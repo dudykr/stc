@@ -12,7 +12,7 @@ warning: Type
 9 |     x;  // undefined
   |     ^
   |
-  = note: string | number | undefined
+  = note: (string | number | undefined)
 
 warning: Type
   --> $DIR/tests/pass/exprs/typeAssertion/3.ts:10:9
@@ -20,7 +20,7 @@ warning: Type
 10 |     if (x) {
    |         ^
    |
-   = note: string | number | undefined
+   = note: (string | number | undefined)
 
 warning: Type
   --> $DIR/tests/pass/exprs/typeAssertion/3.ts:11:9
@@ -28,7 +28,7 @@ warning: Type
 11 |         x;  // string | number (guard as assertion)
    |         ^
    |
-   = note: string | number
+   = note: (string | number)
 
 warning: Type
   --> $DIR/tests/pass/exprs/typeAssertion/3.ts:13:5
@@ -36,5 +36,5 @@ warning: Type
 13 |     x;  // string | number | undefined
    |     ^
    |
-   = note: string | number | undefined
+   = note: (string | number | undefined)
 

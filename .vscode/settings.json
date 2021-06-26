@@ -18,7 +18,7 @@
   // Important
   "editor.formatOnSave": true,
   "git.ignoreLimitWarning": true,
-  "rust-analyzer.assist.importPrefix": "by_self",
+  "rust-analyzer.assist.importPrefix": "crate",
   "git.detectSubmodules": false,
   "rust-analyzer.diagnostics.disabled": [
     "unresolved-import",
@@ -41,5 +41,6 @@
     "typescript/file_analyzer/tests",
     "typescript/type_checker/tests/tsc-stats.rust-debug",
     "typescript/type_checker/tests/wip-stats.rust-debug"
-  ]
+  ],
+  "rust-analyzer.assist.importEnforceGranularity": true
 }

@@ -14,7 +14,7 @@ warning: Type
 15 |     return 'some' in value;
    |                      ^^^^^
    |
-   = note: Some | None
+   = note: (Some | None)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:15:12
@@ -40,7 +40,7 @@ warning: Type
 25 |     x!.slice();
    |     ^
    |
-   = note: string | undefined | null
+   = note: (string | undefined | null)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:25:5
@@ -176,7 +176,7 @@ warning: Type
 32 |     x = <undefined | null>undefined;
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: undefined | null
+   = note: (undefined | null)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:32:5
@@ -184,7 +184,7 @@ warning: Type
 32 |     x = <undefined | null>undefined;
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: undefined | null
+   = note: (undefined | null)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:33:5
@@ -216,7 +216,7 @@ warning: Type
 34 |     x = <string | undefined>"";
    |         ^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: string | undefined
+   = note: (string | undefined)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:34:5
@@ -224,7 +224,7 @@ warning: Type
 34 |     x = <string | undefined>"";
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: string | undefined
+   = note: (string | undefined)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:35:5
@@ -256,7 +256,7 @@ warning: Type
 36 |     x = <string | null>"";
    |         ^^^^^^^^^^^^^^^^^
    |
-   = note: string | null
+   = note: (string | null)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:36:5
@@ -264,7 +264,7 @@ warning: Type
 36 |     x = <string | null>"";
    |     ^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: string | null
+   = note: (string | null)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:37:5

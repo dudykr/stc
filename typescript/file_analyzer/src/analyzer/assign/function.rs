@@ -1,5 +1,11 @@
-use super::{AssignData, AssignOpts};
-use crate::{analyzer::Analyzer, ValidationResult};
+use crate::{
+    analyzer::{
+        assign::{AssignData, AssignOpts},
+        Analyzer,
+    },
+    util::unwrap_ref_with_single_arg,
+    ValidationResult,
+};
 use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
@@ -7,7 +13,7 @@ use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
 use std::borrow::Cow;
 use swc_atoms::js_word;
-use swc_common::TypeEq;
+use swc_common::{Spanned, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
@@ -23,6 +29,42 @@ impl Analyzer<'_, '_> {
         r_ret_ty: Option<&Type>,
     ) -> ValidationResult<()> {
         let span = opts.span;
+
+        if let Some(r_ret_ty) = r_ret_ty {
+            // Fast path for
+            //
+            //
+            // lhs: ((value: T#0#0) => (TResult1#0#0 | PromiseLike<TResult1>) |
+            // undefined | null);
+            //
+            // rhs: (b: boolean) => Promise<boolean>;
+
+            if cfg!(feature = "fastpath")
+                && l_params.len() == 1
+                && l_params[0].ty.normalize().is_type_param()
+                && l_params[0].ty.span().is_dummy()
+            {
+                if let Some(l_ret_ty) = l_ret_ty {
+                    if let Some(r_ret_ty) = unwrap_ref_with_single_arg(&r_ret_ty, "Promise") {
+                        match l_ret_ty.normalize() {
+                            Type::Union(l_ret_ty) => {
+                                // Exact match
+                                if l_ret_ty.types.len() == 4
+                                    && l_ret_ty.types[0].normalize().is_type_param()
+                                    && unwrap_ref_with_single_arg(&l_ret_ty.types[1], "PromiseLike")
+                                        .type_eq(&Some(&l_ret_ty.types[0]))
+                                    && l_ret_ty.types[2].is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                                    && l_ret_ty.types[3].is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                                {
+                                    return Ok(());
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
 
         let new_r_params;
         let new_r_ret_ty;

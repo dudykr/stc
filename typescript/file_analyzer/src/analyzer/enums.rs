@@ -1,6 +1,5 @@
-use super::{scope::VarKind, Analyzer};
 use crate::{
-    analyzer::util::ResultExt,
+    analyzer::{scope::VarKind, util::ResultExt, Analyzer},
     ty::{Enum, EnumMember, Type},
     validator, ValidationResult,
 };

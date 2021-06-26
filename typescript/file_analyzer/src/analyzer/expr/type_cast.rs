@@ -1,8 +1,9 @@
-use super::{super::Analyzer, TypeOfMode};
 use crate::{
     analyzer::{
         assign::AssignOpts,
+        expr::TypeOfMode,
         util::{make_instance_type, ResultExt},
+        Analyzer,
     },
     ty::Type,
     util::is_str_or_union,

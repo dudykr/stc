@@ -71,6 +71,8 @@ impl Fold<Tuple> for LitGeneralizer {
 
 impl Fold<Type> for LitGeneralizer {
     fn fold(&mut self, mut ty: Type) -> Type {
+        ty.normalize_mut();
+
         match &ty {
             Type::IndexedAccessType(IndexedAccessType { index_type, .. }) if is_str_lit_or_union(&index_type) => {
                 return ty;

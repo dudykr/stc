@@ -116,7 +116,7 @@ warning: Type
 27 | f15(E.x).toLowerCase();
    | ^^^
    |
-   = note: (a: string) => boolean | (a: Meters) => string
+   = note: ((a: string) => boolean | (a: Meters) => string)
 
 warning: Type
   --> $DIR/tests/pass/types/alias/base-1-2-2.ts:27:1

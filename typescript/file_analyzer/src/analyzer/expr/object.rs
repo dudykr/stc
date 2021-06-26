@@ -17,7 +17,7 @@ use stc_ts_types::{
     CallSignature, FnParam, Function, Key, PropertySignature, Type, TypeElement, TypeLit, TypeLitMetadata,
     TypeParamDecl, Union,
 };
-use std::{borrow::Cow, iter::repeat};
+use std::{borrow::Cow, iter::repeat, time::Instant};
 use swc_atoms::JsWord;
 use swc_common::{Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -404,10 +404,15 @@ impl Analyzer<'_, '_> {
     /// Type of `a` in the code above is `{ a: number, b?: undefined } | {
     /// a:number, b: string }`.
     pub(super) fn normalize_union(&mut self, ty: &mut Type, preserve_specified: bool) {
+        let start = Instant::now();
         ty.visit_mut_with(&mut UnionNormalizer {
             anaylzer: self,
             preserve_specified,
         });
+
+        let end = Instant::now();
+
+        slog::debug!(self.logger, "Normlaized unions (time = {:?})", end - start);
     }
 
     fn append_prop_or_spread_to_type(

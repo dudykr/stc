@@ -1,3 +1,6 @@
+controlFlow::controlFlowNullishCoalesce.ts
+controlFlow::controlFlowOptionalChain.ts
+controlFlow::neverReturningFunctions1.ts
 controlFlow::controlFlowAssignmentPatternOrder.ts
 controlFlow::controlFlowDeleteOperator.ts
 controlFlow::controlFlowForOfStatement.ts

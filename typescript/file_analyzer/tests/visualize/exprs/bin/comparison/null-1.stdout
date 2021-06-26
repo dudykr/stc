@@ -4,7 +4,7 @@ warning: Type
 4 |     if (null === strOrNull) {
   |                  ^^^^^^^^^
   |
-  = note: string | null
+  = note: (string | null)
 
 warning: Type
  --> $DIR/tests/visualize/exprs/bin/comparison/null-1.ts:4:9
@@ -60,7 +60,7 @@ warning: Type
 10 |     if (undefined !== strOrUndefined) {
    |                       ^^^^^^^^^^^^^^
    |
-   = note: string | undefined
+   = note: (string | undefined)
 
 warning: Type
   --> $DIR/tests/visualize/exprs/bin/comparison/null-1.ts:10:9

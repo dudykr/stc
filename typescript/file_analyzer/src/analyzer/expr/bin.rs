@@ -1,12 +1,11 @@
-use super::{
-    super::{
-        util::{Comparator, ResultExt},
-        Analyzer,
-    },
-    TypeOfMode,
-};
 use crate::{
-    analyzer::{assign::AssignOpts, generic::ExtendsOpts, Ctx, ScopeKind},
+    analyzer::{
+        assign::AssignOpts,
+        expr::TypeOfMode,
+        generic::ExtendsOpts,
+        util::{Comparator, ResultExt},
+        Analyzer, Ctx, ScopeKind,
+    },
     ty::{Operator, Type, TypeExt},
     type_facts::TypeFacts,
     util::{is_str_or_union, RemoveTypes},
@@ -15,14 +14,18 @@ use crate::{
     ValidationResult,
 };
 use stc_ts_ast_rnode::{
-    RBinExpr, RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, RPat, RPatOrExpr, RStr, RTpl, RTsEntityName,
-    RTsKeywordType, RTsLit, RTsLitType, RUnaryExpr,
+    RBinExpr, RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
+    RTsEntityName, RTsKeywordType, RTsLit, RTsLitType, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
-use stc_ts_types::{name::Name, Class, Intersection, Key, ModuleId, Ref, TypeElement, Union};
-use std::{borrow::Cow, collections::hash_map::Entry, convert::TryFrom};
+use stc_ts_types::{name::Name, Class, IdCtx, Intersection, Key, ModuleId, Ref, TypeElement, Union};
+use std::{
+    borrow::Cow,
+    collections::hash_map::Entry,
+    convert::{TryFrom, TryInto},
+};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{op, BinaryOp, TsKeywordTypeKind, TsTypeOperatorOp};
@@ -40,6 +43,7 @@ impl Analyzer<'_, '_> {
         } = *e;
 
         let marks = self.marks();
+        let add_type_facts = self.ctx.in_cond;
 
         let prev_facts = self.cur_facts.clone();
 
@@ -51,6 +55,11 @@ impl Analyzer<'_, '_> {
             should_store_truthy_for_access: self.ctx.should_store_truthy_for_access
                 && match op {
                     op!("&&") => true,
+                    _ => false,
+                },
+            in_cond: self.ctx.in_cond
+                || match op {
+                    op!("&&") | op!("||") => true,
                     _ => false,
                 },
             check_for_implicit_any: true,
@@ -66,7 +75,9 @@ impl Analyzer<'_, '_> {
             },
         );
 
+        let orig_logger = self.logger.clone();
         let lt = {
+            self.logger = orig_logger.new(slog::o!("type" => "lhs"));
             let mut a = self.with_ctx(ctx);
             left.validate_with_args(&mut *a, child_ctxt)
         }
@@ -107,13 +118,14 @@ impl Analyzer<'_, '_> {
             Default::default()
         };
 
-        self.cur_facts = prev_facts;
+        self.cur_facts = prev_facts.clone();
 
         let rhs = self
             .with_child(
                 ScopeKind::Flow,
                 true_facts_for_rhs.clone(),
                 |child: &mut Analyzer| -> ValidationResult<_> {
+                    child.logger = orig_logger.new(slog::o!("type" => "rhs"));
                     child.ctx.should_store_truthy_for_access = false;
 
                     let truthy_lt;
@@ -157,38 +169,43 @@ impl Analyzer<'_, '_> {
                 },
             )
             .store(&mut errors);
+        self.logger = orig_logger;
 
         let rt = rhs;
 
-        self.validate_bin_inner(span, op, lt.as_ref(), rt.as_ref());
+        self.report_errors_for_bin_expr(span, op, lt.as_ref(), rt.as_ref());
 
-        if op == op!("||") {
-            for (k, type_fact) in lhs_facts.true_facts.facts.drain() {
-                match self.cur_facts.true_facts.facts.entry(k) {
-                    // (typeof a === 'string' || typeof a === 'number')
-                    Entry::Occupied(mut e) => {
-                        *e.get_mut() &= type_fact;
+        if add_type_facts {
+            if op == op!("||") {
+                for (k, type_fact) in lhs_facts.true_facts.facts.drain() {
+                    match self.cur_facts.true_facts.facts.entry(k) {
+                        // (typeof a === 'string' || typeof a === 'number')
+                        Entry::Occupied(mut e) => {
+                            *e.get_mut() &= type_fact;
+                        }
+                        // (typeof a === 'string' || a !== foo)
+                        Entry::Vacant(..) => {}
                     }
-                    // (typeof a === 'string' || a !== foo)
-                    Entry::Vacant(..) => {}
+                }
+
+                self.cur_facts += lhs_facts;
+            } else if op == op!("&&") {
+                self.cur_facts.true_facts += true_facts_for_rhs;
+
+                for (k, v) in additional_false_facts.facts.drain() {
+                    *self
+                        .cur_facts
+                        .false_facts
+                        .facts
+                        .entry(k.clone())
+                        .or_insert(TypeFacts::None) &= v;
                 }
             }
 
-            self.cur_facts += lhs_facts;
-        } else if op == op!("&&") {
-            self.cur_facts.true_facts += true_facts_for_rhs;
-
-            for (k, v) in additional_false_facts.facts.drain() {
-                *self
-                    .cur_facts
-                    .false_facts
-                    .facts
-                    .entry(k.clone())
-                    .or_insert(TypeFacts::None) &= v;
-            }
+            self.cur_facts.false_facts += additional_false_facts;
+        } else {
+            self.cur_facts = prev_facts;
         }
-
-        self.cur_facts.false_facts += additional_false_facts;
 
         let (lt, rt): (Type, Type) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
@@ -205,50 +222,8 @@ impl Analyzer<'_, '_> {
                     right: &**right,
                 };
 
-                // Check typeof a === 'string'
-                {
-                    match c.take_if_any_matches(|l, r| match l {
-                        RExpr::Unary(RUnaryExpr {
-                            op: op!("typeof"),
-                            ref arg,
-                            ..
-                        }) => {
-                            //
-                            let name = Name::try_from(&**arg);
-                            slog::info!(self.logger, "cond_facts: typeof {:?}", name);
-                            match r {
-                                RExpr::Tpl(RTpl { quasis, .. }) if quasis.len() == 1 => {
-                                    let value = &quasis[0].cooked.as_ref()?.value;
-                                    Some((
-                                        name,
-                                        if is_eq {
-                                            (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
-                                        } else {
-                                            (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
-                                        },
-                                    ))
-                                }
-                                RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some((
-                                    name,
-                                    if is_eq {
-                                        (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
-                                    } else {
-                                        (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
-                                    },
-                                )),
-                                _ => None,
-                            }
-                        }
-                        _ => None,
-                    }) {
-                        Some((Ok(name), (Some(t), Some(f)))) => {
-                            // Add type facts
-                            self.cur_facts.true_facts.facts.insert(name.clone(), t);
-                            self.cur_facts.false_facts.facts.insert(name.clone(), f);
-                        }
-                        _ => {}
-                    }
-                }
+                self.add_type_facts_for_typeof(span, &left, &right, is_eq)
+                    .report(&mut self.storage);
 
                 // Try narrowing type
                 let c = Comparator {
@@ -280,6 +255,7 @@ impl Analyzer<'_, '_> {
                     _ => None,
                 }) {
                     Some((Ok(name), ty)) => {
+                        let ty = ty.clone().cheap();
                         if is_eq {
                             self.add_deep_type_fact(span, name.clone(), ty.clone(), false);
                         } else {
@@ -288,6 +264,9 @@ impl Analyzer<'_, '_> {
                     }
                     _ => {}
                 }
+
+                self.add_type_facts_for_opt_chains(span, &left, &right, &lt, &rt)
+                    .report(&mut self.storage);
 
                 match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
                     (
@@ -299,11 +278,14 @@ impl Analyzer<'_, '_> {
                     )
                     | (RExpr::Lit(RLit::Null(..)), _) => None,
 
-                    (l, r) => Some((extract_name_for_assignment(l)?, r_ty)),
+                    (l, r) => Some((extract_name_for_assignment(l, op == op!("==="))?, r_ty)),
                 }) {
                     Some((l, r_ty)) => {
-                        if self.ctx.in_cond_of_cond_expr {
+                        if self.ctx.in_cond {
                             let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
+                            self.prevent_generalize(&mut r);
+                            r.make_cheap();
+
                             if op == op!("===") {
                                 self.cur_facts
                                     .false_facts
@@ -312,7 +294,6 @@ impl Analyzer<'_, '_> {
                                     .or_default()
                                     .push(r.clone());
 
-                                self.prevent_generalize(&mut r);
                                 self.add_deep_type_fact(span, name, r, true);
                             } else if !is_eq {
                                 // Remove from union
@@ -323,7 +304,6 @@ impl Analyzer<'_, '_> {
                                     .or_default()
                                     .push(r.clone());
 
-                                self.prevent_generalize(&mut r);
                                 self.add_deep_type_fact(span, name, r, false);
                             }
                         }
@@ -363,7 +343,7 @@ impl Analyzer<'_, '_> {
                                 _ => false,
                             };
 
-                        if self.ctx.in_cond_of_cond_expr && !cannot_narrow {
+                        if self.ctx.in_cond && !cannot_narrow {
                             let narrowed_ty = self
                                 .narrow_with_instanceof(span, ty.clone(), &orig_ty)
                                 .context("tried to narrow type with instanceof")?
@@ -599,7 +579,7 @@ impl Analyzer<'_, '_> {
             }
 
             op!("in") => {
-                if self.ctx.in_cond_of_cond_expr {
+                if self.ctx.in_cond {
                     let left = match &**left {
                         RExpr::Lit(RLit::Str(s)) => Some(s.value.clone()),
                         RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| v.value),
@@ -730,6 +710,178 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn add_type_facts_for_typeof(&mut self, span: Span, l: &RExpr, r: &RExpr, is_eq: bool) -> ValidationResult<()> {
+        if !self.ctx.in_cond {
+            return Ok(());
+        }
+
+        let c = Comparator { left: l, right: r };
+
+        // Check typeof a === 'string'
+        match c.take_if_any_matches(|l, r| match l {
+            RExpr::Unary(RUnaryExpr {
+                op: op!("typeof"),
+                ref arg,
+                ..
+            }) => {
+                //
+                let name = Name::try_from(&**arg);
+                slog::info!(self.logger, "cond_facts: typeof {:?}", name);
+                match r {
+                    RExpr::Tpl(RTpl { quasis, .. }) if quasis.len() == 1 => {
+                        let value = &quasis[0].cooked.as_ref()?.value;
+                        Some((
+                            name,
+                            if is_eq {
+                                (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
+                            } else {
+                                (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
+                            },
+                        ))
+                    }
+                    RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some((
+                        name,
+                        if is_eq {
+                            (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
+                        } else {
+                            (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
+                        },
+                    )),
+                    _ => None,
+                }
+            }
+            _ => None,
+        }) {
+            Some((Ok(name), (Some(t), Some(f)))) => {
+                // Add type facts
+                self.cur_facts.true_facts.facts.insert(name.clone(), t);
+                self.cur_facts.false_facts.facts.insert(name.clone(), f);
+            }
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    ///
+    /// # Exmaple
+    ///
+    ///
+    ///
+    /// ```ts
+    /// // Note: feature.geometry can be undefined
+    ///
+    /// function extractCoordinates(f: Feature): number[] {
+    ///     if (f.geometry?.type !== 'test') {
+    ///         return [];
+    ///     }
+    ///     return f.geometry.coordinates;
+    /// }
+    /// ```
+    ///
+    /// The condition in the if statement above will be `true` if `f.geometry`
+    /// is `undefined`.
+    fn add_type_facts_for_opt_chains(
+        &mut self,
+        span: Span,
+        l: &RExpr,
+        r: &RExpr,
+        lt: &Type,
+        rt: &Type,
+    ) -> ValidationResult<()> {
+        /// Convert expression to names.
+        ///
+        /// This may return multiple names if there are optional chaining
+        /// expressions.
+        fn non_undefined_names(e: &RExpr) -> Vec<Name> {
+            match e {
+                RExpr::OptChain(ROptChainExpr {
+                    expr:
+                        box RExpr::Member(
+                            e
+                            @
+                            RMemberExpr {
+                                obj: RExprOrSuper::Expr(..),
+                                ..
+                            },
+                        ),
+                    ..
+                }) => {
+                    let mut names = non_undefined_names(match &e.obj {
+                        RExprOrSuper::Super(_) => unreachable!(),
+                        RExprOrSuper::Expr(v) => &v,
+                    });
+
+                    names.extend(e.try_into().ok());
+                    names
+                }
+
+                RExpr::Member(
+                    e
+                    @
+                    RMemberExpr {
+                        obj: RExprOrSuper::Expr(..),
+                        ..
+                    },
+                ) => {
+                    let mut names = non_undefined_names(match &e.obj {
+                        RExprOrSuper::Super(_) => unreachable!(),
+                        RExprOrSuper::Expr(v) => &v,
+                    });
+
+                    names.extend(e.try_into().ok());
+                    names
+                }
+
+                _ => vec![],
+            }
+        }
+
+        if !self.ctx.in_cond {
+            return Ok(());
+        }
+
+        let c = Comparator {
+            left: (l, lt),
+            right: (r, rt),
+        };
+
+        match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
+            (
+                RExpr::Ident(RIdent {
+                    sym: js_word!("undefined"),
+                    ..
+                }),
+                _,
+            )
+            | (RExpr::Lit(RLit::Null(..)), _) => None,
+
+            (l, r) => {
+                let names = non_undefined_names(l);
+                if names.is_empty() {
+                    return None;
+                }
+
+                Some((names, r_ty))
+            }
+        }) {
+            Some((names, r_ty)) => {
+                if !self.can_be_undefined(span, &r_ty)? {
+                    for name in names {
+                        self.cur_facts
+                            .false_facts
+                            .facts
+                            .insert(name.clone(), TypeFacts::NEUndefined);
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        // TODO
+        Ok(())
+    }
+
     fn is_valid_for_switch_case(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> ValidationResult<bool> {
         let disc_ty = disc_ty.normalize();
         let case_ty = case_ty.normalize();
@@ -1242,7 +1394,7 @@ impl Analyzer<'_, '_> {
             Type::Union(u) => {
                 let mut candidates = vec![];
                 for ty in &u.types {
-                    let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, super::IdCtx::Var);
+                    let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var);
 
                     match prop_res {
                         Ok(prop_ty) => {
@@ -1321,7 +1473,7 @@ impl Analyzer<'_, '_> {
         Ok(equals_to.into_owned())
     }
 
-    fn validate_bin_inner(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
+    fn report_errors_for_bin_expr(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
         let ls = lt.span();
         let rs = rt.span();
 
@@ -1592,14 +1744,14 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(super) fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
+pub(super) fn extract_name_for_assignment(e: &RExpr, is_exact_eq: bool) -> Option<Name> {
     match e {
-        RExpr::Paren(e) => extract_name_for_assignment(&e.expr),
+        RExpr::Paren(e) => extract_name_for_assignment(&e.expr, is_exact_eq),
         RExpr::Assign(e) => match &e.left {
-            RPatOrExpr::Expr(e) => extract_name_for_assignment(e),
+            RPatOrExpr::Expr(e) => extract_name_for_assignment(e, is_exact_eq),
             RPatOrExpr::Pat(pat) => match &**pat {
                 RPat::Ident(i) => Some(i.id.clone().into()),
-                RPat::Expr(e) => extract_name_for_assignment(e),
+                RPat::Expr(e) => extract_name_for_assignment(e, is_exact_eq),
                 _ => None,
             },
         },
@@ -1609,7 +1761,7 @@ pub(super) fn extract_name_for_assignment(e: &RExpr) -> Option<Name> {
             computed,
             ..
         }) => {
-            let mut name = extract_name_for_assignment(obj)?;
+            let mut name = extract_name_for_assignment(obj, is_exact_eq)?;
 
             name.push(match &**prop {
                 RExpr::Ident(i) if !*computed => i.sym.clone(),

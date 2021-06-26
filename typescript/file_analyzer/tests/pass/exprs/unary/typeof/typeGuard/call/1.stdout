@@ -68,7 +68,7 @@ warning: Type
 6 |             item.call(obj);
   |             ^^^^
   |
-  = note: T[K] | (...args: any) => any
+  = note: (T[K] | (...args: any) => any)
 
 warning: Type
  --> $DIR/tests/pass/exprs/unary/typeof/typeGuard/call/1.ts:6:13

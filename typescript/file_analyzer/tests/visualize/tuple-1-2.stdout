@@ -36,5 +36,5 @@ warning: Type
 5 | var c2: myArray = [...temp1, ...temp];
   |                   ^^^^^^^^^^^^^^^^^^^
   |
-  = note: (number | string)[]
+  = note: ((number | string))[]
 

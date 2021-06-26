@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use crate::{
     analyzer::{assign::AssignOpts, expr::TypeOfMode, Analyzer, Ctx},
     ty::{Array, IndexedAccessType, Mapped, Operator, PropertySignature, Ref, Type, TypeElement, TypeLit},
@@ -96,6 +98,11 @@ impl Analyzer<'_, '_> {
     where
         T: for<'aa, 'bb, 'cc, 'dd> FoldWith<GenericExpander<'aa, 'bb, 'cc, 'dd>>,
     {
+        for (_, param) in params {
+            debug_assert!(param.is_clone_cheap());
+        }
+
+        let start = Instant::now();
         let ty = ty.fold_with(&mut GenericExpander {
             logger: self.logger.clone(),
             analyzer: self,
@@ -103,6 +110,8 @@ impl Analyzer<'_, '_> {
             fully,
             dejavu: Default::default(),
         });
+        let end = Instant::now();
+        slog::info!(self.logger, "expanded type parameters (time = {:?})", end - start);
 
         Ok(ty)
     }

@@ -1073,10 +1073,6 @@ impl Type {
 impl Type {
     /// TODO
     pub fn is_clone_cheap(&self) -> bool {
-        if !cfg!(debug_assertions) {
-            return true;
-        }
-
         match self {
             Type::Arc(..) | Type::Keyword(..) | Type::This(..) | Type::StaticThis(..) | Type::Symbol(..) => true,
 
@@ -1432,9 +1428,9 @@ impl Type {
     pub fn normalize_mut(&mut self) -> &mut Type {
         match self {
             Type::Arc(Freezed { ty, span }) => {
-                let mut ty = (**ty).clone();
+                let ty = Arc::make_mut(ty);
                 ty.respan(*span);
-                *self = ty;
+                *self = replace(ty, Type::any(DUMMY_SP));
             }
             _ => {}
         }

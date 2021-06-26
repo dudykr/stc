@@ -1,9 +1,9 @@
-use super::{Analyzer, Ctx};
 use crate::{
     analyzer::{
         assign::AssignOpts,
         scope::VarKind,
         util::{ResultExt, VarVisitor},
+        Analyzer, Ctx,
     },
     ty,
     ty::{Type, TypeExt},

@@ -4,7 +4,7 @@ warning: Type
 2 |     if (thing instanceof Object) {
   |         ^^^^^
   |
-  = note: string | number | Date
+  = note: (string | number | Date)
 
 warning: Type
  --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:2:26
@@ -68,7 +68,7 @@ warning: Type
 4 |     } else if (typeof thing === 'string') {
   |                       ^^^^^
   |
-  = note: string | number
+  = note: (string | number)
 
 warning: Type
  --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:4:16
@@ -188,7 +188,7 @@ warning: Type
 11 | distinguish(new Date());
    | ^^^^^^^^^^^
    |
-   = note: (thing: string | number | Date) => void
+   = note: (thing: (string | number | Date)) => void
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:11:1
@@ -204,7 +204,7 @@ warning: Type
 12 | distinguish("beef");
    | ^^^^^^^^^^^
    |
-   = note: (thing: string | number | Date) => void
+   = note: (thing: (string | number | Date)) => void
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:12:1
@@ -220,7 +220,7 @@ warning: Type
 13 | distinguish(3.14159265);
    | ^^^^^^^^^^^
    |
-   = note: (thing: string | number | Date) => void
+   = note: (thing: (string | number | Date)) => void
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/primitive-1.ts:13:1

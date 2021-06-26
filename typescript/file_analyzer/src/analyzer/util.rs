@@ -1,5 +1,9 @@
-use super::{Analyzer, Ctx};
-use crate::{analyzer::generic::is_literals, ty, ty::Type, Marks, ValidationResult};
+use crate::{
+    analyzer::{generic::is_literals, Analyzer, Ctx},
+    ty,
+    ty::Type,
+    Marks, ValidationResult,
+};
 use rnode::{Fold, FoldWith, Visit};
 use stc_ts_ast_rnode::{RExpr, RIdent, RPropName, RStr, RTsEntityName, RTsType};
 use stc_ts_errors::Error;

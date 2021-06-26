@@ -28,7 +28,7 @@ warning: Type
 11 |         let v1: T = x;
    |                     ^
    |
-   = note: T & C
+   = note: (T & C)
 
 warning: Type
   --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/1.ts:12:21
@@ -36,7 +36,7 @@ warning: Type
 12 |         let v2: C = x;
    |                     ^
    |
-   = note: T & C
+   = note: (T & C)
 
 warning: Type
   --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/1.ts:13:9
@@ -44,7 +44,7 @@ warning: Type
 13 |         x.prop;
    |         ^
    |
-   = note: T & C
+   = note: (T & C)
 
 warning: Type
   --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/1.ts:13:9

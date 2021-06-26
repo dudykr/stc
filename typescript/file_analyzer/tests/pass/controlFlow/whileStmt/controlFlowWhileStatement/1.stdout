@@ -68,5 +68,5 @@ warning: Type
 8 | x; // string | number
   | ^
   |
-  = note: number | string
+  = note: (number | string)
 

@@ -20,5 +20,5 @@ warning: Type
 15 | const snb: string | number | boolean = item[e];
    |                                        ^^^^^^^
    |
-   = note: string | number | boolean
+   = note: (string | number | boolean)
 

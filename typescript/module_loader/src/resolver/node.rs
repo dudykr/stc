@@ -1,4 +1,4 @@
-use super::Resolve;
+use crate::resolver::Resolve;
 use anyhow::{bail, Context, Error};
 use serde::Deserialize;
 use std::{

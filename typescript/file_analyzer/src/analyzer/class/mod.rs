@@ -1,13 +1,13 @@
 use self::type_param::StaticTypeParamValidator;
-use super::{
-    assign::AssignOpts,
-    expr::TypeOfMode,
-    props::ComputedPropMode,
-    util::{is_prop_name_eq, make_instance_type, ResultExt, VarVisitor},
-    Analyzer, Ctx, ScopeKind,
-};
 use crate::{
-    analyzer::scope::VarKind,
+    analyzer::{
+        assign::AssignOpts,
+        expr::TypeOfMode,
+        props::ComputedPropMode,
+        scope::VarKind,
+        util::{is_prop_name_eq, make_instance_type, ResultExt, VarVisitor},
+        Analyzer, Ctx, ScopeKind,
+    },
     env::ModuleConfig,
     ty::{LitGeneralizer, TypeExt},
     validator,

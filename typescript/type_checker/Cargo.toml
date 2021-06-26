@@ -6,7 +6,10 @@ name = "stc_ts_type_checker"
 publish = false
 version = "0.1.0"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+
+[features]
+perf = ["slog/release_max_level_off"]
 
 [dependencies]
 dashmap = {version = "3", features = ["raw-api"]}
@@ -14,7 +17,7 @@ fxhash = "0.2.1"
 once_cell = "1.5.2"
 parking_lot = "0.11.1"
 rnode = {path = "../../rnode"}
-slog = {version = "2.7.0", features = ["release_max_level_off"]}
+slog = {version = "2.7.0", features = ["release_max_level_debug"]}
 stc_ts_ast_rnode = {path = "../ast_rnode"}
 stc_ts_builtin_types = {path = "../builtin_types"}
 stc_ts_dts = {path = "../dts"}

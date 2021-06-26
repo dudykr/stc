@@ -1,13 +1,12 @@
-use super::{
-    assign::AssignOpts,
-    expr::TypeOfMode,
-    marks::MarkExt,
-    scope::{ScopeKind, VarInfo},
-    util::ResultExt,
-    Analyzer, Ctx,
-};
 use crate::{
-    analyzer::expr::IdCtx,
+    analyzer::{
+        assign::AssignOpts,
+        expr::{IdCtx, TypeOfMode},
+        marks::MarkExt,
+        scope::{ScopeKind, VarInfo},
+        util::ResultExt,
+        Analyzer, Ctx,
+    },
     ty::{Tuple, Type},
     type_facts::TypeFacts,
     util::{type_ext::TypeVecExt, EndsWithRet},
@@ -47,6 +46,7 @@ pub(crate) struct CondFacts {
 }
 
 impl CondFacts {
+    #[inline]
     pub(crate) fn assert_valid(&self) {
         for (_, ty) in &self.vars {
             ty.assert_valid();
@@ -60,6 +60,33 @@ impl CondFacts {
 
         for (_, ty) in &self.types {
             ty.assert_valid();
+        }
+    }
+
+    #[inline]
+    pub(crate) fn assert_clone_cheap(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
+        for (_, ty) in &self.vars {
+            if !ty.is_union_type() {
+                debug_assert!(
+                    ty.is_clone_cheap(),
+                    "ty.is_clone_cheap() shoulf be true:\n{:?}",
+                    &self.vars
+                );
+            }
+        }
+
+        for (_, types) in &self.excludes {
+            for ty in types {
+                debug_assert!(ty.is_clone_cheap());
+            }
+        }
+
+        for (_, ty) in &self.types {
+            debug_assert!(ty.is_clone_cheap());
         }
     }
 
@@ -125,10 +152,18 @@ pub(super) struct Facts {
 }
 
 impl Facts {
+    #[inline]
     pub(crate) fn assert_valid(&self) {
         self.true_facts.assert_valid();
         self.false_facts.assert_valid();
     }
+
+    #[inline]
+    pub(crate) fn assert_clone_cheap(&self) {
+        self.true_facts.assert_clone_cheap();
+        self.false_facts.assert_clone_cheap();
+    }
+
     pub fn clear(&mut self) {
         self.assert_valid();
 
@@ -306,27 +341,44 @@ impl BitOr for CondFacts {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, stmt: &RIfStmt) -> ValidationResult<()> {
-        {
+        let prev_facts = self.cur_facts.take();
+        prev_facts.assert_clone_cheap();
+
+        let facts_from_test: Facts = {
             let ctx = Ctx {
-                in_cond_of_cond_expr: true,
+                in_cond: true,
                 should_store_truthy_for_access: true,
                 ..self.ctx
             };
-            let test = stmt.test.validate_with_default(&mut *self.with_ctx(ctx));
-            match test {
-                Ok(_) => {}
-                Err(err) => {
-                    self.storage.report(err);
-                }
-            }
-        }
+            let facts = self.with_ctx(ctx).with_child(
+                ScopeKind::Flow,
+                prev_facts.true_facts.clone(),
+                |child: &mut Analyzer| {
+                    let test = stmt.test.validate_with_default(child);
+                    match test {
+                        Ok(_) => {}
+                        Err(err) => {
+                            child.storage.report(err);
+                        }
+                    }
 
-        let true_facts = self.cur_facts.true_facts.take();
-        let false_facts = self.cur_facts.false_facts.take();
+                    Ok(child.cur_facts.take())
+                },
+            );
+
+            facts.report(&mut self.storage).unwrap_or_default()
+        };
+
+        facts_from_test.assert_clone_cheap();
+
+        let true_facts = facts_from_test.true_facts;
+        let false_facts = facts_from_test.false_facts;
 
         let mut cons_ends_with_unreachable = false;
 
         let ends_with_ret = stmt.cons.ends_with_ret();
+
+        self.cur_facts = prev_facts.clone();
         self.with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
             stmt.cons.visit_with(child);
 
@@ -339,6 +391,7 @@ impl Analyzer<'_, '_> {
         let mut alt_ends_with_unreachable = None;
 
         if let Some(alt) = &stmt.alt {
+            self.cur_facts = prev_facts.clone();
             self.with_child(ScopeKind::Flow, false_facts.clone(), |child: &mut Analyzer| {
                 alt.visit_with(child);
 
@@ -348,6 +401,8 @@ impl Analyzer<'_, '_> {
             })
             .report(&mut self.storage);
         }
+
+        self.cur_facts = prev_facts;
 
         if ends_with_ret {
             self.cur_facts.true_facts += false_facts;
@@ -523,7 +578,7 @@ impl Analyzer<'_, '_> {
                         right: test.clone(),
                     });
                     let ctx = Ctx {
-                        in_cond_of_cond_expr: true,
+                        in_cond: true,
                         in_switch_case_test: true,
                         should_store_truthy_for_access: true,
                         ..self.ctx
@@ -1012,6 +1067,8 @@ impl Analyzer<'_, '_> {
     pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type) {
         slog::info!(self.logger, "add_type_fact({}); ty = {:?}", sym, ty);
 
+        debug_assert!(ty.is_clone_cheap());
+
         ty.assert_valid();
 
         self.cur_facts.insert_var(sym, ty, false);
@@ -1020,13 +1077,16 @@ impl Analyzer<'_, '_> {
     pub(super) fn add_deep_type_fact(&mut self, span: Span, name: Name, ty: Type, is_for_true: bool) {
         debug_assert!(!self.is_builtin);
 
+        debug_assert!(ty.is_clone_cheap());
+
         ty.assert_valid();
 
-        if let Some((name, ty)) = self
+        if let Some((name, mut ty)) = self
             .determine_type_fact_by_field_fact(span, &name, &ty)
             .report(&mut self.storage)
             .flatten()
         {
+            ty.make_cheap();
             ty.assert_valid();
 
             if is_for_true {
@@ -1201,7 +1261,7 @@ impl Analyzer<'_, '_> {
 
         self.validate_with(|a| {
             let ctx = Ctx {
-                in_cond_of_cond_expr: true,
+                in_cond: true,
                 should_store_truthy_for_access: true,
                 ..a.ctx
             };

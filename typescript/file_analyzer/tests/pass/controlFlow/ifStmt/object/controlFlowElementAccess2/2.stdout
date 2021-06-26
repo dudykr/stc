@@ -5,9 +5,9 @@ warning: Type
   |            ^^^^^^
   |
   = note: {
-              [key: string]: boolean | {
+              [key: string]: (boolean | {
                   prop: string;
-              };
+              });
           }
 
 warning: Type
@@ -16,9 +16,9 @@ warning: Type
 5 | if (typeof config.works !== 'boolean') {
   |            ^^^^^^^^^^^^
   |
-  = note: boolean | {
+  = note: (boolean | {
               prop: string;
-          }
+          })
 
 warning: Type
  --> $DIR/tests/pass/controlFlow/ifStmt/object/controlFlowElementAccess2/2.ts:5:5
@@ -43,9 +43,9 @@ warning: Type
   |     ^^^^^^
   |
   = note: {
-              [key: string]: boolean | {
+              [key: string]: (boolean | {
                   prop: string;
-              };
+              });
           }
 
 warning: Type
@@ -81,9 +81,9 @@ warning: Type
   |     ^^^^^^
   |
   = note: {
-              [key: string]: boolean | {
+              [key: string]: (boolean | {
                   prop: string;
-              };
+              });
           }
 
 warning: Type

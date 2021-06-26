@@ -1,5 +1,7 @@
-use super::NormalizeTypeOpts;
-use crate::{analyzer::Analyzer, ValidationResult};
+use crate::{
+    analyzer::{types::NormalizeTypeOpts, Analyzer},
+    ValidationResult,
+};
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsKeywordType};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};

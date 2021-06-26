@@ -1,6 +1,8 @@
-use super::InferData;
 use crate::{
-    analyzer::{generic::type_form::OldTypeForm, Analyzer, Ctx},
+    analyzer::{
+        generic::{type_form::OldTypeForm, InferData},
+        Analyzer, Ctx,
+    },
     ValidationResult,
 };
 use fxhash::FxHashMap;
@@ -541,6 +543,8 @@ impl Analyzer<'_, '_> {
     pub(super) fn finalize_inference(&self, inferred: &mut InferData) {
         for (k, v) in inferred.type_params.iter_mut() {
             self.replace_null_or_undefined_while_defaulting_to_any(v);
+
+            v.make_cheap();
         }
     }
 

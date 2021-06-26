@@ -14,7 +14,7 @@ warning: Type
 15 |     return 'some' in value;
    |                      ^^^^^
    |
-   = note: Some | None
+   = note: (Some | None)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:15:12
@@ -96,7 +96,7 @@ warning: Type
 27 |         x = typeof x === "string" ? x.slice() : "abc";
    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: any | "abc"
+   = note: (any | "abc")
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:27:9
@@ -104,7 +104,7 @@ warning: Type
 27 |         x = typeof x === "string" ? x.slice() : "abc";
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: any | "abc"
+   = note: (any | "abc")
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:28:9
@@ -112,7 +112,7 @@ warning: Type
 28 |         x;  // string
    |         ^
    |
-   = note: string | number | boolean
+   = note: (string | number | boolean)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:26:9
@@ -120,7 +120,7 @@ warning: Type
 26 |         x;  // number, then string | number
    |         ^
    |
-   = note: string | number | boolean
+   = note: (string | number | boolean)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:27:20
@@ -128,7 +128,7 @@ warning: Type
 27 |         x = typeof x === "string" ? x.slice() : "abc";
    |                    ^
    |
-   = note: string | number | boolean
+   = note: (string | number | boolean)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:27:37
@@ -152,7 +152,7 @@ warning: Type
 27 |         x = typeof x === "string" ? x.slice() : "abc";
    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: string | "abc"
+   = note: (string | "abc")
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:27:9
@@ -160,7 +160,7 @@ warning: Type
 27 |         x = typeof x === "string" ? x.slice() : "abc";
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: string | "abc"
+   = note: (string | "abc")
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/guard/assertions/2.ts:28:9
@@ -176,5 +176,5 @@ warning: Type
 30 |     x;
    |     ^
    |
-   = note: string | number
+   = note: (string | number)
 

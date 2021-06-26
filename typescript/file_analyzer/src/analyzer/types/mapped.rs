@@ -1,12 +1,13 @@
-use crate::{analyzer::Analyzer, ValidationResult};
+use crate::{
+    analyzer::{types::NormalizeTypeOpts, Analyzer},
+    ValidationResult,
+};
 use stc_ts_ast_rnode::{RTsEnumMemberId, RTsLit, RTsLitType};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_types::{FnParam, Id, IndexSignature, Key, Mapped, Operator, PropertySignature, Type, TypeElement, TypeLit};
 use std::{borrow::Cow, collections::HashMap};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsTypeOperatorOp};
-
-use super::NormalizeTypeOpts;
 
 impl Analyzer<'_, '_> {
     /// Required because mapped type can specified by user, like
@@ -174,7 +175,7 @@ impl Analyzer<'_, '_> {
     fn expand_key_in_mapped(&mut self, mapped_type_param: Id, mapped_ty: &Type, key: &Key) -> ValidationResult<Type> {
         let mapped_ty = mapped_ty.clone();
         let mut type_params = HashMap::default();
-        type_params.insert(mapped_type_param, key.ty().into_owned());
+        type_params.insert(mapped_type_param, key.ty().into_owned().cheap());
         self.expand_type_params(&type_params, mapped_ty)
     }
 

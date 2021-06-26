@@ -1,6 +1,8 @@
-use super::{IdCtx, TypeOfMode};
 use crate::{
-    analyzer::{Analyzer, Ctx},
+    analyzer::{
+        expr::{IdCtx, TypeOfMode},
+        Analyzer, Ctx,
+    },
     util::{type_ext::TypeVecExt, RemoveTypes},
     validator,
     validator::ValidateWith,
