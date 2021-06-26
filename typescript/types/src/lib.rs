@@ -1073,10 +1073,6 @@ impl Type {
 impl Type {
     /// TODO
     pub fn is_clone_cheap(&self) -> bool {
-        if !cfg!(debug_assertions) {
-            return true;
-        }
-
         match self {
             Type::Arc(..) | Type::Keyword(..) | Type::This(..) | Type::StaticThis(..) | Type::Symbol(..) => true,
 
