@@ -1432,9 +1432,9 @@ impl Type {
     pub fn normalize_mut(&mut self) -> &mut Type {
         match self {
             Type::Arc(Freezed { ty, span }) => {
-                let mut ty = (**ty).clone();
+                let ty = Arc::make_mut(ty);
                 ty.respan(*span);
-                *self = ty;
+                *self = replace(ty, Type::any(DUMMY_SP));
             }
             _ => {}
         }
