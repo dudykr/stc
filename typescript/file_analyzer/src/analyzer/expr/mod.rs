@@ -1126,6 +1126,24 @@ impl Analyzer<'_, '_> {
 
         let computed = prop.is_computed();
 
+        if computed && !opts.dont_validate_type_of_computed_prop {
+            let res: ValidationResult<_> = try {
+                let key_ty = prop.ty();
+                let key_ty = self.normalize(Some(span), key_ty, Default::default())?;
+
+                if key_ty.is_function() || key_ty.is_constructor() {
+                    Err(Error::CannotUseTypeAsIndexIndex { span })?
+                }
+            };
+
+            res.report(&mut self.storage);
+        }
+
+        let opts = AccessPropertyOpts {
+            dont_validate_type_of_computed_prop: false,
+            ..opts
+        };
+
         if id_ctx == IdCtx::Var {
             // TODO: Use parent scope
 
