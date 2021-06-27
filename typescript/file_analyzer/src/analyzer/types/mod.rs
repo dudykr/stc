@@ -289,7 +289,7 @@ impl Analyzer<'_, '_> {
 
                                             let mut params = HashMap::default();
                                             params.insert(name.clone(), check_type.clone().cheap());
-                                            let c = self.expand_type_params(&params, c.clone())?;
+                                            let c = self.expand_type_params(&params, c.clone(), Default::default())?;
                                             let c = Type::Conditional(c);
                                             c.assert_valid();
 
@@ -543,7 +543,10 @@ impl Analyzer<'_, '_> {
                     let mut type_ann = p.value.clone();
                     if let Some(type_params) = &type_params {
                         type_ann = type_ann
-                            .map(|ty| self.expand_type_params(&type_params, *ty).map(Box::new))
+                            .map(|ty| {
+                                self.expand_type_params(&type_params, *ty, Default::default())
+                                    .map(Box::new)
+                            })
                             .try_opt()?;
                     }
                     //

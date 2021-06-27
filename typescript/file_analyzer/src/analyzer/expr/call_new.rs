@@ -413,7 +413,7 @@ impl Analyzer<'_, '_> {
                         params.insert(type_param.name.clone(), ty.clone().cheap());
                     }
 
-                    callee_ty = analyzer.expand_type_params(&params, callee_ty)?;
+                    callee_ty = analyzer.expand_type_params(&params, callee_ty, Default::default())?;
                 }
             }
 
@@ -2251,7 +2251,7 @@ impl Analyzer<'_, '_> {
                 expanded_params = params
                     .into_iter()
                     .map(|v| -> ValidationResult<_> {
-                        let ty = box self.expand_type_params(&map, *v.ty)?;
+                        let ty = box self.expand_type_params(&map, *v.ty, Default::default())?;
 
                         Ok(FnParam { ty, ..v })
                     })
@@ -2267,7 +2267,7 @@ impl Analyzer<'_, '_> {
             let expanded_param_types = params
                 .into_iter()
                 .map(|v| -> ValidationResult<_> {
-                    let mut ty = box self.expand_type_params(&inferred, *v.ty)?;
+                    let mut ty = box self.expand_type_params(&inferred, *v.ty, Default::default())?;
 
                     Ok(FnParam { ty, ..v })
                 })
@@ -2477,7 +2477,7 @@ impl Analyzer<'_, '_> {
             }
 
             print_type(&logger, "Return", &self.cm, &ret_ty);
-            let mut ty = self.expand_type_params(&inferred, ret_ty)?;
+            let mut ty = self.expand_type_params(&inferred, ret_ty, Default::default())?;
             print_type(&logger, "Return, expanded", &self.cm, &ty);
 
             ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });

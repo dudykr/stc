@@ -10,7 +10,7 @@ use rnode::{Fold, FoldWith, VisitWith};
 use slog::Logger;
 use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
 use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
+use stc_ts_generics::{type_param::finder::TypeParamUsageFinder, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     ComputedKey, Function, Id, IdCtx, Interface, Key, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
@@ -70,11 +70,16 @@ impl Analyzer<'_, '_> {
         Ok(params)
     }
 
-    pub(in super::super) fn expand_type_params<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T) -> ValidationResult<T>
+    pub(in super::super) fn expand_type_params<T>(
+        &mut self,
+        params: &FxHashMap<Id, Type>,
+        ty: T,
+        opts: ExpandGenericOpts,
+    ) -> ValidationResult<T>
     where
         T: for<'aa, 'bb, 'cc, 'dd> FoldWith<GenericExpander<'aa, 'bb, 'cc, 'dd>> + Fix,
     {
-        let ty = self.expand_type_params_inner(params, ty, false)?.fixed();
+        let ty = self.expand_type_params_inner(params, ty, false, opts)?.fixed();
         Ok(ty)
     }
 
@@ -94,7 +99,13 @@ impl Analyzer<'_, '_> {
     ///z     T extends {
     ///          x: infer P extends number ? infer P : string;
     ///      } ? P : never
-    fn expand_type_params_inner<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T, fully: bool) -> ValidationResult<T>
+    fn expand_type_params_inner<T>(
+        &mut self,
+        params: &FxHashMap<Id, Type>,
+        ty: T,
+        fully: bool,
+        opts: ExpandGenericOpts,
+    ) -> ValidationResult<T>
     where
         T: for<'aa, 'bb, 'cc, 'dd> FoldWith<GenericExpander<'aa, 'bb, 'cc, 'dd>>,
     {
@@ -109,6 +120,7 @@ impl Analyzer<'_, '_> {
             params,
             fully,
             dejavu: Default::default(),
+            opts,
         });
         let end = Instant::now();
         slog::info!(self.logger, "expanded type parameters (time = {:?})", end - start);
@@ -378,6 +390,7 @@ pub(crate) struct GenericExpander<'a, 'b, 'c, 'd> {
     /// Expand fully?
     fully: bool,
     dejavu: FxHashSet<Id>,
+    opts: ExpandGenericOpts<'d>,
 }
 
 impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {

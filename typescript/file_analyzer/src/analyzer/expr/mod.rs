@@ -2570,7 +2570,7 @@ impl Analyzer<'_, '_> {
                         params.insert(param.name.clone(), arg.clone());
                     }
 
-                    return self.expand_type_params(&params, ty.clone());
+                    return self.expand_type_params(&params, ty.clone(), Default::default());
                 }
             }
             _ => {
@@ -3085,7 +3085,7 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                                 if let Some(params) = params {
-                                    ty = self.expand_type_params(&params, ty)?;
+                                    ty = self.expand_type_params(&params, ty, Default::default())?;
                                 }
                                 ty.respan(span);
                                 return Ok(ty);

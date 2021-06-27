@@ -25,6 +25,7 @@ use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
     DebugExt, Error,
 };
+use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection,
@@ -683,6 +684,7 @@ impl Analyzer<'_, '_> {
             full: opts.full,
             expand_union: opts.expand_union,
             expand_top_level: true,
+            opts,
         };
 
         let ty = ty.foldable().fold_with(&mut v).fixed();
@@ -696,7 +698,7 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> ValidationResult {
         let type_params = take(&mut self.scope.type_params);
-        let res = self.expand_type_params(&type_params, ty);
+        let res = self.expand_type_params(&type_params, ty, Default::default());
         self.scope.type_params = type_params;
 
         res
@@ -1764,10 +1766,12 @@ impl<'a> Scope<'a> {
 /// pub expand_params: bool,
 /// pub expand_return_type: bool,
 #[derive(Debug, Clone, Default)]
-pub(crate) struct ExpandOpts {
+pub(crate) struct ExpandOpts<'a> {
     /// TODO: Document this.
     pub full: bool,
     pub expand_union: bool,
+
+    pub generic: ExpandGenericOpts<'a>,
 }
 
 #[derive(Debug, Clone)]
@@ -1842,6 +1846,7 @@ struct Expander<'a, 'b, 'c> {
     expand_union: bool,
     /// Should we expand top level references?
     expand_top_level: bool,
+    opts: ExpandOpts<'a>,
 }
 
 impl Expander<'_, '_, '_> {
@@ -1966,7 +1971,11 @@ impl Expander<'_, '_, '_> {
                                     });
 
                                     let before = dump_type_as_string(&self.analyzer.cm, &ty);
-                                    let mut ty = self.analyzer.expand_type_params(&inferred, ty.foldable())?;
+                                    let mut ty = self.analyzer.expand_type_params(
+                                        &inferred,
+                                        ty.foldable(),
+                                        self.opts.generic,
+                                    )?;
                                     let after = dump_type_as_string(&self.analyzer.cm, &ty);
                                     slog::debug!(
                                         &self.analyzer.logger,
@@ -2385,7 +2394,10 @@ impl Expander<'_, '_, '_> {
                                             .infer_ts_infer_types(span, &extends_type, &element.ty, Default::default())
                                             .ok();
                                         if let Some(type_params) = type_params {
-                                            ty = self.analyzer.expand_type_params(&type_params, ty).unwrap();
+                                            ty = self
+                                                .analyzer
+                                                .expand_type_params(&type_params, ty, Default::default())
+                                                .unwrap();
                                         }
 
                                         element.ty = box ty;
@@ -2415,7 +2427,10 @@ impl Expander<'_, '_, '_> {
                             .infer_ts_infer_types(span, &extends_type, &obj_type, Default::default())
                             .ok();
                         if let Some(type_params) = type_params {
-                            ty = self.analyzer.expand_type_params(&type_params, ty).unwrap();
+                            ty = self
+                                .analyzer
+                                .expand_type_params(&type_params, ty, Default::default())
+                                .unwrap();
                         }
 
                         return ty;
@@ -2478,8 +2493,14 @@ impl Expander<'_, '_, '_> {
                     .ok();
 
                 if let Some(type_params) = type_params {
-                    true_type = box self.analyzer.expand_type_params(&type_params, *true_type).unwrap();
-                    false_type = box self.analyzer.expand_type_params(&type_params, *false_type).unwrap();
+                    true_type = box self
+                        .analyzer
+                        .expand_type_params(&type_params, *true_type, Default::default())
+                        .unwrap();
+                    false_type = box self
+                        .analyzer
+                        .expand_type_params(&type_params, *false_type, Default::default())
+                        .unwrap();
                 }
 
                 match check_type.normalize_mut() {
