@@ -58,6 +58,16 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2477
+    ConstEnumMemberHasInifinityAsInit {
+        span: Span,
+    },
+
+    /// TS2478
+    ConstEnumMemberHasNaNAsInit {
+        span: Span,
+    },
+
     /// TS7027
     UnreachableCode {
         span: Span,
@@ -1727,6 +1737,10 @@ impl Error {
             Error::VarMayNotBeInitialized { .. } => 2454,
 
             Error::UnreachableCode { .. } => 7027,
+
+            Error::ConstEnumMemberHasInifinityAsInit { .. } => 2477,
+
+            Error::ConstEnumMemberHasNaNAsInit { .. } => 2478,
 
             _ => 0,
         }
