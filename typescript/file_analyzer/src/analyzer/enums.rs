@@ -82,7 +82,12 @@ impl Analyzer<'_, '_> {
                         })
                         .or_else(|err| match &m.init {
                             None => Err(err),
-                            Some(v) => Ok(*v.clone()),
+                            Some(v) => {
+                                if e.is_const {
+                                    self.storage.report(err);
+                                }
+                                Ok(*v.clone())
+                            }
                         })?;
 
                     Ok(EnumMember {
