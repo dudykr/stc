@@ -1866,6 +1866,7 @@ dependencies = [
  "stc_ts_types",
  "stc_ts_utils",
  "stc_utils",
+ "swc_atoms",
  "swc_common",
 ]
 
