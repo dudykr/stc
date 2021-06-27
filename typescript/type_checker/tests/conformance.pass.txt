@@ -312,6 +312,7 @@ enums/enumConstantMemberWithString.ts
 enums/enumConstantMemberWithStringEmitDeclaration.ts
 enums/enumConstantMemberWithTemplateLiterals.ts
 enums/enumConstantMemberWithTemplateLiteralsEmitDeclaration.ts
+enums/enumConstantMembers.ts
 enums/enumExportMergingES6.ts
 es2017/useObjectValuesAndEntries1.ts
 es2017/useObjectValuesAndEntries2.ts
