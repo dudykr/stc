@@ -2,6 +2,7 @@ use crate::{
     analyzer::{
         assign::AssignOpts,
         expr::TypeOfMode,
+        scope::ExpandOpts,
         util::{make_instance_type, ResultExt},
         Analyzer,
     },
@@ -71,7 +72,15 @@ impl Analyzer<'_, '_> {
     ///
     /// results in error.
     fn validate_type_cast(&mut self, span: Span, orig_ty: Type, casted_ty: Type) -> ValidationResult {
-        let orig_ty = self.expand_fully(span, orig_ty, true)?;
+        let orig_ty = self.expand(
+            span,
+            orig_ty,
+            ExpandOpts {
+                full: true,
+                expand_union: true,
+                ..Default::default()
+            },
+        )?;
 
         let mut casted_ty = make_instance_type(self.ctx.module_id, casted_ty);
         self.prevent_inference_while_simplifying(&mut casted_ty);
@@ -316,11 +325,11 @@ impl Analyzer<'_, '_> {
 
         match (from, to) {
             (Type::Ref(_), _) => {
-                let from = self.expand_top_ref(span, Cow::Borrowed(from))?;
+                let from = self.expand_top_ref(span, Cow::Borrowed(from), Default::default())?;
                 return self.castable(span, &from, to);
             }
             (_, Type::Ref(_)) => {
-                let to = self.expand_top_ref(span, Cow::Borrowed(to))?;
+                let to = self.expand_top_ref(span, Cow::Borrowed(to), Default::default())?;
                 return self.castable(span, from, &to);
             }
 

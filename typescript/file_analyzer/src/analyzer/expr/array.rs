@@ -231,7 +231,7 @@ impl Analyzer<'_, '_> {
         match iterator.normalize() {
             Type::Ref(..) => {
                 let iterator = self
-                    .expand_top_ref(span, iterator)
+                    .expand_top_ref(span, iterator, Default::default())
                     .context("tried to expand iterator to get nth element")?;
 
                 return self
@@ -547,7 +547,7 @@ impl Analyzer<'_, '_> {
 
             match ty.normalize() {
                 Type::Ref(..) => {
-                    let ty = self.expand_top_ref(span, ty)?;
+                    let ty = self.expand_top_ref(span, ty, Default::default())?;
                     return self.get_iterator(span, ty, opts);
                 }
 

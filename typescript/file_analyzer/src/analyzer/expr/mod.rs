@@ -1,7 +1,14 @@
 pub(crate) use self::array::GetIteratorOpts;
 use self::bin::extract_name_for_assignment;
 use crate::{
-    analyzer::{assign::AssignOpts, marks::MarkExt, pat::PatMode, scope::ScopeKind, util::ResultExt, Analyzer, Ctx},
+    analyzer::{
+        assign::AssignOpts,
+        marks::MarkExt,
+        pat::PatMode,
+        scope::{ExpandOpts, ScopeKind},
+        util::ResultExt,
+        Analyzer, Ctx,
+    },
     ty,
     ty::{
         Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple, Type, TypeElement,
@@ -24,6 +31,7 @@ use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
     DebugExt, Error, Errors,
 };
+use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
@@ -580,7 +588,10 @@ impl Analyzer<'_, '_> {
     pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
         if computed {
             prop.validate_with_default(self)
-                .and_then(|ty| self.expand_top_ref(ty.span(), Cow::Owned(ty)).map(Cow::into_owned))
+                .and_then(|ty| {
+                    self.expand_top_ref(ty.span(), Cow::Owned(ty), Default::default())
+                        .map(Cow::into_owned)
+                })
                 .and_then(|ty| self.expand_enum(ty))
                 .and_then(|ty| self.expand_enum_variant(ty))
                 .map(|ty| ComputedKey {
@@ -695,7 +706,7 @@ impl Analyzer<'_, '_> {
 
         match key_ty {
             Type::Ref(..) => {
-                let cur = self.expand_top_ref(span, Cow::Borrowed(key_ty));
+                let cur = self.expand_top_ref(span, Cow::Borrowed(key_ty), Default::default());
                 if let Ok(cur) = cur {
                     return self.check_if_type_matches_key(span, declared, &cur, allow_union);
                 }
@@ -716,7 +727,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let cur = self.expand_top_ref(span, Cow::Borrowed(key_ty));
+                let cur = self.expand_top_ref(span, Cow::Borrowed(key_ty), Default::default());
             }
 
             Type::Enum(e) if allow_union => {
@@ -906,7 +917,7 @@ impl Analyzer<'_, '_> {
 
                     if indexed {
                         if let Some(ref type_ann) = type_ann {
-                            let ty = self.expand_top_ref(span, Cow::Borrowed(type_ann))?;
+                            let ty = self.expand_top_ref(span, Cow::Borrowed(type_ann), Default::default())?;
                             return Ok(Some(ty.into_owned()));
                         }
 
@@ -1056,7 +1067,7 @@ impl Analyzer<'_, '_> {
         let line_col = self.line_col(span);
         slog::debug!(
             self.logger,
-            "[Timings, {}] access_property: (tiem = {:?})",
+            "[Timings, {}] access_property: (time = {:?})",
             line_col,
             end - start
         );
@@ -1166,7 +1177,8 @@ impl Analyzer<'_, '_> {
                                 ClassMember::Property(member @ ClassProperty { is_static: false, .. }) => {
                                     if member.key.type_eq(prop) {
                                         let ty = *member.value.clone().unwrap_or_else(|| box Type::any(span));
-                                        let ty = match self.expand_top_ref(span, Cow::Borrowed(&ty)) {
+                                        let ty = match self.expand_top_ref(span, Cow::Borrowed(&ty), Default::default())
+                                        {
                                             Ok(new_ty) => {
                                                 if new_ty.is_any() {
                                                     new_ty.into_owned()
@@ -1196,7 +1208,15 @@ impl Analyzer<'_, '_> {
                                 ignore_expand_prevention_for_top: true,
                                 ..self.ctx
                             };
-                            let super_class = self.with_ctx(ctx).expand_fully(span, super_class, true)?;
+                            let super_class = self.with_ctx(ctx).expand(
+                                span,
+                                super_class,
+                                ExpandOpts {
+                                    full: true,
+                                    expand_union: true,
+                                    ..Default::default()
+                                },
+                            )?;
 
                             if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var) {
                                 return Ok(v);
@@ -1217,7 +1237,15 @@ impl Analyzer<'_, '_> {
                             ignore_expand_prevention_for_top: true,
                             ..self.ctx
                         };
-                        let super_class = self.with_ctx(ctx).expand_fully(span, super_class, true)?;
+                        let super_class = self.with_ctx(ctx).expand(
+                            span,
+                            super_class,
+                            ExpandOpts {
+                                full: true,
+                                expand_union: true,
+                                ..Default::default()
+                            },
+                        )?;
 
                         if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var) {
                             return Ok(v);
@@ -1310,7 +1338,10 @@ impl Analyzer<'_, '_> {
             }
             _ => Cow::Borrowed(obj),
         };
-        let obj = self.with_ctx(ctx).expand(span, obj.into_owned())?.generalize_lit(marks);
+        let obj = self
+            .with_ctx(ctx)
+            .expand(span, obj.into_owned(), Default::default())?
+            .generalize_lit(marks);
 
         match obj.normalize() {
             Type::Lit(obj) => {
@@ -2231,7 +2262,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Verify if multiple type has field
                 let mut new = vec![];
                 for ty in types {
-                    let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
+                    let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
                     if let Some(v) = self.access_property(span, &ty, prop, type_mode, id_ctx).ok() {
                         new.push(v);
                     }
@@ -2355,10 +2386,10 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Ref(r) => {
-                if let Key::Computed(prop) = prop {
+                if let Key::Computed(computed) = prop {
                     match obj.normalize() {
                         Type::Param(..) => {
-                            let index_type = prop.ty.clone();
+                            let index_type = computed.ty.clone();
 
                             slog::warn!(
                                 self.logger,
@@ -2394,8 +2425,13 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                let opts = ExpandOpts {
+                    generic: ExpandGenericOpts { props: &[prop.clone()] },
+                    ..Default::default()
+                };
+
                 let obj = self
-                    .expand_top_ref(span, Cow::Borrowed(&obj))
+                    .expand_top_ref(span, Cow::Borrowed(&obj), opts)
                     .context("tried to expand reference to access property")?;
 
                 return self.access_property(span, &obj, prop, type_mode, id_ctx);
@@ -2544,7 +2580,7 @@ impl Analyzer<'_, '_> {
                         params.insert(param.name.clone(), arg.clone());
                     }
 
-                    return self.expand_type_params(&params, ty.clone());
+                    return self.expand_type_params(&params, ty.clone(), Default::default());
                 }
             }
             _ => {
@@ -3059,7 +3095,7 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                                 if let Some(params) = params {
-                                    ty = self.expand_type_params(&params, ty)?;
+                                    ty = self.expand_type_params(&params, ty, Default::default())?;
                                 }
                                 ty.respan(span);
                                 return Ok(ty);
@@ -3114,7 +3150,15 @@ impl Analyzer<'_, '_> {
                     ignore_expand_prevention_for_top: true,
                     ..self.ctx
                 };
-                let obj_ty = self.with_ctx(ctx).expand_fully(span, obj_ty, true)?;
+                let obj_ty = self.with_ctx(ctx).expand(
+                    span,
+                    obj_ty,
+                    ExpandOpts {
+                        full: true,
+                        expand_union: true,
+                        ..Default::default()
+                    },
+                )?;
                 obj_ty.assert_valid();
 
                 self.access_property(
@@ -3275,7 +3319,15 @@ impl Analyzer<'_, '_> {
                     preserve_ref: false,
                     ..self.ctx
                 };
-                let ty = self.with_ctx(ctx).expand_fully(*span, ty.clone(), true);
+                let ty = self.with_ctx(ctx).expand(
+                    *span,
+                    ty.clone(),
+                    ExpandOpts {
+                        full: true,
+                        expand_union: true,
+                        ..Default::default()
+                    },
+                );
                 let ty = match ty {
                     Ok(v) => v,
                     Err(..) => return false,

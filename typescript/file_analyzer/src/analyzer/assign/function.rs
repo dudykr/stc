@@ -78,10 +78,10 @@ impl Analyzer<'_, '_> {
                     .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
                     .collect::<FxHashMap<_, _>>();
                 new_r_params = self
-                    .expand_type_params(&map, r_params.to_vec())
+                    .expand_type_params(&map, r_params.to_vec(), Default::default())
                     .context("tried to expand type parameters as a step of function assignemnt")?;
                 new_r_ret_ty = self
-                    .expand_type_params(&map, r_ret_ty.cloned())
+                    .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
                     .context("tried to expand return type of rhs as a step of function assignemnt")?;
                 (&*new_r_params, new_r_ret_ty.as_ref())
             }
@@ -103,10 +103,10 @@ impl Analyzer<'_, '_> {
 
                 let map = self.infer_type_with_types(span, &*rt.params, &rf, &lf, Default::default())?;
                 new_r_params = self
-                    .expand_type_params(&map, r_params.to_vec())
+                    .expand_type_params(&map, r_params.to_vec(), Default::default())
                     .context("tried to expand type parameters of rhs as a step of function assignemnt")?;
                 new_r_ret_ty = self
-                    .expand_type_params(&map, r_ret_ty.cloned())
+                    .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
                     .context("tried to expand return type of rhs as a step of function assignemnt")?;
                 (&*new_r_params, new_r_ret_ty.as_ref())
             }

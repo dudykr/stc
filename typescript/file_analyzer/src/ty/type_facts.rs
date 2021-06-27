@@ -128,7 +128,10 @@ struct TypeFactsHandler<'a, 'b, 'c> {
 
 impl TypeFactsHandler<'_, '_, '_> {
     fn can_be_primitive(&mut self, ty: &Type) -> bool {
-        let ty = if let Ok(ty) = self.analyzer.expand_top_ref(ty.span(), Cow::Borrowed(ty)) {
+        let ty = if let Ok(ty) = self
+            .analyzer
+            .expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default())
+        {
             ty
         } else {
             return true;
@@ -388,7 +391,10 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
 
         if !span.is_dummy() {
             if ty.normalize().is_ref_type() {
-                if let Ok(ty) = self.analyzer.expand_top_ref(ty.span(), Cow::Borrowed(&ty)) {
+                if let Ok(ty) = self
+                    .analyzer
+                    .expand_top_ref(ty.span(), Cow::Borrowed(&ty), Default::default())
+                {
                     if ty.normalize().is_ref_type() {
                         return ty.into_owned();
                     }

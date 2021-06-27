@@ -111,8 +111,8 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_with_op(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> ValidationResult<()> {
         debug_assert_ne!(op, op!("="));
 
-        let l = self.expand_top_ref(span, Cow::Borrowed(lhs))?;
-        let r = self.expand_top_ref(span, Cow::Borrowed(rhs))?;
+        let l = self.expand_top_ref(span, Cow::Borrowed(lhs), Default::default())?;
+        let r = self.expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?;
 
         let lhs = l.normalize();
         let rhs = r.normalize();
@@ -675,7 +675,9 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let mut new_lhs = self.expand_top_ref(span, Cow::Borrowed(to))?.into_owned();
+                let mut new_lhs = self
+                    .expand_top_ref(span, Cow::Borrowed(to), Default::default())?
+                    .into_owned();
                 // self.replace(&mut new_lhs, &[(to, &Type::any(span))]);
 
                 return self
@@ -943,7 +945,9 @@ impl Analyzer<'_, '_> {
 
         match rhs {
             Type::Ref(..) => {
-                let mut new_rhs = self.expand_top_ref(span, Cow::Borrowed(rhs))?.into_owned();
+                let mut new_rhs = self
+                    .expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?
+                    .into_owned();
                 // self.replace(&mut new_rhs, &[(rhs, &Type::any(span))]);
                 return self
                     .assign_inner(data, to, &new_rhs, opts)
@@ -2066,7 +2070,7 @@ impl Analyzer<'_, '_> {
                         let mut map = HashMap::default();
                         map.insert(r.type_param.name.clone(), Type::Param(l.type_param.clone()).cheap());
 
-                        let new_r_ty = self.expand_type_params(&map, r.ty.clone())?;
+                        let new_r_ty = self.expand_type_params(&map, r.ty.clone(), Default::default())?;
 
                         if l.ty.type_eq(&new_r_ty) {
                             return Ok(());

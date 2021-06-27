@@ -1120,7 +1120,7 @@ impl Analyzer<'_, '_> {
 
         match src.normalize() {
             Type::Ref(..) => {
-                let src = self.expand_top_ref(src.span(), Cow::Borrowed(src))?;
+                let src = self.expand_top_ref(src.span(), Cow::Borrowed(src), Default::default())?;
                 return self.filter_types_with_property(&src, property, type_facts);
             }
             Type::Union(ty) => {
@@ -1206,7 +1206,7 @@ impl Analyzer<'_, '_> {
         id.span.hi = span.hi;
 
         let obj = self.type_of_var(&id, TypeOfMode::RValue, None)?;
-        let obj = self.expand_top_ref(ty.span(), Cow::Owned(obj))?;
+        let obj = self.expand_top_ref(ty.span(), Cow::Owned(obj), Default::default())?;
 
         match obj.normalize() {
             Type::Union(u) => {

@@ -23,7 +23,7 @@ impl Analyzer<'_, '_> {
 
         match r {
             Type::Ref(..) => {
-                let r = self.expand_top_ref(opts.span, Cow::Borrowed(r))?;
+                let r = self.expand_top_ref(opts.span, Cow::Borrowed(r), Default::default())?;
                 return self.assign_to_class_def(data, opts, l, &r);
             }
 
@@ -143,7 +143,7 @@ impl Analyzer<'_, '_> {
 
         match r {
             Type::Ref(..) => {
-                let r = self.expand_top_ref(opts.span, Cow::Borrowed(r))?;
+                let r = self.expand_top_ref(opts.span, Cow::Borrowed(r), Default::default())?;
                 return self.assign_to_class(data, opts, l, &r);
             }
 

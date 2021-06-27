@@ -63,7 +63,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-                let b = self.expand_type_params(&type_params, b)?;
+                let b = self.expand_type_params(&type_params, b, Default::default())?;
 
                 let mut new_members = a.body.clone();
 
@@ -100,7 +100,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-                let b = self.expand_type_params(&type_params, b)?;
+                let b = self.expand_type_params(&type_params, b, Default::default())?;
 
                 let mut new_members = a.body.clone();
 
