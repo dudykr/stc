@@ -1059,12 +1059,12 @@ impl Analyzer<'_, '_> {
 
         match (l, r) {
             (Type::Ref(..), _) => {
-                if let Ok(l) = self.expand_top_ref(l.span(), Cow::Borrowed(l)) {
+                if let Ok(l) = self.expand_top_ref(l.span(), Cow::Borrowed(l), Default::default()) {
                     return self.validate_relative_comparison_operands(span, op, &l, r);
                 }
             }
             (l, Type::Ref(..)) => {
-                if let Ok(r) = self.expand_top_ref(r.span(), Cow::Borrowed(r)) {
+                if let Ok(r) = self.expand_top_ref(r.span(), Cow::Borrowed(r), Default::default()) {
                     return self.validate_relative_comparison_operands(span, op, l, &r);
                 }
             }
@@ -1405,7 +1405,9 @@ impl Analyzer<'_, '_> {
         };
 
         let ty = self.type_of_var(&id, TypeOfMode::RValue, None)?;
-        let ty = self.expand_top_ref(span, Cow::Owned(ty))?.into_owned();
+        let ty = self
+            .expand_top_ref(span, Cow::Owned(ty), Default::default())?
+            .into_owned();
 
         match ty.normalize() {
             Type::Union(u) => {
@@ -1415,7 +1417,8 @@ impl Analyzer<'_, '_> {
 
                     match prop_res {
                         Ok(prop_ty) => {
-                            let prop_ty = self.expand_top_ref(prop_ty.span(), Cow::Owned(prop_ty))?;
+                            let prop_ty =
+                                self.expand_top_ref(prop_ty.span(), Cow::Owned(prop_ty), Default::default())?;
                             let possible = match prop_ty.normalize() {
                                 // Type parameters might have same value.
                                 Type::Param(..) => true,
@@ -1650,7 +1653,7 @@ impl Analyzer<'_, '_> {
 
         match ty {
             Type::Ref(..) => {
-                if let Ok(ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(ty)) {
+                if let Ok(ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default()) {
                     return self.is_valid_lhs_of_in(&ty);
                 }
 
@@ -1706,7 +1709,7 @@ impl Analyzer<'_, '_> {
 
         match ty.normalize() {
             Type::Ref(..) => {
-                if let Ok(ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(ty)) {
+                if let Ok(ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default()) {
                     return self.is_valid_rhs_of_in(&ty);
                 }
 

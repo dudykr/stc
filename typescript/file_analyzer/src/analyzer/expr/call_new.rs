@@ -560,7 +560,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Ref(..) => {
                     let obj_type = self
-                        .expand_top_ref(span, Cow::Borrowed(obj_type))
+                        .expand_top_ref(span, Cow::Borrowed(obj_type), Default::default())
                         .context("tried to expand object to call property of it")?;
 
                     return self
@@ -749,7 +749,9 @@ impl Analyzer<'_, '_> {
                 .access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
             let callee_before_expanding = dump_type_as_string(&self.cm, &callee);
-            let callee = self.expand_top_ref(span, Cow::Owned(callee))?.into_owned();
+            let callee = self
+                .expand_top_ref(span, Cow::Owned(callee), Default::default())?
+                .into_owned();
 
             match callee.normalize() {
                 Type::ClassDef(cls) => {
@@ -1117,7 +1119,7 @@ impl Analyzer<'_, '_> {
             for arg in arg_types {
                 if arg.spread.is_some() {
                     let arg_ty = self
-                        .expand_top_ref(arg.span(), Cow::Borrowed(&arg.ty))
+                        .expand_top_ref(arg.span(), Cow::Borrowed(&arg.ty), Default::default())
                         .context("tried to expand ref to handle a spread argument")?;
                     match arg_ty.normalize() {
                         Type::Tuple(arg_ty) => {

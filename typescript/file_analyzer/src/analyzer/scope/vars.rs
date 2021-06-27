@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
             match ty.as_ref().map(Type::normalize) {
                 Some(ty @ Type::Ref(..)) => {
                     let ty = self
-                        .expand_top_ref(ty.span(), Cow::Borrowed(&ty))
+                        .expand_top_ref(ty.span(), Cow::Borrowed(&ty), Default::default())
                         .context("tried to expand reference to declare a complex variable")?
                         .into_owned();
 

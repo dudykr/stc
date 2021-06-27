@@ -107,7 +107,7 @@ impl Analyzer<'_, '_> {
                 match &*ty {
                     Type::Ref(_) => {
                         let new_ty = self
-                            .expand_top_ref(actual_span, Cow::Borrowed(&ty))
+                            .expand_top_ref(actual_span, Cow::Borrowed(&ty), Default::default())
                             .context("tried to expand a ref type as a part of normalization")?;
 
                         // We are declaring, and expand_top_ref returned Type::Ref
@@ -726,7 +726,7 @@ impl Analyzer<'_, '_> {
 
         Ok(Some(match ty {
             Type::Ref(..) => {
-                let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
+                let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
                 return self
                     .type_to_type_lit(span, &ty)
                     .map(|o| o.map(Cow::into_owned).map(Cow::Owned));
@@ -1115,7 +1115,10 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Ref(..) => {
                 // We ignore errors.
-                if let Ok(mut expanded_ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(&*ty)).map(Cow::into_owned) {
+                if let Ok(mut expanded_ty) = self
+                    .expand_top_ref(ty.span(), Cow::Borrowed(&*ty), Default::default())
+                    .map(Cow::into_owned)
+                {
                     self.exclude_type(span, &mut expanded_ty, &excluded);
                     *ty = expanded_ty;
                     return;

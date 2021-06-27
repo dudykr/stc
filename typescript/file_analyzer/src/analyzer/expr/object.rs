@@ -486,7 +486,9 @@ impl Analyzer<'_, '_> {
 
         match rhs.normalize() {
             Type::Ref(..) => {
-                let rhs = self.expand_top_ref(rhs.span(), Cow::Owned(rhs))?.into_owned();
+                let rhs = self
+                    .expand_top_ref(rhs.span(), Cow::Owned(rhs), Default::default())?
+                    .into_owned();
                 return self.append_type(to, rhs);
             }
 

@@ -587,7 +587,10 @@ impl Analyzer<'_, '_> {
     pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
         if computed {
             prop.validate_with_default(self)
-                .and_then(|ty| self.expand_top_ref(ty.span(), Cow::Owned(ty)).map(Cow::into_owned))
+                .and_then(|ty| {
+                    self.expand_top_ref(ty.span(), Cow::Owned(ty), Default::default())
+                        .map(Cow::into_owned)
+                })
                 .and_then(|ty| self.expand_enum(ty))
                 .and_then(|ty| self.expand_enum_variant(ty))
                 .map(|ty| ComputedKey {
@@ -702,7 +705,7 @@ impl Analyzer<'_, '_> {
 
         match key_ty {
             Type::Ref(..) => {
-                let cur = self.expand_top_ref(span, Cow::Borrowed(key_ty));
+                let cur = self.expand_top_ref(span, Cow::Borrowed(key_ty), Default::default());
                 if let Ok(cur) = cur {
                     return self.check_if_type_matches_key(span, declared, &cur, allow_union);
                 }
@@ -723,7 +726,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let cur = self.expand_top_ref(span, Cow::Borrowed(key_ty));
+                let cur = self.expand_top_ref(span, Cow::Borrowed(key_ty), Default::default());
             }
 
             Type::Enum(e) if allow_union => {
@@ -913,7 +916,7 @@ impl Analyzer<'_, '_> {
 
                     if indexed {
                         if let Some(ref type_ann) = type_ann {
-                            let ty = self.expand_top_ref(span, Cow::Borrowed(type_ann))?;
+                            let ty = self.expand_top_ref(span, Cow::Borrowed(type_ann), Default::default())?;
                             return Ok(Some(ty.into_owned()));
                         }
 
@@ -1173,7 +1176,8 @@ impl Analyzer<'_, '_> {
                                 ClassMember::Property(member @ ClassProperty { is_static: false, .. }) => {
                                     if member.key.type_eq(prop) {
                                         let ty = *member.value.clone().unwrap_or_else(|| box Type::any(span));
-                                        let ty = match self.expand_top_ref(span, Cow::Borrowed(&ty)) {
+                                        let ty = match self.expand_top_ref(span, Cow::Borrowed(&ty), Default::default())
+                                        {
                                             Ok(new_ty) => {
                                                 if new_ty.is_any() {
                                                     new_ty.into_owned()
@@ -2257,7 +2261,7 @@ impl Analyzer<'_, '_> {
                 // TODO: Verify if multiple type has field
                 let mut new = vec![];
                 for ty in types {
-                    let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
+                    let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
                     if let Some(v) = self.access_property(span, &ty, prop, type_mode, id_ctx).ok() {
                         new.push(v);
                     }
@@ -2421,7 +2425,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let obj = self
-                    .expand_top_ref(span, Cow::Borrowed(&obj))
+                    .expand_top_ref(span, Cow::Borrowed(&obj), Default::default())
                     .context("tried to expand reference to access property")?;
 
                 return self.access_property(span, &obj, prop, type_mode, id_ctx);

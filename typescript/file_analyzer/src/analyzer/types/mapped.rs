@@ -187,7 +187,7 @@ impl Analyzer<'_, '_> {
 
         match ty {
             Type::Ref(..) => {
-                let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
+                let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
                 return self.convert_type_to_keys(span, &ty);
             }
 

@@ -704,7 +704,12 @@ impl Analyzer<'_, '_> {
         res
     }
 
-    pub(crate) fn expand_top_ref<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+    pub(crate) fn expand_top_ref<'a>(
+        &mut self,
+        span: Span,
+        ty: Cow<'a, Type>,
+        opts: ExpandOpts,
+    ) -> ValidationResult<Cow<'a, Type>> {
         ty.assert_valid();
 
         if !ty.normalize().is_ref_type() {
@@ -726,7 +731,7 @@ impl Analyzer<'_, '_> {
                 ExpandOpts {
                     full: true,
                     expand_union: true,
-                    ..Default::default()
+                    ..opts
                 },
             )
             .map(Cow::Owned)
@@ -1253,7 +1258,7 @@ impl Analyzer<'_, '_> {
             Some(..) if self.is_builtin => ty,
             Some(t) => {
                 // If type is not found, we use `any`.
-                match self.expand_top_ref(ty.span(), Cow::Borrowed(t)) {
+                match self.expand_top_ref(ty.span(), Cow::Borrowed(t), Default::default()) {
                     Ok(new_ty) => {
                         if new_ty.is_any() {
                             Some(new_ty.into_owned())

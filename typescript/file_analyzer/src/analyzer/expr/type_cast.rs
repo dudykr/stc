@@ -325,11 +325,11 @@ impl Analyzer<'_, '_> {
 
         match (from, to) {
             (Type::Ref(_), _) => {
-                let from = self.expand_top_ref(span, Cow::Borrowed(from))?;
+                let from = self.expand_top_ref(span, Cow::Borrowed(from), Default::default())?;
                 return self.castable(span, &from, to);
             }
             (_, Type::Ref(_)) => {
-                let to = self.expand_top_ref(span, Cow::Borrowed(to))?;
+                let to = self.expand_top_ref(span, Cow::Borrowed(to), Default::default())?;
                 return self.castable(span, from, &to);
             }
 

@@ -22,7 +22,7 @@ impl Analyzer<'_, '_> {
 
         match ty {
             Type::Ref(..) => {
-                if let Some(expanded) = self.expand_top_ref(span, Cow::Borrowed(ty)).ok() {
+                if let Some(expanded) = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default()).ok() {
                     return self.can_be_casted_to_number_in_rhs(span, &expanded);
                 }
 
