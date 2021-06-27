@@ -99,7 +99,7 @@ impl Analyzer<'_, '_> {
                 params = params
                     .into_iter()
                     .map(|param: FnParam| -> ValidationResult<_> {
-                        let ty = box child.expand(param.span, *param.ty)?;
+                        let ty = box child.expand(param.span, *param.ty, Default::default())?;
                         Ok(FnParam { ty, ..param })
                     })
                     .collect::<Result<_, _>>()?;

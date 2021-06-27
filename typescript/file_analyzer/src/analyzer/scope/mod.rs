@@ -25,6 +25,7 @@ use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
     DebugExt, Error,
 };
+use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection,
@@ -654,7 +655,14 @@ impl Analyzer<'_, '_> {
     /// Expands
     ///
     ///   - Type alias
-    pub(super) fn expand(&mut self, span: Span, ty: Type) -> ValidationResult {
+    ///
+    /// // TODO: Add an option to expand union (this is required to assign)
+    ///
+    ///
+    ///  - `expand_union` should be true if you are going to use it in
+    ///    assignment, and false if you are going to use it in user-visible
+    ///    stuffs (e.g. type annotation for .d.ts file)
+    pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> ValidationResult {
         if !self.is_builtin {
             debug_assert_ne!(
                 span, DUMMY_SP,
@@ -673,71 +681,35 @@ impl Analyzer<'_, '_> {
             span,
             analyzer: self,
             dejavu: Default::default(),
-            full: false,
-            expand_union: false,
+            full: opts.full,
+            expand_union: opts.expand_union,
             expand_top_level: true,
+            opts,
         };
 
         let ty = ty.foldable().fold_with(&mut v).fixed();
         ty.assert_valid();
 
         let new = dump_type_as_string(&self.cm, &ty);
-        slog::debug!(self.logger, "[expander] expand_fully: {} => {}", orig, new);
-
-        Ok(ty)
-    }
-
-    /// Expands
-    ///
-    /// // TODO: Add an option to expand union (this is required to assign)
-    ///
-    ///
-    ///  - `expand_union` should be true if you are going to use it in
-    ///    assignment, and false if you are going to use it in user-visible
-    ///    stuffs (e.g. type annotation for .d.ts file)
-    pub(super) fn expand_fully(&mut self, span: Span, ty: Type, expand_union: bool) -> ValidationResult {
-        ty.assert_valid();
-        if !self.is_builtin {
-            debug_assert_ne!(
-                span, DUMMY_SP,
-                "expand: {:#?} cannot be expanded because it has dummy span",
-                ty
-            );
-        }
-
-        ty.assert_valid();
-
-        let _ctx = context(format!("expand_fully: {}", dump_type_as_string(&self.cm, &ty)));
-        let orig = dump_type_as_string(&self.cm, &ty);
-
-        let mut v = Expander {
-            logger: self.logger.clone(),
-            span,
-            analyzer: self,
-            dejavu: Default::default(),
-            full: true,
-            expand_union,
-            expand_top_level: true,
-        };
-
-        let ty = ty.foldable().fold_with(&mut v).fixed();
-        ty.assert_valid();
-
-        let new = dump_type_as_string(&self.cm, &ty);
-        slog::debug!(self.logger, "[expander] expand_fully: {} => {}", orig, new);
+        slog::debug!(self.logger, "[expander] expand: {} => {}", orig, new);
 
         Ok(ty)
     }
 
     pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> ValidationResult {
         let type_params = take(&mut self.scope.type_params);
-        let res = self.expand_type_params(&type_params, ty);
+        let res = self.expand_type_params(&type_params, ty, Default::default());
         self.scope.type_params = type_params;
 
         res
     }
 
-    pub(crate) fn expand_top_ref<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+    pub(crate) fn expand_top_ref<'a>(
+        &mut self,
+        span: Span,
+        ty: Cow<'a, Type>,
+        opts: ExpandOpts,
+    ) -> ValidationResult<Cow<'a, Type>> {
         ty.assert_valid();
 
         if !ty.normalize().is_ref_type() {
@@ -753,7 +725,15 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx)
-            .expand_fully(span, ty.into_owned(), true)
+            .expand(
+                span,
+                ty.into_owned(),
+                ExpandOpts {
+                    full: true,
+                    expand_union: true,
+                    ..opts
+                },
+            )
             .map(Cow::Owned)
     }
 
@@ -1278,7 +1258,7 @@ impl Analyzer<'_, '_> {
             Some(..) if self.is_builtin => ty,
             Some(t) => {
                 // If type is not found, we use `any`.
-                match self.expand_top_ref(ty.span(), Cow::Borrowed(t)) {
+                match self.expand_top_ref(ty.span(), Cow::Borrowed(t), Default::default()) {
                     Ok(new_ty) => {
                         if new_ty.is_any() {
                             Some(new_ty.into_owned())
@@ -1404,8 +1384,24 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     _ => {
-                                        let ty = self.expand_fully(span, ty.clone(), true)?;
-                                        let var_ty = self.expand_fully(span, generalized_var_ty, true)?;
+                                        let ty = self.expand(
+                                            span,
+                                            ty.clone(),
+                                            ExpandOpts {
+                                                full: true,
+                                                expand_union: true,
+                                                ..Default::default()
+                                            },
+                                        )?;
+                                        let var_ty = self.expand(
+                                            span,
+                                            generalized_var_ty,
+                                            ExpandOpts {
+                                                full: true,
+                                                expand_union: true,
+                                                ..Default::default()
+                                            },
+                                        )?;
 
                                         let res = self.assign(&mut Default::default(), &ty, &var_ty, span);
 
@@ -1763,6 +1759,26 @@ impl<'a> Scope<'a> {
     }
 }
 
+/// All fields default to type-native default value. (`false` for [bool] and
+/// [None] for [Option])
+
+/// TODO:
+/// pub fully: bool,
+///
+/// pub preserve_ref: bool,
+/// pub ignore_expand_prevention_for_top: bool,
+//
+/// pub expand_params: bool,
+/// pub expand_return_type: bool,
+#[derive(Debug, Clone, Default)]
+pub(crate) struct ExpandOpts<'a> {
+    /// TODO: Document this.
+    pub full: bool,
+    pub expand_union: bool,
+
+    pub generic: ExpandGenericOpts<'a>,
+}
+
 #[derive(Debug, Clone)]
 pub enum ItemRef<'a, T: Clone> {
     Single(iter::Once<&'a T>),
@@ -1835,6 +1851,7 @@ struct Expander<'a, 'b, 'c> {
     expand_union: bool,
     /// Should we expand top level references?
     expand_top_level: bool,
+    opts: ExpandOpts<'a>,
 }
 
 impl Expander<'_, '_, '_> {
@@ -1959,7 +1976,11 @@ impl Expander<'_, '_, '_> {
                                     });
 
                                     let before = dump_type_as_string(&self.analyzer.cm, &ty);
-                                    let mut ty = self.analyzer.expand_type_params(&inferred, ty.foldable())?;
+                                    let mut ty = self.analyzer.expand_type_params(
+                                        &inferred,
+                                        ty.foldable(),
+                                        self.opts.generic,
+                                    )?;
                                     let after = dump_type_as_string(&self.analyzer.cm, &ty);
                                     slog::debug!(
                                         &self.analyzer.logger,
@@ -2378,7 +2399,10 @@ impl Expander<'_, '_, '_> {
                                             .infer_ts_infer_types(span, &extends_type, &element.ty, Default::default())
                                             .ok();
                                         if let Some(type_params) = type_params {
-                                            ty = self.analyzer.expand_type_params(&type_params, ty).unwrap();
+                                            ty = self
+                                                .analyzer
+                                                .expand_type_params(&type_params, ty, Default::default())
+                                                .unwrap();
                                         }
 
                                         element.ty = box ty;
@@ -2408,7 +2432,10 @@ impl Expander<'_, '_, '_> {
                             .infer_ts_infer_types(span, &extends_type, &obj_type, Default::default())
                             .ok();
                         if let Some(type_params) = type_params {
-                            ty = self.analyzer.expand_type_params(&type_params, ty).unwrap();
+                            ty = self
+                                .analyzer
+                                .expand_type_params(&type_params, ty, Default::default())
+                                .unwrap();
                         }
 
                         return ty;
@@ -2471,8 +2498,14 @@ impl Expander<'_, '_, '_> {
                     .ok();
 
                 if let Some(type_params) = type_params {
-                    true_type = box self.analyzer.expand_type_params(&type_params, *true_type).unwrap();
-                    false_type = box self.analyzer.expand_type_params(&type_params, *false_type).unwrap();
+                    true_type = box self
+                        .analyzer
+                        .expand_type_params(&type_params, *true_type, Default::default())
+                        .unwrap();
+                    false_type = box self
+                        .analyzer
+                        .expand_type_params(&type_params, *false_type, Default::default())
+                        .unwrap();
                 }
 
                 match check_type.normalize_mut() {

@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use crate::{
-    analyzer::{assign::AssignOpts, expr::TypeOfMode, Analyzer, Ctx},
+    analyzer::{assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, Analyzer, Ctx},
     ty::{Array, IndexedAccessType, Mapped, Operator, PropertySignature, Ref, Type, TypeElement, TypeLit},
     ValidationResult,
 };
@@ -10,10 +10,10 @@ use rnode::{Fold, FoldWith, VisitWith};
 use slog::Logger;
 use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
 use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
+use stc_ts_generics::{type_param::finder::TypeParamUsageFinder, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    ComputedKey, Function, Id, IdCtx, Interface, Key, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+    ComputedKey, Function, Id, IdCtx, Interface, Key, MethodSignature, TypeParam, TypeParamDecl, TypeParamInstantiation,
 };
 use stc_utils::{error::context, ext::SpanExt, stack};
 use swc_atoms::js_word;
@@ -70,11 +70,16 @@ impl Analyzer<'_, '_> {
         Ok(params)
     }
 
-    pub(in super::super) fn expand_type_params<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T) -> ValidationResult<T>
+    pub(in super::super) fn expand_type_params<T>(
+        &mut self,
+        params: &FxHashMap<Id, Type>,
+        ty: T,
+        opts: ExpandGenericOpts,
+    ) -> ValidationResult<T>
     where
         T: for<'aa, 'bb, 'cc, 'dd> FoldWith<GenericExpander<'aa, 'bb, 'cc, 'dd>> + Fix,
     {
-        let ty = self.expand_type_params_inner(params, ty, false)?.fixed();
+        let ty = self.expand_type_params_inner(params, ty, false, opts)?.fixed();
         Ok(ty)
     }
 
@@ -94,7 +99,13 @@ impl Analyzer<'_, '_> {
     ///z     T extends {
     ///          x: infer P extends number ? infer P : string;
     ///      } ? P : never
-    fn expand_type_params_inner<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T, fully: bool) -> ValidationResult<T>
+    fn expand_type_params_inner<T>(
+        &mut self,
+        params: &FxHashMap<Id, Type>,
+        ty: T,
+        fully: bool,
+        opts: ExpandGenericOpts,
+    ) -> ValidationResult<T>
     where
         T: for<'aa, 'bb, 'cc, 'dd> FoldWith<GenericExpander<'aa, 'bb, 'cc, 'dd>>,
     {
@@ -109,6 +120,7 @@ impl Analyzer<'_, '_> {
             params,
             fully,
             dejavu: Default::default(),
+            opts,
         });
         let end = Instant::now();
         slog::info!(self.logger, "expanded type parameters (time = {:?})", end - start);
@@ -157,7 +169,15 @@ impl Analyzer<'_, '_> {
                 };
                 let child = self
                     .with_ctx(ctx)
-                    .expand_fully(child.span(), child.clone(), true)
+                    .expand(
+                        child.span(),
+                        child.clone(),
+                        ExpandOpts {
+                            full: true,
+                            expand_union: true,
+                            ..Default::default()
+                        },
+                    )
                     .unwrap();
                 match child.normalize() {
                     Type::Ref(..) => return None,
@@ -204,7 +224,15 @@ impl Analyzer<'_, '_> {
                 };
                 let parent = self
                     .with_ctx(ctx)
-                    .expand_fully(parent.span(), parent.clone(), true)
+                    .expand(
+                        parent.span(),
+                        parent.clone(),
+                        ExpandOpts {
+                            full: true,
+                            expand_union: true,
+                            ..Default::default()
+                        },
+                    )
                     .unwrap();
                 match parent.normalize() {
                     Type::Ref(..) => return None,
@@ -362,6 +390,7 @@ pub(crate) struct GenericExpander<'a, 'b, 'c, 'd> {
     /// Expand fully?
     fully: bool,
     dejavu: FxHashSet<Id>,
+    opts: ExpandGenericOpts<'d>,
 }
 
 impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
@@ -878,19 +907,27 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
     }
 }
 
-/// Override to handle some edge cases.
-///
-/// For inputs like `T | PromiseLike<T>` where `T` = `T | PromiseLike<T>`, we
-/// should expand it to `T | PromiseLike<T>`.
-impl Fold<Union> for GenericExpander<'_, '_, '_, '_> {
-    fn fold(&mut self, u: Union) -> Union {
-        let u = u.fold_children_with(self);
-
-        {
-            // TODO: Handle recursive types.
+impl Fold<PropertySignature> for GenericExpander<'_, '_, '_, '_> {
+    fn fold(&mut self, v: PropertySignature) -> PropertySignature {
+        if !self.opts.props.is_empty() {
+            if self.opts.props.iter().all(|enabled| !enabled.type_eq(&v.key)) {
+                return v;
+            }
         }
 
-        u
+        v.fold_children_with(self)
+    }
+}
+
+impl Fold<MethodSignature> for GenericExpander<'_, '_, '_, '_> {
+    fn fold(&mut self, v: MethodSignature) -> MethodSignature {
+        if !self.opts.props.is_empty() {
+            if self.opts.props.iter().all(|enabled| !enabled.type_eq(&v.key)) {
+                return v;
+            }
+        }
+
+        v.fold_children_with(self)
     }
 }
 

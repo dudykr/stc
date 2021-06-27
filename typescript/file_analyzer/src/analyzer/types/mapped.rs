@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
                                         Some(mapped_ty) => {
                                             let mut map = HashMap::default();
                                             map.insert(m.type_param.name.clone(), *params[0].ty.clone());
-                                            self.expand_type_params(&map, m.ty.clone())?
+                                            self.expand_type_params(&map, m.ty.clone(), Default::default())?
                                         }
                                         None => None,
                                     };
@@ -176,7 +176,7 @@ impl Analyzer<'_, '_> {
         let mapped_ty = mapped_ty.clone();
         let mut type_params = HashMap::default();
         type_params.insert(mapped_type_param, key.ty().into_owned().cheap());
-        self.expand_type_params(&type_params, mapped_ty)
+        self.expand_type_params(&type_params, mapped_ty, Default::default())
     }
 
     /// Evaluate a type and convert it to keys.
@@ -187,7 +187,7 @@ impl Analyzer<'_, '_> {
 
         match ty {
             Type::Ref(..) => {
-                let ty = self.expand_top_ref(span, Cow::Borrowed(ty))?;
+                let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
                 return self.convert_type_to_keys(span, &ty);
             }
 

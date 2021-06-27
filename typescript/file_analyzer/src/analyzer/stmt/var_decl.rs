@@ -232,7 +232,7 @@ impl Analyzer<'_, '_> {
                                 return Ok(());
                             }
                         };
-                        let ty = self.expand(span, ty)?;
+                        let ty = self.expand(span, ty, Default::default())?;
                         ty.assert_valid();
                         let ty = (|| {
                             if !should_instantiate_type_ann(&ty) {
@@ -250,7 +250,7 @@ impl Analyzer<'_, '_> {
                         self.scope.this = Some(ty.clone().remove_falsy());
                         let mut value_ty = get_value_ty!(Some(&ty));
                         value_ty.assert_valid();
-                        value_ty = self.expand(span, value_ty)?;
+                        value_ty = self.expand(span, value_ty, Default::default())?;
                         value_ty.assert_valid();
                         value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
                         value_ty.assert_valid();
@@ -375,7 +375,7 @@ impl Analyzer<'_, '_> {
                                     ignore_expand_prevention_for_top: false,
                                     ..self.ctx
                                 };
-                                ty = self.with_ctx(ctx).expand(span, ty)?;
+                                ty = self.with_ctx(ctx).expand(span, ty, Default::default())?;
                                 ty.assert_valid();
 
                                 slog::debug!(
@@ -510,7 +510,7 @@ impl Analyzer<'_, '_> {
                                     preserve_ret_ty: true,
                                     ..self.ctx
                                 };
-                                ty = self.with_ctx(ctx).expand(span, ty)?;
+                                ty = self.with_ctx(ctx).expand(span, ty, Default::default())?;
                             }
                         }
                         ty.assert_valid();

@@ -135,7 +135,9 @@ impl Analyzer<'_, '_> {
                     ComputedPropMode::Class { .. } | ComputedPropMode::Interface => {
                         let is_valid_key = is_valid_computed_key(&node.expr);
 
-                        let ty = analyzer.expand(node.span, ty.clone()).report(&mut analyzer.storage);
+                        let ty = analyzer
+                            .expand(node.span, ty.clone(), Default::default())
+                            .report(&mut analyzer.storage);
 
                         if let Some(ref ty) = ty {
                             // TODO: Add support for expressions like '' + ''.

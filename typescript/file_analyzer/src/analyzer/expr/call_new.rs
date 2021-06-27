@@ -4,6 +4,7 @@ use crate::{
         assign::AssignOpts,
         expr::TypeOfMode,
         marks::MarkExt,
+        scope::ExpandOpts,
         util::{make_instance_type, ResultExt},
         Analyzer, Ctx, ScopeKind,
     },
@@ -412,7 +413,7 @@ impl Analyzer<'_, '_> {
                         params.insert(type_param.name.clone(), ty.clone().cheap());
                     }
 
-                    callee_ty = analyzer.expand_type_params(&params, callee_ty)?;
+                    callee_ty = analyzer.expand_type_params(&params, callee_ty, Default::default())?;
                 }
             }
 
@@ -420,7 +421,15 @@ impl Analyzer<'_, '_> {
                 preserve_params: true,
                 ..analyzer.ctx
             };
-            callee_ty = analyzer.with_ctx(ctx).expand_fully(span, callee_ty, false)?;
+            callee_ty = analyzer.with_ctx(ctx).expand(
+                span,
+                callee_ty,
+                ExpandOpts {
+                    full: true,
+                    expand_union: false,
+                    ..Default::default()
+                },
+            )?;
 
             let expanded_ty = analyzer.extract(
                 span,
@@ -551,7 +560,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Ref(..) => {
                     let obj_type = self
-                        .expand_top_ref(span, Cow::Borrowed(obj_type))
+                        .expand_top_ref(span, Cow::Borrowed(obj_type), Default::default())
                         .context("tried to expand object to call property of it")?;
 
                     return self
@@ -740,7 +749,9 @@ impl Analyzer<'_, '_> {
                 .access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
 
             let callee_before_expanding = dump_type_as_string(&self.cm, &callee);
-            let callee = self.expand_top_ref(span, Cow::Owned(callee))?.into_owned();
+            let callee = self
+                .expand_top_ref(span, Cow::Owned(callee), Default::default())?
+                .into_owned();
 
             match callee.normalize() {
                 Type::ClassDef(cls) => {
@@ -1108,7 +1119,7 @@ impl Analyzer<'_, '_> {
             for arg in arg_types {
                 if arg.spread.is_some() {
                     let arg_ty = self
-                        .expand_top_ref(arg.span(), Cow::Borrowed(&arg.ty))
+                        .expand_top_ref(arg.span(), Cow::Borrowed(&arg.ty), Default::default())
                         .context("tried to expand ref to handle a spread argument")?;
                     match arg_ty.normalize() {
                         Type::Tuple(arg_ty) => {
@@ -2242,8 +2253,7 @@ impl Analyzer<'_, '_> {
                 expanded_params = params
                     .into_iter()
                     .map(|v| -> ValidationResult<_> {
-                        let mut ty = box self.expand_type_params(&map, *v.ty)?;
-                        ty.fix();
+                        let ty = box self.expand_type_params(&map, *v.ty, Default::default())?;
 
                         Ok(FnParam { ty, ..v })
                     })
@@ -2259,9 +2269,7 @@ impl Analyzer<'_, '_> {
             let expanded_param_types = params
                 .into_iter()
                 .map(|v| -> ValidationResult<_> {
-                    let mut ty = box self.expand_type_params(&inferred, *v.ty)?;
-                    ty.fix();
-                    ty.assert_valid();
+                    let mut ty = box self.expand_type_params(&inferred, *v.ty, Default::default())?;
 
                     Ok(FnParam { ty, ..v })
                 })
@@ -2444,7 +2452,7 @@ impl Analyzer<'_, '_> {
                 preserve_ret_ty: true,
                 ..self.ctx
             };
-            let ret_ty = self.with_ctx(ctx).expand(span, ret_ty)?;
+            let ret_ty = self.with_ctx(ctx).expand(span, ret_ty, Default::default())?;
 
             for item in &expanded_param_types {
                 item.ty.assert_valid();
@@ -2471,7 +2479,7 @@ impl Analyzer<'_, '_> {
             }
 
             print_type(&logger, "Return", &self.cm, &ret_ty);
-            let mut ty = self.expand_type_params(&inferred, ret_ty)?;
+            let mut ty = self.expand_type_params(&inferred, ret_ty, Default::default())?;
             print_type(&logger, "Return, expanded", &self.cm, &ty);
 
             ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
@@ -3194,7 +3202,17 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                         ..self.analyzer.ctx
                     };
                     let mut a = self.analyzer.with_ctx(ctx);
-                    let obj = a.expand_fully(*span, *obj_ty.clone(), true).report(&mut a.storage);
+                    let obj = a
+                        .expand(
+                            *span,
+                            *obj_ty.clone(),
+                            ExpandOpts {
+                                full: true,
+                                expand_union: true,
+                                ..Default::default()
+                            },
+                        )
+                        .report(&mut a.storage);
                     if let Some(obj) = &obj {
                         if let Some(actual_ty) = a
                             .access_property(

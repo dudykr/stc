@@ -1,6 +1,6 @@
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
 use crate::{
-    analyzer::{assign::AssignOpts, Analyzer, Ctx},
+    analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer, Ctx},
     util::{unwrap_ref_with_single_arg, RemoveTypes},
     ValidationResult,
 };
@@ -117,7 +117,15 @@ impl Analyzer<'_, '_> {
                         _ => false,
                     }
                 {
-                    let ty = self.expand_fully(span, *type_param.constraint.clone().unwrap(), false)?;
+                    let ty = self.expand(
+                        span,
+                        *type_param.constraint.clone().unwrap(),
+                        ExpandOpts {
+                            full: true,
+                            expand_union: false,
+                            ..Default::default()
+                        },
+                    )?;
                     params.push(ty);
                     continue;
                 }
@@ -306,9 +314,15 @@ impl Analyzer<'_, '_> {
                     preserve_ret_ty: true,
                     ..self.ctx
                 };
-                let ty = self
-                    .with_ctx(ctx)
-                    .expand_fully(span, *type_param.constraint.clone().unwrap(), false)?;
+                let ty = self.with_ctx(ctx).expand(
+                    span,
+                    *type_param.constraint.clone().unwrap(),
+                    ExpandOpts {
+                        full: true,
+                        expand_union: false,
+                        ..Default::default()
+                    },
+                )?;
                 if !inferred.type_params.contains_key(&type_param.name) {
                     self.insert_inferred(&mut inferred, type_param.name.clone(), ty)?;
                 }
@@ -776,7 +790,15 @@ impl Analyzer<'_, '_> {
 
                 Type::IndexedAccessType(arg_iat) => {
                     let arg_obj_ty = self
-                        .expand_fully(arg_iat.span, *arg_iat.obj_type.clone(), true)?
+                        .expand(
+                            arg_iat.span,
+                            *arg_iat.obj_type.clone(),
+                            ExpandOpts {
+                                full: true,
+                                expand_union: true,
+                                ..Default::default()
+                            },
+                        )?
                         .foldable();
                     match arg_obj_ty {
                         Type::Mapped(arg_obj_ty) => match &arg_obj_ty.type_param {
@@ -908,7 +930,15 @@ impl Analyzer<'_, '_> {
                         ..self.ctx
                     };
                     slog::debug!(self.logger, "infer_type: expanding param");
-                    let param = self.with_ctx(ctx).expand_fully(span, Type::Ref(param.clone()), true)?;
+                    let param = self.with_ctx(ctx).expand(
+                        span,
+                        Type::Ref(param.clone()),
+                        ExpandOpts {
+                            full: true,
+                            expand_union: true,
+                            ..Default::default()
+                        },
+                    )?;
                     match param.normalize() {
                         Type::Ref(..) => {
                             dbg!();
@@ -1067,7 +1097,15 @@ impl Analyzer<'_, '_> {
                     preserve_params: true,
                     ..self.ctx
                 };
-                let arg = self.with_ctx(ctx).expand_fully(span, arg.clone(), true)?;
+                let arg = self.with_ctx(ctx).expand(
+                    span,
+                    arg.clone(),
+                    ExpandOpts {
+                        full: true,
+                        expand_union: true,
+                        ..Default::default()
+                    },
+                )?;
                 match arg.normalize() {
                     Type::Ref(..) => {}
                     _ => {
@@ -1153,9 +1191,15 @@ impl Analyzer<'_, '_> {
                     ..self.ctx
                 };
 
-                let arg = self
-                    .with_ctx(ctx)
-                    .expand_fully(arg.span, Type::Ref(arg.clone()), true)?;
+                let arg = self.with_ctx(ctx).expand(
+                    arg.span,
+                    Type::Ref(arg.clone()),
+                    ExpandOpts {
+                        full: true,
+                        expand_union: true,
+                        ..Default::default()
+                    },
+                )?;
 
                 match arg.normalize() {
                     Type::Ref(..) => return Ok(false),

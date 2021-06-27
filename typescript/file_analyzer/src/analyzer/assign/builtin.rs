@@ -10,7 +10,7 @@ use stc_ts_ast_rnode::{RIdent, RTsEntityName};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Array, Ref, Type, TypeElement};
 use swc_atoms::js_word;
-use swc_common::TypeEq;
+use swc_common::{Spanned, TypeEq};
 
 impl Analyzer<'_, '_> {
     pub(super) fn assign_to_builtins(
@@ -156,6 +156,34 @@ impl Analyzer<'_, '_> {
             },
 
             _ => {}
+        }
+
+        if cfg!(feature = "fastpath") {
+            if let Type::Array(l) = l {
+                if let Some(r_elem) = unwrap_ref_with_single_arg(r, "TemplateStringArray")
+                    .or_else(|| unwrap_ref_with_single_arg(r, "Array"))
+                    .or_else(|| unwrap_ref_with_single_arg(r, "ReadonlyArray"))
+                {
+                    return Some(
+                        self.assign_with_opts(data, opts, &l.elem_type, &r)
+                            .context("tried fast-path assignment to an array"),
+                    );
+                }
+            }
+        }
+
+        if cfg!(feature = "fastpath") {
+            if let Some(r_elem) = unwrap_ref_with_single_arg(r, "ReadonlyArray") {
+                return Some(self.assign_with_opts(
+                    data,
+                    opts,
+                    &l,
+                    &Type::Array(Array {
+                        span: r.span(),
+                        elem_type: box r_elem.clone(),
+                    }),
+                ));
+            }
         }
 
         if cfg!(feature = "fastpath") && opts.allow_assignment_to_param {
