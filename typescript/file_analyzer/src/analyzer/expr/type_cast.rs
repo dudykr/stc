@@ -72,10 +72,11 @@ impl Analyzer<'_, '_> {
     ///
     /// results in error.
     fn validate_type_cast(&mut self, span: Span, orig_ty: Type, casted_ty: Type) -> ValidationResult {
-        let orig_ty = self.expand_fully(
+        let orig_ty = self.expand(
             span,
             orig_ty,
             ExpandOpts {
+                full: true,
                 expand_union: true,
                 ..Default::default()
             },

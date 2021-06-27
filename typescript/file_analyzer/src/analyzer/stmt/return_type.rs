@@ -106,10 +106,11 @@ impl Analyzer<'_, '_> {
                                 ignore_expand_prevention_for_all: false,
                                 ..self.ctx
                             };
-                            self.with_ctx(ctx).expand_fully(
+                            self.with_ctx(ctx).expand(
                                 ty.span(),
                                 ty,
                                 ExpandOpts {
+                                    full: true,
                                     expand_union: true,
                                     ..Default::default()
                                 },
@@ -123,10 +124,11 @@ impl Analyzer<'_, '_> {
                         .yield_types
                         .into_iter()
                         .map(|ty| {
-                            self.expand_fully(
+                            self.expand(
                                 ty.span(),
                                 ty,
                                 ExpandOpts {
+                                    full: true,
                                     expand_union: true,
                                     ..Default::default()
                                 },
@@ -504,10 +506,11 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                 let index_ty = self
                     .analyzer
                     .with_ctx(ctx)
-                    .expand_fully(
+                    .expand(
                         span,
                         *index_type.clone(),
                         ExpandOpts {
+                            full: true,
                             expand_union: true,
                             ..Default::default()
                         },

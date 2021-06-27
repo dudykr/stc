@@ -421,10 +421,11 @@ impl Analyzer<'_, '_> {
                 preserve_params: true,
                 ..analyzer.ctx
             };
-            callee_ty = analyzer.with_ctx(ctx).expand_fully(
+            callee_ty = analyzer.with_ctx(ctx).expand(
                 span,
                 callee_ty,
                 ExpandOpts {
+                    full: true,
                     expand_union: false,
                     ..Default::default()
                 },
@@ -2449,7 +2450,7 @@ impl Analyzer<'_, '_> {
                 preserve_ret_ty: true,
                 ..self.ctx
             };
-            let ret_ty = self.with_ctx(ctx).expand(span, ret_ty)?;
+            let ret_ty = self.with_ctx(ctx).expand(span, ret_ty, Default::default())?;
 
             for item in &expanded_param_types {
                 item.ty.assert_valid();
@@ -3200,10 +3201,11 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                     };
                     let mut a = self.analyzer.with_ctx(ctx);
                     let obj = a
-                        .expand_fully(
+                        .expand(
                             *span,
                             *obj_ty.clone(),
                             ExpandOpts {
+                                full: true,
                                 expand_union: true,
                                 ..Default::default()
                             },

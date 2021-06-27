@@ -157,10 +157,11 @@ impl Analyzer<'_, '_> {
                 };
                 let child = self
                     .with_ctx(ctx)
-                    .expand_fully(
+                    .expand(
                         child.span(),
                         child.clone(),
                         ExpandOpts {
+                            full: true,
                             expand_union: true,
                             ..Default::default()
                         },
@@ -211,10 +212,11 @@ impl Analyzer<'_, '_> {
                 };
                 let parent = self
                     .with_ctx(ctx)
-                    .expand_fully(
+                    .expand(
                         parent.span(),
                         parent.clone(),
                         ExpandOpts {
+                            full: true,
                             expand_union: true,
                             ..Default::default()
                         },

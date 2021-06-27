@@ -1203,10 +1203,11 @@ impl Analyzer<'_, '_> {
                                 ignore_expand_prevention_for_top: true,
                                 ..self.ctx
                             };
-                            let super_class = self.with_ctx(ctx).expand_fully(
+                            let super_class = self.with_ctx(ctx).expand(
                                 span,
                                 super_class,
                                 ExpandOpts {
+                                    full: true,
                                     expand_union: true,
                                     ..Default::default()
                                 },
@@ -1231,10 +1232,11 @@ impl Analyzer<'_, '_> {
                             ignore_expand_prevention_for_top: true,
                             ..self.ctx
                         };
-                        let super_class = self.with_ctx(ctx).expand_fully(
+                        let super_class = self.with_ctx(ctx).expand(
                             span,
                             super_class,
                             ExpandOpts {
+                                full: true,
                                 expand_union: true,
                                 ..Default::default()
                             },
@@ -1331,7 +1333,10 @@ impl Analyzer<'_, '_> {
             }
             _ => Cow::Borrowed(obj),
         };
-        let obj = self.with_ctx(ctx).expand(span, obj.into_owned())?.generalize_lit(marks);
+        let obj = self
+            .with_ctx(ctx)
+            .expand(span, obj.into_owned(), Default::default())?
+            .generalize_lit(marks);
 
         match obj.normalize() {
             Type::Lit(obj) => {
@@ -3135,10 +3140,11 @@ impl Analyzer<'_, '_> {
                     ignore_expand_prevention_for_top: true,
                     ..self.ctx
                 };
-                let obj_ty = self.with_ctx(ctx).expand_fully(
+                let obj_ty = self.with_ctx(ctx).expand(
                     span,
                     obj_ty,
                     ExpandOpts {
+                        full: true,
                         expand_union: true,
                         ..Default::default()
                     },
@@ -3303,10 +3309,11 @@ impl Analyzer<'_, '_> {
                     preserve_ref: false,
                     ..self.ctx
                 };
-                let ty = self.with_ctx(ctx).expand_fully(
+                let ty = self.with_ctx(ctx).expand(
                     *span,
                     ty.clone(),
                     ExpandOpts {
+                        full: true,
                         expand_union: true,
                         ..Default::default()
                     },

@@ -98,10 +98,11 @@ impl Analyzer<'_, '_> {
                     ignore_expand_prevention_for_top: true,
                     ..self.ctx
                 };
-                let ty = self.with_ctx(ctx).expand_fully(
+                let ty = self.with_ctx(ctx).expand(
                     span,
                     ty.normalize().clone(),
                     ExpandOpts {
+                        full: true,
                         expand_union: false,
                         ..Default::default()
                     },

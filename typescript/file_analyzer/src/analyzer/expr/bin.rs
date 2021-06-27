@@ -89,10 +89,11 @@ impl Analyzer<'_, '_> {
                     ignore_expand_prevention_for_top: true,
                     ..self.ctx
                 };
-                ty = self.with_ctx(ctx).expand_fully(
+                ty = self.with_ctx(ctx).expand(
                     span,
                     ty,
                     ExpandOpts {
+                        full: true,
                         expand_union: true,
                         ..Default::default()
                     },
@@ -164,10 +165,11 @@ impl Analyzer<'_, '_> {
                                 ignore_expand_prevention_for_top: true,
                                 ..child.ctx
                             };
-                            ty = child.with_ctx(ctx).expand_fully(
+                            ty = child.with_ctx(ctx).expand(
                                 span,
                                 ty,
                                 ExpandOpts {
+                                    full: true,
                                     expand_union: true,
                                     ..Default::default()
                                 },

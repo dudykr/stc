@@ -654,7 +654,14 @@ impl Analyzer<'_, '_> {
     /// Expands
     ///
     ///   - Type alias
-    pub(super) fn expand(&mut self, span: Span, ty: Type) -> ValidationResult {
+    ///
+    /// // TODO: Add an option to expand union (this is required to assign)
+    ///
+    ///
+    ///  - `expand_union` should be true if you are going to use it in
+    ///    assignment, and false if you are going to use it in user-visible
+    ///    stuffs (e.g. type annotation for .d.ts file)
+    pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> ValidationResult {
         if !self.is_builtin {
             debug_assert_ne!(
                 span, DUMMY_SP,
@@ -673,49 +680,7 @@ impl Analyzer<'_, '_> {
             span,
             analyzer: self,
             dejavu: Default::default(),
-            full: false,
-            expand_union: false,
-            expand_top_level: true,
-        };
-
-        let ty = ty.foldable().fold_with(&mut v).fixed();
-        ty.assert_valid();
-
-        let new = dump_type_as_string(&self.cm, &ty);
-        slog::debug!(self.logger, "[expander] expand_fully: {} => {}", orig, new);
-
-        Ok(ty)
-    }
-
-    /// Expands
-    ///
-    /// // TODO: Add an option to expand union (this is required to assign)
-    ///
-    ///
-    ///  - `expand_union` should be true if you are going to use it in
-    ///    assignment, and false if you are going to use it in user-visible
-    ///    stuffs (e.g. type annotation for .d.ts file)
-    pub(super) fn expand_fully(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> ValidationResult {
-        ty.assert_valid();
-        if !self.is_builtin {
-            debug_assert_ne!(
-                span, DUMMY_SP,
-                "expand: {:#?} cannot be expanded because it has dummy span",
-                ty
-            );
-        }
-
-        ty.assert_valid();
-
-        let _ctx = context(format!("expand_fully: {}", dump_type_as_string(&self.cm, &ty)));
-        let orig = dump_type_as_string(&self.cm, &ty);
-
-        let mut v = Expander {
-            logger: self.logger.clone(),
-            span,
-            analyzer: self,
-            dejavu: Default::default(),
-            full: true,
+            full: opts.full,
             expand_union: opts.expand_union,
             expand_top_level: true,
         };
@@ -724,7 +689,7 @@ impl Analyzer<'_, '_> {
         ty.assert_valid();
 
         let new = dump_type_as_string(&self.cm, &ty);
-        slog::debug!(self.logger, "[expander] expand_fully: {} => {}", orig, new);
+        slog::debug!(self.logger, "[expander] expand: {} => {}", orig, new);
 
         Ok(ty)
     }
@@ -753,10 +718,11 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx)
-            .expand_fully(
+            .expand(
                 span,
                 ty.into_owned(),
                 ExpandOpts {
+                    full: true,
                     expand_union: true,
                     ..Default::default()
                 },
@@ -1411,18 +1377,20 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     _ => {
-                                        let ty = self.expand_fully(
+                                        let ty = self.expand(
                                             span,
                                             ty.clone(),
                                             ExpandOpts {
+                                                full: true,
                                                 expand_union: true,
                                                 ..Default::default()
                                             },
                                         )?;
-                                        let var_ty = self.expand_fully(
+                                        let var_ty = self.expand(
                                             span,
                                             generalized_var_ty,
                                             ExpandOpts {
+                                                full: true,
                                                 expand_union: true,
                                                 ..Default::default()
                                             },
@@ -1797,6 +1765,8 @@ impl<'a> Scope<'a> {
 /// pub expand_return_type: bool,
 #[derive(Debug, Clone, Default)]
 pub(crate) struct ExpandOpts {
+    /// TODO: Document this.
+    pub full: bool,
     pub expand_union: bool,
 }
 

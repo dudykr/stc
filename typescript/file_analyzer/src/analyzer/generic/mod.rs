@@ -117,10 +117,11 @@ impl Analyzer<'_, '_> {
                         _ => false,
                     }
                 {
-                    let ty = self.expand_fully(
+                    let ty = self.expand(
                         span,
                         *type_param.constraint.clone().unwrap(),
                         ExpandOpts {
+                            full: true,
                             expand_union: false,
                             ..Default::default()
                         },
@@ -313,10 +314,11 @@ impl Analyzer<'_, '_> {
                     preserve_ret_ty: true,
                     ..self.ctx
                 };
-                let ty = self.with_ctx(ctx).expand_fully(
+                let ty = self.with_ctx(ctx).expand(
                     span,
                     *type_param.constraint.clone().unwrap(),
                     ExpandOpts {
+                        full: true,
                         expand_union: false,
                         ..Default::default()
                     },
@@ -788,10 +790,11 @@ impl Analyzer<'_, '_> {
 
                 Type::IndexedAccessType(arg_iat) => {
                     let arg_obj_ty = self
-                        .expand_fully(
+                        .expand(
                             arg_iat.span,
                             *arg_iat.obj_type.clone(),
                             ExpandOpts {
+                                full: true,
                                 expand_union: true,
                                 ..Default::default()
                             },
@@ -927,10 +930,11 @@ impl Analyzer<'_, '_> {
                         ..self.ctx
                     };
                     slog::debug!(self.logger, "infer_type: expanding param");
-                    let param = self.with_ctx(ctx).expand_fully(
+                    let param = self.with_ctx(ctx).expand(
                         span,
                         Type::Ref(param.clone()),
                         ExpandOpts {
+                            full: true,
                             expand_union: true,
                             ..Default::default()
                         },
@@ -1093,10 +1097,11 @@ impl Analyzer<'_, '_> {
                     preserve_params: true,
                     ..self.ctx
                 };
-                let arg = self.with_ctx(ctx).expand_fully(
+                let arg = self.with_ctx(ctx).expand(
                     span,
                     arg.clone(),
                     ExpandOpts {
+                        full: true,
                         expand_union: true,
                         ..Default::default()
                     },
@@ -1186,10 +1191,11 @@ impl Analyzer<'_, '_> {
                     ..self.ctx
                 };
 
-                let arg = self.with_ctx(ctx).expand_fully(
+                let arg = self.with_ctx(ctx).expand(
                     arg.span,
                     Type::Ref(arg.clone()),
                     ExpandOpts {
+                        full: true,
                         expand_union: true,
                         ..Default::default()
                     },
