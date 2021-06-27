@@ -1,5 +1,5 @@
 use crate::{
-    analyzer::{generic::is_literals, Analyzer, Ctx},
+    analyzer::{generic::is_literals, scope::ExpandOpts, Analyzer, Ctx},
     ty,
     ty::Type,
     Marks, ValidationResult,
@@ -98,7 +98,14 @@ impl Analyzer<'_, '_> {
                     ignore_expand_prevention_for_top: true,
                     ..self.ctx
                 };
-                let ty = self.with_ctx(ctx).expand_fully(span, ty.normalize().clone(), false)?;
+                let ty = self.with_ctx(ctx).expand_fully(
+                    span,
+                    ty.normalize().clone(),
+                    ExpandOpts {
+                        expand_union: false,
+                        ..Default::default()
+                    },
+                )?;
 
                 match ty.normalize() {
                     Type::Ref(..) => return Ok(ty.clone()),

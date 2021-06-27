@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use crate::{
-    analyzer::{assign::AssignOpts, expr::TypeOfMode, Analyzer, Ctx},
+    analyzer::{assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, Analyzer, Ctx},
     ty::{Array, IndexedAccessType, Mapped, Operator, PropertySignature, Ref, Type, TypeElement, TypeLit},
     ValidationResult,
 };
@@ -157,7 +157,14 @@ impl Analyzer<'_, '_> {
                 };
                 let child = self
                     .with_ctx(ctx)
-                    .expand_fully(child.span(), child.clone(), true)
+                    .expand_fully(
+                        child.span(),
+                        child.clone(),
+                        ExpandOpts {
+                            expand_union: true,
+                            ..Default::default()
+                        },
+                    )
                     .unwrap();
                 match child.normalize() {
                     Type::Ref(..) => return None,
@@ -204,7 +211,14 @@ impl Analyzer<'_, '_> {
                 };
                 let parent = self
                     .with_ctx(ctx)
-                    .expand_fully(parent.span(), parent.clone(), true)
+                    .expand_fully(
+                        parent.span(),
+                        parent.clone(),
+                        ExpandOpts {
+                            expand_union: true,
+                            ..Default::default()
+                        },
+                    )
                     .unwrap();
                 match parent.normalize() {
                     Type::Ref(..) => return None,

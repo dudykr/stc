@@ -4,6 +4,7 @@ use crate::{
         assign::AssignOpts,
         expr::TypeOfMode,
         marks::MarkExt,
+        scope::ExpandOpts,
         util::{make_instance_type, ResultExt},
         Analyzer, Ctx, ScopeKind,
     },
@@ -420,7 +421,14 @@ impl Analyzer<'_, '_> {
                 preserve_params: true,
                 ..analyzer.ctx
             };
-            callee_ty = analyzer.with_ctx(ctx).expand_fully(span, callee_ty, false)?;
+            callee_ty = analyzer.with_ctx(ctx).expand_fully(
+                span,
+                callee_ty,
+                ExpandOpts {
+                    expand_union: false,
+                    ..Default::default()
+                },
+            )?;
 
             let expanded_ty = analyzer.extract(
                 span,
@@ -3191,7 +3199,16 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                         ..self.analyzer.ctx
                     };
                     let mut a = self.analyzer.with_ctx(ctx);
-                    let obj = a.expand_fully(*span, *obj_ty.clone(), true).report(&mut a.storage);
+                    let obj = a
+                        .expand_fully(
+                            *span,
+                            *obj_ty.clone(),
+                            ExpandOpts {
+                                expand_union: true,
+                                ..Default::default()
+                            },
+                        )
+                        .report(&mut a.storage);
                     if let Some(obj) = &obj {
                         if let Some(actual_ty) = a
                             .access_property(

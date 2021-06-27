@@ -695,7 +695,7 @@ impl Analyzer<'_, '_> {
     ///  - `expand_union` should be true if you are going to use it in
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
-    pub(super) fn expand_fully(&mut self, span: Span, ty: Type, expand_union: bool) -> ValidationResult {
+    pub(super) fn expand_fully(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> ValidationResult {
         ty.assert_valid();
         if !self.is_builtin {
             debug_assert_ne!(
@@ -716,7 +716,7 @@ impl Analyzer<'_, '_> {
             analyzer: self,
             dejavu: Default::default(),
             full: true,
-            expand_union,
+            expand_union: opts.expand_union,
             expand_top_level: true,
         };
 
@@ -753,7 +753,14 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx)
-            .expand_fully(span, ty.into_owned(), true)
+            .expand_fully(
+                span,
+                ty.into_owned(),
+                ExpandOpts {
+                    expand_union: true,
+                    ..Default::default()
+                },
+            )
             .map(Cow::Owned)
     }
 
@@ -1404,8 +1411,22 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     _ => {
-                                        let ty = self.expand_fully(span, ty.clone(), true)?;
-                                        let var_ty = self.expand_fully(span, generalized_var_ty, true)?;
+                                        let ty = self.expand_fully(
+                                            span,
+                                            ty.clone(),
+                                            ExpandOpts {
+                                                expand_union: true,
+                                                ..Default::default()
+                                            },
+                                        )?;
+                                        let var_ty = self.expand_fully(
+                                            span,
+                                            generalized_var_ty,
+                                            ExpandOpts {
+                                                expand_union: true,
+                                                ..Default::default()
+                                            },
+                                        )?;
 
                                         let res = self.assign(&mut Default::default(), &ty, &var_ty, span);
 
@@ -1761,6 +1782,22 @@ impl<'a> Scope<'a> {
             None => None,
         }
     }
+}
+
+/// All fields default to type-native default value. (`false` for [bool] and
+/// [None] for [Option])
+
+/// TODO:
+/// pub fully: bool,
+///
+/// pub preserve_ref: bool,
+/// pub ignore_expand_prevention_for_top: bool,
+//
+/// pub expand_params: bool,
+/// pub expand_return_type: bool,
+#[derive(Debug, Clone, Default)]
+pub(crate) struct ExpandOpts {
+    pub expand_union: bool,
 }
 
 #[derive(Debug, Clone)]

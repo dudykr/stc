@@ -3,6 +3,7 @@ use crate::{
         assign::AssignOpts,
         expr::TypeOfMode,
         generic::ExtendsOpts,
+        scope::ExpandOpts,
         util::{Comparator, ResultExt},
         Analyzer, Ctx, ScopeKind,
     },
@@ -88,7 +89,14 @@ impl Analyzer<'_, '_> {
                     ignore_expand_prevention_for_top: true,
                     ..self.ctx
                 };
-                ty = self.with_ctx(ctx).expand_fully(span, ty, true)?;
+                ty = self.with_ctx(ctx).expand_fully(
+                    span,
+                    ty,
+                    ExpandOpts {
+                        expand_union: true,
+                        ..Default::default()
+                    },
+                )?;
             }
             let span = ty.span();
             ty.reposition(left.span());
@@ -156,7 +164,14 @@ impl Analyzer<'_, '_> {
                                 ignore_expand_prevention_for_top: true,
                                 ..child.ctx
                             };
-                            ty = child.with_ctx(ctx).expand_fully(span, ty, true)?;
+                            ty = child.with_ctx(ctx).expand_fully(
+                                span,
+                                ty,
+                                ExpandOpts {
+                                    expand_union: true,
+                                    ..Default::default()
+                                },
+                            )?;
                         }
 
                         let span = ty.span();

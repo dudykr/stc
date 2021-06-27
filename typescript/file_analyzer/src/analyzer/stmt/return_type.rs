@@ -1,7 +1,7 @@
 use crate::{
     analyzer::{
-        assign::AssignOpts, expr::TypeOfMode, stmt::return_type::yield_check::YieldValueUsageFinder, util::ResultExt,
-        Analyzer, Ctx,
+        assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, stmt::return_type::yield_check::YieldValueUsageFinder,
+        util::ResultExt, Analyzer, Ctx,
     },
     ty::{Array, Type, TypeExt},
     util::type_ext::TypeVecExt,
@@ -106,7 +106,14 @@ impl Analyzer<'_, '_> {
                                 ignore_expand_prevention_for_all: false,
                                 ..self.ctx
                             };
-                            self.with_ctx(ctx).expand_fully(ty.span(), ty, true)
+                            self.with_ctx(ctx).expand_fully(
+                                ty.span(),
+                                ty,
+                                ExpandOpts {
+                                    expand_union: true,
+                                    ..Default::default()
+                                },
+                            )
                         })
                         .collect::<Result<_, _>>()
                         .report(&mut self.storage)
@@ -115,7 +122,16 @@ impl Analyzer<'_, '_> {
                     values.yield_types = values
                         .yield_types
                         .into_iter()
-                        .map(|ty| self.expand_fully(ty.span(), ty, true))
+                        .map(|ty| {
+                            self.expand_fully(
+                                ty.span(),
+                                ty,
+                                ExpandOpts {
+                                    expand_union: true,
+                                    ..Default::default()
+                                },
+                            )
+                        })
                         .collect::<Result<_, _>>()
                         .report(&mut self.storage)
                         .unwrap_or_default();
@@ -488,7 +504,14 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                 let index_ty = self
                     .analyzer
                     .with_ctx(ctx)
-                    .expand_fully(span, *index_type.clone(), true)
+                    .expand_fully(
+                        span,
+                        *index_type.clone(),
+                        ExpandOpts {
+                            expand_union: true,
+                            ..Default::default()
+                        },
+                    )
                     .unwrap_or_else(|_| *index_type.clone());
 
                 if obj_type.type_eq(&index_type) {

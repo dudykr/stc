@@ -1,7 +1,14 @@
 pub(crate) use self::array::GetIteratorOpts;
 use self::bin::extract_name_for_assignment;
 use crate::{
-    analyzer::{assign::AssignOpts, marks::MarkExt, pat::PatMode, scope::ScopeKind, util::ResultExt, Analyzer, Ctx},
+    analyzer::{
+        assign::AssignOpts,
+        marks::MarkExt,
+        pat::PatMode,
+        scope::{ExpandOpts, ScopeKind},
+        util::ResultExt,
+        Analyzer, Ctx,
+    },
     ty,
     ty::{
         Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple, Type, TypeElement,
@@ -1196,7 +1203,14 @@ impl Analyzer<'_, '_> {
                                 ignore_expand_prevention_for_top: true,
                                 ..self.ctx
                             };
-                            let super_class = self.with_ctx(ctx).expand_fully(span, super_class, true)?;
+                            let super_class = self.with_ctx(ctx).expand_fully(
+                                span,
+                                super_class,
+                                ExpandOpts {
+                                    expand_union: true,
+                                    ..Default::default()
+                                },
+                            )?;
 
                             if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var) {
                                 return Ok(v);
@@ -1217,7 +1231,14 @@ impl Analyzer<'_, '_> {
                             ignore_expand_prevention_for_top: true,
                             ..self.ctx
                         };
-                        let super_class = self.with_ctx(ctx).expand_fully(span, super_class, true)?;
+                        let super_class = self.with_ctx(ctx).expand_fully(
+                            span,
+                            super_class,
+                            ExpandOpts {
+                                expand_union: true,
+                                ..Default::default()
+                            },
+                        )?;
 
                         if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var) {
                             return Ok(v);
@@ -3114,7 +3135,14 @@ impl Analyzer<'_, '_> {
                     ignore_expand_prevention_for_top: true,
                     ..self.ctx
                 };
-                let obj_ty = self.with_ctx(ctx).expand_fully(span, obj_ty, true)?;
+                let obj_ty = self.with_ctx(ctx).expand_fully(
+                    span,
+                    obj_ty,
+                    ExpandOpts {
+                        expand_union: true,
+                        ..Default::default()
+                    },
+                )?;
                 obj_ty.assert_valid();
 
                 self.access_property(
@@ -3275,7 +3303,14 @@ impl Analyzer<'_, '_> {
                     preserve_ref: false,
                     ..self.ctx
                 };
-                let ty = self.with_ctx(ctx).expand_fully(*span, ty.clone(), true);
+                let ty = self.with_ctx(ctx).expand_fully(
+                    *span,
+                    ty.clone(),
+                    ExpandOpts {
+                        expand_union: true,
+                        ..Default::default()
+                    },
+                );
                 let ty = match ty {
                     Ok(v) => v,
                     Err(..) => return false,
