@@ -9,7 +9,7 @@ use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl, RTsEnumMember, RTsEnumMemberId,
     RTsKeywordType, RTsLit, RTsLitType,
 };
-use stc_ts_errors::Error;
+use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, PropertySignature, TypeElement, TypeLit};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
@@ -138,8 +138,13 @@ impl Analyzer<'_, '_> {
         if e.is_const {
             for m in &e.members {
                 if let Some(init) = &m.init {
-                    let mut v = LitValidator { error: false, decl: &e };
+                    let mut v = LitValidator {
+                        error: false,
+                        decl: &e,
+                        errors: Default::default(),
+                    };
                     init.visit_with(&mut v);
+                    self.storage.report_all(v.errors);
                     if v.error {
                         self.storage.report(Error::InvalidInitInConstEnum { span: init.span() })
                     }
@@ -539,6 +544,7 @@ impl Analyzer<'_, '_> {
 struct LitValidator<'a> {
     decl: &'a RTsEnumDecl,
     error: bool,
+    errors: Errors,
 }
 
 impl Visit<RExpr> for LitValidator<'_> {
@@ -548,7 +554,13 @@ impl Visit<RExpr> for LitValidator<'_> {
         match e {
             RExpr::Lit(..) => {}
             RExpr::Ident(ref i) => {
-                if i.sym == js_word!("NaN") || i.sym == js_word!("Infinity") {
+                if i.sym == js_word!("NaN") {
+                    self.errors.push(Error::ConstEnumMemberHasNaNAsInit { span: i.span });
+                    return;
+                }
+                if i.sym == js_word!("Infinity") {
+                    self.errors
+                        .push(Error::ConstEnumMemberHasInifinityAsInit { span: i.span });
                     return;
                 }
 
