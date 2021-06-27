@@ -186,7 +186,20 @@ impl Evaluator<'_> {
             match expr {
                 RExpr::Lit(RLit::Str(s)) => return Ok(RTsLit::Str(s.clone())),
                 RExpr::Lit(RLit::Num(s)) => return Ok(RTsLit::Number(s.clone())),
-                RExpr::Bin(ref bin) => return self.compute_bin(span, &bin),
+                RExpr::Bin(ref bin) => {
+                    let v = self.compute_bin(span, &bin)?;
+
+                    match &v {
+                        RTsLit::Number(n) => {
+                            if n.value.is_infinite() && self.e.is_const {
+                                return Err(Error::ConstEnumMemberHasInifinityAsInit { span: bin.span });
+                            } else {
+                                return Ok(v);
+                            }
+                        }
+                        _ => return Ok(v),
+                    }
+                }
                 RExpr::Paren(ref paren) => return self.compute(span, default, Some(&paren.expr)),
 
                 RExpr::Ident(ref id) => {
