@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::Error;
 use stc_ts_types::{Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, PropertySignature, TypeElement, TypeLit};
-use swc_atoms::JsWord;
+use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 
@@ -548,6 +548,10 @@ impl Visit<RExpr> for LitValidator<'_> {
         match e {
             RExpr::Lit(..) => {}
             RExpr::Ident(ref i) => {
+                if i.sym == js_word!("NaN") || i.sym == js_word!("Infinity") {
+                    return;
+                }
+
                 let is_ref = self.decl.members.iter().any(|m| match m.id {
                     RTsEnumMemberId::Ident(RIdent { ref sym, .. })
                     | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => *sym == i.sym,
