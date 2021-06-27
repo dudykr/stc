@@ -58,6 +58,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2432
+    OnlyFirstEnumCanOmitInit {
+        span: Span,
+    },
+
     /// TS2477
     ConstEnumMemberHasInifinityAsInit {
         span: Span,
@@ -1741,6 +1746,8 @@ impl Error {
             Error::ConstEnumMemberHasInifinityAsInit { .. } => 2477,
 
             Error::ConstEnumMemberHasNaNAsInit { .. } => 2478,
+
+            Error::OnlyFirstEnumCanOmitInit { .. } => 2432,
 
             _ => 0,
         }
