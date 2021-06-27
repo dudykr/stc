@@ -2425,11 +2425,8 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let props_to_expand = if prop.is_computed() { vec![] } else { vec![prop.clone()] };
                 let opts = ExpandOpts {
-                    generic: ExpandGenericOpts {
-                        props: &props_to_expand,
-                    },
+                    generic: ExpandGenericOpts { props: &[prop.clone()] },
                     ..Default::default()
                 };
 

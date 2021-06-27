@@ -909,7 +909,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
 
 impl Fold<PropertySignature> for GenericExpander<'_, '_, '_, '_> {
     fn fold(&mut self, v: PropertySignature) -> PropertySignature {
-        if !self.opts.props.is_empty() && !v.key.is_computed() {
+        if !self.opts.props.is_empty() {
             if self.opts.props.iter().all(|enabled| !enabled.type_eq(&v.key)) {
                 return v;
             }
@@ -921,7 +921,7 @@ impl Fold<PropertySignature> for GenericExpander<'_, '_, '_, '_> {
 
 impl Fold<MethodSignature> for GenericExpander<'_, '_, '_, '_> {
     fn fold(&mut self, v: MethodSignature) -> MethodSignature {
-        if !self.opts.props.is_empty() && !v.key.is_computed() {
+        if !self.opts.props.is_empty() {
             if self.opts.props.iter().all(|enabled| !enabled.type_eq(&v.key)) {
                 return v;
             }
