@@ -871,10 +871,14 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
 
                 let span = key.span().or_else(|| ty.obj_type.span()).or_else(|| ty.span());
 
-                if let Ok(prop_ty) =
-                    self.analyzer
-                        .access_property(span, &ty.obj_type, &key, TypeOfMode::RValue, IdCtx::Var)
-                {
+                if let Ok(prop_ty) = self.analyzer.access_property(
+                    span,
+                    &ty.obj_type,
+                    &key,
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                    Default::default(),
+                ) {
                     return prop_ty;
                 }
 

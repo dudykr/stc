@@ -362,6 +362,7 @@ impl Analyzer<'_, '_> {
                             }),
                             TypeOfMode::RValue,
                             IdCtx::Type,
+                            Default::default(),
                         );
                         if let Ok(prop_ty) = prop_ty {
                             if ty.type_eq(&prop_ty) {

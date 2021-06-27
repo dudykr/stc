@@ -925,6 +925,7 @@ impl Analyzer<'_, '_> {
                     },
                     TypeOfMode::RValue,
                     IdCtx::Var,
+                    Default::default(),
                 )?
             }
         };
@@ -2087,6 +2088,7 @@ impl Expander<'_, '_, '_> {
                             },
                             TypeOfMode::RValue,
                             IdCtx::Type,
+                            Default::default(),
                         )
                         .report(&mut self.analyzer.storage)
                         .unwrap_or_else(|| Type::any(span));
