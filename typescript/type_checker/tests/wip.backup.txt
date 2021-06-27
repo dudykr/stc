@@ -14,9 +14,6 @@ declarationEmit::typePredicates::declarationEmitThisPredicatesWithPrivateName02.
 directives::ts-expect-error-nocheck.ts
 directives::ts-expect-error.ts
 directives::ts-ignore.ts
-enums::enumConstantMembers.ts
-enums::enumMerging.ts
-enums::enumMergingErrors.ts
 es2019::globalThisBlockscopedProperties.ts
 es2019::globalThisGlobalExportAsGlobal.ts
 es2019::globalThisReadonlyProperties.ts
