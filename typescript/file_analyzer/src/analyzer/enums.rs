@@ -43,7 +43,11 @@ impl Analyzer<'_, '_> {
         let mut default = 0.0;
         let mut values = Default::default();
 
-        let mut eval = Evaluator { e, values: &mut values };
+        let mut eval = Evaluator {
+            e,
+            values: &mut values,
+            errors: Default::default(),
+        };
 
         let ty: Result<_, _> = try {
             let members = e
@@ -163,6 +167,8 @@ impl Analyzer<'_, '_> {
 struct Evaluator<'a> {
     e: &'a RTsEnumDecl,
     values: &'a mut EnumValues,
+
+    errors: Errors,
 }
 
 impl Evaluator<'_> {
@@ -179,6 +185,15 @@ impl Evaluator<'_> {
                 RExpr::Paren(ref paren) => return self.compute(span, default, Some(&paren.expr)),
 
                 RExpr::Ident(ref id) => {
+                    if self.e.is_const {
+                        if id.sym == js_word!("NaN") {
+                            return Err(Error::ConstEnumMemberHasNaNAsInit { span: id.span });
+                        }
+                        if id.sym == js_word!("Infinity") {
+                            return Err(Error::ConstEnumMemberHasInifinityAsInit { span: id.span });
+                        }
+                    }
+
                     if let Some(v) = self.values.get(&id.sym) {
                         return Ok(v.clone());
                     }
@@ -560,12 +575,9 @@ impl Visit<RExpr> for LitValidator<'_> {
             RExpr::Lit(..) => {}
             RExpr::Ident(ref i) => {
                 if i.sym == js_word!("NaN") {
-                    self.errors.push(Error::ConstEnumMemberHasNaNAsInit { span: i.span });
                     return;
                 }
                 if i.sym == js_word!("Infinity") {
-                    self.errors
-                        .push(Error::ConstEnumMemberHasInifinityAsInit { span: i.span });
                     return;
                 }
 
