@@ -59,7 +59,7 @@ impl Errors {
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
     /// TS2432
-    OnlyFirstEnumCanOmitInit {
+    OnlyOneEnumCanOmitInit {
         span: Span,
     },
 
@@ -1747,7 +1747,7 @@ impl Error {
 
             Error::ConstEnumMemberHasNaNAsInit { .. } => 2478,
 
-            Error::OnlyFirstEnumCanOmitInit { .. } => 2432,
+            Error::OnlyOneEnumCanOmitInit { .. } => 2432,
 
             _ => 0,
         }
