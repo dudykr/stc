@@ -58,6 +58,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2538
+    CannotUseTypeAsIndexIndex {
+        span: Span,
+    },
+
     /// TS2432
     OnlyOneEnumCanOmitInit {
         span: Span,
@@ -1748,6 +1753,8 @@ impl Error {
             Error::ConstEnumMemberHasNaNAsInit { .. } => 2478,
 
             Error::OnlyOneEnumCanOmitInit { .. } => 2432,
+
+            Error::CannotUseTypeAsIndexIndex { .. } => 2538,
 
             _ => 0,
         }
