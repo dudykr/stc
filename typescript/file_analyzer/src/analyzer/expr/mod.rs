@@ -31,6 +31,7 @@ use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
     DebugExt, Error, Errors,
 };
+use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
@@ -2385,10 +2386,10 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Ref(r) => {
-                if let Key::Computed(prop) = prop {
+                if let Key::Computed(computed) = prop {
                     match obj.normalize() {
                         Type::Param(..) => {
-                            let index_type = prop.ty.clone();
+                            let index_type = computed.ty.clone();
 
                             slog::warn!(
                                 self.logger,
@@ -2424,8 +2425,16 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                let props_to_expand = if prop.is_computed() { vec![] } else { vec![prop.clone()] };
+                let opts = ExpandOpts {
+                    generic: ExpandGenericOpts {
+                        props: &props_to_expand,
+                    },
+                    ..Default::default()
+                };
+
                 let obj = self
-                    .expand_top_ref(span, Cow::Borrowed(&obj), Default::default())
+                    .expand_top_ref(span, Cow::Borrowed(&obj), opts)
                     .context("tried to expand reference to access property")?;
 
                 return self.access_property(span, &obj, prop, type_mode, id_ctx);

@@ -13,7 +13,7 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::{type_param::finder::TypeParamUsageFinder, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    ComputedKey, Function, Id, IdCtx, Interface, Key, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+    ComputedKey, Function, Id, IdCtx, Interface, Key, TypeParam, TypeParamDecl, TypeParamInstantiation,
 };
 use stc_utils::{error::context, ext::SpanExt, stack};
 use swc_atoms::js_word;
@@ -907,19 +907,15 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
     }
 }
 
-/// Override to handle some edge cases.
-///
-/// For inputs like `T | PromiseLike<T>` where `T` = `T | PromiseLike<T>`, we
-/// should expand it to `T | PromiseLike<T>`.
-impl Fold<Union> for GenericExpander<'_, '_, '_, '_> {
-    fn fold(&mut self, u: Union) -> Union {
-        let u = u.fold_children_with(self);
-
-        {
-            // TODO: Handle recursive types.
+impl Fold<PropertySignature> for GenericExpander<'_, '_, '_, '_> {
+    fn fold(&mut self, v: PropertySignature) -> PropertySignature {
+        if !self.opts.props.is_empty() && !v.key.is_computed() {
+            if self.opts.props.iter().all(|enabled| !enabled.type_eq(&v.key)) {
+                return v;
+            }
         }
 
-        u
+        v.fold_children_with(self)
     }
 }
 
