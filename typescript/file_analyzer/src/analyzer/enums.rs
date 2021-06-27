@@ -193,6 +193,8 @@ impl Evaluator<'_> {
                         RTsLit::Number(n) => {
                             if n.value.is_infinite() && self.e.is_const {
                                 return Err(Error::ConstEnumMemberHasInifinityAsInit { span: bin.span });
+                            } else if n.value.is_nan() && self.e.is_const {
+                                return Err(Error::ConstEnumMemberHasNaNAsInit { span: bin.span });
                             } else {
                                 return Ok(v);
                             }
