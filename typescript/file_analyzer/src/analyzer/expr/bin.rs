@@ -1413,7 +1413,8 @@ impl Analyzer<'_, '_> {
             Type::Union(u) => {
                 let mut candidates = vec![];
                 for ty in &u.types {
-                    let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var);
+                    let prop_res =
+                        self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
 
                     match prop_res {
                         Ok(prop_ty) => {

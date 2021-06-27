@@ -491,6 +491,12 @@ impl Analyzer<'_, '_> {
     }
 }
 
+/// All fields defaults to default value of the type. (`false` for [bool]).
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct AccessPropertyOpts {
+    pub dont_validate_type_of_computed_prop: bool,
+}
+
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RSeqExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> ValidationResult {
@@ -973,6 +979,7 @@ impl Analyzer<'_, '_> {
         prop: &Key,
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
+        opts: AccessPropertyOpts,
     ) -> ValidationResult {
         if !self.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
@@ -1047,7 +1054,7 @@ impl Analyzer<'_, '_> {
         // We use child scope to store type parameters.
         let mut res = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> ValidationResult<_> {
             let mut ty = analyzer
-                .access_property_inner(span, obj, prop, type_mode, id_ctx)?
+                .access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?
                 .fixed();
             ty.assert_valid();
             ty = analyzer.expand_type_params_using_scope(ty)?;
@@ -1099,6 +1106,7 @@ impl Analyzer<'_, '_> {
         prop: &Key,
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
+        opts: AccessPropertyOpts,
     ) -> ValidationResult {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy());
