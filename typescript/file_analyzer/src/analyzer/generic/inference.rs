@@ -14,7 +14,7 @@ use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, Id, Interface, Operator, Ref, Type, TypeElement, TypeLit, TypeParam, Union,
 };
-use std::collections::hash_map::Entry;
+use std::collections::{hash_map::Entry, HashMap};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 
@@ -538,12 +538,23 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn finalize_inference(&self, inferred: &mut InferData) {
-        for (k, v) in inferred.type_params.iter_mut() {
+    pub(super) fn finalize_inference(&self, inferred: InferData) -> FxHashMap<Id, Type> {
+        let mut map = HashMap::default();
+
+        for (k, v) in inferred.type_params {
             self.replace_null_or_undefined_while_defaulting_to_any(v);
 
-            v.make_cheap();
+            let mut ty = match v {
+                InferredType::Union(ty) => unreachable!("NOT IMPLEMENTED"),
+                InferredType::Other(types) => Type::union(types),
+            };
+
+            ty.make_cheap();
+
+            map.insert(k, ty);
         }
+
+        map
     }
 
     /// TODO: Handle union

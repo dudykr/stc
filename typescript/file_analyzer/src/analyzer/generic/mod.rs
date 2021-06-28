@@ -2103,10 +2103,13 @@ impl Analyzer<'_, '_> {
                 "renaming type parameters based on type annotation provided by user\ntype_ann = {:?}",
                 type_ann
             );
+
+            let map = self.finalize_inference(inferred);
+
             return Ok(ty
                 .foldable()
                 .fold_with(&mut TypeParamRenamer {
-                    inferred: inferred.type_params,
+                    inferred: inferred.map,
                     declared: Default::default(),
                 })
                 .fixed());
