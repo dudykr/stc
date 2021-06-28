@@ -1514,7 +1514,8 @@ impl Analyzer<'_, '_> {
 
                                         let mut data = InferData::default();
                                         self.infer_type(span, &mut data, &param_ty, &arg_prop_ty, opts)?;
-                                        let inferred_ty = data.type_params.remove(&name);
+                                        let mut map = self.finalize_inference(data);
+                                        let inferred_ty = map.remove(&name);
 
                                         self.mapped_type_param_name = old;
 
