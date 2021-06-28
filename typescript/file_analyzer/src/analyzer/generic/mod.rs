@@ -637,7 +637,9 @@ impl Analyzer<'_, '_> {
         let p = param;
         let a = arg;
 
-        self.infer_builtin(span, inferred, param, arg, opts)?;
+        if let Some(res) = self.infer_builtin(span, inferred, param, arg, opts) {
+            return res;
+        }
 
         if self.infer_type_by_converting_to_type_lit(span, inferred, param, arg, opts)? {
             return Ok(());

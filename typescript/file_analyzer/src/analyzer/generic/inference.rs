@@ -258,7 +258,7 @@ impl Analyzer<'_, '_> {
         param: &Type,
         arg: &Type,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> Option<ValidationResult<()>> {
         let param = param.normalize();
         let arg = arg.normalize();
 
@@ -279,7 +279,7 @@ impl Analyzer<'_, '_> {
                 _ => None,
             })
         {
-            return self.infer_type(
+            return Some(self.infer_type(
                 span,
                 inferred,
                 &Type::Array(Array {
@@ -291,7 +291,7 @@ impl Analyzer<'_, '_> {
                     append_type_as_union: true,
                     ..opts
                 },
-            );
+            ));
         }
 
         match param {
@@ -302,7 +302,7 @@ impl Analyzer<'_, '_> {
                     ..
                 }) if type_name.sym == *"ReadonlyArray" => match type_args {
                     Some(type_args) => {
-                        return self.infer_type(
+                        return Some(self.infer_type(
                             span,
                             inferred,
                             &elem_type,
@@ -311,7 +311,7 @@ impl Analyzer<'_, '_> {
                                 append_type_as_union: true,
                                 ..opts
                             },
-                        );
+                        ));
                     }
                     None => {}
                 },
@@ -320,7 +320,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Ok(())
+        None
     }
 
     pub(super) fn infer_type_using_interface(
