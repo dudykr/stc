@@ -15,6 +15,7 @@ err_handler () {
 trap err_handler ERR
 
 export CARGO_TERM_COLOR=always
+export RUST_BACKTRACE=1
 
 # We prevent regression using faster checks
 GOLDEN_ONLY=1 cargo test -q -p stc_ts_file_analyzer --test visualize
