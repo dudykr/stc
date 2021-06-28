@@ -22,7 +22,7 @@ warning: Type
    |         ^
    |
    = note: (Validator & {
-               onChanges?(changes: Record<string, unknown>): void;
+               onChanges?: (changes: Record<string, unknown>) => void;
            })
 
 warning: Type
@@ -48,7 +48,7 @@ warning: Type
    |         ^
    |
    = note: (Validator & {
-               onChanges?(changes: Record<string, unknown>): void;
+               onChanges?: (changes: Record<string, unknown>) => void;
            })
 
 warning: Type
@@ -58,7 +58,7 @@ warning: Type
    |     ^
    |
    = note: (Validator & {
-               onChanges?(changes: Record<string, unknown>): void;
+               onChanges?: (changes: Record<string, unknown>) => void;
            })
 
 warning: Type
@@ -68,7 +68,7 @@ warning: Type
    |         ^
    |
    = note: (Validator & {
-               onChanges?(changes: Record<string, unknown>): void;
+               onChanges?: (changes: Record<string, unknown>) => void;
            })
 
 warning: Type
@@ -95,7 +95,7 @@ warning: Type
    |         ^
    |
    = note: (Validator & {
-               onChanges?(changes: Record<string, unknown>): void;
+               onChanges?: (changes: Record<string, unknown>) => void;
            })
 
 warning: Type
