@@ -262,7 +262,23 @@ impl Analyzer<'_, '_> {
         let param = param.normalize();
         let arg = arg.normalize();
 
-        if let Some(elem_type) = unwrap_ref_with_single_arg(param, "ReadonlyArray") {
+        if let Some(elem_type) =
+            unwrap_ref_with_single_arg(param, "ReadonlyArray").or_else(|| match param.normalize() {
+                Type::Interface(Interface { name, body, .. }) => {
+                    if name == "ReadonlyArray" {
+                        body.iter()
+                            .filter_map(|v| match v {
+                                TypeElement::Index(i) => i.type_ann.as_deref(),
+                                _ => None,
+                            })
+                            .next()
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            })
+        {
             return self.infer_type(
                 span,
                 inferred,
