@@ -19,7 +19,7 @@ export CARGO_TERM_COLOR=always
 # We prevent regression using faster checks
 GOLDEN_ONLY=1 cargo test -q -p stc_ts_file_analyzer --test visualize
 
-RUST_LOG=0 TEST='' cargo test --test tsc \
+RUST_LOG=off TEST='' DONT_PRINT_MATCHED=1 cargo test --test tsc \
   | tee /dev/stderr \
   | grep 'ts .\.\. ok$' \
   | sed -e 's!test conformance::!!' \
