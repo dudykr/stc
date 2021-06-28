@@ -14,6 +14,9 @@ export function activate(context: ExtensionContext) {
     const executable: Executable = {
         command: 'cargo',
         args: ['run', '--', 'lsp'],
+        options: {
+            cwd: __dirname
+        }
     };
 
 
@@ -34,7 +37,7 @@ export function activate(context: ExtensionContext) {
     // Create the language client and start the client.
     client = new LanguageClient(
         'stc-lsp',
-        'STC language server',
+        'Stc language server',
         serverOptions,
         clientOptions
     );
