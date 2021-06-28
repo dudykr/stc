@@ -84,6 +84,8 @@ impl Analyzer<'_, '_> {
                             let mut ret_ty = mapped_ty.clone();
                             ret_ty.visit_mut_with(&mut replacer);
 
+                            ret_ty = self.apply_mapped_flags_to_type(span, ret_ty, m.optional, m.readonly)?;
+
                             return Ok(Some(ret_ty));
                         }
                     }
@@ -442,6 +444,25 @@ impl Analyzer<'_, '_> {
             _ => {
                 unimplemented!("get_property_names_for_mapped_type: {:#?}", ty);
             }
+        }
+    }
+
+    pub(crate) fn apply_mapped_flags_to_type(
+        &mut self,
+        span: Span,
+        ty: Type,
+        optional: Option<TruePlusMinus>,
+        readonly: Option<TruePlusMinus>,
+    ) -> ValidationResult<Type> {
+        let type_lit = self.type_to_type_lit(span, &ty)?.map(Cow::into_owned);
+        if let Some(mut type_lit) = type_lit {
+            for m in &mut type_lit.members {
+                self.apply_mapped_flags(m, optional, readonly);
+            }
+
+            Ok(Type::TypeLit(type_lit))
+        } else {
+            Ok(ty)
         }
     }
 
