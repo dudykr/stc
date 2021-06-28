@@ -31,6 +31,8 @@ use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Spanned, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 
+mod interface;
+
 /// We analyze dependencies between type parameters, and fold parameter in
 /// topological order.
 #[validator]
