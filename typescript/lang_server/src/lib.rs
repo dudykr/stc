@@ -1,12 +1,12 @@
 use lspower::{jsonrpc::Result, lsp::*, Client, LanguageServer};
 
 #[derive(Debug)]
-pub struct Backend {
-    client: Client,
+pub struct LspBackend {
+    pub client: Client,
 }
 
 #[lspower::async_trait]
-impl LanguageServer for Backend {
+impl LanguageServer for LspBackend {
     async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
         Ok(InitializeResult::default())
     }

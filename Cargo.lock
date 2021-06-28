@@ -1803,6 +1803,7 @@ name = "stc"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "lspower",
  "slog",
  "stc_ts_builtin_types",
  "stc_ts_file_analyzer",

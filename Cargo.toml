@@ -11,6 +11,7 @@ version = "0.1.0"
 
 [dependencies]
 anyhow = "1"
+lspower = "1.1.0"
 slog = {version = "2", features = []}
 stc_ts_builtin_types = {path = "./typescript/builtin_types"}
 stc_ts_file_analyzer = {path = "typescript/file_analyzer"}
