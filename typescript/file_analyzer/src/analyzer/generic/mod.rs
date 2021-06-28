@@ -1579,7 +1579,8 @@ impl Analyzer<'_, '_> {
 
                             let mut data = InferData::default();
                             self.infer_type(span, &mut data, &param_ty, &arg.elem_type, opts)?;
-                            let mut inferred_ty = data.type_params.remove(&name);
+                            let mut map = self.finalize_inference(data);
+                            let mut inferred_ty = map.remove(&name);
 
                             self.mapped_type_param_name = old;
 
@@ -2045,7 +2046,7 @@ impl Analyzer<'_, '_> {
 
         impl VisitMut<Type> for Renamer<'_> {
             fn visit_mut(&mut self, node: &mut Type) {
-                match node {
+                match node.normalize() {
                     Type::Param(p) if self.fixed.contains_key(&p.name) => {
                         *node = (*self.fixed.get(&p.name).unwrap()).clone();
                     }
@@ -2062,7 +2063,11 @@ impl Analyzer<'_, '_> {
             if arg_type_params.params.iter().all(|v| *param_name != v.name) {
                 return;
             }
-            fixed.insert(param_name.clone(), ty.clone());
+            let ty = match ty.clone() {
+                InferredType::Union(v) => v,
+                InferredType::Other(types) => Type::union(types).cheap(),
+            };
+            fixed.insert(param_name.clone(), ty);
         });
 
         let mut v = Renamer { fixed: &fixed };
@@ -2128,7 +2133,7 @@ impl Analyzer<'_, '_> {
             return Ok(ty
                 .foldable()
                 .fold_with(&mut TypeParamRenamer {
-                    inferred: inferred.map,
+                    inferred: map,
                     declared: Default::default(),
                 })
                 .fixed());
