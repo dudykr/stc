@@ -730,6 +730,19 @@ impl Analyzer<'_, '_> {
                     )
                     .context("tried to assign a type created from a reference")
                     .convert_err(|err| {
+                        match err.actual() {
+                            Error::MissingFields { .. } => return err,
+                            Error::Errors { errors, .. } => {
+                                if errors.iter().all(|v| match v.actual() {
+                                    Error::MissingFields { .. } => true,
+                                    _ => false,
+                                }) {
+                                    return err;
+                                }
+                            }
+                            _ => {}
+                        }
+
                         // Use single error
                         Error::AssignFailed {
                             span,
