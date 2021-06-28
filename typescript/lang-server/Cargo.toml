@@ -17,3 +17,4 @@ stc_ts_ast_rnode = {path = "../ast_rnode"}
 stc_ts_env = {path = "../env"}
 stc_ts_type_checker = {path = "../type_checker"}
 stc_ts_types = {path = "../types"}
+tokio = {version = "1.7.1", features = ["rt", "rt-multi-thread", "macros"]}
