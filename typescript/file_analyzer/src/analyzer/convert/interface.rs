@@ -27,6 +27,7 @@ impl Analyzer<'_, '_> {
                     if let Err(err) = self.assign_with_opts(
                         &mut Default::default(),
                         AssignOpts {
+                            span,
                             allow_unknown_rhs: true,
                             ..Default::default()
                         },
