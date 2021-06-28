@@ -1,4 +1,4 @@
-use self::tsc::TscCommand;
+use crate::{lsp::LspCommand, tsc::TscCommand};
 use anyhow::Error;
 use slog::{Discard, Logger};
 use stc_ts_builtin_types::Lib;
@@ -16,6 +16,7 @@ use swc_common::{
 };
 use swc_ecma_parser::{JscTarget, TsConfig};
 
+mod lsp;
 mod tsc;
 
 #[derive(Debug, StructOpt)]
@@ -28,6 +29,7 @@ mod tsc;
 enum Command {
     /// Compatibillity layer for `tsc` cli.
     Tsc(TscCommand),
+    Lsp(LspCommand),
 }
 
 #[derive(Debug, StructOpt)]
@@ -49,7 +51,8 @@ struct CliOptions {
     inputs: Vec<PathBuf>,
 }
 
-fn main() -> Result<(), Error> {
+#[tokio::main]
+async fn main() -> Result<(), Error> {
     let cm = Arc::new(SourceMap::new(FilePathMapping::empty()));
     let handler = Arc::new(Handler::with_tty_emitter(
         ColorConfig::Auto,
