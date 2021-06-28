@@ -8,5 +8,18 @@
   },
   "keywords": [],
   "author": "",
-  "license": "STC License"
+  "license": "STC License",
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:typescript"
+  ],
+  "engines": {
+    "vscode": "^1.52.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.57.0"
+  }
 }
