@@ -251,6 +251,7 @@ tests/visualize/tuple-1-2.ts
 tests/visualize/tuple-1.ts
 tests/visualize/types/inference/generic/interface/methods-1.ts
 tests/visualize/types/mapped/7-1.ts
+tests/visualize/types/tuple/genericCallWithTupleType/1.ts
 tests/visualize/types/tuple/strictTupleLength/1.ts
 tests/visualize/types/tuple/strictTupleLength/2.ts
 tests/visualize/types/tuple/widening/1.ts
