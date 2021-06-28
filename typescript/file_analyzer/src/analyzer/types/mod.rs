@@ -15,8 +15,8 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ComputedKey, ConstructorSignature, Id, IdCtx, Instance,
-    Intersection, Key, MethodSignature, Operator, PropertySignature, QueryExpr, Tuple, TupleElement, Type, TypeElement,
-    TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    Intersection, Key, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref, Tuple, TupleElement,
+    Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
@@ -726,6 +726,31 @@ impl Analyzer<'_, '_> {
         let ty = ty.normalize();
 
         Ok(Some(match ty {
+            Type::Keyword(ty) => {
+                let name = match ty.kind {
+                    TsKeywordTypeKind::TsNumberKeyword => js_word!("Number"),
+                    TsKeywordTypeKind::TsObjectKeyword => js_word!("Object"),
+                    TsKeywordTypeKind::TsBooleanKeyword => js_word!("Boolean"),
+                    TsKeywordTypeKind::TsBigIntKeyword => js_word!("BigInt"),
+                    TsKeywordTypeKind::TsStringKeyword => js_word!("String"),
+                    TsKeywordTypeKind::TsSymbolKeyword => js_word!("Symbol"),
+                    _ => return Ok(None),
+                };
+
+                return Ok(self
+                    .type_to_type_lit(
+                        span,
+                        &Type::Ref(Ref {
+                            span,
+                            ctxt: ModuleId::builtin(),
+                            type_name: RTsEntityName::Ident(RIdent::new(name, span)),
+                            type_args: None,
+                        }),
+                    )?
+                    .map(Cow::into_owned)
+                    .map(Cow::Owned));
+            }
+
             Type::Ref(..) => {
                 let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
                 return self
