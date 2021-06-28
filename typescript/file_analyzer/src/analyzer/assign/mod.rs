@@ -1333,6 +1333,7 @@ impl Analyzer<'_, '_> {
                 let should_use_single_error = normalized
                     || types.iter().all(|ty| {
                         ty.normalize().is_lit()
+                            || ty.normalize().is_keyword()
                             || ty.normalize().is_enum_variant()
                             || ty.normalize().is_ref_type()
                             || ty.normalize().is_query()
