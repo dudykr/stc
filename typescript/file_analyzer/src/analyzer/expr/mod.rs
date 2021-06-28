@@ -2564,6 +2564,16 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::ReadOnly,
+                ty,
+                ..
+            }) => {
+                if let TypeOfMode::RValue = type_mode {
+                    return self.access_property(span, &ty, prop, type_mode, id_ctx, opts);
+                }
+            }
+
             _ => {}
         }
 
