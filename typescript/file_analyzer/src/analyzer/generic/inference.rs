@@ -3,6 +3,7 @@ use crate::{
         generic::{type_form::OldTypeForm, InferData, InferredType},
         Analyzer, Ctx,
     },
+    util::unwrap_ref_with_single_arg,
     ValidationResult,
 };
 use fxhash::FxHashMap;
@@ -261,21 +262,23 @@ impl Analyzer<'_, '_> {
         let param = param.normalize();
         let arg = arg.normalize();
 
-        match param {
-            Type::Ref(Ref {
-                type_name: RTsEntityName::Ident(type_name),
-                type_args,
-                ..
-            }) if type_name.sym == *"ReadonlyArray" => match type_args {
-                Some(type_args) => match arg {
-                    Type::Array(Array { elem_type, .. }) => {
-                        return self.infer_type(span, inferred, &type_args.params[0], elem_type, opts);
-                    }
-                    _ => {}
+        if let Some(elem_type) = unwrap_ref_with_single_arg(param, "ReadonlyArray") {
+            return self.infer_type(
+                span,
+                inferred,
+                &Type::Array(Array {
+                    span: param.span(),
+                    elem_type: box elem_type.clone(),
+                }),
+                arg,
+                InferTypeOpts {
+                    append_type_as_union: true,
+                    ..opts
                 },
-                None => {}
-            },
+            );
+        }
 
+        match param {
             Type::Array(Array { elem_type, .. }) => match arg {
                 Type::Ref(Ref {
                     type_name: RTsEntityName::Ident(type_name),
@@ -283,7 +286,16 @@ impl Analyzer<'_, '_> {
                     ..
                 }) if type_name.sym == *"ReadonlyArray" => match type_args {
                     Some(type_args) => {
-                        return self.infer_type(span, inferred, &elem_type, &type_args.params[0], opts);
+                        return self.infer_type(
+                            span,
+                            inferred,
+                            &elem_type,
+                            &type_args.params[0],
+                            InferTypeOpts {
+                                append_type_as_union: true,
+                                ..opts
+                            },
+                        );
                     }
                     None => {}
                 },
