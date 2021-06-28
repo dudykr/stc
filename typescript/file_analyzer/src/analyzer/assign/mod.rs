@@ -1669,7 +1669,7 @@ impl Analyzer<'_, '_> {
 
                 // We should check for unknown rhs, while allowing assignment to parent
                 // interfaces.
-                if !opts.allow_unknown_rhs {
+                if !opts.allow_unknown_rhs && !opts.allow_unknown_rhs_if_expanded {
                     let lhs = self.type_to_type_lit(span, to)?;
                     if let Some(lhs) = lhs {
                         self.assign_to_type_elements(data, opts, span, &lhs.members, rhs, Default::default())
