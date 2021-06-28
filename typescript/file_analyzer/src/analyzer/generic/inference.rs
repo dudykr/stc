@@ -25,7 +25,23 @@ use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 ///
 /// All fields default to `false`.
 #[derive(Debug, Clone, Copy, Default)]
-pub(crate) struct InferTypeOpts {}
+pub(crate) struct InferTypeOpts {
+    /// Defaults to false because
+    ///
+    /// ```ts
+    /// function foo<T>(x: T, y: T) {
+    ///     return x;
+    /// }
+    ///
+    /// foo(1, '')
+    /// ```
+    ///
+    /// the code above is error.
+    ///
+    ///
+    /// This is `true` for array
+    pub append_type_as_union: bool,
+}
 
 impl Analyzer<'_, '_> {
     /// Union-union inference is special, because
