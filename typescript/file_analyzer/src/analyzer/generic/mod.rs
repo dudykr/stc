@@ -1722,10 +1722,6 @@ impl Analyzer<'_, '_> {
                                                     self.infer_type(span, inferred, &param_ty, &type_ann, opts)?;
                                                 }
 
-                                                for (id, ty) in &inferred.type_params {
-                                                    print_type(&self.logger, &format!("{}", id), &self.cm, &ty);
-                                                }
-
                                                 for name in &names {
                                                     if *name == type_param.name {
                                                         continue;
@@ -2051,8 +2047,13 @@ impl Analyzer<'_, '_> {
         });
 
         let mut v = Renamer { fixed: &fixed };
-        inferred.type_params.iter_mut().for_each(|(_, ty)| {
-            ty.visit_mut_with(&mut v);
+        inferred.type_params.iter_mut().for_each(|(_, ty)| match ty {
+            InferredType::Union(ty) => {
+                ty.visit_mut_with(&mut v);
+            }
+            InferredType::Other(ty) => {
+                ty.visit_mut_with(&mut v);
+            }
         });
 
         Ok(())

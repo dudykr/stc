@@ -1,6 +1,6 @@
 use crate::{
     analyzer::{
-        generic::{type_form::OldTypeForm, InferData},
+        generic::{type_form::OldTypeForm, InferData, InferredType},
         Analyzer, Ctx,
     },
     ValidationResult,
@@ -163,20 +163,20 @@ impl Analyzer<'_, '_> {
         }
 
         match inferred.type_params.entry(name.clone()) {
-            Entry::Occupied(e) => {
-                if e.get().iter_union().any(|prev| prev.type_eq(&ty)) {
-                    return Ok(());
+            Entry::Occupied(e) => match e.get_mut() {
+                InferredType::Union(e) => {
+                    unreachable!("InferredType::Union should not be stored in hashmap")
                 }
+                InferredType::Other(e) => {
+                    if e.iter().any(|prev| prev.type_eq(&ty)) {
+                        return Ok(());
+                    }
 
-                // Use this for type inference.
-                let (name, param_ty) = e.remove_entry();
-
-                inferred
-                    .type_params
-                    .insert(name, Type::union(vec![param_ty.clone(), ty]));
-            }
+                    e.push(ty);
+                }
+            },
             Entry::Vacant(e) => {
-                e.insert(ty);
+                e.insert(InferredType::Other(vec![ty]));
             }
         }
 
