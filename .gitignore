@@ -42,7 +42,6 @@ package-lock.json
 
 pkg/
 
-yarn.lock
 .idea/
 
 
