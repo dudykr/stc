@@ -598,12 +598,14 @@ impl Analyzer<'_, '_> {
             }
 
             (_, Type::Union(arg)) => {
-                //
-                for a in &arg.types {
-                    self.infer_type(span, inferred, param, a, opts)?;
-                }
+                if opts.append_type_as_union {
+                    //
+                    for a in &arg.types {
+                        self.infer_type(span, inferred, param, a, opts)?;
+                    }
 
-                return Ok(());
+                    return Ok(());
+                }
             }
 
             _ => {}
@@ -799,6 +801,11 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Array(arr @ Array { .. }) => {
+                let opts = InferTypeOpts {
+                    append_type_as_union: true,
+                    ..opts
+                };
+
                 match arr.elem_type.normalize() {
                     Type::Param(TypeParam {
                         constraint: Some(constraint),
