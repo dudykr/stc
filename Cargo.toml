@@ -11,10 +11,10 @@ version = "0.1.0"
 
 [dependencies]
 anyhow = "1"
-languageserver-types = "0.54.0"
 slog = {version = "2", features = []}
 stc_ts_builtin_types = {path = "./typescript/builtin_types"}
 stc_ts_file_analyzer = {path = "typescript/file_analyzer"}
+stc_ts_lang_server = {path = "./typescript/lang-server/"}
 stc_ts_module_loader = {path = "./typescript/module_loader"}
 stc_ts_type_checker = {path = "./typescript/type_checker"}
 stc_utils = {path = "utils"}
