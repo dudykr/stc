@@ -909,6 +909,15 @@ pub struct TypeOrSpread {
 pub trait TypeIterExt {}
 
 impl Type {
+    #[cfg_attr(not(debug_assertions), inline(always))]
+    pub fn assert_clone_cheap(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
+        assert!(self.is_clone_cheap());
+    }
+
     pub fn intersection<I>(span: Span, iter: I) -> Self
     where
         I: IntoIterator<Item = Type>,
