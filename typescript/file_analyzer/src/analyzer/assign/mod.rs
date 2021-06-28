@@ -86,6 +86,43 @@ pub(crate) struct AssignOpts {
     /// }
     /// ```
     pub may_unwrap_promise: bool,
+
+    /// contextualTYpeWithUnionTypeMembers says
+    ///
+    /// > When used as a contextual type, a union type U has those members that
+    /// > are present in any of its constituent types, with types that are
+    /// > unions of the respective members in the constituent types.
+    ///
+    /// And
+    ///
+    /// ```ts
+    /// var i1Ori2: I1<number> | I2<number> = { // Like i1 and i2 both
+    ///     commonPropertyType: "hello",
+    ///     commonMethodType: a=> a,
+    ///     commonMethodWithTypeParameter: a => a,
+    ///     methodOnlyInI1: a => a,
+    ///     propertyOnlyInI1: "Hello",
+    ///     methodOnlyInI2: a => a,
+    ///     propertyOnlyInI2: "Hello",
+    /// };
+    /// ```
+    ///
+    /// is valid but
+    ///
+    ///
+    /// ```ts
+    /// function f13(x: { a: null; b: string } | { a: string, c: number }) {
+    ///     x = { a: null, b: "foo", c: 4};  // Error
+    /// }
+    /// ```
+    ///
+    /// and
+    ///
+    /// ```ts
+    /// var test: { a: null; b: string } | { a: string, c: number } = { a: null, b: "foo", c: 4}
+    /// ```
+    /// are not.
+    pub allow_unknown_rhs_if_expanded: bool,
 }
 
 #[derive(Default)]
@@ -681,7 +718,16 @@ impl Analyzer<'_, '_> {
                 // self.replace(&mut new_lhs, &[(to, &Type::any(span))]);
 
                 return self
-                    .assign_inner(data, &new_lhs, rhs, opts)
+                    .assign_inner(
+                        data,
+                        &new_lhs,
+                        rhs,
+                        AssignOpts {
+                            allow_unknown_rhs: opts.allow_unknown_rhs || opts.allow_unknown_rhs_if_expanded,
+                            allow_unknown_rhs_if_expanded: false,
+                            ..opts
+                        },
+                    )
                     .context("tried to assign a type created from a reference");
             }
 
@@ -1267,7 +1313,7 @@ impl Analyzer<'_, '_> {
                         self.assign_with_opts(
                             data,
                             AssignOpts {
-                                allow_unknown_rhs: true,
+                                allow_unknown_rhs_if_expanded: true,
                                 ..opts
                             },
                             &to,
