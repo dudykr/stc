@@ -4,7 +4,7 @@ use crate::{
 };
 use stc_ts_errors::Error;
 use stc_ts_types::TsExpr;
-use swc_common::Span;
+use swc_common::{Span, TypeEq};
 
 impl Analyzer<'_, '_> {
     pub(crate) fn report_error_for_conflicting_parents(&mut self, span: Span, parent: &[TsExpr]) {
@@ -14,10 +14,15 @@ impl Analyzer<'_, '_> {
 
         for (i, p1) in parent.iter().enumerate() {
             let res: ValidationResult<()> = try {
-                let p1 = self.type_of_ts_entity_name(span, self.ctx.module_id, &p1.expr, p1.type_args.as_deref())?;
+                let p1_type =
+                    self.type_of_ts_entity_name(span, self.ctx.module_id, &p1.expr, p1.type_args.as_deref())?;
 
                 for (j, p2) in parent.iter().enumerate() {
                     if i <= j {
+                        continue;
+                    }
+                    // Declaration merging
+                    if p1.type_eq(p2) {
                         continue;
                     }
 
@@ -28,14 +33,22 @@ impl Analyzer<'_, '_> {
                         &mut Default::default(),
                         AssignOpts {
                             span,
+                            use_missing_fields_for_class: true,
                             allow_unknown_rhs: true,
                             ..Default::default()
                         },
-                        &p1,
+                        &p1_type,
                         &p2,
                     ) {
                         match err.actual() {
                             Error::MissingFields { .. } => {}
+
+                            Error::Errors { errors, .. }
+                                if errors.iter().all(|err| match err.actual() {
+                                    Error::MissingFields { .. } => true,
+                                    _ => false,
+                                }) => {}
+
                             _ => self
                                 .storage
                                 .report(err.convert(|err| Error::InterfaceNotCompatible { span })),
