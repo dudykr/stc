@@ -21,9 +21,7 @@ warning: Type
 16 |     if (v instanceof C) {
    |         ^
    |
-   = note: (Validator & {
-               onChanges?: (changes: Record<string, unknown>) => void;
-           })
+   = note: (Validator & OnChanges)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:16:22
@@ -47,9 +45,7 @@ warning: Type
 17 |         v // Validator & Partial<OnChanges> & C
    |         ^
    |
-   = note: (Validator & {
-               onChanges?: (changes: Record<string, unknown>) => void;
-           })
+   = note: (Validator & OnChanges)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:19:5
@@ -57,9 +53,7 @@ warning: Type
 19 |     v // Validator & Partial<OnChanges> via subtype reduction
    |     ^
    |
-   = note: (Validator & {
-               onChanges?: (changes: Record<string, unknown>) => void;
-           })
+   = note: (Validator & OnChanges)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:20:9
@@ -67,9 +61,7 @@ warning: Type
 20 |     if (v.onChanges) {
    |         ^
    |
-   = note: (Validator & {
-               onChanges?: (changes: Record<string, unknown>) => void;
-           })
+   = note: (Validator & OnChanges)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:20:9
@@ -94,9 +86,7 @@ warning: Type
 21 |         v.onChanges({});
    |         ^
    |
-   = note: (Validator & {
-               onChanges?: (changes: Record<string, unknown>) => void;
-           })
+   = note: (Validator & OnChanges)
 
 warning: Type
   --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:21:9
