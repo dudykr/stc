@@ -3496,10 +3496,11 @@ impl Analyzer<'_, '_> {
         }
 
         // Check for numeric keys like '0', '1', '2'.
-        elems.iter().any(|el| match el {
-            TypeElement::Property(PropertySignature { key: Key::Num(..), .. }) => true,
-            _ => false,
-        })
+        elems.is_empty()
+            || elems.iter().any(|el| match el {
+                TypeElement::Property(PropertySignature { key: Key::Num(..), .. }) => true,
+                _ => false,
+            })
     }
 }
 
