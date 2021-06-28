@@ -2767,6 +2767,7 @@ impl Analyzer<'_, '_> {
                             AssignOpts {
                                 span: arg.span(),
                                 allow_unknown_rhs,
+                                use_missing_fields_for_class: true,
                                 ..Default::default()
                             },
                             &param.ty,
