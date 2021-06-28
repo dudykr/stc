@@ -33,6 +33,7 @@ impl Analyzer<'_, '_> {
                         &mut Default::default(),
                         AssignOpts {
                             span,
+                            // required because interface can extend classes
                             use_missing_fields_for_class: true,
                             allow_unknown_rhs: true,
                             ..Default::default()
