@@ -65,36 +65,6 @@ impl Analyzer<'_, '_> {
                             return Ok(Some(Type::TypeLit(new)));
                         }
                     }
-
-                    if !ty.normalize().is_type_param() {
-                        // Check if type in `keyof T` is only used as `T[K]`.
-                        // If so, we can just use the type.
-                        //
-                        // {
-                        //     [P#5430#0 in keyof number[]]: Box<number[][P]>;
-                        // };
-
-                        let mut finder = IndexedAccessTypeFinder {
-                            obj: ty,
-                            key: &m.type_param.name,
-                            can_replace_indexed_type: false,
-                        };
-
-                        mapped_ty.visit_with(&mut finder);
-                        if finder.can_replace_indexed_type {
-                            let mut replacer = IndexedAccessTypeReplacer {
-                                obj: ty,
-                                key: &m.type_param.name,
-                            };
-
-                            let mut ret_ty = mapped_ty.clone();
-                            ret_ty.visit_mut_with(&mut replacer);
-
-                            ret_ty = self.apply_mapped_flags_to_type(span, ret_ty, m.optional, m.readonly)?;
-
-                            return Ok(Some(ret_ty));
-                        }
-                    }
                 }
 
                 let keys = self.get_property_names_for_mapped_type(span, ty)?;
@@ -163,6 +133,38 @@ impl Analyzer<'_, '_> {
                         members,
                         metadata: Default::default(),
                     })));
+                }
+
+                if let Some(mapped_ty) = m.ty.as_deref().map(Type::normalize) {
+                    if !ty.normalize().is_type_param() {
+                        // Check if type in `keyof T` is only used as `T[K]`.
+                        // If so, we can just use the type.
+                        //
+                        // {
+                        //     [P#5430#0 in keyof number[]]: Box<number[][P]>;
+                        // };
+
+                        let mut finder = IndexedAccessTypeFinder {
+                            obj: ty,
+                            key: &m.type_param.name,
+                            can_replace_indexed_type: false,
+                        };
+
+                        mapped_ty.visit_with(&mut finder);
+                        if finder.can_replace_indexed_type {
+                            let mut replacer = IndexedAccessTypeReplacer {
+                                obj: ty,
+                                key: &m.type_param.name,
+                            };
+
+                            let mut ret_ty = mapped_ty.clone();
+                            ret_ty.visit_mut_with(&mut replacer);
+
+                            ret_ty = self.apply_mapped_flags_to_type(span, ret_ty, m.optional, m.readonly)?;
+
+                            return Ok(Some(ret_ty));
+                        }
+                    }
                 }
             }
             _ => match m.type_param.constraint.as_deref() {
@@ -447,6 +449,8 @@ impl Analyzer<'_, '_> {
 
                 return Ok(Some(result));
             }
+            Type::Tuple(..) | Type::Array(..) => Ok(None),
+
             _ => {
                 unimplemented!("get_property_names_for_mapped_type: {:#?}", ty);
             }
