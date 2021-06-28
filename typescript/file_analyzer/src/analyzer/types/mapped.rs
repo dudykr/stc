@@ -5,6 +5,7 @@ use crate::{
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RTsEnumMemberId, RTsLit, RTsLitType};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_types::{
     Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, Mapped, Operator, PropertySignature, Type,
     TypeElement, TypeLit,
@@ -135,8 +136,13 @@ impl Analyzer<'_, '_> {
                     })));
                 }
 
-                if let Some(mapped_ty) = m.ty.as_deref().map(Type::normalize) {
-                    if !ty.normalize().is_type_param() {
+                if let Some(mapped_ty) = m.ty.as_deref() {
+                    let found_type_param_in_keyof_operand = {
+                        let mut v = TypeParamUsageFinder::default();
+                        ty.visit_with(&mut v);
+                        !v.params.is_empty()
+                    };
+                    if !found_type_param_in_keyof_operand {
                         // Check if type in `keyof T` is only used as `T[K]`.
                         // If so, we can just use the type.
                         //
