@@ -57,6 +57,7 @@ mod call_new;
 mod const_assertion;
 mod constraint_reducer;
 mod function;
+mod jsx;
 mod meta_prop;
 mod object;
 mod optional_chaining;
