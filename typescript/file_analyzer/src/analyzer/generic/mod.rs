@@ -380,6 +380,80 @@ impl Analyzer<'_, '_> {
         Ok(inferred.type_params)
     }
 
+    ///
+    /// ```ts
+    /// function foo<T>(x: { bar: T; baz: T }) {
+    ///     return x;
+    /// }
+    ///
+    /// declare function fn1(): void;
+    /// declare function f2(): string;
+    ///
+    /// declare class C1 {
+    ///     prop: string
+    /// }
+    ///
+    /// declare class C2 {
+    ///     c2prop: number
+    /// }
+    ///
+    /// interface I1 {
+    ///     s: string
+    /// }
+    ///
+    /// declare const usymbol: unique symbol
+    /// declare var i1: I1
+    ///
+    /// declare var c1: C1
+    /// declare var c2: C2
+    ///
+    ///
+    /// declare var n: number
+    ///
+    /// foo({ bar: 1, baz: '' }); // Error on baz (number is selected)
+    /// foo({ bar: '', baz: 1 }); // Error on baz (string is selected)
+    /// foo({ bar: '', baz: n }); // Error on baz (string is selected)
+    /// foo({ bar: Symbol.iterator, baz: 5 }) // Error on baz (symbol is selected)
+    /// foo({ bar: usymbol, baz: 5 }) // Error on baz (unique symbol is selected)
+    ///
+    ///
+    /// foo({ bar: [], baz: '' }); // Error on bar (string is selected)
+    /// foo({ bar: {}, baz: '' }); // Error on bar (string is selected)
+    ///
+    /// declare var u: string | number
+    /// foo({ bar: 1, baz: u }) // Ok
+    /// foo({ bar: {}, baz: u }) // Error on bar (string | number is selected)
+    ///
+    /// foo({ bar: i1, baz: 5 }) // Error on baz (I1 is selected)
+    /// foo({ bar: 5, baz: i1 }) // Error on baz (number is selected)
+    ///
+    ///
+    /// foo({ bar: 5, baz: fn1 }) // Error on baz (number is selected)
+    /// foo({ bar: 5, baz: i1 }) // Error on baz (number is selected)
+    ///
+    /// foo({ bar: 1, baz: c2 }) // Error on baz (number is selected)
+    /// foo({ bar: c1, baz: 1 }) // Error on baz (C1 is selected)
+    /// foo({ bar: c1, baz: c2 }) // Error on baz (C1 is selected)
+    /// foo({ bar: i1, baz: c1 }) // Error on baz (I1 is selected)
+    /// foo({ bar: c1, baz: i1 }) // Error on baz (C1 is selected)
+    ///
+    ///
+    /// function arr<T>(x: T[]) {
+    ///     return x;
+    /// }
+    ///
+    /// arr([1, '']); // Ok
+    /// arr(['', 1]); // Ok
+    /// arr([Symbol.iterator, 5]) // Ok
+    /// arr([usymbol, 5]) // Ok
+    ///
+    ///
+    /// arr([[], '']); // Ok
+    /// arr([{}, '']); // Ok
+    ///
+    /// arr([1, u]) // Ok
+    /// arr([{}, u]) // Ok
+    /// ```
     fn infer_type(
         &mut self,
         span: Span,
