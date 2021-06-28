@@ -734,7 +734,7 @@ impl Analyzer<'_, '_> {
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
                         match e.get_mut() {
-                            InferredType::Union(e) => unreachable!("NOT IMPLEMENTED"),
+                            InferredType::Union(e) => return Ok(()),
                             InferredType::Other(e) => {
                                 // If we inferred T as `number`, we don't need to add `1`.
                                 if e.iter().any(|prev| {
