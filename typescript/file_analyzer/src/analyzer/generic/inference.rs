@@ -202,9 +202,9 @@ impl Analyzer<'_, '_> {
             .infer_type(span, &mut inferred, &param, &arg, opts)
             .context("tried to infer type using two type")?;
 
-        self.finalize_inference(&mut inferred);
+        let map = self.finalize_inference(inferred);
 
-        Ok(inferred.type_params)
+        Ok(map)
     }
 
     /// Handle some special builtin types

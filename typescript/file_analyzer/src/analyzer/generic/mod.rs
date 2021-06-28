@@ -171,7 +171,9 @@ impl Analyzer<'_, '_> {
                     type_param.name,
                     param.clone()
                 );
-                inferred.type_params.insert(type_param.name.clone(), param.clone());
+                inferred
+                    .type_params
+                    .insert(type_param.name.clone(), InferredType::Other(vec![param.clone()]));
             }
         }
 
@@ -345,13 +347,13 @@ impl Analyzer<'_, '_> {
 
         self.prevent_generalization_of_inferred_types(type_params, &mut inferred);
 
-        self.finalize_inference(&mut inferred);
+        let map = self.finalize_inference(inferred);
 
         let end = Instant::now();
 
         slog::warn!(self.logger, "infer_arg_types is finished. (time = {:?})", end - start);
 
-        Ok(inferred.type_params)
+        Ok(map)
     }
 
     /// Handles `infer U`.
