@@ -460,7 +460,16 @@ impl Analyzer<'_, '_> {
                         if p.params.type_eq(&a.params) {
                             if let Some(pt) = &p.type_ann {
                                 if let Some(at) = &a.type_ann {
-                                    self.infer_type(span, inferred, pt, at, opts)?;
+                                    self.infer_type(
+                                        span,
+                                        inferred,
+                                        pt,
+                                        at,
+                                        InferTypeOpts {
+                                            append_type_as_union: true,
+                                            ..opts
+                                        },
+                                    )?;
                                 } else {
                                     dbg!((&p, &a));
                                 }
@@ -477,7 +486,16 @@ impl Analyzer<'_, '_> {
                         if let Ok(()) = self.assign(&mut Default::default(), &p.params[0].ty, &a.key.ty(), span) {
                             if let Some(p_ty) = &p.type_ann {
                                 if let Some(arg_ty) = &a.type_ann {
-                                    self.infer_type(span, inferred, &p_ty, &arg_ty, opts)?;
+                                    self.infer_type(
+                                        span,
+                                        inferred,
+                                        &p_ty,
+                                        &arg_ty,
+                                        InferTypeOpts {
+                                            append_type_as_union: true,
+                                            ..opts
+                                        },
+                                    )?;
                                 }
                             }
                         }
