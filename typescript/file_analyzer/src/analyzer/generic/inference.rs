@@ -14,7 +14,10 @@ use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, Id, Interface, Operator, Ref, Type, TypeElement, TypeLit, TypeParam, Union,
 };
-use std::collections::{hash_map::Entry, HashMap};
+use std::{
+    borrow::Cow,
+    collections::{hash_map::Entry, HashMap},
+};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 
@@ -124,7 +127,12 @@ impl Analyzer<'_, '_> {
     /// let e4 = f({ a: 2 }, data); // Error
     /// let e5 = f(data, data2); // Error
     /// ```
-    pub(super) fn insert_inferred(&mut self, inferred: &mut InferData, name: Id, ty: Type) -> ValidationResult<()> {
+    pub(super) fn insert_inferred(
+        &mut self,
+        inferred: &mut InferData,
+        name: Id,
+        ty: Cow<Type>,
+    ) -> ValidationResult<()> {
         slog::info!(
             self.logger,
             "Inferred {} as {}",
@@ -168,15 +176,15 @@ impl Analyzer<'_, '_> {
                     unreachable!("InferredType::Union should not be stored in hashmap")
                 }
                 InferredType::Other(e) => {
-                    if e.iter().any(|prev| prev.type_eq(&ty)) {
+                    if e.iter().any(|prev| prev.type_eq(&*ty)) {
                         return Ok(());
                     }
 
-                    e.push(ty);
+                    e.push(ty.into_owned());
                 }
             },
             Entry::Vacant(e) => {
-                e.insert(InferredType::Other(vec![ty]));
+                e.insert(InferredType::Other(vec![ty.into_owned()]));
             }
         }
 
