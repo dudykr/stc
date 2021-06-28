@@ -2,9 +2,13 @@ use crate::{
     analyzer::{types::NormalizeTypeOpts, Analyzer},
     ValidationResult,
 };
+use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RTsEnumMemberId, RTsLit, RTsLitType};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
-use stc_ts_types::{FnParam, Id, IndexSignature, Key, Mapped, Operator, PropertySignature, Type, TypeElement, TypeLit};
+use stc_ts_types::{
+    Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, Mapped, Operator, PropertySignature, Type,
+    TypeElement, TypeLit,
+};
 use std::{borrow::Cow, collections::HashMap};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsTypeOperatorOp};
@@ -53,6 +57,34 @@ impl Analyzer<'_, '_> {
                             }
 
                             return Ok(Some(Type::TypeLit(new)));
+                        }
+                    }
+
+                    {
+                        // Check if type in `keyof T` is only used as `T[K]`.
+                        // If so, we can just use the type.
+                        //
+                        // {
+                        //     [P#5430#0 in keyof number[]]: Box<number[][P]>;
+                        // };
+
+                        let mut finder = IndexedAccessTypeFinder {
+                            obj: ty,
+                            key: &m.type_param.name,
+                            can_replace_indexed_type: false,
+                        };
+
+                        mapped_ty.visit_with(&mut finder);
+                        if finder.can_replace_indexed_type {
+                            let mut replacer = IndexedAccessTypeReplacer {
+                                obj: ty,
+                                key: &m.type_param.name,
+                            };
+
+                            let mut ret_ty = mapped_ty.clone();
+                            ret_ty.visit_mut_with(&mut replacer);
+
+                            return Ok(Some(ret_ty));
                         }
                     }
                 }
@@ -499,5 +531,77 @@ pub(crate) enum PropertyName {
 impl From<Key> for PropertyName {
     fn from(key: Key) -> Self {
         Self::Key(key)
+    }
+}
+
+#[derive(Debug)]
+struct IndexedAccessTypeFinder<'a> {
+    obj: &'a Type,
+    key: &'a Id,
+
+    can_replace_indexed_type: bool,
+}
+
+impl Visit<Conditional> for IndexedAccessTypeFinder<'_> {
+    fn visit(&mut self, n: &Conditional) {
+        n.check_type.visit_children_with(self);
+
+        n.extends_type.visit_children_with(self);
+    }
+}
+
+impl Visit<IndexedAccessType> for IndexedAccessTypeFinder<'_> {
+    fn visit(&mut self, n: &IndexedAccessType) {
+        if (&*n.obj_type).type_eq(self.obj)
+            && match n.index_type.normalize() {
+                Type::Param(index) => *self.key == index.name,
+                _ => false,
+            }
+        {
+            self.can_replace_indexed_type = true;
+            return;
+        }
+
+        n.visit_children_with(self);
+    }
+}
+
+#[derive(Debug)]
+struct IndexedAccessTypeReplacer<'a> {
+    obj: &'a Type,
+    key: &'a Id,
+}
+
+impl VisitMut<Type> for IndexedAccessTypeReplacer<'_> {
+    fn visit_mut(&mut self, ty: &mut Type) {
+        {
+            let mut v = IndexedAccessTypeFinder {
+                obj: self.obj,
+                key: self.key,
+                can_replace_indexed_type: false,
+            };
+
+            ty.visit_with(&mut v);
+            if !v.can_replace_indexed_type {
+                return;
+            }
+        }
+
+        ty.normalize_mut();
+
+        match ty {
+            Type::IndexedAccessType(n) => {
+                if (&*n.obj_type).type_eq(self.obj)
+                    && match n.index_type.normalize() {
+                        Type::Param(index) => *self.key == index.name,
+                        _ => false,
+                    }
+                {
+                    *ty = self.obj.clone();
+                    return;
+                }
+            }
+            _ => {}
+        }
     }
 }
