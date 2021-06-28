@@ -2069,7 +2069,16 @@ impl Analyzer<'_, '_> {
         arg: &FnParam,
         opts: InferTypeOpts,
     ) -> ValidationResult<()> {
-        self.infer_type(span, inferred, &param.ty, &arg.ty, opts)
+        self.infer_type(
+            span,
+            inferred,
+            &param.ty,
+            &arg.ty,
+            InferTypeOpts {
+                append_type_as_union: true,
+                ..opts
+            },
+        )
     }
 
     fn infer_type_of_fn_params(
