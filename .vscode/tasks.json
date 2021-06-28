@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "build",
+			"path": "packages/vscode-lsp/",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "npm: build vscode extension",
+			"detail": "tsc"
+		}
+	]
+}
