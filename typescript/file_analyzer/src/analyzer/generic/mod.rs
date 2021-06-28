@@ -635,7 +635,15 @@ impl Analyzer<'_, '_> {
                             skip_identical_while_inferencing: true,
                             ..self.ctx
                         };
-                        self.with_ctx(ctx).infer_type(span, inferred, &prev, arg, opts)?;
+                        match prev {
+                            InferredType::Union(prev) => {
+                                self.with_ctx(ctx).infer_type(span, inferred, &prev, arg, opts)?;
+                            }
+                            InferredType::Other(prev) => {
+                                let prev = Type::union(prev).cheap();
+                                self.with_ctx(ctx).infer_type(span, inferred, &prev, arg, opts)?;
+                            }
+                        }
                     }
                 }
 
