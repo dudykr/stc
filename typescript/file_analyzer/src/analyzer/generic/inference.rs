@@ -172,18 +172,30 @@ impl Analyzer<'_, '_> {
         }
 
         match inferred.type_params.entry(name.clone()) {
-            Entry::Occupied(mut e) => match e.get_mut() {
-                InferredType::Union(e) => {
-                    unreachable!("InferredType::Union should not be stored in hashmap")
+            Entry::Occupied(mut e) => {
+                match e.get() {
+                    InferredType::Union(_) => return Ok(()),
+                    _ => {}
                 }
-                InferredType::Other(e) => {
-                    if e.iter().any(|prev| prev.type_eq(&*ty)) {
-                        return Ok(());
-                    }
 
-                    e.push(ty.into_owned());
+                if ty.normalize().is_union_type() {
+                    *e.get_mut() = InferredType::Union(ty.into_owned().cheap());
+                    return Ok(());
                 }
-            },
+
+                match e.get_mut() {
+                    InferredType::Union(e) => {
+                        unreachable!()
+                    }
+                    InferredType::Other(e) => {
+                        if e.iter().any(|prev| prev.type_eq(&*ty)) {
+                            return Ok(());
+                        }
+
+                        e.push(ty.into_owned());
+                    }
+                }
+            }
             Entry::Vacant(e) => {
                 e.insert(InferredType::Other(vec![ty.into_owned()]));
             }
@@ -552,7 +564,7 @@ impl Analyzer<'_, '_> {
 
         for (k, v) in inferred.type_params {
             let mut ty = match v {
-                InferredType::Union(ty) => unreachable!("NOT IMPLEMENTED"),
+                InferredType::Union(ty) => ty,
                 InferredType::Other(types) => Type::union(types),
             };
 
