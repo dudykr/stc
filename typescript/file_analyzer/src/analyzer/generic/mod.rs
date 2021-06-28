@@ -736,6 +736,10 @@ impl Analyzer<'_, '_> {
                         match e.get_mut() {
                             InferredType::Union(e) => return Ok(()),
                             InferredType::Other(e) => {
+                                if !e.is_empty() && !opts.append_type_as_union {
+                                    return Ok(());
+                                }
+
                                 // If we inferred T as `number`, we don't need to add `1`.
                                 if e.iter().any(|prev| {
                                     self.assign_with_opts(

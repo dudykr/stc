@@ -204,7 +204,7 @@ impl Analyzer<'_, '_> {
                         unreachable!()
                     }
                     InferredType::Other(e) => {
-                        if !e.is_empty() && opts.append_type_as_union {
+                        if !e.is_empty() && !opts.append_type_as_union {
                             return Ok(());
                         }
 
