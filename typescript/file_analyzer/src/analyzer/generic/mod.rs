@@ -1,6 +1,7 @@
 pub(crate) use self::{expander::ExtendsOpts, inference::InferTypeOpts};
 use crate::{
     analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer, Ctx},
+    ty::TypeExt,
     util::{unwrap_ref_with_single_arg, RemoveTypes},
     ValidationResult,
 };
@@ -495,6 +496,8 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        let marks = self.marks();
+
         let _stack = match stack::track(span) {
             Ok(v) => v,
             Err(_) => return Ok(()),
@@ -784,7 +787,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 let param_ty = Type::union(e.clone()).cheap();
-                                e.push(arg.clone());
+                                e.push(arg.clone().generalize_lit(marks));
 
                                 match param_ty.normalize() {
                                     Type::Param(param) => {
@@ -803,7 +806,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     Entry::Vacant(e) => {
-                        let arg = arg.clone();
+                        let arg = arg.clone().generalize_lit(marks);
 
                         e.insert(InferredType::Other(vec![arg]));
                     }

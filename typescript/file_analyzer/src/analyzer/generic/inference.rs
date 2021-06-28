@@ -3,6 +3,7 @@ use crate::{
         generic::{type_form::OldTypeForm, InferData, InferredType},
         Analyzer, Ctx,
     },
+    ty::TypeExt,
     util::unwrap_ref_with_single_arg,
     ValidationResult,
 };
@@ -151,6 +152,8 @@ impl Analyzer<'_, '_> {
         ty: Cow<Type>,
         opts: InferTypeOpts,
     ) -> ValidationResult<()> {
+        let marks = self.marks();
+
         slog::info!(
             self.logger,
             "Inferred {} as {}",
@@ -213,12 +216,12 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
 
-                        e.push(ty.into_owned());
+                        e.push(ty.into_owned().generalize_lit(marks));
                     }
                 }
             }
             Entry::Vacant(e) => {
-                e.insert(InferredType::Other(vec![ty.into_owned()]));
+                e.insert(InferredType::Other(vec![ty.into_owned().generalize_lit(marks)]));
             }
         }
 
