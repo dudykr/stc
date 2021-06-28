@@ -542,12 +542,12 @@ impl Analyzer<'_, '_> {
         let mut map = HashMap::default();
 
         for (k, v) in inferred.type_params {
-            self.replace_null_or_undefined_while_defaulting_to_any(v);
-
             let mut ty = match v {
                 InferredType::Union(ty) => unreachable!("NOT IMPLEMENTED"),
                 InferredType::Other(types) => Type::union(types),
             };
+
+            self.replace_null_or_undefined_while_defaulting_to_any(ty);
 
             ty.make_cheap();
 

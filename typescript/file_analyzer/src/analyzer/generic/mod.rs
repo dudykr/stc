@@ -1726,7 +1726,14 @@ impl Analyzer<'_, '_> {
                                                         continue;
                                                     }
 
-                                                    let ty = inferred.type_params.remove(name).map(Box::new);
+                                                    let ty = inferred
+                                                        .type_params
+                                                        .remove(name)
+                                                        .map(|ty| match ty {
+                                                            InferredType::Union(v) => v,
+                                                            InferredType::Other(v) => Type::union(v).cheap(),
+                                                        })
+                                                        .map(Box::new);
 
                                                     type_elements.entry(name.clone()).or_default().push(
                                                         TypeElement::Property(PropertySignature {
