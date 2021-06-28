@@ -29,10 +29,16 @@ mod expander;
 mod inference;
 mod type_form;
 
+#[derive(Debug)]
+enum InferredType {
+    Union(Type),
+    Other(Vec<Type>),
+}
+
 #[derive(Debug, Default)]
 pub(super) struct InferData {
     /// Inferred type parameters
-    type_params: FxHashMap<Id, Type>,
+    type_params: FxHashMap<Id, InferredType>,
 
     /// For the code below, we can know that `T` defaults to `unknown` while
     /// inferring type of funcation parametrs. We cannot know the type before
