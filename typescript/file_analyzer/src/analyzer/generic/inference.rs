@@ -132,6 +132,7 @@ impl Analyzer<'_, '_> {
         inferred: &mut InferData,
         name: Id,
         ty: Cow<Type>,
+        opts: InferTypeOpts,
     ) -> ValidationResult<()> {
         slog::info!(
             self.logger,

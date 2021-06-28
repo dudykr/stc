@@ -285,6 +285,7 @@ impl Analyzer<'_, '_> {
                             &mut inferred,
                             type_param.name.clone(),
                             Cow::Owned(Type::Param(p.clone())),
+                            opts,
                         )?;
                     }
                     continue;
@@ -297,6 +298,7 @@ impl Analyzer<'_, '_> {
                     &mut inferred,
                     type_param.name.clone(),
                     Cow::Borrowed(&type_param.constraint.as_deref().unwrap()),
+                    opts,
                 )?;
                 continue;
             }
@@ -322,16 +324,16 @@ impl Analyzer<'_, '_> {
                     },
                 )?;
                 if !inferred.type_params.contains_key(&type_param.name) {
-                    self.insert_inferred(&mut inferred, type_param.name.clone(), Cow::Owned(ty))?;
+                    self.insert_inferred(&mut inferred, type_param.name.clone(), Cow::Owned(ty), opts)?;
                 }
                 continue;
             }
             if !inferred.type_params.contains_key(&type_param.name) {
                 if let Some(default_ty) = inferred.defaults.remove(&type_param.name) {
-                    self.insert_inferred(&mut inferred, type_param.name.clone(), Cow::Owned(default_ty))?;
+                    self.insert_inferred(&mut inferred, type_param.name.clone(), Cow::Owned(default_ty), opts)?;
                 } else {
                     if let Some(default) = &type_param.default {
-                        self.insert_inferred(&mut inferred, type_param.name.clone(), Cow::Borrowed(&default))?;
+                        self.insert_inferred(&mut inferred, type_param.name.clone(), Cow::Borrowed(&default), opts)?;
                         continue;
                     }
 
@@ -343,7 +345,7 @@ impl Analyzer<'_, '_> {
                             default_ty
                         );
 
-                        self.insert_inferred(&mut inferred, type_param.name.clone(), Cow::Borrowed(&default_ty))?;
+                        self.insert_inferred(&mut inferred, type_param.name.clone(), Cow::Borrowed(&default_ty), opts)?;
                     }
                 }
             }
@@ -619,7 +621,7 @@ impl Analyzer<'_, '_> {
         match arg {
             Type::Param(arg) => {
                 if !param.normalize().is_type_param() {
-                    self.insert_inferred(inferred, arg.name.clone(), Cow::Borrowed(&param))?;
+                    self.insert_inferred(inferred, arg.name.clone(), Cow::Borrowed(&param), opts)?;
                     return Ok(());
                 }
             }
@@ -755,14 +757,14 @@ impl Analyzer<'_, '_> {
 
                                 match param_ty.normalize() {
                                     Type::Param(param) => {
-                                        self.insert_inferred(inferred, param.name.clone(), Cow::Borrowed(&arg))?;
+                                        self.insert_inferred(inferred, param.name.clone(), Cow::Borrowed(&arg), opts)?;
                                     }
                                     _ => {}
                                 }
 
                                 match arg.normalize() {
                                     Type::Param(param) => {
-                                        self.insert_inferred(inferred, param.name.clone(), Cow::Owned(param_ty))?;
+                                        self.insert_inferred(inferred, param.name.clone(), Cow::Owned(param_ty), opts)?;
                                     }
                                     _ => {}
                                 }
@@ -788,7 +790,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Infer(param) => {
-                self.insert_inferred(inferred, param.type_param.name.clone(), Cow::Borrowed(&arg))?;
+                self.insert_inferred(inferred, param.type_param.name.clone(), Cow::Borrowed(&arg), opts)?;
                 return Ok(());
             }
 
@@ -922,6 +924,7 @@ impl Analyzer<'_, '_> {
                                     inferred,
                                     param_ty.name.clone(),
                                     Cow::Owned(Type::TypeLit(new_lit)),
+                                    opts,
                                 )?;
 
                                 return Ok(());
@@ -1075,7 +1078,7 @@ impl Analyzer<'_, '_> {
                         obj_type: box Type::Param(obj_type),
                         ..
                     } if self.mapped_type_param_name.contains(&obj_type.name) => {
-                        self.insert_inferred(inferred, obj_type.name.clone(), Cow::Borrowed(&arg))?;
+                        self.insert_inferred(inferred, obj_type.name.clone(), Cow::Borrowed(&arg), opts)?;
                         return Ok(());
                     }
 
@@ -1093,7 +1096,7 @@ impl Analyzer<'_, '_> {
                         for ty in types {
                             match ty.normalize() {
                                 Type::Param(obj_type) => {
-                                    self.insert_inferred(inferred, obj_type.name.clone(), Cow::Borrowed(&arg))?;
+                                    self.insert_inferred(inferred, obj_type.name.clone(), Cow::Borrowed(&arg), opts)?;
                                 }
 
                                 _ => {}
@@ -1573,6 +1576,7 @@ impl Analyzer<'_, '_> {
                                 members: new_members,
                                 metadata: arg.metadata,
                             })),
+                            opts,
                         )?;
 
                         let mut keys = Type::Union(Union {
@@ -1581,7 +1585,7 @@ impl Analyzer<'_, '_> {
                         });
                         self.prevent_generalize(&mut keys);
 
-                        self.insert_inferred(inferred, key_name.clone(), Cow::Owned(keys))?;
+                        self.insert_inferred(inferred, key_name.clone(), Cow::Owned(keys), opts)?;
 
                         return Ok(true);
                     }
@@ -1617,6 +1621,7 @@ impl Analyzer<'_, '_> {
                                 span: arg.span,
                                 elem_type: box new_ty.unwrap_or_else(|| Type::any(arg.span)),
                             })),
+                            opts,
                         )?;
 
                         return Ok(true);
@@ -1669,7 +1674,7 @@ impl Analyzer<'_, '_> {
                                 });
                                 let mut key_ty = Type::union(key_ty);
                                 self.prevent_generalize(&mut key_ty);
-                                self.insert_inferred(inferred, type_param.name.clone(), Cow::Owned(key_ty))?;
+                                self.insert_inferred(inferred, type_param.name.clone(), Cow::Owned(key_ty), opts)?;
                             }
                             _ => {}
                         }
@@ -1795,7 +1800,7 @@ impl Analyzer<'_, '_> {
                                             metadata: arg.metadata,
                                         });
 
-                                        self.insert_inferred(inferred, name.clone(), Cow::Owned(list_ty))?;
+                                        self.insert_inferred(inferred, name.clone(), Cow::Owned(list_ty), opts)?;
                                     }
                                 }
 
@@ -1892,7 +1897,12 @@ impl Analyzer<'_, '_> {
                                                     metadata: arg.metadata,
                                                 });
 
-                                                self.insert_inferred(inferred, name.clone(), Cow::Owned(list_ty))?;
+                                                self.insert_inferred(
+                                                    inferred,
+                                                    name.clone(),
+                                                    Cow::Owned(list_ty),
+                                                    opts,
+                                                )?;
                                                 return Ok(true);
                                             }
 
