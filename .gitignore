@@ -12,7 +12,6 @@ target/
 core
 *.log
 
-.vscode/*
 !.vscode/settings.json
 
 /.idea

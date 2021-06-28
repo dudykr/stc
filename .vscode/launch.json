@@ -1,0 +1,16 @@
+{
+    "configurations": [
+        {
+            "args": [
+                "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-lsp"
+            ],
+            "name": "Launch Extension",
+            "outFiles": [
+                "${workspaceFolder}/packages/vscode-lsp/lib/**/*.js"
+            ],
+            "preLaunchTask": "npm",
+            "request": "launch",
+            "type": "pwa-extensionHost"
+        }
+    ]
+},
