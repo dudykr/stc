@@ -895,7 +895,16 @@ impl Analyzer<'_, '_> {
             Type::Function(p) => match arg {
                 Type::Function(a) => {
                     self.infer_type_of_fn_params(span, inferred, &p.params, &a.params, opts)?;
-                    self.infer_type(span, inferred, &p.ret_ty, &a.ret_ty, opts)?;
+                    self.infer_type(
+                        span,
+                        inferred,
+                        &p.ret_ty,
+                        &a.ret_ty,
+                        InferTypeOpts {
+                            append_type_as_union: true,
+                            ..opts
+                        },
+                    )?;
 
                     if let Some(arg_type_params) = &a.type_params {
                         self.rename_inferred(inferred, arg_type_params)?;
