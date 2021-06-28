@@ -58,6 +58,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2320
+    InterfaceNotCompatible {
+        span: Span,
+    },
+
     /// TS2538
     CannotUseTypeAsIndexIndex {
         span: Span,
@@ -1755,6 +1760,8 @@ impl Error {
             Error::OnlyOneEnumCanOmitInit { .. } => 2432,
 
             Error::CannotUseTypeAsIndexIndex { .. } => 2538,
+
+            Error::InterfaceNotCompatible { .. } => 2320,
 
             _ => 0,
         }
