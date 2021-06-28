@@ -180,8 +180,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        inferred.priorities.insert(name, inferred.cur_priority);
-
         Ok(())
     }
 

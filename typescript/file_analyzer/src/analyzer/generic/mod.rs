@@ -29,24 +29,10 @@ mod expander;
 mod inference;
 mod type_form;
 
-/// Lower value means higher priority and it contains lower value if the
-/// type parameter and the type argument are simpler.
-///
-///
-///
-/// e.g.
-/// - `param = TypeParam, arg = Keyword` => 1
-type Priority = u16;
-
 #[derive(Debug, Default)]
 pub(super) struct InferData {
     /// Inferred type parameters
     type_params: FxHashMap<Id, Type>,
-
-    priorities: FxHashMap<Id, Priority>,
-
-    /// It's incremented before calling `infer_type`
-    cur_priority: Priority,
 
     /// For the code below, we can know that `T` defaults to `unknown` while
     /// inferring type of funcation parametrs. We cannot know the type before
