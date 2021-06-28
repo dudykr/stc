@@ -1806,7 +1806,6 @@ dependencies = [
  "slog",
  "stc_ts_builtin_types",
  "stc_ts_file_analyzer",
- "stc_ts_lang_server",
  "stc_ts_module_loader",
  "stc_ts_type_checker",
  "stc_utils",

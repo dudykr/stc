@@ -1,5 +1,5 @@
 [workspace]
-members = ["bindings/node-stc", "devtools"]
+members = ["bindings/node-stc", "devtools", "typescript/lang-server"]
 
 [package]
 authors = ["강동윤 <kdy1997.dev@gmail.com>"]
@@ -14,7 +14,6 @@ anyhow = "1"
 slog = {version = "2", features = []}
 stc_ts_builtin_types = {path = "./typescript/builtin_types"}
 stc_ts_file_analyzer = {path = "typescript/file_analyzer"}
-stc_ts_lang_server = {path = "./typescript/lang-server/"}
 stc_ts_module_loader = {path = "./typescript/module_loader"}
 stc_ts_type_checker = {path = "./typescript/type_checker"}
 stc_utils = {path = "utils"}
