@@ -901,7 +901,7 @@ impl Analyzer<'_, '_> {
                         &p.ret_ty,
                         &a.ret_ty,
                         InferTypeOpts {
-                            append_type_as_union: true,
+                            append_type_as_union: opts.append_type_as_union || opts.for_fn_assignment,
                             ..opts
                         },
                     )?;
@@ -2084,7 +2084,8 @@ impl Analyzer<'_, '_> {
             &param.ty,
             &arg.ty,
             InferTypeOpts {
-                append_type_as_union: true,
+                append_type_as_union: opts.append_type_as_union || opts.for_fn_assignment,
+
                 ..opts
             },
         )

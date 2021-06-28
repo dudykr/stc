@@ -28,6 +28,7 @@ use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 /// All fields default to `false`.
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct InferTypeOpts {
+    pub for_fn_assignment: bool,
     /// Defaults to false because
     ///
     /// ```ts
