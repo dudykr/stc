@@ -1813,6 +1813,7 @@ dependencies = [
  "structopt",
  "swc_common",
  "swc_ecma_parser",
+ "tokio",
 ]
 
 [[package]]

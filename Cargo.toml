@@ -21,6 +21,7 @@ stc_utils = {path = "utils"}
 structopt = "0.3.20"
 swc_common = {version = "0.10.21", features = ["tty-emitter"]}
 swc_ecma_parser = "0.60.0"
+tokio = "1.7.1"
 
 [profile.release]
 codegen-units = 1
