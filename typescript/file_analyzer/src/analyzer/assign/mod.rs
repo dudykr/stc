@@ -728,30 +728,7 @@ impl Analyzer<'_, '_> {
                             ..opts
                         },
                     )
-                    .context("tried to assign a type created from a reference")
-                    .convert_err(|err| {
-                        match err.actual() {
-                            Error::MissingFields { .. } => return err,
-                            Error::Errors { errors, .. } => {
-                                if errors.iter().all(|v| match v.actual() {
-                                    Error::MissingFields { .. } => true,
-                                    _ => false,
-                                }) {
-                                    return err;
-                                }
-                            }
-                            _ => {}
-                        }
-
-                        // Use single error
-                        Error::AssignFailed {
-                            span,
-                            right_ident: None,
-                            left: box to.clone(),
-                            right: box rhs.clone(),
-                            cause: Error::flatten(vec![err]),
-                        }
-                    });
+                    .context("tried to assign a type created from a reference");
             }
 
             _ => {}
@@ -1356,6 +1333,7 @@ impl Analyzer<'_, '_> {
                 let should_use_single_error = normalized
                     || types.iter().all(|ty| {
                         ty.normalize().is_lit()
+                            || ty.normalize().is_type_lit()
                             || ty.normalize().is_keyword()
                             || ty.normalize().is_enum_variant()
                             || ty.normalize().is_ref_type()
