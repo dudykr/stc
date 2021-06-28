@@ -558,6 +558,10 @@ impl Analyzer<'_, '_> {
         };
 
         if cfg!(feature = "fastpath") {
+            let opts = InferTypeOpts {
+                append_type_as_union: true,
+                ..opts
+            };
             if let Some(param_elem) = unwrap_ref_with_single_arg(param, "Array")
                 .or_else(|| unwrap_ref_with_single_arg(&param, "ArrayLike"))
                 .or_else(|| unwrap_ref_with_single_arg(&param, "ReadonlyArray"))
@@ -580,13 +584,32 @@ impl Analyzer<'_, '_> {
 
         match (param, arg) {
             (Type::Union(p), Type::Union(a)) => {
-                self.infer_type_using_union_and_union(span, inferred, p, arg, a, opts)?;
+                self.infer_type_using_union_and_union(
+                    span,
+                    inferred,
+                    p,
+                    arg,
+                    a,
+                    InferTypeOpts {
+                        append_type_as_union: true,
+                        ..opts
+                    },
+                )?;
 
                 return Ok(());
             }
 
             (Type::Union(param), _) => {
-                return self.infer_type_using_union(span, inferred, param, arg, opts);
+                return self.infer_type_using_union(
+                    span,
+                    inferred,
+                    param,
+                    arg,
+                    InferTypeOpts {
+                        append_type_as_union: true,
+                        ..opts
+                    },
+                );
             }
 
             (Type::Intersection(param), _) => {
