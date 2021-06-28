@@ -408,10 +408,11 @@ impl Analyzer<'_, '_> {
                 }
 
                 RPatOrExpr::Pat(box RPat::Expr(ref e)) | RPatOrExpr::Expr(ref e) => {
-                    e.validate_with_args(analyzer, (TypeOfMode::LValue, None, None))
+                    ty_of_left = e
+                        .validate_with_args(analyzer, (TypeOfMode::LValue, None, None))
                         .report(&mut analyzer.storage);
 
-                    (None, type_ann)
+                    (None, ty_of_left.as_ref())
                 }
 
                 _ => {
