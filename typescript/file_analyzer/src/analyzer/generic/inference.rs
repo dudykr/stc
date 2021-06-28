@@ -547,7 +547,7 @@ impl Analyzer<'_, '_> {
                 InferredType::Other(types) => Type::union(types),
             };
 
-            self.replace_null_or_undefined_while_defaulting_to_any(ty);
+            self.replace_null_or_undefined_while_defaulting_to_any(&mut ty);
 
             ty.make_cheap();
 

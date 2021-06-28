@@ -29,7 +29,7 @@ mod expander;
 mod inference;
 mod type_form;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum InferredType {
     Union(Type),
     Other(Vec<Type>),
