@@ -11,23 +11,15 @@ import {
 let client: LanguageClient | undefined;
 
 export function activate(context: ExtensionContext) {
-    const binaryPath = context.asAbsolutePath(path.join('..', '..', 'target', 'debug', 'stc'))
-
     const executable: Executable = {
-        command: binaryPath,
-        args: ['lsp'],
+        command: 'cargo',
+        args: ['run', '--', 'lsp'],
     };
-    const debugOptions: Executable = {
-        command: binaryPath,
-        args: ['lsp'],
-    };
+
 
     // If the extension is launched in debug mode then the debug server options are used
     // Otherwise the run options are used
-    let serverOptions: ServerOptions = {
-        run: executable,
-        debug: debugOptions
-    };
+    let serverOptions: ServerOptions = executable;
 
     // Options to control the language client
     let clientOptions: LanguageClientOptions = {
