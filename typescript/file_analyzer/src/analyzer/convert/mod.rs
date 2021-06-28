@@ -165,27 +165,32 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsInterfaceDecl) -> ValidationResult<Interface> {
-        let ty: Interface = self.with_child(ScopeKind::Flow, Default::default(), |child| -> ValidationResult<_> {
-            match &*d.id.sym {
-                "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
-                    child.storage.report(Error::InvalidInterfaceName { span: d.id.span });
+        let ty: Interface = self.with_child(
+            ScopeKind::Flow,
+            Default::default(),
+            |child: &mut Analyzer| -> ValidationResult<_> {
+                match &*d.id.sym {
+                    "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
+                        child.storage.report(Error::InvalidInterfaceName { span: d.id.span });
+                    }
+                    _ => {}
                 }
-                _ => {}
-            }
 
-            let mut ty = Interface {
-                span: d.span,
-                name: d.id.clone().into(),
-                type_params: try_opt!(d.type_params.validate_with(&mut *child)),
-                extends: d.extends.validate_with(child)?,
-                body: d.body.validate_with(child)?,
-            };
-            child.prevent_expansion(&mut ty.body);
+                let mut ty = Interface {
+                    span: d.span,
+                    name: d.id.clone().into(),
+                    type_params: try_opt!(d.type_params.validate_with(&mut *child)),
+                    extends: d.extends.validate_with(child)?,
+                    body: d.body.validate_with(child)?,
+                };
+                child.prevent_expansion(&mut ty.body);
 
-            child.resolve_parent_interfaces(&d.extends);
+                child.resolve_parent_interfaces(&d.extends);
+                child.report_error_for_conflicting_parents(d.id.span, &ty.extends);
 
-            Ok(ty)
-        })?;
+                Ok(ty)
+            },
+        )?;
 
         // TODO: Recover
         self.register_type(d.id.clone().into(), Type::Interface(ty.clone()).cheap());
