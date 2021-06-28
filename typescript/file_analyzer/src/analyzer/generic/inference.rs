@@ -163,7 +163,7 @@ impl Analyzer<'_, '_> {
         }
 
         match inferred.type_params.entry(name.clone()) {
-            Entry::Occupied(e) => match e.get_mut() {
+            Entry::Occupied(mut e) => match e.get_mut() {
                 InferredType::Union(e) => {
                     unreachable!("InferredType::Union should not be stored in hashmap")
                 }

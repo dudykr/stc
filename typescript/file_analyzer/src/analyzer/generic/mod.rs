@@ -657,7 +657,12 @@ impl Analyzer<'_, '_> {
                         constraint
                     );
                     if let Some(orig) = inferred.type_params.get(&name) {
-                        if !(*orig).eq_ignore_span(&constraint.as_ref().unwrap()) {
+                        let orig = match orig.clone() {
+                            InferredType::Union(ty) => ty,
+                            InferredType::Other(types) => Type::union(types),
+                        };
+
+                        if !orig.eq_ignore_span(&constraint.as_ref().unwrap()) {
                             print_backtrace();
                             panic!(
                                 "Cannot override T in `T extends <literal>`\nOrig: {:?}\nConstraints: {:?}",
@@ -721,7 +726,7 @@ impl Analyzer<'_, '_> {
                 slog::info!(self.logger, "({}): infer: {} = {:?}", self.scope.depth(), name, arg);
 
                 match inferred.type_params.entry(name.clone()) {
-                    Entry::Occupied(e) => {
+                    Entry::Occupied(mut e) => {
                         match e.get_mut() {
                             InferredType::Union(e) => unreachable!("NOT IMPLEMENTED"),
                             InferredType::Other(e) => {
@@ -1514,12 +1519,13 @@ impl Analyzer<'_, '_> {
 
                                         let mut data = InferData::default();
                                         self.infer_type(span, &mut data, &param_ty, &arg_prop_ty, opts)?;
+                                        let mut defaults = take(&mut data.defaults);
                                         let mut map = self.finalize_inference(data);
                                         let inferred_ty = map.remove(&name);
 
                                         self.mapped_type_param_name = old;
 
-                                        inferred_ty.or_else(|| data.defaults.remove(&name))
+                                        inferred_ty.or_else(|| defaults.remove(&name))
                                     } else {
                                         None
                                     };
