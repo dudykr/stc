@@ -2383,6 +2383,7 @@ types/union/contextualTypeWithUnionTypeCallSignatures.ts
 types/union/contextualTypeWithUnionTypeIndexSignatures.ts
 types/union/contextualTypeWithUnionTypeMembers.ts
 types/union/discriminatedUnionTypes1.ts
+types/union/discriminatedUnionTypes2.ts
 types/union/unionTypeCallSignatures2.ts
 types/union/unionTypeCallSignatures3.ts
 types/union/unionTypeFromArrayLiteral.ts
