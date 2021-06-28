@@ -36,7 +36,7 @@ use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, Method, ModuleId, Operator,
-    PropertySignature, QueryExpr, QueryType, StaticThis,
+    OptionalType, PropertySignature, QueryExpr, QueryType, StaticThis,
 };
 use stc_utils::{error::context, stack};
 use std::{
@@ -2572,6 +2572,14 @@ impl Analyzer<'_, '_> {
                 if let TypeOfMode::RValue = type_mode {
                     return self.access_property(span, &ty, prop, type_mode, id_ctx, opts);
                 }
+            }
+
+            Type::Optional(OptionalType { ty, .. }) => {
+                if self.rule().strict_null_checks {
+                    return Err(Error::ObjectIsPossiblyUndefined { span });
+                }
+
+                return self.access_property(span, &ty, prop, type_mode, id_ctx, opts);
             }
 
             _ => {}
