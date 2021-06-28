@@ -363,6 +363,7 @@ es6/Symbols/symbolProperty26.ts
 es6/Symbols/symbolProperty27.ts
 es6/Symbols/symbolProperty28.ts
 es6/Symbols/symbolProperty3.ts
+es6/Symbols/symbolProperty35.ts
 es6/Symbols/symbolProperty37.ts
 es6/Symbols/symbolProperty38.ts
 es6/Symbols/symbolProperty4.ts
@@ -2073,6 +2074,7 @@ types/nonPrimitive/nonPrimitiveRhsSideOfInExpression.ts
 types/nonPrimitive/nonPrimitiveUnionIntersection.ts
 types/objectTypeLiteral/callSignatures/callSignatureWithoutAnnotationsOrBody.ts
 types/objectTypeLiteral/callSignatures/callSignaturesThatDifferOnlyByReturnType.ts
+types/objectTypeLiteral/callSignatures/callSignaturesThatDifferOnlyByReturnType2.ts
 types/objectTypeLiteral/callSignatures/callSignaturesThatDifferOnlyByReturnType3.ts
 types/objectTypeLiteral/callSignatures/callSignaturesWithOptionalParameters.ts
 types/objectTypeLiteral/callSignatures/callSignaturesWithOptionalParameters2.ts
