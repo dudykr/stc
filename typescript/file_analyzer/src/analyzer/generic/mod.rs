@@ -722,47 +722,48 @@ impl Analyzer<'_, '_> {
 
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(e) => {
-                        // If we inferred T as `number`, we don't need to add `1`.
-                        if e.get().iter_union().any(|prev| {
-                            self.assign_with_opts(
-                                &mut Default::default(),
-                                AssignOpts {
-                                    span,
-                                    ..Default::default()
-                                },
-                                prev,
-                                &arg,
-                            )
-                            .is_ok()
-                        }) {
-                            return Ok(());
-                        }
+                        match e.get_mut() {
+                            InferredType::Union(e) => unreachable!("NOT IMPLEMENTED"),
+                            InferredType::Other(e) => {
+                                // If we inferred T as `number`, we don't need to add `1`.
+                                if e.iter().any(|prev| {
+                                    self.assign_with_opts(
+                                        &mut Default::default(),
+                                        AssignOpts {
+                                            span,
+                                            ..Default::default()
+                                        },
+                                        prev,
+                                        &arg,
+                                    )
+                                    .is_ok()
+                                }) {
+                                    return Ok(());
+                                }
 
-                        // Use this for type inference.
-                        let (name, param_ty) = e.remove_entry();
+                                let param_ty = Type::union(e.clone()).cheap();
+                                e.push(arg.clone());
 
-                        inferred
-                            .type_params
-                            .insert(name, Type::union(vec![param_ty.clone(), arg.clone()]));
+                                match param_ty.normalize() {
+                                    Type::Param(param) => {
+                                        self.insert_inferred(inferred, param.name.clone(), arg.clone())?;
+                                    }
+                                    _ => {}
+                                }
 
-                        match param_ty.normalize() {
-                            Type::Param(param) => {
-                                self.insert_inferred(inferred, param.name.clone(), arg.clone())?;
+                                match arg.normalize() {
+                                    Type::Param(param) => {
+                                        self.insert_inferred(inferred, param.name.clone(), param_ty)?;
+                                    }
+                                    _ => {}
+                                }
                             }
-                            _ => {}
-                        }
-
-                        match arg.normalize() {
-                            Type::Param(param) => {
-                                self.insert_inferred(inferred, param.name.clone(), param_ty)?;
-                            }
-                            _ => {}
                         }
                     }
                     Entry::Vacant(e) => {
                         let arg = arg.clone();
 
-                        e.insert(arg);
+                        e.insert(InferredType::Other(vec![arg]));
                     }
                 }
 
@@ -1451,7 +1452,10 @@ impl Analyzer<'_, '_> {
 
                                             let mut data = InferData::default();
                                             self.infer_type(span, &mut data, &param_ty, arg_prop_ty, opts)?;
-                                            let inferred_ty = data.type_params.remove(&name);
+                                            let inferred_ty = data.type_params.remove(&name).map(|ty| match ty {
+                                                InferredType::Union(ty) => ty,
+                                                InferredType::Other(types) => Type::union(types).cheap(),
+                                            });
 
                                             self.mapped_type_param_name = old;
 
