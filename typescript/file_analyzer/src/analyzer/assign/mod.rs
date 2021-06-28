@@ -728,7 +728,17 @@ impl Analyzer<'_, '_> {
                             ..opts
                         },
                     )
-                    .context("tried to assign a type created from a reference");
+                    .context("tried to assign a type created from a reference")
+                    .convert_err(|err| {
+                        // Use single error
+                        Error::AssignFailed {
+                            span,
+                            right_ident: None,
+                            left: box to.clone(),
+                            right: box rhs.clone(),
+                            cause: Error::flatten(vec![err]),
+                        }
+                    });
             }
 
             _ => {}
