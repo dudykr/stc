@@ -918,8 +918,25 @@ impl Analyzer<'_, '_> {
                 // TODO: Report error.
             }
 
-            // TODO: Optimize
-            TypeElement::Call(_) | TypeElement::Constructor(_) | TypeElement::Method(_) | TypeElement::Index(_) => {}
+            TypeElement::Index(li) => {
+                for rhs_member in rhs_members {
+                    match rhs_member {
+                        ClassMember::IndexSignature(ri) => {
+                            if ri.params.type_eq(&li.params) {
+                                if let Some(lt) = &li.type_ann {
+                                    if let Some(rt) = &ri.type_ann {
+                                        return self.assign_with_opts(data, opts, &lt, &rt);
+                                    }
+                                }
+                            }
+                        }
+
+                        _ => continue,
+                    }
+                }
+            }
+
+            TypeElement::Call(_) | TypeElement::Constructor(_) | TypeElement::Method(_) => {}
         }
 
         Ok(())
