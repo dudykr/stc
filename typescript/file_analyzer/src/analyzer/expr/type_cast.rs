@@ -25,6 +25,8 @@ pub(crate) struct CastableOpts {
     pub disallow_different_classes: bool,
 
     pub allow_assignment_to_param_constraint: bool,
+
+    pub disallow_special_assignment_to_empty_class: bool,
 }
 
 #[validator]
@@ -437,6 +439,7 @@ impl Analyzer<'_, '_> {
                 span,
                 disallow_different_classes: opts.disallow_different_classes,
                 allow_assignment_to_param_constraint: opts.allow_assignment_to_param_constraint,
+                disallow_special_assignment_to_empty_class: opts.disallow_special_assignment_to_empty_class,
                 for_castablity: true,
                 ..Default::default()
             },

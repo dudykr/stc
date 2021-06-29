@@ -1044,6 +1044,7 @@ impl Analyzer<'_, '_> {
                         &ty,
                         CastableOpts {
                             disallow_different_classes: true,
+                            disallow_special_assignment_to_empty_class: true,
                             ..Default::default()
                         },
                     )
