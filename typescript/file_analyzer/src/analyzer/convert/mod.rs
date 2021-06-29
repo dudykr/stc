@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     analyzer::{marks::MarkExt, props::ComputedPropMode, scope::VarKind, util::ResultExt, Analyzer, Ctx, ScopeKind},
     util::{contains_infer_type, type_ext::TypeVecExt},
@@ -80,7 +82,22 @@ impl Analyzer<'_, '_> {
                 );
             }
 
-            let params = decl.params.validate_with(self)?;
+            let params: Vec<TypeParam> = decl.params.validate_with(self)?;
+
+            let ctxt = self.ctx.module_id;
+            let mut map = HashMap::default();
+            for param in &params {
+                let ty = self.find_type(ctxt, &param.name).unwrap().unwrap().next().unwrap();
+
+                map.entry(param.name.clone()).or_insert_with(|| ty.into_owned());
+            }
+
+            // Resolve contraints
+            let params = self.expand_type_params(&map, params, Default::default())?;
+
+            for param in &params {
+                self.register_type(param.name.clone(), Type::Param(param.clone()));
+            }
 
             Ok(TypeParamDecl {
                 span: decl.span,
