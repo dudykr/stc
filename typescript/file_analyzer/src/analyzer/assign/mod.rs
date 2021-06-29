@@ -1980,7 +1980,12 @@ impl Analyzer<'_, '_> {
         }
 
         // TODO: Implement full type checker
-        slog::error!(self.logger, "unimplemented: assign: \nLeft: {:?}\nRight: {:?}", to, rhs);
+        slog::error!(
+            self.logger,
+            "unimplemented: assign: \nLeft: {}\nRight: {}",
+            dump_type_as_string(&self.cm, to),
+            dump_type_as_string(&self.cm, rhs)
+        );
         Ok(())
     }
 
