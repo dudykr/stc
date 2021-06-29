@@ -425,7 +425,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if from.is_class() && to.is_interface() {
+        if from.is_class() && (to.is_interface() || to.is_type_lit()) {
             return Ok(false);
         }
 

@@ -300,7 +300,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
             Type::TypeLit(..) => match parent {
-                Type::Class(..) => return Some(false),
+                Type::Class(..) | Type::ClassDef(..) => return Some(false),
                 _ => {}
             },
             Type::ClassDef(child_class) => match parent {
