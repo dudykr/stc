@@ -1984,6 +1984,11 @@ impl Analyzer<'_, '_> {
                 }),
             )
             | (Type::Predicate(..), Type::Predicate(..)) => return Ok(()),
+
+            (Type::Rest(lr), r) => match lr.ty.normalize() {
+                Type::Array(la) => return self.assign_with_opts(data, opts, &la.elem_type, &r),
+                _ => {}
+            },
             _ => {}
         }
 
