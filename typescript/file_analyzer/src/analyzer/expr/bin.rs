@@ -362,7 +362,7 @@ impl Analyzer<'_, '_> {
 
                         if self.ctx.in_cond && !cannot_narrow {
                             let narrowed_ty = self
-                                .narrow_with_instanceof(span, ty.clone(), &orig_ty)
+                                .narrow_with_instanceof(span, Cow::Borrowed(&ty), &orig_ty)
                                 .context("tried to narrow type with instanceof")?
                                 .cheap();
 
@@ -952,7 +952,7 @@ impl Analyzer<'_, '_> {
     /// If we apply `instanceof C` to `v`, `v` becomes `T`.
     /// Note that `C extends D` and `D extends C` are true because both of `C`
     /// and `D` are empty classes.
-    fn narrow_with_instanceof(&mut self, span: Span, ty: Type, orig_ty: &Type) -> ValidationResult {
+    fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> ValidationResult {
         let orig_ty = orig_ty.normalize();
 
         match orig_ty {
@@ -993,10 +993,10 @@ impl Analyzer<'_, '_> {
             Type::ClassDef(ty) => {
                 return self.narrow_with_instanceof(
                     span,
-                    Type::Class(Class {
+                    Cow::Owned(Type::Class(Class {
                         span,
                         def: box ty.clone(),
-                    }),
+                    })),
                     orig_ty,
                 )
             }
@@ -1025,7 +1025,7 @@ impl Analyzer<'_, '_> {
                 return Ok(orig_ty.clone());
             } else {
                 match (orig_ty, ty.normalize()) {
-                    (Type::Interface(..), Type::Interface(..)) => return Ok(ty),
+                    (Type::Interface(..), Type::Interface(..)) => return Ok(ty.into_owned()),
                     _ => {}
                 }
 
@@ -1047,7 +1047,7 @@ impl Analyzer<'_, '_> {
             }
             _ => {}
         }
-        Ok(ty)
+        Ok(ty.into_owned())
     }
 
     #[extra_validator]
