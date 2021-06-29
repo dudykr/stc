@@ -917,7 +917,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.has_overlap(span, &disc_ty, &case_ty, Default::default())
+        self.has_overlap(
+            span,
+            &disc_ty,
+            &case_ty,
+            CastableOpts {
+                allow_assignment_to_param_constraint: true,
+                ..Default::default()
+            },
+        )
     }
 
     /// We have to check for inheritnace.
