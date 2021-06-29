@@ -1969,6 +1969,13 @@ impl Analyzer<'_, '_> {
                     .assign_to_tpl(l, r, opts)
                     .context("tried to assign to a template type")
             }
+            (
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                }),
+                Type::Tpl(..),
+            ) => return Ok(()),
             _ => {}
         }
 
