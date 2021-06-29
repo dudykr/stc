@@ -1975,6 +1975,13 @@ impl Analyzer<'_, '_> {
                     ..
                 }),
                 Type::Tpl(..),
+            )
+            | (
+                Type::Predicate(..),
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                }),
             ) => return Ok(()),
             _ => {}
         }
