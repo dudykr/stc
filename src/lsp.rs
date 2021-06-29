@@ -8,7 +8,7 @@ use tracing::{info, instrument};
 pub struct LspCommand {}
 
 impl LspCommand {
-    #[instrument]
+    #[instrument(skip(self))]
     pub async fn run(self) {
         info!("Starting server");
 
