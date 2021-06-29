@@ -27,8 +27,6 @@ impl Analyzer<'_, '_> {
     ) -> Option<ValidationResult<()>> {
         let r_res = self.flatten_unions_for_assignment(opts.span, Cow::Borrowed(r));
 
-        dbg!(&r_res);
-
         match r_res {
             Ok(r) => {
                 if r.normalize().is_union_type() {
