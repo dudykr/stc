@@ -1051,9 +1051,9 @@ impl Analyzer<'_, '_> {
                 });
             }
 
-            Type::Union(Union { ref types, .. }) => {
+            Type::Union(l) => {
                 if self.should_use_union_assignment(span, rhs)? {
-                    types
+                    l.types
                         .iter()
                         .map(|rhs| {
                             self.assign_with_opts(
@@ -1072,7 +1072,17 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                let errors = types
+                match rhs {
+                    Type::Tuple(r) => {
+                        if let Some(res) = self.assign_tuple_to_union(data, l, r, opts) {
+                            return res;
+                        }
+                    }
+                    _ => {}
+                }
+
+                let errors = l
+                    .types
                     .iter()
                     .filter_map(|rhs| match self.assign_with_opts(data, opts, to, rhs) {
                         Ok(()) => None,
