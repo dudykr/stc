@@ -369,7 +369,7 @@ impl Analyzer<'_, '_> {
             &mut Default::default(),
             AssignOpts {
                 span,
-                for_extends: true,
+                disallow_special_assignment_to_empty_class: true,
                 disallow_different_classes: opts.disallow_different_classes,
                 allow_assignment_to_param_constraint: true,
                 ..Default::default()

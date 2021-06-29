@@ -57,7 +57,7 @@ pub(crate) struct AssignOpts {
 
     pub for_castablity: bool,
 
-    pub for_extends: bool,
+    pub disallow_special_assignment_to_empty_class: bool,
 
     /// If true, assignment of a class to another class without inheritance
     /// relation will fail, even if the class is empty.
