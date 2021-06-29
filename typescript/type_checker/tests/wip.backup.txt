@@ -1,3 +1,14 @@
+controlFlow::controlFlowIIFE.ts
+controlFlow::controlFlowIterationErrors.ts
+es6::Symbols::symbolProperty24.ts
+es6::Symbols::symbolProperty35.ts
+es6::Symbols::symbolProperty36.ts
+es6::Symbols::symbolProperty39.ts
+es6::Symbols::symbolProperty42.ts
+es6::Symbols::symbolProperty44.ts
+es6::Symbols::symbolProperty46.ts
+es6::Symbols::symbolProperty47.ts
+es6::Symbols::symbolProperty53.ts
 controlFlow::controlFlowNullishCoalesce.ts
 controlFlow::controlFlowOptionalChain.ts
 controlFlow::neverReturningFunctions1.ts
