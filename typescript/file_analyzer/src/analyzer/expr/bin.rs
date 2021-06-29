@@ -1,7 +1,7 @@
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        expr::TypeOfMode,
+        expr::{type_cast::CastableOpts, TypeOfMode},
         generic::ExtendsOpts,
         scope::ExpandOpts,
         util::{Comparator, ResultExt},
@@ -917,7 +917,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.has_overlap(span, &disc_ty, &case_ty)
+        self.has_overlap(span, &disc_ty, &case_ty, Default::default())
     }
 
     /// We have to check for inheritnace.
@@ -1030,7 +1030,15 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !self
-                    .has_overlap(span, orig_ty, &ty)
+                    .has_overlap(
+                        span,
+                        orig_ty,
+                        &ty,
+                        CastableOpts {
+                            disallow_different_classes: true,
+                            ..Default::default()
+                        },
+                    )
                     .context("tried to check if overlap exists to calculate the type created by instanceof")?
                 {
                     return Ok(Type::never(span));
@@ -1185,7 +1193,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        self.has_overlap(span, &l, &r)
+        self.has_overlap(span, &l, &r, Default::default())
     }
 
     /// Returns Ok(Some(v)) if this method has a special rule to handle type
