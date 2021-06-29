@@ -365,17 +365,20 @@ impl Analyzer<'_, '_> {
         }
         // dbg!(child, parent);
 
-        match self.assign_with_opts(
+        let res = self.assign_with_opts(
             &mut Default::default(),
             AssignOpts {
                 span,
-                allow_assignment_to_param_constraint: true,
+                for_extends: true,
                 disallow_different_classes: opts.disallow_different_classes,
+                allow_assignment_to_param_constraint: true,
                 ..Default::default()
             },
             parent,
             child,
-        ) {
+        );
+
+        match res {
             Ok(()) => Some(true),
             _ => Some(false),
         }
