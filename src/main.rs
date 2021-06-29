@@ -1,8 +1,6 @@
 use crate::{lsp::LspCommand, tsc::TscCommand};
 use anyhow::Error;
 use structopt::StructOpt;
-use tracing::{info, span, Level};
-use tracing_subscriber::util::SubscriberInitExt;
 
 mod lsp;
 mod tsc;
@@ -22,20 +20,18 @@ enum Command {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    tracing_subscriber::FmtSubscriber::builder()
+    let sub = tracing_subscriber::FmtSubscriber::builder()
         .with_ansi(true)
         .without_time()
-        .set_default();
+        .finish();
+
+    tracing::subscriber::set_global_default(sub).unwrap();
 
     let command = Command::from_args();
 
     match command {
         Command::Tsc(_) => todo!("tsc mode"),
-        Command::Lsp(c) => {
-            let _span = span!(Level::DEBUG, "command", "lsp");
-
-            c.run().await
-        }
+        Command::Lsp(c) => c.run().await,
     }
 
     Ok(())
