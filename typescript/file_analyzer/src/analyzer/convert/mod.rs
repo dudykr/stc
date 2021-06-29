@@ -98,8 +98,12 @@ impl Analyzer<'_, '_> {
             in_actual_type: true,
             ..self.ctx
         };
-        let constraint = try_opt!(p.constraint.validate_with(&mut *self.with_ctx(ctx))).map(Box::new);
-        let default = try_opt!(p.default.validate_with(&mut *self.with_ctx(ctx))).map(Box::new);
+        let constraint = try_opt!(p.constraint.validate_with(&mut *self.with_ctx(ctx)))
+            .map(Type::cheap)
+            .map(Box::new);
+        let default = try_opt!(p.default.validate_with(&mut *self.with_ctx(ctx)))
+            .map(Type::cheap)
+            .map(Box::new);
 
         let param = TypeParam {
             span: p.span,
