@@ -27,6 +27,7 @@ mod function;
 mod query;
 mod tpl;
 mod type_el;
+mod unions;
 
 /// Context used for `=` assignments.
 #[derive(Debug, Clone, Copy, Default)]
