@@ -421,6 +421,7 @@ impl Analyzer<'_, '_> {
             &mut Default::default(),
             AssignOpts {
                 span,
+                disallow_different_classes: true,
                 for_castablity: true,
                 ..Default::default()
             },
