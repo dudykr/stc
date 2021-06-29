@@ -515,6 +515,15 @@ impl Scope<'_> {
                         let prev = e.get_mut();
 
                         if prev.normalize().is_type_param() {
+                            match ty.normalize() {
+                                Type::Param(TypeParam {
+                                    constraint: None,
+                                    default: None,
+                                    ..
+                                }) => return,
+                                _ => {}
+                            }
+
                             *prev = ty;
                             return;
                         } else if prev.normalize().is_intersection_type() {
