@@ -1,1 +1,1 @@
-typeParameterAssignability2.ts
+assignmentCompatWithDiscriminatedUnion.ts
