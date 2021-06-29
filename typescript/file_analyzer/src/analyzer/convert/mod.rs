@@ -5,6 +5,7 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
+use itertools::Itertools;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RAssignPatProp, RBindingIdent, RComputedPropName, RIdent, RObjectPat, RObjectPatProp, RPat,
@@ -105,6 +106,8 @@ impl Analyzer<'_, '_> {
             .map(Type::cheap)
             .map(Box::new);
 
+        let has_constraint = constraint.is_some();
+
         let param = TypeParam {
             span: p.span,
             name: p.name.clone().into(),
@@ -112,6 +115,23 @@ impl Analyzer<'_, '_> {
             default,
         };
         self.register_type(param.name.clone().into(), param.clone().into());
+
+        if cfg!(debug_assertions) && has_constraint {
+            if let Ok(types) = self.find_type(self.ctx.module_id, &p.name.clone().into()) {
+                let types = types.expect("should be stored").collect_vec();
+
+                debug_assert_eq!(types.len(), 1, "Types: {:?}", types);
+
+                match types[0].normalize() {
+                    Type::Param(p) => {
+                        assert!(p.constraint.is_some(), "should store contraint");
+                    }
+                    _ => {
+                        unreachable!()
+                    }
+                }
+            }
+        }
 
         Ok(param)
     }
