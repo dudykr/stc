@@ -57,6 +57,8 @@ pub(crate) struct AssignOpts {
 
     pub for_castablity: bool,
 
+    /// If this is `false`, assignment of literals or some other strange type to
+    /// empty class will success.
     pub disallow_special_assignment_to_empty_class: bool,
 
     /// If true, assignment of a class to another class without inheritance
