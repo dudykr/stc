@@ -1074,7 +1074,7 @@ impl Analyzer<'_, '_> {
 
                 match rhs {
                     Type::Tuple(r) => {
-                        if let Some(res) = self.assign_tuple_to_union(data, l, r, opts) {
+                        if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
                             return res;
                         }
                     }
