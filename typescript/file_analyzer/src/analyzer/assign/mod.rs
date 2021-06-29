@@ -74,7 +74,7 @@ pub(crate) struct AssignOpts {
 
     pub use_missing_fields_for_class: bool,
 
-    pub disallow_assignment_to_param_constraint: bool,
+    pub allow_assignment_to_param_constraint: bool,
 
     /// The code below is valid.
     ///
@@ -1145,7 +1145,7 @@ impl Analyzer<'_, '_> {
                 constraint: Some(ref c),
                 ..
             }) => {
-                if !opts.disallow_assignment_to_param_constraint {
+                if opts.allow_assignment_to_param_constraint {
                     return self.assign_inner(
                         data,
                         c,
