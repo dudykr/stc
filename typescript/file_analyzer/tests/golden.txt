@@ -161,6 +161,7 @@ tests/pass/fn/generator/selfReferential/1.ts
 tests/pass/fn/generator/selfReferential/nested-1.ts
 tests/pass/fn/overloading/union-1.ts
 tests/pass/fn/returnType/inference/1.ts
+tests/pass/fn/typeParam/typeParameterAssignabillity2/1.ts
 tests/pass/types/alias/base-1-2-1.ts
 tests/pass/types/alias/base-1-2-2.ts
 tests/pass/types/alias/base-1-2.ts
