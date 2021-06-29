@@ -487,7 +487,7 @@ impl Analyzer<'_, '_> {
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize to see if it can be undefined")?;
 
-        if ty.is_str() || ty.is_bool() || ty.is_num() {
+        if ty.is_str() || ty.is_bool() || ty.is_num() || ty.is_lit() {
             return Ok(false);
         }
 
@@ -499,7 +499,12 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(match &*ty {
-            Type::Keyword(..) | Type::Lit(..) => false,
+            Type::Class(..)
+            | Type::ClassDef(..)
+            | Type::Enum(..)
+            | Type::EnumVariant(..)
+            | Type::Keyword(..)
+            | Type::Lit(..) => false,
             Type::Union(ty) => {
                 for ty in &ty.types {
                     if self.can_be_undefined(span, ty)? {
