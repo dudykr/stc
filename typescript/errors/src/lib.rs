@@ -1068,10 +1068,6 @@ pub enum Error {
         span: Span,
     },
 
-    TS2532 {
-        span: Span,
-    },
-
     TS2567 {
         span: Span,
     },
@@ -1453,7 +1449,6 @@ impl Error {
             Error::TS2447 { .. } => 2447,
             Error::ClassDoesNotImplementMemeber { .. } => 2515,
             Error::TS2531 { .. } => 2531,
-            Error::TS2532 { .. } => 2532,
             Error::TS2567 { .. } => 2567,
             Error::TS2585 { .. } => 2585,
             Error::TS2704 { .. } => 2704,
