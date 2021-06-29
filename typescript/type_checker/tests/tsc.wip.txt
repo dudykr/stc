@@ -1,5 +1,4 @@
 assignmentCompatWithDiscriminatedUnion.ts
-types::typeRelationships::assignmentCompatibility::assignmentCompatWithCallSignatures.ts
 types::typeRelationships::assignmentCompatibility::assignmentCompatWithCallSignatures3.ts
 types::typeRelationships::assignmentCompatibility::assignmentCompatWithCallSignatures4.ts
 types::typeRelationships::assignmentCompatibility::assignmentCompatWithCallSignatures5.ts
