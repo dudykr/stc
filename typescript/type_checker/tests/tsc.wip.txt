@@ -1,1 +1,7 @@
 assignmentCompatWithDiscriminatedUnion.ts
+types::typeRelationships::assignmentCompatibility::assignmentCompatWithNumericIndexer.ts
+types::typeRelationships::assignmentCompatibility::assignmentCompatWithNumericIndexer2.ts
+types::typeRelationships::assignmentCompatibility::assignmentCompatWithNumericIndexer3.ts
+types::typeRelationships::assignmentCompatibility::assignmentCompatWithStringIndexer.ts
+types::typeRelationships::assignmentCompatibility::assignmentCompatWithStringIndexer2.ts
+types::typeRelationships::assignmentCompatibility::assignmentCompatWithStringIndexer3.ts
