@@ -482,6 +482,39 @@ impl Analyzer<'_, '_> {
         })
     }
 
+    pub(crate) fn should_report_undefined_error(&mut self, span: Span, ty: &Type) -> ValidationResult<bool> {
+        let ty = self
+            .normalize(Some(span), Cow::Borrowed(ty), Default::default())
+            .context("tried to normalize to see if it can be undefined")?;
+
+        if ty.is_str() || ty.is_bool() || ty.is_num() || ty.is_lit() {
+            return Ok(false);
+        }
+
+        if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+            return Ok(true);
+        }
+
+        Ok(match &*ty {
+            Type::Class(..)
+            | Type::ClassDef(..)
+            | Type::Enum(..)
+            | Type::EnumVariant(..)
+            | Type::Keyword(..)
+            | Type::Lit(..) => false,
+            Type::Union(ty) => {
+                for ty in &ty.types {
+                    if self.should_report_undefined_error(span, ty)? {
+                        return Ok(true);
+                    }
+                }
+
+                false
+            }
+            _ => true,
+        })
+    }
+
     pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type) -> ValidationResult<bool> {
         let ty = self
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())

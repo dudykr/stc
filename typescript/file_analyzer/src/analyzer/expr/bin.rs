@@ -547,6 +547,22 @@ impl Analyzer<'_, '_> {
             | op!("**") => {
                 no_unknown!();
 
+                if op == op!("**") {
+                    if self.should_report_undefined_error(lt.span(), &lt)? {
+                        self.storage.report(Error::ObjectIsPossiblyUndefinedWithType {
+                            span: lt.span(),
+                            ty: box lt.clone(),
+                        })
+                    }
+
+                    if self.should_report_undefined_error(rt.span(), &rt)? {
+                        self.storage.report(Error::ObjectIsPossiblyUndefinedWithType {
+                            span: rt.span(),
+                            ty: box rt.clone(),
+                        })
+                    }
+                }
+
                 return Ok(Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     span,
