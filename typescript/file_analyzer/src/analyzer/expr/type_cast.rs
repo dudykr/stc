@@ -23,6 +23,8 @@ use swc_ecma_ast::TsKeywordTypeKind;
 pub(crate) struct CastableOpts {
     /// `true` if we are checking for `A extends B` relation.
     pub disallow_different_classes: bool,
+
+    pub allow_assignment_to_param_constraint: bool,
 }
 
 #[validator]
@@ -434,6 +436,7 @@ impl Analyzer<'_, '_> {
             AssignOpts {
                 span,
                 disallow_different_classes: opts.disallow_different_classes,
+                allow_assignment_to_param_constraint: opts.allow_assignment_to_param_constraint,
                 for_castablity: true,
                 ..Default::default()
             },
