@@ -26,6 +26,8 @@ impl Analyzer<'_, '_> {
     ) -> Option<ValidationResult<()>> {
         let r_res = self.flatten_unions_for_assignment(opts.span, Cow::Borrowed(r));
 
+        dbg!(&r_res);
+
         match r_res {
             Ok(r) => {
                 if r.normalize().is_union_type() {
@@ -63,6 +65,25 @@ impl Analyzer<'_, '_> {
     }
 
     fn append_tuple_element_to_tuple(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> ValidationResult<()> {
+        match el.ty.normalize() {
+            Type::Union(el_ty) => {
+                for el_ty in &el_ty.types {
+                    self.append_tuple_element_to_tuple(
+                        span,
+                        to,
+                        &TupleElement {
+                            span: el.span,
+                            label: el.label.clone(),
+                            ty: box el_ty.clone(),
+                        },
+                    )?;
+                }
+
+                return Ok(());
+            }
+            _ => {}
+        }
+
         match to.normalize_mut() {
             Type::Union(to) => {
                 for to in &mut to.types {

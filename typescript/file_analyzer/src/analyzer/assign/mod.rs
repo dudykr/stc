@@ -12,7 +12,7 @@ use stc_ts_errors::{
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, EnumVariant, FnParam, Interface, Intersection, Key, Mapped, Operator, PropertySignature, Ref, Tuple, Type,
-    TypeElement, TypeLit, TypeParam, Union,
+    TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::stack;
 use std::{borrow::Cow, collections::HashMap, time::Instant};
@@ -1051,9 +1051,9 @@ impl Analyzer<'_, '_> {
                 });
             }
 
-            Type::Union(l) => {
+            Type::Union(r) => {
                 if self.should_use_union_assignment(span, rhs)? {
-                    l.types
+                    r.types
                         .iter()
                         .map(|rhs| {
                             self.assign_with_opts(
@@ -1072,16 +1072,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                match rhs {
-                    Type::Tuple(r) => {
-                        if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
-                            return res;
-                        }
-                    }
-                    _ => {}
-                }
-
-                let errors = l
+                let errors = r
                     .types
                     .iter()
                     .filter_map(|rhs| match self.assign_with_opts(data, opts, to, rhs) {
@@ -1265,16 +1256,16 @@ impl Analyzer<'_, '_> {
             },
 
             // let a: string | number = 'string';
-            Type::Union(Union { ref types, .. }) => {
+            Type::Union(lu) => {
                 // true | false = boolean
                 if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
-                    if types.iter().any(|ty| match ty.normalize() {
+                    if lu.types.iter().any(|ty| match ty.normalize() {
                         Type::Lit(RTsLitType {
                             lit: RTsLit::Bool(RBool { value: true, .. }),
                             ..
                         }) => true,
                         _ => false,
-                    }) && types.iter().any(|ty| match ty.normalize() {
+                    }) && lu.types.iter().any(|ty| match ty.normalize() {
                         Type::Lit(RTsLitType {
                             lit: RTsLit::Bool(RBool { value: false, .. }),
                             ..
@@ -1285,6 +1276,15 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                match rhs {
+                    Type::Tuple(rt) => {
+                        if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
+                            return res;
+                        }
+                    }
+                    _ => {}
+                }
+
                 // Same operation as above, but for enums.
                 match rhs {
                     Type::EnumVariant(EnumVariant {
@@ -1292,7 +1292,8 @@ impl Analyzer<'_, '_> {
                     }) => {
                         // If `types` contains all variant of the enum, the
                         // assignment is valid.
-                        let patched_types = types
+                        let patched_types = lu
+                            .types
                             .iter()
                             .map(|ty| {
                                 self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
@@ -1308,7 +1309,7 @@ impl Analyzer<'_, '_> {
                                 for ty in lhs {
                                     match ty.normalize() {
                                         Type::Enum(e) => {
-                                            if e.members.len() == types.len() {
+                                            if e.members.len() == lu.types.len() {
                                                 return Ok(());
                                             }
                                         }
@@ -1322,7 +1323,8 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let results = types
+                let results = lu
+                    .types
                     .iter()
                     .map(|to| {
                         self.assign_with_opts(
@@ -1340,13 +1342,13 @@ impl Analyzer<'_, '_> {
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
-                let normalized = types.iter().map(|ty| ty.normalize()).any(|ty| match ty {
+                let normalized = lu.types.iter().map(|ty| ty.normalize()).any(|ty| match ty {
                     Type::TypeLit(ty) => ty.metadata.normalized,
                     _ => false,
                 });
                 let errors = results.into_iter().map(Result::unwrap_err).collect();
                 let should_use_single_error = normalized
-                    || types.iter().all(|ty| {
+                    || lu.types.iter().all(|ty| {
                         ty.normalize().is_lit()
                             || ty.normalize().is_type_lit()
                             || ty.normalize().is_keyword()
