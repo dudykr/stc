@@ -872,6 +872,10 @@ impl Analyzer<'_, '_> {
                             }
                             TypeElement::Index(ri) => {
                                 if li.params.type_eq(&ri.params) {
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == ri.span()) {
+                                        unhandled_rhs.remove(pos);
+                                    }
+
                                     if let Some(lt) = &li.type_ann {
                                         if let Some(rt) = &ri.type_ann {
                                             return self.assign_with_opts(data, opts, &lt, &rt);
