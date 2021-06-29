@@ -1982,7 +1982,8 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
                 }),
-            ) => return Ok(()),
+            )
+            | (Type::Predicate(..), Type::Predicate(..)) => return Ok(()),
             _ => {}
         }
 
