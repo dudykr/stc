@@ -827,15 +827,15 @@ impl Analyzer<'_, '_> {
         } else {
             match lm {
                 // TODO: Check type of the index.
-                TypeElement::Index(l_index) => {
+                TypeElement::Index(li) => {
                     // TODO: Verify
                     for rm in rhs_members {
                         match rm {
                             TypeElement::Call(_) | TypeElement::Constructor(_) => continue,
 
                             TypeElement::Property(r_prop) => {
-                                if let Ok(()) = self.assign(data, &l_index.params[0].ty, &r_prop.key.ty(), span) {
-                                    if let Some(l_index_ret_ty) = &l_index.type_ann {
+                                if let Ok(()) = self.assign(data, &li.params[0].ty, &r_prop.key.ty(), span) {
+                                    if let Some(l_index_ret_ty) = &li.type_ann {
                                         if let Some(r_prop_ty) = &r_prop.type_ann {
                                             self.assign_with_opts(data, opts, &l_index_ret_ty, &&r_prop_ty)
                                                 .context(
@@ -850,8 +850,16 @@ impl Analyzer<'_, '_> {
                             TypeElement::Method(_) => {
                                 slog::error!(self.logger, "unimplemented: Index = Method");
                             }
-                            TypeElement::Index(_) => {
-                                slog::error!(self.logger, "unimplemented: Index = Index");
+                            TypeElement::Index(ri) => {
+                                if li.params.type_eq(&ri.params) {
+                                    if let Some(lt) = &li.type_ann {
+                                        if let Some(rt) = &ri.type_ann {
+                                            return self.assign_with_opts(data, opts, &lt, &rt);
+                                        }
+                                    }
+                                }
+
+                                slog::error!(self.logger, "unimplemented: error reporting for Index = Index");
                             }
                         }
                     }
