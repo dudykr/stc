@@ -5,8 +5,9 @@ use crate::{
     },
     ValidationResult,
 };
+use itertools::Itertools;
 use stc_ts_errors::{DebugExt, Error};
-use stc_ts_types::{Tuple, TupleElement, Type};
+use stc_ts_types::{Tuple, TupleElement, Type, Union};
 use std::borrow::Cow;
 use swc_common::Span;
 
@@ -64,13 +65,16 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    /// TODO: Use Cow<TupleElement>
     fn append_tuple_element_to_tuple(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> ValidationResult<()> {
         match el.ty.normalize() {
             Type::Union(el_ty) => {
-                for el_ty in &el_ty.types {
+                let mut to_types = (0..el_ty.types.len()).map(|_| to.clone()).collect_vec();
+
+                for (idx, el_ty) in el_ty.types.iter().enumerate() {
                     self.append_tuple_element_to_tuple(
                         span,
-                        to,
+                        &mut to_types[idx],
                         &TupleElement {
                             span: el.span,
                             label: el.label.clone(),
@@ -78,6 +82,11 @@ impl Analyzer<'_, '_> {
                         },
                     )?;
                 }
+
+                *to = Type::Union(Union {
+                    span: el_ty.span,
+                    types: to_types,
+                });
 
                 return Ok(());
             }
