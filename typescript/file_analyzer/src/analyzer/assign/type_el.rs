@@ -670,6 +670,23 @@ impl Analyzer<'_, '_> {
     /// t = { f: <T>(x:T) => 1 };
     /// ```
     /// This is valid.
+    ///
+    ///
+    /// ## Call signatures
+    ///
+    /// ```ts
+    // declare var a: {
+    ///     (s: string): void
+    ///     (s: number): void
+    /// }
+    /// declare var b: {
+    ///     (s: string): void
+    /// }
+    ///
+    ///
+    /// a = b // error
+    /// b = a // ok
+    /// ```
     fn assign_type_elements_to_type_element(
         &mut self,
         data: &mut AssignData,
@@ -864,20 +881,47 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-                TypeElement::Call(..) => {
+                TypeElement::Call(lc) => {
+                    let mut errors = vec![];
+                    let mut done = false;
                     //
                     for rm in rhs_members {
                         match rm {
                             // TODO: Check type of parameters
                             // TODO: Check return type
-                            TypeElement::Call(..) => {
+                            TypeElement::Call(rc) => {
                                 if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                     unhandled_rhs.remove(pos);
                                 }
+                                done = true;
 
-                                return Ok(());
+                                let res = self.assign_to_fn_like(
+                                    data,
+                                    opts,
+                                    lc.type_params.as_ref(),
+                                    &lc.params,
+                                    lc.ret_ty.as_deref(),
+                                    rc.type_params.as_ref(),
+                                    &rc.params,
+                                    rc.ret_ty.as_deref(),
+                                );
+
+                                match res {
+                                    Ok(()) => return Ok(()),
+                                    Err(err) => {
+                                        errors.push(err);
+                                    }
+                                }
                             }
                             _ => {}
+                        }
+                    }
+
+                    if done {
+                        if errors.is_empty() {
+                            return Ok(());
+                        } else {
+                            return Err(Error::ObjectAssignFailed { span, errors });
                         }
                     }
 
