@@ -699,6 +699,9 @@ impl Analyzer<'_, '_> {
         let span = opts.span;
         // We need this to show error if not all of rhs_member is matched
 
+        let mut errors = vec![];
+        let mut done = false;
+
         if let Some(l_key) = lm.key() {
             for rm in rhs_members {
                 if let Some(r_key) = rm.key() {
@@ -882,8 +885,6 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 TypeElement::Call(lc) => {
-                    let mut errors = vec![];
-                    let mut done = false;
                     //
                     for rm in rhs_members {
                         match rm {
@@ -912,22 +913,24 @@ impl Analyzer<'_, '_> {
                                         errors.push(err);
                                     }
                                 }
+
+                                continue;
                             }
                             _ => {}
-                        }
-                    }
-
-                    if done {
-                        if errors.is_empty() {
-                            return Ok(());
-                        } else {
-                            return Err(Error::ObjectAssignFailed { span, errors });
                         }
                     }
 
                     missing_fields.push(lm.clone());
                 }
                 _ => {}
+            }
+        }
+
+        if done {
+            if errors.is_empty() {
+                return Ok(());
+            } else {
+                return Err(Error::ObjectAssignFailed { span, errors });
             }
         }
 
