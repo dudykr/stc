@@ -671,7 +671,7 @@ impl Analyzer<'_, '_> {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None));
                     let lhs_ty = match lhs_ty {
                         Ok(v) => v,
-                        _ => return,
+                        _ => Type::any(lhs.span()),
                     };
 
                     if op == op!("=") {
