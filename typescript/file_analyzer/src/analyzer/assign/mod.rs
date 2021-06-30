@@ -790,15 +790,34 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match rhs {
-            Type::Conditional(rhs) => {
-                self.assign_with_opts(data, opts, to, &rhs.true_type)
+        match (to, rhs) {
+            (Type::Conditional(lc), Type::Conditional(rc)) => {
+                if lc.extends_type.type_eq(&rc.extends_type) {
+                    //
+                }
+            }
+            _ => {}
+        }
+
+        match (to, rhs) {
+            (_, Type::Conditional(rc)) => {
+                self.assign_with_opts(data, opts, to, &rc.true_type)
                     .context("tried to assign the true type of a conditional type to lhs")?;
-                self.assign_with_opts(data, opts, to, &rhs.false_type)
+                self.assign_with_opts(data, opts, to, &rc.false_type)
                     .context("tried to assign the false type of a conditional type to lhs")?;
 
                 return Ok(());
             }
+
+            (Type::Conditional(lc), _) => {
+                self.assign_with_opts(data, opts, &lc.true_type, &rhs)
+                    .context("tried to assign to the true type")?;
+                self.assign_with_opts(data, opts, &lc.false_type, &rhs)
+                    .context("tried to assign to the false type")?;
+
+                return Ok(());
+            }
+
             _ => {}
         }
 
