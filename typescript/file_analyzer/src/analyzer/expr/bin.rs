@@ -560,6 +560,7 @@ impl Analyzer<'_, '_> {
                         || lt.is_type_lit()
                         || lt.is_type_param()
                         || lt.is_interface()
+                        || lt.is_tpl()
                     {
                         self.storage.report(Error::WrongTypeForLhsOfNumericOperation { span });
                     }
@@ -573,6 +574,7 @@ impl Analyzer<'_, '_> {
                         || rt.is_type_lit()
                         || rt.is_type_param()
                         || rt.is_interface()
+                        || rt.is_tpl()
                     {
                         self.storage.report(Error::WrongTypeForRhsOfNumericOperation { span });
                     }
