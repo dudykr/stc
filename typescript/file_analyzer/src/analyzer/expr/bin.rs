@@ -555,7 +555,7 @@ impl Analyzer<'_, '_> {
                         .report(&mut self.storage);
 
                     if rt.is_kwd(TsKeywordTypeKind::TsVoidKeyword) || rt.is_str() || rt.is_type_lit() {
-                        return Err(Error::WrongTypeForRhsOfNumericOperation { span });
+                        self.storage.report(Error::WrongTypeForRhsOfNumericOperation { span });
                     }
                 }
 
