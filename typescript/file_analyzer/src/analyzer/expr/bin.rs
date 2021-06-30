@@ -551,10 +551,24 @@ impl Analyzer<'_, '_> {
                     self.report_possibly_null_or_undefined(lt.span(), &lt)
                         .report(&mut self.storage);
 
+                    if lt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+                        || lt.is_str()
+                        || lt.is_bool()
+                        || lt.is_type_lit()
+                        || lt.is_interface()
+                    {
+                        self.storage.report(Error::WrongTypeForLhsOfNumericOperation { span });
+                    }
+
                     self.report_possibly_null_or_undefined(rt.span(), &rt)
                         .report(&mut self.storage);
 
-                    if rt.is_kwd(TsKeywordTypeKind::TsVoidKeyword) || rt.is_str() || rt.is_type_lit() {
+                    if rt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+                        || rt.is_str()
+                        || rt.is_bool()
+                        || rt.is_type_lit()
+                        || rt.is_interface()
+                    {
                         self.storage.report(Error::WrongTypeForRhsOfNumericOperation { span });
                     }
                 }
