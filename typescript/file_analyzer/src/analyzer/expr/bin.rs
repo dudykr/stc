@@ -548,19 +548,11 @@ impl Analyzer<'_, '_> {
                 no_unknown!();
 
                 if op == op!("**") {
-                    if self.should_report_undefined_error(lt.span(), &lt)? {
-                        self.storage.report(Error::ObjectIsPossiblyUndefinedWithType {
-                            span: lt.span(),
-                            ty: box lt.clone(),
-                        })
-                    }
+                    self.report_possibly_null_or_undefined(lt.span(), &lt)
+                        .report(&mut self.storage);
 
-                    if self.should_report_undefined_error(rt.span(), &rt)? {
-                        self.storage.report(Error::ObjectIsPossiblyUndefinedWithType {
-                            span: rt.span(),
-                            ty: box rt.clone(),
-                        })
-                    }
+                    self.report_possibly_null_or_undefined(rt.span(), &rt)
+                        .report(&mut self.storage);
                 }
 
                 return Ok(Type::Keyword(RTsKeywordType {

@@ -482,37 +482,41 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    pub(crate) fn should_report_undefined_error(&mut self, span: Span, ty: &Type) -> ValidationResult<bool> {
+    pub(crate) fn report_possibly_null_or_undefined(&mut self, span: Span, ty: &Type) -> ValidationResult<()> {
         let ty = self
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize to see if it can be undefined")?;
 
         if ty.is_str() || ty.is_bool() || ty.is_num() || ty.is_lit() {
-            return Ok(false);
+            return Ok(());
         }
 
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
-            return Ok(true);
+            return Err(Error::ObjectIsPossiblyUndefined { span });
+        }
+        if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
+            return Err(Error::ObjectIsPossiblyNull { span });
         }
 
-        Ok(match &*ty {
+        match &*ty {
             Type::Class(..)
             | Type::ClassDef(..)
             | Type::Enum(..)
             | Type::EnumVariant(..)
             | Type::Keyword(..)
-            | Type::Lit(..) => false,
+            | Type::Lit(..) => Ok(()),
             Type::Union(ty) => {
                 for ty in &ty.types {
-                    if self.should_report_undefined_error(span, ty)? {
-                        return Ok(true);
-                    }
+                    self.report_possibly_null_or_undefined(span, ty)?
                 }
 
-                false
+                Ok(())
             }
-            _ => true,
-        })
+            _ => Err(Error::ObjectIsPossiblyUndefinedWithType {
+                span,
+                ty: box ty.into_owned(),
+            }),
+        }
     }
 
     pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type) -> ValidationResult<bool> {
