@@ -553,6 +553,10 @@ impl Analyzer<'_, '_> {
 
                     self.report_possibly_null_or_undefined(rt.span(), &rt)
                         .report(&mut self.storage);
+
+                    if rt.is_kwd(TsKeywordTypeKind::TsVoidKeyword) || rt.is_str() || rt.is_type_lit() {
+                        return Err(Error::WrongTypeForRhsOfNumericOperation { span });
+                    }
                 }
 
                 return Ok(Type::Keyword(RTsKeywordType {
