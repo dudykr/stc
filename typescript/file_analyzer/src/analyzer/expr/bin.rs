@@ -548,6 +548,9 @@ impl Analyzer<'_, '_> {
                 no_unknown!();
 
                 if op == op!("**") {
+                    let lt = lt.normalize();
+                    let rt = rt.normalize();
+
                     self.report_possibly_null_or_undefined(lt.span(), &lt)
                         .report(&mut self.storage);
 
@@ -555,6 +558,7 @@ impl Analyzer<'_, '_> {
                         || lt.is_str()
                         || lt.is_bool()
                         || lt.is_type_lit()
+                        || lt.is_type_param()
                         || lt.is_interface()
                     {
                         self.storage.report(Error::WrongTypeForLhsOfNumericOperation { span });
@@ -567,6 +571,7 @@ impl Analyzer<'_, '_> {
                         || rt.is_str()
                         || rt.is_bool()
                         || rt.is_type_lit()
+                        || lt.is_type_param()
                         || rt.is_interface()
                     {
                         self.storage.report(Error::WrongTypeForRhsOfNumericOperation { span });
