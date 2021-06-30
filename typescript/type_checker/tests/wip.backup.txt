@@ -361,13 +361,6 @@ statements::forStatements::forStatementsMultipleInvalidDecl.ts
 statements::forStatements::forStatementsMultipleValidDecl.ts
 statements::returnStatements::invalidReturnStatements.ts
 statements::switchStatements::switchStatements.ts
-types::any::assignAnyToEveryType.ts
-types::any::narrowExceptionVariableInCatchClause.ts
-types::any::narrowFromAnyWithInstanceof.ts
-types::any::narrowFromAnyWithTypePredicate.ts
-types::conditional::conditionalTypes1.ts
-types::conditional::conditionalTypes2.ts
-types::conditional::conditionalTypesExcessProperties.ts
 types::contextualTypes::jsxAttributes::contextuallyTypedStringLiteralsInJsxAttributes01.tsx
 types::contextualTypes::methodDeclarations::contextuallyTypedBindingInitializerNegative.ts
 types::contextualTypes::methodDeclarations::contextuallyTypedClassExpressionMethodDeclaration01.ts
