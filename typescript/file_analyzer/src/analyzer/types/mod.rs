@@ -506,8 +506,22 @@ impl Analyzer<'_, '_> {
             | Type::Keyword(..)
             | Type::Lit(..) => Ok(()),
             Type::Union(ty) => {
-                for ty in &ty.types {
-                    self.report_possibly_null_or_undefined(span, ty)?
+                let has_null = ty.types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsNullKeyword));
+                let has_undefined = ty.types.iter().any(|ty| {
+                    ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+                });
+
+                // tsc is crazy. It uses different error code for these errors.
+                if has_null && has_undefined {
+                    return Err(Error::ObjectIsPossiblyNullOrUndefined { span });
+                }
+
+                if has_null {
+                    return Err(Error::ObjectIsPossiblyNull { span });
+                }
+
+                if has_undefined {
+                    return Err(Error::ObjectIsPossiblyUndefined { span });
                 }
 
                 Ok(())
