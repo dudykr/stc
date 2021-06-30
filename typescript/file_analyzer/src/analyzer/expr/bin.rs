@@ -571,7 +571,7 @@ impl Analyzer<'_, '_> {
                         || rt.is_str()
                         || rt.is_bool()
                         || rt.is_type_lit()
-                        || lt.is_type_param()
+                        || rt.is_type_param()
                         || rt.is_interface()
                     {
                         self.storage.report(Error::WrongTypeForRhsOfNumericOperation { span });
