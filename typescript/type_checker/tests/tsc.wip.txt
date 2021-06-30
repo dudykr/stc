@@ -1,7 +1,5 @@
-types::any::assignAnyToEveryType.ts
-types::any::narrowExceptionVariableInCatchClause.ts
-types::any::narrowFromAnyWithInstanceof.ts
-types::any::narrowFromAnyWithTypePredicate.ts
+expressions::unaryOperators::decrementOperator::decrementOperatorWithEnumType.ts
+expressions::unaryOperators::decrementOperator::decrementOperatorWithEnumTypeInvalidOperations.ts
 types::conditional::conditionalTypes1.ts
 types::conditional::conditionalTypes2.ts
 types::conditional::conditionalTypesExcessProperties.ts
