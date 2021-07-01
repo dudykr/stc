@@ -1,5 +1,5 @@
 use crate::{
-    analyzer::{expr::TypeOfMode, marks::MarkExt, Analyzer, Ctx},
+    analyzer::{expr::TypeOfMode, generic::ExtendsOpts, marks::MarkExt, Analyzer, Ctx},
     type_facts::TypeFacts,
     util::{type_ext::TypeVecExt, unwrap_ref_with_single_arg},
     Marks, ValidationResult,
@@ -14,9 +14,9 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    name::Name, Accessor, Array, Class, ClassDef, ClassMember, ComputedKey, ConstructorSignature, Id, IdCtx, Instance,
-    Intersection, Key, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref, Tuple, TupleElement,
-    Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    name::Name, Accessor, Array, Class, ClassDef, ClassMember, ComputedKey, Conditional, ConstructorSignature, Id,
+    IdCtx, Instance, Intersection, Key, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref, Tuple,
+    TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
@@ -203,6 +203,30 @@ impl Analyzer<'_, '_> {
                         }
 
                         match check_type.normalize() {
+                            Type::Param(TypeParam {
+                                name,
+                                constraint: Some(check_type_constraint),
+                                ..
+                            }) => {
+                                let new_type = self
+                                    .reduce_conditional_type(
+                                        c.span,
+                                        &check_type,
+                                        &check_type_constraint,
+                                        &extends_type,
+                                        &c.true_type,
+                                        &c.false_type,
+                                    )
+                                    .context("tried to reduce conditional type")?;
+
+                                if let Some(new_type) = new_type {
+                                    return self.normalize(span, Cow::Owned(new_type), opts);
+                                }
+                            }
+                            _ => {}
+                        }
+
+                        match check_type.normalize() {
                             Type::Union(check_type_union) => {
                                 let mut all = true;
                                 let mut types = vec![];
@@ -244,7 +268,7 @@ impl Analyzer<'_, '_> {
                         match check_type.normalize_mut() {
                             Type::Param(TypeParam {
                                 name,
-                                constraint: Some(check_type_contraint),
+                                constraint: Some(check_type_constraint),
                                 ..
                             }) => {
                                 // We removes unmatchable constraints.
@@ -255,7 +279,7 @@ impl Analyzer<'_, '_> {
                                 //
                                 // We removes `undefined` from parents of T.
 
-                                match check_type_contraint.normalize() {
+                                match check_type_constraint.normalize() {
                                     Type::Union(check_type_union) => {
                                         let mut all = true;
                                         let mut types = vec![];
@@ -285,7 +309,7 @@ impl Analyzer<'_, '_> {
                                                 types,
                                             });
 
-                                            *check_type_contraint = box new;
+                                            *check_type_constraint = box new;
 
                                             let mut params = HashMap::default();
                                             params.insert(name.clone(), check_type.clone().cheap());
@@ -421,6 +445,102 @@ impl Analyzer<'_, '_> {
         slog::debug!(self.logger, "Normalized a type. (time = {:?})", end - start);
 
         res
+    }
+
+    fn reduce_conditional_type(
+        &mut self,
+        span: Span,
+        check_type: &Type,
+        check_type_constraint: &Type,
+        extends_type: &Type,
+        true_type: &Type,
+        false_type: &Type,
+    ) -> ValidationResult<Option<Type>> {
+        if !check_type.normalize().is_type_param() {
+            return Ok(None);
+        }
+        let mut worked = false;
+
+        let mut true_type = self.normalize(Some(span), Cow::Borrowed(true_type), Default::default())?;
+        let mut false_type = self.normalize(Some(span), Cow::Borrowed(false_type), Default::default())?;
+
+        match true_type.normalize() {
+            Type::Conditional(c) => {
+                if (*c.check_type).type_eq(check_type) {
+                    if let Some(ty) = self.reduce_conditional_type(
+                        span,
+                        check_type,
+                        check_type_constraint,
+                        &c.extends_type,
+                        &c.true_type,
+                        &c.false_type,
+                    )? {
+                        worked = true;
+                        true_type = Cow::Owned(ty)
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        match false_type.normalize() {
+            Type::Conditional(c) => {
+                if (*c.check_type).type_eq(check_type) {
+                    if let Some(ty) = self.reduce_conditional_type(
+                        span,
+                        check_type,
+                        check_type_constraint,
+                        &c.extends_type,
+                        &c.true_type,
+                        &c.false_type,
+                    )? {
+                        worked = true;
+                        false_type = Cow::Owned(ty)
+                    }
+                }
+            }
+            _ => {}
+        }
+        match check_type_constraint.normalize() {
+            Type::Union(check_type_union) => {
+                //
+                let can_match = check_type_union.types.iter().any(|check_type_contraint| {
+                    self.extends(span, Default::default(), check_type_contraint, extends_type)
+                        .unwrap_or(true)
+                });
+
+                if !can_match {
+                    return Ok(Some(Type::never(span)));
+                }
+            }
+            _ => {
+                //
+                if let Some(v) = self.extends(
+                    span,
+                    ExtendsOpts { ..Default::default() },
+                    &check_type_constraint,
+                    extends_type,
+                ) {
+                    if v {
+                        return Ok(Some(true_type.into_owned()));
+                    } else {
+                        return Ok(Some(false_type.into_owned()));
+                    }
+                }
+            }
+        }
+
+        if worked {
+            Ok(Some(Type::Conditional(Conditional {
+                span,
+                check_type: box check_type.clone(),
+                extends_type: box extends_type.clone(),
+                true_type: box true_type.into_owned(),
+                false_type: box false_type.into_owned(),
+            })))
+        } else {
+            Ok(None)
+        }
     }
 
     // This is part of normalization.
