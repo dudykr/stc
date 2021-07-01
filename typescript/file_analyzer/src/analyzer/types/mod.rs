@@ -373,8 +373,14 @@ impl Analyzer<'_, '_> {
                             let _context =
                                 error::context(format!("Property type: {}", dump_type_as_string(&self.cm, &prop_ty)));
 
-                            if prop_ty.normalize().is_indexed_access_type() {
-                                panic!("{:?}", prop_ty);
+                            match prop_ty.normalize() {
+                                Type::IndexedAccessType(prop_ty) => match prop_ty.index_type.normalize() {
+                                    Type::Param(..) => {}
+                                    _ => {
+                                        panic!("{:?}", prop_ty);
+                                    }
+                                },
+                                _ => {}
                             }
 
                             let ty = self
