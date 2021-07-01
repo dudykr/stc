@@ -792,6 +792,20 @@ impl Analyzer<'_, '_> {
 
         match (to, rhs) {
             (Type::Conditional(lc), Type::Conditional(rc)) => {
+                if lc.check_type.type_eq(&rc.check_type) && lc.extends_type.type_eq(&rc.extends_type) {
+                    self.assign_with_opts(data, opts, &lc.true_type, &rc.true_type)
+                        .context(
+                            "tried to assign the true type of a conditional type to it of similar conditional type",
+                        )?;
+
+                    self.assign_with_opts(data, opts, &lc.false_type, &rc.false_type)
+                        .context(
+                            "tried to assign the true type of a conditional type to it of similar conditional type",
+                        )?;
+
+                    return Ok(());
+                }
+
                 if lc.extends_type.type_eq(&rc.extends_type) {
                     //
                     let l_variance = self.variance(&lc)?;
