@@ -11,8 +11,8 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, EnumVariant, FnParam, Interface, Intersection, Key, Mapped, Operator, PropertySignature, Ref, Tuple, Type,
-    TypeElement, TypeLit, TypeParam,
+    Array, Conditional, EnumVariant, FnParam, Interface, Intersection, Key, Mapped, Operator, PropertySignature, Ref,
+    Tuple, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::stack;
 use std::{borrow::Cow, collections::HashMap, time::Instant};
@@ -794,6 +794,27 @@ impl Analyzer<'_, '_> {
             (Type::Conditional(lc), Type::Conditional(rc)) => {
                 if lc.extends_type.type_eq(&rc.extends_type) {
                     //
+                    let l_variance = self.variance(&lc)?;
+                    let r_variance = self.variance(&rc)?;
+
+                    match (l_variance, r_variance) {
+                        (Variance::Covariant, Variance::Covariant) => {
+                            return self
+                                .assign_with_opts(data, opts, &lc.check_type, &rc.check_type)
+                                .context("tried assignment of convariant types")
+                        }
+                        (Variance::Contravariant, Variance::Contravariant) => {
+                            return self
+                                .assign_with_opts(data, opts, &rc.check_type, &lc.check_type)
+                                .context("tried assignment of contravariant types")
+                        }
+                        _ => {
+                            return Err(Error::Unimplemented {
+                                span,
+                                msg: format!("{:?} = {:?}", l_variance, r_variance),
+                            })
+                        }
+                    }
                 }
             }
             _ => {}
@@ -2237,6 +2258,48 @@ impl Analyzer<'_, '_> {
 
         Ok(false)
     }
+
+    fn variance(&mut self, ty: &Conditional) -> ValidationResult<Variance> {
+        let convariant =
+            self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
+
+        let contravariant = self.is_contravariant(&ty.check_type, &ty.true_type)?
+            || self.is_contravariant(&ty.check_type, &ty.false_type)?;
+
+        match (convariant, contravariant) {
+            (true, true) | (false, false) => Ok(Variance::Invariant),
+            (true, false) => Ok(Variance::Covariant),
+            (false, true) => Ok(Variance::Contravariant),
+        }
+    }
+
+    fn is_covariant(&mut self, check_type: &Type, output_type: &Type) -> ValidationResult<bool> {
+        Ok(check_type.type_eq(output_type))
+    }
+
+    fn is_contravariant(&mut self, check_type: &Type, output_type: &Type) -> ValidationResult<bool> {
+        match output_type.normalize() {
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::KeyOf,
+                ty,
+                ..
+            }) => {
+                if output_type.type_eq(&**ty) {
+                    return Ok(true);
+                }
+            }
+            _ => {}
+        }
+
+        Ok(false)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Variance {
+    Covariant,
+    Contravariant,
+    Invariant,
 }
 
 /// Returns true if l and r are lieteral and equal to each other.
