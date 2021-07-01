@@ -1,0 +1,108 @@
+warning: Type
+ --> $DIR/tests/pass/types/conditional/conditionalTypes1/8.ts:8:34
+  |
+8 | export var a = { o: 1, b: 2, c: [{ a: 1, c: '213' }] }
+  |                                  ^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              a: 1;
+              c: '213';
+          }
+
+warning: Type
+ --> $DIR/tests/pass/types/conditional/conditionalTypes1/8.ts:8:33
+  |
+8 | export var a = { o: 1, b: 2, c: [{ a: 1, c: '213' }] }
+  |                                 ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              a: number;
+              c: string;
+          }[]
+
+warning: Type
+ --> $DIR/tests/pass/types/conditional/conditionalTypes1/8.ts:8:16
+  |
+8 | export var a = { o: 1, b: 2, c: [{ a: 1, c: '213' }] }
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              o: 1;
+              b: 2;
+              c: {
+                  a: number;
+                  c: string;
+              }[];
+          }
+
+warning: Type
+ --> $DIR/tests/pass/types/conditional/conditionalTypes1/8.ts:9:8
+  |
+9 | assign(a, { o: 2, c: { 0: { a: 2, c: '213123' } } })
+  |        ^
+  |
+  = note: {
+              o: number;
+              b: number;
+              c: {
+                  a: number;
+                  c: string;
+              }[];
+          }
+
+warning: Type
+ --> $DIR/tests/pass/types/conditional/conditionalTypes1/8.ts:9:27
+  |
+9 | assign(a, { o: 2, c: { 0: { a: 2, c: '213123' } } })
+  |                           ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              a: 2;
+              c: '213123';
+          }
+
+warning: Type
+ --> $DIR/tests/pass/types/conditional/conditionalTypes1/8.ts:9:22
+  |
+9 | assign(a, { o: 2, c: { 0: { a: 2, c: '213123' } } })
+  |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              0: {
+                  a: 2;
+                  c: '213123';
+              };
+          }
+
+warning: Type
+ --> $DIR/tests/pass/types/conditional/conditionalTypes1/8.ts:9:11
+  |
+9 | assign(a, { o: 2, c: { 0: { a: 2, c: '213123' } } })
+  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              o: 2;
+              c: {
+                  0: {
+                      a: 2;
+                      c: '213123';
+                  };
+              };
+          }
+
+warning: Type
+ --> $DIR/tests/pass/types/conditional/conditionalTypes1/8.ts:9:1
+  |
+9 | assign(a, { o: 2, c: { 0: { a: 2, c: '213123' } } })
+  | ^^^^^^
+  |
+  = note: <T>(o: T, a: RecursivePartial<T>) => void
+
+warning: Type
+ --> $DIR/tests/pass/types/conditional/conditionalTypes1/8.ts:9:1
+  |
+9 | assign(a, { o: 2, c: { 0: { a: 2, c: '213123' } } })
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: void
+
