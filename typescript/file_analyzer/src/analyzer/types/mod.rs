@@ -364,10 +364,14 @@ impl Analyzer<'_, '_> {
                             IdCtx::Type,
                             Default::default(),
                         );
+
                         if let Ok(prop_ty) = prop_ty {
                             if ty.type_eq(&prop_ty) {
                                 return Ok(ty);
                             }
+
+                            let _context =
+                                error::context(format!("Property type: {}", dump_type_as_string(&self.cm, &prop_ty)));
 
                             if prop_ty.normalize().is_indexed_access_type() {
                                 panic!("{:?}", prop_ty);
