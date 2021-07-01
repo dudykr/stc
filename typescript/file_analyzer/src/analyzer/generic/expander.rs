@@ -133,6 +133,10 @@ impl Analyzer<'_, '_> {
         let child = child.normalize();
         let parent = parent.normalize();
 
+        if child.is_any() {
+            return Some(true);
+        }
+
         if child.type_eq(&parent) {
             return Some(true);
         }
