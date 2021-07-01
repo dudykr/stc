@@ -470,7 +470,7 @@ impl Analyzer<'_, '_> {
                     if let Some(ty) = self.reduce_conditional_type(
                         span,
                         check_type,
-                        check_type_constraint,
+                        &extends_type,
                         &c.extends_type,
                         &c.true_type,
                         &c.false_type,
@@ -486,10 +486,14 @@ impl Analyzer<'_, '_> {
         match false_type.normalize() {
             Type::Conditional(c) => {
                 if (*c.check_type).type_eq(check_type) {
+                    let mut check_type_constraint = check_type_constraint.clone();
+                    self.exclude_type(span, &mut check_type_constraint, extends_type);
+                    check_type_constraint.assert_valid();
+
                     if let Some(ty) = self.reduce_conditional_type(
                         span,
                         check_type,
-                        check_type_constraint,
+                        &check_type_constraint,
                         &c.extends_type,
                         &c.true_type,
                         &c.false_type,
@@ -501,6 +505,15 @@ impl Analyzer<'_, '_> {
             }
             _ => {}
         }
+
+        dbg!(&true_type);
+        dbg!(&false_type);
+        dbg!(
+            &check_type_constraint,
+            check_type_constraint.iter_union().count(),
+            &&extends_type
+        );
+
         match check_type_constraint.normalize() {
             Type::Union(check_type_union) => {
                 //
@@ -509,19 +522,22 @@ impl Analyzer<'_, '_> {
                         .unwrap_or(true)
                 });
 
+                dbg!(can_match);
+
                 if !can_match {
                     return Ok(Some(Type::never(span)));
                 }
             }
             _ => {
                 //
-                if let Some(v) = self.extends(
+                if let Some(extends) = self.extends(
                     span,
                     ExtendsOpts { ..Default::default() },
                     &check_type_constraint,
                     extends_type,
                 ) {
-                    if v {
+                    dbg!(extends);
+                    if extends {
                         return Ok(Some(true_type.into_owned()));
                     } else {
                         return Ok(Some(false_type.into_owned()));
