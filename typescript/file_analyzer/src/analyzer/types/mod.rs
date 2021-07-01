@@ -411,7 +411,7 @@ impl Analyzer<'_, '_> {
                                 .normalize(span, Cow::Owned(prop_ty), opts)
                                 .context("tried to normalize the type of property")?
                                 .into_owned();
-                            dbg!(&ty);
+
                             return Ok(Cow::Owned(ty));
                         }
                         // TODO:
@@ -488,7 +488,7 @@ impl Analyzer<'_, '_> {
                 if (*c.check_type).type_eq(check_type) {
                     let mut check_type_constraint = check_type_constraint.clone();
                     self.exclude_type(span, &mut check_type_constraint, extends_type);
-                    check_type_constraint.assert_valid();
+                    check_type_constraint.fix();
 
                     if let Some(ty) = self.reduce_conditional_type(
                         span,
@@ -506,14 +506,6 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        dbg!(&true_type);
-        dbg!(&false_type);
-        dbg!(
-            &check_type_constraint,
-            check_type_constraint.iter_union().count(),
-            &&extends_type
-        );
-
         match check_type_constraint.normalize() {
             Type::Union(check_type_union) => {
                 //
@@ -521,8 +513,6 @@ impl Analyzer<'_, '_> {
                     self.extends(span, Default::default(), check_type_contraint, extends_type)
                         .unwrap_or(true)
                 });
-
-                dbg!(can_match);
 
                 if !can_match {
                     return Ok(Some(Type::never(span)));
@@ -536,7 +526,6 @@ impl Analyzer<'_, '_> {
                     &check_type_constraint,
                     extends_type,
                 ) {
-                    dbg!(extends);
                     if extends {
                         return Ok(Some(true_type.into_owned()));
                     } else {
