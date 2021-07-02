@@ -159,7 +159,7 @@ impl Analyzer<'_, '_> {
                     return Err(Error::SimpleAssignFailed { span });
                 }
 
-                Type::Tuple(..) | Type::Array(..) if lhs.is_empty() => return Ok(()),
+                Type::Tuple(..) | Type::Array(..) | Type::EnumVariant(..) if lhs.is_empty() => return Ok(()),
 
                 Type::Array(..) | Type::Tuple(..) => {
                     if opts.allow_assignment_of_array_to_optional_type_lit {
