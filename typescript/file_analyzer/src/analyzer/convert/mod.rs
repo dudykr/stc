@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     analyzer::{marks::MarkExt, props::ComputedPropMode, scope::VarKind, util::ResultExt, Analyzer, Ctx, ScopeKind},
     util::{contains_infer_type, type_ext::TypeVecExt},
@@ -5,6 +7,7 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
+use itertools::Itertools;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RAssignPatProp, RBindingIdent, RComputedPropName, RIdent, RObjectPat, RObjectPatProp, RPat,
@@ -30,6 +33,8 @@ use stc_utils::{error, AHashSet};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Spanned, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
+
+mod interface;
 
 /// We analyze dependencies between type parameters, and fold parameter in
 /// topological order.
@@ -77,7 +82,22 @@ impl Analyzer<'_, '_> {
                 );
             }
 
-            let params = decl.params.validate_with(self)?;
+            let params: Vec<TypeParam> = decl.params.validate_with(self)?;
+
+            let ctxt = self.ctx.module_id;
+            let mut map = HashMap::default();
+            for param in &params {
+                let ty = self.find_type(ctxt, &param.name).unwrap().unwrap().next().unwrap();
+
+                map.entry(param.name.clone()).or_insert_with(|| ty.into_owned());
+            }
+
+            // Resolve contraints
+            let params = self.expand_type_params(&map, params, Default::default())?;
+
+            for param in &params {
+                self.register_type(param.name.clone(), Type::Param(param.clone()));
+            }
 
             Ok(TypeParamDecl {
                 span: decl.span,
@@ -96,8 +116,14 @@ impl Analyzer<'_, '_> {
             in_actual_type: true,
             ..self.ctx
         };
-        let constraint = try_opt!(p.constraint.validate_with(&mut *self.with_ctx(ctx))).map(Box::new);
-        let default = try_opt!(p.default.validate_with(&mut *self.with_ctx(ctx))).map(Box::new);
+        let constraint = try_opt!(p.constraint.validate_with(&mut *self.with_ctx(ctx)))
+            .map(Type::cheap)
+            .map(Box::new);
+        let default = try_opt!(p.default.validate_with(&mut *self.with_ctx(ctx)))
+            .map(Type::cheap)
+            .map(Box::new);
+
+        let has_constraint = constraint.is_some();
 
         let param = TypeParam {
             span: p.span,
@@ -106,6 +132,23 @@ impl Analyzer<'_, '_> {
             default,
         };
         self.register_type(param.name.clone().into(), param.clone().into());
+
+        if cfg!(debug_assertions) && has_constraint {
+            if let Ok(types) = self.find_type(self.ctx.module_id, &p.name.clone().into()) {
+                let types = types.expect("should be stored").collect_vec();
+
+                debug_assert_eq!(types.len(), 1, "Types: {:?}", types);
+
+                match types[0].normalize() {
+                    Type::Param(p) => {
+                        assert!(p.constraint.is_some(), "should store contraint");
+                    }
+                    _ => {
+                        unreachable!()
+                    }
+                }
+            }
+        }
 
         Ok(param)
     }
@@ -163,27 +206,32 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsInterfaceDecl) -> ValidationResult<Interface> {
-        let ty: Interface = self.with_child(ScopeKind::Flow, Default::default(), |child| -> ValidationResult<_> {
-            match &*d.id.sym {
-                "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
-                    child.storage.report(Error::InvalidInterfaceName { span: d.id.span });
+        let ty: Interface = self.with_child(
+            ScopeKind::Flow,
+            Default::default(),
+            |child: &mut Analyzer| -> ValidationResult<_> {
+                match &*d.id.sym {
+                    "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
+                        child.storage.report(Error::InvalidInterfaceName { span: d.id.span });
+                    }
+                    _ => {}
                 }
-                _ => {}
-            }
 
-            let mut ty = Interface {
-                span: d.span,
-                name: d.id.clone().into(),
-                type_params: try_opt!(d.type_params.validate_with(&mut *child)),
-                extends: d.extends.validate_with(child)?,
-                body: d.body.validate_with(child)?,
-            };
-            child.prevent_expansion(&mut ty.body);
+                let mut ty = Interface {
+                    span: d.span,
+                    name: d.id.clone().into(),
+                    type_params: try_opt!(d.type_params.validate_with(&mut *child)),
+                    extends: d.extends.validate_with(child)?,
+                    body: d.body.validate_with(child)?,
+                };
+                child.prevent_expansion(&mut ty.body);
 
-            child.resolve_parent_interfaces(&d.extends);
+                child.resolve_parent_interfaces(&d.extends);
+                child.report_error_for_conflicting_parents(d.id.span, &ty.extends);
 
-            Ok(ty)
-        })?;
+                Ok(ty)
+            },
+        )?;
 
         // TODO: Recover
         self.register_type(d.id.clone().into(), Type::Interface(ty.clone()).cheap());

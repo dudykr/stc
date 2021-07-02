@@ -744,9 +744,14 @@ impl Analyzer<'_, '_> {
                 diallow_unknown_object_property: true,
                 ..self.ctx
             };
-            let callee = self
-                .with_ctx(ctx)
-                .access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var)?;
+            let callee = self.with_ctx(ctx).access_property(
+                span,
+                obj_type,
+                &prop,
+                TypeOfMode::RValue,
+                IdCtx::Var,
+                Default::default(),
+            )?;
 
             let callee_before_expanding = dump_type_as_string(&self.cm, &callee);
             let callee = self
@@ -2762,6 +2767,7 @@ impl Analyzer<'_, '_> {
                             AssignOpts {
                                 span: arg.span(),
                                 allow_unknown_rhs,
+                                use_missing_fields_for_class: true,
                                 ..Default::default()
                             },
                             &param.ty,
@@ -3224,6 +3230,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                 },
                                 TypeOfMode::RValue,
                                 IdCtx::Type,
+                                Default::default(),
                             )
                             .report(&mut a.storage)
                         {

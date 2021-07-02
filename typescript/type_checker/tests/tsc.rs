@@ -70,6 +70,10 @@ fn is_all_test_enabled() -> bool {
     env::var("TEST").map(|s| s == "").unwrap_or(false)
 }
 
+fn print_matched_errors() -> bool {
+    !env::var("DONT_PRINT_MATCHED").map(|s| s == "1").unwrap_or(false)
+}
+
 fn record_time(time: Duration) {
     static TOTAL: Lazy<Mutex<Duration>> = Lazy::new(|| Default::default());
 
@@ -671,19 +675,33 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         }
 
         if !success {
-            panic!(
-                "\n============================================================\n{:?}
-============================================================\n{} unmatched errors out of {} errors. Got {} extra \
-                 errors.\nWanted: {:?}\nUnwanted: {:?}\n\nAll required errors: {:?}\nAll actual errors: {:?}",
-                err,
-                expected_errors.len(),
-                full_ref_err_cnt,
-                extra_err_count,
-                expected_errors,
-                extra_errors,
-                full_ref_errors,
-                full_actual_errors,
-            );
+            if print_matched_errors() {
+                panic!(
+                    "\n============================================================\n{:?}
+    ============================================================\n{} unmatched errors out of {} errors. Got {} extra \
+                     errors.\nWanted: {:?}\nUnwanted: {:?}\n\nAll required errors: {:?}\nAll actual errors: {:?}",
+                    err,
+                    expected_errors.len(),
+                    full_ref_err_cnt,
+                    extra_err_count,
+                    expected_errors,
+                    extra_errors,
+                    full_ref_errors,
+                    full_actual_errors,
+                );
+            } else {
+                panic!(
+                    "\n============================================================\n{:?}
+    ============================================================\n{} unmatched errors out of {} errors. Got {} extra \
+                     errors.\nWanted: {:?}\nUnwanted: {:?}",
+                    err,
+                    expected_errors.len(),
+                    full_ref_err_cnt,
+                    extra_err_count,
+                    expected_errors,
+                    extra_errors,
+                );
+            }
         }
     }
 

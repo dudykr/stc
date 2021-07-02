@@ -34,6 +34,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Enum(e) => !e.has_str,
             Type::Union(ty) => ty.types.iter().all(|ty| self.can_be_casted_to_number_in_rhs(span, &ty)),
+            Type::Intersection(ty) => ty.types.iter().any(|ty| self.can_be_casted_to_number_in_rhs(span, &ty)),
             _ => false,
         }
     }

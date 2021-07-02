@@ -670,6 +670,23 @@ impl Analyzer<'_, '_> {
     /// t = { f: <T>(x:T) => 1 };
     /// ```
     /// This is valid.
+    ///
+    ///
+    /// ## Call signatures
+    ///
+    /// ```ts
+    // declare var a: {
+    ///     (s: string): void
+    ///     (s: number): void
+    /// }
+    /// declare var b: {
+    ///     (s: string): void
+    /// }
+    ///
+    ///
+    /// a = b // error
+    /// b = a // ok
+    /// ```
     fn assign_type_elements_to_type_element(
         &mut self,
         data: &mut AssignData,
@@ -681,6 +698,9 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let span = opts.span;
         // We need this to show error if not all of rhs_member is matched
+
+        let mut errors = vec![];
+        let mut done = false;
 
         if let Some(l_key) = lm.key() {
             for rm in rhs_members {
@@ -827,15 +847,15 @@ impl Analyzer<'_, '_> {
         } else {
             match lm {
                 // TODO: Check type of the index.
-                TypeElement::Index(l_index) => {
+                TypeElement::Index(li) => {
                     // TODO: Verify
                     for rm in rhs_members {
                         match rm {
                             TypeElement::Call(_) | TypeElement::Constructor(_) => continue,
 
                             TypeElement::Property(r_prop) => {
-                                if let Ok(()) = self.assign(data, &l_index.params[0].ty, &r_prop.key.ty(), span) {
-                                    if let Some(l_index_ret_ty) = &l_index.type_ann {
+                                if let Ok(()) = self.assign(data, &li.params[0].ty, &r_prop.key.ty(), span) {
+                                    if let Some(l_index_ret_ty) = &li.type_ann {
                                         if let Some(r_prop_ty) = &r_prop.type_ann {
                                             self.assign_with_opts(data, opts, &l_index_ret_ty, &&r_prop_ty)
                                                 .context(
@@ -850,24 +870,55 @@ impl Analyzer<'_, '_> {
                             TypeElement::Method(_) => {
                                 slog::error!(self.logger, "unimplemented: Index = Method");
                             }
-                            TypeElement::Index(_) => {
-                                slog::error!(self.logger, "unimplemented: Index = Index");
+                            TypeElement::Index(ri) => {
+                                if li.params.type_eq(&ri.params) {
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == ri.span()) {
+                                        unhandled_rhs.remove(pos);
+                                    }
+
+                                    if let Some(lt) = &li.type_ann {
+                                        if let Some(rt) = &ri.type_ann {
+                                            return self.assign_with_opts(data, opts, &lt, &rt);
+                                        }
+                                    }
+                                }
+
+                                slog::error!(self.logger, "unimplemented: error reporting for Index = Index");
                             }
                         }
                     }
                 }
-                TypeElement::Call(..) => {
+                TypeElement::Call(lc) => {
                     //
                     for rm in rhs_members {
                         match rm {
                             // TODO: Check type of parameters
                             // TODO: Check return type
-                            TypeElement::Call(..) => {
+                            TypeElement::Call(rc) => {
                                 if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                     unhandled_rhs.remove(pos);
                                 }
+                                done = true;
 
-                                return Ok(());
+                                let res = self.assign_to_fn_like(
+                                    data,
+                                    opts,
+                                    lc.type_params.as_ref(),
+                                    &lc.params,
+                                    lc.ret_ty.as_deref(),
+                                    rc.type_params.as_ref(),
+                                    &rc.params,
+                                    rc.ret_ty.as_deref(),
+                                );
+
+                                match res {
+                                    Ok(()) => return Ok(()),
+                                    Err(err) => {
+                                        errors.push(err);
+                                    }
+                                }
+
+                                continue;
                             }
                             _ => {}
                         }
@@ -876,6 +927,14 @@ impl Analyzer<'_, '_> {
                     missing_fields.push(lm.clone());
                 }
                 _ => {}
+            }
+        }
+
+        if done {
+            if errors.is_empty() {
+                return Ok(());
+            } else {
+                return Err(Error::ObjectAssignFailed { span, errors });
             }
         }
 
@@ -918,8 +977,25 @@ impl Analyzer<'_, '_> {
                 // TODO: Report error.
             }
 
-            // TODO: Optimize
-            TypeElement::Call(_) | TypeElement::Constructor(_) | TypeElement::Method(_) | TypeElement::Index(_) => {}
+            TypeElement::Index(li) => {
+                for rhs_member in rhs_members {
+                    match rhs_member {
+                        ClassMember::IndexSignature(ri) => {
+                            if ri.params.type_eq(&li.params) {
+                                if let Some(lt) = &li.type_ann {
+                                    if let Some(rt) = &ri.type_ann {
+                                        return self.assign_with_opts(data, opts, &lt, &rt);
+                                    }
+                                }
+                            }
+                        }
+
+                        _ => continue,
+                    }
+                }
+            }
+
+            TypeElement::Call(_) | TypeElement::Constructor(_) | TypeElement::Method(_) => {}
         }
 
         Ok(())

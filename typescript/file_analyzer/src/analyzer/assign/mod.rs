@@ -11,8 +11,8 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, EnumVariant, FnParam, Interface, Intersection, Key, Mapped, Operator, PropertySignature, Ref, Tuple, Type,
-    TypeElement, TypeLit, TypeParam, Union,
+    Array, Conditional, EnumVariant, FnParam, Interface, Intersection, Key, Mapped, Operator, PropertySignature, Ref,
+    Tuple, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::stack;
 use std::{borrow::Cow, collections::HashMap, time::Instant};
@@ -27,6 +27,7 @@ mod function;
 mod query;
 mod tpl;
 mod type_el;
+mod unions;
 
 /// Context used for `=` assignments.
 #[derive(Debug, Clone, Copy, Default)]
@@ -57,6 +58,10 @@ pub(crate) struct AssignOpts {
 
     pub for_castablity: bool,
 
+    /// If this is `false`, assignment of literals or some other strange type to
+    /// empty class will success.
+    pub disallow_special_assignment_to_empty_class: bool,
+
     /// If true, assignment of a class to another class without inheritance
     /// relation will fail, even if the class is empty.
     pub disallow_different_classes: bool,
@@ -74,7 +79,7 @@ pub(crate) struct AssignOpts {
 
     pub use_missing_fields_for_class: bool,
 
-    pub disallow_assignment_to_param_constraint: bool,
+    pub allow_assignment_to_param_constraint: bool,
 
     /// The code below is valid.
     ///
@@ -86,6 +91,43 @@ pub(crate) struct AssignOpts {
     /// }
     /// ```
     pub may_unwrap_promise: bool,
+
+    /// contextualTYpeWithUnionTypeMembers says
+    ///
+    /// > When used as a contextual type, a union type U has those members that
+    /// > are present in any of its constituent types, with types that are
+    /// > unions of the respective members in the constituent types.
+    ///
+    /// And
+    ///
+    /// ```ts
+    /// var i1Ori2: I1<number> | I2<number> = { // Like i1 and i2 both
+    ///     commonPropertyType: "hello",
+    ///     commonMethodType: a=> a,
+    ///     commonMethodWithTypeParameter: a => a,
+    ///     methodOnlyInI1: a => a,
+    ///     propertyOnlyInI1: "Hello",
+    ///     methodOnlyInI2: a => a,
+    ///     propertyOnlyInI2: "Hello",
+    /// };
+    /// ```
+    ///
+    /// is valid but
+    ///
+    ///
+    /// ```ts
+    /// function f13(x: { a: null; b: string } | { a: string, c: number }) {
+    ///     x = { a: null, b: "foo", c: 4};  // Error
+    /// }
+    /// ```
+    ///
+    /// and
+    ///
+    /// ```ts
+    /// var test: { a: null; b: string } | { a: string, c: number } = { a: null, b: "foo", c: 4}
+    /// ```
+    /// are not.
+    pub allow_unknown_rhs_if_expanded: bool,
 }
 
 #[derive(Default)]
@@ -681,7 +723,16 @@ impl Analyzer<'_, '_> {
                 // self.replace(&mut new_lhs, &[(to, &Type::any(span))]);
 
                 return self
-                    .assign_inner(data, &new_lhs, rhs, opts)
+                    .assign_inner(
+                        data,
+                        &new_lhs,
+                        rhs,
+                        AssignOpts {
+                            allow_unknown_rhs: opts.allow_unknown_rhs || opts.allow_unknown_rhs_if_expanded,
+                            allow_unknown_rhs_if_expanded: false,
+                            ..opts
+                        },
+                    )
                     .context("tried to assign a type created from a reference");
             }
 
@@ -739,15 +790,69 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match rhs {
-            Type::Conditional(rhs) => {
-                self.assign_with_opts(data, opts, to, &rhs.true_type)
+        match (to, rhs) {
+            (Type::Conditional(lc), Type::Conditional(rc)) => {
+                if lc.check_type.type_eq(&rc.check_type) && lc.extends_type.type_eq(&rc.extends_type) {
+                    self.assign_with_opts(data, opts, &lc.true_type, &rc.true_type)
+                        .context(
+                            "tried to assign the true type of a conditional type to it of similar conditional type",
+                        )?;
+
+                    self.assign_with_opts(data, opts, &lc.false_type, &rc.false_type)
+                        .context(
+                            "tried to assign the true type of a conditional type to it of similar conditional type",
+                        )?;
+
+                    return Ok(());
+                }
+
+                if lc.extends_type.type_eq(&rc.extends_type) {
+                    //
+                    let l_variance = self.variance(&lc)?;
+                    let r_variance = self.variance(&rc)?;
+
+                    match (l_variance, r_variance) {
+                        (Variance::Covariant, Variance::Covariant) => {
+                            return self
+                                .assign_with_opts(data, opts, &lc.check_type, &rc.check_type)
+                                .context("tried assignment of convariant types")
+                        }
+                        (Variance::Contravariant, Variance::Contravariant) => {
+                            return self
+                                .assign_with_opts(data, opts, &rc.check_type, &lc.check_type)
+                                .context("tried assignment of contravariant types")
+                        }
+                        _ => {
+                            return Err(Error::Unimplemented {
+                                span,
+                                msg: format!("{:?} = {:?}", l_variance, r_variance),
+                            })
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        match (to, rhs) {
+            (_, Type::Conditional(rc)) => {
+                self.assign_with_opts(data, opts, to, &rc.true_type)
                     .context("tried to assign the true type of a conditional type to lhs")?;
-                self.assign_with_opts(data, opts, to, &rhs.false_type)
+                self.assign_with_opts(data, opts, to, &rc.false_type)
                     .context("tried to assign the false type of a conditional type to lhs")?;
 
                 return Ok(());
             }
+
+            (Type::Conditional(lc), _) => {
+                self.assign_with_opts(data, opts, &lc.true_type, &rhs)
+                    .context("tried to assign to the true type")?;
+                self.assign_with_opts(data, opts, &lc.false_type, &rhs)
+                    .context("tried to assign to the false type")?;
+
+                return Ok(());
+            }
+
             _ => {}
         }
 
@@ -1000,9 +1105,9 @@ impl Analyzer<'_, '_> {
                 });
             }
 
-            Type::Union(Union { ref types, .. }) => {
+            Type::Union(r) => {
                 if self.should_use_union_assignment(span, rhs)? {
-                    types
+                    r.types
                         .iter()
                         .map(|rhs| {
                             self.assign_with_opts(
@@ -1021,7 +1126,8 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                let errors = types
+                let errors = r
+                    .types
                     .iter()
                     .filter_map(|rhs| match self.assign_with_opts(data, opts, to, rhs) {
                         Ok(()) => None,
@@ -1099,7 +1205,7 @@ impl Analyzer<'_, '_> {
                 constraint: Some(ref c),
                 ..
             }) => {
-                if !opts.disallow_assignment_to_param_constraint {
+                if opts.allow_assignment_to_param_constraint {
                     return self.assign_inner(
                         data,
                         c,
@@ -1204,16 +1310,16 @@ impl Analyzer<'_, '_> {
             },
 
             // let a: string | number = 'string';
-            Type::Union(Union { ref types, .. }) => {
+            Type::Union(lu) => {
                 // true | false = boolean
                 if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
-                    if types.iter().any(|ty| match ty.normalize() {
+                    if lu.types.iter().any(|ty| match ty.normalize() {
                         Type::Lit(RTsLitType {
                             lit: RTsLit::Bool(RBool { value: true, .. }),
                             ..
                         }) => true,
                         _ => false,
-                    }) && types.iter().any(|ty| match ty.normalize() {
+                    }) && lu.types.iter().any(|ty| match ty.normalize() {
                         Type::Lit(RTsLitType {
                             lit: RTsLit::Bool(RBool { value: false, .. }),
                             ..
@@ -1224,6 +1330,15 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                match rhs {
+                    Type::Tuple(rt) => {
+                        if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
+                            return res;
+                        }
+                    }
+                    _ => {}
+                }
+
                 // Same operation as above, but for enums.
                 match rhs {
                     Type::EnumVariant(EnumVariant {
@@ -1231,7 +1346,8 @@ impl Analyzer<'_, '_> {
                     }) => {
                         // If `types` contains all variant of the enum, the
                         // assignment is valid.
-                        let patched_types = types
+                        let patched_types = lu
+                            .types
                             .iter()
                             .map(|ty| {
                                 self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
@@ -1247,7 +1363,7 @@ impl Analyzer<'_, '_> {
                                 for ty in lhs {
                                     match ty.normalize() {
                                         Type::Enum(e) => {
-                                            if e.members.len() == types.len() {
+                                            if e.members.len() == lu.types.len() {
                                                 return Ok(());
                                             }
                                         }
@@ -1261,13 +1377,14 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let results = types
+                let results = lu
+                    .types
                     .iter()
                     .map(|to| {
                         self.assign_with_opts(
                             data,
                             AssignOpts {
-                                allow_unknown_rhs: true,
+                                allow_unknown_rhs_if_expanded: true,
                                 ..opts
                             },
                             &to,
@@ -1279,14 +1396,16 @@ impl Analyzer<'_, '_> {
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
-                let normalized = types.iter().map(|ty| ty.normalize()).any(|ty| match ty {
+                let normalized = lu.types.iter().map(|ty| ty.normalize()).any(|ty| match ty {
                     Type::TypeLit(ty) => ty.metadata.normalized,
                     _ => false,
                 });
                 let errors = results.into_iter().map(Result::unwrap_err).collect();
                 let should_use_single_error = normalized
-                    || types.iter().all(|ty| {
+                    || lu.types.iter().all(|ty| {
                         ty.normalize().is_lit()
+                            || ty.normalize().is_type_lit()
+                            || ty.normalize().is_keyword()
                             || ty.normalize().is_enum_variant()
                             || ty.normalize().is_ref_type()
                             || ty.normalize().is_query()
@@ -1623,7 +1742,7 @@ impl Analyzer<'_, '_> {
 
                 // We should check for unknown rhs, while allowing assignment to parent
                 // interfaces.
-                if !opts.allow_unknown_rhs {
+                if !opts.allow_unknown_rhs && !opts.allow_unknown_rhs_if_expanded {
                     let lhs = self.type_to_type_lit(span, to)?;
                     if let Some(lhs) = lhs {
                         self.assign_to_type_elements(data, opts, span, &lhs.members, rhs, Default::default())
@@ -1904,11 +2023,36 @@ impl Analyzer<'_, '_> {
                     .assign_to_tpl(l, r, opts)
                     .context("tried to assign to a template type")
             }
+            (
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                }),
+                Type::Tpl(..),
+            )
+            | (
+                Type::Predicate(..),
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                }),
+            )
+            | (Type::Predicate(..), Type::Predicate(..)) => return Ok(()),
+
+            (Type::Rest(lr), r) => match lr.ty.normalize() {
+                Type::Array(la) => return self.assign_with_opts(data, opts, &la.elem_type, &r),
+                _ => {}
+            },
             _ => {}
         }
 
         // TODO: Implement full type checker
-        slog::error!(self.logger, "unimplemented: assign: \nLeft: {:?}\nRight: {:?}", to, rhs);
+        slog::error!(
+            self.logger,
+            "unimplemented: assign: \nLeft: {}\nRight: {}",
+            dump_type_as_string(&self.cm, to),
+            dump_type_as_string(&self.cm, rhs)
+        );
         Ok(())
     }
 
@@ -2128,6 +2272,48 @@ impl Analyzer<'_, '_> {
 
         Ok(false)
     }
+
+    fn variance(&mut self, ty: &Conditional) -> ValidationResult<Variance> {
+        let convariant =
+            self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
+
+        let contravariant = self.is_contravariant(&ty.check_type, &ty.true_type)?
+            || self.is_contravariant(&ty.check_type, &ty.false_type)?;
+
+        match (convariant, contravariant) {
+            (true, true) | (false, false) => Ok(Variance::Invariant),
+            (true, false) => Ok(Variance::Covariant),
+            (false, true) => Ok(Variance::Contravariant),
+        }
+    }
+
+    fn is_covariant(&mut self, check_type: &Type, output_type: &Type) -> ValidationResult<bool> {
+        Ok(check_type.type_eq(output_type))
+    }
+
+    fn is_contravariant(&mut self, check_type: &Type, output_type: &Type) -> ValidationResult<bool> {
+        match output_type.normalize() {
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::KeyOf,
+                ty,
+                ..
+            }) => {
+                if output_type.type_eq(&**ty) {
+                    return Ok(true);
+                }
+            }
+            _ => {}
+        }
+
+        Ok(false)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Variance {
+    Covariant,
+    Contravariant,
+    Invariant,
 }
 
 /// Returns true if l and r are lieteral and equal to each other.

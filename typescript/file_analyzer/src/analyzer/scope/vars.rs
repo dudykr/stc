@@ -161,7 +161,7 @@ impl Analyzer<'_, '_> {
                         &mut Default::default(),
                         AssignOpts {
                             span: p.right.span(),
-                            disallow_assignment_to_param_constraint: true,
+                            allow_assignment_to_param_constraint: false,
                             ..Default::default()
                         },
                         &left,
@@ -313,6 +313,7 @@ impl Analyzer<'_, '_> {
                                             }),
                                             TypeOfMode::RValue,
                                             IdCtx::Var,
+                                            Default::default(),
                                         )
                                         .context("tried to access property to declare variables using an array pattern")
                                         .report(&mut self.storage),
@@ -330,6 +331,7 @@ impl Analyzer<'_, '_> {
                                             }),
                                             TypeOfMode::RValue,
                                             IdCtx::Var,
+                                            Default::default(),
                                         )
                                         .context("tried to access property to declare variables using an array pattern")
                                         .report(&mut self.storage),
@@ -372,13 +374,26 @@ impl Analyzer<'_, '_> {
                                 ..self.ctx
                             };
                             let prop_ty = ty.as_ref().try_map(|ty| {
-                                self.with_ctx(ctx)
-                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
+                                self.with_ctx(ctx).access_property(
+                                    span,
+                                    &ty,
+                                    &key,
+                                    TypeOfMode::RValue,
+                                    IdCtx::Var,
+                                    Default::default(),
+                                )
                             });
 
                             let default_prop_ty = default.as_ref().and_then(|ty| {
                                 self.with_ctx(ctx)
-                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
+                                    .access_property(
+                                        span,
+                                        &ty,
+                                        &key,
+                                        TypeOfMode::RValue,
+                                        IdCtx::Var,
+                                        Default::default(),
+                                    )
                                     .ok()
                             });
 
@@ -421,13 +436,26 @@ impl Analyzer<'_, '_> {
                                 ..self.ctx
                             };
                             let prop_ty = ty.as_ref().try_map(|ty| {
-                                self.with_ctx(ctx)
-                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
+                                self.with_ctx(ctx).access_property(
+                                    span,
+                                    &ty,
+                                    &key,
+                                    TypeOfMode::RValue,
+                                    IdCtx::Var,
+                                    Default::default(),
+                                )
                             });
 
                             let default_prop_ty = default.as_ref().and_then(|ty| {
                                 self.with_ctx(ctx)
-                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var)
+                                    .access_property(
+                                        span,
+                                        &ty,
+                                        &key,
+                                        TypeOfMode::RValue,
+                                        IdCtx::Var,
+                                        Default::default(),
+                                    )
                                     .ok()
                             });
 

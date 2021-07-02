@@ -246,6 +246,7 @@ impl Analyzer<'_, '_> {
                         &Key::Num(RNumber { span, value: n as _ }),
                         TypeOfMode::RValue,
                         IdCtx::Var,
+                        Default::default(),
                     )
                     .map(Cow::Owned)
                     .context("tried to access property of a type to calculate element type");
@@ -295,6 +296,7 @@ impl Analyzer<'_, '_> {
                 },
                 TypeOfMode::RValue,
                 IdCtx::Var,
+                Default::default(),
             )
             .context(
                 "tried to get the type of property named `value` to determine the type of nth element of an iterator",
@@ -429,6 +431,7 @@ impl Analyzer<'_, '_> {
                 },
                 TypeOfMode::RValue,
                 IdCtx::Var,
+                Default::default(),
             )
             .context("tried to get the type of property named `value` to determine the type of an iterator")
             .convert_err(|err| Error::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() })?;
@@ -509,6 +512,7 @@ impl Analyzer<'_, '_> {
                     },
                     TypeOfMode::RValue,
                     IdCtx::Var,
+                    Default::default(),
                 ) {
                     if !return_prop_ty.normalize().is_function() {
                         self.storage

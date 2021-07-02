@@ -1,6 +1,7 @@
 use crate::{
     analyzer::{
         assign::{AssignData, AssignOpts},
+        generic::InferTypeOpts,
         Analyzer,
     },
     util::unwrap_ref_with_single_arg,
@@ -101,7 +102,16 @@ impl Analyzer<'_, '_> {
                     ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
                 });
 
-                let map = self.infer_type_with_types(span, &*rt.params, &rf, &lf, Default::default())?;
+                let map = self.infer_type_with_types(
+                    span,
+                    &*rt.params,
+                    &rf,
+                    &lf,
+                    InferTypeOpts {
+                        for_fn_assignment: true,
+                        ..Default::default()
+                    },
+                )?;
                 new_r_params = self
                     .expand_type_params(&map, r_params.to_vec(), Default::default())
                     .context("tried to expand type parameters of rhs as a step of function assignemnt")?;

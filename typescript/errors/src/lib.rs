@@ -58,6 +58,31 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2320
+    InterfaceNotCompatible {
+        span: Span,
+    },
+
+    /// TS2538
+    CannotUseTypeAsIndexIndex {
+        span: Span,
+    },
+
+    /// TS2432
+    OnlyOneEnumCanOmitInit {
+        span: Span,
+    },
+
+    /// TS2477
+    ConstEnumMemberHasInifinityAsInit {
+        span: Span,
+    },
+
+    /// TS2478
+    ConstEnumMemberHasNaNAsInit {
+        span: Span,
+    },
+
     /// TS7027
     UnreachableCode {
         span: Span,
@@ -514,6 +539,11 @@ pub enum Error {
 
     ObjectIsPossiblyUndefined {
         span: Span,
+    },
+
+    ObjectIsPossiblyUndefinedWithType {
+        span: Span,
+        ty: Box<Type>,
     },
 
     ObjectIsPossiblyNullOrUndefined {
@@ -1043,10 +1073,6 @@ pub enum Error {
         span: Span,
     },
 
-    TS2532 {
-        span: Span,
-    },
-
     TS2567 {
         span: Span,
     },
@@ -1428,7 +1454,6 @@ impl Error {
             Error::TS2447 { .. } => 2447,
             Error::ClassDoesNotImplementMemeber { .. } => 2515,
             Error::TS2531 { .. } => 2531,
-            Error::TS2532 { .. } => 2532,
             Error::TS2567 { .. } => 2567,
             Error::TS2585 { .. } => 2585,
             Error::TS2704 { .. } => 2704,
@@ -1495,7 +1520,7 @@ impl Error {
             Error::DebugContext(c) => c.inner.code(),
 
             Error::ObjectIsPossiblyNull { .. } => 2531,
-            Error::ObjectIsPossiblyUndefined { .. } => 2532,
+            Error::ObjectIsPossiblyUndefined { .. } | Error::ObjectIsPossiblyUndefinedWithType { .. } => 2532,
             Error::ObjectIsPossiblyNullOrUndefined { .. } => 2533,
 
             Error::InvalidBinaryOp { .. } => 2365,
@@ -1727,6 +1752,16 @@ impl Error {
             Error::VarMayNotBeInitialized { .. } => 2454,
 
             Error::UnreachableCode { .. } => 7027,
+
+            Error::ConstEnumMemberHasInifinityAsInit { .. } => 2477,
+
+            Error::ConstEnumMemberHasNaNAsInit { .. } => 2478,
+
+            Error::OnlyOneEnumCanOmitInit { .. } => 2432,
+
+            Error::CannotUseTypeAsIndexIndex { .. } => 2538,
+
+            Error::InterfaceNotCompatible { .. } => 2320,
 
             _ => 0,
         }

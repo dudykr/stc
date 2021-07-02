@@ -92,6 +92,7 @@ impl Analyzer<'_, '_> {
                 },
                 TypeOfMode::RValue,
                 IdCtx::Var,
+                Default::default(),
             )
             .ok()
             .and_then(|then_ty| {
