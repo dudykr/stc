@@ -1,5 +1,9 @@
-expressions::unaryOperators::decrementOperator::decrementOperatorWithEnumType.ts
-expressions::unaryOperators::decrementOperator::decrementOperatorWithEnumTypeInvalidOperations.ts
-types::conditional::conditionalTypes1.ts
-types::conditional::conditionalTypes2.ts
-types::conditional::conditionalTypesExcessProperties.ts
+types::typeRelationships::assignmentCompatibility::assignmentCompatWithCallSignatures3.ts
+types::typeRelationships::assignmentCompatibility::assignmentCompatWithCallSignatures6.ts
+types::typeRelationships::assignmentCompatibility::assignmentCompatWithConstructSignatures2.ts
+types::typeRelationships::assignmentCompatibility::assignmentCompatWithConstructSignatures5.ts
+types::typeRelationships::assignmentCompatibility::assignmentCompatWithGenericCallSignatures.ts
+types::typeRelationships::assignmentCompatibility::assignmentCompatWithGenericCallSignatures2.ts
+types::typeRelationships::assignmentCompatibility::assignmentCompatWithGenericCallSignatures4.ts
+types::typeRelationships::assignmentCompatibility::assignmentCompatWithObjectMembersOptionality.ts
+types::typeRelationships::assignmentCompatibility::enumAssignability.ts
