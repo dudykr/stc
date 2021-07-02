@@ -128,3 +128,4 @@ jobs:
       - name: Run cargo tests
         run: |
           cargo test --color always -p ${{ matrix.crate }} -- -Z unstable-options --report-time=colored
+          cargo test --color always -p ${{ matrix.crate }} --all-features -- -Z unstable-options --report-time=colored
