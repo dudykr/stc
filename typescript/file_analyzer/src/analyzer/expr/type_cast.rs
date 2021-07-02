@@ -19,6 +19,16 @@ use std::borrow::Cow;
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct CastableOpts {
+    /// `true` if we are checking for `A extends B` relation.
+    pub disallow_different_classes: bool,
+
+    pub allow_assignment_to_param_constraint: bool,
+
+    pub disallow_special_assignment_to_empty_class: bool,
+}
+
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(
@@ -204,7 +214,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        self.castable(span, &orig, &casted)
+        self.castable(span, &orig, &casted, Default::default())
             .and_then(|castable| {
                 if castable {
                     Ok(())
@@ -215,7 +225,7 @@ impl Analyzer<'_, '_> {
             .convert_err(|err| Error::NonOverlappingTypeCast { span })
     }
 
-    pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
+    pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type, opts: CastableOpts) -> ValidationResult<bool> {
         let l = l.normalize();
         let r = r.normalize();
 
@@ -223,14 +233,20 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        Ok(self.castable(span, l, r)? || self.castable(span, r, l)?)
+        Ok(self.castable(span, l, r, opts)? || self.castable(span, r, l, opts)?)
     }
     /// # Parameters
     ///
     /// - `l`: from
     /// - `r`: to
 
-    pub(crate) fn castable(&mut self, span: Span, from: &Type, to: &Type) -> ValidationResult<bool> {
+    pub(crate) fn castable(
+        &mut self,
+        span: Span,
+        from: &Type,
+        to: &Type,
+        opts: CastableOpts,
+    ) -> ValidationResult<bool> {
         let from = from.normalize();
         let to = to.normalize();
 
@@ -326,11 +342,11 @@ impl Analyzer<'_, '_> {
         match (from, to) {
             (Type::Ref(_), _) => {
                 let from = self.expand_top_ref(span, Cow::Borrowed(from), Default::default())?;
-                return self.castable(span, &from, to);
+                return self.castable(span, &from, to, opts);
             }
             (_, Type::Ref(_)) => {
                 let to = self.expand_top_ref(span, Cow::Borrowed(to), Default::default())?;
-                return self.castable(span, from, &to);
+                return self.castable(span, from, &to, opts);
             }
 
             (Type::TypeLit(lt), Type::TypeLit(rt)) => {
@@ -370,7 +386,7 @@ impl Analyzer<'_, '_> {
         match from {
             Type::Union(l) => {
                 for l in &l.types {
-                    if self.castable(span, l, to)? {
+                    if self.castable(span, l, to, opts)? {
                         return Ok(true);
                     }
                 }
@@ -383,7 +399,7 @@ impl Analyzer<'_, '_> {
         match to {
             Type::Union(to) => {
                 for to in &to.types {
-                    if self.castable(span, from, &to)? {
+                    if self.castable(span, from, &to, opts)? {
                         return Ok(true);
                     }
                 }
@@ -393,7 +409,7 @@ impl Analyzer<'_, '_> {
 
             Type::Intersection(to) => {
                 for to in &to.types {
-                    if self.castable(span, from, &to)? {
+                    if self.castable(span, from, &to, opts)? {
                         return Ok(true);
                     }
                 }
@@ -409,7 +425,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if from.is_class() && to.is_interface() {
+        if from.is_class() && (to.is_interface() || to.is_type_lit()) {
             return Ok(false);
         }
 
@@ -421,6 +437,9 @@ impl Analyzer<'_, '_> {
             &mut Default::default(),
             AssignOpts {
                 span,
+                disallow_different_classes: opts.disallow_different_classes,
+                allow_assignment_to_param_constraint: opts.allow_assignment_to_param_constraint,
+                disallow_special_assignment_to_empty_class: opts.disallow_special_assignment_to_empty_class,
                 for_castablity: true,
                 ..Default::default()
             },

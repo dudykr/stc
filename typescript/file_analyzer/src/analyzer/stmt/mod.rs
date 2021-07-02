@@ -140,6 +140,10 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// Validate that parent interfaces are all resolved.
     pub(super) fn resolve_parent_interfaces(&mut self, parents: &[RTsExprWithTypeArgs]) {
+        if self.is_builtin {
+            return;
+        }
+
         for parent in parents {
             // Verify parent interface
             let res: Result<_, _> = try {

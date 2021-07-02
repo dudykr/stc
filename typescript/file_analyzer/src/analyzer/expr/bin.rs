@@ -1,7 +1,7 @@
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        expr::TypeOfMode,
+        expr::{type_cast::CastableOpts, TypeOfMode},
         generic::ExtendsOpts,
         scope::ExpandOpts,
         util::{Comparator, ResultExt},
@@ -362,7 +362,7 @@ impl Analyzer<'_, '_> {
 
                         if self.ctx.in_cond && !cannot_narrow {
                             let narrowed_ty = self
-                                .narrow_with_instanceof(span, ty.clone(), &orig_ty)
+                                .narrow_with_instanceof(span, Cow::Borrowed(&ty), &orig_ty)
                                 .context("tried to narrow type with instanceof")?
                                 .cheap();
 
@@ -546,6 +546,39 @@ impl Analyzer<'_, '_> {
             | op!("^")
             | op!("**") => {
                 no_unknown!();
+
+                if op == op!("**") {
+                    let lt = lt.normalize();
+                    let rt = rt.normalize();
+
+                    self.report_possibly_null_or_undefined(lt.span(), &lt)
+                        .report(&mut self.storage);
+
+                    if lt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+                        || lt.is_str()
+                        || lt.is_bool()
+                        || lt.is_type_lit()
+                        || lt.is_type_param()
+                        || lt.is_interface()
+                        || lt.is_tpl()
+                    {
+                        self.storage.report(Error::WrongTypeForLhsOfNumericOperation { span });
+                    }
+
+                    self.report_possibly_null_or_undefined(rt.span(), &rt)
+                        .report(&mut self.storage);
+
+                    if rt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+                        || rt.is_str()
+                        || rt.is_bool()
+                        || rt.is_type_lit()
+                        || rt.is_type_param()
+                        || rt.is_interface()
+                        || rt.is_tpl()
+                    {
+                        self.storage.report(Error::WrongTypeForRhsOfNumericOperation { span });
+                    }
+                }
 
                 return Ok(Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
@@ -917,7 +950,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.has_overlap(span, &disc_ty, &case_ty)
+        self.has_overlap(
+            span,
+            &disc_ty,
+            &case_ty,
+            CastableOpts {
+                allow_assignment_to_param_constraint: true,
+                ..Default::default()
+            },
+        )
     }
 
     /// We have to check for inheritnace.
@@ -952,7 +993,7 @@ impl Analyzer<'_, '_> {
     /// If we apply `instanceof C` to `v`, `v` becomes `T`.
     /// Note that `C extends D` and `D extends C` are true because both of `C`
     /// and `D` are empty classes.
-    fn narrow_with_instanceof(&mut self, span: Span, ty: Type, orig_ty: &Type) -> ValidationResult {
+    fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> ValidationResult {
         let orig_ty = orig_ty.normalize();
 
         match orig_ty {
@@ -993,10 +1034,10 @@ impl Analyzer<'_, '_> {
             Type::ClassDef(ty) => {
                 return self.narrow_with_instanceof(
                     span,
-                    Type::Class(Class {
+                    Cow::Owned(Type::Class(Class {
                         span,
                         def: box ty.clone(),
-                    }),
+                    })),
                     orig_ty,
                 )
             }
@@ -1025,12 +1066,21 @@ impl Analyzer<'_, '_> {
                 return Ok(orig_ty.clone());
             } else {
                 match (orig_ty, ty.normalize()) {
-                    (Type::Interface(..), Type::Interface(..)) => return Ok(ty),
+                    (Type::Interface(..), Type::Interface(..)) => return Ok(ty.into_owned()),
                     _ => {}
                 }
 
                 if !self
-                    .has_overlap(span, orig_ty, &ty)
+                    .has_overlap(
+                        span,
+                        orig_ty,
+                        &ty,
+                        CastableOpts {
+                            disallow_different_classes: true,
+                            disallow_special_assignment_to_empty_class: true,
+                            ..Default::default()
+                        },
+                    )
                     .context("tried to check if overlap exists to calculate the type created by instanceof")?
                 {
                     return Ok(Type::never(span));
@@ -1047,7 +1097,7 @@ impl Analyzer<'_, '_> {
             }
             _ => {}
         }
-        Ok(ty)
+        Ok(ty.into_owned())
     }
 
     #[extra_validator]
@@ -1185,7 +1235,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        self.has_overlap(span, &l, &r)
+        self.has_overlap(span, &l, &r, Default::default())
     }
 
     /// Returns Ok(Some(v)) if this method has a special rule to handle type
@@ -1413,7 +1463,8 @@ impl Analyzer<'_, '_> {
             Type::Union(u) => {
                 let mut candidates = vec![];
                 for ty in &u.types {
-                    let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var);
+                    let prop_res =
+                        self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
 
                     match prop_res {
                         Ok(prop_ty) => {

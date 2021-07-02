@@ -671,7 +671,7 @@ impl Analyzer<'_, '_> {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None));
                     let lhs_ty = match lhs_ty {
                         Ok(v) => v,
-                        _ => return,
+                        _ => Type::any(lhs.span()),
                     };
 
                     if op == op!("=") {
@@ -952,7 +952,7 @@ impl Analyzer<'_, '_> {
                             };
                             let prop_ty = self
                                 .with_ctx(ctx)
-                                .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var)
+                                .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
                                 .unwrap_or_else(|_| Type::any(span));
 
                             self.try_assign_pat_with_opts(span, &kv.value, &prop_ty, opts)
@@ -969,7 +969,7 @@ impl Analyzer<'_, '_> {
                             };
                             let prop_ty = self
                                 .with_ctx(ctx)
-                                .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var)
+                                .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
                                 .unwrap_or_else(|_| Type::any(span));
 
                             self.try_assign_pat_with_opts(
@@ -1157,6 +1157,7 @@ impl Analyzer<'_, '_> {
             },
             TypeOfMode::RValue,
             IdCtx::Var,
+            Default::default(),
         );
 
         match prop_res {
@@ -1223,6 +1224,7 @@ impl Analyzer<'_, '_> {
                             },
                             TypeOfMode::RValue,
                             IdCtx::Var,
+                            Default::default(),
                         ) {
                             if ty.type_eq(&prop_ty) {
                                 new_obj_types.push(obj.clone());

@@ -30,9 +30,14 @@ impl Analyzer<'_, '_> {
                     in_opt_chain: true,
                     ..self.ctx
                 };
-                let ty = self
-                    .with_ctx(ctx)
-                    .access_property(span, &obj, &prop, TypeOfMode::RValue, IdCtx::Var)?;
+                let ty = self.with_ctx(ctx).access_property(
+                    span,
+                    &obj,
+                    &prop,
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                    Default::default(),
+                )?;
 
                 //
 

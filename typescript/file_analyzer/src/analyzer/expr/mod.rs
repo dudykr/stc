@@ -36,7 +36,7 @@ use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, Method, ModuleId, Operator,
-    PropertySignature, QueryExpr, QueryType, StaticThis,
+    OptionalType, PropertySignature, QueryExpr, QueryType, StaticThis,
 };
 use stc_utils::{error::context, stack};
 use std::{
@@ -57,6 +57,7 @@ mod call_new;
 mod const_assertion;
 mod constraint_reducer;
 mod function;
+mod jsx;
 mod meta_prop;
 mod object;
 mod optional_chaining;
@@ -407,10 +408,11 @@ impl Analyzer<'_, '_> {
                 }
 
                 RPatOrExpr::Pat(box RPat::Expr(ref e)) | RPatOrExpr::Expr(ref e) => {
-                    e.validate_with_args(analyzer, (TypeOfMode::LValue, None, None))
+                    ty_of_left = e
+                        .validate_with_args(analyzer, (TypeOfMode::LValue, None, None))
                         .report(&mut analyzer.storage);
 
-                    (None, type_ann)
+                    (None, ty_of_left.as_ref())
                 }
 
                 _ => {
@@ -489,6 +491,12 @@ impl Analyzer<'_, '_> {
             Ok(rhs_ty)
         })
     }
+}
+
+/// All fields defaults to default value of the type. (`false` for [bool]).
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct AccessPropertyOpts {
+    pub dont_validate_type_of_computed_prop: bool,
 }
 
 #[validator]
@@ -771,6 +779,7 @@ impl Analyzer<'_, '_> {
         prop: &Key,
         type_mode: TypeOfMode,
         members: &[TypeElement],
+        opts: AccessPropertyOpts,
     ) -> ValidationResult<Option<Type>> {
         let mut matching_elements = vec![];
         for el in members.iter() {
@@ -883,7 +892,7 @@ impl Analyzer<'_, '_> {
 
             let obj = self.env.get_global_type(span, &js_word!("Function"))?;
 
-            if let Ok(v) = self.access_property(span, &obj, prop, type_mode, IdCtx::Var) {
+            if let Ok(v) = self.access_property(span, &obj, prop, type_mode, IdCtx::Var, opts) {
                 return Ok(Some(v));
             }
         }
@@ -973,6 +982,7 @@ impl Analyzer<'_, '_> {
         prop: &Key,
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
+        opts: AccessPropertyOpts,
     ) -> ValidationResult {
         if !self.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
@@ -992,7 +1002,7 @@ impl Analyzer<'_, '_> {
                     Type::Lit(RTsLitType {
                         lit: RTsLit::Number(prop),
                         ..
-                    }) => return self.access_property(span, obj, &Key::Num(prop.clone()), type_mode, id_ctx),
+                    }) => return self.access_property(span, obj, &Key::Num(prop.clone()), type_mode, id_ctx, opts),
                     _ => {}
                 }
             }
@@ -1016,6 +1026,7 @@ impl Analyzer<'_, '_> {
                         },
                         type_mode,
                         id_ctx,
+                        opts,
                     );
                     // As some types has rules about computed propeties, we use the result only if
                     // it sucesses.
@@ -1034,7 +1045,7 @@ impl Analyzer<'_, '_> {
                 }) => {
                     // As some types has rules about computed propeties, we use the result only if
                     // it sucesses.
-                    if let Ok(ty) = self.access_property(span, obj, &Key::Num(n.clone()), type_mode, id_ctx) {
+                    if let Ok(ty) = self.access_property(span, obj, &Key::Num(n.clone()), type_mode, id_ctx, opts) {
                         return Ok(ty);
                     }
                 }
@@ -1047,7 +1058,7 @@ impl Analyzer<'_, '_> {
         // We use child scope to store type parameters.
         let mut res = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> ValidationResult<_> {
             let mut ty = analyzer
-                .access_property_inner(span, obj, prop, type_mode, id_ctx)?
+                .access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?
                 .fixed();
             ty.assert_valid();
             ty = analyzer.expand_type_params_using_scope(ty)?;
@@ -1099,6 +1110,7 @@ impl Analyzer<'_, '_> {
         prop: &Key,
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
+        opts: AccessPropertyOpts,
     ) -> ValidationResult {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy());
@@ -1115,6 +1127,24 @@ impl Analyzer<'_, '_> {
         let marks = self.marks();
 
         let computed = prop.is_computed();
+
+        if computed && !opts.dont_validate_type_of_computed_prop {
+            let res: ValidationResult<_> = try {
+                let key_ty = prop.ty();
+                let key_ty = self.normalize(Some(span), key_ty, Default::default())?;
+
+                if key_ty.is_function() || key_ty.is_constructor() {
+                    Err(Error::CannotUseTypeAsIndexIndex { span })?
+                }
+            };
+
+            res.report(&mut self.storage);
+        }
+
+        let opts = AccessPropertyOpts {
+            dont_validate_type_of_computed_prop: false,
+            ..opts
+        };
 
         if id_ctx == IdCtx::Var {
             // TODO: Use parent scope
@@ -1146,7 +1176,9 @@ impl Analyzer<'_, '_> {
 
                     // TODO: Remove clone
                     let members = self.scope.object_lit_members().to_vec();
-                    if let Some(mut v) = self.access_property_of_type_elements(span, &obj, prop, type_mode, &members)? {
+                    if let Some(mut v) =
+                        self.access_property_of_type_elements(span, &obj, prop, type_mode, &members, opts)?
+                    {
                         self.marks().infected_by_this_in_object_literal.apply_to_type(&mut v);
                         return Ok(v);
                     }
@@ -1218,7 +1250,7 @@ impl Analyzer<'_, '_> {
                                 },
                             )?;
 
-                            if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var) {
+                            if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                                 return Ok(v);
                             }
                         }
@@ -1247,7 +1279,7 @@ impl Analyzer<'_, '_> {
                             },
                         )?;
 
-                        if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var) {
+                        if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
                             return Ok(v);
                         }
                     }
@@ -1318,7 +1350,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     return self
-                        .access_property(span, &this, prop, type_mode, id_ctx)
+                        .access_property(span, &this, prop, type_mode, id_ctx, opts)
                         .context("tried to access property of `this`");
                 }
             }
@@ -1365,6 +1397,7 @@ impl Analyzer<'_, '_> {
                     prop,
                     type_mode,
                     id_ctx,
+                    opts,
                 );
             }
 
@@ -1451,7 +1484,7 @@ impl Analyzer<'_, '_> {
                                         _ => unreachable!(),
                                     },
                                 });
-                                return self.access_property(span, &new_obj_ty, prop, type_mode, id_ctx);
+                                return self.access_property(span, &new_obj_ty, prop, type_mode, id_ctx, opts);
                             }
                         }
                         return Ok(Type::Keyword(RTsKeywordType {
@@ -1507,7 +1540,7 @@ impl Analyzer<'_, '_> {
                                                 _ => unreachable!(),
                                             },
                                         });
-                                        return self.access_property(*span, &new_obj_ty, prop, type_mode, id_ctx);
+                                        return self.access_property(*span, &new_obj_ty, prop, type_mode, id_ctx, opts);
                                     }
                                 }
                             }
@@ -1601,7 +1634,7 @@ impl Analyzer<'_, '_> {
                 if let Some(super_ty) = &c.def.super_class {
                     let super_ty = self.instantiate_class(span, &super_ty)?;
 
-                    if let Ok(v) = self.access_property(span, &super_ty, prop, type_mode, id_ctx) {
+                    if let Ok(v) = self.access_property(span, &super_ty, prop, type_mode, id_ctx, opts) {
                         return Ok(v);
                     }
                 }
@@ -1656,7 +1689,7 @@ impl Analyzer<'_, '_> {
                             };
                             if let Ok(ty) =
                                 self.with_ctx(ctx)
-                                    .access_property(span, &constraint, prop, type_mode, id_ctx)
+                                    .access_property(span, &constraint, prop, type_mode, id_ctx, opts)
                             {
                                 return Ok(ty);
                             }
@@ -1766,7 +1799,7 @@ impl Analyzer<'_, '_> {
                 };
                 let interface = self.env.get_global_type(span, &word)?;
 
-                let err = match self.access_property(span, &interface, prop, type_mode, id_ctx) {
+                let err = match self.access_property(span, &interface, prop, type_mode, id_ctx, opts) {
                     Ok(v) => return Ok(v),
                     Err(err) => err,
                 };
@@ -1832,7 +1865,7 @@ impl Analyzer<'_, '_> {
                 };
                 return self
                     .with_ctx(ctx)
-                    .access_property(span, &array_ty, prop, type_mode, id_ctx)
+                    .access_property(span, &array_ty, prop, type_mode, id_ctx, opts)
                     .or_else(|err| {
                         if !has_better_default {
                             return Err(err);
@@ -1861,7 +1894,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(Interface { ref body, extends, .. }) => {
-                if let Ok(Some(v)) = self.access_property_of_type_elements(span, &obj, prop, type_mode, body) {
+                if let Ok(Some(v)) = self.access_property_of_type_elements(span, &obj, prop, type_mode, body, opts) {
                     return Ok(v);
                 }
 
@@ -1878,7 +1911,7 @@ impl Analyzer<'_, '_> {
                         .context("tried to instantiate parents of an interface to access property")?;
 
                     // TODO: Check if multiple interface has same property.
-                    if let Ok(ty) = self.access_property(span, &obj, prop, type_mode, id_ctx) {
+                    if let Ok(ty) = self.access_property(span, &obj, prop, type_mode, id_ctx, opts) {
                         return Ok(ty);
                     }
                 }
@@ -1898,6 +1931,7 @@ impl Analyzer<'_, '_> {
                         prop,
                         type_mode,
                         id_ctx,
+                        opts,
                     ) {
                         return Ok(ty);
                     }
@@ -1915,7 +1949,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(TypeLit { ref members, .. }) => {
-                if let Some(v) = self.access_property_of_type_elements(span, &obj, prop, type_mode, members)? {
+                if let Some(v) = self.access_property_of_type_elements(span, &obj, prop, type_mode, members, opts)? {
                     return Ok(v);
                 }
 
@@ -1932,6 +1966,7 @@ impl Analyzer<'_, '_> {
                         prop,
                         type_mode,
                         id_ctx,
+                        opts,
                     ) {
                         return Ok(ty);
                     }
@@ -1943,14 +1978,14 @@ impl Analyzer<'_, '_> {
 
                 if members.iter().any(|e| e.is_call()) {
                     let obj = self.env.get_global_type(span, &js_word!("Function"))?;
-                    if let Ok(v) = self.access_property(span, &obj, prop, type_mode, IdCtx::Var) {
+                    if let Ok(v) = self.access_property(span, &obj, prop, type_mode, IdCtx::Var, opts) {
                         return Ok(v);
                     }
                 }
 
                 {
                     let obj = self.env.get_global_type(span, &js_word!("Object"))?;
-                    if let Ok(v) = self.access_property(span, &obj, prop, type_mode, IdCtx::Var) {
+                    if let Ok(v) = self.access_property(span, &obj, prop, type_mode, IdCtx::Var, opts) {
                         return Ok(v);
                     }
                 }
@@ -1997,7 +2032,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    match self.access_property(span, ty, prop, type_mode, id_ctx) {
+                    match self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
                         Ok(ty) => tys.push(ty),
                         Err(err) => errors.push(err),
                     }
@@ -2093,7 +2128,7 @@ impl Analyzer<'_, '_> {
                     elem_type: box Type::union(types),
                 });
 
-                return self.access_property(span, &obj, prop, type_mode, id_ctx);
+                return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
             }
 
             Type::ClassDef(cls) => {
@@ -2141,7 +2176,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Some(super_ty) = &cls.super_class {
-                    if let Ok(v) = self.access_property(span, &super_ty, prop, type_mode, id_ctx) {
+                    if let Ok(v) = self.access_property(span, &super_ty, prop, type_mode, id_ctx, opts) {
                         return Ok(v);
                     }
                 }
@@ -2158,6 +2193,7 @@ impl Analyzer<'_, '_> {
                     prop,
                     type_mode,
                     id_ctx,
+                    opts,
                 ) {
                     return Ok(ty);
                 }
@@ -2228,7 +2264,7 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     }
 
-                    return self.access_property(span, &this, prop, type_mode, id_ctx);
+                    return self.access_property(span, &this, prop, type_mode, id_ctx, opts);
                 } else if self.ctx.in_argument {
                     // We will adjust `this` using information from callee.
                     return Ok(Type::any(span));
@@ -2263,7 +2299,7 @@ impl Analyzer<'_, '_> {
                 let mut new = vec![];
                 for ty in types {
                     let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
-                    if let Some(v) = self.access_property(span, &ty, prop, type_mode, id_ctx).ok() {
+                    if let Some(v) = self.access_property(span, &ty, prop, type_mode, id_ctx, opts).ok() {
                         new.push(v);
                     }
                 }
@@ -2305,7 +2341,7 @@ impl Analyzer<'_, '_> {
                         ..
                     })) => {
                         if let Ok(obj) = self.env.get_global_type(span, &js_word!("Array")) {
-                            return self.access_property(span, &obj, prop, type_mode, id_ctx);
+                            return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
                         }
                     }
 
@@ -2345,7 +2381,7 @@ impl Analyzer<'_, '_> {
                     .context("tried to expand a mapped type to access property")?;
 
                 if let Some(obj) = &expanded {
-                    return self.access_property(span, obj, prop, type_mode, id_ctx);
+                    return self.access_property(span, obj, prop, type_mode, id_ctx, opts);
                 }
 
                 match constraint.as_ref().map(Type::normalize) {
@@ -2418,6 +2454,7 @@ impl Analyzer<'_, '_> {
                                         prop,
                                         type_mode,
                                         id_ctx,
+                                        opts,
                                     );
                                 }
                             }
@@ -2425,16 +2462,16 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let opts = ExpandOpts {
+                let expand_opts = ExpandOpts {
                     generic: ExpandGenericOpts { props: &[prop.clone()] },
                     ..Default::default()
                 };
 
                 let obj = self
-                    .expand_top_ref(span, Cow::Borrowed(&obj), opts)
+                    .expand_top_ref(span, Cow::Borrowed(&obj), expand_opts)
                     .context("tried to expand reference to access property")?;
 
-                return self.access_property(span, &obj, prop, type_mode, id_ctx);
+                return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
             }
 
             Type::IndexedAccessType(..) => {
@@ -2462,21 +2499,21 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, name, None)?;
-                return self.access_property(span, &obj, prop, type_mode, id_ctx);
+                return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
             }
 
             Type::Function(f) if type_mode == TypeOfMode::RValue => {
                 // Use builtin type `Function`
                 let interface = self.env.get_global_type(f.span, &js_word!("Function"))?;
                 print_backtrace();
-                return self.access_property(span, &interface, prop, type_mode, id_ctx);
+                return self.access_property(span, &interface, prop, type_mode, id_ctx, opts);
             }
 
             Type::Constructor(c) => match prop {
                 Key::Num(_) | Key::BigInt(_) => return Ok(Type::any(span)),
                 _ => {
                     return self
-                        .access_property(span, &c.type_ann, prop, type_mode, id_ctx)
+                        .access_property(span, &c.type_ann, prop, type_mode, id_ctx, opts)
                         .context("tried to access property of the return type of a constructor")
                 }
             },
@@ -2500,7 +2537,7 @@ impl Analyzer<'_, '_> {
                     dump_type_as_string(&self.cm, &rest.ty)
                 );
                 return self
-                    .access_property(span, &rest.ty, prop, type_mode, id_ctx)
+                    .access_property(span, &rest.ty, prop, type_mode, id_ctx, opts)
                     .context("tried to access property of a rest type");
             }
 
@@ -2517,6 +2554,7 @@ impl Analyzer<'_, '_> {
                     prop,
                     type_mode,
                     id_ctx,
+                    opts,
                 ) {
                     return Ok(ty);
                 }
@@ -2526,6 +2564,24 @@ impl Analyzer<'_, '_> {
                     TypeOfMode::LValue => return Ok(Type::any(span)),
                     TypeOfMode::RValue => {}
                 }
+            }
+
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::ReadOnly,
+                ty,
+                ..
+            }) => {
+                if let TypeOfMode::RValue = type_mode {
+                    return self.access_property(span, &ty, prop, type_mode, id_ctx, opts);
+                }
+            }
+
+            Type::Optional(OptionalType { ty, .. }) => {
+                if self.rule().strict_null_checks {
+                    return Err(Error::ObjectIsPossiblyUndefined { span });
+                }
+
+                return self.access_property(span, &ty, prop, type_mode, id_ctx, opts);
             }
 
             _ => {}
@@ -3170,6 +3226,7 @@ impl Analyzer<'_, '_> {
                     },
                     TypeOfMode::RValue,
                     IdCtx::Type,
+                    Default::default(),
                 )
             }
         }
@@ -3249,7 +3306,7 @@ impl Analyzer<'_, '_> {
 
         let mut ty = self
             .with_ctx(prop_access_ctx)
-            .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var)
+            .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var, Default::default())
             .context("tried to access property of an object to calculate type of a member expression")?;
 
         let name: Option<Name> = expr.try_into().ok();
@@ -3440,10 +3497,11 @@ impl Analyzer<'_, '_> {
         }
 
         // Check for numeric keys like '0', '1', '2'.
-        elems.iter().any(|el| match el {
-            TypeElement::Property(PropertySignature { key: Key::Num(..), .. }) => true,
-            _ => false,
-        })
+        elems.is_empty()
+            || elems.iter().any(|el| match el {
+                TypeElement::Property(PropertySignature { key: Key::Num(..), .. }) => true,
+                _ => false,
+            })
     }
 }
 

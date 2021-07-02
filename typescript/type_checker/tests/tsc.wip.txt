@@ -1,0 +1,5 @@
+expressions::unaryOperators::decrementOperator::decrementOperatorWithEnumType.ts
+expressions::unaryOperators::decrementOperator::decrementOperatorWithEnumTypeInvalidOperations.ts
+types::conditional::conditionalTypes1.ts
+types::conditional::conditionalTypes2.ts
+types::conditional::conditionalTypesExcessProperties.ts

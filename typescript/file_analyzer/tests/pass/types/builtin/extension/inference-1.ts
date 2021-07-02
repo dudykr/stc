@@ -5,4 +5,4 @@ interface Array<T> {
 declare const a: (string | number)[] | null[] | undefined[] | {}[];
 declare const b: (string | number)[] | null[] | undefined[] | {}[];
 
-export let x = a.equalsShallow(b);
+let x = a.equalsShallow(b);

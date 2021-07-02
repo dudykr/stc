@@ -1360,7 +1360,7 @@ impl Analyzer<'_, '_> {
                                 .into_causes()
                                 .into_iter()
                                 .map(|err| {
-                                    err.convert(|err| Error::InvalidImplOfInterface {
+                                    err.convert_all(|err| Error::InvalidImplOfInterface {
                                         span: match &err {
                                             Error::AssignFailed {
                                                 right_ident: Some(s), ..

@@ -235,7 +235,7 @@ impl Analyzer<'_, '_> {
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
-                }) => errors.push(Error::TS2532 { span: arg.span() }),
+                }) => errors.push(Error::ObjectIsPossiblyUndefined { span: arg.span() }),
 
                 _ => {
                     //

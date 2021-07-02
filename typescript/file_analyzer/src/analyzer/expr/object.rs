@@ -295,6 +295,7 @@ impl UnionNormalizer<'_, '_, '_> {
                 normalized: true,
                 inexact,
                 specified: self.preserve_specified && prev_specified,
+                ..Default::default()
             },
         };
 

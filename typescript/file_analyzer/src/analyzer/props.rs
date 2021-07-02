@@ -410,7 +410,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 let type_ann = object_type.and_then(|obj| {
-                    self.access_property(span, &obj, &key, TypeOfMode::RValue, IdCtx::Var)
+                    self.access_property(span, &obj, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
                         .ok()
                 });
 
@@ -478,7 +478,7 @@ impl Analyzer<'_, '_> {
                     _ => false,
                 };
                 let method_type_ann = object_type.and_then(|obj| {
-                    self.access_property(span, &obj, &key, TypeOfMode::RValue, IdCtx::Var)
+                    self.access_property(span, &obj, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
                         .ok()
                 });
 

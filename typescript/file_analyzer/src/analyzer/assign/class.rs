@@ -236,17 +236,19 @@ impl Analyzer<'_, '_> {
 
         // Everything left is assignable to empty classes, including classes with only
         // constructors.
-        let is_empty = l
-            .def
-            .body
-            .iter()
-            .find(|member| match member {
-                ClassMember::Constructor(_) => false,
-                _ => true,
-            })
-            .is_none();
-        if !l.def.is_abstract && is_empty {
-            return Ok(());
+        if !opts.disallow_special_assignment_to_empty_class {
+            let is_empty = l
+                .def
+                .body
+                .iter()
+                .find(|member| match member {
+                    ClassMember::Constructor(_) => false,
+                    _ => true,
+                })
+                .is_none();
+            if !l.def.is_abstract && is_empty {
+                return Ok(());
+            }
         }
 
         match r {

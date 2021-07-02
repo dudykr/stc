@@ -2,10 +2,15 @@ use crate::{
     analyzer::{types::NormalizeTypeOpts, Analyzer},
     ValidationResult,
 };
+use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RTsEnumMemberId, RTsLit, RTsLitType};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
-use stc_ts_types::{FnParam, Id, IndexSignature, Key, Mapped, Operator, PropertySignature, Type, TypeElement, TypeLit};
-use std::{borrow::Cow, collections::HashMap};
+use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
+use stc_ts_types::{
+    Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, Mapped, Operator, PropertySignature, Type,
+    TypeElement, TypeLit,
+};
+use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsTypeOperatorOp};
 
@@ -22,7 +27,13 @@ impl Analyzer<'_, '_> {
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
         let orig = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
 
-        let ty = self.expand_mapped_inner(span, m)?;
+        let start = Instant::now();
+        let ty = self.expand_mapped_inner(span, m);
+        let end = Instant::now();
+
+        slog::debug!(self.logger, "[Timings] expand_mapped (time = {:?})", end - start);
+
+        let ty = ty?;
         if let Some(ty) = &ty {
             let expanded = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
 
@@ -41,7 +52,7 @@ impl Analyzer<'_, '_> {
             })) => {
                 if let Some(mapped_ty) = m.ty.as_deref().map(Type::normalize) {
                     // Special case, but many usages can be handled with this check.
-                    if ty.normalize().type_eq(&mapped_ty) {
+                    if (&**ty).type_eq(&mapped_ty) {
                         let mut new_type = self
                             .type_to_type_lit(span, &ty)
                             .context("tried to convert a type to type literal to expand mapped type")?
@@ -123,6 +134,43 @@ impl Analyzer<'_, '_> {
                         members,
                         metadata: Default::default(),
                     })));
+                }
+
+                if let Some(mapped_ty) = m.ty.as_deref() {
+                    let found_type_param_in_keyof_operand = {
+                        let mut v = TypeParamUsageFinder::default();
+                        ty.visit_with(&mut v);
+                        !v.params.is_empty()
+                    };
+                    if !found_type_param_in_keyof_operand {
+                        // Check if type in `keyof T` is only used as `T[K]`.
+                        // If so, we can just use the type.
+                        //
+                        // {
+                        //     [P#5430#0 in keyof number[]]: Box<number[][P]>;
+                        // };
+
+                        let mut finder = IndexedAccessTypeFinder {
+                            obj: ty,
+                            key: &m.type_param.name,
+                            can_replace_indexed_type: false,
+                        };
+
+                        mapped_ty.visit_with(&mut finder);
+                        if finder.can_replace_indexed_type {
+                            let mut replacer = IndexedAccessTypeReplacer {
+                                obj: ty,
+                                key: &m.type_param.name,
+                            };
+
+                            let mut ret_ty = mapped_ty.clone();
+                            ret_ty.visit_mut_with(&mut replacer);
+
+                            ret_ty = self.apply_mapped_flags_to_type(span, ret_ty, m.optional, m.readonly)?;
+
+                            return Ok(Some(ret_ty));
+                        }
+                    }
                 }
             }
             _ => match m.type_param.constraint.as_deref() {
@@ -407,9 +455,34 @@ impl Analyzer<'_, '_> {
 
                 return Ok(Some(result));
             }
+            Type::Tuple(..) | Type::Array(..) => Ok(None),
+
             _ => {
-                unimplemented!("get_property_names_for_mapped_type: {:#?}", ty);
+                unimplemented!(
+                    "get_property_names_for_mapped_type:\n{}\n{:#?}",
+                    dump_type_as_string(&self.cm, &ty),
+                    ty
+                );
             }
+        }
+    }
+
+    pub(crate) fn apply_mapped_flags_to_type(
+        &mut self,
+        span: Span,
+        ty: Type,
+        optional: Option<TruePlusMinus>,
+        readonly: Option<TruePlusMinus>,
+    ) -> ValidationResult<Type> {
+        let type_lit = self.type_to_type_lit(span, &ty)?.map(Cow::into_owned);
+        if let Some(mut type_lit) = type_lit {
+            for m in &mut type_lit.members {
+                self.apply_mapped_flags(m, optional, readonly);
+            }
+
+            Ok(Type::TypeLit(type_lit))
+        } else {
+            Ok(ty)
         }
     }
 
@@ -499,5 +572,77 @@ pub(crate) enum PropertyName {
 impl From<Key> for PropertyName {
     fn from(key: Key) -> Self {
         Self::Key(key)
+    }
+}
+
+#[derive(Debug)]
+struct IndexedAccessTypeFinder<'a> {
+    obj: &'a Type,
+    key: &'a Id,
+
+    can_replace_indexed_type: bool,
+}
+
+impl Visit<Conditional> for IndexedAccessTypeFinder<'_> {
+    fn visit(&mut self, n: &Conditional) {
+        n.check_type.visit_children_with(self);
+
+        n.extends_type.visit_children_with(self);
+    }
+}
+
+impl Visit<IndexedAccessType> for IndexedAccessTypeFinder<'_> {
+    fn visit(&mut self, n: &IndexedAccessType) {
+        if (&*n.obj_type).type_eq(self.obj)
+            && match n.index_type.normalize() {
+                Type::Param(index) => *self.key == index.name,
+                _ => false,
+            }
+        {
+            self.can_replace_indexed_type = true;
+            return;
+        }
+
+        n.visit_children_with(self);
+    }
+}
+
+#[derive(Debug)]
+struct IndexedAccessTypeReplacer<'a> {
+    obj: &'a Type,
+    key: &'a Id,
+}
+
+impl VisitMut<Type> for IndexedAccessTypeReplacer<'_> {
+    fn visit_mut(&mut self, ty: &mut Type) {
+        {
+            let mut v = IndexedAccessTypeFinder {
+                obj: self.obj,
+                key: self.key,
+                can_replace_indexed_type: false,
+            };
+
+            ty.visit_with(&mut v);
+            if !v.can_replace_indexed_type {
+                return;
+            }
+        }
+
+        ty.normalize_mut();
+
+        match ty {
+            Type::IndexedAccessType(n) => {
+                if (&*n.obj_type).type_eq(self.obj)
+                    && match n.index_type.normalize() {
+                        Type::Param(index) => *self.key == index.name,
+                        _ => false,
+                    }
+                {
+                    *ty = self.obj.clone();
+                    return;
+                }
+            }
+            _ => {}
+        }
     }
 }

@@ -133,6 +133,10 @@ impl Analyzer<'_, '_> {
         let child = child.normalize();
         let parent = parent.normalize();
 
+        if child.is_any() {
+            return Some(true);
+        }
+
         if child.type_eq(&parent) {
             return Some(true);
         }
@@ -300,7 +304,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
             Type::TypeLit(..) => match parent {
-                Type::Class(..) => return Some(false),
+                Type::Class(..) | Type::ClassDef(..) => return Some(false),
                 _ => {}
             },
             Type::ClassDef(child_class) => match parent {
@@ -365,16 +369,20 @@ impl Analyzer<'_, '_> {
         }
         // dbg!(child, parent);
 
-        match self.assign_with_opts(
+        let res = self.assign_with_opts(
             &mut Default::default(),
             AssignOpts {
                 span,
+                disallow_special_assignment_to_empty_class: true,
                 disallow_different_classes: opts.disallow_different_classes,
+                allow_assignment_to_param_constraint: true,
                 ..Default::default()
             },
             parent,
             child,
-        ) {
+        );
+
+        match res {
             Ok(()) => Some(true),
             _ => Some(false),
         }
@@ -871,10 +879,14 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
 
                 let span = key.span().or_else(|| ty.obj_type.span()).or_else(|| ty.span());
 
-                if let Ok(prop_ty) =
-                    self.analyzer
-                        .access_property(span, &ty.obj_type, &key, TypeOfMode::RValue, IdCtx::Var)
-                {
+                if let Ok(prop_ty) = self.analyzer.access_property(
+                    span,
+                    &ty.obj_type,
+                    &key,
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                    Default::default(),
+                ) {
                     return prop_ty;
                 }
 
