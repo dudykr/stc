@@ -21,11 +21,10 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        let res = e.arg.validate_with_args(self, (TypeOfMode::LValue, None, None));
         let mut errored = false;
 
-        let ty = e
-            .arg
-            .validate_with_args(self, (TypeOfMode::LValue, None, None))
+        let ty = res
             .and_then(|ty| match ty.normalize() {
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
