@@ -1,6 +1,7 @@
 use crate::{
     analyzer::{
         assign::{AssignData, AssignOpts},
+        types::NormalizeTypeOpts,
         util::ResultExt,
         Analyzer,
     },
@@ -520,6 +521,27 @@ impl Analyzer<'_, '_> {
                 }) => return Ok(()),
 
                 Type::EnumVariant(..) => return Err(Error::SimpleAssignFailed { span }),
+
+                Type::Keyword(..) => {
+                    let rhs = self
+                        .normalize(
+                            Some(span),
+                            Cow::Borrowed(&rhs),
+                            NormalizeTypeOpts {
+                                normalize_keywords: true,
+                                ..Default::default()
+                            },
+                        )
+                        .convert_err(|err| Error::SimpleAssignFailed { span: err.span() })?;
+
+                    if rhs.normalize().is_keyword() {
+                        return Err(Error::SimpleAssignFailed { span });
+                    }
+
+                    return self
+                        .assign_to_type_elements(data, opts, lhs_span, lhs, &rhs, lhs_metadata)
+                        .context("tried to assign using expanded builtin type");
+                }
 
                 _ => {
                     return Err(Error::Unimplemented {
