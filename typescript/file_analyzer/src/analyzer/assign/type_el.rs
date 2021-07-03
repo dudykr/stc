@@ -532,10 +532,13 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         )
-                        .convert_err(|err| Error::SimpleAssignFailed { span: err.span() })?;
+                        .convert_err(|err| Error::SimpleAssignFailed { span: err.span() })
+                        .context("failed to normalize")?;
 
                     if rhs.normalize().is_keyword() {
-                        return Err(Error::SimpleAssignFailed { span });
+                        return Err(
+                            Error::SimpleAssignFailed { span }.context("failed to assign builtin type of a keyword")
+                        );
                     }
 
                     return self
