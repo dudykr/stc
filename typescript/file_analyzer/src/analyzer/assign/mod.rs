@@ -128,6 +128,8 @@ pub(crate) struct AssignOpts {
     /// ```
     /// are not.
     pub allow_unknown_rhs_if_expanded: bool,
+
+    pub infer_type_params_of_left: bool,
 }
 
 #[derive(Default)]

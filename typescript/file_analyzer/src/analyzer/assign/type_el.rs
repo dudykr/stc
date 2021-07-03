@@ -902,7 +902,10 @@ impl Analyzer<'_, '_> {
 
                                 let res = self.assign_to_fn_like(
                                     data,
-                                    opts,
+                                    AssignOpts {
+                                        infer_type_params_of_left: true,
+                                        ..opts
+                                    },
                                     lc.type_params.as_ref(),
                                     &lc.params,
                                     lc.ret_ty.as_deref(),

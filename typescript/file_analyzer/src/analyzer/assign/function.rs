@@ -87,6 +87,46 @@ impl Analyzer<'_, '_> {
                 (&*new_r_params, new_r_ret_ty.as_ref())
             }
 
+            (Some(lt), None) if opts.infer_type_params_of_left => {
+                let opts = AssignOpts {
+                    infer_type_params_of_left: false,
+                    ..opts
+                };
+
+                let lf = Type::Function(Function {
+                    span,
+                    type_params: None,
+                    params: l_params.to_vec(),
+                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
+                });
+                let rf = Type::Function(Function {
+                    span,
+                    type_params: None,
+                    params: r_params.to_vec(),
+                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
+                });
+
+                let map =
+                    self.infer_type_with_types(span, &*lt.params, &lf, &rf, InferTypeOpts { ..Default::default() })?;
+                let new_l_params = self
+                    .expand_type_params(&map, l_params.to_vec(), Default::default())
+                    .context("tried to expand type parameters of lhs as a step of function assignemnt")?;
+                let new_l_ret_ty = self
+                    .expand_type_params(&map, l_ret_ty.cloned(), Default::default())
+                    .context("tried to expand return type of lhs as a step of function assignemnt")?;
+
+                return self.assign_to_fn_like(
+                    data,
+                    opts,
+                    None,
+                    &new_l_params,
+                    new_l_ret_ty.as_ref(),
+                    None,
+                    r_params,
+                    r_ret_ty,
+                );
+            }
+
             // Assigning `(a: 1) => string` to `<Z>(a: Z) => string` is valid.
             (None, Some(rt)) => {
                 let lf = Type::Function(Function {
