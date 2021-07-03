@@ -115,16 +115,18 @@ impl Analyzer<'_, '_> {
                     .expand_type_params(&map, l_ret_ty.cloned(), Default::default())
                     .context("tried to expand return type of lhs as a step of function assignemnt")?;
 
-                return self.assign_to_fn_like(
-                    data,
-                    opts,
-                    None,
-                    &new_l_params,
-                    new_l_ret_ty.as_ref(),
-                    None,
-                    r_params,
-                    r_ret_ty,
-                );
+                return self
+                    .assign_to_fn_like(
+                        data,
+                        opts,
+                        None,
+                        &new_l_params,
+                        new_l_ret_ty.as_ref(),
+                        None,
+                        r_params,
+                        r_ret_ty,
+                    )
+                    .context("tried to assign to an instantiated fn-like stuff");
             }
 
             // Assigning `(a: 1) => string` to `<Z>(a: Z) => string` is valid.
