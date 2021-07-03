@@ -248,17 +248,21 @@ impl Analyzer<'_, '_> {
                 for rm in &rt.members {
                     match rm {
                         TypeElement::Call(rm) => {
-                            if self.assign_params(data, opts, &l.params, &rm.params).is_err() {
-                                continue;
-                            }
-
-                            if let Some(r_ret_ty) = &rm.ret_ty {
-                                if self.assign_with_opts(data, opts, &l.ret_ty, &r_ret_ty).is_err() {
-                                    continue;
-                                }
-                            }
-
-                            return Ok(());
+                            return self
+                                .assign_to_fn_like(
+                                    data,
+                                    AssignOpts {
+                                        infer_type_params_of_left: true,
+                                        ..opts
+                                    },
+                                    l.type_params.as_ref(),
+                                    &l.params,
+                                    Some(&l.ret_ty),
+                                    rm.type_params.as_ref(),
+                                    &rm.params,
+                                    rm.ret_ty.as_deref(),
+                                )
+                                .context("tried to assign TypeElemeny::Call to a function");
                         }
                         _ => {}
                     }
