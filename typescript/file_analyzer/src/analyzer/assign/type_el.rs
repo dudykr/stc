@@ -143,7 +143,27 @@ impl Analyzer<'_, '_> {
                         lhs,
                         rhs_members,
                     )
-                    .context("tried assignment of a type literal to a type literals")
+                    .with_context(|| {
+                        format!(
+                            "tried assignment of a type literal to a type literals\nLHS={}\nRHS={}",
+                            dump_type_as_string(
+                                &self.cm,
+                                &Type::TypeLit(TypeLit {
+                                    span: DUMMY_SP,
+                                    members: lhs.to_vec(),
+                                    metadata: Default::default()
+                                })
+                            ),
+                            dump_type_as_string(
+                                &self.cm,
+                                &Type::TypeLit(TypeLit {
+                                    span: DUMMY_SP,
+                                    members: rhs_members.to_vec(),
+                                    metadata: Default::default()
+                                })
+                            ),
+                        )
+                    })
                     .store(&mut errors);
                 }
 
