@@ -148,6 +148,7 @@ impl Analyzer<'_, '_> {
     /// ```
     pub(super) fn insert_inferred(
         &mut self,
+        span: Span,
         inferred: &mut InferData,
         name: Id,
         ty: Cow<Type>,
