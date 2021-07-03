@@ -67,6 +67,22 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        {
+            // TODO(kdy1):
+            //
+            // If a parameter of lhs is something like
+            //
+            // (x: {
+            //     (a: number) : number;
+            //     (a: string) : string;
+            // }) : any[];
+            //
+            // and rhs is
+            //
+            // <T#3930>(x: (a: T#3930#0) => T) : T[];
+            //
+            // we need to infer two time.
+        }
         let new_r_params;
         let new_r_ret_ty;
         let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
