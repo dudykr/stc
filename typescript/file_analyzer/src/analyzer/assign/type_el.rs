@@ -419,7 +419,12 @@ impl Analyzer<'_, '_> {
 
                     return self
                         .assign_to_type_elements(data, opts, lhs_span, lhs, &rhs, lhs_metadata)
-                        .context("tried to assign the converted type to type elements");
+                        .with_context(|| {
+                            format!(
+                                "tried to assign the converted type to type elements:\nRHS={}",
+                                dump_type_as_string(&self.cm, &rhs)
+                            )
+                        });
                 }
 
                 Type::Keyword(RTsKeywordType {
