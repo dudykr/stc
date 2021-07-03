@@ -372,6 +372,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBigIntKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 })
@@ -379,12 +383,23 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
                 })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                })
                 | Type::Lit(RTsLitType {
                     lit: RTsLit::Number(..),
                     ..
                 })
                 | Type::Lit(RTsLitType {
+                    lit: RTsLit::BigInt(..),
+                    ..
+                })
+                | Type::Lit(RTsLitType {
                     lit: RTsLit::Str(..), ..
+                })
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::Bool(..), ..
                 })
                 | Type::Mapped(..)
                     if lhs.is_empty() =>
