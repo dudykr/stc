@@ -49,6 +49,7 @@ swc_ecma_ast = "0.46.0"
 swc_ecma_codegen = "0.59.0"
 swc_ecma_parser = "0.60.0"
 swc_ecma_utils = "0.37.1"
+tracing = "0.1.26"
 
 [dev-dependencies]
 stc_testing = {path = "../../testing"}
