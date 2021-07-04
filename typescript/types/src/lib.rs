@@ -19,6 +19,7 @@ use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
 use rnode::{FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
+use scoped_tls::scoped_thread_local;
 use static_assertions::assert_eq_size;
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
@@ -172,7 +173,10 @@ pub enum Type {
 
 impl Clone for Type {
     fn clone(&self) -> Self {
-        match self {
+        scoped_thread_local!(static NO_LOG: ());
+        let log = !NO_LOG.is_set();
+
+        NO_LOG.set(&(), || match self {
             Type::Arc(ty) => ty.clone().into(),
             Type::Keyword(ty) => ty.clone().into(),
             Type::StaticThis(ty) => ty.clone().into(),
@@ -217,11 +221,13 @@ impl Clone for Type {
                 };
 
                 let end = Instant::now();
-                trace!(kind = "perf", op = "Type.clone", "took {:?}", end - start);
+                if log {
+                    trace!(kind = "perf", op = "Type.clone", "took {:?}", end - start);
+                }
 
                 new
             }
-        }
+        })
     }
 }
 
