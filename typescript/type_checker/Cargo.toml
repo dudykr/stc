@@ -35,7 +35,7 @@ swc_ecma_ast = "0.46.0"
 swc_ecma_parser = "0.60.0"
 swc_ecma_transforms = "0.54.0"
 swc_ecma_visit = "0.32.0"
-tracing = "0.1.26"
+tracing = {version = "0.1.26", features = ["release_max_level_trace"]}
 
 [dev-dependencies]
 anyhow = "1.0.37"
