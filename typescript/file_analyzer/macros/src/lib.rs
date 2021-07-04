@@ -213,8 +213,9 @@ pub fn validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
 
                         let end = std::time::Instant::now();
 
-                        slog::info!(
-                            self.logger,
+                        tracing::trace!(
+                            kind = "perf",
+                            op = "validate",
                             "Validate<{}>: (time = {:?})",
                             stringify!(NodeType),
                             end - start
