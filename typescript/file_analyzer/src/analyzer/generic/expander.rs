@@ -19,7 +19,7 @@ use stc_utils::{error::context, ext::SpanExt, stack};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, instrument, trace};
+use tracing::{debug, instrument};
 
 /// All fields default to false.
 #[derive(Debug, Clone, Copy, Default)]
