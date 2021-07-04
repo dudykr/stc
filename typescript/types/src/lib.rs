@@ -34,6 +34,7 @@ use std::{
     mem::{replace, transmute},
     ops::AddAssign,
     sync::Arc,
+    time::Instant,
 };
 use swc_atoms::{js_word, JsWord};
 use swc_common::{EqIgnoreSpan, FromVariant, Span, Spanned, TypeEq, DUMMY_SP};
@@ -42,6 +43,7 @@ use swc_ecma_utils::{
     Value,
     Value::{Known, Unknown},
 };
+use tracing::trace;
 
 mod convert;
 mod id;
@@ -107,7 +109,7 @@ impl AddAssign for ModuleTypeData {
 }
 
 /// This type is expected to stored in a [Box], like `Vec<Type>`.
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, Is, EqIgnoreSpan, Visit)]
+#[derive(Debug, PartialEq, Spanned, FromVariant, Is, EqIgnoreSpan, Visit)]
 pub enum Type {
     Instance(Instance),
     StaticThis(StaticThis),
@@ -166,6 +168,61 @@ pub enum Type {
     Symbol(Symbol),
 
     Tpl(TplType),
+}
+
+impl Clone for Type {
+    fn clone(&self) -> Self {
+        match self {
+            Type::Arc(ty) => ty.clone().into(),
+
+            _ => {
+                let start = Instant::now();
+
+                let new = match self {
+                    Type::Instance(ty) => ty.clone().into(),
+                    Type::StaticThis(ty) => ty.clone().into(),
+                    Type::This(ty) => ty.clone().into(),
+                    Type::Lit(ty) => ty.clone().into(),
+                    Type::Query(ty) => ty.clone().into(),
+                    Type::Infer(ty) => ty.clone().into(),
+                    Type::Import(ty) => ty.clone().into(),
+                    Type::Predicate(ty) => ty.clone().into(),
+                    Type::IndexedAccessType(ty) => ty.clone().into(),
+                    Type::Ref(ty) => ty.clone().into(),
+                    Type::TypeLit(ty) => ty.clone().into(),
+                    Type::Keyword(ty) => ty.clone().into(),
+                    Type::Conditional(ty) => ty.clone().into(),
+                    Type::Tuple(ty) => ty.clone().into(),
+                    Type::Array(ty) => ty.clone().into(),
+                    Type::Union(ty) => ty.clone().into(),
+                    Type::Intersection(ty) => ty.clone().into(),
+                    Type::Function(ty) => ty.clone().into(),
+                    Type::Constructor(ty) => ty.clone().into(),
+                    Type::Operator(ty) => ty.clone().into(),
+                    Type::Param(ty) => ty.clone().into(),
+                    Type::EnumVariant(ty) => ty.clone().into(),
+                    Type::Interface(ty) => ty.clone().into(),
+                    Type::Enum(ty) => ty.clone().into(),
+                    Type::Mapped(ty) => ty.clone().into(),
+                    Type::Alias(ty) => ty.clone().into(),
+                    Type::Namespace(ty) => ty.clone().into(),
+                    Type::Module(ty) => ty.clone().into(),
+                    Type::Class(ty) => ty.clone().into(),
+                    Type::ClassDef(ty) => ty.clone().into(),
+                    Type::Rest(ty) => ty.clone().into(),
+                    Type::Optional(ty) => ty.clone().into(),
+                    Type::Symbol(ty) => ty.clone().into(),
+                    Type::Tpl(ty) => ty.clone().into(),
+                    _ => unreachable!(),
+                };
+
+                let end = Instant::now();
+                trace!(kind = "perf", op = "Type.clone", "took {:?}", end - start);
+
+                new
+            }
+        }
+    }
 }
 
 assert_eq_size!(Type, [u8; 128]);
