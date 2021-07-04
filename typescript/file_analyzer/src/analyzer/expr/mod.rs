@@ -2675,6 +2675,9 @@ impl Analyzer<'_, '_> {
 
         let mut modules = vec![];
         let mut ty = self.type_of_raw_var(i, type_mode)?;
+        if type_mode == TypeOfMode::LValue && ty.normalize().is_class_def() {
+            return Err(Error::NotVariable { span, left: span });
+        }
         ty.assert_valid();
         if let Some(type_args) = type_args {
             ty = self.expand_type_args(span, ty, type_args)?;
