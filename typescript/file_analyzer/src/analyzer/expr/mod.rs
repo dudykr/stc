@@ -2705,6 +2705,17 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if let TypeOfMode::LValue = type_mode {
+            if let Some(types) = self.find_type(self.ctx.module_id, &id)? {
+                for ty in types {
+                    match ty.normalize() {
+                        Type::Module(..) => return Err(Error::NotVariable { span, left: span }),
+                        _ => {}
+                    }
+                }
+            }
+        }
+
         if self.ctx.allow_module_var && need_intersection {
             if let Some(types) = self.find_type(self.ctx.module_id, &id)? {
                 for ty in types {
