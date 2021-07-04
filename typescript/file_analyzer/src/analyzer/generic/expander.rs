@@ -19,7 +19,7 @@ use stc_utils::{error::context, ext::SpanExt, stack};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::instrument;
+use tracing::{debug, instrument, trace};
 
 /// All fields default to false.
 #[derive(Debug, Clone, Copy, Default)]
@@ -125,7 +125,12 @@ impl Analyzer<'_, '_> {
             opts,
         });
         let end = Instant::now();
-        slog::info!(self.logger, "expanded type parameters (time = {:?})", end - start);
+        debug!(
+            kind = "perf",
+            op = "expand_generics",
+            "Expanded type parameters (time = {:?})",
+            end - start
+        );
 
         Ok(ty)
     }

@@ -43,11 +43,12 @@ use std::{
     borrow::Cow,
     collections::HashMap,
     convert::{TryFrom, TryInto},
-    time::Instant,
+    time::{Duration, Instant},
 };
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
+use tracing::debug;
 use ty::TypeExt;
 
 mod array;
@@ -1075,13 +1076,18 @@ impl Analyzer<'_, '_> {
             })
         }
         let end = Instant::now();
-        let line_col = self.line_col(span);
-        slog::debug!(
-            self.logger,
-            "[Timings, {}] access_property: (time = {:?})",
-            line_col,
-            end - start
-        );
+        let dur = end - start;
+
+        if dur >= Duration::from_micros(100) {
+            let line_col = self.line_col(span);
+            debug!(
+                kind = "pref",
+                op = "access_property",
+                "({}) access_property: (time = {:?})",
+                line_col,
+                end - start
+            );
+        }
 
         let mut ty = res?;
 
