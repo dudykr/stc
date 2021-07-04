@@ -19,6 +19,7 @@ use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
+use tracing::instrument;
 
 mod builtin;
 mod cast;
@@ -515,6 +516,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Assigns, but does not wrap error with [Error::AssignFailed].
+    #[instrument(name = "assign", skip(self, data, to, rhs, opts))]
     fn assign_without_wrapping(
         &mut self,
         data: &mut AssignData,

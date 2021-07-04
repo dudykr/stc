@@ -19,6 +19,7 @@ use stc_utils::{error::context, ext::SpanExt, stack};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
+use tracing::instrument;
 
 /// All fields default to false.
 #[derive(Debug, Clone, Copy, Default)]
@@ -70,6 +71,7 @@ impl Analyzer<'_, '_> {
         Ok(params)
     }
 
+    #[instrument(name = "expand_type_params", skip(self, params, ty, opts))]
     pub(in super::super) fn expand_type_params<T>(
         &mut self,
         params: &FxHashMap<Id, Type>,
@@ -129,6 +131,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns `Some(true)` if `child` extends `parent`.
+    #[instrument(name = "extends", skip(self, span, opts, child, parent))]
     pub(crate) fn extends(&mut self, span: Span, opts: ExtendsOpts, child: &Type, parent: &Type) -> Option<bool> {
         let child = child.normalize();
         let parent = parent.normalize();

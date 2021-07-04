@@ -25,6 +25,7 @@ use stc_utils::{error::context, stack};
 use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
+use tracing::instrument;
 
 mod expander;
 mod inference;
@@ -472,6 +473,7 @@ impl Analyzer<'_, '_> {
     /// arr([1, u]) // Ok
     /// arr([{}, u]) // Ok
     /// ```
+    #[instrument(name = "infer_type", skip(self, span, inferred, param, arg, opts))]
     fn infer_type(
         &mut self,
         span: Span,

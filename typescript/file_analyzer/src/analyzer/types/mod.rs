@@ -24,6 +24,7 @@ use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use tracing::instrument;
 
 mod index_signature;
 mod keyof;
@@ -57,6 +58,7 @@ impl Analyzer<'_, '_> {
     ///
     /// If `span` is provided, it will be used for types **created** by the
     /// method. Otherwise the span of the original type is used.
+    #[instrument(name = "normalize", skip(self, span, ty, opts))]
     pub(crate) fn normalize<'a>(
         &mut self,
         span: Option<Span>,
