@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crate::{
     analyzer::{assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, Analyzer, Ctx},
@@ -125,12 +125,16 @@ impl Analyzer<'_, '_> {
             opts,
         });
         let end = Instant::now();
-        debug!(
-            kind = "perf",
-            op = "expand_generics",
-            "Expanded type parameters (time = {:?})",
-            end - start
-        );
+        let dur = end - start;
+
+        if dur > Duration::from_millis(1) {
+            debug!(
+                kind = "perf",
+                op = "expand_generics",
+                "Expanded type parameters (time = {:?})",
+                dur
+            );
+        }
 
         Ok(ty)
     }
