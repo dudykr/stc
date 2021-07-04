@@ -35,7 +35,7 @@ use std::{
     mem::{replace, transmute},
     ops::AddAssign,
     sync::Arc,
-    time::Instant,
+    time::{Duration, Instant},
 };
 use swc_atoms::{js_word, JsWord};
 use swc_common::{EqIgnoreSpan, FromVariant, Span, Spanned, TypeEq, DUMMY_SP};
@@ -220,9 +220,12 @@ impl Clone for Type {
                     _ => unreachable!(),
                 };
 
-                let end = Instant::now();
                 if log {
-                    trace!(kind = "perf", op = "Type.clone", "took {:?}", end - start);
+                    let end = Instant::now();
+                    let dur = end - start;
+                    if dur >= Duration::from_millis(1) {
+                        trace!(kind = "perf", op = "Type.clone", "took {:?}", dur);
+                    }
                 }
 
                 new
