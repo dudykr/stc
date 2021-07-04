@@ -497,6 +497,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2540
     EnumCannotBeLValue {
         span: Span,
     },
