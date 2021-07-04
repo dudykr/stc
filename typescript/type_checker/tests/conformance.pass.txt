@@ -393,6 +393,7 @@ es6/Symbols/symbolType1.ts
 es6/Symbols/symbolType10.ts
 es6/Symbols/symbolType11.ts
 es6/Symbols/symbolType14.ts
+es6/Symbols/symbolType15.ts
 es6/Symbols/symbolType17.ts
 es6/Symbols/symbolType18.ts
 es6/Symbols/symbolType19.ts
@@ -2312,7 +2313,6 @@ types/typeRelationships/subtypesAndSuperTypes/subtypesOfAny.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypesOfTypeParameterWithConstraints2.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypesOfTypeParameterWithConstraints3.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithCallSignatures.ts
-types/typeRelationships/subtypesAndSuperTypes/subtypingWithCallSignatures2.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithCallSignatures3.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithCallSignatures4.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithCallSignaturesA.ts

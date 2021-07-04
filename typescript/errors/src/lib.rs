@@ -58,6 +58,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2357
+    UpdateArgMustBeVariableOrPropertyAccess {
+        span: Span,
+    },
+
     /// TS2320
     InterfaceNotCompatible {
         span: Span,
@@ -1762,6 +1767,8 @@ impl Error {
             Error::CannotUseTypeAsIndexIndex { .. } => 2538,
 
             Error::InterfaceNotCompatible { .. } => 2320,
+
+            Error::UpdateArgMustBeVariableOrPropertyAccess { .. } => 2357,
 
             _ => 0,
         }

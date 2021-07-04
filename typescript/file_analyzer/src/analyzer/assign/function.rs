@@ -67,6 +67,22 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        {
+            // TODO(kdy1):
+            //
+            // If a parameter of lhs is something like
+            //
+            // (x: {
+            //     (a: number) : number;
+            //     (a: string) : string;
+            // }) : any[];
+            //
+            // and rhs is
+            //
+            // <T#3930>(x: (a: T#3930#0) => T) : T[];
+            //
+            // we need to infer two time.
+        }
         let new_r_params;
         let new_r_ret_ty;
         let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
@@ -85,6 +101,48 @@ impl Analyzer<'_, '_> {
                     .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
                     .context("tried to expand return type of rhs as a step of function assignemnt")?;
                 (&*new_r_params, new_r_ret_ty.as_ref())
+            }
+
+            (Some(lt), None) if opts.infer_type_params_of_left => {
+                let opts = AssignOpts {
+                    infer_type_params_of_left: false,
+                    ..opts
+                };
+
+                let lf = Type::Function(Function {
+                    span,
+                    type_params: None,
+                    params: l_params.to_vec(),
+                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
+                });
+                let rf = Type::Function(Function {
+                    span,
+                    type_params: None,
+                    params: r_params.to_vec(),
+                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
+                });
+
+                let map =
+                    self.infer_type_with_types(span, &*lt.params, &lf, &rf, InferTypeOpts { ..Default::default() })?;
+                let new_l_params = self
+                    .expand_type_params(&map, l_params.to_vec(), Default::default())
+                    .context("tried to expand type parameters of lhs as a step of function assignemnt")?;
+                let new_l_ret_ty = self
+                    .expand_type_params(&map, l_ret_ty.cloned(), Default::default())
+                    .context("tried to expand return type of lhs as a step of function assignemnt")?;
+
+                return self
+                    .assign_to_fn_like(
+                        data,
+                        opts,
+                        None,
+                        &new_l_params,
+                        new_l_ret_ty.as_ref(),
+                        None,
+                        r_params,
+                        r_ret_ty,
+                    )
+                    .context("tried to assign to an instantiated fn-like stuff");
             }
 
             // Assigning `(a: 1) => string` to `<Z>(a: Z) => string` is valid.
@@ -208,17 +266,21 @@ impl Analyzer<'_, '_> {
                 for rm in &rt.members {
                     match rm {
                         TypeElement::Call(rm) => {
-                            if self.assign_params(data, opts, &l.params, &rm.params).is_err() {
-                                continue;
-                            }
-
-                            if let Some(r_ret_ty) = &rm.ret_ty {
-                                if self.assign_with_opts(data, opts, &l.ret_ty, &r_ret_ty).is_err() {
-                                    continue;
-                                }
-                            }
-
-                            return Ok(());
+                            return self
+                                .assign_to_fn_like(
+                                    data,
+                                    AssignOpts {
+                                        infer_type_params_of_left: true,
+                                        ..opts
+                                    },
+                                    l.type_params.as_ref(),
+                                    &l.params,
+                                    Some(&l.ret_ty),
+                                    rm.type_params.as_ref(),
+                                    &rm.params,
+                                    rm.ret_ty.as_deref(),
+                                )
+                                .context("tried to assign TypeElemeny::Call to a function");
                         }
                         _ => {}
                     }
