@@ -178,7 +178,7 @@ pub enum Error {
     },
 
     /// TS2631
-    CannotAssignToModule {
+    CannotAssignToNamespace {
         span: Span,
     },
 
@@ -1715,7 +1715,7 @@ impl Error {
 
             Error::RestArgMustBeVarOrMemberAccess { .. } => 2701,
 
-            Error::CannotAssignToModule { .. } => 2631,
+            Error::CannotAssignToNamespace { .. } => 2631,
 
             Error::ReturnPropertyOfIteratorMustBeMethod { .. } => 2767,
 
