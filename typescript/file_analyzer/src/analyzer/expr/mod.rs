@@ -1081,7 +1081,7 @@ impl Analyzer<'_, '_> {
         if dur >= Duration::from_micros(100) {
             let line_col = self.line_col(span);
             debug!(
-                kind = "pref",
+                kind = "perf",
                 op = "access_property",
                 "({}) access_property: (time = {:?})",
                 line_col,
