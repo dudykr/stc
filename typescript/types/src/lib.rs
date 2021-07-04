@@ -174,14 +174,16 @@ impl Clone for Type {
     fn clone(&self) -> Self {
         match self {
             Type::Arc(ty) => ty.clone().into(),
+            Type::Keyword(ty) => ty.clone().into(),
+            Type::StaticThis(ty) => ty.clone().into(),
+            Type::This(ty) => ty.clone().into(),
+            Type::Symbol(ty) => ty.clone().into(),
 
             _ => {
                 let start = Instant::now();
 
                 let new = match self {
                     Type::Instance(ty) => ty.clone().into(),
-                    Type::StaticThis(ty) => ty.clone().into(),
-                    Type::This(ty) => ty.clone().into(),
                     Type::Lit(ty) => ty.clone().into(),
                     Type::Query(ty) => ty.clone().into(),
                     Type::Infer(ty) => ty.clone().into(),
@@ -190,7 +192,6 @@ impl Clone for Type {
                     Type::IndexedAccessType(ty) => ty.clone().into(),
                     Type::Ref(ty) => ty.clone().into(),
                     Type::TypeLit(ty) => ty.clone().into(),
-                    Type::Keyword(ty) => ty.clone().into(),
                     Type::Conditional(ty) => ty.clone().into(),
                     Type::Tuple(ty) => ty.clone().into(),
                     Type::Array(ty) => ty.clone().into(),
@@ -211,7 +212,6 @@ impl Clone for Type {
                     Type::ClassDef(ty) => ty.clone().into(),
                     Type::Rest(ty) => ty.clone().into(),
                     Type::Optional(ty) => ty.clone().into(),
-                    Type::Symbol(ty) => ty.clone().into(),
                     Type::Tpl(ty) => ty.clone().into(),
                     _ => unreachable!(),
                 };
