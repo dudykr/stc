@@ -636,6 +636,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2630
+    CannotAssignToFunction {
+        span: Span,
+    },
+
     /// TS2322
     AssignedWrapperToPrimitive {
         span: Span,
@@ -1537,6 +1542,7 @@ impl Error {
             Error::ExprInvalidForUpdateArg { .. } => 2357,
 
             Error::CannotAssignToNonVariable { .. } => 2539,
+            Error::CannotAssignToFunction { .. } => 2630,
 
             Error::AssignedWrapperToPrimitive { .. } => 2322,
 
