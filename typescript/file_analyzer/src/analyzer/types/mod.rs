@@ -24,7 +24,7 @@ use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::instrument;
+use tracing::{instrument, trace};
 
 mod index_signature;
 mod keyof;
@@ -444,7 +444,12 @@ impl Analyzer<'_, '_> {
 
         let end = Instant::now();
 
-        slog::debug!(self.logger, "Normalized a type. (time = {:?})", end - start);
+        trace!(
+            kind = "perf",
+            op = "normalize",
+            "Normalized a type. (time = {:?})",
+            end - start
+        );
 
         res
     }
