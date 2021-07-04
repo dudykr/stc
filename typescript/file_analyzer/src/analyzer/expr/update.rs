@@ -4,7 +4,7 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use stc_ts_ast_rnode::{RExpr, RLit, RTsKeywordType, RTsLit, RTsLitType, RUpdateExpr};
+use stc_ts_ast_rnode::{RExpr, RLit, RParenExpr, RTsKeywordType, RTsLit, RTsLitType, RUpdateExpr};
 use stc_ts_errors::Error;
 use stc_ts_types::Type;
 use std::borrow::Cow;
@@ -21,9 +21,10 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let ty = e
-            .arg
-            .validate_with_args(self, (TypeOfMode::LValue, None, None))
+        let res = e.arg.validate_with_args(self, (TypeOfMode::LValue, None, None));
+        let mut errored = false;
+
+        let ty = res
             .and_then(|ty| match ty.normalize() {
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
@@ -47,17 +48,28 @@ impl Analyzer<'_, '_> {
                 | Type::Array(..)
                 | Type::Tuple(..)
                 | Type::This(..)
-                | Type::Function(..) => Err(Error::TypeInvalidForUpdateArg {
-                    span: e.arg.span(),
-                    ty: box ty.clone(),
-                }),
+                | Type::Function(..) => {
+                    errored = true;
+                    Err(Error::TypeInvalidForUpdateArg {
+                        span: e.arg.span(),
+                        ty: box ty.clone(),
+                    })
+                }
 
-                _ if ty.is_global_this() => Err(Error::TypeInvalidForUpdateArg {
-                    span: e.arg.span(),
-                    ty: box ty.clone(),
-                }),
+                _ if ty.is_global_this() => {
+                    errored = true;
 
-                Type::Enum(..) => Err(Error::CannotAssignToNonVariable { span: e.arg.span() }),
+                    Err(Error::TypeInvalidForUpdateArg {
+                        span: e.arg.span(),
+                        ty: box ty.clone(),
+                    })
+                }
+
+                Type::Enum(..) => {
+                    errored = true;
+
+                    Err(Error::CannotAssignToNonVariable { span: e.arg.span() })
+                }
 
                 Type::Lit(RTsLitType {
                     lit: RTsLit::Number(..),
@@ -68,9 +80,10 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => {
                     match &*e.arg {
-                        RExpr::Lit(RLit::Num(..)) | RExpr::Call(..) | RExpr::Paren(..) | RExpr::Bin(..) => {
+                        RExpr::Lit(RLit::Num(..)) | RExpr::Call(..) | RExpr::Paren(..) => {
                             self.storage.report(Error::ExprInvalidForUpdateArg { span });
                         }
+
                         _ => {}
                     }
                     return Ok(ty);
@@ -83,6 +96,20 @@ impl Analyzer<'_, '_> {
         if let Some(ty) = ty {
             if let Some(false) = self.is_update_operand_valid(&ty).report(&mut self.storage) {
                 self.storage.report(Error::InvalidNumericOperand { span: e.arg.span() })
+            }
+        } else {
+            if !errored
+                && match &*e.arg {
+                    RExpr::Paren(RParenExpr {
+                        expr: box RExpr::Bin(..),
+                        ..
+                    })
+                    | RExpr::Bin(..) => true,
+                    _ => false,
+                }
+            {
+                self.storage
+                    .report(Error::UpdateArgMustBeVariableOrPropertyAccess { span });
             }
         }
 

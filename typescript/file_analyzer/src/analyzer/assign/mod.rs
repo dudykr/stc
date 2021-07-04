@@ -128,6 +128,8 @@ pub(crate) struct AssignOpts {
     /// ```
     /// are not.
     pub allow_unknown_rhs_if_expanded: bool,
+
+    pub infer_type_params_of_left: bool,
 }
 
 #[derive(Default)]
@@ -1099,10 +1101,20 @@ impl Analyzer<'_, '_> {
                 if errors.iter().any(Result::is_ok) {
                     return Ok(());
                 }
-                return Err(Error::Errors {
-                    span,
-                    errors: errors.into_iter().map(Result::unwrap_err).collect(),
-                });
+                let use_single_error = types.iter().all(|ty| ty.normalize().is_interface());
+                let errors = errors.into_iter().map(Result::unwrap_err).collect();
+
+                if use_single_error {
+                    return Err(Error::AssignFailed {
+                        span,
+                        left: box to.clone(),
+                        right_ident: None,
+                        right: box rhs.clone(),
+                        cause: errors,
+                    });
+                }
+
+                return Err(Error::Errors { span, errors });
             }
 
             Type::Union(r) => {

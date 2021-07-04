@@ -1,6 +1,7 @@
 use crate::{
     analyzer::{
         assign::{AssignData, AssignOpts},
+        types::NormalizeTypeOpts,
         util::ResultExt,
         Analyzer,
     },
@@ -143,7 +144,27 @@ impl Analyzer<'_, '_> {
                         lhs,
                         rhs_members,
                     )
-                    .context("tried assignment of a type literal to a type literals")
+                    .with_context(|| {
+                        format!(
+                            "tried assignment of a type literal to a type literals\nLHS={}\nRHS={}",
+                            dump_type_as_string(
+                                &self.cm,
+                                &Type::TypeLit(TypeLit {
+                                    span: DUMMY_SP,
+                                    members: lhs.to_vec(),
+                                    metadata: Default::default()
+                                })
+                            ),
+                            dump_type_as_string(
+                                &self.cm,
+                                &Type::TypeLit(TypeLit {
+                                    span: DUMMY_SP,
+                                    members: rhs_members.to_vec(),
+                                    metadata: Default::default()
+                                })
+                            ),
+                        )
+                    })
                     .store(&mut errors);
                 }
 
@@ -159,7 +180,7 @@ impl Analyzer<'_, '_> {
                     return Err(Error::SimpleAssignFailed { span });
                 }
 
-                Type::Tuple(..) | Type::Array(..) if lhs.is_empty() => return Ok(()),
+                Type::Tuple(..) | Type::Array(..) | Type::EnumVariant(..) if lhs.is_empty() => return Ok(()),
 
                 Type::Array(..) | Type::Tuple(..) => {
                     if opts.allow_assignment_of_array_to_optional_type_lit {
@@ -352,6 +373,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBigIntKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 })
@@ -359,12 +384,23 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
                 })
+                | Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                })
                 | Type::Lit(RTsLitType {
                     lit: RTsLit::Number(..),
                     ..
                 })
                 | Type::Lit(RTsLitType {
+                    lit: RTsLit::BigInt(..),
+                    ..
+                })
+                | Type::Lit(RTsLitType {
                     lit: RTsLit::Str(..), ..
+                })
+                | Type::Lit(RTsLitType {
+                    lit: RTsLit::Bool(..), ..
                 })
                 | Type::Mapped(..)
                     if lhs.is_empty() =>
@@ -399,7 +435,12 @@ impl Analyzer<'_, '_> {
 
                     return self
                         .assign_to_type_elements(data, opts, lhs_span, lhs, &rhs, lhs_metadata)
-                        .context("tried to assign the converted type to type elements");
+                        .with_context(|| {
+                            format!(
+                                "tried to assign the converted type to type elements:\nRHS={}",
+                                dump_type_as_string(&self.cm, &rhs)
+                            )
+                        });
                 }
 
                 Type::Keyword(RTsKeywordType {
@@ -480,6 +521,30 @@ impl Analyzer<'_, '_> {
                 }) => return Ok(()),
 
                 Type::EnumVariant(..) => return Err(Error::SimpleAssignFailed { span }),
+
+                Type::Keyword(..) => {
+                    let rhs = self
+                        .normalize(
+                            Some(span),
+                            Cow::Borrowed(&rhs),
+                            NormalizeTypeOpts {
+                                normalize_keywords: true,
+                                ..Default::default()
+                            },
+                        )
+                        .convert_err(|err| Error::SimpleAssignFailed { span: err.span() })
+                        .context("failed to normalize")?;
+
+                    if rhs.normalize().is_keyword() {
+                        return Err(
+                            Error::SimpleAssignFailed { span }.context("failed to assign builtin type of a keyword")
+                        );
+                    }
+
+                    return self
+                        .assign_to_type_elements(data, opts, lhs_span, lhs, &rhs, lhs_metadata)
+                        .context("tried to assign using expanded builtin type");
+                }
 
                 _ => {
                     return Err(Error::Unimplemented {
@@ -902,7 +967,10 @@ impl Analyzer<'_, '_> {
 
                                 let res = self.assign_to_fn_like(
                                     data,
-                                    opts,
+                                    AssignOpts {
+                                        infer_type_params_of_left: true,
+                                        ..opts
+                                    },
                                     lc.type_params.as_ref(),
                                     &lc.params,
                                     lc.ret_ty.as_deref(),

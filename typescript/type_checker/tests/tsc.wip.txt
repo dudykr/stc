@@ -1,5 +1,9 @@
-expressions::unaryOperators::decrementOperator::decrementOperatorWithEnumType.ts
-expressions::unaryOperators::decrementOperator::decrementOperatorWithEnumTypeInvalidOperations.ts
-types::conditional::conditionalTypes1.ts
-types::conditional::conditionalTypes2.ts
-types::conditional::conditionalTypesExcessProperties.ts
+types::primitives::boolean::assignFromBooleanInterface2.ts
+types::primitives::boolean::invalidBooleanAssignments.ts
+types::primitives::null::validNullAssignments.ts
+types::primitives::number::assignFromNumberInterface2.ts
+types::primitives::number::invalidNumberAssignments.ts
+types::primitives::string::assignFromStringInterface2.ts
+types::primitives::string::invalidStringAssignments.ts
+types::primitives::undefined::invalidUndefinedAssignments.ts
+types::primitives::void::invalidVoidAssignments.ts
