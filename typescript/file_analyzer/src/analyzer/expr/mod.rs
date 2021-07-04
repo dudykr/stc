@@ -2675,7 +2675,7 @@ impl Analyzer<'_, '_> {
 
         let mut modules = vec![];
         let mut ty = self.type_of_raw_var(i, type_mode)?;
-        if type_mode == TypeOfMode::LValue && ty.normalize().is_class_def() {
+        if type_mode == TypeOfMode::LValue && (ty.normalize().is_class_def() || ty.normalize().is_enum_type()) {
             return Err(Error::NotVariable { span, left: span });
         }
         ty.assert_valid();
