@@ -5,7 +5,7 @@ use crate::{
         assign::AssignOpts,
         marks::MarkExt,
         pat::PatMode,
-        scope::{ExpandOpts, ScopeKind},
+        scope::{ExpandOpts, ScopeKind, VarKind},
         util::ResultExt,
         Analyzer, Ctx,
     },
@@ -2884,6 +2884,12 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(v) = self.scope.vars.get(&i.into()) {
+            if let VarKind::Fn = v.kind {
+                if let TypeOfMode::LValue = type_mode {
+                    return Err(Error::CannotAssignToNonVariable { span });
+                }
+            }
+
             slog::debug!(self.logger, "found var with name");
             match type_mode {
                 TypeOfMode::LValue => {
