@@ -7,6 +7,7 @@ use crate::{
     },
     ValidationResult,
 };
+use rnode::NodeId;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
@@ -200,7 +201,7 @@ impl Analyzer<'_, '_> {
                         return Err(Error::SimpleAssignFailed { span });
                     }
 
-                    match rhs {
+                    match rhs.normalize() {
                         Type::Array(r_arr) => {
                             //
                             let r_arr = Type::Ref(Ref {
@@ -444,28 +445,101 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    kind: kind @ TsKeywordTypeKind::TsStringKeyword,
                     ..
                 })
                 | Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    kind: kind @ TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 })
                 | Type::Keyword(RTsKeywordType {
-                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    kind: kind @ TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                })
+                | Type::Keyword(RTsKeywordType {
+                    kind: kind @ TsKeywordTypeKind::TsBigIntKeyword,
+                    ..
+                }) => {
+                    let rhs = Type::Ref(Ref {
+                        span,
+                        ctxt: ModuleId::builtin(),
+                        type_name: RTsEntityName::Ident(RIdent {
+                            span,
+                            sym: match kind {
+                                TsKeywordTypeKind::TsNumberKeyword => "NumberConstructor".into(),
+                                TsKeywordTypeKind::TsBooleanKeyword => "BooleanConstructor".into(),
+                                TsKeywordTypeKind::TsBigIntKeyword => "BigIntConstructor".into(),
+                                TsKeywordTypeKind::TsStringKeyword => "StringConstructor".into(),
+                                _ => {
+                                    unreachable!()
+                                }
+                            },
+                            node_id: NodeId::invalid(),
+                            optional: false,
+                        }),
+                        type_args: None,
+                    });
+
+                    let rhs = self.normalize(None, Cow::Owned(rhs), Default::default())?;
+
+                    // Try builtin assignment
+                    return self
+                        .assign_to_type_elements(
+                            data,
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                            lhs_span,
+                            lhs,
+                            &rhs,
+                            lhs_metadata,
+                        )
+                        .context("tried to assign a keyword as builtin to type elements");
+                }
+
+                Type::Lit(RTsLitType {
+                    lit: lit @ RTsLit::Number(..),
                     ..
                 })
                 | Type::Lit(RTsLitType {
-                    lit: RTsLit::Number(..),
+                    lit: lit @ RTsLit::Str(..),
                     ..
                 })
                 | Type::Lit(RTsLitType {
-                    lit: RTsLit::Str(..), ..
+                    lit: lit @ RTsLit::Bool(..),
+                    ..
                 })
                 | Type::Lit(RTsLitType {
-                    lit: RTsLit::Bool(..), ..
-                })
-                | Type::Param(..)
+                    lit: lit @ RTsLit::BigInt(..),
+                    ..
+                }) => {
+                    // Try keyword assignment
+
+                    return self
+                        .assign_to_type_elements(
+                            data,
+                            opts,
+                            lhs_span,
+                            lhs,
+                            &Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: match lit {
+                                    RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
+                                    RTsLit::Number(_) => TsKeywordTypeKind::TsNumberKeyword,
+                                    RTsLit::Str(_) => TsKeywordTypeKind::TsStringKeyword,
+                                    RTsLit::Bool(_) => TsKeywordTypeKind::TsBooleanKeyword,
+                                    _ => {
+                                        unreachable!()
+                                    }
+                                },
+                            }),
+                            lhs_metadata,
+                        )
+                        .context("tried to assign a literal as keyword to type elements");
+                }
+
+                Type::Param(..)
                 | Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
