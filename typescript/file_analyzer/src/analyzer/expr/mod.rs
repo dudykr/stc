@@ -442,11 +442,20 @@ impl Analyzer<'_, '_> {
                     ..analyzer.ctx
                 };
                 let mut analyzer = analyzer.with_ctx(ctx);
-                e.right
+                let result: Result<_, _> = e
+                    .right
                     .validate_with_args(&mut *analyzer, (mode, None, type_ann))
-                    .context("tried to validate rhs an assign expr")
+                    .context("tried to validate rhs an assign expr");
+
+                match result {
+                    Ok(v) => Some(v),
+                    Err(err) => {
+                        errors.push(err);
+                        None
+                    }
+                }
             } {
-                Ok(rhs_ty) => {
+                Some(rhs_ty) => {
                     let lhs;
                     analyzer.check_rvalue(
                         span,
@@ -462,10 +471,7 @@ impl Analyzer<'_, '_> {
 
                     Ok(rhs_ty)
                 }
-                Err(err) => {
-                    errors.push(err);
-                    Err(())
-                }
+                None => Err(()),
             };
 
             // TODO: Deny changing type of const
