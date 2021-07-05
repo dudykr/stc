@@ -381,6 +381,7 @@ impl Analyzer<'_, '_> {
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
             let span = e.span();
             let mut mark_var_as_truthy = false;
+            let mut skip_right = false;
 
             let mut left_i = None;
             let ty_of_left;
@@ -402,6 +403,15 @@ impl Analyzer<'_, '_> {
                         .map(|ty| {
                             mark_var_as_truthy = true;
                             ty
+                        })
+                        .map_err(|v| {
+                            match v.actual() {
+                                Error::CannotAssignToNonVariable { .. } => {
+                                    skip_right = true;
+                                }
+                                _ => {}
+                            }
+                            v
                         })
                         .report(&mut analyzer.storage);
 
@@ -431,28 +441,32 @@ impl Analyzer<'_, '_> {
             let mut errors = Errors::default();
 
             let rhs_ty = match {
-                let cannot_be_tuple = match &e.left {
-                    RPatOrExpr::Pat(pat) => !analyzer.can_rhs_be_tuple(&pat),
-                    _ => false,
-                };
+                if !skip_right {
+                    let cannot_be_tuple = match &e.left {
+                        RPatOrExpr::Pat(pat) => !analyzer.can_rhs_be_tuple(&pat),
+                        _ => false,
+                    };
 
-                let ctx = Ctx {
-                    in_assign_rhs: true,
-                    cannot_be_tuple,
-                    ..analyzer.ctx
-                };
-                let mut analyzer = analyzer.with_ctx(ctx);
-                let result: Result<_, _> = e
-                    .right
-                    .validate_with_args(&mut *analyzer, (mode, None, type_ann))
-                    .context("tried to validate rhs an assign expr");
+                    let ctx = Ctx {
+                        in_assign_rhs: true,
+                        cannot_be_tuple,
+                        ..analyzer.ctx
+                    };
+                    let mut analyzer = analyzer.with_ctx(ctx);
+                    let result: Result<_, _> = e
+                        .right
+                        .validate_with_args(&mut *analyzer, (mode, None, type_ann))
+                        .context("tried to validate rhs an assign expr");
 
-                match result {
-                    Ok(v) => Some(v),
-                    Err(err) => {
-                        errors.push(err);
-                        None
+                    match result {
+                        Ok(v) => Some(v),
+                        Err(err) => {
+                            errors.push(err);
+                            None
+                        }
                     }
+                } else {
+                    None
                 }
             } {
                 Some(rhs_ty) => {
