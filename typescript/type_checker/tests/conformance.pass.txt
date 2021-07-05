@@ -2123,10 +2123,12 @@ types/primitives/null/directReferenceToNull.ts
 types/primitives/null/validNullAssignments.ts
 types/primitives/number/assignFromNumberInterface.ts
 types/primitives/number/extendNumberInterface.ts
+types/primitives/number/invalidNumberAssignments.ts
 types/primitives/number/numberPropertyAccess.ts
 types/primitives/number/validNumberAssignments.ts
 types/primitives/string/assignFromStringInterface.ts
 types/primitives/string/extendStringInterface.ts
+types/primitives/string/invalidStringAssignments.ts
 types/primitives/string/stringPropertyAccess.ts
 types/primitives/string/stringPropertyAccessWithError.ts
 types/primitives/string/validStringAssignments.ts
@@ -2137,6 +2139,7 @@ types/primitives/undefined/invalidUndefinedValues.ts
 types/primitives/undefined/validUndefinedAssignments.ts
 types/primitives/undefined/validUndefinedValues.ts
 types/primitives/void/invalidAssignmentsToVoid.ts
+types/primitives/void/invalidVoidAssignments.ts
 types/primitives/void/invalidVoidValues.ts
 types/primitives/void/validVoidAssignments.ts
 types/primitives/void/validVoidValues.ts
