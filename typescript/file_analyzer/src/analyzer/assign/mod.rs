@@ -11,8 +11,8 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, FnParam, Interface, Intersection, Key, Mapped, Operator, PropertySignature, Ref,
-    Tuple, Type, TypeElement, TypeLit, TypeParam,
+    Array, Conditional, EnumVariant, FnParam, Instance, Interface, Intersection, Key, Mapped, Operator,
+    PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::stack;
 use std::{borrow::Cow, collections::HashMap, time::Instant};
@@ -778,17 +778,29 @@ impl Analyzer<'_, '_> {
                 let rhs = rhs.clone().generalize_lit(self.marks());
                 match to {
                     Type::Keyword(k) if k.kind == *kwd => match rhs {
-                        Type::Interface(ref i) => {
+                        Type::Instance(Instance {
+                            ty: box Type::Interface(ref i),
+                            ..
+                        })
+                        | Type::Interface(ref i) => {
                             if i.name.as_str() == *interface {
                                 return Err(Error::AssignedWrapperToPrimitive { span });
                             }
                         }
                         _ => {}
                     },
-                    Type::Interface(ref i) if i.name.as_str() == *interface => match rhs {
-                        Type::Keyword(ref k) if k.kind == *kwd => return Ok(()),
-                        _ => {}
-                    },
+                    Type::Instance(Instance {
+                        ty: box Type::Interface(ref i),
+                        ..
+                    })
+                    | Type::Interface(ref i)
+                        if i.name.as_str() == *interface =>
+                    {
+                        match rhs {
+                            Type::Keyword(ref k) if k.kind == *kwd => return Ok(()),
+                            _ => {}
+                        }
+                    }
                     _ => {}
                 }
             }
