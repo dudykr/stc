@@ -495,9 +495,11 @@ impl Analyzer<'_, '_> {
                             &rhs,
                             lhs_metadata,
                         )
-                        .convert_err(|err| match err {
-                            Error::MissingFields { .. } => Error::SimpleAssignFailed { span: err.span() },
-                            _ => err,
+                        .map_err(|err| {
+                            err.convert_all(|err| match err {
+                                Error::MissingFields { .. } => Error::SimpleAssignFailed { span: err.span() },
+                                _ => err,
+                            })
                         })
                         .with_context(|| {
                             format!(
