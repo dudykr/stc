@@ -2231,7 +2231,7 @@ impl Analyzer<'_, '_> {
                 });
             }
 
-            Type::Module(ty::Module { ref exports, .. }) => {
+            Type::Module(ty::Module { name, ref exports, .. }) => {
                 match id_ctx {
                     IdCtx::Type => {
                         if let Key::Normal { sym, .. } = prop {
@@ -2264,7 +2264,10 @@ impl Analyzer<'_, '_> {
 
                 print_backtrace();
                 // No property found
-                return Err(Error::NoSuchPropertyInModule { span });
+                return Err(Error::NoSuchPropertyInModule {
+                    span,
+                    name: box name.clone(),
+                });
             }
 
             Type::This(..) => {

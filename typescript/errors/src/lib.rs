@@ -6,6 +6,7 @@
 pub use self::result_ext::DebugExt;
 use fmt::Formatter;
 use static_assertions::assert_eq_size;
+use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_types::{name::Name, Id, Key, ModuleId, Type, TypeElement, TypeParamInstantiation};
 use stc_utils::stack::StackOverflowError;
 use std::{
@@ -618,6 +619,7 @@ pub enum Error {
 
     NoSuchPropertyInModule {
         span: Span,
+        name: Box<RTsModuleName>,
     },
 
     ReturnRequired {
