@@ -766,10 +766,11 @@ impl Analyzer<'_, '_> {
     pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
         slog::debug!(self.logger, "[({})/types] Registering: {:?}", self.scope.depth(), name);
 
-        let should_check_for_mixed = match ty.normalize() {
-            Type::Param(..) => false,
-            _ => true,
-        };
+        let should_check_for_mixed = !self.is_builtin
+            && match ty.normalize() {
+                Type::Param(..) => false,
+                _ => true,
+            };
         if should_check_for_mixed {
             // Report an error for
             //
