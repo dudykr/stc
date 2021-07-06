@@ -495,7 +495,12 @@ impl Analyzer<'_, '_> {
                             &rhs,
                             lhs_metadata,
                         )
-                        .context("tried to assign a keyword as builtin to type elements");
+                        .with_context(|| {
+                            format!(
+                                "tried to assign a keyword as builtin to type elements\nRHS = {}",
+                                dump_type_as_string(&self.cm, &rhs)
+                            )
+                        });
                 }
 
                 Type::Lit(RTsLitType {
