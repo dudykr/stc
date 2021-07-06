@@ -91,6 +91,8 @@ pub fn intl() {
                     .expect("failed to get global type Intl");
 
                 let i = intl.foldable().module().unwrap();
+                let type_names = i.exports.types.iter().map(|v| v.0).collect::<Vec<_>>();
+                eprintln!("Type names: {:?}", type_names);
                 assert!(i.exports.types.contains_key(&"NumberFormatOptions".into()));
             }
 

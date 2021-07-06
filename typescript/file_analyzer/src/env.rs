@@ -7,7 +7,7 @@ use dashmap::DashMap;
 use derivative::Derivative;
 use fxhash::{FxBuildHasher, FxHashMap};
 use once_cell::sync::{Lazy, OnceCell};
-use rnode::{NodeIdGenerator, RNode, VisitMutWith, VisitWith};
+use rnode::{NodeIdGenerator, RNode, VisitWith};
 use slog::Logger;
 use stc_ts_ast_rnode::{RDecl, RIdent, RModule, RModuleItem, RStmt, RTsModuleName, RVarDecl};
 use stc_ts_builtin_types::Lib;
@@ -134,8 +134,10 @@ impl BuiltIn {
                                 {
                                     let mut analyzer = Analyzer::for_builtin(env.clone(), &mut data);
 
-                                    m.body.visit_mut_with(&mut analyzer);
+                                    m.body.visit_with(&mut analyzer);
                                 }
+
+                                assert!(!data.types.is_empty() || !data.vars.is_empty());
 
                                 match result.types.entry(id.clone()) {
                                     Entry::Occupied(mut e) => match e.get_mut().normalize_mut() {
