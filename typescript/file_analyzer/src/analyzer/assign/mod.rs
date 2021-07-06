@@ -983,9 +983,14 @@ impl Analyzer<'_, '_> {
                 }
 
                 let left_contains_object = i.types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
+                let rhs_requires_unknown_property_check = match rhs.normalize() {
+                    Type::Keyword(..) => false,
+                    _ => true,
+                };
 
-                if !left_contains_object && !opts.allow_unknown_rhs {
+                if !left_contains_object && rhs_requires_unknown_property_check && !opts.allow_unknown_rhs {
                     let lhs = self.type_to_type_lit(span, to)?;
+
                     if let Some(lhs) = lhs {
                         self.assign_to_type_elements(data, opts, lhs.span, &lhs.members, &rhs, lhs.metadata)
                             .with_context(|| {
