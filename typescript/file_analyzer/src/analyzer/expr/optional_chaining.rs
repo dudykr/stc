@@ -9,6 +9,7 @@ use crate::{
     ValidationResult,
 };
 use stc_ts_ast_rnode::{RExpr, RExprOrSuper, RMemberExpr, ROptChainExpr};
+use stc_ts_errors::DebugExt;
 use stc_ts_types::Type;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -30,14 +31,10 @@ impl Analyzer<'_, '_> {
                     in_opt_chain: true,
                     ..self.ctx
                 };
-                let ty = self.with_ctx(ctx).access_property(
-                    span,
-                    &obj,
-                    &prop,
-                    TypeOfMode::RValue,
-                    IdCtx::Var,
-                    Default::default(),
-                )?;
+                let ty = self
+                    .with_ctx(ctx)
+                    .access_property(span, &obj, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                    .context("tried to access property to validate an optional chaining expression")?;
 
                 //
 

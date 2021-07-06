@@ -374,14 +374,16 @@ impl Analyzer<'_, '_> {
                                 ..self.ctx
                             };
                             let prop_ty = ty.as_ref().try_map(|ty| {
-                                self.with_ctx(ctx).access_property(
-                                    span,
-                                    &ty,
-                                    &key,
-                                    TypeOfMode::RValue,
-                                    IdCtx::Var,
-                                    Default::default(),
-                                )
+                                self.with_ctx(ctx)
+                                    .access_property(
+                                        span,
+                                        &ty,
+                                        &key,
+                                        TypeOfMode::RValue,
+                                        IdCtx::Var,
+                                        Default::default(),
+                                    )
+                                    .context("tried to access poprerty to declare variables")
                             });
 
                             let default_prop_ty = default.as_ref().and_then(|ty| {
@@ -436,14 +438,16 @@ impl Analyzer<'_, '_> {
                                 ..self.ctx
                             };
                             let prop_ty = ty.as_ref().try_map(|ty| {
-                                self.with_ctx(ctx).access_property(
-                                    span,
-                                    &ty,
-                                    &key,
-                                    TypeOfMode::RValue,
-                                    IdCtx::Var,
-                                    Default::default(),
-                                )
+                                self.with_ctx(ctx)
+                                    .access_property(
+                                        span,
+                                        &ty,
+                                        &key,
+                                        TypeOfMode::RValue,
+                                        IdCtx::Var,
+                                        Default::default(),
+                                    )
+                                    .context("tried to access poprerty to declare variables")
                             });
 
                             let default_prop_ty = default.as_ref().and_then(|ty| {

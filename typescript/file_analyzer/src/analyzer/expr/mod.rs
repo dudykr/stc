@@ -3282,6 +3282,7 @@ impl Analyzer<'_, '_> {
                     IdCtx::Type,
                     Default::default(),
                 )
+                .context("tried to resolve type from a ts entity name")
             }
         }
     }

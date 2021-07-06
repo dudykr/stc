@@ -935,7 +935,8 @@ impl Analyzer<'_, '_> {
                     TypeOfMode::RValue,
                     IdCtx::Var,
                     Default::default(),
-                )?
+                )
+                .context("tried to access property to resolve `typeof`")?
             }
         };
         ty.reposition(span);
@@ -2099,6 +2100,7 @@ impl Expander<'_, '_, '_> {
                             IdCtx::Type,
                             Default::default(),
                         )
+                        .context("tired to access property as a part of type expansion")
                         .report(&mut self.analyzer.storage)
                         .unwrap_or_else(|| Type::any(span));
                     return Ok(Some(ty));
