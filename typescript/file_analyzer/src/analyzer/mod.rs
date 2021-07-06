@@ -971,6 +971,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsModuleDecl) -> ValidationResult<Option<Type>> {
+        let is_builtin = self.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;
         let global = decl.global;
@@ -992,7 +993,7 @@ impl Analyzer<'_, '_> {
 
                 let mut exports = child.storage.take_info(ctxt);
                 // Ambient module members are always exported with or without export keyword
-                if decl.declare {
+                if is_builtin || decl.declare {
                     for (id, var) in take(&mut exports.private_vars) {
                         var.assert_valid();
 
@@ -1012,7 +1013,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if !global {
+                if is_builtin || !global {
                     let ty = child.finalize(ty::Module {
                         name: decl.id.clone(),
                         span,
