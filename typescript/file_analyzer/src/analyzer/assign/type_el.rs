@@ -175,7 +175,9 @@ impl Analyzer<'_, '_> {
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                     {
-                        return self.assign_to_type_elements(data, opts, lhs_span, lhs, &rty, lhs_metadata);
+                        return self
+                            .assign_to_type_elements(data, opts, lhs_span, lhs, &rty, lhs_metadata)
+                            .context("tried to assign to type elements by converting rhs to a type literal");
                     }
 
                     return Err(Error::SimpleAssignFailed { span });
