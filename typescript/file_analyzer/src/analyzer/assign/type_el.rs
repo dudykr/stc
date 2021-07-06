@@ -466,10 +466,10 @@ impl Analyzer<'_, '_> {
                         type_name: RTsEntityName::Ident(RIdent {
                             span,
                             sym: match kind {
-                                TsKeywordTypeKind::TsNumberKeyword => "NumberConstructor".into(),
-                                TsKeywordTypeKind::TsBooleanKeyword => "BooleanConstructor".into(),
-                                TsKeywordTypeKind::TsBigIntKeyword => "BigIntConstructor".into(),
-                                TsKeywordTypeKind::TsStringKeyword => "StringConstructor".into(),
+                                TsKeywordTypeKind::TsNumberKeyword => "Number".into(),
+                                TsKeywordTypeKind::TsBooleanKeyword => "Boolean".into(),
+                                TsKeywordTypeKind::TsBigIntKeyword => "BigInt".into(),
+                                TsKeywordTypeKind::TsStringKeyword => "String".into(),
                                 _ => {
                                     unreachable!()
                                 }
