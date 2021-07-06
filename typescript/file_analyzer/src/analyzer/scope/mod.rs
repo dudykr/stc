@@ -2100,7 +2100,7 @@ impl Expander<'_, '_, '_> {
                             IdCtx::Type,
                             Default::default(),
                         )
-                        .context("tired to access property as a part of type expansion")
+                        .context("tried to access property as a part of type expansion")
                         .report(&mut self.analyzer.storage)
                         .unwrap_or_else(|| Type::any(span));
                     return Ok(Some(ty));
