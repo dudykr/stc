@@ -1000,7 +1000,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn check_ambient_methods(&mut self, c: &RClass, declare: bool) -> ValidationResult<()> {
-        if self.ctx.in_declare {
+        if self.ctx.in_declare || self.is_builtin {
             return Ok(());
         }
 

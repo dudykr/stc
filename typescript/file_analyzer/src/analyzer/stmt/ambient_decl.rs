@@ -6,6 +6,10 @@ use stc_ts_storage::Storage;
 
 impl Analyzer<'_, '_> {
     pub(crate) fn validate_ambient_fns(&mut self, nodes: &[RModuleItem]) {
+        if self.is_builtin {
+            return;
+        }
+
         let mut visitor = AmbientFunctionHandler {
             last_ambient_name: None,
             errors: &mut self.storage,
