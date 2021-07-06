@@ -1038,17 +1038,20 @@ impl Analyzer<'_, '_> {
                         disallow_indexing_array_with_string: true,
                         ..self.ctx
                     };
-                    let res = self.with_ctx(ctx).access_property(
-                        span,
-                        obj,
-                        &Key::Normal {
-                            span: prop.span,
-                            sym: prop.value.clone(),
-                        },
-                        type_mode,
-                        id_ctx,
-                        opts,
-                    );
+                    let res = self
+                        .with_ctx(ctx)
+                        .access_property(
+                            span,
+                            obj,
+                            &Key::Normal {
+                                span: prop.span,
+                                sym: prop.value.clone(),
+                            },
+                            type_mode,
+                            id_ctx,
+                            opts,
+                        )
+                        .context("tired to access property using string as a key");
                     // As some types has rules about computed propeties, we use the result only if
                     // it sucesses.
                     if let Ok(ty) = res {
@@ -1406,25 +1409,27 @@ impl Analyzer<'_, '_> {
                 // Even if literal generalization is prevented, it should be
                 // expanded in this case.
 
-                return self.access_property(
-                    span,
-                    &Type::Keyword(RTsKeywordType {
-                        span: obj.span,
-                        kind: match &obj.lit {
-                            RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
-                            RTsLit::Number(_) => TsKeywordTypeKind::TsNumberKeyword,
-                            RTsLit::Str(_) => TsKeywordTypeKind::TsStringKeyword,
-                            RTsLit::Bool(_) => TsKeywordTypeKind::TsBooleanKeyword,
-                            RTsLit::Tpl(_) => {
-                                unreachable!()
-                            }
-                        },
-                    }),
-                    prop,
-                    type_mode,
-                    id_ctx,
-                    opts,
-                );
+                return self
+                    .access_property(
+                        span,
+                        &Type::Keyword(RTsKeywordType {
+                            span: obj.span,
+                            kind: match &obj.lit {
+                                RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
+                                RTsLit::Number(_) => TsKeywordTypeKind::TsNumberKeyword,
+                                RTsLit::Str(_) => TsKeywordTypeKind::TsStringKeyword,
+                                RTsLit::Bool(_) => TsKeywordTypeKind::TsBooleanKeyword,
+                                RTsLit::Tpl(_) => {
+                                    unreachable!()
+                                }
+                            },
+                        }),
+                        prop,
+                        type_mode,
+                        id_ctx,
+                        opts,
+                    )
+                    .context("tried to access property of a type generalized from a literal");
             }
 
             Type::Symbol(..) => {

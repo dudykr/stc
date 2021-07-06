@@ -744,14 +744,17 @@ impl Analyzer<'_, '_> {
                 diallow_unknown_object_property: true,
                 ..self.ctx
             };
-            let callee = self.with_ctx(ctx).access_property(
-                span,
-                obj_type,
-                &prop,
-                TypeOfMode::RValue,
-                IdCtx::Var,
-                Default::default(),
-            )?;
+            let callee = self
+                .with_ctx(ctx)
+                .access_property(
+                    span,
+                    obj_type,
+                    &prop,
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                    Default::default(),
+                )
+                .context("tried to sccess property to call it")?;
 
             let callee_before_expanding = dump_type_as_string(&self.cm, &callee);
             let callee = self
@@ -3232,6 +3235,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                 IdCtx::Type,
                                 Default::default(),
                             )
+                            .context("tried to access property to simplify return type")
                             .report(&mut a.storage)
                         {
                             if types.iter().all(|prev_ty| !(*prev_ty).type_eq(&actual_ty)) {
