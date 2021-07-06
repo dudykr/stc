@@ -1093,9 +1093,10 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             res = res.with_context(|| {
                 format!(
-                    "tried to access property of an object ({}, id_ctx = {:?})",
+                    "tried to access property of an object ({}, id_ctx = {:?})\nProp={:?}",
                     dump_type_as_string(&self.cm, &obj),
-                    id_ctx
+                    id_ctx,
+                    prop
                 )
             })
         }
