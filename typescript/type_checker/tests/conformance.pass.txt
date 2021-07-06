@@ -2113,6 +2113,7 @@ types/objectTypeLiteral/objectTypeLiteralSyntax.ts
 types/objectTypeLiteral/propertySignatures/propertyNameWithoutTypeAnnotation.ts
 types/objectTypeLiteral/propertySignatures/stringNamedPropertyAccess.ts
 types/primitives/boolean/assignFromBooleanInterface.ts
+types/primitives/boolean/assignFromBooleanInterface2.ts
 types/primitives/boolean/boolInsteadOfBoolean.ts
 types/primitives/boolean/booleanPropertyAccess.ts
 types/primitives/boolean/extendBooleanInterface.ts
