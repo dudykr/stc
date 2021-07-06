@@ -180,7 +180,7 @@ impl Analyzer<'_, '_> {
                             .context("tried to assign to type elements by converting rhs to a type literal");
                     }
 
-                    return Err(Error::SimpleAssignFailed { span });
+                    return Err(Error::SimpleAssignFailed { span, cause: None });
                 }
 
                 Type::Tuple(..) | Type::Array(..) | Type::EnumVariant(..) if lhs.is_empty() => return Ok(()),
@@ -200,7 +200,7 @@ impl Analyzer<'_, '_> {
                         | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
                         _ => false,
                     }) {
-                        return Err(Error::SimpleAssignFailed { span });
+                        return Err(Error::SimpleAssignFailed { span, cause: None });
                     }
 
                     match rhs.normalize() {
@@ -330,8 +330,14 @@ impl Analyzer<'_, '_> {
                             lhs_metadata,
                         )
                         .convert_err(|err| match err {
-                            Error::Errors { span, .. } => Error::SimpleAssignFailed { span },
-                            Error::MissingFields { span, .. } => Error::SimpleAssignFailed { span },
+                            Error::Errors { span, .. } => Error::SimpleAssignFailed {
+                                span,
+                                cause: Some(box err),
+                            },
+                            Error::MissingFields { span, .. } => Error::SimpleAssignFailed {
+                                span,
+                                cause: Some(box err),
+                            },
                             _ => err,
                         })
                         .with_context(|| {
@@ -499,7 +505,10 @@ impl Analyzer<'_, '_> {
                         )
                         .map_err(|err| {
                             err.convert_all(|err| match err {
-                                Error::MissingFields { .. } => Error::SimpleAssignFailed { span: err.span() },
+                                Error::MissingFields { .. } => Error::SimpleAssignFailed {
+                                    span: err.span(),
+                                    cause: Some(box err),
+                                },
                                 _ => err,
                             })
                         })
@@ -556,7 +565,7 @@ impl Analyzer<'_, '_> {
                 | Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
-                }) => return Err(Error::SimpleAssignFailed { span }),
+                }) => return Err(Error::SimpleAssignFailed { span, cause: None }),
 
                 // TODO: Strict mode
                 Type::Keyword(RTsKeywordType {
@@ -607,7 +616,7 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => return Ok(()),
 
-                Type::EnumVariant(..) => return Err(Error::SimpleAssignFailed { span }),
+                Type::EnumVariant(..) => return Err(Error::SimpleAssignFailed { span, cause: None }),
 
                 Type::Keyword(..) => {
                     let rhs = self
@@ -619,13 +628,15 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         )
-                        .convert_err(|err| Error::SimpleAssignFailed { span: err.span() })
+                        .convert_err(|err| Error::SimpleAssignFailed {
+                            span: err.span(),
+                            cause: Some(box err),
+                        })
                         .context("failed to normalize")?;
 
                     if rhs.normalize().is_keyword() {
-                        return Err(
-                            Error::SimpleAssignFailed { span }.context("failed to assign builtin type of a keyword")
-                        );
+                        return Err(Error::SimpleAssignFailed { span, cause: None }
+                            .context("failed to assign builtin type of a keyword"));
                     }
 
                     return self

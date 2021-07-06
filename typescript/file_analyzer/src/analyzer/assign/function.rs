@@ -298,7 +298,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::SimpleAssignFailed { span })
+        Err(Error::SimpleAssignFailed { span, cause: None })
     }
 
     pub(super) fn assign_to_constructor(
@@ -333,7 +333,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             Type::Lit(..) | Type::ClassDef(ClassDef { is_abstract: true, .. }) | Type::Function(..) => {
-                return Err(Error::SimpleAssignFailed { span })
+                return Err(Error::SimpleAssignFailed { span, cause: None })
             }
 
             Type::TypeLit(rt) => {
@@ -384,7 +384,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::SimpleAssignFailed { span })
+        Err(Error::SimpleAssignFailed { span, cause: None })
     }
 
     /// Assigns a parameter to another one.
@@ -547,7 +547,7 @@ impl Analyzer<'_, '_> {
 
         if opts.for_overload {
             if required_li.clone().count() > required_ri.clone().count() {
-                return Err(Error::SimpleAssignFailed { span })
+                return Err(Error::SimpleAssignFailed { span, cause: None })
                     .context("l.params.required.len > r.params.required.len");
             }
         }
@@ -561,7 +561,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(Error::SimpleAssignFailed { span }).with_context(|| {
+                return Err(Error::SimpleAssignFailed { span, cause: None }).with_context(|| {
                     format!(
                         "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: {:?}\nRight: {:?}\n",
                         required_non_void_li.collect_vec(),

@@ -875,6 +875,7 @@ pub enum Error {
 
     SimpleAssignFailed {
         span: Span,
+        cause: Option<Box<Error>>,
     },
 
     SimpleAssignFailedWithCause {

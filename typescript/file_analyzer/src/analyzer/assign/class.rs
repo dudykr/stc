@@ -193,7 +193,11 @@ impl Analyzer<'_, '_> {
                 }
 
                 if opts.disallow_different_classes {
-                    return Err(Error::SimpleAssignFailed { span: opts.span });
+                    return Err(Error::SimpleAssignFailed {
+                        span: opts.span,
+                        cause: None,
+                    }
+                    .context("opts.disallow_different_classes is true"));
                 }
 
                 return Ok(());
@@ -252,7 +256,13 @@ impl Analyzer<'_, '_> {
         }
 
         match r {
-            Type::Lit(..) | Type::Keyword(..) => return Err(Error::SimpleAssignFailed { span: opts.span }),
+            Type::Lit(..) | Type::Keyword(..) => {
+                return Err(Error::SimpleAssignFailed {
+                    span: opts.span,
+                    cause: None,
+                }
+                .context("cannot assign literal or keyword to a class"))
+            }
             _ => {}
         }
 
@@ -327,7 +337,8 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(Error::SimpleAssignFailed { span });
+                return Err(Error::SimpleAssignFailed { span, cause: None })
+                    .context("failed to assign a class member to another one");
             }
             ClassMember::Property(lp) => {
                 for rm in r {
@@ -376,7 +387,7 @@ impl Analyzer<'_, '_> {
                         errors: vec![err],
                     });
                 } else {
-                    return Err(Error::SimpleAssignFailed { span });
+                    return Err(Error::SimpleAssignFailed { span, cause: None });
                 }
             }
             ClassMember::IndexSignature(_) => {}

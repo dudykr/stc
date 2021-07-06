@@ -975,8 +975,10 @@ impl Analyzer<'_, '_> {
                             rhs,
                         )
                         .context("tried to assign to an element of an intersection type")
-                        .convert_err(|err| Error::SimpleAssignFailed { span: err.span() })
-                    {
+                        .convert_err(|err| Error::SimpleAssignFailed {
+                            span: err.span(),
+                            cause: Some(box err),
+                        }) {
                         Ok(..) => {}
                         Err(err) => errors.push(err),
                     }
@@ -1000,7 +1002,10 @@ impl Analyzer<'_, '_> {
                                     dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
                                 )
                             })
-                            .convert_err(|err| Error::SimpleAssignFailed { span: err.span() })?;
+                            .convert_err(|err| Error::SimpleAssignFailed {
+                                span: err.span(),
+                                cause: Some(box err),
+                            })?;
 
                         errors.retain(|err| match err.actual() {
                             Error::UnknownPropertyInObjectLiteralAssignment { .. } => false,

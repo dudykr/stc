@@ -104,7 +104,7 @@ impl Analyzer<'_, '_> {
 
                 Ok(())
             }
-            _ => Err(Error::SimpleAssignFailed { span }),
+            _ => Err(Error::SimpleAssignFailed { span, cause: None }),
         }
     }
 }
