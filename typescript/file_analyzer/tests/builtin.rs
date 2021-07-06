@@ -68,17 +68,9 @@ pub fn intl() {
 
         GLOBALS.set(&globals, || {
             let log = logger();
-            let shared = StableEnv::new(slog::Logger::root(slog::Discard, slog::o!()), globals.clone());
+            let shared = StableEnv::new(log.logger, globals.clone());
             let mut libs = vec![];
-            for s in &[
-                "es2020.full",
-                "es2019.full",
-                "es2018.full",
-                "es2017.full",
-                "es2016.full",
-                "es2015.full",
-                "es5.full",
-            ] {
+            for s in &["es5"] {
                 libs.extend(Lib::load(&s));
             }
             libs.sort();
