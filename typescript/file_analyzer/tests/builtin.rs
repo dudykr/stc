@@ -55,6 +55,15 @@ pub fn builtin() {
                 assert_eq!(keyed_item_count, 10);
             }
 
+            {
+                let intl = env
+                    .get_global_type(DUMMY_SP, &"Intl".into())
+                    .expect("failed to get global type Intl");
+
+                let i = intl.foldable().module().unwrap();
+                assert!(i.exports.types.contains_key(&"NumberFormatOptions".into()));
+            }
+
             Ok(())
         })
     })
