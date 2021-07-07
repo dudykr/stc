@@ -105,7 +105,13 @@ impl Analyzer<'_, '_> {
                     .collect::<Result<_, _>>()?;
             }
 
-            let mut declared_ret_ty = try_opt!(f.return_type.validate_with(child));
+            let mut declared_ret_ty = {
+                let ctx = Ctx {
+                    in_actual_type: true,
+                    ..child.ctx
+                };
+                try_opt!(f.return_type.validate_with(&mut *child.with_ctx(ctx)))
+            };
 
             child.scope.declared_return_type = declared_ret_ty.clone();
 
