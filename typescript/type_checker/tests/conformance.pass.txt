@@ -2128,6 +2128,7 @@ types/primitives/number/invalidNumberAssignments.ts
 types/primitives/number/numberPropertyAccess.ts
 types/primitives/number/validNumberAssignments.ts
 types/primitives/string/assignFromStringInterface.ts
+types/primitives/string/assignFromStringInterface2.ts
 types/primitives/string/extendStringInterface.ts
 types/primitives/string/invalidStringAssignments.ts
 types/primitives/string/stringPropertyAccess.ts
