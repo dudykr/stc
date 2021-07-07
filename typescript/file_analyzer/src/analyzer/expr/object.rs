@@ -14,7 +14,7 @@ use stc_ts_file_analyzer_macros::validator;
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    CallSignature, FnParam, Function, Key, PropertySignature, Type, TypeElement, TypeLit, TypeLitMetadata,
+    Accessor, CallSignature, FnParam, Function, Key, PropertySignature, Type, TypeElement, TypeLit, TypeLitMetadata,
     TypeParamDecl, Union,
 };
 use std::{borrow::Cow, iter::repeat, time::Instant};
@@ -431,23 +431,36 @@ impl Analyzer<'_, '_> {
             RPropOrSpread::Prop(prop) => {
                 let p: TypeElement = prop.validate_with_args(self, object_type)?;
 
-                if let Some(key) = p.key() {
-                    let span = key.span();
+                match p {
+                    TypeElement::Method(..)
+                    | TypeElement::Property(PropertySignature {
+                        accessor:
+                            Accessor {
+                                getter: false,
+                                setter: false,
+                            },
+                        ..
+                    }) => {
+                        if let Some(key) = p.key() {
+                            let span = key.span();
 
-                    // Check if duplicate key exists.
-                    // We show errors on the second key and latters.
-                    //
-                    // See: es6/Symbols/symbolProperty36.ts
+                            // Check if duplicate key exists.
+                            // We show errors on the second key and latters.
+                            //
+                            // See: es6/Symbols/symbolProperty36.ts
 
-                    if known_keys.iter().any(|prev_key| {
-                        // TODO: Use
-                        // self.key_matches(span, prev_key, key, false)
-                        prev_key.type_eq(&key)
-                    }) {
-                        self.storage.report(Error::DuplicateProperty { span })
+                            if known_keys.iter().any(|prev_key| {
+                                // TODO: Use
+                                // self.key_matches(span, prev_key, key, false)
+                                prev_key.type_eq(&key)
+                            }) {
+                                self.storage.report(Error::DuplicateProperty { span })
+                            }
+
+                            known_keys.push(key.clone());
+                        }
                     }
-
-                    known_keys.push(key.clone());
+                    _ => {}
                 }
 
                 self.append_type_element(to, p)
