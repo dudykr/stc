@@ -451,7 +451,8 @@ impl Analyzer<'_, '_> {
                             //
                             // See: es6/Symbols/symbolProperty36.ts
 
-                            if !(key_ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || key_ty.normalize().is_symbol())
+                            // TODO: Exclude types which is not valid for computed key
+                            if !key.is_computed()
                                 && known_keys.iter().any(|prev_key| {
                                     // TODO: Use
                                     // self.key_matches(span, prev_key, key, false)
