@@ -622,6 +622,7 @@ pub enum Error {
         name: Box<RTsModuleName>,
     },
 
+    /// TS2355
     ReturnRequired {
         /// Span of the return type.
         span: Span,
