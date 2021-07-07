@@ -364,6 +364,7 @@ es6/Symbols/symbolProperty27.ts
 es6/Symbols/symbolProperty28.ts
 es6/Symbols/symbolProperty3.ts
 es6/Symbols/symbolProperty35.ts
+es6/Symbols/symbolProperty36.ts
 es6/Symbols/symbolProperty37.ts
 es6/Symbols/symbolProperty38.ts
 es6/Symbols/symbolProperty4.ts
@@ -2101,6 +2102,7 @@ types/objectTypeLiteral/callSignatures/specializedSignatureIsNotSubtypeOfNonSpec
 types/objectTypeLiteral/callSignatures/specializedSignatureIsSubtypeOfNonSpecializedSignature.ts
 types/objectTypeLiteral/callSignatures/specializedSignatureWithOptional.ts
 types/objectTypeLiteral/callSignatures/stringLiteralTypesInImplementationSignatures.ts
+types/objectTypeLiteral/callSignatures/stringLiteralTypesInImplementationSignatures2.ts
 types/objectTypeLiteral/callSignatures/typeParameterUsedAsTypeParameterConstraint.ts
 types/objectTypeLiteral/callSignatures/typeParameterUsedAsTypeParameterConstraint2.ts
 types/objectTypeLiteral/callSignatures/typeParameterUsedAsTypeParameterConstraint3.ts
