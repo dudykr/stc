@@ -910,7 +910,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn report_error_for_duplicate_params(&mut self, params: &[FnParam]) {
         let mut prev_ids: Vec<RIdent> = vec![];
-        for param in &params {
+        for param in params {
             let ids: Vec<RIdent> = find_ids_in_pat(&param.pat);
 
             for id in ids {
