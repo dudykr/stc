@@ -23,12 +23,12 @@ use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, CallSignature, Conditional, ConstructorSignature, Id, ImportType, IndexSignature,
-    IndexedAccessType, InferType, Interface, Intersection, Key, Mapped, MethodSignature, Operator, OptionalType,
-    Predicate, PropertySignature, QueryExpr, QueryType, Ref, RestType, Symbol, TplType, TsExpr, Tuple, TupleElement,
-    Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+    type_id::SymbolId, Alias, Array, CallSignature, Conditional, ConstructorSignature, FnParam, Id, ImportType,
+    IndexSignature, IndexedAccessType, InferType, Interface, Intersection, Key, Mapped, MethodSignature, Operator,
+    OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RestType, Symbol, TplType, TsExpr, Tuple,
+    TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
-use stc_ts_utils::{OptionExt, PatExt};
+use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
 use stc_utils::{error, AHashSet};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Spanned, DUMMY_SP};
@@ -331,12 +331,16 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsCallSignatureDecl) -> ValidationResult<CallSignature> {
         let type_params = try_opt!(d.type_params.validate_with(self));
+        let params: Vec<FnParam> = d.params.validate_with(self)?;
+        let ret_ty = try_opt!(d.type_ann.validate_with(self)).map(Box::new);
+
+        self.report_error_for_duplicate_params(&params);
 
         Ok(CallSignature {
             span: d.span,
-            params: d.params.validate_with(self)?,
+            params,
             type_params,
-            ret_ty: try_opt!(d.type_ann.validate_with(self)).map(Box::new),
+            ret_ty,
         })
     }
 }
@@ -904,6 +908,24 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn report_error_for_duplicate_params(&mut self, params: &[FnParam]) {
+        let mut prev_ids: Vec<RIdent> = vec![];
+        for param in &params {
+            let ids: Vec<RIdent> = find_ids_in_pat(&param.pat);
+
+            for id in ids {
+                if let Some(prev) = prev_ids.iter().find(|v| v.sym == id.sym) {
+                    self.storage.report(Error::DuplicateName {
+                        span: prev.span,
+                        name: id.into(),
+                    })
+                } else {
+                    prev_ids.push(id);
+                }
+            }
+        }
+    }
+
     #[extra_validator]
     fn report_error_for_type_param_usages_in_static_members(&mut self, i: &RIdent) {
         let span = i.span;
