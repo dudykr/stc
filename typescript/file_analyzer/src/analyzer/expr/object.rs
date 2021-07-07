@@ -442,6 +442,8 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         if let Some(key) = p.key() {
+                            let key_ty = key.ty();
+
                             let span = key.span();
 
                             // Check if duplicate key exists.
@@ -449,11 +451,13 @@ impl Analyzer<'_, '_> {
                             //
                             // See: es6/Symbols/symbolProperty36.ts
 
-                            if known_keys.iter().any(|prev_key| {
-                                // TODO: Use
-                                // self.key_matches(span, prev_key, key, false)
-                                prev_key.type_eq(&key)
-                            }) {
+                            if !(key_ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || key_ty.normalize().is_symbol())
+                                && known_keys.iter().any(|prev_key| {
+                                    // TODO: Use
+                                    // self.key_matches(span, prev_key, key, false)
+                                    prev_key.type_eq(&key)
+                                })
+                            {
                                 self.storage.report(Error::DuplicateProperty { span })
                             }
 
