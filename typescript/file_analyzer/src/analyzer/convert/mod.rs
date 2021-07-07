@@ -33,6 +33,7 @@ use stc_utils::{error, AHashSet};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Spanned, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
+use tracing::warn;
 
 mod interface;
 
@@ -706,7 +707,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !self.is_builtin {
-            slog::warn!(self.logger, "Crating a ref from TsTypeRef: {:?}", t.type_name);
+            warn!("Crating a ref from TsTypeRef: {:?}", t.type_name);
 
             if !reported_type_not_found {
                 self.report_error_for_unresolve_type(t.span, &t.type_name, type_args.as_deref())
