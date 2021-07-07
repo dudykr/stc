@@ -12,7 +12,6 @@ target/
 core
 *.log
 
-.vscode/*
 !.vscode/settings.json
 
 /.idea
@@ -42,7 +41,6 @@ package-lock.json
 
 pkg/
 
-yarn.lock
 .idea/
 
 
