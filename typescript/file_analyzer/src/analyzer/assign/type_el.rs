@@ -12,7 +12,7 @@ use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, MethodSignature, ModuleId, Operator, PropertySignature, Ref, Tuple, Type,
+    Array, Class, ClassDef, ClassMember, Key, MethodSignature, ModuleId, Operator, PropertySignature, Ref, Tuple, Type,
     TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union,
 };
 use stc_utils::ext::SpanExt;
@@ -1059,6 +1059,12 @@ impl Analyzer<'_, '_> {
             match lm {
                 TypeElement::Property(PropertySignature { optional: true, .. })
                 | TypeElement::Method(MethodSignature { optional: true, .. }) => {}
+
+                TypeElement::Method(MethodSignature {
+                    key: Key::Normal { sym, .. },
+                    ..
+                }) if &**sym == "toString" => {}
+
                 _ => {
                     // No property with `key` found.
                     missing_fields.push(lm.clone());
