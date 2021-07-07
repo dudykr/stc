@@ -2117,6 +2117,7 @@ types/primitives/boolean/assignFromBooleanInterface2.ts
 types/primitives/boolean/boolInsteadOfBoolean.ts
 types/primitives/boolean/booleanPropertyAccess.ts
 types/primitives/boolean/extendBooleanInterface.ts
+types/primitives/boolean/invalidBooleanAssignments.ts
 types/primitives/boolean/validBooleanAssignments.ts
 types/primitives/enum/invalidEnumAssignments.ts
 types/primitives/enum/validEnumAssignments.ts
