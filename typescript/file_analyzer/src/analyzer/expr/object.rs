@@ -9,7 +9,7 @@ use indexmap::IndexSet;
 use itertools::Itertools;
 use rnode::{FoldWith, NodeId, VisitMut, VisitMutWith};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RObjectLit, RPat, RPropOrSpread, RSpreadElement, RTsKeywordType};
-use stc_ts_errors::DebugExt;
+use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_type_ops::Fix;
@@ -444,11 +444,7 @@ impl Analyzer<'_, '_> {
                         // self.key_matches(span, prev_key, key, false)
                         prev_key.type_eq(&key)
                     }) {
-                        // TODO: Uncomment this after implementing getter /
-                        // setter distingtion
-
-                        // self.storage.report(Error::DuplicateProperty { span
-                        // })
+                        self.storage.report(Error::DuplicateProperty { span })
                     }
 
                     known_keys.push(key.clone());
