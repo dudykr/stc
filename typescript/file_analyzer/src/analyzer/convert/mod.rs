@@ -161,7 +161,14 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, ann: &RTsTypeAnn) -> ValidationResult {
         self.record(ann);
 
-        ann.type_ann.validate_with(self).map(|ty: Type| ty.fixed())
+        let ctx = Ctx {
+            in_actual_type: true,
+            ..self.ctx
+        };
+
+        ann.type_ann
+            .validate_with(&mut *self.with_ctx(ctx))
+            .map(|ty: Type| ty.fixed())
     }
 }
 
