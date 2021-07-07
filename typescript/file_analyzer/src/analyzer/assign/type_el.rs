@@ -766,6 +766,53 @@ impl Analyzer<'_, '_> {
 
         Ok(())
     }
+
+    pub(super) fn try_assign_using_parent(
+        &mut self,
+        data: &mut AssignData,
+        l: &Type,
+        r: &Type,
+        opts: AssignOpts,
+    ) -> Option<ValidationResult<()>> {
+        let span = opts.span;
+
+        match r.normalize() {
+            Type::Interface(ri) => {
+                let res: ValidationResult<_> = try {
+                    for parent in &ri.extends {
+                        let parent = self.type_of_ts_entity_name(
+                            span,
+                            self.ctx.module_id,
+                            &parent.expr,
+                            parent.type_args.as_deref(),
+                        )?;
+
+                        // An interface can extend a class.
+                        let parent = self.instantiate_class(span, &parent)?;
+
+                        let res = self.assign_with_opts(
+                            data,
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
+                            &l,
+                            &parent,
+                        );
+                        if res.is_ok() {
+                            return Some(Ok(()));
+                        }
+                    }
+
+                    return None;
+                };
+
+                Some(res)
+            }
+            _ => None,
+        }
+    }
+
     fn handle_assignment_of_type_elements_to_type_elements(
         &mut self,
         data: &mut AssignData,

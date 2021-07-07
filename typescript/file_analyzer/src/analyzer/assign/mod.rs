@@ -1290,6 +1290,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 _ => {
+                    if let Some(res) = self.try_assign_using_parent(data, to, rhs, opts) {
+                        return res;
+                    }
+
                     let r = self.type_to_type_lit(span, &rhs)?;
                     if let Some(r) = r {
                         for m in &r.members {
