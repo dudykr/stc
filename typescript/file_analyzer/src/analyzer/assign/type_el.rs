@@ -994,24 +994,34 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Method(ref rm) => {
                                     //
 
-                                    self.assign_to_fn_like(
-                                        data,
-                                        opts,
-                                        lm.type_params.as_ref(),
-                                        &lm.params,
-                                        lm.ret_ty.as_deref(),
-                                        rm.type_params.as_ref(),
-                                        &rm.params,
-                                        rm.ret_ty.as_deref(),
-                                    )
-                                    .context("tried to assign to callable type element")?;
+                                    let res = self
+                                        .assign_to_fn_like(
+                                            data,
+                                            opts,
+                                            lm.type_params.as_ref(),
+                                            &lm.params,
+                                            lm.ret_ty.as_deref(),
+                                            rm.type_params.as_ref(),
+                                            &rm.params,
+                                            rm.ret_ty.as_deref(),
+                                        )
+                                        .context("tried to assign to callable type element");
                                     // TODO: Return type
 
-                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                        unhandled_rhs.remove(pos);
-                                    }
+                                    match res {
+                                        Ok(()) => {
+                                            if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span())
+                                            {
+                                                unhandled_rhs.remove(pos);
+                                            }
 
-                                    return Ok(());
+                                            return Ok(());
+                                        }
+                                        Err(err) => {
+                                            errors.push(err);
+                                            done = true
+                                        }
+                                    }
                                 }
 
                                 TypeElement::Property(rp) => {
