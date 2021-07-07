@@ -1248,10 +1248,17 @@ impl Analyzer<'_, '_> {
 
             if err {
                 for (_, span) in &**spans {
-                    self.storage.report(Error::DuplicateVar {
-                        name: name.clone(),
-                        span: *span,
-                    });
+                    if kind == VarKind::Param {
+                        self.storage.report(Error::DuplicateName {
+                            name: name.clone(),
+                            span: *span,
+                        });
+                    } else {
+                        self.storage.report(Error::DuplicateVar {
+                            name: name.clone(),
+                            span: *span,
+                        });
+                    }
                 }
             }
         }
