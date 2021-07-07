@@ -920,8 +920,12 @@ impl Analyzer<'_, '_> {
                 if let Some(prev) = prev_ids.iter().find(|v| v.sym == id.sym) {
                     self.storage.report(Error::DuplicateName {
                         span: prev.span,
+                        name: prev.into(),
+                    });
+                    self.storage.report(Error::DuplicateName {
+                        span: id.span,
                         name: id.into(),
-                    })
+                    });
                 } else {
                     prev_ids.push(id);
                 }
