@@ -357,6 +357,9 @@ impl Analyzer<'_, '_> {
                 child.validate_computed_prop_key(d.span(), &d.key);
             }
 
+            let params = d.params.validate_with(child)?;
+            child.report_error_for_duplicate_params(&params);
+
             Ok(MethodSignature {
                 accessibility: None,
                 span: d.span,
@@ -364,7 +367,7 @@ impl Analyzer<'_, '_> {
                 key,
                 optional: d.optional,
                 type_params,
-                params: d.params.validate_with(child)?,
+                params,
                 ret_ty: try_opt!(d.type_ann.validate_with(child)).map(Box::new),
                 metadata: Default::default(),
             })
