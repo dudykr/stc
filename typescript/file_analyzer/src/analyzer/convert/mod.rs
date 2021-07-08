@@ -920,13 +920,15 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => {
                     if let Some(key) = elem.key() {
+                        let key = key.normalize();
+
                         if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(&*prev_key)) {
                             self.storage
                                 .report(Error::DuplicateNameWithoutName { span: prev.span() });
                             self.storage
                                 .report(Error::DuplicateNameWithoutName { span: key.span() });
                         } else {
-                            prev_keys.push(key.normalize());
+                            prev_keys.push(key);
                         }
                     }
                 }
