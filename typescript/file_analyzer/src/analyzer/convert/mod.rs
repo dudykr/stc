@@ -28,7 +28,7 @@ use stc_ts_types::{
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
 use stc_utils::{error, AHashSet};
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -255,7 +255,11 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
 
-        Ok(node.body.validate_with(&mut *self.with_ctx(ctx))?)
+        let members = node.body.validate_with(&mut *self.with_ctx(ctx))?;
+
+        self.report_error_for_duplicate_type_elements(&members);
+
+        Ok(members)
     }
 }
 
@@ -290,6 +294,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        self.report_error_for_duplicate_type_elements(&members);
         self.report_error_for_mixed_optional_method_signatures(&members);
 
         Ok(TypeLit {
@@ -920,6 +925,23 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    fn report_error_for_duplicate_type_elements(&mut self, elems: &[TypeElement]) {
+        let mut prev_keys: Vec<Cow<_>> = vec![];
+
+        for elem in elems {
+            if let Some(key) = elem.key() {
+                if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(&*prev_key)) {
+                    self.storage
+                        .report(Error::DuplicateNameWithoutName { span: prev.span() });
+                    self.storage
+                        .report(Error::DuplicateNameWithoutName { span: key.span() });
+                } else {
+                    prev_keys.push(key.normalize());
+                }
+            }
+        }
+    }
+
     fn report_error_for_duplicate_params(&mut self, params: &[FnParam]) {
         let mut prev_ids: Vec<RIdent> = vec![];
         for param in params {
