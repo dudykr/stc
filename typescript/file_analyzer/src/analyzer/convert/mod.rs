@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{
     analyzer::{marks::MarkExt, props::ComputedPropMode, scope::VarKind, util::ResultExt, Analyzer, Ctx, ScopeKind},
     util::{contains_infer_type, type_ext::TypeVecExt},
@@ -30,8 +28,9 @@ use stc_ts_types::{
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
 use stc_utils::{error, AHashSet};
+use std::collections::HashMap;
 use swc_atoms::js_word;
-use swc_common::{EqIgnoreSpan, Spanned, DUMMY_SP};
+use swc_common::{Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::warn;
 
@@ -274,7 +273,7 @@ impl Analyzer<'_, '_> {
             }
             if let Some(key) = member.key() {
                 for prev in &keys {
-                    if prev.eq_ignore_span(key) {
+                    if prev.type_eq(key) {
                         self.storage.report(Error::DuplicateName {
                             span: prev.span(),
                             name: Id::word("".into()),
