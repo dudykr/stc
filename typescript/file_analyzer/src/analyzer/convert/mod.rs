@@ -21,10 +21,11 @@ use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, CallSignature, Conditional, ConstructorSignature, FnParam, Id, ImportType,
-    IndexSignature, IndexedAccessType, InferType, Interface, Intersection, Key, Mapped, MethodSignature, Operator,
-    OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RestType, Symbol, TplType, TsExpr, Tuple,
-    TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+    type_id::SymbolId, Accessor, Alias, Array, CallSignature, Conditional, ConstructorSignature, FnParam, Id,
+    ImportType, IndexSignature, IndexedAccessType, InferType, Interface, Intersection, Key, Mapped, MethodSignature,
+    Operator, OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RestType, Symbol, TplType, TsExpr,
+    Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation,
+    Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
 use stc_utils::{error, AHashSet};
@@ -933,15 +934,29 @@ impl Analyzer<'_, '_> {
         let mut prev_keys: Vec<Cow<_>> = vec![];
 
         for elem in elems {
-            if let Some(key) = elem.key() {
-                if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(&*prev_key)) {
-                    self.storage
-                        .report(Error::DuplicateNameWithoutName { span: prev.span() });
-                    self.storage
-                        .report(Error::DuplicateNameWithoutName { span: key.span() });
-                } else {
-                    prev_keys.push(key.normalize());
+            match elem {
+                // TODO: Handle getter / setter
+                TypeElement::Property(PropertySignature {
+                    accessor:
+                        Accessor {
+                            getter: false,
+                            setter: false,
+                            ..
+                        },
+                    ..
+                }) => {
+                    if let Some(key) = elem.key() {
+                        if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(&*prev_key)) {
+                            self.storage
+                                .report(Error::DuplicateNameWithoutName { span: prev.span() });
+                            self.storage
+                                .report(Error::DuplicateNameWithoutName { span: key.span() });
+                        } else {
+                            prev_keys.push(key.normalize());
+                        }
+                    }
                 }
+                _ => {}
             }
         }
     }
