@@ -15,6 +15,7 @@ use stc_ts_errors::{Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Alias, CallSignature, Class, ClassDef, Function, Interface, Ref, TypeElement, TypeLit};
 use stc_ts_utils::PatExt;
+use std::borrow::Cow;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
@@ -185,8 +186,9 @@ impl Analyzer<'_, '_> {
 
                     if let Some(ref declared) = declared_ret_ty {
                         span = declared.span();
+                        let declared = child.normalize(Some(span), Cow::Borrowed(&declared), Default::default())?;
 
-                        match *declared.normalize() {
+                        match declared.normalize() {
                             Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
