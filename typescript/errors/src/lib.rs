@@ -1786,6 +1786,8 @@ impl Error {
 
             Error::UpdateArgMustBeVariableOrPropertyAccess { .. } => 2357,
 
+            Error::OptionalAndNonOptionalMethodPropertyMixed { .. } => 2386,
+
             _ => 0,
         }
     }
