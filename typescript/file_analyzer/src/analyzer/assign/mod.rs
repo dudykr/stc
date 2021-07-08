@@ -1143,6 +1143,18 @@ impl Analyzer<'_, '_> {
 
             Type::Union(r) => {
                 if self.should_use_union_assignment(span, rhs)? {
+                    // TODO: We should assign rhs as full.
+                    //
+                    //
+                    // lhs = (undefined | {
+                    //     (x: number) : number;
+                    //     (s: string) : string;
+                    // });
+                    // rhs = (undefined | (x: number) => number | (s: string) => string);
+                    //
+                    // The assignment above is valid, but it only works if we create a type literal
+                    // with two call signatures using two functions in rhs.
+
                     r.types
                         .iter()
                         .map(|rhs| {
