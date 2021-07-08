@@ -1247,18 +1247,24 @@ impl Analyzer<'_, '_> {
             spans.push((kind, span));
 
             if err {
+                let mut done = false;
                 for (_, span) in &**spans {
                     if kind == VarKind::Param {
                         self.storage.report(Error::DuplicateName {
                             name: name.clone(),
                             span: *span,
                         });
+                        done = true;
                     } else {
                         self.storage.report(Error::DuplicateVar {
                             name: name.clone(),
                             span: *span,
                         });
                     }
+                }
+
+                if done {
+                    return Ok(());
                 }
             }
         }
