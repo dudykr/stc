@@ -14,8 +14,8 @@ use stc_ts_file_analyzer_macros::validator;
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Accessor, CallSignature, FnParam, Function, Key, PropertySignature, Type, TypeElement, TypeLit, TypeLitMetadata,
-    TypeParamDecl, Union,
+    Accessor, CallSignature, FnParam, Function, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit,
+    TypeLitMetadata, TypeParamDecl, Union,
 };
 use std::{borrow::Cow, iter::repeat, time::Instant};
 use swc_atoms::JsWord;
@@ -39,7 +39,7 @@ impl Analyzer<'_, '_> {
                 ret = a.append_prop_or_spread_to_type(&mut known_keys, ret, prop, type_ann.as_deref())?;
             }
 
-            a.report_errors_for_type_literal(&ret);
+            a.report_errors_for_type_literal(&ret, false);
 
             Ok(ret)
         })
@@ -418,11 +418,11 @@ impl Analyzer<'_, '_> {
         slog::debug!(self.logger, "Normlaized unions (time = {:?})", end - start);
     }
 
-    fn report_errors_for_type_literal(&mut self, ty: &Type) {
+    pub(crate) fn report_errors_for_type_literal(&mut self, ty: &Type, is_type_ann: bool) {
         match ty.normalize() {
             Type::Union(ty) => {
                 for ty in &ty.types {
-                    self.report_errors_for_type_literal(ty);
+                    self.report_errors_for_type_literal(ty, is_type_ann);
                 }
             }
             Type::TypeLit(ty) => {
@@ -432,7 +432,25 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn report_error_for_mixed_optional_method_signatures(&mut self, elems: &[TypeElement]) {}
+    pub(crate) fn report_error_for_mixed_optional_method_signatures(&mut self, elems: &[TypeElement]) {
+        let mut keys: Vec<(&Key, bool)> = vec![];
+        for elem in elems {
+            match elem {
+                TypeElement::Method(MethodSignature { key, optional, .. }) => {
+                    if let Some(prev) = keys.iter().find(|v| v.0.type_eq(key)) {
+                        if *optional != prev.1 {
+                            self.storage
+                                .report(Error::OptionalAndNonOptionalMethodPropertyMixed { span: key.span() });
+                            continue;
+                        }
+                    }
+
+                    keys.push((key, *optional));
+                }
+                _ => {}
+            }
+        }
+    }
 
     fn append_prop_or_spread_to_type(
         &mut self,

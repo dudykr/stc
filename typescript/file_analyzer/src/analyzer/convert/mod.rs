@@ -291,6 +291,8 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        self.report_error_for_mixed_optional_method_signatures(&members);
+
         Ok(TypeLit {
             span: lit.span,
             members,
