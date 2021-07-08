@@ -79,7 +79,7 @@ impl Analyzer<'_, '_> {
             //
             // and rhs is
             //
-            // <T#3930>(x: (a: T#3930#0) => T) : T[];
+            // <T>(x: (a: T) => T) : T[];
             //
             // we need to infer two time.
         }
