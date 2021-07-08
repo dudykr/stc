@@ -921,7 +921,11 @@ impl Analyzer<'_, '_> {
                 }) => {
                     if let Some(key) = elem.key() {
                         let key = key.normalize();
+                        let key_ty = key.ty();
 
+                        if key_ty.normalize().is_symbol() {
+                            continue;
+                        }
                         if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(&*prev_key)) {
                             self.storage
                                 .report(Error::DuplicateNameWithoutName { span: prev.span() });
