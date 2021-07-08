@@ -479,6 +479,7 @@ impl Analyzer<'_, '_> {
                     }) => {
                         if let Some(key) = p.key() {
                             let key_ty = key.ty();
+                            let key = key.normalize().into_owned();
 
                             let span = key.span();
 
@@ -496,9 +497,9 @@ impl Analyzer<'_, '_> {
                                 })
                             {
                                 self.storage.report(Error::DuplicateProperty { span })
+                            } else {
+                                known_keys.push(key);
                             }
-
-                            known_keys.push(key.clone());
                         }
                     }
                     _ => {}
