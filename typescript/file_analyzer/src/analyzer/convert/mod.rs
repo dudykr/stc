@@ -269,32 +269,6 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, lit: &RTsTypeLit) -> ValidationResult<TypeLit> {
         let members = lit.members.validate_with(self)?;
 
-        let mut keys: Vec<Key> = vec![];
-
-        for member in &members {
-            match member {
-                TypeElement::Method(..) => continue,
-                _ => {}
-            }
-            if let Some(key) = member.key() {
-                for prev in &keys {
-                    if prev.type_eq(key) {
-                        self.storage.report(Error::DuplicateName {
-                            span: prev.span(),
-                            name: Id::word("".into()),
-                        });
-
-                        self.storage.report(Error::DuplicateName {
-                            span: key.span(),
-                            name: Id::word("".into()),
-                        });
-                    }
-                }
-
-                keys.push(key.clone());
-            }
-        }
-
         self.report_error_for_duplicate_type_elements(&members);
         self.report_error_for_mixed_optional_method_signatures(&members);
 
