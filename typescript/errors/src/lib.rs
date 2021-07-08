@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2386
+    OptionalAndNonOptionalMethodPropertyMixed {
+        span: Span,
+    },
+
     /// TS2357
     UpdateArgMustBeVariableOrPropertyAccess {
         span: Span,
