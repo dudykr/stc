@@ -67,7 +67,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        {
+        if r_type_params.is_some() {
             // TODO(kdy1):
             //
             // If a parameter of lhs is something like
@@ -82,7 +82,80 @@ impl Analyzer<'_, '_> {
             // <T>(x: (a: T) => T) : T[];
             //
             // we need to infer two time.
+
+            let l_pos = l_params.iter().position(|p| match p.ty.normalize() {
+                Type::TypeLit(ty) => {
+                    ty.members
+                        .iter()
+                        .filter(|v| match v {
+                            TypeElement::Call(..) => true,
+                            _ => false,
+                        })
+                        .count()
+                        >= 2
+                }
+                _ => false,
+            });
+
+            if let Some(l_pos) = l_pos {
+                let count = match l_params[l_pos].ty.normalize() {
+                    Type::TypeLit(ty) => ty
+                        .members
+                        .iter()
+                        .filter(|v| match v {
+                            TypeElement::Call(..) => true,
+                            _ => false,
+                        })
+                        .count(),
+                    _ => {
+                        unreachable!()
+                    }
+                };
+
+                let mut vec = (0..count).into_iter().map(|_| l_params.to_vec()).collect_vec();
+
+                for (el_idx, new_params) in vec.iter_mut().enumerate() {
+                    match new_params[l_pos].ty.normalize_mut() {
+                        Type::TypeLit(ty) => {
+                            let mut call_idx = 0;
+                            ty.members.retain(|el| match el {
+                                TypeElement::Call(..) => {
+                                    if el_idx == call_idx {
+                                        call_idx += 1;
+
+                                        return true;
+                                    }
+
+                                    call_idx += 1;
+
+                                    false
+                                }
+                                _ => true,
+                            });
+                        }
+                        _ => {
+                            unreachable!()
+                        }
+                    }
+                }
+
+                for new_l_params in vec {
+                    return self
+                        .assign_to_fn_like(
+                            data,
+                            opts,
+                            l_type_params,
+                            &new_l_params,
+                            l_ret_ty,
+                            r_type_params,
+                            r_params,
+                            r_ret_ty,
+                        )
+                        .context("tried to assign by expanding overloads in a type literal");
+                }
+            }
         }
+
         let new_r_params;
         let new_r_ret_ty;
         let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
