@@ -18,7 +18,7 @@ use itertools::Itertools;
 use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RArrowExpr, RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp,
-    RComputedPropName, RConstructor, RDecl, RExpr, RExprOrSuper, RFunction, RIdent, RMemberExpr, RParam,
+    RComputedPropName, RConstructor, RDecl, RExpr, RExprOrSuper, RFunction, RIdent, RLit, RMemberExpr, RParam,
     RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RSeqExpr, RStmt, RSuper, RTsEntityName,
     RTsFnParam, RTsKeywordType, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl,
     RVarDeclarator,
@@ -36,7 +36,7 @@ use std::{
     mem::{replace, take},
 };
 use swc_atoms::js_word;
-use swc_common::{iter::IdentifyLast, EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
+use swc_common::{iter::IdentifyLast, EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_utils::private_ident;
 
@@ -822,6 +822,16 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     fn check_duplicate_of_class(&mut self, c: &RClass) -> ValidationResult<()> {
+        fn normalize_prop_name(p: &RPropName) -> Cow<RPropName> {
+            match p {
+                RPropName::Num(v) => Cow::Owned(RPropName::Ident(RIdent::new(
+                    v.value.to_string().into(),
+                    v.span.with_ctxt(SyntaxContext::empty()),
+                ))),
+                _ => Cow::Borrowed(p),
+            }
+        }
+
         let mut keys = vec![];
         let mut private_keys = vec![];
         let mut is_props = AHashSet::default();
@@ -838,7 +848,7 @@ impl Analyzer<'_, '_> {
                         ..
                     },
                 ) => {
-                    keys.push((Cow::Borrowed(&m.key), m.is_static));
+                    keys.push((normalize_prop_name(&m.key), m.is_static));
                 }
                 RClassMember::PrivateMethod(
                     m
@@ -863,14 +873,19 @@ impl Analyzer<'_, '_> {
 
                 RClassMember::ClassProp(m) => {
                     is_props.insert(keys.len());
-                    keys.push((
-                        Cow::Owned(RPropName::Computed(RComputedPropName {
+
+                    let key = match &*m.key {
+                        RExpr::Lit(RLit::Num(v)) => Cow::Owned(RPropName::Ident(RIdent::new(
+                            v.value.to_string().into(),
+                            v.span.with_ctxt(SyntaxContext::empty()),
+                        ))),
+                        _ => Cow::Owned(RPropName::Computed(RComputedPropName {
                             node_id: NodeId::invalid(),
                             span: DUMMY_SP,
                             expr: m.key.clone(),
                         })),
-                        m.is_static,
-                    ));
+                    };
+                    keys.push((key, m.is_static));
                 }
                 RClassMember::PrivateProp(m) => {
                     is_private_props.insert(private_keys.len());
