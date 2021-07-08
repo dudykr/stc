@@ -529,11 +529,8 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        if to.is_kwd(TsKeywordTypeKind::TsObjectKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
-            return Ok(Type::Keyword(RTsKeywordType {
-                span: to.span(),
-                kind: TsKeywordTypeKind::TsObjectKeyword,
-            }));
+        if rhs.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
+            return Ok(to);
         }
 
         match rhs.normalize() {
