@@ -329,6 +329,18 @@ pub enum Key {
     Private(#[use_eq_ignore_span] PrivateName),
 }
 
+impl Key {
+    pub fn normalize(&self) -> Cow<Key> {
+        match self {
+            Key::Num(v) => Cow::Owned(Key::Normal {
+                span: v.span,
+                sym: v.value.to_string().into(),
+            }),
+            _ => Cow::Borrowed(self),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, EqIgnoreSpan, TypeEq, Visit, Spanned)]
 pub struct PrivateName {
     pub span: Span,
