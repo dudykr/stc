@@ -39,6 +39,8 @@ impl Analyzer<'_, '_> {
                 ret = a.append_prop_or_spread_to_type(&mut known_keys, ret, prop, type_ann.as_deref())?;
             }
 
+            a.report_errors_for_type_literal(&ret);
+
             Ok(ret)
         })
     }
@@ -415,6 +417,22 @@ impl Analyzer<'_, '_> {
 
         slog::debug!(self.logger, "Normlaized unions (time = {:?})", end - start);
     }
+
+    fn report_errors_for_type_literal(&mut self, ty: &Type) {
+        match ty.normalize() {
+            Type::Union(ty) => {
+                for ty in &ty.types {
+                    self.report_errors_for_type_literal(ty);
+                }
+            }
+            Type::TypeLit(ty) => {
+                self.report_error_for_mixed_optional_method_signatures(&ty.members);
+            }
+            _ => {}
+        }
+    }
+
+    fn report_error_for_mixed_optional_method_signatures(&mut self, elems: &[TypeElement]) {}
 
     fn append_prop_or_spread_to_type(
         &mut self,
