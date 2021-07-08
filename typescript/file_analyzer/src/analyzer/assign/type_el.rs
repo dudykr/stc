@@ -614,7 +614,21 @@ impl Analyzer<'_, '_> {
                 Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsObjectKeyword,
                     ..
-                }) => return Ok(()),
+                }) => {
+                    if lhs.is_empty() {
+                        return Ok(());
+                    } else {
+                        let err = Error::MissingFields {
+                            span,
+                            fields: lhs.to_vec(),
+                        }
+                        .context("keyword `object` is not assignable to a non-empty type literal");
+                        return Err(Error::Errors {
+                            span,
+                            errors: vec![err],
+                        });
+                    }
+                }
 
                 Type::EnumVariant(..) => return Err(Error::SimpleAssignFailed { span, cause: None }),
 
