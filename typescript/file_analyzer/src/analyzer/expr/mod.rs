@@ -2120,6 +2120,18 @@ impl Analyzer<'_, '_> {
                                 _ => {}
                             }
 
+                            if let TypeOfMode::LValue = type_mode {
+                                self.storage.report(Error::TupleIndexError {
+                                    span: n.span(),
+                                    index: v,
+                                    len: elems.len() as u64,
+                                });
+                                return Ok(Type::Keyword(RTsKeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                }));
+                            }
+
                             return Err(Error::TupleIndexError {
                                 span: n.span(),
                                 index: v,
