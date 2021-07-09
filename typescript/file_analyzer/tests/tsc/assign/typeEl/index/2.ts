@@ -3,8 +3,7 @@ interface A {
     [s: string]: number
 }
 interface B {
-    [b: string]: number
-    [a: number]: number
+    [a: number]: string
 }
 
 
