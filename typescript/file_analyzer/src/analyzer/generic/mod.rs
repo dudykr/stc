@@ -25,7 +25,7 @@ use stc_utils::{error::context, stack};
 use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::instrument;
+use tracing::{error, instrument};
 
 mod expander;
 mod inference;
@@ -1354,6 +1354,8 @@ impl Analyzer<'_, '_> {
         );
         Ok(())
     }
+
+    #[instrument(skip(self, span, inferred, param, arg, opts))]
     fn infer_mapped(
         &mut self,
         span: Span,
@@ -1648,8 +1650,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 _ => {
-                                    slog::error!(
-                                        self.logger,
+                                    error!(
                                         "unimplemented: infer_mapped: Mapped <- Assign: TypeElement({:#?})",
                                         arg_member
                                     );
