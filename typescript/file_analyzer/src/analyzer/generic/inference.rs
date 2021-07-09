@@ -22,6 +22,7 @@ use std::{
 };
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use tracing::error;
 
 /// # Default
 ///
@@ -554,11 +555,9 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                slog::error!(
-                    self.logger,
+                error!(
                     "unimplemented: type infernce: type element:\nParam = {:#?}\nArg = {:#?}",
-                    p,
-                    a
+                    p, a
                 );
             }
         }

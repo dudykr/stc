@@ -20,6 +20,7 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{Accessibility, TsKeywordTypeKind, TsTypeOperatorOp};
+use tracing::error;
 
 impl Analyzer<'_, '_> {
     /// This method is called when lhs of assignment is interface or type
@@ -1108,7 +1109,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             TypeElement::Method(_) => {
-                                slog::error!(self.logger, "unimplemented: Index = Method");
+                                error!("unimplemented: Index = Method");
                             }
                             TypeElement::Index(ri) => {
                                 if li.params.type_eq(&ri.params) {
@@ -1123,7 +1124,7 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
 
-                                slog::error!(self.logger, "unimplemented: error reporting for Index = Index");
+                                error!("unimplemented: error reporting for Index = Index");
                             }
                         }
                     }

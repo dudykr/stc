@@ -19,7 +19,7 @@ use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::instrument;
+use tracing::{error, instrument};
 
 mod builtin;
 mod cast;
@@ -2100,8 +2100,7 @@ impl Analyzer<'_, '_> {
         }
 
         // TODO: Implement full type checker
-        slog::error!(
-            self.logger,
+        error!(
             "unimplemented: assign: \nLeft: {}\nRight: {}",
             dump_type_as_string(&self.cm, to),
             dump_type_as_string(&self.cm, rhs)

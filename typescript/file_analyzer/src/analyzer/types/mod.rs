@@ -28,7 +28,7 @@ use std::{
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{instrument, trace};
+use tracing::{error, instrument, trace};
 
 mod index_signature;
 mod keyof;
@@ -879,7 +879,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Class(c) => self.collect_class_members(excluded, &Type::ClassDef(*c.def.clone())),
             _ => {
-                slog::error!(self.logger, "unimplemented: collect_class_members: {:?}", ty);
+                error!("unimplemented: collect_class_members: {:?}", ty);
                 return Ok(None);
             }
         }
@@ -1157,7 +1157,7 @@ impl Analyzer<'_, '_> {
             }
 
             _ => {
-                slog::error!(self.logger, "unimplemented: type_to_type_lit: {:?}", ty);
+                error!("unimplemented: type_to_type_lit: {:?}", ty);
                 return Ok(None);
             }
         }))
