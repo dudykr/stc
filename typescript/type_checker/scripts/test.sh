@@ -14,6 +14,7 @@ export RUST_BACKTRACE=1
 export RUST_LOG=debug,swc_common=off
 
 # We prevent regression using faster checks
+cargo test -q -p stc_ts_file_analyzer --test tsc
 GOLDEN_ONLY=1 cargo test -q -p stc_ts_file_analyzer --test visualize
 
 WIP_STATS=1 cargo test --color always -q --test tsc
