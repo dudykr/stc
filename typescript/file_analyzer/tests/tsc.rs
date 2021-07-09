@@ -1,3 +1,4 @@
+use stc_ts_testing::tsc::TscError;
 use std::{
     path::{Path, PathBuf},
     process::Command,
@@ -9,11 +10,12 @@ use testing::fixture;
 fn compare(input: PathBuf) {
     let tsc_result = invoke_tsc(&input);
 
-    panic!("{}", tsc_result)
+    panic!("{:?}", tsc_result)
 }
 
-fn invoke_tsc(input: &Path) -> String {
+fn invoke_tsc(input: &Path) -> Vec<TscError> {
     let output = Command::new("tsc")
+        .arg("--pretty")
         .arg("--noEmit")
         .arg(&input)
         .output()
@@ -23,5 +25,5 @@ fn invoke_tsc(input: &Path) -> String {
 
     eprintln!("tsc output: \nStdout:\n{}\nStderr:\n{}", stdout, stderr);
 
-    stderr.into_owned()
+    TscError::parse_all(&stdout)
 }
