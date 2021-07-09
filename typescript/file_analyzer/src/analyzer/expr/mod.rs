@@ -48,7 +48,7 @@ use std::{
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
-use tracing::debug;
+use tracing::{debug, instrument};
 use ty::TypeExt;
 
 mod array;
@@ -793,6 +793,7 @@ impl Analyzer<'_, '_> {
         false
     }
 
+    #[instrument(skip(self, span, obj, prop, type_mode, members, opts))]
     fn access_property_of_type_elements(
         &mut self,
         span: Span,
@@ -996,6 +997,7 @@ impl Analyzer<'_, '_> {
         Ok(Some(Type::union(matching_elements)))
     }
 
+    #[instrument(skip(self, span, obj, prop, type_mode, id_ctx, opts))]
     pub(super) fn access_property(
         &mut self,
         span: Span,
