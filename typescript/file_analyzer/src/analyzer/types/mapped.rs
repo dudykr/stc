@@ -33,7 +33,12 @@ impl Analyzer<'_, '_> {
         let ty = self.expand_mapped_inner(span, m);
         let end = Instant::now();
 
-        debug!("[Timings] expand_mapped (time = {:?})", end - start);
+        debug!(
+            kind = "perf",
+            op = "expand_mapped",
+            "expand_mapped (time = {:?})",
+            end - start
+        );
 
         let ty = ty?;
         if let Some(ty) = &ty {

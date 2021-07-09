@@ -26,6 +26,7 @@ use std::{borrow::Cow, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
+use tracing::debug;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct GetIteratorOpts {
@@ -497,7 +498,12 @@ impl Analyzer<'_, '_> {
 
         let end = Instant::now();
 
-        slog::debug!(self.logger, "[Timings] get_interator done. (time = {:?}", end - start);
+        debug!(
+            kind = "perf",
+            op = "get_iterator",
+            "get_iterator (time = {:?}",
+            end - start
+        );
 
         let iterator = iterator?;
 

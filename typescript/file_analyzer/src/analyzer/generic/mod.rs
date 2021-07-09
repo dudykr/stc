@@ -25,7 +25,7 @@ use stc_utils::{error::context, stack};
 use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{error, instrument};
+use tracing::{debug, error, instrument};
 
 mod expander;
 mod inference;
@@ -491,9 +491,10 @@ impl Analyzer<'_, '_> {
 
         let end = Instant::now();
 
-        slog::debug!(
-            self.logger,
-            "[Timings] infer_type: `{}` === `{}`. (took {:?})",
+        debug!(
+            kind = "perf",
+            op = "infer_type",
+            "infer_type: `{}` === `{}`. (took {:?})",
             param_str,
             arg_str,
             end - start
