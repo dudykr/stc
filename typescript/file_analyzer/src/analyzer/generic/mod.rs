@@ -482,6 +482,10 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> ValidationResult<()> {
+        if self.is_builtin {
+            return Ok(());
+        }
+
         let param_str = dump_type_as_string(&self.cm, &param);
         let arg_str = dump_type_as_string(&self.cm, &arg);
 
