@@ -44,6 +44,7 @@ use std::{
 use swc_atoms::js_word;
 use swc_common::{util::move_map::MoveMap, Mark, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
+use tracing::instrument;
 
 mod this;
 mod type_param;
@@ -671,6 +672,7 @@ impl Analyzer<'_, '_> {
     ///  - `expand_union` should be true if you are going to use it in
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
+    #[instrument(skip(self, span, ty, opts))]
     pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> ValidationResult {
         if !self.is_builtin {
             debug_assert_ne!(
