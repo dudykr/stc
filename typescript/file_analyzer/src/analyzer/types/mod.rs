@@ -8,8 +8,8 @@ use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    RBool, RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl,
-    RTsKeywordType, RTsLit, RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
+    RClassDecl, RExpr, RIdent, RInvalid, RNumber, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsKeywordType, RTsLit,
+    RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
@@ -930,9 +930,9 @@ impl Analyzer<'_, '_> {
         Ok(Some(match ty {
             Type::Lit(ty) => {
                 let kind = match &ty.lit {
-                    RTsLit::Bool(RBool { .. }) => TsKeywordTypeKind::TsBooleanKeyword,
-                    RTsLit::Number(RNumber { .. }) => TsKeywordTypeKind::TsNumberKeyword,
-                    RTsLit::Str(RStr { .. }) => TsKeywordTypeKind::TsStringKeyword,
+                    RTsLit::Bool(..) => TsKeywordTypeKind::TsBooleanKeyword,
+                    RTsLit::Number(..) => TsKeywordTypeKind::TsNumberKeyword,
+                    RTsLit::Str(..) => TsKeywordTypeKind::TsStringKeyword,
                     RTsLit::Tpl(..) => unreachable!(),
                     RTsLit::BigInt(..) => TsKeywordTypeKind::TsBigIntKeyword,
                 };
