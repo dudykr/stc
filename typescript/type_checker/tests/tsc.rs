@@ -500,15 +500,6 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 }
 
 fn do_test(file_name: &Path) -> Result<(), StdErr> {
-    let _tracing = tracing::subscriber::set_default(
-        tracing_subscriber::FmtSubscriber::builder()
-            .without_time()
-            .with_max_level(tracing::Level::TRACE)
-            .with_ansi(true)
-            .with_test_writer()
-            .finish(),
-    );
-
     let fname = file_name.display().to_string();
     let mut expected_errors = load_expected_errors(&file_name).unwrap();
 
@@ -561,6 +552,16 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                     },
                     None,
                     Arc::new(NodeResolver),
+                );
+
+                // Don't print logs from builtin modules.
+                let _tracing = tracing::subscriber::set_default(
+                    tracing_subscriber::FmtSubscriber::builder()
+                        .without_time()
+                        .with_max_level(tracing::Level::TRACE)
+                        .with_ansi(true)
+                        .with_test_writer()
+                        .finish(),
                 );
 
                 let start = Instant::now();
