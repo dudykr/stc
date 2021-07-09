@@ -1650,7 +1650,7 @@ impl Analyzer<'_, '_> {
                                 _ => {
                                     slog::error!(
                                         self.logger,
-                                        "not implemented yet: infer_mapped: Mapped <- Assign: TypeElement({:#?})",
+                                        "unimplemented: infer_mapped: Mapped <- Assign: TypeElement({:#?})",
                                         arg_member
                                     );
                                     return Ok(true);
