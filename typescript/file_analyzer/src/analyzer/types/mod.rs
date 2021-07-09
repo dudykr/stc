@@ -8,8 +8,8 @@ use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    RClassDecl, RExpr, RIdent, RInvalid, RNumber, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsKeywordType,
-    RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
+    RBool, RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl,
+    RTsKeywordType, RTsLit, RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
@@ -928,6 +928,22 @@ impl Analyzer<'_, '_> {
         let ty = ty.normalize();
 
         Ok(Some(match ty {
+            Type::Lit(ty) => {
+                let kind = match &ty.lit {
+                    RTsLit::Bool(RBool { .. }) => TsKeywordTypeKind::TsBooleanKeyword,
+                    RTsLit::Number(RNumber { .. }) => TsKeywordTypeKind::TsNumberKeyword,
+                    RTsLit::Str(RStr { .. }) => TsKeywordTypeKind::TsStringKeyword,
+                    RTsLit::Tpl(..) => unreachable!(),
+                    RTsLit::BigInt(..) => TsKeywordTypeKind::TsBigIntKeyword,
+                };
+
+                let ty = self
+                    .type_to_type_lit(span, &Type::Keyword(RTsKeywordType { span: ty.span, kind }))
+                    .context("tried to convert a literal to type literal")?
+                    .map(Cow::into_owned);
+                return Ok(ty.map(Cow::Owned));
+            }
+
             Type::Keyword(ty) => {
                 let name = match ty.kind {
                     TsKeywordTypeKind::TsNumberKeyword => js_word!("Number"),
