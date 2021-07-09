@@ -2228,6 +2228,20 @@ impl Analyzer<'_, '_> {
     ///  8. Type of the arrow function is `(a: number) => [number]`.
     ///  9. Type of the property `foo` is `<A, B>(a: A) => B` where A = `number`
     /// and B = `[number]`.
+    #[instrument(skip(
+        self,
+        span,
+        kind,
+        expr,
+        type_params,
+        params,
+        ret_ty,
+        type_args,
+        args,
+        arg_types,
+        spread_arg_types,
+        type_ann
+    ))]
     fn get_return_type(
         &mut self,
         span: Span,
