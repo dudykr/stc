@@ -134,6 +134,8 @@ fn validate(input: &Path) -> Vec<StcError> {
                 }
             };
 
+            eprintln!("{}", d.message[0].0);
+
             StcError {
                 line: cp.line,
                 code: code.strip_prefix("TS").unwrap().parse().unwrap(),
