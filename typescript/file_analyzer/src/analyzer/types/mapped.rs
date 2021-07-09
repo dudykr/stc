@@ -13,7 +13,7 @@ use stc_ts_types::{
 use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsTypeOperatorOp};
-use tracing::{debug, instrument};
+use tracing::{debug, error, instrument};
 
 impl Analyzer<'_, '_> {
     /// Required because mapped type can specified by user, like
@@ -281,7 +281,7 @@ impl Analyzer<'_, '_> {
             Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) => return Ok(None),
 
             _ => {
-                slog::error!(self.logger, "unimplemented: convert_type_to_keys: {:#?}", ty);
+                error!("unimplemented: convert_type_to_keys: {:#?}", ty);
                 return Ok(None);
             }
         }
