@@ -13,6 +13,7 @@ use stc_ts_types::{
 use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsTypeOperatorOp};
+use tracing::{debug, instrument};
 
 impl Analyzer<'_, '_> {
     /// Required because mapped type can specified by user, like
@@ -24,6 +25,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO: Handle index signatures.
+    #[instrument(name = "expand_mapped", skip(self, span, m))]
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
         let orig = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
 
@@ -31,13 +33,13 @@ impl Analyzer<'_, '_> {
         let ty = self.expand_mapped_inner(span, m);
         let end = Instant::now();
 
-        slog::debug!(self.logger, "[Timings] expand_mapped (time = {:?})", end - start);
+        debug!("[Timings] expand_mapped (time = {:?})", end - start);
 
         let ty = ty?;
         if let Some(ty) = &ty {
             let expanded = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
 
-            slog::debug!(self.logger, "[types/mapped]: Expanded {} as {}", orig, expanded);
+            debug!("[types/mapped]: Expanded {} as {}", orig, expanded);
         }
 
         Ok(ty)
