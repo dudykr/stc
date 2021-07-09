@@ -2022,6 +2022,7 @@ dependencies = [
  "swc_ecma_visit",
  "testing",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
