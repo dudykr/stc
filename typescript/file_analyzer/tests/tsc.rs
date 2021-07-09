@@ -13,7 +13,11 @@ fn compare(input: PathBuf) {
 }
 
 fn invoke_tsc(input: &Path) -> String {
-    let output = Command::new("tsc").arg(&input).output().expect("failed to invoke tsc");
+    let output = Command::new("tsc")
+        .arg("--noEmit")
+        .arg(&input)
+        .output()
+        .expect("failed to invoke tsc");
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
 
