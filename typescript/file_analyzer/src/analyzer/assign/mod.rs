@@ -1033,7 +1033,7 @@ impl Analyzer<'_, '_> {
                         .assign_to_class(data, opts, l, rhs)
                         .context("tried to assign a type to an instance of a class")
                 }
-                Type::ClassDef(..) => {
+                Type::Array(..) | Type::ClassDef(..) => {
                     fail!()
                 }
                 _ => {}
