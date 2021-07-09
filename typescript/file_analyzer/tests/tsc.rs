@@ -165,6 +165,8 @@ fn invoke_tsc(input: &Path) -> Vec<TscError> {
     let output = Command::new("tsc")
         .arg("--pretty")
         .arg("--noEmit")
+        .arg("--lib")
+        .arg("es2020")
         .arg(&input)
         .output()
         .expect("failed to invoke tsc");
@@ -172,6 +174,8 @@ fn invoke_tsc(input: &Path) -> Vec<TscError> {
     let stderr = String::from_utf8_lossy(&output.stderr);
 
     eprintln!("tsc output: \nStdout:\n{}\nStderr:\n{}", stdout, stderr);
+
+    assert!(stderr.is_empty());
 
     TscError::parse_all(&stdout)
 }
