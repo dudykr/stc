@@ -1430,7 +1430,10 @@ impl Analyzer<'_, '_> {
                                             },
                                         )?;
 
-                                        let res = self.assign(&mut Default::default(), &ty, &var_ty, span);
+                                        let res = self
+                                            .assign(&mut Default::default(), &ty, &var_ty, span)
+                                            .context("tried to validate a varaible declared multiple times")
+                                            .convert_err(|err| Error::VarDeclNotCompatible { span: err.span() });
 
                                         if let Err(err) = res {
                                             self.storage.report(err);

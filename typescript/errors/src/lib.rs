@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2403
+    VarDeclNotCompatible {
+        span: Span,
+    },
+
     /// TS2795
     IntrinsicIsBuiltinOnly {
         span: Span,
@@ -173,7 +178,7 @@ pub enum Error {
         span: Span,
     },
 
-    /// TS2403
+    /// TS2322
     AssignFailedBecauseTupleLengthDiffers {
         span: Span,
     },
@@ -1748,7 +1753,7 @@ impl Error {
 
             Error::InvalidUsageOfNewTarget { .. } => 17013,
 
-            Error::AssignFailedBecauseTupleLengthDiffers { .. } => 2403,
+            Error::AssignFailedBecauseTupleLengthDiffers { .. } => 2322,
 
             Error::ClassMemeberNotCompatibleWithStringIndexSignature { .. } => 2411,
 
@@ -1801,6 +1806,8 @@ impl Error {
             Error::TypeParamsProvidedButCalleeIsNotGeneric { .. } => 2347,
 
             Error::IntrinsicIsBuiltinOnly { .. } => 2795,
+
+            Error::VarDeclNotCompatible { .. } => 2403,
 
             _ => 0,
         }
