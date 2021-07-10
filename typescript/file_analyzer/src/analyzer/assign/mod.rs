@@ -1920,7 +1920,18 @@ impl Analyzer<'_, '_> {
                                     _ => {}
                                 }
 
-                                errors.extend(self.assign_inner(data, &l.ty, &r.ty, opts).err());
+                                errors.extend(
+                                    self.assign_inner(
+                                        data,
+                                        &l.ty,
+                                        &r.ty,
+                                        AssignOpts {
+                                            allow_unknown_rhs: true,
+                                            ..opts
+                                        },
+                                    )
+                                    .err(),
+                                );
                             }
                         }
 
