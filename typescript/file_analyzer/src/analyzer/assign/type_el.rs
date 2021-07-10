@@ -1218,7 +1218,8 @@ impl Analyzer<'_, '_> {
                     }
 
                     if !lhs_metadata.inexact {
-                        missing_fields.push(lm.clone());
+                        return Err(Error::SimpleAssignFailed { span, cause: None }
+                            .context("failed to assign to a constructor"));
                     }
                 }
 
