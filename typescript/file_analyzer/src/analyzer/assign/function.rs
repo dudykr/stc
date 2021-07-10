@@ -164,7 +164,7 @@ impl Analyzer<'_, '_> {
         let new_r_params;
         let new_r_ret_ty;
         let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
-            (Some(lt), Some(rt)) => {
+            (Some(lt), Some(rt)) if lt.params.len() == rt.params.len() => {
                 //
                 let map = lt
                     .params
@@ -224,7 +224,7 @@ impl Analyzer<'_, '_> {
             }
 
             // Assigning `(a: 1) => string` to `<Z>(a: Z) => string` is valid.
-            (None, Some(rt)) => {
+            (_, Some(rt)) => {
                 let lf = Type::Function(Function {
                     span,
                     type_params: None,
