@@ -718,7 +718,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            unimplemented!("exclude_props: {:#?}", ty)
+            unimplemented!("exclude_props: {}", dump_type_as_string(&self.cm, &ty))
         })()?;
 
         Ok(ty.fixed())
