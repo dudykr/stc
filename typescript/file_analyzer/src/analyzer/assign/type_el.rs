@@ -993,7 +993,15 @@ impl Analyzer<'_, '_> {
                                                 &rm.params,
                                                 rm.ret_ty.as_deref(),
                                             )
-                                            .context("tried to assign a method signature to a property signature")?;
+                                            .context(
+                                                "tried to assign a method signature to a property signature with \
+                                                 function type",
+                                            )?;
+                                        } else {
+                                            return Err(Error::SimpleAssignFailed { span, cause: None }.context(
+                                                "failed to assign a method signature to a property signature because \
+                                                 the property was not a function",
+                                            ));
                                         }
                                     }
 
