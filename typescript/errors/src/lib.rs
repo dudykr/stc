@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2795
+    IntrinsicIsBuiltinOnly {
+        span: Span,
+    },
+
     /// TS2347
     TypeParamsProvidedButCalleeIsNotGeneric {
         span: Span,
@@ -1794,6 +1799,8 @@ impl Error {
             Error::OptionalAndNonOptionalMethodPropertyMixed { .. } => 2386,
 
             Error::TypeParamsProvidedButCalleeIsNotGeneric { .. } => 2347,
+
+            Error::IntrinsicIsBuiltinOnly { .. } => 2795,
 
             _ => 0,
         }
