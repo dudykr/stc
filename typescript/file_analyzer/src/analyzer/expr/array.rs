@@ -276,6 +276,18 @@ impl Analyzer<'_, '_> {
                 Error::NoCallabelPropertyWithName { span, .. }
                 | Error::NoSuchProperty { span, .. }
                 | Error::NoSuchPropertyInClass { span, .. } => {
+                    match iterator.normalize() {
+                        Type::Union(iterator) => {
+                            if iterator.types.iter().all(|ty| ty.normalize().is_tuple()) {
+                                return Error::NoSuchProperty {
+                                    span,
+                                    obj: None,
+                                    prop: None,
+                                };
+                            }
+                        }
+                        _ => {}
+                    }
                     Error::MustHaveSymbolIteratorThatReturnsIterator { span }
                 }
                 _ => err,
