@@ -3211,13 +3211,9 @@ impl Analyzer<'_, '_> {
                                                 .instantiate_type_params_using_args(span, type_params, type_args)
                                                 .map(Some)?;
                                         }
-                                        _ => {
-                                            unimplemented!(
-                                                "Error reporting for type arguments for types without type \
-                                                 parameters: {:#?}",
-                                                ty
-                                            )
-                                        }
+                                        _ => self
+                                            .storage
+                                            .report(Error::TypeParamsProvidedButCalleeIsNotGeneric { span }),
                                     }
                                 }
                                 if let Some(params) = params {
