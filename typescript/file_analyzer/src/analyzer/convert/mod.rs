@@ -12,10 +12,10 @@ use stc_ts_ast_rnode::{
     RTsArrayType, RTsCallSignatureDecl, RTsConditionalType, RTsConstructSignatureDecl, RTsConstructorType,
     RTsEntityName, RTsExprWithTypeArgs, RTsFnOrConstructorType, RTsFnParam, RTsFnType, RTsImportType,
     RTsIndexSignature, RTsIndexedAccessType, RTsInferType, RTsInterfaceBody, RTsInterfaceDecl, RTsIntersectionType,
-    RTsLit, RTsMappedType, RTsMethodSignature, RTsOptionalType, RTsParenthesizedType, RTsPropertySignature,
-    RTsRestType, RTsTplLitType, RTsTupleElement, RTsTupleType, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RTsTypeElement,
-    RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation, RTsTypePredicate,
-    RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
+    RTsKeywordType, RTsLit, RTsMappedType, RTsMethodSignature, RTsOptionalType, RTsParenthesizedType,
+    RTsPropertySignature, RTsRestType, RTsTplLitType, RTsTupleElement, RTsTupleType, RTsType, RTsTypeAliasDecl,
+    RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation,
+    RTsTypePredicate, RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -31,7 +31,7 @@ use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
 use stc_utils::{error, AHashSet};
 use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
-use swc_common::{Spanned, TypeEq, DUMMY_SP};
+use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::warn;
 
@@ -185,7 +185,18 @@ impl Analyzer<'_, '_> {
                 |child: &mut Analyzer| -> ValidationResult<_> {
                     let type_params = try_opt!(d.type_params.validate_with(child));
 
-                    let mut ty = d.type_ann.validate_with(child)?;
+                    let mut ty = match &*d.type_ann {
+                        RTsType::TsKeywordType(RTsKeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsIntrinsicKeyword,
+                        }) if !child.is_builtin => {
+                            let span = *span;
+                            child.storage.report(Error::IntrinsicIsBuiltinOnly { span });
+                            Type::any(span.with_ctxt(SyntaxContext::empty()))
+                        }
+                        _ => d.type_ann.validate_with(child)?,
+                    };
+
                     // If infer type exists, it should be expanded to remove infer type.
                     if contains_infer_type(&ty) || child.contains_infer_type(&ty) {
                         span = child.mark_as_infer_type_container(span);
@@ -863,7 +874,20 @@ impl Analyzer<'_, '_> {
                 self.prevent_generalize(&mut ty);
                 ty
             }
-            RTsType::TsKeywordType(ty) => Type::Keyword(ty.clone()),
+            RTsType::TsKeywordType(ty) => {
+                if let TsKeywordTypeKind::TsIntrinsicKeyword = ty.kind {
+                    if !self.is_builtin {
+                        let span = ty.span;
+
+                        self.storage.report(Error::NoSuchType {
+                            span,
+                            name: Id::word("intrinsic".into()),
+                        });
+                        return Ok(Type::any(span.with_ctxt(SyntaxContext::empty())));
+                    }
+                }
+                Type::Keyword(ty.clone())
+            }
             RTsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(self)?),
             RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => {
                 Type::Union(u.validate_with(self)?).fixed()
