@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2347
+    TypeParamsProvidedButCalleeIsNotGeneric {
+        span: Span,
+    },
+
     /// TS2386
     OptionalAndNonOptionalMethodPropertyMixed {
         span: Span,
@@ -1787,6 +1792,8 @@ impl Error {
             Error::UpdateArgMustBeVariableOrPropertyAccess { .. } => 2357,
 
             Error::OptionalAndNonOptionalMethodPropertyMixed { .. } => 2386,
+
+            Error::TypeParamsProvidedButCalleeIsNotGeneric { .. } => 2347,
 
             _ => 0,
         }
