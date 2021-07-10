@@ -1195,7 +1195,22 @@ impl Analyzer<'_, '_> {
                                 );
 
                                 match res {
-                                    Ok(()) => return Ok(()),
+                                    Ok(()) => {
+                                        for rm in rhs_members {
+                                            match rm {
+                                                TypeElement::Constructor(..) => {
+                                                    if let Some(pos) =
+                                                        unhandled_rhs.iter().position(|span| *span == rm.span())
+                                                    {
+                                                        unhandled_rhs.remove(pos);
+                                                    }
+                                                }
+                                                _ => {}
+                                            }
+                                        }
+
+                                        return Ok(());
+                                    }
                                     Err(err) => {
                                         errors.push(err);
                                     }
