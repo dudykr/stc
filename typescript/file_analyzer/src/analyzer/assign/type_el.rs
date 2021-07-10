@@ -983,17 +983,17 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Method(rm) => {
                                     if let Some(lp_ty) = &lp.type_ann {
                                         if let Type::Function(lp_ty) = lp_ty.normalize() {
-                                            self.assign_params(data, opts, &lp_ty.params, &rm.params).context(
-                                                "tried to assign parameters of a method property to the parameters of \
-                                                 a property with callable type",
-                                            )?;
-
-                                            if let Some(r_ret_ty) = &rm.ret_ty {
-                                                self.assign_with_opts(data, opts, &lp_ty.ret_ty, &r_ret_ty).context(
-                                                    "tried to assign return type of a method property to the return \
-                                                     type of a property with callable type",
-                                                )?;
-                                            }
+                                            self.assign_to_fn_like(
+                                                data,
+                                                opts,
+                                                lp_ty.type_params.as_ref(),
+                                                &lp_ty.params,
+                                                Some(&lp_ty.ret_ty),
+                                                rm.type_params.as_ref(),
+                                                &rm.params,
+                                                rm.ret_ty.as_deref(),
+                                            )
+                                            .context("tried to assign a method signature to a property signature")?;
                                         }
                                     }
 
