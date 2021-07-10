@@ -1207,7 +1207,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    if !lhs_metadata.inexact {
+                    if !lhs_metadata.inexact && !opts.is_assigning_to_class_members {
                         return Err(Error::SimpleAssignFailed { span, cause: None }
                             .context("failed to assign to a constructor"));
                     }
