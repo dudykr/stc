@@ -12,13 +12,13 @@ use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, Key, MethodSignature, ModuleId, Operator, PropertySignature, Ref, Tuple, Type,
-    TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union,
+    Array, Class, ClassDef, ClassMember, Function, Key, MethodSignature, ModuleId, Operator, PropertySignature, Ref,
+    Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union,
 };
 use stc_utils::ext::SpanExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
-use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{Accessibility, TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::error;
 
@@ -998,10 +998,23 @@ impl Analyzer<'_, '_> {
                                                  function type",
                                             )?;
                                         } else {
-                                            return Err(Error::SimpleAssignFailed { span, cause: None }.context(
+                                            self.assign_with_opts(
+                                                data,
+                                                opts,
+                                                &lp_ty,
+                                                &Type::Function(Function {
+                                                    span,
+                                                    type_params: rm.type_params.clone(),
+                                                    params: rm.params.clone(),
+                                                    ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
+                                                        box Type::any(span.with_ctxt(SyntaxContext::empty()))
+                                                    }),
+                                                }),
+                                            )
+                                            .context(
                                                 "failed to assign a method signature to a property signature because \
                                                  the property was not a function",
-                                            ));
+                                            )?;
                                         }
                                     }
 
