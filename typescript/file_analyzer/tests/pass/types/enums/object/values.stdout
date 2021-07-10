@@ -20,5 +20,5 @@ warning: Type
 2 | export var values5 = Object.values(E);                     // any[]
   |                      ^^^^^^^^^^^^^^^^
   |
-  = note: ((E.A | E.B))[]
+  = note: ((E.A | E.B | string))[]
 

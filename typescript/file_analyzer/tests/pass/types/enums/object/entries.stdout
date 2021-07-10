@@ -20,5 +20,5 @@ warning: Type
 2 | export var entries5 = Object.entries(E);                   // [string, any][]
   |                       ^^^^^^^^^^^^^^^^^
   |
-  = note: [string, (E.A | E.B)][]
+  = note: [string, (E.A | E.B | string)][]
 
