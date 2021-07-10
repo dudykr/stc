@@ -1,5 +1,8 @@
 use crate::{
-    analyzer::{marks::MarkExt, props::ComputedPropMode, scope::VarKind, util::ResultExt, Analyzer, Ctx, ScopeKind},
+    analyzer::{
+        expr::TypeOfMode, marks::MarkExt, props::ComputedPropMode, scope::VarKind, util::ResultExt, Analyzer, Ctx,
+        ScopeKind,
+    },
     util::{contains_infer_type, type_ext::TypeVecExt},
     validator,
     validator::ValidateWith,
@@ -8,8 +11,8 @@ use crate::{
 use itertools::Itertools;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RAssignPatProp, RBindingIdent, RComputedPropName, RIdent, RObjectPat, RObjectPatProp, RPat,
-    RTsArrayType, RTsCallSignatureDecl, RTsConditionalType, RTsConstructSignatureDecl, RTsConstructorType,
+    RArrayPat, RAssignPatProp, RBindingIdent, RComputedPropName, RExpr, RIdent, RInvalid, RObjectPat, RObjectPatProp,
+    RPat, RTsArrayType, RTsCallSignatureDecl, RTsConditionalType, RTsConstructSignatureDecl, RTsConstructorType,
     RTsEntityName, RTsExprWithTypeArgs, RTsFnOrConstructorType, RTsFnParam, RTsFnType, RTsImportType,
     RTsIndexSignature, RTsIndexedAccessType, RTsInferType, RTsInterfaceBody, RTsInterfaceDecl, RTsIntersectionType,
     RTsKeywordType, RTsLit, RTsMappedType, RTsMethodSignature, RTsOptionalType, RTsParenthesizedType,
@@ -21,11 +24,11 @@ use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    type_id::SymbolId, Accessor, Alias, Array, CallSignature, Conditional, ConstructorSignature, FnParam, Id,
-    ImportType, IndexSignature, IndexedAccessType, InferType, Interface, Intersection, Key, Mapped, MethodSignature,
-    Operator, OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RestType, Symbol, TplType, TsExpr,
-    Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation,
-    Union,
+    type_id::SymbolId, Accessor, Alias, Array, CallSignature, ComputedKey, Conditional, ConstructorSignature, FnParam,
+    Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, Interface, Intersection, Key, Mapped,
+    MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RestType, Symbol,
+    TplType, TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
+    TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
 use stc_utils::{error, AHashSet};
@@ -827,15 +830,40 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsIndexedAccessType) -> ValidationResult<IndexedAccessType> {
+    fn validate(&mut self, t: &RTsIndexedAccessType) -> ValidationResult<Type> {
         self.record(t);
+        let span = t.span;
 
-        Ok(IndexedAccessType {
-            span: t.span,
+        let obj_type = box t.obj_type.validate_with(self)?;
+        let index_type = box t.index_type.validate_with(self)?.cheap();
+
+        if !self.is_builtin {
+            let ctx = Ctx {
+                diallow_unknown_object_property: true,
+                ..self.ctx
+            };
+            let prop_ty = self.with_ctx(ctx).access_property(
+                span,
+                &obj_type,
+                &Key::Computed(ComputedKey {
+                    span,
+                    expr: box RExpr::Invalid(RInvalid { span }),
+                    ty: index_type.clone(),
+                }),
+                TypeOfMode::RValue,
+                IdCtx::Type,
+                Default::default(),
+            );
+
+            prop_ty.report(&mut self.storage);
+        }
+
+        Ok(Type::IndexedAccessType(IndexedAccessType {
+            span,
             readonly: t.readonly,
-            obj_type: box t.obj_type.validate_with(self)?,
-            index_type: box t.index_type.validate_with(self)?,
-        })
+            obj_type,
+            index_type,
+        }))
     }
 }
 
@@ -912,7 +940,7 @@ impl Analyzer<'_, '_> {
             RTsType::TsOptionalType(ty) => Type::Optional(ty.validate_with(self)?),
             RTsType::TsRestType(ty) => Type::Rest(ty.validate_with(self)?),
             RTsType::TsInferType(ty) => Type::Infer(ty.validate_with(self)?),
-            RTsType::TsIndexedAccessType(ty) => Type::IndexedAccessType(ty.validate_with(self)?),
+            RTsType::TsIndexedAccessType(ty) => ty.validate_with(self)?,
             RTsType::TsTypePredicate(ty) => Type::Predicate(ty.validate_with(self)?),
             RTsType::TsImportType(ty) => Type::Import(ty.validate_with(self)?),
         };
