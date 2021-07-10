@@ -518,6 +518,18 @@ impl Analyzer<'_, '_> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
+
+        match to.normalize() {
+            Type::Function(..) => {
+                // objectSpead.ts says
+                //
+                //
+                // functions result in { }
+                return Ok(to);
+            }
+            _ => {}
+        }
+
         if rhs.is_any() || rhs.is_unknown() {
             return Ok(rhs);
         }
