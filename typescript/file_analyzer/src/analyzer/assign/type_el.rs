@@ -144,6 +144,7 @@ impl Analyzer<'_, '_> {
                         &mut missing_fields,
                         &mut unhandled_rhs,
                         lhs,
+                        lhs_metadata,
                         rhs_members,
                     )
                     .with_context(|| {
@@ -835,6 +836,7 @@ impl Analyzer<'_, '_> {
         missing_fields: &mut Vec<TypeElement>,
         unhandled_rhs: &mut Vec<Span>,
         lhs: &[TypeElement],
+        lhs_metadata: TypeLitMetadata,
         rhs: &[TypeElement],
     ) -> ValidationResult<()> {
         let span = opts.span;
@@ -843,7 +845,7 @@ impl Analyzer<'_, '_> {
 
         for (i, m) in lhs.into_iter().enumerate().filter(|(_, m)| m.key().is_some()) {
             let res = self
-                .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, m, rhs)
+                .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, m, lhs_metadata, rhs)
                 .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
 
             match res {
@@ -861,7 +863,15 @@ impl Analyzer<'_, '_> {
         for m in lhs.iter().filter(|m| m.key().is_none()) {
             for r in rhs {
                 let res = self
-                    .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, m, &[r.clone()])
+                    .assign_type_elements_to_type_element(
+                        data,
+                        opts,
+                        missing_fields,
+                        unhandled_rhs,
+                        m,
+                        lhs_metadata,
+                        &[r.clone()],
+                    )
                     .with_context(|| format!("tried to assign to an element (not a key-based)"));
 
                 errors.extend(res.err());
@@ -919,6 +929,7 @@ impl Analyzer<'_, '_> {
         missing_fields: &mut Vec<TypeElement>,
         unhandled_rhs: &mut Vec<Span>,
         lm: &TypeElement,
+        lhs_metadata: TypeLitMetadata,
         rhs_members: &[TypeElement],
     ) -> ValidationResult<()> {
         let span = opts.span;
@@ -1133,8 +1144,6 @@ impl Analyzer<'_, '_> {
                     //
                     for rm in rhs_members {
                         match rm {
-                            // TODO: Check type of parameters
-                            // TODO: Check return type
                             TypeElement::Call(rc) => {
                                 if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                     unhandled_rhs.remove(pos);
@@ -1170,6 +1179,49 @@ impl Analyzer<'_, '_> {
 
                     missing_fields.push(lm.clone());
                 }
+
+                TypeElement::Constructor(lc) => {
+                    //
+                    for rm in rhs_members {
+                        match rm {
+                            TypeElement::Constructor(rc) => {
+                                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                    unhandled_rhs.remove(pos);
+                                }
+                                done = true;
+
+                                let res = self.assign_to_fn_like(
+                                    data,
+                                    AssignOpts {
+                                        infer_type_params_of_left: true,
+                                        ..opts
+                                    },
+                                    lc.type_params.as_ref(),
+                                    &lc.params,
+                                    lc.ret_ty.as_deref(),
+                                    rc.type_params.as_ref(),
+                                    &rc.params,
+                                    rc.ret_ty.as_deref(),
+                                );
+
+                                match res {
+                                    Ok(()) => return Ok(()),
+                                    Err(err) => {
+                                        errors.push(err);
+                                    }
+                                }
+
+                                continue;
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    if !lhs_metadata.inexact {
+                        missing_fields.push(lm.clone());
+                    }
+                }
+
                 _ => {}
             }
         }
