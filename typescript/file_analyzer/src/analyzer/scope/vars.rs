@@ -616,7 +616,7 @@ impl Analyzer<'_, '_> {
                 },
             )?;
 
-            if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
+            if ty.is_any() || ty.is_unknown() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
                 return Ok(ty.into_owned());
             }
 
