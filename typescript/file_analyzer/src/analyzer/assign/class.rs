@@ -221,6 +221,7 @@ impl Analyzer<'_, '_> {
                     data,
                     AssignOpts {
                         allow_unknown_rhs: true,
+                        is_assigning_to_class_members: true,
                         ..opts
                     },
                     l.span,
