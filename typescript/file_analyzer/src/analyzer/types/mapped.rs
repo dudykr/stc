@@ -464,6 +464,19 @@ impl Analyzer<'_, '_> {
             }
             Type::Tuple(..) | Type::Array(..) => return Ok(None),
 
+            Type::Mapped(m) => match m.type_param.constraint.as_deref().map(|ty| ty.normalize()) {
+                Some(Type::Operator(Operator {
+                    op: TsTypeOperatorOp::KeyOf,
+                    ty,
+                    ..
+                })) => {
+                    return self
+                        .get_property_names_for_mapped_type(span, ty)
+                        .context("tried to get property names by using `keyof` constraint")
+                }
+                _ => {}
+            },
+
             _ => {}
         }
 
