@@ -861,21 +861,11 @@ impl Analyzer<'_, '_> {
 
         // Index signature can eat multiple rhs.
         for m in lhs.iter().filter(|m| m.key().is_none()) {
-            for r in rhs {
-                let res = self
-                    .assign_type_elements_to_type_element(
-                        data,
-                        opts,
-                        missing_fields,
-                        unhandled_rhs,
-                        m,
-                        lhs_metadata,
-                        &[r.clone()],
-                    )
-                    .with_context(|| format!("tried to assign to an element (not a key-based)"));
+            let res = self
+                .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, m, lhs_metadata, rhs)
+                .with_context(|| format!("tried to assign to an element (not a key-based)"));
 
-                errors.extend(res.err());
-            }
+            errors.extend(res.err());
         }
 
         if !errors.is_empty() {
