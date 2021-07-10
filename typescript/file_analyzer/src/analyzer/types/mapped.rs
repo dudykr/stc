@@ -391,7 +391,7 @@ impl Analyzer<'_, '_> {
 
                 return Ok(Some(keys));
             }
-            Type::Param(..) => Ok(None),
+            Type::Param(..) => return Ok(None),
 
             Type::Intersection(ty) => {
                 let keys_types = ty
@@ -462,16 +462,16 @@ impl Analyzer<'_, '_> {
 
                 return Ok(Some(result));
             }
-            Type::Tuple(..) | Type::Array(..) => Ok(None),
+            Type::Tuple(..) | Type::Array(..) => return Ok(None),
 
-            _ => {
-                unimplemented!(
-                    "get_property_names_for_mapped_type:\n{}\n{:#?}",
-                    dump_type_as_string(&self.cm, &ty),
-                    ty
-                );
-            }
+            _ => {}
         }
+
+        unimplemented!(
+            "get_property_names_for_mapped_type:\n{}\n{:#?}",
+            dump_type_as_string(&self.cm, &ty),
+            ty
+        );
     }
 
     pub(crate) fn apply_mapped_flags_to_type(
