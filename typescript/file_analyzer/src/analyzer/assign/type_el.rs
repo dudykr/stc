@@ -1134,7 +1134,11 @@ impl Analyzer<'_, '_> {
                                 error!("unimplemented: Index = Method");
                             }
                             TypeElement::Index(ri) => {
-                                if li.params.type_eq(&ri.params) {
+                                done = true;
+
+                                if li.params.type_eq(&ri.params)
+                                    || ri.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                                {
                                     if let Some(pos) = unhandled_rhs.iter().position(|span| *span == ri.span()) {
                                         unhandled_rhs.remove(pos);
                                     }
@@ -1144,7 +1148,14 @@ impl Analyzer<'_, '_> {
                                             return self.assign_with_opts(data, opts, &lt, &rt);
                                         }
                                     }
+
+                                    return Ok(());
                                 }
+
+                                errors.push(
+                                    Error::SimpleAssignFailed { span, cause: None }
+                                        .context("failed to assign to an index signature"),
+                                );
 
                                 error!("unimplemented: error reporting for Index = Index");
                             }
