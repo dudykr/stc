@@ -13,4 +13,19 @@ pub enum IntrinsicKind {
     Uppercase,
     Lowercase,
     Capitalize,
+    Uncapitalize,
+}
+
+impl From<&'_ str> for IntrinsicKind {
+    fn from(s: &str) -> Self {
+        match s {
+            "Uppercase" => Self::Uppercase,
+            "Lowercase" => Self::Lowercase,
+            "Capitalize" => Self::Capitalize,
+            "Uncapitalize" => Self::Uncapitalize,
+            _ => {
+                unreachable!("unknown intrinsic type `{}`", s)
+            }
+        }
+    }
 }

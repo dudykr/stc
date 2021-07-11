@@ -25,10 +25,10 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, Array, CallSignature, ComputedKey, Conditional, ConstructorSignature, FnParam,
-    Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, Interface, Intersection, Key, Mapped,
-    MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RestType, Symbol,
-    TplType, TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
-    TypeParamInstantiation, Union,
+    Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, Interface, Intersection, Intrinsic,
+    IntrinsicKind, Key, Mapped, MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr,
+    QueryType, Ref, RestType, Symbol, TplType, TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit,
+    TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
 use stc_utils::{error, AHashSet};
@@ -197,6 +197,15 @@ impl Analyzer<'_, '_> {
                             child.storage.report(Error::IntrinsicIsBuiltinOnly { span });
                             Type::any(span.with_ctxt(SyntaxContext::empty()))
                         }
+
+                        RTsType::TsKeywordType(RTsKeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsIntrinsicKeyword,
+                        }) => Type::Intrinsic(Intrinsic {
+                            span: d.span,
+                            kind: IntrinsicKind::from(&*d.id.sym),
+                        }),
+
                         _ => d.type_ann.validate_with(child)?,
                     };
 

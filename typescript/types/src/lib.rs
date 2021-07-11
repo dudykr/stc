@@ -11,7 +11,7 @@ use self::type_id::SymbolId;
 pub use self::{
     convert::rprop_name_to_expr,
     id::Id,
-    intrinsic::Intrinsic,
+    intrinsic::{Intrinsic, IntrinsicKind},
     metadata::{TypeElMetadata, TypeLitMetadata},
     module_id::ModuleId,
 };
