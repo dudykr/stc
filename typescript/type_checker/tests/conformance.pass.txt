@@ -2233,6 +2233,7 @@ types/tuple/tupleElementTypes3.ts
 types/tuple/tupleElementTypes4.ts
 types/tuple/tupleLengthCheck.ts
 types/tuple/typeInferenceWithTupleType.ts
+types/tuple/unionsOfTupleTypes1.ts
 types/tuple/wideningTuples1.ts
 types/tuple/wideningTuples4.ts
 types/tuple/wideningTuples6.ts
