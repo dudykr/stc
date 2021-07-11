@@ -111,11 +111,6 @@ pub(crate) struct Ctx {
     /// If `true`, expression validator will not emit tuple.
     cannot_be_tuple: bool,
 
-    /// If `true`, `access_property` will not produce types like `Array['b']`
-    disallow_creating_indexed_type_from_ty_els: bool,
-
-    disallow_indexing_class_with_computed: bool,
-
     in_shorthand: bool,
 
     /// Used to make type parameters `unknown` when it cannot be inferred.
@@ -508,8 +503,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 allow_module_var: false,
                 check_for_implicit_any: false,
                 cannot_be_tuple: false,
-                disallow_creating_indexed_type_from_ty_els: false,
-                disallow_indexing_class_with_computed: false,
                 in_shorthand: false,
                 is_instantiating_class: false,
                 in_cond: false,

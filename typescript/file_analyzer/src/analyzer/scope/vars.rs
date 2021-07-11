@@ -368,7 +368,6 @@ impl Analyzer<'_, '_> {
                             used_keys.push(key.clone());
 
                             let ctx = Ctx {
-                                disallow_creating_indexed_type_from_ty_els: true,
                                 diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
@@ -382,6 +381,7 @@ impl Analyzer<'_, '_> {
                                         IdCtx::Var,
                                         AccessPropertyOpts {
                                             disallow_indexing_array_with_string: true,
+                                            disallow_creating_indexed_type_from_ty_els: true,
                                             ..Default::default()
                                         },
                                     )
@@ -434,7 +434,6 @@ impl Analyzer<'_, '_> {
                             used_keys.push(key.clone());
 
                             let ctx = Ctx {
-                                disallow_creating_indexed_type_from_ty_els: true,
                                 diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
@@ -448,6 +447,7 @@ impl Analyzer<'_, '_> {
                                         IdCtx::Var,
                                         AccessPropertyOpts {
                                             disallow_indexing_array_with_string: true,
+                                            disallow_creating_indexed_type_from_ty_els: true,
                                             ..Default::default()
                                         },
                                     )

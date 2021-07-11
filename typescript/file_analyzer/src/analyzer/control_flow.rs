@@ -1156,11 +1156,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let ctx = Ctx {
-            disallow_creating_indexed_type_from_ty_els: true,
-            ..self.ctx
-        };
-        let prop_res = self.with_ctx(ctx).access_property(
+        let prop_res = self.access_property(
             src.span(),
             src,
             &Key::Normal {
@@ -1169,7 +1165,10 @@ impl Analyzer<'_, '_> {
             },
             TypeOfMode::RValue,
             IdCtx::Var,
-            Default::default(),
+            AccessPropertyOpts {
+                disallow_creating_indexed_type_from_ty_els: true,
+                ..Default::default()
+            },
         );
 
         match prop_res {

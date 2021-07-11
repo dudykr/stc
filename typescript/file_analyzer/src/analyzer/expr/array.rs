@@ -426,12 +426,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         iterator_result: Cow<'a, Type>,
     ) -> ValidationResult<Cow<'a, Type>> {
-        let ctx = Ctx {
-            disallow_creating_indexed_type_from_ty_els: true,
-            ..self.ctx
-        };
         let mut elem_ty = self
-            .with_ctx(ctx)
             .access_property(
                 span,
                 &iterator_result,
@@ -443,6 +438,7 @@ impl Analyzer<'_, '_> {
                 IdCtx::Var,
                 AccessPropertyOpts {
                     disallow_indexing_array_with_string: true,
+                    disallow_creating_indexed_type_from_ty_els: true,
                     ..Default::default()
                 },
             )

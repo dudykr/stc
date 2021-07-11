@@ -520,6 +520,11 @@ pub(crate) struct AccessPropertyOpts {
     pub dont_validate_type_of_computed_prop: bool,
 
     pub disallow_indexing_array_with_string: bool,
+
+    /// If `true`, `access_property` will not produce types like `Array['b']`
+    pub disallow_creating_indexed_type_from_ty_els: bool,
+
+    pub disallow_indexing_class_with_computed: bool,
 }
 
 #[validator]
@@ -975,7 +980,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if has_index_signature && !self.ctx.disallow_creating_indexed_type_from_ty_els {
+        if has_index_signature && !opts.disallow_creating_indexed_type_from_ty_els {
             // This check exists to prefer a specific property over generic index signature.
             if prop.is_computed() || matching_elements.is_empty() {
                 slog::warn!(self.logger, "Creating a indexed access type from a type literal");
@@ -1037,12 +1042,7 @@ impl Analyzer<'_, '_> {
                 Type::Lit(RTsLitType {
                     lit: RTsLit::Str(prop), ..
                 }) => {
-                    let ctx = Ctx {
-                        disallow_creating_indexed_type_from_ty_els: true,
-                        ..self.ctx
-                    };
                     let res = self
-                        .with_ctx(ctx)
                         .access_property(
                             span,
                             obj,
@@ -1054,6 +1054,7 @@ impl Analyzer<'_, '_> {
                             id_ctx,
                             AccessPropertyOpts {
                                 disallow_indexing_array_with_string: true,
+                                disallow_creating_indexed_type_from_ty_els: true,
                                 ..opts
                             },
                         )
@@ -1678,7 +1679,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let has_better_default = !self.ctx.disallow_indexing_class_with_computed
+                let has_better_default = !opts.disallow_indexing_class_with_computed
                     && prop.is_computed()
                     && match prop.ty().normalize() {
                         // newWithSpreadES5.ts contains
@@ -1897,14 +1898,20 @@ impl Analyzer<'_, '_> {
                         _ => false,
                     };
 
-                let ctx = Ctx {
-                    disallow_creating_indexed_type_from_ty_els: self.ctx.disallow_creating_indexed_type_from_ty_els
-                        || has_better_default,
-                    ..self.ctx
-                };
                 return self
                     .with_ctx(ctx)
-                    .access_property(span, &array_ty, prop, type_mode, id_ctx, opts)
+                    .access_property(
+                        span,
+                        &array_ty,
+                        prop,
+                        type_mode,
+                        id_ctx,
+                        AccessPropertyOpts {
+                            disallow_creating_indexed_type_from_ty_els: opts.disallow_creating_indexed_type_from_ty_els
+                                || has_better_default,
+                            ..opts
+                        },
+                    )
                     .or_else(|err| {
                         if !has_better_default {
                             return Err(err);
