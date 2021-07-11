@@ -7,7 +7,7 @@ use crate::{
         util::ResultExt,
         Analyzer, Ctx,
     },
-    ty::{Tuple, Type},
+    ty::Type,
     type_facts::TypeFacts,
     util::{type_ext::TypeVecExt, EndsWithRet},
     validator,
