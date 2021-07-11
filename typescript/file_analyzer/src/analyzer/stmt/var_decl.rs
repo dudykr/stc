@@ -306,6 +306,10 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     None => {
+                        self.ctx.prefer_tuple = match v.name {
+                            RPat::Array(_) => true,
+                            _ => false,
+                        };
                         let value_ty = get_value_ty!(None);
 
                         // infer type from value.
@@ -349,7 +353,12 @@ impl Analyzer<'_, '_> {
                         );
 
                         if should_generalize_fully {
-                            self.normalize_tuples(&mut ty);
+                            match v.name {
+                                RPat::Array(_) => {}
+                                _ => {
+                                    self.normalize_tuples(&mut ty);
+                                }
+                            }
                             ty.assert_valid();
                             ty = match ty.normalize() {
                                 Type::Function(f) => {

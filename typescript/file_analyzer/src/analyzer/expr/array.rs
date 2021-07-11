@@ -54,9 +54,9 @@ impl Analyzer<'_, '_> {
             .as_deref()
             .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty), Default::default()).ok());
 
-        let prefer_tuple = self.prefer_tuple(type_ann.as_deref());
+        let prefer_tuple = self.ctx.prefer_tuple || self.prefer_tuple(type_ann.as_deref());
         let is_empty = elems.is_empty();
-        let mut can_be_tuple = !self.ctx.cannot_be_tuple;
+        let mut can_be_tuple = self.ctx.prefer_tuple || !self.ctx.cannot_be_tuple;
         let mut elements = Vec::with_capacity(elems.len());
 
         for (idx, elem) in elems.iter().enumerate() {
@@ -195,7 +195,7 @@ impl Analyzer<'_, '_> {
             el.ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || el.ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
         });
 
-        if should_be_any {
+        if should_be_any && !self.ctx.prefer_tuple {
             elements.iter_mut().for_each(|el| {
                 el.ty = box Type::any(el.ty.span());
             });
