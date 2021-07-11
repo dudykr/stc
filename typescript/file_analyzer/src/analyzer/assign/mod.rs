@@ -2109,6 +2109,10 @@ impl Analyzer<'_, '_> {
                 Type::Array(la) => return self.assign_with_opts(data, opts, &la.elem_type, &r),
                 _ => {}
             },
+
+            (Type::Intrinsic(..), ..) => {
+                fail!()
+            }
             _ => {}
         }
 
