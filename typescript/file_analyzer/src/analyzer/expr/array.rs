@@ -266,7 +266,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !errors.is_empty() {
-                    if can_use_undefined && errors.len() != types.len() {
+                    if can_use_undefined && errors.len() != u.types.len() {
                         types.push(Type::Keyword(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
