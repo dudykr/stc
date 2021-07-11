@@ -518,6 +518,8 @@ impl Analyzer<'_, '_> {
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct AccessPropertyOpts {
     pub dont_validate_type_of_computed_prop: bool,
+
+    pub disallow_indexing_array_with_string: bool,
 }
 
 #[validator]
@@ -1037,7 +1039,6 @@ impl Analyzer<'_, '_> {
                 }) => {
                     let ctx = Ctx {
                         disallow_creating_indexed_type_from_ty_els: true,
-                        disallow_indexing_array_with_string: true,
                         ..self.ctx
                     };
                     let res = self
@@ -1051,7 +1052,10 @@ impl Analyzer<'_, '_> {
                             },
                             type_mode,
                             id_ctx,
-                            opts,
+                            AccessPropertyOpts {
+                                disallow_indexing_array_with_string: true,
+                                ..opts
+                            },
                         )
                         .context("tired to access property using string as a key");
                     // As some types has rules about computed propeties, we use the result only if
@@ -1871,7 +1875,7 @@ impl Analyzer<'_, '_> {
 
                 let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
 
-                let has_better_default = !self.ctx.disallow_indexing_array_with_string
+                let has_better_default = !opts.disallow_indexing_array_with_string
                     && match prop.ty().normalize() {
                         // newWithSpreadES5.ts contains
                         //

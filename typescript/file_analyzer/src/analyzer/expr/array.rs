@@ -2,7 +2,7 @@ use crate::{
     analyzer::{
         expr::{
             call_new::{ExtractKind, ReevalMode},
-            IdCtx, TypeOfMode,
+            AccessPropertyOpts, IdCtx, TypeOfMode,
         },
         types::NormalizeTypeOpts,
         Analyzer, Ctx,
@@ -294,12 +294,7 @@ impl Analyzer<'_, '_> {
             })
             .context("tried calling `next()` to get element type of nth element of an iterator")?;
 
-        let ctx = Ctx {
-            disallow_indexing_array_with_string: true,
-            ..self.ctx
-        };
         let mut elem_ty = self
-            .with_ctx(ctx)
             .access_property(
                 span,
                 &next_ret_ty,
@@ -309,7 +304,10 @@ impl Analyzer<'_, '_> {
                 },
                 TypeOfMode::RValue,
                 IdCtx::Var,
-                Default::default(),
+                AccessPropertyOpts {
+                    disallow_indexing_array_with_string: true,
+                    ..Default::default()
+                },
             )
             .context(
                 "tried to get the type of property named `value` to determine the type of nth element of an iterator",
@@ -429,7 +427,6 @@ impl Analyzer<'_, '_> {
         iterator_result: Cow<'a, Type>,
     ) -> ValidationResult<Cow<'a, Type>> {
         let ctx = Ctx {
-            disallow_indexing_array_with_string: true,
             disallow_creating_indexed_type_from_ty_els: true,
             ..self.ctx
         };
@@ -444,7 +441,10 @@ impl Analyzer<'_, '_> {
                 },
                 TypeOfMode::RValue,
                 IdCtx::Var,
-                Default::default(),
+                AccessPropertyOpts {
+                    disallow_indexing_array_with_string: true,
+                    ..Default::default()
+                },
             )
             .context("tried to get the type of property named `value` to determine the type of an iterator")
             .convert_err(|err| Error::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() })?;

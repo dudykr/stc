@@ -114,8 +114,6 @@ pub(crate) struct Ctx {
     /// If `true`, `access_property` will not produce types like `Array['b']`
     disallow_creating_indexed_type_from_ty_els: bool,
 
-    disallow_indexing_array_with_string: bool,
-
     disallow_indexing_class_with_computed: bool,
 
     in_shorthand: bool,
@@ -511,7 +509,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 check_for_implicit_any: false,
                 cannot_be_tuple: false,
                 disallow_creating_indexed_type_from_ty_els: false,
-                disallow_indexing_array_with_string: false,
                 disallow_indexing_class_with_computed: false,
                 in_shorthand: false,
                 is_instantiating_class: false,

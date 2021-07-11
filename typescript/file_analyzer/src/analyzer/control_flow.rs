@@ -1,7 +1,7 @@
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        expr::{IdCtx, TypeOfMode},
+        expr::{AccessPropertyOpts, IdCtx, TypeOfMode},
         marks::MarkExt,
         scope::{ScopeKind, VarInfo},
         util::ResultExt,
@@ -946,13 +946,19 @@ impl Analyzer<'_, '_> {
                     match prop {
                         RObjectPatProp::KeyValue(kv) => {
                             let key = kv.key.validate_with(self)?;
-                            let ctx = Ctx {
-                                disallow_indexing_array_with_string: true,
-                                ..self.ctx
-                            };
                             let prop_ty = self
-                                .with_ctx(ctx)
-                                .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                                .access_property(
+                                    span,
+                                    ty,
+                                    &key,
+                                    TypeOfMode::RValue,
+                                    IdCtx::Var,
+                                    AccessPropertyOpts {
+                                        disallow_indexing_array_with_string: true,
+
+                                        ..Default::default()
+                                    },
+                                )
                                 .unwrap_or_else(|_| Type::any(span));
 
                             self.try_assign_pat_with_opts(span, &kv.value, &prop_ty, opts)
@@ -963,13 +969,19 @@ impl Analyzer<'_, '_> {
                                 span: a.key.span,
                                 sym: a.key.sym.clone(),
                             };
-                            let ctx = Ctx {
-                                disallow_indexing_array_with_string: true,
-                                ..self.ctx
-                            };
+
                             let prop_ty = self
-                                .with_ctx(ctx)
-                                .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                                .access_property(
+                                    span,
+                                    ty,
+                                    &key,
+                                    TypeOfMode::RValue,
+                                    IdCtx::Var,
+                                    AccessPropertyOpts {
+                                        disallow_indexing_array_with_string: true,
+                                        ..Default::default()
+                                    },
+                                )
                                 .unwrap_or_else(|_| Type::any(span));
 
                             self.try_assign_pat_with_opts(

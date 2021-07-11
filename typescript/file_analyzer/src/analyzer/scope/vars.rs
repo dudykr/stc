@@ -1,7 +1,7 @@
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        expr::{GetIteratorOpts, IdCtx, TypeOfMode},
+        expr::{AccessPropertyOpts, GetIteratorOpts, IdCtx, TypeOfMode},
         types::NormalizeTypeOpts,
         util::{opt_union, ResultExt},
         Analyzer, Ctx,
@@ -369,7 +369,6 @@ impl Analyzer<'_, '_> {
 
                             let ctx = Ctx {
                                 disallow_creating_indexed_type_from_ty_els: true,
-                                disallow_indexing_array_with_string: true,
                                 diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
@@ -381,7 +380,10 @@ impl Analyzer<'_, '_> {
                                         &key,
                                         TypeOfMode::RValue,
                                         IdCtx::Var,
-                                        Default::default(),
+                                        AccessPropertyOpts {
+                                            disallow_indexing_array_with_string: true,
+                                            ..Default::default()
+                                        },
                                     )
                                     .context("tried to access poprerty to declare variables")
                             });
@@ -433,7 +435,6 @@ impl Analyzer<'_, '_> {
 
                             let ctx = Ctx {
                                 disallow_creating_indexed_type_from_ty_els: true,
-                                disallow_indexing_array_with_string: true,
                                 diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
@@ -445,7 +446,10 @@ impl Analyzer<'_, '_> {
                                         &key,
                                         TypeOfMode::RValue,
                                         IdCtx::Var,
-                                        Default::default(),
+                                        AccessPropertyOpts {
+                                            disallow_indexing_array_with_string: true,
+                                            ..Default::default()
+                                        },
                                     )
                                     .context("tried to access poprerty to declare variables")
                             });
