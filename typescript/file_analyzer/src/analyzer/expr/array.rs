@@ -177,7 +177,11 @@ impl Analyzer<'_, '_> {
                     Type::undefined(span)
                 } else {
                     let span = span.with_ctxt(SyntaxContext::empty());
-                    let span = marks.implicit_type_mark.apply_to_span(span);
+                    let span = if !elems.is_empty() {
+                        marks.implicit_type_mark.apply_to_span(span)
+                    } else {
+                        span
+                    };
 
                     Type::any(span)
                 });
