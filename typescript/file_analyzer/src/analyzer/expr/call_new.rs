@@ -47,6 +47,8 @@ use ty::TypeExt;
 
 #[derive(Debug, Default, Clone, Copy)]
 pub(crate) struct CallOpts {
+    pub disallow_invoking_implicit_constructors: bool,
+
     /// Optional properties cannot be called.
     ///
     /// See: for-of29.ts
@@ -451,6 +453,7 @@ impl Analyzer<'_, '_> {
                 &spread_arg_types,
                 type_args.as_ref(),
                 type_ann,
+                Default::default(),
             )?;
 
             return Ok(expanded_ty.fixed());
@@ -947,7 +950,7 @@ impl Analyzer<'_, '_> {
                             // TODO: Change error message from no callable
                             // property to property exists but not callable.
 
-                            if let Some(ty) = value.as_deref().map(Type::normalize) {
+                            if let Some(ty) = value.as_deref() {
                                 return self
                                     .extract(
                                         span,
@@ -959,6 +962,7 @@ impl Analyzer<'_, '_> {
                                         spread_arg_types,
                                         type_args,
                                         type_ann,
+                                        opts,
                                     )
                                     .map(Some);
                             }
@@ -1229,6 +1233,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
+        opts: CallOpts,
     ) -> ValidationResult {
         if !self.is_builtin {
             ty.assert_valid();
@@ -1247,6 +1252,7 @@ impl Analyzer<'_, '_> {
                     spread_arg_types,
                     type_args,
                     type_ann,
+                    opts,
                 );
             }
 
@@ -1276,7 +1282,7 @@ impl Analyzer<'_, '_> {
                     }));
 
                     if cls.is_abstract {
-                        if self.ctx.disallow_invoking_implicit_constructors {
+                        if opts.disallow_invoking_implicit_constructors {
                             return Err(Error::NoNewSignature {
                                 span,
                                 callee: box ty.clone(),
@@ -1354,12 +1360,8 @@ impl Analyzer<'_, '_> {
                     // Check for consturctors decalred in the super class.
                     if let Some(super_class) = &cls.super_class {
                         //
-                        let ctx = Ctx {
-                            disallow_invoking_implicit_constructors: true,
-                            ..self.ctx
-                        };
 
-                        if let Ok(v) = self.with_ctx(ctx).extract(
+                        if let Ok(v) = self.extract(
                             span,
                             expr,
                             &super_class,
@@ -1369,12 +1371,16 @@ impl Analyzer<'_, '_> {
                             spread_arg_types,
                             type_args,
                             type_ann,
+                            CallOpts {
+                                disallow_invoking_implicit_constructors: true,
+                                ..opts
+                            },
                         ) {
                             return Ok(v);
                         }
                     }
 
-                    if self.ctx.disallow_invoking_implicit_constructors {
+                    if opts.disallow_invoking_implicit_constructors {
                         return Err(Error::NoNewSignature {
                             span,
                             callee: box ty.clone(),
@@ -1516,6 +1522,7 @@ impl Analyzer<'_, '_> {
                     spread_arg_types,
                     type_args,
                     type_ann,
+                    opts,
                 )
             }
 
@@ -1588,6 +1595,7 @@ impl Analyzer<'_, '_> {
                                 spread_arg_types,
                                 type_args,
                                 type_ann,
+                                opts,
                             ) {
                                 return Ok(v);
                             }

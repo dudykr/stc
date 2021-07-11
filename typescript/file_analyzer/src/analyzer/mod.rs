@@ -210,8 +210,6 @@ pub(crate) struct Ctx {
 
     allow_new_target: bool,
 
-    disallow_invoking_implicit_constructors: bool,
-
     disallow_suggesting_property_on_no_var: bool,
 
     /// Should be modified directly instead of using `with_ctx`.
@@ -544,7 +542,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 is_value_used: false,
                 cannot_fallback_to_iterable_iterator: false,
                 allow_new_target: false,
-                disallow_invoking_implicit_constructors: false,
                 disallow_suggesting_property_on_no_var: false,
                 in_unreachable: false,
             },
