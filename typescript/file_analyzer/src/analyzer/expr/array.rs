@@ -4,6 +4,7 @@ use crate::{
             call_new::{ExtractKind, ReevalMode},
             AccessPropertyOpts, CallOpts, IdCtx, TypeOfMode,
         },
+        marks::MarkExt,
         types::NormalizeTypeOpts,
         Analyzer,
     },
@@ -24,7 +25,7 @@ use stc_ts_types::{
 };
 use std::{borrow::Cow, time::Instant};
 use swc_atoms::js_word;
-use swc_common::{Span, Spanned};
+use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::debug;
 
@@ -197,7 +198,9 @@ impl Analyzer<'_, '_> {
 
         if should_be_any && !self.ctx.prefer_tuple {
             elements.iter_mut().for_each(|el| {
-                el.ty = box Type::any(el.ty.span());
+                let span = el.ty.span().with_ctxt(SyntaxContext::empty());
+                let span = marks.implicit_type_mark.apply_to_span(span);
+                el.ty = box Type::any(span);
             });
         }
 
