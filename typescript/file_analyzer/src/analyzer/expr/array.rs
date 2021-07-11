@@ -239,6 +239,26 @@ impl Analyzer<'_, '_> {
                     .get_element_from_iterator(span, iterator, n)
                     .context("tried to get element from an expanded iterator");
             }
+
+            Type::Union(iterator) => {
+                let mut types = vec![];
+                for (idx, iterator_elem) in iterator.types.iter().enumerate() {
+                    let res = self
+                        .get_element_from_iterator(span, Cow::Borrowed(iterator_elem), n)
+                        .with_context(|| format!("failed to get element type from {}th element", idx))
+                        .convert_err(|err| match err {
+                            Error::TupleIndexError { span, .. } => Error::TupleTooShort { span },
+                            _ => err,
+                        })?
+                        .into_owned();
+                    res.assert_valid();
+                    types.push(res)
+                }
+                types.dedup_type();
+
+                return Ok(Cow::Owned(Type::union(types)));
+            }
+
             Type::Array(..) | Type::Tuple(..) => {
                 return self
                     .access_property(
