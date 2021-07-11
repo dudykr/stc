@@ -1,5 +1,5 @@
-pub(crate) use self::array::GetIteratorOpts;
 use self::bin::extract_name_for_assignment;
+pub(crate) use self::{array::GetIteratorOpts, call_new::CallOpts};
 use crate::{
     analyzer::{
         assign::AssignOpts,

@@ -100,7 +100,6 @@ pub(crate) struct Ctx {
     in_constructor_param: bool,
 
     diallow_unknown_object_property: bool,
-    disallow_optional_object_property: bool,
 
     use_undefined_for_empty_tuple: bool,
 
@@ -498,7 +497,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_const_assertion: false,
                 in_constructor_param: false,
                 diallow_unknown_object_property: false,
-                disallow_optional_object_property: false,
                 use_undefined_for_empty_tuple: false,
                 allow_module_var: false,
                 check_for_implicit_any: false,

@@ -45,8 +45,13 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 use ty::TypeExt;
 
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct CallOpts {}
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct CallOpts {
+    /// Optional properties cannot be called.
+    ///
+    /// See: for-of29.ts
+    pub disallow_optional_object_property: bool,
+}
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -354,6 +359,7 @@ impl Analyzer<'_, '_> {
                         &arg_types,
                         &spread_arg_types,
                         type_ann,
+                        Default::default(),
                     )
                     .map(|ty| ty.fixed());
             }
@@ -484,6 +490,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
+        opts: CallOpts,
     ) -> ValidationResult {
         obj_type.assert_valid();
 
@@ -533,6 +540,7 @@ impl Analyzer<'_, '_> {
                         arg_types,
                         spread_arg_types,
                         type_ann,
+                        opts,
                     );
                 }
 
@@ -553,6 +561,7 @@ impl Analyzer<'_, '_> {
                                 arg_types,
                                 spread_arg_types,
                                 type_ann,
+                                opts,
                             )
                         })
                         .filter_map(Result::ok)
@@ -594,6 +603,7 @@ impl Analyzer<'_, '_> {
                             arg_types,
                             spread_arg_types,
                             type_ann,
+                            opts,
                         )
                         .context("tried to call a property of expanded type");
                 }
@@ -612,6 +622,7 @@ impl Analyzer<'_, '_> {
                         &arg_types,
                         &spread_arg_types,
                         type_ann,
+                        opts,
                     ) {
                         Ok(v) => return Ok(v),
                         Err(err) => err,
@@ -634,6 +645,7 @@ impl Analyzer<'_, '_> {
                             arg_types,
                             spread_arg_types,
                             type_ann,
+                            opts,
                         ) {
                             return Ok(v);
                         }
@@ -655,6 +667,7 @@ impl Analyzer<'_, '_> {
                         &arg_types,
                         &spread_arg_types,
                         type_ann,
+                        opts,
                     );
                 }
 
@@ -672,6 +685,7 @@ impl Analyzer<'_, '_> {
                         arg_types,
                         spread_arg_types,
                         type_ann,
+                        opts,
                     )? {
                         return Ok(v);
                     }
@@ -691,6 +705,7 @@ impl Analyzer<'_, '_> {
                         arg_types,
                         spread_arg_types,
                         type_ann,
+                        opts,
                     )? {
                         return Ok(v);
                     }
@@ -732,6 +747,7 @@ impl Analyzer<'_, '_> {
                         arg_types,
                         spread_arg_types,
                         type_ann,
+                        opts,
                     );
                     match obj_res {
                         Ok(v) => return Ok(v),
@@ -897,6 +913,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
+        opts: CallOpts,
     ) -> ValidationResult<Option<Type>> {
         let candidates = {
             // TODO: Deduplicate.
@@ -987,6 +1004,7 @@ impl Analyzer<'_, '_> {
                 arg_types,
                 spread_arg_types,
                 type_ann,
+                opts,
             ) {
                 return Ok(Some(ret_ty));
             }
@@ -1002,12 +1020,11 @@ impl Analyzer<'_, '_> {
         candidates: &mut Vec<CallCandidate>,
         m: &'a TypeElement,
         prop: &Key,
+        opts: CallOpts,
     ) {
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
-                if self.ctx.disallow_optional_object_property && m.optional {
-                    // See: for-of29.ts
-                    // Optional properties cannot be called.
+                if opts.disallow_optional_object_property && m.optional {
                     return;
                 }
 
@@ -1022,7 +1039,7 @@ impl Analyzer<'_, '_> {
             }
 
             TypeElement::Property(p) => {
-                if self.ctx.disallow_optional_object_property && p.optional {
+                if opts.disallow_optional_object_property && p.optional {
                     // See: for-of29.ts
                     // Optional properties cannot be called.
                     return;
@@ -1082,6 +1099,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
+        opts: CallOpts,
     ) -> ValidationResult {
         // Candidates of the method call.
         //
@@ -1090,7 +1108,7 @@ impl Analyzer<'_, '_> {
         let mut candidates = Vec::with_capacity(4);
 
         for m in members {
-            self.check_type_element_for_call(span, kind, &mut candidates, m, prop);
+            self.check_type_element_for_call(span, kind, &mut candidates, m, prop, opts);
         }
 
         // TODO: Move this to caller to prevent checking members of `Object` every time
@@ -1109,7 +1127,7 @@ impl Analyzer<'_, '_> {
 
             // TODO: Remove clone
             for m in methods {
-                self.check_type_element_for_call(span, kind, &mut candidates, m, prop);
+                self.check_type_element_for_call(span, kind, &mut candidates, m, prop, opts);
             }
         }
 

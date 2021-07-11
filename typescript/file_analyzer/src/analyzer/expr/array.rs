@@ -2,10 +2,10 @@ use crate::{
     analyzer::{
         expr::{
             call_new::{ExtractKind, ReevalMode},
-            AccessPropertyOpts, IdCtx, TypeOfMode,
+            AccessPropertyOpts, CallOpts, IdCtx, TypeOfMode,
         },
         types::NormalizeTypeOpts,
-        Analyzer, Ctx,
+        Analyzer,
     },
     ty::TypeExt,
     type_facts::TypeFacts,
@@ -271,6 +271,7 @@ impl Analyzer<'_, '_> {
                 &[],
                 &[],
                 None,
+                CallOpts { ..Default::default() },
             )
             .convert_err(|err| match err {
                 Error::NoCallabelPropertyWithName { span, .. }
@@ -342,12 +343,7 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        let ctx = Ctx {
-            disallow_optional_object_property: true,
-            ..self.ctx
-        };
         let async_iterator = self
-            .with_ctx(ctx)
             .call_property(
                 span,
                 ExtractKind::Call,
@@ -367,6 +363,10 @@ impl Analyzer<'_, '_> {
                 &[],
                 &[],
                 None,
+                CallOpts {
+                    disallow_optional_object_property: true,
+                    ..Default::default()
+                },
             )
             .map(Cow::Owned);
 
@@ -387,6 +387,7 @@ impl Analyzer<'_, '_> {
                     Default::default(),
                     Default::default(),
                     Default::default(),
+                    CallOpts { ..Default::default() },
                 )
                 .context("tried to get the type of `next` of an async iterator")?;
 
@@ -623,40 +624,38 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            let ctx = Ctx {
-                disallow_optional_object_property: true,
-                ..self.ctx
-            };
-
-            self.with_ctx(ctx)
-                .call_property(
+            self.call_property(
+                span,
+                ExtractKind::Call,
+                Default::default(),
+                &ty,
+                &ty,
+                &Key::Computed(ComputedKey {
                     span,
-                    ExtractKind::Call,
-                    Default::default(),
-                    &ty,
-                    &ty,
-                    &Key::Computed(ComputedKey {
+                    expr: box RExpr::Invalid(RInvalid { span }),
+                    ty: box Type::Symbol(Symbol {
                         span,
-                        expr: box RExpr::Invalid(RInvalid { span }),
-                        ty: box Type::Symbol(Symbol {
-                            span,
-                            id: SymbolId::iterator(),
-                        }),
+                        id: SymbolId::iterator(),
                     }),
-                    None,
-                    &[],
-                    &[],
-                    &[],
-                    None,
-                )
-                .convert_err(|err| match err {
-                    Error::NoCallabelPropertyWithName { span, .. }
-                    | Error::NoSuchPropertyInClass { span, .. }
-                    | Error::NoSuchProperty { span, .. } => Error::MustHaveSymbolIteratorThatReturnsIterator { span },
-                    _ => err,
-                })
-                .map(Cow::Owned)
-                .context("tried to call `[Symbol.iterator]()`")
+                }),
+                None,
+                &[],
+                &[],
+                &[],
+                None,
+                CallOpts {
+                    disallow_optional_object_property: true,
+                    ..Default::default()
+                },
+            )
+            .convert_err(|err| match err {
+                Error::NoCallabelPropertyWithName { span, .. }
+                | Error::NoSuchPropertyInClass { span, .. }
+                | Error::NoSuchProperty { span, .. } => Error::MustHaveSymbolIteratorThatReturnsIterator { span },
+                _ => err,
+            })
+            .map(Cow::Owned)
+            .context("tried to call `[Symbol.iterator]()`")
         })();
 
         res.with_context(|| format!("tried to convert a type ({}) to an iterator", ty_str))
@@ -763,6 +762,7 @@ impl Analyzer<'_, '_> {
                 &[],
                 &[],
                 None,
+                Default::default(),
             )
             .convert_err(|err| match err {
                 Error::NoCallabelPropertyWithName { span, .. } => Error::NoMethodNamedNext { span },
