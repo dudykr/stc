@@ -240,20 +240,48 @@ impl Analyzer<'_, '_> {
                     .context("tried to get element from an expanded iterator");
             }
 
-            Type::Union(iterator) => {
+            Type::Union(u) => {
+                let can_use_undefined = u.types.iter().all(|ty| ty.normalize().is_tuple());
+
                 let mut types = vec![];
-                for (idx, iterator_elem) in iterator.types.iter().enumerate() {
+                let mut errors = vec![];
+                for (idx, iterator_elem) in u.types.iter().enumerate() {
                     let res = self
                         .get_element_from_iterator(span, Cow::Borrowed(iterator_elem), n)
                         .with_context(|| format!("failed to get element type from {}th element", idx))
                         .convert_err(|err| match err {
                             Error::TupleIndexError { span, .. } => Error::TupleTooShort { span },
                             _ => err,
-                        })?
-                        .into_owned();
-                    res.assert_valid();
-                    types.push(res)
+                        })
+                        .map(Cow::into_owned);
+                    match res {
+                        Ok(ty) => {
+                            ty.assert_valid();
+                            types.push(ty);
+                        }
+                        Err(err) => {
+                            errors.push(err);
+                        }
+                    }
                 }
+
+                if !errors.is_empty() {
+                    if can_use_undefined && errors.len() != types.len() {
+                        types.push(Type::Keyword(RTsKeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        }));
+                        types.dedup_type();
+                        return Ok(Cow::Owned(Type::union(types)));
+                    }
+
+                    return Err(Error::NoSuchProperty {
+                        span,
+                        obj: Some(box iterator.into_owned()),
+                        prop: None,
+                    });
+                }
+
                 types.dedup_type();
 
                 return Ok(Cow::Owned(Type::union(types)));
