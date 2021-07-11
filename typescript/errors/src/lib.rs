@@ -1408,7 +1408,8 @@ impl Error {
             // TS7005; No implicit any for variables.
             // TS7006; No implicit any for parameters.
             // TS7008; No implicit any for members.
-            7005 | 7006 | 7008 => 7005,
+            // TS7008; No implicit any for binding patterns.
+            7005 | 7006 | 7008 | 7031 => 7005,
 
             _ => code,
         }
