@@ -2188,7 +2188,8 @@ impl Analyzer<'_, '_> {
                                 span: n.span(),
                                 index: v,
                                 len: elems.len() as u64,
-                            });
+                            }
+                            .context("r-value context"));
                         }
 
                         return Ok(*elems[v as usize].ty.clone());
