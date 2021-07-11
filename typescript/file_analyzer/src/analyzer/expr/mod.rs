@@ -2073,8 +2073,9 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                let is_all_tuple = types.iter().all(|ty| ty.normalize().is_tuple());
                 let use_undefined_for_tuple_index_error =
-                    opts.use_undefined_for_tuple_index_error || types.iter().all(|ty| ty.normalize().is_tuple());
+                    opts.use_undefined_for_tuple_index_error || (type_mode == TypeOfMode::LValue && is_all_tuple);
 
                 for ty in types {
                     if !self.rule().strict_null_checks || self.ctx.in_opt_chain {
@@ -2108,6 +2109,17 @@ impl Analyzer<'_, '_> {
                     }
                 } else {
                     if !errors.is_empty() {
+                        if is_all_tuple && errors.len() != types.len() {
+                            tys.push(Type::Keyword(RTsKeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            }));
+                            tys.dedup_type();
+                            let ty = Type::union(tys);
+                            ty.assert_valid();
+                            return Ok(ty);
+                        }
+
                         print_backtrace();
                         return Err(Error::NoSuchProperty {
                             span,
