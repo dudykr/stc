@@ -3281,6 +3281,7 @@ impl Analyzer<'_, '_> {
                             Type::Predicate(_) => {}
                             Type::IndexedAccessType(_) => {}
                             Type::Ref(_) => {}
+                            Type::Intrinsic(_) => {}
 
                             Type::Conditional(_) => {}
                             Type::Tuple(_) => {}

@@ -455,7 +455,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
         let ty = ty.foldable();
 
         match ty {
-            Type::StaticThis(..) | Type::Symbol(..) => return ty,
+            Type::StaticThis(..) | Type::Intrinsic(..) | Type::Symbol(..) => return ty,
             Type::Ref(Ref {
                 span,
                 type_name: RTsEntityName::Ident(ref i),

@@ -11,6 +11,7 @@ use self::type_id::SymbolId;
 pub use self::{
     convert::rprop_name_to_expr,
     id::Id,
+    intrinsic::Intrinsic,
     metadata::{TypeElMetadata, TypeLitMetadata},
     module_id::ModuleId,
 };
@@ -48,6 +49,7 @@ use tracing::trace;
 
 mod convert;
 mod id;
+mod intrinsic;
 pub mod macros;
 mod metadata;
 pub mod module_id;
@@ -169,6 +171,8 @@ pub enum Type {
     Symbol(Symbol),
 
     Tpl(TplType),
+
+    Intrinsic(Intrinsic),
 }
 
 impl Clone for Type {
@@ -182,6 +186,7 @@ impl Clone for Type {
             Type::StaticThis(ty) => ty.clone().into(),
             Type::This(ty) => ty.clone().into(),
             Type::Symbol(ty) => ty.clone().into(),
+            Type::Intrinsic(ty) => ty.clone().into(),
 
             _ => {
                 let start = Instant::now();
@@ -1328,6 +1333,8 @@ impl Type {
             Type::Instance(ty) => ty.span = span,
 
             Type::Tpl(ty) => ty.span = span,
+
+            Type::Intrinsic(ty) => ty.span = span,
         }
     }
 }
