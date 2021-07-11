@@ -109,6 +109,7 @@ pub(crate) struct Ctx {
 
     /// If `true`, expression validator will not emit tuple.
     cannot_be_tuple: bool,
+    prefer_tuple: bool,
 
     in_shorthand: bool,
 
@@ -499,6 +500,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 allow_module_var: false,
                 check_for_implicit_any: false,
                 cannot_be_tuple: false,
+                prefer_tuple: false,
                 in_shorthand: false,
                 is_instantiating_class: false,
                 in_cond: false,
