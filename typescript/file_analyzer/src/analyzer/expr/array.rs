@@ -176,6 +176,9 @@ impl Analyzer<'_, '_> {
                 types.push(if self.ctx.use_undefined_for_empty_tuple && is_empty {
                     Type::undefined(span)
                 } else {
+                    let span = span.with_ctxt(SyntaxContext::empty());
+                    let span = marks.implicit_type_mark.apply_to_span(span);
+
                     Type::any(span)
                 });
             }
