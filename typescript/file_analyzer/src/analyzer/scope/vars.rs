@@ -236,11 +236,13 @@ impl Analyzer<'_, '_> {
                             let elem_ty = ty.as_ref().try_map(|ty| -> ValidationResult<_> {
                                 Ok(self
                                     .get_element_from_iterator(span, Cow::Borrowed(&ty), idx)
-                                    .with_context(format!(
-                                        "tried to get the type of {}th element from iterator to declare vars with an \
-                                         array pattern",
-                                        idx
-                                    ))?
+                                    .with_context(|| {
+                                        format!(
+                                            "tried to get the type of {}th element from iterator to declare vars with \
+                                             an array pattern",
+                                            idx
+                                        )
+                                    })?
                                     .into_owned())
                             })?;
 
