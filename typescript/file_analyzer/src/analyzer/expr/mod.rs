@@ -2170,11 +2170,14 @@ impl Analyzer<'_, '_> {
                             }
 
                             if let TypeOfMode::LValue = type_mode {
-                                self.storage.report(Error::TupleIndexError {
-                                    span: n.span(),
-                                    index: v,
-                                    len: elems.len() as u64,
-                                });
+                                self.storage.report(
+                                    Error::TupleIndexError {
+                                        span: n.span(),
+                                        index: v,
+                                        len: elems.len() as u64,
+                                    }
+                                    .context("returning undefined because it's l-value context"),
+                                );
                                 return Ok(Type::Keyword(RTsKeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
