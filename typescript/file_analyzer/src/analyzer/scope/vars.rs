@@ -231,26 +231,30 @@ impl Analyzer<'_, '_> {
                         })
                     });
 
-                    for (i, elem) in arr.elems.iter().enumerate() {
+                    for (idx, elem) in arr.elems.iter().enumerate() {
                         if let Some(elem) = elem {
                             let elem_ty = ty.as_ref().try_map(|ty| -> ValidationResult<_> {
                                 Ok(self
-                                    .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
-                                    .context(
-                                        "tried to get the type of nth element from iterator to declare vars with an \
+                                    .get_element_from_iterator(span, Cow::Borrowed(&ty), idx)
+                                    .with_context(format!(
+                                        "tried to get the type of {}th element from iterator to declare vars with an \
                                          array pattern",
-                                    )?
+                                        idx
+                                    ))?
                                     .into_owned())
                             })?;
 
                             let default_elem_ty = default
                                 .as_ref()
                                 .and_then(|ty| {
-                                    self.get_element_from_iterator(span, Cow::Borrowed(&ty), i)
-                                        .context(
-                                            "tried to get the type of nth element from iterator to declare vars with \
-                                             an array pattern (default value)",
-                                        )
+                                    self.get_element_from_iterator(span, Cow::Borrowed(&ty), idx)
+                                        .with_context(|| {
+                                            format!(
+                                                "tried to get the type of {}th element from iterator to declare vars \
+                                                 with an array pattern (default value)",
+                                                idx
+                                            )
+                                        })
                                         .ok()
                                 })
                                 .map(Cow::into_owned);
