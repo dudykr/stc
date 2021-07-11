@@ -45,6 +45,9 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 use ty::TypeExt;
 
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct CallOpts {}
+
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RExprOrSpread) -> ValidationResult<TypeOrSpread> {
