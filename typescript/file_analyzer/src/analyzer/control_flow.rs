@@ -909,31 +909,14 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
 
-                        match ty.normalize() {
-                            Type::Tuple(Tuple { elems, .. }) => {
-                                if elems.len() > i {
-                                    self.try_assign_pat_with_opts(span, elem, &elems[i].ty, opts)
-                                        .report(&mut self.storage);
-                                } else {
-                                    self.storage.report(Error::TupleIndexError {
-                                        span,
-                                        len: elems.len() as _,
-                                        index: i as _,
-                                    });
-                                }
-                            }
-
-                            _ => {
-                                let elem_ty = self
-                                    .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
-                                    .context("tried to get an element of type to assign with an array pattern")
-                                    .report(&mut self.storage);
-                                if let Some(elem_ty) = elem_ty {
-                                    self.try_assign_pat_with_opts(span, elem, &elem_ty, opts)
-                                        .context("tried to assign an element of an array pattern")
-                                        .report(&mut self.storage);
-                                }
-                            }
+                        let elem_ty = self
+                            .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
+                            .context("tried to get an element of type to assign with an array pattern")
+                            .report(&mut self.storage);
+                        if let Some(elem_ty) = elem_ty {
+                            self.try_assign_pat_with_opts(span, elem, &elem_ty, opts)
+                                .context("tried to assign an element of an array pattern")
+                                .report(&mut self.storage);
                         }
                     }
                 }
