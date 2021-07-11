@@ -59,6 +59,11 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2339
+    TupleTooShort {
+        span: Span,
+    },
+
     /// TS2403
     VarDeclNotCompatible {
         span: Span,
@@ -555,6 +560,7 @@ pub enum Error {
         op: BinaryOp,
     },
 
+    /// TS2339
     NoSuchEnumVariant {
         span: Span,
         name: JsWord,
@@ -1593,6 +1599,8 @@ impl Error {
             Error::EnumCannotBeLValue { .. } => 2540,
 
             Error::NoSuchEnumVariant { .. } => 2339,
+
+            Error::TupleTooShort { .. } => 2339,
 
             Error::SwitchCaseTestNotCompatible { .. } => 2678,
 
