@@ -525,6 +525,10 @@ pub(crate) struct AccessPropertyOpts {
     pub disallow_creating_indexed_type_from_ty_els: bool,
 
     pub disallow_indexing_class_with_computed: bool,
+
+    /// Note: If it's in l-value context, `access_property` will return
+    /// undefined even if this field is `false`.
+    pub use_undefined_for_tuple_index_error: bool,
 }
 
 #[validator]
@@ -2069,6 +2073,9 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                let use_undefined_for_tuple_index_error =
+                    opts.use_undefined_for_tuple_index_error || types.iter().all(|ty| ty.normalize().is_tuple());
+
                 for ty in types {
                     if !self.rule().strict_null_checks || self.ctx.in_opt_chain {
                         if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
@@ -2078,7 +2085,17 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    match self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
+                    match self.access_property(
+                        span,
+                        ty,
+                        prop,
+                        type_mode,
+                        id_ctx,
+                        AccessPropertyOpts {
+                            use_undefined_for_tuple_index_error,
+                            ..opts
+                        },
+                    ) {
                         Ok(ty) => tys.push(ty),
                         Err(err) => errors.push(err),
                     }
@@ -2131,6 +2148,13 @@ impl Analyzer<'_, '_> {
                                     _ => {}
                                 },
                                 _ => {}
+                            }
+
+                            if opts.use_undefined_for_tuple_index_error {
+                                return Ok(Type::Keyword(RTsKeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                }));
                             }
 
                             if let TypeOfMode::LValue = type_mode {
