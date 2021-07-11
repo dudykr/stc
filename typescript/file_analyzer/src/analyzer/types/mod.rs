@@ -337,19 +337,25 @@ impl Analyzer<'_, '_> {
                         if !opts.preserve_typeof {
                             match &*q.expr {
                                 QueryExpr::TsEntityName(e) => {
-                                    let ty = self
+                                    let expanded_ty = self
                                         .resolve_typeof(actual_span, e)
                                         .context("tried to resolve typeof as a part of normalization")?;
 
-                                    if ty.normalize().is_query() {
+                                    if ty.type_eq(&expanded_ty) {
+                                        return Ok(Cow::Owned(Type::any(
+                                            actual_span.with_ctxt(SyntaxContext::empty()),
+                                        )));
+                                    }
+
+                                    if expanded_ty.normalize().is_query() {
                                         panic!(
                                             "normalize: resolve_typeof returned a query type: {}",
-                                            dump_type_as_string(&self.cm, &ty)
+                                            dump_type_as_string(&self.cm, &expanded_ty)
                                         )
                                     }
 
                                     return Ok(self
-                                        .normalize(span, Cow::Owned(ty), opts)
+                                        .normalize(span, Cow::Owned(expanded_ty), opts)
                                         .context("tried to normalize the type returned from typeof")?);
                                 }
                                 QueryExpr::Import(_) => {}
