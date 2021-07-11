@@ -277,6 +277,7 @@ impl TypeEq for Type {
             (Type::Rest(l), Type::Rest(r)) => l.type_eq(r),
             (Type::Optional(l), Type::Optional(r)) => l.type_eq(r),
             (Type::Symbol(l), Type::Symbol(r)) => l.type_eq(r),
+            (Type::Intrinsic(l), Type::Intrinsic(r)) => l.type_eq(r),
             _ => false,
         }
     }

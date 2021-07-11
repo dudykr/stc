@@ -1,14 +1,14 @@
 use is_macro::Is;
 use stc_visit::Visit;
-use swc_common::{EqIgnoreSpan, Span, Spanned};
+use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Spanned, EqIgnoreSpan, Visit)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Intrinsic {
     pub span: Span,
     pub kind: IntrinsicKind,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Is, EqIgnoreSpan, Visit)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Is, EqIgnoreSpan, TypeEq, Visit)]
 pub enum IntrinsicKind {
     Uppercase,
     Lowercase,
