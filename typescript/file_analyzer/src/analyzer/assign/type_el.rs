@@ -1115,20 +1115,18 @@ impl Analyzer<'_, '_> {
                             TypeElement::Call(_) | TypeElement::Constructor(_) => continue,
 
                             TypeElement::Property(r_prop) => {
-                                if let Ok(()) = self.assign(data, &li.params[0].ty, &r_prop.key.ty(), span) {
-                                    if let Some(l_index_ret_ty) = &li.type_ann {
-                                        if let Some(r_prop_ty) = &r_prop.type_ann {
-                                            self.assign_with_opts(data, opts, &l_index_ret_ty, &&r_prop_ty)
-                                                .context(
-                                                    "tried to assign a type of property to thr type of an index \
-                                                     signature",
-                                                )?;
-                                        }
+                                done = true;
+                                if let Some(l_index_ret_ty) = &li.type_ann {
+                                    if let Some(r_prop_ty) = &r_prop.type_ann {
+                                        self.assign_with_opts(data, opts, &l_index_ret_ty, &&r_prop_ty)
+                                            .context(
+                                                "tried to assign a type of property to thr type of an index signature",
+                                            )?;
                                     }
+                                }
 
-                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                        unhandled_rhs.remove(pos);
-                                    }
+                                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                    unhandled_rhs.remove(pos);
                                 }
                             }
 
