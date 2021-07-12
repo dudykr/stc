@@ -448,6 +448,7 @@ impl Analyzer<'_, '_> {
             | Type::IndexedAccessType(..)
             | Type::Alias(..)
             | Type::Instance(..)
+            | Type::Intrinsic(..)
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
