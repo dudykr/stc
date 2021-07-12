@@ -1125,6 +1125,10 @@ impl Analyzer<'_, '_> {
                                                 )?;
                                         }
                                     }
+
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
+                                    }
                                 }
                             }
 
@@ -1149,6 +1153,10 @@ impl Analyzer<'_, '_> {
                                         }),
                                     )
                                     .context("tried to assign a method to an index signature")?;
+                                }
+
+                                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                    unhandled_rhs.remove(pos);
                                 }
                             }
 
