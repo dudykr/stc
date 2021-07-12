@@ -76,7 +76,9 @@ fn validate(input: &Path) -> Vec<StcError> {
 
                 parser.parse_module().unwrap()
             };
-            module = module.fold_with(&mut ts_resolver(env.shared().marks().top_level_mark()));
+            module = GLOBALS.set(env.shared().swc_globals(), || {
+                module.fold_with(&mut ts_resolver(env.shared().marks().top_level_mark()))
+            });
             let module = RModule::from_orig(&mut node_id_gen, module);
 
             let mut storage = Single {
