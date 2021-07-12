@@ -20,7 +20,6 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{Accessibility, TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::error;
 
 impl Analyzer<'_, '_> {
     /// This method is called when lhs of assignment is interface or type
@@ -1130,9 +1129,29 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            TypeElement::Method(_) => {
-                                error!("unimplemented: Index = Method");
+                            TypeElement::Method(rm) => {
+                                if let Ok(()) = self.assign(data, &li.params[0].ty, &rm.key.ty(), span) {
+                                    done = true;
+
+                                    if let Some(li_ret) = &li.type_ann {
+                                        self.assign_with_opts(
+                                            data,
+                                            opts,
+                                            &li_ret,
+                                            &Type::Function(Function {
+                                                span: rm.span,
+                                                type_params: rm.type_params.clone(),
+                                                params: rm.params.clone(),
+                                                ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
+                                                    box Type::any(rm.span.with_ctxt(SyntaxContext::empty()))
+                                                }),
+                                            }),
+                                        )
+                                        .context("tried to assign a method to an index signature")?;
+                                    }
+                                }
                             }
+
                             TypeElement::Index(ri) => {
                                 done = true;
 
@@ -1156,8 +1175,6 @@ impl Analyzer<'_, '_> {
                                     Error::SimpleAssignFailed { span, cause: None }
                                         .context("failed to assign to an index signature"),
                                 );
-
-                                error!("unimplemented: error reporting for Index = Index");
                             }
                         }
                     }
