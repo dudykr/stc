@@ -399,7 +399,7 @@ impl StableEnv {
         self.logger.clone()
     }
 
-    pub fn swc_globals(&self) -> &Globals {
+    pub fn swc_globals(&self) -> &Arc<Globals> {
         &self.globals
     }
 }
