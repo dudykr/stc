@@ -39,7 +39,7 @@ use std::{
     sync::Arc,
 };
 use swc_atoms::{js_word, JsWord};
-use swc_common::{SourceMap, Span, Spanned, DUMMY_SP};
+use swc_common::{SourceMap, Span, Spanned, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::*;
 use swc_ecma_parser::JscTarget;
 
@@ -795,54 +795,58 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, items: &Vec<RModuleItem>) {
-        let mut items_ref = items.iter().collect::<Vec<_>>();
-        self.load_normal_imports(&items_ref);
+        let globals = self.env.shared().swc_globals().clone();
 
-        self.fill_known_type_names(&items);
+        GLOBALS.set(&globals, || {
+            let mut items_ref = items.iter().collect::<Vec<_>>();
+            self.load_normal_imports(&items_ref);
 
-        let mut has_normal_export = false;
-        items.iter().for_each(|item| match item {
-            RModuleItem::ModuleDecl(RModuleDecl::TsExportAssignment(decl)) => {
-                if self.export_equals_span.is_dummy() {
-                    self.export_equals_span = decl.span;
-                }
-                if has_normal_export {
-                    self.storage.report(Error::TS2309 { span: decl.span });
-                }
+            self.fill_known_type_names(&items);
 
-                //
-            }
-            RModuleItem::ModuleDecl(item) => match item {
-                RModuleDecl::ExportDecl(..)
-                | RModuleDecl::ExportAll(..)
-                | RModuleDecl::ExportDefaultDecl(..)
-                | RModuleDecl::ExportDefaultExpr(..)
-                | RModuleDecl::TsNamespaceExport(..) => {
-                    has_normal_export = true;
-                    if !self.export_equals_span.is_dummy() {
-                        self.storage.report(Error::TS2309 {
-                            span: self.export_equals_span,
-                        });
+            let mut has_normal_export = false;
+            items.iter().for_each(|item| match item {
+                RModuleItem::ModuleDecl(RModuleDecl::TsExportAssignment(decl)) => {
+                    if self.export_equals_span.is_dummy() {
+                        self.export_equals_span = decl.span;
                     }
+                    if has_normal_export {
+                        self.storage.report(Error::TS2309 { span: decl.span });
+                    }
+
+                    //
                 }
+                RModuleItem::ModuleDecl(item) => match item {
+                    RModuleDecl::ExportDecl(..)
+                    | RModuleDecl::ExportAll(..)
+                    | RModuleDecl::ExportDefaultDecl(..)
+                    | RModuleDecl::ExportDefaultExpr(..)
+                    | RModuleDecl::TsNamespaceExport(..) => {
+                        has_normal_export = true;
+                        if !self.export_equals_span.is_dummy() {
+                            self.storage.report(Error::TS2309 {
+                                span: self.export_equals_span,
+                            });
+                        }
+                    }
+                    _ => {}
+                },
                 _ => {}
-            },
-            _ => {}
-        });
+            });
 
-        if !self.ctx.in_declare {
-            self.validate_ambient_fns(&items);
-        }
+            if !self.ctx.in_declare {
+                self.validate_ambient_fns(&items);
+            }
 
-        if self.is_builtin {
-            items.visit_children_with(self);
-        } else {
-            self.validate_stmts_and_collect(&items_ref);
-        }
+            if self.is_builtin {
+                items.visit_children_with(self);
+            } else {
+                self.validate_stmts_and_collect(&items_ref);
+            }
 
-        self.handle_pending_exports();
+            self.handle_pending_exports();
 
-        Ok(())
+            Ok(())
+        })
     }
 }
 
