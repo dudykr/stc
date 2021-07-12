@@ -6,17 +6,18 @@ use crate::{
 };
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
-use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
+use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    RClassDecl, RExpr, RIdent, RInvalid, RNumber, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsKeywordType, RTsLit,
-    RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
+    RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsKeywordType,
+    RTsLit, RTsLitType, RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ComputedKey, Conditional, ConstructorSignature, Id,
-    IdCtx, Instance, Intersection, Key, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref, Tuple,
-    TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    IdCtx, Instance, Intersection, Intrinsic, IntrinsicKind, Key, MethodSignature, ModuleId, Operator,
+    PropertySignature, QueryExpr, Ref, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam,
+    TypeParamInstantiation, Union,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
@@ -1233,6 +1234,78 @@ impl Analyzer<'_, '_> {
             .collect::<Vec<_>>();
         v.sort();
         v
+    }
+
+    pub(crate) fn handle_intrinsic_types(
+        &mut self,
+        span: Span,
+        ty: Intrinsic,
+        type_args: Option<&TypeParamInstantiation>,
+    ) -> ValidationResult {
+        if let Some(arg) = type_args {
+            match ty.kind {
+                IntrinsicKind::Uppercase
+                | IntrinsicKind::Lowercase
+                | IntrinsicKind::Capitalize
+                | IntrinsicKind::Uncapitalize => match arg.params[0].normalize() {
+                    Type::Lit(RTsLitType {
+                        lit: RTsLit::Str(s), ..
+                    }) => {
+                        let new_val = match ty.kind {
+                            IntrinsicKind::Uppercase => s.value.to_uppercase(),
+                            IntrinsicKind::Lowercase => s.value.to_lowercase(),
+                            IntrinsicKind::Capitalize => {
+                                if s.value.is_empty() {
+                                    "".into()
+                                } else {
+                                    let mut res = String::new();
+                                    let mut chars = s.value.chars();
+
+                                    res.extend(chars.next().into_iter().flat_map(|v| v.to_uppercase()));
+                                    res.push_str(chars.as_str());
+
+                                    res
+                                }
+                            }
+                            IntrinsicKind::Uncapitalize => {
+                                if s.value.is_empty() {
+                                    "".into()
+                                } else {
+                                    let mut res = String::new();
+                                    let mut chars = s.value.chars();
+
+                                    res.extend(chars.next().into_iter().flat_map(|v| v.to_lowercase()));
+                                    res.push_str(chars.as_str());
+
+                                    res
+                                }
+                            }
+                        };
+
+                        return Ok(Type::Lit(RTsLitType {
+                            node_id: NodeId::invalid(),
+                            span: arg.params[0].span(),
+                            lit: RTsLit::Str(RStr {
+                                span: arg.params[0].span(),
+                                value: new_val.into(),
+                                has_escape: false,
+                                kind: Default::default(),
+                            }),
+                        }));
+                    }
+
+                    _ => {}
+                },
+            }
+        }
+
+        Err(Error::Unimplemented {
+            span,
+            msg: format!(
+                "error reporting for wrong usage of intrinsic type; {:?}\nType args:{:?}",
+                ty, type_args
+            ),
+        })
     }
 
     pub(crate) fn report_error_for_unresolve_type(
