@@ -751,7 +751,6 @@ impl Analyzer<'_, '_> {
 
                 Type::Tuple(..)
                 | Type::Array(..)
-                | Type::Lit(..)
                 | Type::Keyword(RTsKeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
@@ -1130,25 +1129,26 @@ impl Analyzer<'_, '_> {
                             }
 
                             TypeElement::Method(rm) => {
-                                if let Ok(()) = self.assign(data, &li.params[0].ty, &rm.key.ty(), span) {
-                                    done = true;
+                                done = true;
 
-                                    if let Some(li_ret) = &li.type_ann {
-                                        self.assign_with_opts(
-                                            data,
-                                            opts,
-                                            &li_ret,
-                                            &Type::Function(Function {
-                                                span: rm.span,
-                                                type_params: rm.type_params.clone(),
-                                                params: rm.params.clone(),
-                                                ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
-                                                    box Type::any(rm.span.with_ctxt(SyntaxContext::empty()))
-                                                }),
+                                if let Some(li_ret) = &li.type_ann {
+                                    self.assign_with_opts(
+                                        data,
+                                        AssignOpts {
+                                            allow_assignment_to_param: false,
+                                            ..opts
+                                        },
+                                        &li_ret,
+                                        &Type::Function(Function {
+                                            span: rm.span,
+                                            type_params: rm.type_params.clone(),
+                                            params: rm.params.clone(),
+                                            ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
+                                                box Type::any(rm.span.with_ctxt(SyntaxContext::empty()))
                                             }),
-                                        )
-                                        .context("tried to assign a method to an index signature")?;
-                                    }
+                                        }),
+                                    )
+                                    .context("tried to assign a method to an index signature")?;
                                 }
                             }
 
@@ -1164,7 +1164,7 @@ impl Analyzer<'_, '_> {
 
                                     if let Some(lt) = &li.type_ann {
                                         if let Some(rt) = &ri.type_ann {
-                                            return self.assign_with_opts(data, opts, &lt, &rt);
+                                            self.assign_with_opts(data, opts, &lt, &rt)?;
                                         }
                                     }
 
@@ -1284,9 +1284,11 @@ impl Analyzer<'_, '_> {
         if done {
             if errors.is_empty() {
                 return Ok(());
-            } else {
-                return Err(Error::ObjectAssignFailed { span, errors });
             }
+        }
+
+        if !errors.is_empty() {
+            return Err(Error::ObjectAssignFailed { span, errors });
         }
 
         unhandled_rhs.clear();
