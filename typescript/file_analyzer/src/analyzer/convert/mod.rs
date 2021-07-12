@@ -204,6 +204,23 @@ impl Analyzer<'_, '_> {
                         }) => Type::Intrinsic(Intrinsic {
                             span: d.span,
                             kind: IntrinsicKind::from(&*d.id.sym),
+                            type_args: TypeParamInstantiation {
+                                span: d.span,
+                                params: type_params
+                                    .clone()
+                                    .unwrap()
+                                    .params
+                                    .into_iter()
+                                    .map(|v| {
+                                        Type::Param(TypeParam {
+                                            span: DUMMY_SP,
+                                            name: v.name,
+                                            constraint: Default::default(),
+                                            default: Default::default(),
+                                        })
+                                    })
+                                    .collect(),
+                            },
                         }),
 
                         _ => d.type_ann.validate_with(child)?,
