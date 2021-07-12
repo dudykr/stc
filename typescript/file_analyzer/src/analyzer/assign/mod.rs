@@ -2111,6 +2111,11 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
+            (l, Type::Rest(rr)) => match rr.ty.normalize() {
+                Type::Array(ra) => return self.assign_with_opts(data, opts, &l, &ra.elem_type),
+                _ => {}
+            },
+
             (Type::Intrinsic(l), r) => return self.assign_to_intrinsic(data, l, r, opts),
             _ => {}
         }
