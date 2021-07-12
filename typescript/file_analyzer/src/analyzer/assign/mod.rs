@@ -11,8 +11,8 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, FnParam, Instance, Interface, Intersection, Key, Mapped, Operator,
-    PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
+    Array, Conditional, EnumVariant, FnParam, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, Mapped,
+    Operator, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::stack;
 use std::{borrow::Cow, collections::HashMap, time::Instant};
@@ -2111,9 +2111,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            (Type::Intrinsic(..), ..) => {
-                fail!()
-            }
+            (Type::Intrinsic(l), r) => return self.assign_to_intrinsic(data, l, r, opts),
             _ => {}
         }
 
@@ -2122,6 +2120,29 @@ impl Analyzer<'_, '_> {
             "unimplemented: assign: \nLeft: {}\nRight: {}",
             dump_type_as_string(&self.cm, to),
             dump_type_as_string(&self.cm, rhs)
+        );
+        Ok(())
+    }
+
+    /// Should be called only if `to` is not expandable.
+    fn assign_to_intrinsic(
+        &mut self,
+        data: &mut AssignData,
+        to: &Intrinsic,
+        r: &Type,
+        opts: AssignOpts,
+    ) -> ValidationResult<()> {
+        match to.kind {
+            IntrinsicKind::Uppercase => {}
+            IntrinsicKind::Lowercase => {}
+            IntrinsicKind::Capitalize => {}
+            IntrinsicKind::Uncapitalize => {}
+        }
+
+        error!(
+            "unimplemented: assign to intrinsic type\n{:?}\n{}",
+            to,
+            dump_type_as_string(&self.cm, r)
         );
         Ok(())
     }
