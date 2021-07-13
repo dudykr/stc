@@ -1109,6 +1109,7 @@ impl Analyzer<'_, '_> {
             match lm {
                 // TODO: Check type of the index.
                 TypeElement::Index(li) => {
+                    unhandled_rhs.clear();
                     // TODO: Verify
                     for rm in rhs_members {
                         match rm {
