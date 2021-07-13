@@ -671,6 +671,10 @@ impl Analyzer<'_, '_> {
                 Type::Array(ra) => return self.assign_with_opts(data, opts, &l, &ra.elem_type),
                 _ => {}
             },
+
+            (Type::Tuple(..) | Type::Array(..), Type::Function(..) | Type::Constructor(..)) => {
+                fail!()
+            }
             _ => {}
         }
 
