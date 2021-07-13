@@ -563,11 +563,25 @@ impl Analyzer<'_, '_> {
                 .context("tried to assign the type of a parameter to another")
         };
 
-        res.convert_err(|err| match err {
+        res.convert_err(|err| match &err {
             Error::MissingFields { span, .. } => Error::SimpleAssignFailed {
-                span,
+                span: *span,
                 cause: Some(box err),
             },
+
+            Error::Errors { errors, .. } => {
+                if errors.iter().all(|err| match err.actual() {
+                    Error::MissingFields { .. } => true,
+                    _ => false,
+                }) {
+                    Error::SimpleAssignFailed {
+                        span,
+                        cause: Some(box err),
+                    }
+                } else {
+                    err
+                }
+            }
             _ => err,
         })?;
 
