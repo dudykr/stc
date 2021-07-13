@@ -1116,17 +1116,25 @@ impl Analyzer<'_, '_> {
 
                             TypeElement::Property(r_prop) => {
                                 done = true;
-                                if let Some(l_index_ret_ty) = &li.type_ann {
-                                    if let Some(r_prop_ty) = &r_prop.type_ann {
-                                        self.assign_with_opts(data, opts, &l_index_ret_ty, &&r_prop_ty)
-                                            .context(
-                                                "tried to assign a type of property to thr type of an index signature",
-                                            )?;
-                                    }
-                                }
 
-                                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                    unhandled_rhs.remove(pos);
+                                if self
+                                    .assign(&mut Default::default(), &li.params[0].ty, &r_prop.key.ty(), span)
+                                    .is_ok()
+                                    || li.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                                {
+                                    if let Some(l_index_ret_ty) = &li.type_ann {
+                                        if let Some(r_prop_ty) = &r_prop.type_ann {
+                                            self.assign_with_opts(data, opts, &l_index_ret_ty, &&r_prop_ty)
+                                                .context(
+                                                    "tried to assign a type of property to thr type of an index \
+                                                     signature",
+                                                )?;
+                                        }
+                                    }
+
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
+                                    }
                                 }
                             }
 
