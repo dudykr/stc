@@ -2072,6 +2072,7 @@ types/members/objectTypeWithStringNamedNumericProperty.ts
 types/members/objectTypeWithStringNamedPropertyOfIllegalCharacters.ts
 types/members/typesWithOptionalProperty.ts
 types/members/typesWithPublicConstructor.ts
+types/members/typesWithSpecializedCallSignatures.ts
 types/members/typesWithSpecializedConstructSignatures.ts
 types/namedTypes/classWithOnlyPublicMembersEquivalentToInterface.ts
 types/namedTypes/classWithOnlyPublicMembersEquivalentToInterface2.ts
