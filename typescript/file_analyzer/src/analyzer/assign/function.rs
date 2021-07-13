@@ -555,13 +555,21 @@ impl Analyzer<'_, '_> {
                 _ => true,
             };
 
-        if reverse {
+        let res = if reverse {
             self.assign_with_opts(data, opts, &r.ty, &l.ty)
-                .context("tried to assign the type of a parameter to another (reversed)")?;
+                .context("tried to assign the type of a parameter to another (reversed)")
         } else {
             self.assign_with_opts(data, opts, &l.ty, &r.ty)
-                .context("tried to assign the type of a parameter to another")?;
-        }
+                .context("tried to assign the type of a parameter to another")
+        };
+
+        res.convert_err(|err| match err {
+            Error::MissingFields { span, .. } => Error::SimpleAssignFailed {
+                span,
+                cause: Some(box err),
+            },
+            _ => err,
+        })?;
 
         Ok(())
     }
