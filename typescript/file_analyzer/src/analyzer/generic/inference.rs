@@ -489,6 +489,28 @@ impl Analyzer<'_, '_> {
                         continue;
                     }
 
+                    (TypeElement::Method(p), TypeElement::Property(a)) => {
+                        if self.key_matches(span, &a.key, &p.key, false) {
+                            let span = span.with_ctxt(SyntaxContext::empty());
+
+                            if let Some(at) = &a.type_ann {
+                                self.infer_type(
+                                    span,
+                                    inferred,
+                                    &Type::Function(Function {
+                                        span,
+                                        type_params: p.type_params.clone(),
+                                        params: p.params.clone(),
+                                        ret_ty: p.ret_ty.clone().unwrap_or_else(|| box Type::any(span)),
+                                    }),
+                                    &at,
+                                    opts,
+                                )?;
+                            }
+                        }
+                        continue;
+                    }
+
                     (TypeElement::Index(p), TypeElement::Index(a)) => {
                         if p.params.type_eq(&a.params) {
                             if let Some(pt) = &p.type_ann {
