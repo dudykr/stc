@@ -1,5 +1,6 @@
 use crate::{
     analyzer::{
+        assign::AssignOpts,
         generic::{type_form::OldTypeForm, InferData, InferredType},
         Analyzer, Ctx,
     },
@@ -218,6 +219,24 @@ impl Analyzer<'_, '_> {
 
                         if e.iter().any(|prev| prev.type_eq(&*ty)) {
                             return Ok(());
+                        }
+
+                        for prev in e.iter_mut() {
+                            if self
+                                .assign_with_opts(
+                                    &mut Default::default(),
+                                    AssignOpts {
+                                        span,
+                                        ..Default::default()
+                                    },
+                                    &ty,
+                                    prev,
+                                )
+                                .is_ok()
+                            {
+                                *prev = ty.into_owned().generalize_lit(marks);
+                                return Ok(());
+                            }
                         }
 
                         e.push(ty.into_owned().generalize_lit(marks));

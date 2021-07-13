@@ -797,7 +797,6 @@ impl Analyzer<'_, '_> {
                                     return Ok(());
                                 }
 
-                                // TODO: Remove this
                                 // If we inferred T as `number`, we don't need to add `1`.
                                 if e.iter().any(|prev| {
                                     self.assign_with_opts(
@@ -812,6 +811,24 @@ impl Analyzer<'_, '_> {
                                     .is_ok()
                                 }) {
                                     return Ok(());
+                                }
+
+                                for prev in e.iter_mut() {
+                                    if self
+                                        .assign_with_opts(
+                                            &mut Default::default(),
+                                            AssignOpts {
+                                                span,
+                                                ..Default::default()
+                                            },
+                                            &arg,
+                                            prev,
+                                        )
+                                        .is_ok()
+                                    {
+                                        *prev = arg.clone().generalize_lit(marks);
+                                        return Ok(());
+                                    }
                                 }
 
                                 let param_ty = Type::union(e.clone()).cheap();
