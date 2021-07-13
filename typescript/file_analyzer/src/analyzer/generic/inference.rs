@@ -493,7 +493,11 @@ impl Analyzer<'_, '_> {
                     (TypeElement::Index(p), TypeElement::Property(a)) => {
                         assert_eq!(p.params.len(), 1, "Index signature should have exactly one parameter");
 
-                        if let Ok(()) = self.assign(&mut Default::default(), &p.params[0].ty, &a.key.ty(), span) {
+                        if self
+                            .assign(&mut Default::default(), &p.params[0].ty, &a.key.ty(), span)
+                            .is_ok()
+                            || p.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                        {
                             if let Some(p_ty) = &p.type_ann {
                                 if let Some(arg_ty) = &a.type_ann {
                                     self.infer_type(
