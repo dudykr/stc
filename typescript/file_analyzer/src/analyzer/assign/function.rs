@@ -548,6 +548,8 @@ impl Analyzer<'_, '_> {
             && match (l_ty.normalize_instance(), r_ty.normalize_instance()) {
                 (Type::Union(..), Type::Union(..)) => false,
 
+                (Type::Function(..), Type::Function(..)) => false,
+
                 (Type::Function(..) | Type::Constructor(..), Type::TypeLit(..) | Type::Interface(..)) => false,
 
                 (_, Type::Union(..)) => true,
