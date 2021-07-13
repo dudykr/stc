@@ -14,13 +14,14 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, Id, Interface, Operator, Ref, Type, TypeElement, TypeLit, TypeParam, Union,
+    Array, Class, ClassDef, ClassMember, Function, Id, Interface, Operator, Ref, Type, TypeElement, TypeLit, TypeParam,
+    Union,
 };
 use std::{
     borrow::Cow,
     collections::{hash_map::Entry, HashMap},
 };
-use swc_common::{Span, Spanned, TypeEq};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::error;
 
@@ -461,6 +462,28 @@ impl Analyzer<'_, '_> {
                                 }
                             } else {
                                 dbg!((&p, &a));
+                            }
+                        }
+                        continue;
+                    }
+
+                    (TypeElement::Property(p), TypeElement::Method(a)) => {
+                        if self.key_matches(span, &p.key, &a.key, false) {
+                            let span = span.with_ctxt(SyntaxContext::empty());
+
+                            if let Some(pt) = &p.type_ann {
+                                self.infer_type(
+                                    span,
+                                    inferred,
+                                    &pt,
+                                    &Type::Function(Function {
+                                        span,
+                                        type_params: a.type_params.clone(),
+                                        params: a.params.clone(),
+                                        ret_ty: a.ret_ty.clone().unwrap_or_else(|| box Type::any(span)),
+                                    }),
+                                    opts,
+                                )?;
                             }
                         }
                         continue;
