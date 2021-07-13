@@ -548,7 +548,7 @@ impl Analyzer<'_, '_> {
             && match (l_ty.normalize_instance(), r_ty.normalize_instance()) {
                 (Type::Union(..), Type::Union(..)) => false,
                 (_, Type::Union(..)) => true,
-                _ => false,
+                _ => true,
             };
 
         if reverse {
