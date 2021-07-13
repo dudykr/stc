@@ -1141,24 +1141,30 @@ impl Analyzer<'_, '_> {
                             TypeElement::Method(rm) => {
                                 done = true;
 
-                                if let Some(li_ret) = &li.type_ann {
-                                    self.assign_with_opts(
-                                        data,
-                                        AssignOpts {
-                                            allow_assignment_to_param: false,
-                                            ..opts
-                                        },
-                                        &li_ret,
-                                        &Type::Function(Function {
-                                            span: rm.span,
-                                            type_params: rm.type_params.clone(),
-                                            params: rm.params.clone(),
-                                            ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
-                                                box Type::any(rm.span.with_ctxt(SyntaxContext::empty()))
+                                if self
+                                    .assign(&mut Default::default(), &li.params[0].ty, &rm.key.ty(), span)
+                                    .is_ok()
+                                    || li.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                                {
+                                    if let Some(li_ret) = &li.type_ann {
+                                        self.assign_with_opts(
+                                            data,
+                                            AssignOpts {
+                                                allow_assignment_to_param: false,
+                                                ..opts
+                                            },
+                                            &li_ret,
+                                            &Type::Function(Function {
+                                                span: rm.span,
+                                                type_params: rm.type_params.clone(),
+                                                params: rm.params.clone(),
+                                                ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
+                                                    box Type::any(rm.span.with_ctxt(SyntaxContext::empty()))
+                                                }),
                                             }),
-                                        }),
-                                    )
-                                    .context("tried to assign a method to an index signature")?;
+                                        )
+                                        .context("tried to assign a method to an index signature")?;
+                                    }
                                 }
 
                                 if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
