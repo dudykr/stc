@@ -547,7 +547,11 @@ impl Analyzer<'_, '_> {
         let reverse = !opts.for_overload
             && match (l_ty.normalize_instance(), r_ty.normalize_instance()) {
                 (Type::Union(..), Type::Union(..)) => false,
+
+                (Type::Function(..) | Type::Constructor(..), Type::TypeLit(..) | Type::Interface(..)) => false,
+
                 (_, Type::Union(..)) => true,
+
                 _ => true,
             };
 
