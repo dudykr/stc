@@ -1431,7 +1431,16 @@ impl Analyzer<'_, '_> {
                                         )?;
 
                                         let res = self
-                                            .assign(&mut Default::default(), &ty, &var_ty, span)
+                                            .assign_with_opts(
+                                                &mut Default::default(),
+                                                AssignOpts {
+                                                    span,
+                                                    for_overload: true,
+                                                    ..Default::default()
+                                                },
+                                                &ty,
+                                                &var_ty,
+                                            )
                                             .context("tried to validate a varaible declared multiple times")
                                             .convert_err(|err| Error::VarDeclNotCompatible { span: err.span() });
 
