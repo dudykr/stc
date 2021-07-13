@@ -438,6 +438,13 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         for p in param {
             for a in arg {
+                let opts = match p {
+                    TypeElement::Index(..) => InferTypeOpts {
+                        append_type_as_union: true,
+                        ..opts
+                    },
+                    _ => opts,
+                };
                 //
 
                 match (p, a) {
