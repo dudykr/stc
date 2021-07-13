@@ -661,6 +661,19 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        match (to, rhs) {
+            (Type::Rest(lr), r) => match lr.ty.normalize() {
+                Type::Array(la) => return self.assign_with_opts(data, opts, &la.elem_type, &r),
+                _ => {}
+            },
+
+            (l, Type::Rest(rr)) => match rr.ty.normalize() {
+                Type::Array(ra) => return self.assign_with_opts(data, opts, &l, &ra.elem_type),
+                _ => {}
+            },
+            _ => {}
+        }
+
         match rhs {
             Type::IndexedAccessType(rhs) => {
                 let err = Error::NoSuchProperty {
@@ -2107,16 +2120,6 @@ impl Analyzer<'_, '_> {
                 }),
             )
             | (Type::Predicate(..), Type::Predicate(..)) => return Ok(()),
-
-            (Type::Rest(lr), r) => match lr.ty.normalize() {
-                Type::Array(la) => return self.assign_with_opts(data, opts, &la.elem_type, &r),
-                _ => {}
-            },
-
-            (l, Type::Rest(rr)) => match rr.ty.normalize() {
-                Type::Array(ra) => return self.assign_with_opts(data, opts, &l, &ra.elem_type),
-                _ => {}
-            },
 
             (Type::Intrinsic(l), r) => return self.assign_to_intrinsic(data, l, r, opts),
             _ => {}
