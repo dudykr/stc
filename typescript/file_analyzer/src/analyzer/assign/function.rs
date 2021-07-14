@@ -550,7 +550,10 @@ impl Analyzer<'_, '_> {
 
                 (Type::Function(..), Type::Function(..)) => false,
 
-                (Type::Function(..) | Type::Constructor(..), Type::TypeLit(..) | Type::Interface(..)) => false,
+                (
+                    Type::Function(..) | Type::Constructor(..) | Type::Class(..),
+                    Type::TypeLit(..) | Type::Interface(..),
+                ) => false,
 
                 (_, Type::Union(..)) => true,
 
@@ -558,10 +561,10 @@ impl Analyzer<'_, '_> {
             };
 
         let res = if reverse {
-            self.assign_with_opts(data, opts, &r.ty, &l.ty)
+            self.assign_with_opts(data, opts, &r_ty, &l_ty)
                 .context("tried to assign the type of a parameter to another (reversed)")
         } else {
-            self.assign_with_opts(data, opts, &l.ty, &r.ty)
+            self.assign_with_opts(data, opts, &l_ty, &r_ty)
                 .context("tried to assign the type of a parameter to another")
         };
 
