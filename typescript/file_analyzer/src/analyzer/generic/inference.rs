@@ -463,7 +463,14 @@ impl Analyzer<'_, '_> {
                         append_type_as_union: true,
                         ..opts
                     },
-                    _ => opts,
+                    _ => InferTypeOpts {
+                        append_type_as_union: if opts.for_fn_assignment {
+                            false
+                        } else {
+                            opts.append_type_as_union
+                        },
+                        ..opts
+                    },
                 };
                 //
 
