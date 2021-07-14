@@ -14,7 +14,7 @@ use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
 use std::borrow::Cow;
 use swc_atoms::js_word;
-use swc_common::{Spanned, TypeEq};
+use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
@@ -544,21 +544,7 @@ impl Analyzer<'_, '_> {
         l_ty.assert_valid();
         r_ty.assert_valid();
 
-        let reverse = !opts.for_overload
-            && match (l_ty.normalize_instance(), r_ty.normalize_instance()) {
-                (Type::Union(..), Type::Union(..)) => false,
-
-                (Type::Function(..), Type::Function(..)) => false,
-
-                (
-                    Type::Function(..) | Type::Constructor(..) | Type::Class(..),
-                    Type::TypeLit(..) | Type::Interface(..),
-                ) => false,
-
-                (_, Type::Union(..)) => true,
-
-                _ => true,
-            };
+        let reverse = !opts.for_overload && self.should_fn_param_reversed(span, &l_ty, &r_ty)?;
 
         let res = if reverse {
             self.assign_with_opts(data, opts, &r_ty, &l_ty)
@@ -715,5 +701,24 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(())
+    }
+
+    pub(crate) fn should_fn_param_reversed(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
+        let l = self.normalize(Some(span), Cow::Borrowed(&l), Default::default())?;
+        let r = self.normalize(Some(span), Cow::Borrowed(&r), Default::default())?;
+
+        Ok(match (l.normalize_instance(), r.normalize_instance()) {
+            (Type::Union(..), Type::Union(..)) => false,
+
+            (Type::Function(..), Type::Function(..)) => false,
+
+            (Type::Function(..) | Type::Constructor(..) | Type::Class(..), Type::TypeLit(..) | Type::Interface(..)) => {
+                false
+            }
+
+            (_, Type::Union(..)) => true,
+
+            _ => true,
+        })
     }
 }
