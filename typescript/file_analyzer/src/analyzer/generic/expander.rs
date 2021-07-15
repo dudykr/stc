@@ -414,7 +414,7 @@ pub(crate) struct GenericExpander<'a, 'b, 'c, 'd> {
 }
 
 impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
-    fn fold(&mut self, ty: Type) -> Type {
+    fn fold(&mut self, mut ty: Type) -> Type {
         let _stack = match stack::track(ty.span()) {
             Ok(v) => v,
             _ => {
@@ -452,7 +452,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             "[generic/expander]: Expanding {}",
             dump_type_as_string(&self.analyzer.cm, &ty)
         );
-        let ty = ty.foldable();
+        ty.normalize_mut();
 
         match ty {
             Type::StaticThis(..) | Type::Intrinsic(..) | Type::Symbol(..) => return ty,
