@@ -24,7 +24,7 @@ use std::{
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::error;
+use tracing::{error, trace};
 
 /// # Default
 ///
@@ -183,6 +183,7 @@ impl Analyzer<'_, '_> {
             match inferred.defaults.entry(name.clone()) {
                 Entry::Occupied(..) => {}
                 Entry::Vacant(e) => {
+                    trace!("defaulting to itself");
                     e.insert(Type::Param(TypeParam {
                         span: ty.span(),
                         name: name.clone(),
