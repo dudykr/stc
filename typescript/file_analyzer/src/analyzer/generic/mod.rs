@@ -25,7 +25,7 @@ use stc_utils::{error::context, stack};
 use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, error, instrument};
+use tracing::{debug, error, info, instrument};
 
 mod expander;
 mod inference;
@@ -765,10 +765,11 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                slog::info!(self.logger, "({}): infer: {} = {:?}", self.scope.depth(), name, arg);
+                info!("({}): infer: {} = {:?}", self.scope.depth(), name, arg);
 
                 if (arg.is_any() && self.is_implicitly_typed(&arg)) || arg.is_type_param() {
                     if inferred.type_params.contains_key(&name.clone()) {
+                        debug!("infer: already inferred as `{}`", dump_type_as_string(&self.cm, &arg));
                         return Ok(());
                     }
 
