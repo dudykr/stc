@@ -765,7 +765,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if arg.is_any() && self.is_implicitly_typed(&arg) {
+                if (arg.is_any() && self.is_implicitly_typed(&arg)) || arg.is_type_param() {
                     if inferred.type_params.contains_key(&name.clone()) {
                         return Ok(());
                     }
