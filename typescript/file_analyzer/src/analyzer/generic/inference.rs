@@ -711,8 +711,16 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn finalize_inference(&self, inferred: InferData) -> FxHashMap<Id, Type> {
+    pub(super) fn finalize_inference(&self, mut inferred: InferData) -> FxHashMap<Id, Type> {
         let mut map = HashMap::default();
+
+        for (k, ty) in inferred.defaults {
+            if inferred.type_params.contains_key(&k) {
+                continue;
+            }
+
+            inferred.type_params.insert(k, InferredType::Union(ty));
+        }
 
         for (k, v) in inferred.type_params {
             let mut ty = match v {
