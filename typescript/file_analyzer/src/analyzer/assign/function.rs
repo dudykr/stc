@@ -160,8 +160,6 @@ impl Analyzer<'_, '_> {
             check!(Constructor);
         }
 
-        let new_r_params;
-        let new_r_ret_ty;
         let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
             // (Some(lt), Some(rt)) if lt.params.len() == rt.params.len() => {
             //     //
@@ -246,13 +244,25 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )?;
-                new_r_params = self
+                let new_r_params = self
                     .expand_type_params(&map, r_params.to_vec(), Default::default())
                     .context("tried to expand type parameters of rhs as a step of function assignemnt")?;
-                new_r_ret_ty = self
+                let new_r_ret_ty = self
                     .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
                     .context("tried to expand return type of rhs as a step of function assignemnt")?;
-                (&*new_r_params, new_r_ret_ty.as_ref())
+
+                return self
+                    .assign_to_fn_like(
+                        data,
+                        opts,
+                        None,
+                        l_params,
+                        l_ret_ty,
+                        None,
+                        &new_r_params,
+                        new_r_ret_ty.as_ref(),
+                    )
+                    .context("tried to assign an instantiated function to a normalfunction");
             }
 
             _ => (r_params, r_ret_ty),
