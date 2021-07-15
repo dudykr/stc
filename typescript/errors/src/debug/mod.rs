@@ -8,6 +8,7 @@ use std::{collections::HashSet, fmt::Write};
 use swc_common::{sync::Lrc, SourceMap, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
+use tracing::info;
 
 pub mod debugger;
 pub mod duplicate;
@@ -84,9 +85,9 @@ pub fn dbg_type(name: &str, cm: &Lrc<SourceMap>, t: &Type) {
     let s = dump_type_as_string(cm, t);
     eprintln!("===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
 }
-pub fn print_type(logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {
+pub fn print_type(_logger: &Logger, name: &str, cm: &Lrc<SourceMap>, t: &Type) {
     let s = dump_type_as_string(cm, t);
-    slog::info!(logger, "===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
+    info!("===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
 }
 
 /// Ensures that `ty` does not **contain** [Type::Ref].
