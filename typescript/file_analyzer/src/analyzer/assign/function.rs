@@ -262,7 +262,7 @@ impl Analyzer<'_, '_> {
                         &new_r_params,
                         new_r_ret_ty.as_ref(),
                     )
-                    .context("tried to assign an instantiated function to a normalfunction");
+                    .context("tried to assign an instantiated function to a normal function");
             }
 
             _ => (r_params, r_ret_ty),
