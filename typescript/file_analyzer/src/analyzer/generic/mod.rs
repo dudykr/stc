@@ -765,6 +765,8 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
+                slog::info!(self.logger, "({}): infer: {} = {:?}", self.scope.depth(), name, arg);
+
                 if (arg.is_any() && self.is_implicitly_typed(&arg)) || arg.is_type_param() {
                     if inferred.type_params.contains_key(&name.clone()) {
                         return Ok(());
@@ -785,8 +787,6 @@ impl Analyzer<'_, '_> {
                     //
                     return Ok(());
                 }
-
-                slog::info!(self.logger, "({}): infer: {} = {:?}", self.scope.depth(), name, arg);
 
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
