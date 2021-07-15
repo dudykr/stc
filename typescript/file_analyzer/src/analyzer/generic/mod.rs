@@ -767,7 +767,7 @@ impl Analyzer<'_, '_> {
 
                 info!("({}): infer: {} = {:?}", self.scope.depth(), name, arg);
 
-                if (arg.is_any() && self.is_implicitly_typed(&arg)) || arg.is_type_param() {
+                if arg.is_any() && self.is_implicitly_typed(&arg) {
                     if inferred.type_params.contains_key(&name.clone()) {
                         debug!("infer: already inferred as `{}`", dump_type_as_string(&self.cm, &arg));
                         return Ok(());
@@ -782,6 +782,22 @@ impl Analyzer<'_, '_> {
                                 constraint: None,
                                 default: None,
                             }));
+                        }
+                    }
+
+                    //
+                    return Ok(());
+                }
+
+                if arg.normalize().is_type_param() {
+                    if inferred.type_params.contains_key(&name.clone()) {
+                        return Ok(());
+                    }
+
+                    match inferred.defaults.entry(name.clone()) {
+                        Entry::Occupied(..) => {}
+                        Entry::Vacant(e) => {
+                            e.insert(arg.clone());
                         }
                     }
 
