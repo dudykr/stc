@@ -255,6 +255,27 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        self.insert_default_type_params(span, type_params, &mut inferred, default_ty, opts)?;
+
+        self.prevent_generalization_of_inferred_types(type_params, &mut inferred);
+
+        let map = self.finalize_inference(inferred);
+
+        let end = Instant::now();
+
+        slog::warn!(self.logger, "infer_arg_types is finished. (time = {:?})", end - start);
+
+        Ok(map)
+    }
+
+    fn insert_default_type_params(
+        &mut self,
+        span: Span,
+        type_params: &[TypeParam],
+        inferred: &mut InferData,
+        default_ty: Option<&Type>,
+        opts: InferTypeOpts,
+    ) -> ValidationResult<()> {
         // Defaults
         for type_param in type_params {
             if inferred.type_params.contains_key(&type_param.name) {
@@ -285,7 +306,7 @@ impl Analyzer<'_, '_> {
                         );
                         self.insert_inferred(
                             span,
-                            &mut inferred,
+                            inferred,
                             type_param.name.clone(),
                             Cow::Owned(Type::Param(p.clone())),
                             opts,
@@ -299,7 +320,7 @@ impl Analyzer<'_, '_> {
             if type_param.constraint.is_some() && is_literals(&type_param.constraint.as_ref().unwrap()) {
                 self.insert_inferred(
                     span,
-                    &mut inferred,
+                    inferred,
                     type_param.name.clone(),
                     Cow::Borrowed(&type_param.constraint.as_deref().unwrap()),
                     opts,
@@ -328,28 +349,16 @@ impl Analyzer<'_, '_> {
                     },
                 )?;
                 if !inferred.type_params.contains_key(&type_param.name) {
-                    self.insert_inferred(span, &mut inferred, type_param.name.clone(), Cow::Owned(ty), opts)?;
+                    self.insert_inferred(span, inferred, type_param.name.clone(), Cow::Owned(ty), opts)?;
                 }
                 continue;
             }
             if !inferred.type_params.contains_key(&type_param.name) {
                 if let Some(default_ty) = inferred.defaults.remove(&type_param.name) {
-                    self.insert_inferred(
-                        span,
-                        &mut inferred,
-                        type_param.name.clone(),
-                        Cow::Owned(default_ty),
-                        opts,
-                    )?;
+                    self.insert_inferred(span, inferred, type_param.name.clone(), Cow::Owned(default_ty), opts)?;
                 } else {
                     if let Some(default) = &type_param.default {
-                        self.insert_inferred(
-                            span,
-                            &mut inferred,
-                            type_param.name.clone(),
-                            Cow::Borrowed(&default),
-                            opts,
-                        )?;
+                        self.insert_inferred(span, inferred, type_param.name.clone(), Cow::Borrowed(&default), opts)?;
                         continue;
                     }
 
@@ -363,7 +372,7 @@ impl Analyzer<'_, '_> {
 
                         self.insert_inferred(
                             span,
-                            &mut inferred,
+                            inferred,
                             type_param.name.clone(),
                             Cow::Borrowed(&default_ty),
                             opts,
@@ -373,15 +382,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.prevent_generalization_of_inferred_types(type_params, &mut inferred);
-
-        let map = self.finalize_inference(inferred);
-
-        let end = Instant::now();
-
-        slog::warn!(self.logger, "infer_arg_types is finished. (time = {:?})", end - start);
-
-        Ok(map)
+        Ok(())
     }
 
     /// Handles `infer U`.
