@@ -1065,6 +1065,13 @@ impl Analyzer<'_, '_> {
 
             Type::Tuple(param) => match arg {
                 Type::Tuple(arg) => return self.infer_tuple(span, inferred, param, arg, opts),
+                Type::Array(arg) => {
+                    for elem in param.elems.iter() {
+                        self.infer_type(span, inferred, &elem.ty, &arg.elem_type, opts)?;
+                    }
+
+                    return Ok(());
+                }
                 _ => {
                     dbg!();
                 }
