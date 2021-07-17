@@ -995,6 +995,32 @@ pub struct TypeOrSpread {
 pub trait TypeIterExt {}
 
 impl Type {
+    pub fn type_params(&self) -> Option<&TypeParamDecl> {
+        match self.normalize() {
+            Type::ClassDef(ClassDef {
+                type_params: Some(type_params),
+                ..
+            })
+            | Type::Class(Class {
+                def:
+                    box ClassDef {
+                        type_params: Some(type_params),
+                        ..
+                    },
+                ..
+            })
+            | Type::Interface(Interface {
+                type_params: Some(type_params),
+                ..
+            })
+            | Type::Alias(Alias {
+                type_params: Some(type_params),
+                ..
+            }) => Some(type_params),
+            _ => None,
+        }
+    }
+
     #[cfg_attr(not(debug_assertions), inline(always))]
     pub fn assert_clone_cheap(&self) {
         if !cfg!(debug_assertions) {
