@@ -11,11 +11,11 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, FnParam, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, Mapped,
-    Operator, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
+    variance::VarianceFlag, Array, Conditional, EnumVariant, FnParam, Instance, Interface, Intersection, Intrinsic,
+    IntrinsicKind, Key, Mapped, Operator, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::stack;
-use std::{borrow::Cow, collections::HashMap, time::Instant};
+use std::{borrow::Cow, collections::HashMap, mem::take, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -138,6 +138,9 @@ pub(crate) struct AssignOpts {
 #[derive(Default)]
 pub struct AssignData {
     dejavu: Vec<(Type, Type)>,
+
+    unreliable: bool,
+    unmeasurable: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -843,17 +846,17 @@ impl Analyzer<'_, '_> {
                 }
 
                 if lc.extends_type.type_eq(&rc.extends_type) {
-                    //
-                    let l_variance = self.variance(&lc)?;
-                    let r_variance = self.variance(&rc)?;
+                    // TODO: Fix this
+                    let l_variance = self.variance_of_conditional(&lc)?;
+                    let r_variance = self.variance_of_conditional(&rc)?;
 
                     match (l_variance, r_variance) {
-                        (Variance::Covariant, Variance::Covariant) => {
+                        (VarianceFlag::COVARIANT, VarianceFlag::COVARIANT) => {
                             return self
                                 .assign_with_opts(data, opts, &lc.check_type, &rc.check_type)
                                 .context("tried assignment of convariant types")
                         }
-                        (Variance::Contravariant, Variance::Contravariant) => {
+                        (VarianceFlag::CONTRAVARIANT, VarianceFlag::CONTRAVARIANT) => {
                             return self
                                 .assign_with_opts(data, opts, &rc.check_type, &lc.check_type)
                                 .context("tried assignment of contravariant types")
@@ -2378,7 +2381,47 @@ impl Analyzer<'_, '_> {
         Ok(false)
     }
 
-    fn variance(&mut self, ty: &Conditional) -> ValidationResult<Variance> {
+    pub(crate) fn variance<F>(
+        &mut self,
+        span: Span,
+        data: &mut AssignData,
+        param: TypeParam,
+        create_marker_type: F,
+    ) -> ValidationResult<VarianceFlag>
+    where
+        F: FnMut(&mut AssignData, &TypeParam, Type) -> Type,
+    {
+        let old_unmesurable = take(&mut data.unmeasurable);
+        let old_unreliable = take(&mut data.unreliable);
+
+        let mut variance = VarianceFlag::INVARIANT;
+
+        let type_with_super = create_marker_type(data, &param, marker_super_type);
+        let type_with_sub = create_marker_type(data, &param, marker_sub_type);
+
+        if let Ok(()) = self.assign_with_opts(data, Default::default(), &type_with_sub, &type_with_super) {
+            variance |= VarianceFlag::CONTRAVARIANT;
+        }
+
+        if let Ok(()) = self.assign_with_opts(data, Default::default(), &type_with_super, &type_with_sub) {
+            variance |= VarianceFlag::COVARIANT;
+        }
+
+        if data.unmeasurable {
+            variance |= VarianceFlag::UNMEASURABLE;
+        }
+
+        if data.unreliable {
+            variance |= VarianceFlag::UNRELIABLE;
+        }
+
+        data.unmeasurable = old_unmesurable;
+        data.unreliable = old_unreliable;
+
+        Ok(variance)
+    }
+
+    fn variance_of_conditional(&mut self, ty: &Conditional) -> ValidationResult<VarianceFlag> {
         let convariant =
             self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
 
@@ -2386,9 +2429,10 @@ impl Analyzer<'_, '_> {
             || self.is_contravariant(&ty.check_type, &ty.false_type)?;
 
         match (convariant, contravariant) {
-            (true, true) | (false, false) => Ok(Variance::Invariant),
-            (true, false) => Ok(Variance::Covariant),
-            (false, true) => Ok(Variance::Contravariant),
+            (true, true) => Ok(VarianceFlag::BIVARIANT),
+            (false, false) => Ok(VarianceFlag::INVARIANT),
+            (true, false) => Ok(VarianceFlag::COVARIANT),
+            (false, true) => Ok(VarianceFlag::CONTRAVARIANT),
         }
     }
 
@@ -2412,13 +2456,6 @@ impl Analyzer<'_, '_> {
 
         Ok(false)
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Variance {
-    Covariant,
-    Contravariant,
-    Invariant,
 }
 
 /// Returns true if l and r are lieteral and equal to each other.
