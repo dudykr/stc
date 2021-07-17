@@ -11,8 +11,10 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    variance::VarianceFlag, Array, Conditional, EnumVariant, FnParam, Instance, Interface, Intersection, Intrinsic,
-    IntrinsicKind, Key, Mapped, Operator, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
+    markers::{SUB_TYPE_MARKER, SUPER_TYPE_MARKER},
+    variance::VarianceFlag,
+    Array, Conditional, EnumVariant, FnParam, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, Mapped,
+    Operator, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::stack;
 use std::{borrow::Cow, collections::HashMap, mem::take, time::Instant};
@@ -2386,18 +2388,18 @@ impl Analyzer<'_, '_> {
         span: Span,
         data: &mut AssignData,
         param: TypeParam,
-        create_marker_type: F,
+        mut create_marker_type: F,
     ) -> ValidationResult<VarianceFlag>
     where
-        F: FnMut(&mut AssignData, &TypeParam, Type) -> Type,
+        F: FnMut(&mut AssignData, &TypeParam, &Type) -> Type,
     {
         let old_unmesurable = take(&mut data.unmeasurable);
         let old_unreliable = take(&mut data.unreliable);
 
         let mut variance = VarianceFlag::INVARIANT;
 
-        let type_with_super = create_marker_type(data, &param, marker_super_type);
-        let type_with_sub = create_marker_type(data, &param, marker_sub_type);
+        let type_with_super = create_marker_type(data, &param, &SUPER_TYPE_MARKER);
+        let type_with_sub = create_marker_type(data, &param, &SUB_TYPE_MARKER);
 
         if let Ok(()) = self.assign_with_opts(data, Default::default(), &type_with_sub, &type_with_super) {
             variance |= VarianceFlag::CONTRAVARIANT;

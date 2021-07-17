@@ -51,6 +51,7 @@ mod convert;
 mod id;
 mod intrinsic;
 pub mod macros;
+pub mod markers;
 mod metadata;
 pub mod module_id;
 pub mod name;
