@@ -162,36 +162,35 @@ impl Analyzer<'_, '_> {
         }
 
         let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
-            (Some(lt), Some(rt)) if lt.params.len() == rt.params.len() => {
-                // TODO: This is wrong.
-                // Order of type parameters do not matter.
+            // (Some(lt), Some(rt)) if lt.params.len() == rt.params.len() => {
+            //     // TODO: This is wrong.
+            //     // Order of type parameters do not matter.
 
-                let map = lt
-                    .params
-                    .iter()
-                    .zip(rt.params.iter())
-                    .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
-                    .collect::<FxHashMap<_, _>>();
-                let new_r_params = self
-                    .expand_type_params(&map, r_params.to_vec(), Default::default())
-                    .context("tried to expand type parameters as a step of function assignemnt")?;
-                let new_r_ret_ty = self
-                    .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
-                    .context("tried to expand return type of rhs as a step of function assignemnt")?;
-                return self
-                    .assign_to_fn_like(
-                        data,
-                        opts,
-                        None,
-                        l_params,
-                        l_ret_ty,
-                        None,
-                        &new_r_params,
-                        new_r_ret_ty.as_ref(),
-                    )
-                    .context("tried to assign an instantiated function to a normal function (1-1 map)");
-            }
-
+            //     let map = lt
+            //         .params
+            //         .iter()
+            //         .zip(rt.params.iter())
+            //         .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
+            //         .collect::<FxHashMap<_, _>>();
+            //     let new_r_params = self
+            //         .expand_type_params(&map, r_params.to_vec(), Default::default())
+            //         .context("tried to expand type parameters as a step of function assignemnt")?;
+            //     let new_r_ret_ty = self
+            //         .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
+            //         .context("tried to expand return type of rhs as a step of function assignemnt")?;
+            //     return self
+            //         .assign_to_fn_like(
+            //             data,
+            //             opts,
+            //             None,
+            //             l_params,
+            //             l_ret_ty,
+            //             None,
+            //             &new_r_params,
+            //             new_r_ret_ty.as_ref(),
+            //         )
+            //         .context("tried to assign an instantiated function to a normal function (1-1 map)");
+            // }
             (Some(lt), None) if opts.infer_type_params_of_left => {
                 let opts = AssignOpts {
                     infer_type_params_of_left: false,
