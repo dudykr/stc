@@ -9,13 +9,13 @@ use indexmap::IndexSet;
 use itertools::Itertools;
 use rnode::{FoldWith, NodeId, VisitMut, VisitMutWith};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RObjectLit, RPat, RPropOrSpread, RSpreadElement, RTsKeywordType};
-use stc_ts_errors::DebugExt;
+use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    CallSignature, FnParam, Function, Key, PropertySignature, Type, TypeElement, TypeLit, TypeLitMetadata,
-    TypeParamDecl, Union,
+    Accessor, CallSignature, FnParam, Function, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit,
+    TypeLitMetadata, TypeParamDecl, Union,
 };
 use std::{borrow::Cow, iter::repeat, time::Instant};
 use swc_atoms::JsWord;
@@ -38,6 +38,8 @@ impl Analyzer<'_, '_> {
             for prop in node.props.iter() {
                 ret = a.append_prop_or_spread_to_type(&mut known_keys, ret, prop, type_ann.as_deref())?;
             }
+
+            a.report_errors_for_type_literal(&ret, false);
 
             Ok(ret)
         })
@@ -416,6 +418,40 @@ impl Analyzer<'_, '_> {
         slog::debug!(self.logger, "Normlaized unions (time = {:?})", end - start);
     }
 
+    pub(crate) fn report_errors_for_type_literal(&mut self, ty: &Type, is_type_ann: bool) {
+        match ty.normalize() {
+            Type::Union(ty) => {
+                for ty in &ty.types {
+                    self.report_errors_for_type_literal(ty, is_type_ann);
+                }
+            }
+            Type::TypeLit(ty) => {
+                self.report_error_for_mixed_optional_method_signatures(&ty.members);
+            }
+            _ => {}
+        }
+    }
+
+    pub(crate) fn report_error_for_mixed_optional_method_signatures(&mut self, elems: &[TypeElement]) {
+        let mut keys: Vec<(&Key, bool)> = vec![];
+        for elem in elems {
+            match elem {
+                TypeElement::Method(MethodSignature { key, optional, .. }) => {
+                    if let Some(prev) = keys.iter().find(|v| v.0.type_eq(key)) {
+                        if *optional != prev.1 {
+                            self.storage
+                                .report(Error::OptionalAndNonOptionalMethodPropertyMixed { span: key.span() });
+                            continue;
+                        }
+                    }
+
+                    keys.push((key, *optional));
+                }
+                _ => {}
+            }
+        }
+    }
+
     fn append_prop_or_spread_to_type(
         &mut self,
         known_keys: &mut Vec<Key>,
@@ -431,27 +467,42 @@ impl Analyzer<'_, '_> {
             RPropOrSpread::Prop(prop) => {
                 let p: TypeElement = prop.validate_with_args(self, object_type)?;
 
-                if let Some(key) = p.key() {
-                    let span = key.span();
+                match p {
+                    TypeElement::Method(..)
+                    | TypeElement::Property(PropertySignature {
+                        accessor:
+                            Accessor {
+                                getter: false,
+                                setter: false,
+                            },
+                        ..
+                    }) => {
+                        if let Some(key) = p.key() {
+                            let key_ty = key.ty();
+                            let key = key.normalize().into_owned();
 
-                    // Check if duplicate key exists.
-                    // We show errors on the second key and latters.
-                    //
-                    // See: es6/Symbols/symbolProperty36.ts
+                            let span = key.span();
 
-                    if known_keys.iter().any(|prev_key| {
-                        // TODO: Use
-                        // self.key_matches(span, prev_key, key, false)
-                        prev_key.type_eq(&key)
-                    }) {
-                        // TODO: Uncomment this after implementing getter /
-                        // setter distingtion
+                            // Check if duplicate key exists.
+                            // We show errors on the second key and latters.
+                            //
+                            // See: es6/Symbols/symbolProperty36.ts
 
-                        // self.storage.report(Error::DuplicateProperty { span
-                        // })
+                            // TODO: Exclude types which is not valid for computed key
+                            if !key.is_computed()
+                                && known_keys.iter().any(|prev_key| {
+                                    // TODO: Use
+                                    // self.key_matches(span, prev_key, key, false)
+                                    prev_key.type_eq(&key)
+                                })
+                            {
+                                self.storage.report(Error::DuplicateProperty { span })
+                            } else {
+                                known_keys.push(key);
+                            }
+                        }
                     }
-
-                    known_keys.push(key.clone());
+                    _ => {}
                 }
 
                 self.append_type_element(to, p)
@@ -467,6 +518,18 @@ impl Analyzer<'_, '_> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
+
+        match to.normalize() {
+            Type::Function(..) => {
+                // objectSpead.ts says
+                //
+                //
+                // functions result in { }
+                return Ok(to);
+            }
+            _ => {}
+        }
+
         if rhs.is_any() || rhs.is_unknown() {
             return Ok(rhs);
         }
@@ -478,11 +541,8 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        if to.is_kwd(TsKeywordTypeKind::TsObjectKeyword) || rhs.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
-            return Ok(Type::Keyword(RTsKeywordType {
-                span: to.span(),
-                kind: TsKeywordTypeKind::TsObjectKeyword,
-            }));
+        if rhs.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
+            return Ok(to);
         }
 
         match rhs.normalize() {

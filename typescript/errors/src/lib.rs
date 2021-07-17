@@ -6,6 +6,7 @@
 pub use self::result_ext::DebugExt;
 use fmt::Formatter;
 use static_assertions::assert_eq_size;
+use stc_ts_ast_rnode::RTsModuleName;
 use stc_ts_types::{name::Name, Id, Key, ModuleId, Type, TypeElement, TypeParamInstantiation};
 use stc_utils::stack::StackOverflowError;
 use std::{
@@ -58,6 +59,31 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    /// TS2339
+    TupleTooShort {
+        span: Span,
+    },
+
+    /// TS2403
+    VarDeclNotCompatible {
+        span: Span,
+    },
+
+    /// TS2795
+    IntrinsicIsBuiltinOnly {
+        span: Span,
+    },
+
+    /// TS2347
+    TypeParamsProvidedButCalleeIsNotGeneric {
+        span: Span,
+    },
+
+    /// TS2386
+    OptionalAndNonOptionalMethodPropertyMixed {
+        span: Span,
+    },
+
     /// TS2357
     UpdateArgMustBeVariableOrPropertyAccess {
         span: Span,
@@ -157,7 +183,7 @@ pub enum Error {
         span: Span,
     },
 
-    /// TS2403
+    /// TS2322
     AssignFailedBecauseTupleLengthDiffers {
         span: Span,
     },
@@ -178,7 +204,7 @@ pub enum Error {
     },
 
     /// TS2631
-    CannotAssignToModule {
+    CannotAssignToNamespace {
         span: Span,
     },
 
@@ -497,6 +523,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2540
     EnumCannotBeLValue {
         span: Span,
     },
@@ -533,6 +560,7 @@ pub enum Error {
         op: BinaryOp,
     },
 
+    /// TS2339
     NoSuchEnumVariant {
         span: Span,
         name: JsWord,
@@ -617,8 +645,10 @@ pub enum Error {
 
     NoSuchPropertyInModule {
         span: Span,
+        name: Box<RTsModuleName>,
     },
 
+    /// TS2355
     ReturnRequired {
         /// Span of the return type.
         span: Span,
@@ -632,6 +662,11 @@ pub enum Error {
 
     /// TS2539
     CannotAssignToNonVariable {
+        span: Span,
+    },
+
+    /// TS2630
+    CannotAssignToFunction {
         span: Span,
     },
 
@@ -867,6 +902,7 @@ pub enum Error {
 
     SimpleAssignFailed {
         span: Span,
+        cause: Option<Box<Error>>,
     },
 
     SimpleAssignFailedWithCause {
@@ -1372,7 +1408,11 @@ impl Error {
             // TS7005; No implicit any for variables.
             // TS7006; No implicit any for parameters.
             // TS7008; No implicit any for members.
-            7005 | 7006 | 7008 => 7005,
+            // TS7031; No implicit any for binding patterns.
+            // TS7032; No implicit any for set accessor.
+            // TS7033; No implicit any for get accessor.
+            // TS7034; No implicit any for "in some locations where its type cannot be determined."
+            7005 | 7006 | 7008 | 7031 | 7032 | 7033 | 7034 => 7005,
 
             _ => code,
         }
@@ -1536,6 +1576,7 @@ impl Error {
             Error::ExprInvalidForUpdateArg { .. } => 2357,
 
             Error::CannotAssignToNonVariable { .. } => 2539,
+            Error::CannotAssignToFunction { .. } => 2630,
 
             Error::AssignedWrapperToPrimitive { .. } => 2322,
 
@@ -1562,6 +1603,8 @@ impl Error {
             Error::EnumCannotBeLValue { .. } => 2540,
 
             Error::NoSuchEnumVariant { .. } => 2339,
+
+            Error::TupleTooShort { .. } => 2339,
 
             Error::SwitchCaseTestNotCompatible { .. } => 2678,
 
@@ -1714,7 +1757,7 @@ impl Error {
 
             Error::RestArgMustBeVarOrMemberAccess { .. } => 2701,
 
-            Error::CannotAssignToModule { .. } => 2631,
+            Error::CannotAssignToNamespace { .. } => 2631,
 
             Error::ReturnPropertyOfIteratorMustBeMethod { .. } => 2767,
 
@@ -1722,7 +1765,7 @@ impl Error {
 
             Error::InvalidUsageOfNewTarget { .. } => 17013,
 
-            Error::AssignFailedBecauseTupleLengthDiffers { .. } => 2403,
+            Error::AssignFailedBecauseTupleLengthDiffers { .. } => 2322,
 
             Error::ClassMemeberNotCompatibleWithStringIndexSignature { .. } => 2411,
 
@@ -1769,6 +1812,14 @@ impl Error {
             Error::InterfaceNotCompatible { .. } => 2320,
 
             Error::UpdateArgMustBeVariableOrPropertyAccess { .. } => 2357,
+
+            Error::OptionalAndNonOptionalMethodPropertyMixed { .. } => 2386,
+
+            Error::TypeParamsProvidedButCalleeIsNotGeneric { .. } => 2347,
+
+            Error::IntrinsicIsBuiltinOnly { .. } => 2795,
+
+            Error::VarDeclNotCompatible { .. } => 2403,
 
             _ => 0,
         }

@@ -6,15 +6,15 @@ use crate::{
     ValidationResult,
 };
 use once_cell::sync::Lazy;
-use rnode::NodeIdGenerator;
+use rnode::{NodeIdGenerator, RNode};
 use stc_testing::logger;
+use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_storage::Single;
 use stc_ts_types::{ModuleId, ModuleTypeData};
 use std::{path::PathBuf, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{FileName, SourceMap};
-use swc_ecma_ast::Module;
 use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
@@ -64,7 +64,7 @@ where
 }
 
 impl Tester<'_, '_> {
-    pub fn parse(&self, name: &str, src: &str) -> Module {
+    pub fn parse(&self, name: &str, src: &str) -> RModule {
         swc_common::GLOBALS.set(&GLOBALS, || {
             let fm = self.cm.new_source_file(FileName::Real(name.into()), src.into());
 
@@ -83,10 +83,12 @@ impl Tester<'_, '_> {
             );
             let mut parser = Parser::new_from(lexer);
 
-            parser
+            let module = parser
                 .parse_module()
                 .unwrap()
-                .fold_with(&mut ts_resolver(MARKS.top_level_mark))
+                .fold_with(&mut ts_resolver(MARKS.top_level_mark));
+
+            RModule::from_orig(&mut NodeIdGenerator::invalid(), module)
         })
     }
 }

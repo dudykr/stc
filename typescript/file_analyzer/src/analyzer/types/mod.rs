@@ -6,24 +6,30 @@ use crate::{
 };
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
-use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
+use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    RClassDecl, RExpr, RIdent, RInvalid, RNumber, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsKeywordType,
-    RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
+    RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsKeywordType,
+    RTsLit, RTsLitType, RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ComputedKey, Conditional, ConstructorSignature, Id,
-    IdCtx, Instance, Intersection, Key, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref, Tuple,
-    TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    IdCtx, Instance, Intersection, Intrinsic, IntrinsicKind, Key, MethodSignature, ModuleId, Operator,
+    PropertySignature, QueryExpr, Ref, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam,
+    TypeParamInstantiation, Union,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
-use std::{borrow::Cow, collections::HashMap, time::Instant};
+use std::{
+    borrow::Cow,
+    collections::HashMap,
+    time::{Duration, Instant},
+};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use tracing::{error, instrument, trace};
 
 mod index_signature;
 mod keyof;
@@ -57,6 +63,7 @@ impl Analyzer<'_, '_> {
     ///
     /// If `span` is provided, it will be used for types **created** by the
     /// method. Otherwise the span of the original type is used.
+    #[instrument(name = "normalize", skip(self, span, ty, opts))]
     pub(crate) fn normalize<'a>(
         &mut self,
         span: Option<Span>,
@@ -158,6 +165,14 @@ impl Analyzer<'_, '_> {
                         return Ok(Cow::Owned(
                             self.normalize(span, Cow::Borrowed(&a.ty), opts)?.into_owned(),
                         ));
+                    }
+
+                    Type::Intrinsic(i) => {
+                        let ty = self
+                            .handle_intrinsic_types(actual_span, i)
+                            .context("tried to expand intrinsic type as a part of normalization")?;
+
+                        return Ok(Cow::Owned(ty));
                     }
 
                     // Leaf types.
@@ -331,19 +346,25 @@ impl Analyzer<'_, '_> {
                         if !opts.preserve_typeof {
                             match &*q.expr {
                                 QueryExpr::TsEntityName(e) => {
-                                    let ty = self
+                                    let expanded_ty = self
                                         .resolve_typeof(actual_span, e)
                                         .context("tried to resolve typeof as a part of normalization")?;
 
-                                    if ty.normalize().is_query() {
+                                    if ty.type_eq(&expanded_ty) {
+                                        return Ok(Cow::Owned(Type::any(
+                                            actual_span.with_ctxt(SyntaxContext::empty()),
+                                        )));
+                                    }
+
+                                    if expanded_ty.normalize().is_query() {
                                         panic!(
                                             "normalize: resolve_typeof returned a query type: {}",
-                                            dump_type_as_string(&self.cm, &ty)
+                                            dump_type_as_string(&self.cm, &expanded_ty)
                                         )
                                     }
 
                                     return Ok(self
-                                        .normalize(span, Cow::Owned(ty), opts)
+                                        .normalize(span, Cow::Owned(expanded_ty), opts)
                                         .context("tried to normalize the type returned from typeof")?);
                                 }
                                 QueryExpr::Import(_) => {}
@@ -441,8 +462,10 @@ impl Analyzer<'_, '_> {
         })();
 
         let end = Instant::now();
-
-        slog::debug!(self.logger, "Normalized a type. (time = {:?})", end - start);
+        let dur = end - start;
+        if dur > Duration::from_micros(100) {
+            trace!(kind = "perf", op = "normalize", "Normalized a type. (time = {:?})", dur);
+        }
 
         res
     }
@@ -871,7 +894,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Class(c) => self.collect_class_members(excluded, &Type::ClassDef(*c.def.clone())),
             _ => {
-                slog::error!(self.logger, "unimplemented: collect_class_members: {:?}", ty);
+                error!("unimplemented: collect_class_members: {:?}", ty);
                 return Ok(None);
             }
         }
@@ -920,6 +943,22 @@ impl Analyzer<'_, '_> {
         let ty = ty.normalize();
 
         Ok(Some(match ty {
+            Type::Lit(ty) => {
+                let kind = match &ty.lit {
+                    RTsLit::Bool(..) => TsKeywordTypeKind::TsBooleanKeyword,
+                    RTsLit::Number(..) => TsKeywordTypeKind::TsNumberKeyword,
+                    RTsLit::Str(..) => TsKeywordTypeKind::TsStringKeyword,
+                    RTsLit::Tpl(..) => unreachable!(),
+                    RTsLit::BigInt(..) => TsKeywordTypeKind::TsBigIntKeyword,
+                };
+
+                let ty = self
+                    .type_to_type_lit(span, &Type::Keyword(RTsKeywordType { span: ty.span, kind }))
+                    .context("tried to convert a literal to type literal")?
+                    .map(Cow::into_owned);
+                return Ok(ty.map(Cow::Owned));
+            }
+
             Type::Keyword(ty) => {
                 let name = match ty.kind {
                     TsKeywordTypeKind::TsNumberKeyword => js_word!("Number"),
@@ -1149,7 +1188,7 @@ impl Analyzer<'_, '_> {
             }
 
             _ => {
-                slog::error!(self.logger, "unimplemented: type_to_type_lit: {:?}", ty);
+                error!("unimplemented: type_to_type_lit: {:?}", ty);
                 return Ok(None);
             }
         }))
@@ -1203,6 +1242,67 @@ impl Analyzer<'_, '_> {
             .collect::<Vec<_>>();
         v.sort();
         v
+    }
+
+    pub(crate) fn handle_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> ValidationResult {
+        let arg = &ty.type_args;
+
+        match ty.kind {
+            IntrinsicKind::Uppercase
+            | IntrinsicKind::Lowercase
+            | IntrinsicKind::Capitalize
+            | IntrinsicKind::Uncapitalize => match arg.params[0].normalize() {
+                Type::Lit(RTsLitType {
+                    lit: RTsLit::Str(s), ..
+                }) => {
+                    let new_val = match ty.kind {
+                        IntrinsicKind::Uppercase => s.value.to_uppercase(),
+                        IntrinsicKind::Lowercase => s.value.to_lowercase(),
+                        IntrinsicKind::Capitalize => {
+                            if s.value.is_empty() {
+                                "".into()
+                            } else {
+                                let mut res = String::new();
+                                let mut chars = s.value.chars();
+
+                                res.extend(chars.next().into_iter().flat_map(|v| v.to_uppercase()));
+                                res.push_str(chars.as_str());
+
+                                res
+                            }
+                        }
+                        IntrinsicKind::Uncapitalize => {
+                            if s.value.is_empty() {
+                                "".into()
+                            } else {
+                                let mut res = String::new();
+                                let mut chars = s.value.chars();
+
+                                res.extend(chars.next().into_iter().flat_map(|v| v.to_lowercase()));
+                                res.push_str(chars.as_str());
+
+                                res
+                            }
+                        }
+                    };
+
+                    return Ok(Type::Lit(RTsLitType {
+                        node_id: NodeId::invalid(),
+                        span: arg.params[0].span(),
+                        lit: RTsLit::Str(RStr {
+                            span: arg.params[0].span(),
+                            value: new_val.into(),
+                            has_escape: false,
+                            kind: Default::default(),
+                        }),
+                    }));
+                }
+
+                _ => {}
+            },
+        }
+
+        Ok(Type::Intrinsic(ty.clone()))
     }
 
     pub(crate) fn report_error_for_unresolve_type(

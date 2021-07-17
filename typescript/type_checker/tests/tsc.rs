@@ -554,6 +554,16 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                     Arc::new(NodeResolver),
                 );
 
+                // Don't print logs from builtin modules.
+                let _tracing = tracing::subscriber::set_default(
+                    tracing_subscriber::FmtSubscriber::builder()
+                        .without_time()
+                        .with_max_level(tracing::Level::TRACE)
+                        .with_ansi(true)
+                        .with_test_writer()
+                        .finish(),
+                );
+
                 let start = Instant::now();
                 checker.check(Arc::new(file_name.into()));
                 let end = Instant::now();

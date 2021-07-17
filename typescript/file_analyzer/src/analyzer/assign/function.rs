@@ -67,9 +67,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        {
-            // TODO(kdy1):
-            //
+        if r_type_params.is_some() {
             // If a parameter of lhs is something like
             //
             // (x: {
@@ -79,14 +77,94 @@ impl Analyzer<'_, '_> {
             //
             // and rhs is
             //
-            // <T#3930>(x: (a: T#3930#0) => T) : T[];
+            // <T>(x: (a: T) => T) : T[];
             //
             // we need to infer two time.
+
+            macro_rules! check {
+                ($pat:ident) => {{
+                    let l_pos = l_params.iter().position(|p| match p.ty.normalize() {
+                        Type::TypeLit(ty) => {
+                            ty.members
+                                .iter()
+                                .filter(|v| match v {
+                                    TypeElement::$pat(..) => true,
+                                    _ => false,
+                                })
+                                .count()
+                                >= 2
+                        }
+                        _ => false,
+                    });
+
+                    if let Some(l_pos) = l_pos {
+                        let count = match l_params[l_pos].ty.normalize() {
+                            Type::TypeLit(ty) => ty
+                                .members
+                                .iter()
+                                .filter(|v| match v {
+                                    TypeElement::$pat(..) => true,
+                                    _ => false,
+                                })
+                                .count(),
+                            _ => {
+                                unreachable!()
+                            }
+                        };
+
+                        let mut vec = (0..count).into_iter().map(|_| l_params.to_vec()).collect_vec();
+
+                        for (el_idx, new_params) in vec.iter_mut().enumerate() {
+                            match new_params[l_pos].ty.normalize_mut() {
+                                Type::TypeLit(ty) => {
+                                    let mut call_idx = 0;
+                                    ty.members.retain(|el| match el {
+                                        TypeElement::$pat(..) => {
+                                            if el_idx == call_idx {
+                                                call_idx += 1;
+
+                                                return true;
+                                            }
+
+                                            call_idx += 1;
+
+                                            false
+                                        }
+                                        _ => true,
+                                    });
+                                }
+                                _ => {
+                                    unreachable!()
+                                }
+                            }
+                        }
+
+                        for new_l_params in vec {
+                            return self
+                                .assign_to_fn_like(
+                                    data,
+                                    opts,
+                                    l_type_params,
+                                    &new_l_params,
+                                    l_ret_ty,
+                                    r_type_params,
+                                    r_params,
+                                    r_ret_ty,
+                                )
+                                .context("tried to assign by expanding overloads in a type literal");
+                        }
+                    }
+                }};
+            }
+
+            check!(Call);
+            check!(Constructor);
         }
+
         let new_r_params;
         let new_r_ret_ty;
         let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
-            (Some(lt), Some(rt)) => {
+            (Some(lt), Some(rt)) if lt.params.len() == rt.params.len() => {
                 //
                 let map = lt
                     .params
@@ -146,7 +224,7 @@ impl Analyzer<'_, '_> {
             }
 
             // Assigning `(a: 1) => string` to `<Z>(a: Z) => string` is valid.
-            (None, Some(rt)) => {
+            (_, Some(rt)) => {
                 let lf = Type::Function(Function {
                     span,
                     type_params: None,
@@ -298,7 +376,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::SimpleAssignFailed { span })
+        Err(Error::SimpleAssignFailed { span, cause: None })
     }
 
     pub(super) fn assign_to_constructor(
@@ -333,7 +411,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             Type::Lit(..) | Type::ClassDef(ClassDef { is_abstract: true, .. }) | Type::Function(..) => {
-                return Err(Error::SimpleAssignFailed { span })
+                return Err(Error::SimpleAssignFailed { span, cause: None })
             }
 
             Type::TypeLit(rt) => {
@@ -384,7 +462,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::SimpleAssignFailed { span })
+        Err(Error::SimpleAssignFailed { span, cause: None })
     }
 
     /// Assigns a parameter to another one.
@@ -469,17 +547,48 @@ impl Analyzer<'_, '_> {
         let reverse = !opts.for_overload
             && match (l_ty.normalize_instance(), r_ty.normalize_instance()) {
                 (Type::Union(..), Type::Union(..)) => false,
+
+                (Type::Function(..), Type::Function(..)) => false,
+
+                (
+                    Type::Function(..) | Type::Constructor(..) | Type::Class(..),
+                    Type::TypeLit(..) | Type::Interface(..),
+                ) => false,
+
                 (_, Type::Union(..)) => true,
-                _ => false,
+
+                _ => true,
             };
 
-        if reverse {
-            self.assign_with_opts(data, opts, &r.ty, &l.ty)
-                .context("tried to assign the type of a parameter to another (reversed)")?;
+        let res = if reverse {
+            self.assign_with_opts(data, opts, &r_ty, &l_ty)
+                .context("tried to assign the type of a parameter to another (reversed)")
         } else {
-            self.assign_with_opts(data, opts, &l.ty, &r.ty)
-                .context("tried to assign the type of a parameter to another")?;
-        }
+            self.assign_with_opts(data, opts, &l_ty, &r_ty)
+                .context("tried to assign the type of a parameter to another")
+        };
+
+        res.convert_err(|err| match &err {
+            Error::MissingFields { span, .. } => Error::SimpleAssignFailed {
+                span: *span,
+                cause: Some(box err),
+            },
+
+            Error::Errors { errors, .. } => {
+                if errors.iter().all(|err| match err.actual() {
+                    Error::MissingFields { .. } => true,
+                    _ => false,
+                }) {
+                    Error::SimpleAssignFailed {
+                        span,
+                        cause: Some(box err),
+                    }
+                } else {
+                    err
+                }
+            }
+            _ => err,
+        })?;
 
         Ok(())
     }
@@ -547,7 +656,7 @@ impl Analyzer<'_, '_> {
 
         if opts.for_overload {
             if required_li.clone().count() > required_ri.clone().count() {
-                return Err(Error::SimpleAssignFailed { span })
+                return Err(Error::SimpleAssignFailed { span, cause: None })
                     .context("l.params.required.len > r.params.required.len");
             }
         }
@@ -561,7 +670,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(Error::SimpleAssignFailed { span }).with_context(|| {
+                return Err(Error::SimpleAssignFailed { span, cause: None }).with_context(|| {
                     format!(
                         "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: {:?}\nRight: {:?}\n",
                         required_non_void_li.collect_vec(),

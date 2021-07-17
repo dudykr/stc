@@ -18,6 +18,7 @@ export CARGO_TERM_COLOR=always
 export RUST_BACKTRACE=1
 
 # We prevent regression using faster checks
+cargo test -q -p stc_ts_file_analyzer --test tsc
 GOLDEN_ONLY=1 cargo test -q -p stc_ts_file_analyzer --test visualize
 
 RUST_LOG=off TEST='' DONT_PRINT_MATCHED=1 cargo test --test tsc \

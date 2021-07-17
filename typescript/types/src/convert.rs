@@ -1,7 +1,7 @@
 use crate::{
     Alias, Array, ClassDef, Conditional, Enum, EnumVariant, FnParam, Function, Id, ImportType, IndexedAccessType,
-    InferType, Interface, Intersection, Key, Operator, OptionalType, Predicate, QueryExpr, QueryType, Ref, RestType,
-    StaticThis, Symbol, TplType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, TypeParamDecl,
+    InferType, Interface, Intersection, Intrinsic, Key, Operator, OptionalType, Predicate, QueryExpr, QueryType, Ref,
+    RestType, StaticThis, Symbol, TplType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, TypeParamDecl,
     TypeParamInstantiation, Union,
 };
 use rnode::NodeId;
@@ -64,6 +64,7 @@ impl From<Type> for RTsType {
             Type::Symbol(t) => t.into(),
             Type::StaticThis(t) => t.into(),
             Type::Tpl(t) => t.into(),
+            Type::Intrinsic(t) => t.into(),
         }
     }
 }
@@ -740,6 +741,21 @@ impl From<TplType> for RTsTplLitType {
             span: t.span,
             quasis: t.quasis,
             types: t.types.into_iter().map(From::from).collect(),
+        }
+    }
+}
+
+impl From<Intrinsic> for RTsType {
+    fn from(t: Intrinsic) -> Self {
+        RTsType::TsKeywordType(t.into())
+    }
+}
+
+impl From<Intrinsic> for RTsKeywordType {
+    fn from(t: Intrinsic) -> Self {
+        RTsKeywordType {
+            span: t.span,
+            kind: TsKeywordTypeKind::TsIntrinsicKeyword,
         }
     }
 }

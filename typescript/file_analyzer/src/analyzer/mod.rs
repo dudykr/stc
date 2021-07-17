@@ -39,7 +39,7 @@ use std::{
     sync::Arc,
 };
 use swc_atoms::{js_word, JsWord};
-use swc_common::{SourceMap, Span, Spanned, DUMMY_SP};
+use swc_common::{SourceMap, Span, Spanned, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::*;
 use swc_ecma_parser::JscTarget;
 
@@ -100,7 +100,6 @@ pub(crate) struct Ctx {
     in_constructor_param: bool,
 
     diallow_unknown_object_property: bool,
-    disallow_optional_object_property: bool,
 
     use_undefined_for_empty_tuple: bool,
 
@@ -110,13 +109,7 @@ pub(crate) struct Ctx {
 
     /// If `true`, expression validator will not emit tuple.
     cannot_be_tuple: bool,
-
-    /// If `true`, `access_property` will not produce types like `Array['b']`
-    disallow_creating_indexed_type_from_ty_els: bool,
-
-    disallow_indexing_array_with_string: bool,
-
-    disallow_indexing_class_with_computed: bool,
+    prefer_tuple: bool,
 
     in_shorthand: bool,
 
@@ -217,8 +210,6 @@ pub(crate) struct Ctx {
     cannot_fallback_to_iterable_iterator: bool,
 
     allow_new_target: bool,
-
-    disallow_invoking_implicit_constructors: bool,
 
     disallow_suggesting_property_on_no_var: bool,
 
@@ -505,14 +496,11 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_const_assertion: false,
                 in_constructor_param: false,
                 diallow_unknown_object_property: false,
-                disallow_optional_object_property: false,
                 use_undefined_for_empty_tuple: false,
                 allow_module_var: false,
                 check_for_implicit_any: false,
                 cannot_be_tuple: false,
-                disallow_creating_indexed_type_from_ty_els: false,
-                disallow_indexing_array_with_string: false,
-                disallow_indexing_class_with_computed: false,
+                prefer_tuple: false,
                 in_shorthand: false,
                 is_instantiating_class: false,
                 in_cond: false,
@@ -556,7 +544,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 is_value_used: false,
                 cannot_fallback_to_iterable_iterator: false,
                 allow_new_target: false,
-                disallow_invoking_implicit_constructors: false,
                 disallow_suggesting_property_on_no_var: false,
                 in_unreachable: false,
             },
@@ -808,54 +795,58 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, items: &Vec<RModuleItem>) {
-        let mut items_ref = items.iter().collect::<Vec<_>>();
-        self.load_normal_imports(&items_ref);
+        let globals = self.env.shared().swc_globals().clone();
 
-        self.fill_known_type_names(&items);
+        GLOBALS.set(&globals, || {
+            let mut items_ref = items.iter().collect::<Vec<_>>();
+            self.load_normal_imports(&items_ref);
 
-        let mut has_normal_export = false;
-        items.iter().for_each(|item| match item {
-            RModuleItem::ModuleDecl(RModuleDecl::TsExportAssignment(decl)) => {
-                if self.export_equals_span.is_dummy() {
-                    self.export_equals_span = decl.span;
-                }
-                if has_normal_export {
-                    self.storage.report(Error::TS2309 { span: decl.span });
-                }
+            self.fill_known_type_names(&items);
 
-                //
-            }
-            RModuleItem::ModuleDecl(item) => match item {
-                RModuleDecl::ExportDecl(..)
-                | RModuleDecl::ExportAll(..)
-                | RModuleDecl::ExportDefaultDecl(..)
-                | RModuleDecl::ExportDefaultExpr(..)
-                | RModuleDecl::TsNamespaceExport(..) => {
-                    has_normal_export = true;
-                    if !self.export_equals_span.is_dummy() {
-                        self.storage.report(Error::TS2309 {
-                            span: self.export_equals_span,
-                        });
+            let mut has_normal_export = false;
+            items.iter().for_each(|item| match item {
+                RModuleItem::ModuleDecl(RModuleDecl::TsExportAssignment(decl)) => {
+                    if self.export_equals_span.is_dummy() {
+                        self.export_equals_span = decl.span;
                     }
+                    if has_normal_export {
+                        self.storage.report(Error::TS2309 { span: decl.span });
+                    }
+
+                    //
                 }
+                RModuleItem::ModuleDecl(item) => match item {
+                    RModuleDecl::ExportDecl(..)
+                    | RModuleDecl::ExportAll(..)
+                    | RModuleDecl::ExportDefaultDecl(..)
+                    | RModuleDecl::ExportDefaultExpr(..)
+                    | RModuleDecl::TsNamespaceExport(..) => {
+                        has_normal_export = true;
+                        if !self.export_equals_span.is_dummy() {
+                            self.storage.report(Error::TS2309 {
+                                span: self.export_equals_span,
+                            });
+                        }
+                    }
+                    _ => {}
+                },
                 _ => {}
-            },
-            _ => {}
-        });
+            });
 
-        if !self.ctx.in_declare {
-            self.validate_ambient_fns(&items);
-        }
+            if !self.ctx.in_declare {
+                self.validate_ambient_fns(&items);
+            }
 
-        if self.is_builtin {
-            items.visit_children_with(self);
-        } else {
-            self.validate_stmts_and_collect(&items_ref);
-        }
+            if self.is_builtin {
+                items.visit_children_with(self);
+            } else {
+                self.validate_stmts_and_collect(&items_ref);
+            }
 
-        self.handle_pending_exports();
+            self.handle_pending_exports();
 
-        Ok(())
+            Ok(())
+        })
     }
 }
 
@@ -971,6 +962,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, decl: &RTsModuleDecl) -> ValidationResult<Option<Type>> {
+        let is_builtin = self.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;
         let global = decl.global;
@@ -992,7 +984,7 @@ impl Analyzer<'_, '_> {
 
                 let mut exports = child.storage.take_info(ctxt);
                 // Ambient module members are always exported with or without export keyword
-                if decl.declare {
+                if is_builtin || decl.declare {
                     for (id, var) in take(&mut exports.private_vars) {
                         var.assert_valid();
 
@@ -1012,7 +1004,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if !global {
+                if is_builtin || !global {
                     let ty = child.finalize(ty::Module {
                         name: decl.id.clone(),
                         span,

@@ -11,6 +11,7 @@ use self::type_id::SymbolId;
 pub use self::{
     convert::rprop_name_to_expr,
     id::Id,
+    intrinsic::{Intrinsic, IntrinsicKind},
     metadata::{TypeElMetadata, TypeLitMetadata},
     module_id::ModuleId,
 };
@@ -19,6 +20,7 @@ use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
 use rnode::{FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
+use scoped_tls::scoped_thread_local;
 use static_assertions::assert_eq_size;
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
@@ -34,6 +36,7 @@ use std::{
     mem::{replace, transmute},
     ops::AddAssign,
     sync::Arc,
+    time::{Duration, Instant},
 };
 use swc_atoms::{js_word, JsWord};
 use swc_common::{EqIgnoreSpan, FromVariant, Span, Spanned, TypeEq, DUMMY_SP};
@@ -42,9 +45,11 @@ use swc_ecma_utils::{
     Value,
     Value::{Known, Unknown},
 };
+use tracing::trace;
 
 mod convert;
 mod id;
+mod intrinsic;
 pub mod macros;
 mod metadata;
 pub mod module_id;
@@ -107,7 +112,7 @@ impl AddAssign for ModuleTypeData {
 }
 
 /// This type is expected to stored in a [Box], like `Vec<Type>`.
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, Is, EqIgnoreSpan, Visit)]
+#[derive(Debug, PartialEq, Spanned, FromVariant, Is, EqIgnoreSpan, Visit)]
 pub enum Type {
     Instance(Instance),
     StaticThis(StaticThis),
@@ -166,6 +171,72 @@ pub enum Type {
     Symbol(Symbol),
 
     Tpl(TplType),
+
+    Intrinsic(Intrinsic),
+}
+
+impl Clone for Type {
+    fn clone(&self) -> Self {
+        scoped_thread_local!(static NO_LOG: ());
+        let log = !NO_LOG.is_set();
+
+        NO_LOG.set(&(), || match self {
+            Type::Arc(ty) => ty.clone().into(),
+            Type::Keyword(ty) => ty.clone().into(),
+            Type::StaticThis(ty) => ty.clone().into(),
+            Type::This(ty) => ty.clone().into(),
+            Type::Symbol(ty) => ty.clone().into(),
+            Type::Intrinsic(ty) => ty.clone().into(),
+
+            _ => {
+                let start = Instant::now();
+
+                let new = match self {
+                    Type::Instance(ty) => ty.clone().into(),
+                    Type::Lit(ty) => ty.clone().into(),
+                    Type::Query(ty) => ty.clone().into(),
+                    Type::Infer(ty) => ty.clone().into(),
+                    Type::Import(ty) => ty.clone().into(),
+                    Type::Predicate(ty) => ty.clone().into(),
+                    Type::IndexedAccessType(ty) => ty.clone().into(),
+                    Type::Ref(ty) => ty.clone().into(),
+                    Type::TypeLit(ty) => ty.clone().into(),
+                    Type::Conditional(ty) => ty.clone().into(),
+                    Type::Tuple(ty) => ty.clone().into(),
+                    Type::Array(ty) => ty.clone().into(),
+                    Type::Union(ty) => ty.clone().into(),
+                    Type::Intersection(ty) => ty.clone().into(),
+                    Type::Function(ty) => ty.clone().into(),
+                    Type::Constructor(ty) => ty.clone().into(),
+                    Type::Operator(ty) => ty.clone().into(),
+                    Type::Param(ty) => ty.clone().into(),
+                    Type::EnumVariant(ty) => ty.clone().into(),
+                    Type::Interface(ty) => ty.clone().into(),
+                    Type::Enum(ty) => ty.clone().into(),
+                    Type::Mapped(ty) => ty.clone().into(),
+                    Type::Alias(ty) => ty.clone().into(),
+                    Type::Namespace(ty) => ty.clone().into(),
+                    Type::Module(ty) => ty.clone().into(),
+                    Type::Class(ty) => ty.clone().into(),
+                    Type::ClassDef(ty) => ty.clone().into(),
+                    Type::Rest(ty) => ty.clone().into(),
+                    Type::Optional(ty) => ty.clone().into(),
+                    Type::Tpl(ty) => ty.clone().into(),
+                    _ => unreachable!(),
+                };
+
+                if log {
+                    let end = Instant::now();
+                    let dur = end - start;
+                    if dur >= Duration::from_millis(1) {
+                        trace!(kind = "perf", op = "Type.clone", "took {:?}", dur);
+                    }
+                }
+
+                new
+            }
+        })
+    }
 }
 
 assert_eq_size!(Type, [u8; 128]);
@@ -206,6 +277,7 @@ impl TypeEq for Type {
             (Type::Rest(l), Type::Rest(r)) => l.type_eq(r),
             (Type::Optional(l), Type::Optional(r)) => l.type_eq(r),
             (Type::Symbol(l), Type::Symbol(r)) => l.type_eq(r),
+            (Type::Intrinsic(l), Type::Intrinsic(r)) => l.type_eq(r),
             _ => false,
         }
     }
@@ -261,6 +333,18 @@ pub enum Key {
     Num(#[use_eq_ignore_span] RNumber),
     BigInt(#[use_eq_ignore_span] RBigInt),
     Private(#[use_eq_ignore_span] PrivateName),
+}
+
+impl Key {
+    pub fn normalize(&self) -> Cow<Key> {
+        match self {
+            Key::Num(v) => Cow::Owned(Key::Normal {
+                span: v.span,
+                sym: v.value.to_string().into(),
+            }),
+            _ => Cow::Borrowed(self),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, EqIgnoreSpan, TypeEq, Visit, Spanned)]
@@ -1250,6 +1334,8 @@ impl Type {
             Type::Instance(ty) => ty.span = span,
 
             Type::Tpl(ty) => ty.span = span,
+
+            Type::Intrinsic(ty) => ty.span = span,
         }
     }
 }

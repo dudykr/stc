@@ -14,6 +14,7 @@ use stc_utils::stack;
 use std::time::Instant;
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_utils::Value::Known;
+use tracing::{span, warn, Level};
 
 mod ambient_decl;
 mod loops;
@@ -38,7 +39,10 @@ impl Analyzer<'_, '_> {
         let span = s.span();
         let line_col = self.line_col(span);
 
-        slog::warn!(self.logger, "Statement start");
+        let tracing_span = span!(Level::TRACE, "Statement", line_col = &*line_col);
+        let _tracing_guard = tracing_span.enter();
+
+        warn!("Statement start");
         let start = Instant::now();
 
         if self.rule().always_strict && !self.rule().allow_unreachable_code && self.ctx.in_unreachable {
@@ -59,8 +63,9 @@ impl Analyzer<'_, '_> {
 
         let end = Instant::now();
 
-        slog::warn!(
-            self.logger,
+        warn!(
+            kind = "perf",
+            op = "validate (Stmt)",
             "({}): Statement validation done. (time = {:?}",
             line_col,
             end - start

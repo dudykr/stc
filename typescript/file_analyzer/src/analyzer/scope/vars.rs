@@ -1,7 +1,7 @@
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        expr::{GetIteratorOpts, IdCtx, TypeOfMode},
+        expr::{AccessPropertyOpts, GetIteratorOpts, IdCtx, TypeOfMode},
         types::NormalizeTypeOpts,
         util::{opt_union, ResultExt},
         Analyzer, Ctx,
@@ -231,26 +231,32 @@ impl Analyzer<'_, '_> {
                         })
                     });
 
-                    for (i, elem) in arr.elems.iter().enumerate() {
+                    for (idx, elem) in arr.elems.iter().enumerate() {
                         if let Some(elem) = elem {
                             let elem_ty = ty.as_ref().try_map(|ty| -> ValidationResult<_> {
                                 Ok(self
-                                    .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
-                                    .context(
-                                        "tried to get the type of nth element from iterator to declare vars with an \
-                                         array pattern",
-                                    )?
+                                    .get_element_from_iterator(span, Cow::Borrowed(&ty), idx)
+                                    .with_context(|| {
+                                        format!(
+                                            "tried to get the type of {}th element from iterator to declare vars with \
+                                             an array pattern",
+                                            idx
+                                        )
+                                    })?
                                     .into_owned())
                             })?;
 
                             let default_elem_ty = default
                                 .as_ref()
                                 .and_then(|ty| {
-                                    self.get_element_from_iterator(span, Cow::Borrowed(&ty), i)
-                                        .context(
-                                            "tried to get the type of nth element from iterator to declare vars with \
-                                             an array pattern (default value)",
-                                        )
+                                    self.get_element_from_iterator(span, Cow::Borrowed(&ty), idx)
+                                        .with_context(|| {
+                                            format!(
+                                                "tried to get the type of {}th element from iterator to declare vars \
+                                                 with an array pattern (default value)",
+                                                idx
+                                            )
+                                        })
                                         .ok()
                                 })
                                 .map(Cow::into_owned);
@@ -368,20 +374,24 @@ impl Analyzer<'_, '_> {
                             used_keys.push(key.clone());
 
                             let ctx = Ctx {
-                                disallow_creating_indexed_type_from_ty_els: true,
-                                disallow_indexing_array_with_string: true,
                                 diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
                             let prop_ty = ty.as_ref().try_map(|ty| {
-                                self.with_ctx(ctx).access_property(
-                                    span,
-                                    &ty,
-                                    &key,
-                                    TypeOfMode::RValue,
-                                    IdCtx::Var,
-                                    Default::default(),
-                                )
+                                self.with_ctx(ctx)
+                                    .access_property(
+                                        span,
+                                        &ty,
+                                        &key,
+                                        TypeOfMode::RValue,
+                                        IdCtx::Var,
+                                        AccessPropertyOpts {
+                                            disallow_indexing_array_with_string: true,
+                                            disallow_creating_indexed_type_from_ty_els: true,
+                                            ..Default::default()
+                                        },
+                                    )
+                                    .context("tried to access poprerty to declare variables")
                             });
 
                             let default_prop_ty = default.as_ref().and_then(|ty| {
@@ -430,20 +440,24 @@ impl Analyzer<'_, '_> {
                             used_keys.push(key.clone());
 
                             let ctx = Ctx {
-                                disallow_creating_indexed_type_from_ty_els: true,
-                                disallow_indexing_array_with_string: true,
                                 diallow_unknown_object_property: true,
                                 ..self.ctx
                             };
                             let prop_ty = ty.as_ref().try_map(|ty| {
-                                self.with_ctx(ctx).access_property(
-                                    span,
-                                    &ty,
-                                    &key,
-                                    TypeOfMode::RValue,
-                                    IdCtx::Var,
-                                    Default::default(),
-                                )
+                                self.with_ctx(ctx)
+                                    .access_property(
+                                        span,
+                                        &ty,
+                                        &key,
+                                        TypeOfMode::RValue,
+                                        IdCtx::Var,
+                                        AccessPropertyOpts {
+                                            disallow_indexing_array_with_string: true,
+                                            disallow_creating_indexed_type_from_ty_els: true,
+                                            ..Default::default()
+                                        },
+                                    )
+                                    .context("tried to access poprerty to declare variables")
                             });
 
                             let default_prop_ty = default.as_ref().and_then(|ty| {
@@ -612,7 +626,7 @@ impl Analyzer<'_, '_> {
                 },
             )?;
 
-            if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
+            if ty.is_any() || ty.is_unknown() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
                 return Ok(ty.into_owned());
             }
 
@@ -714,7 +728,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            unimplemented!("exclude_props: {:#?}", ty)
+            unimplemented!("exclude_props: {}", dump_type_as_string(&self.cm, &ty))
         })()?;
 
         Ok(ty.fixed())

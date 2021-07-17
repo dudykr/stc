@@ -60,3 +60,44 @@ pub fn builtin() {
     })
     .unwrap();
 }
+
+#[test]
+pub fn intl() {
+    testing::run_test2(false, |_, _| {
+        let globals = Arc::new(Globals::default());
+
+        GLOBALS.set(&globals, || {
+            let log = logger();
+            let shared = StableEnv::new(log.logger, globals.clone());
+            let mut libs = vec![];
+            for s in &["es5"] {
+                libs.extend(Lib::load(&s));
+            }
+            libs.sort();
+            libs.dedup();
+            let data = BuiltIn::from_ts_libs(&shared, &libs);
+
+            let env = Env::new(
+                shared,
+                Default::default(),
+                swc_ecma_ast::EsVersion::Es2020,
+                ModuleConfig::None,
+                Arc::new(data),
+            );
+
+            {
+                let intl = env
+                    .get_global_type(DUMMY_SP, &"Intl".into())
+                    .expect("failed to get global type Intl");
+
+                let i = intl.foldable().module().unwrap();
+                let type_names = i.exports.types.iter().map(|v| v.0).collect::<Vec<_>>();
+                eprintln!("Type names: {:?}", type_names);
+                assert!(i.exports.types.contains_key(&"NumberFormatOptions".into()));
+            }
+
+            Ok(())
+        })
+    })
+    .unwrap();
+}

@@ -13,7 +13,7 @@ Inflector = "0.11"
 pmutil = "0.5.1"
 proc-macro2 = "1"
 swc_common = "0.10.21"
-swc_ecma_parser = "0.60.0"
+swc_ecma_parser = "0.62.1"
 swc_macros_common = "0.3"
 
 [dependencies.syn]

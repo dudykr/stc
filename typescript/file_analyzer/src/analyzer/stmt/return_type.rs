@@ -427,7 +427,10 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     Err(err) => {
-                        self.storage.report(Error::SimpleAssignFailed { span });
+                        self.storage.report(Error::SimpleAssignFailed {
+                            span,
+                            cause: Some(box err),
+                        });
                         return Ok(Type::any(span));
                     }
                 }

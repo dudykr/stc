@@ -1,5 +1,6 @@
 use crate::{
     analyzer::{
+        assign::AssignOpts,
         generic::{type_form::OldTypeForm, InferData, InferredType},
         Analyzer, Ctx,
     },
@@ -14,14 +15,16 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, Id, Interface, Operator, Ref, Type, TypeElement, TypeLit, TypeParam, Union,
+    Array, Class, ClassDef, ClassMember, Function, Id, Interface, Operator, Ref, Type, TypeElement, TypeLit, TypeParam,
+    Union,
 };
 use std::{
     borrow::Cow,
     collections::{hash_map::Entry, HashMap},
 };
-use swc_common::{Span, Spanned, TypeEq};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use tracing::error;
 
 /// # Default
 ///
@@ -216,6 +219,24 @@ impl Analyzer<'_, '_> {
 
                         if e.iter().any(|prev| prev.type_eq(&*ty)) {
                             return Ok(());
+                        }
+
+                        for prev in e.iter_mut() {
+                            if self
+                                .assign_with_opts(
+                                    &mut Default::default(),
+                                    AssignOpts {
+                                        span,
+                                        ..Default::default()
+                                    },
+                                    &ty,
+                                    prev,
+                                )
+                                .is_ok()
+                            {
+                                *prev = ty.into_owned().generalize_lit(marks);
+                                return Ok(());
+                            }
                         }
 
                         e.push(ty.into_owned().generalize_lit(marks));
@@ -437,6 +458,20 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         for p in param {
             for a in arg {
+                let opts = match p {
+                    TypeElement::Index(..) => InferTypeOpts {
+                        append_type_as_union: true,
+                        ..opts
+                    },
+                    _ => InferTypeOpts {
+                        append_type_as_union: if opts.for_fn_assignment {
+                            false
+                        } else {
+                            opts.append_type_as_union
+                        },
+                        ..opts
+                    },
+                };
                 //
 
                 match (p, a) {
@@ -453,6 +488,50 @@ impl Analyzer<'_, '_> {
                                 }
                             } else {
                                 dbg!((&p, &a));
+                            }
+                        }
+                        continue;
+                    }
+
+                    (TypeElement::Property(p), TypeElement::Method(a)) => {
+                        if self.key_matches(span, &p.key, &a.key, false) {
+                            let span = span.with_ctxt(SyntaxContext::empty());
+
+                            if let Some(pt) = &p.type_ann {
+                                self.infer_type(
+                                    span,
+                                    inferred,
+                                    &pt,
+                                    &Type::Function(Function {
+                                        span,
+                                        type_params: a.type_params.clone(),
+                                        params: a.params.clone(),
+                                        ret_ty: a.ret_ty.clone().unwrap_or_else(|| box Type::any(span)),
+                                    }),
+                                    opts,
+                                )?;
+                            }
+                        }
+                        continue;
+                    }
+
+                    (TypeElement::Method(p), TypeElement::Property(a)) => {
+                        if self.key_matches(span, &a.key, &p.key, false) {
+                            let span = span.with_ctxt(SyntaxContext::empty());
+
+                            if let Some(at) = &a.type_ann {
+                                self.infer_type(
+                                    span,
+                                    inferred,
+                                    &Type::Function(Function {
+                                        span,
+                                        type_params: p.type_params.clone(),
+                                        params: p.params.clone(),
+                                        ret_ty: p.ret_ty.clone().unwrap_or_else(|| box Type::any(span)),
+                                    }),
+                                    &at,
+                                    opts,
+                                )?;
                             }
                         }
                         continue;
@@ -485,7 +564,11 @@ impl Analyzer<'_, '_> {
                     (TypeElement::Index(p), TypeElement::Property(a)) => {
                         assert_eq!(p.params.len(), 1, "Index signature should have exactly one parameter");
 
-                        if let Ok(()) = self.assign(&mut Default::default(), &p.params[0].ty, &a.key.ty(), span) {
+                        if self
+                            .assign(&mut Default::default(), &p.params[0].ty, &a.key.ty(), span)
+                            .is_ok()
+                            || p.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                        {
                             if let Some(p_ty) = &p.type_ann {
                                 if let Some(arg_ty) = &a.type_ann {
                                     self.infer_type(
@@ -554,11 +637,9 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                slog::error!(
-                    self.logger,
+                error!(
                     "unimplemented: type infernce: type element:\nParam = {:#?}\nArg = {:#?}",
-                    p,
-                    a
+                    p, a
                 );
             }
         }
