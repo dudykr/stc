@@ -59,6 +59,10 @@ impl Errors {
 
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub enum Error {
+    InferenceFailed {
+        span: Span,
+    },
+
     /// TS2339
     TupleTooShort {
         span: Span,
