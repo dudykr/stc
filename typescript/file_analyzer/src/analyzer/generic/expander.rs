@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crate::{
     analyzer::{assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, Analyzer, Ctx},
@@ -19,6 +19,7 @@ use stc_utils::{error::context, ext::SpanExt, stack};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
+use tracing::{debug, instrument};
 
 /// All fields default to false.
 #[derive(Debug, Clone, Copy, Default)]
@@ -70,6 +71,7 @@ impl Analyzer<'_, '_> {
         Ok(params)
     }
 
+    #[instrument(name = "expand_type_params", skip(self, params, ty, opts))]
     pub(in super::super) fn expand_type_params<T>(
         &mut self,
         params: &FxHashMap<Id, Type>,
@@ -123,12 +125,22 @@ impl Analyzer<'_, '_> {
             opts,
         });
         let end = Instant::now();
-        slog::info!(self.logger, "expanded type parameters (time = {:?})", end - start);
+        let dur = end - start;
+
+        if dur > Duration::from_millis(1) {
+            debug!(
+                kind = "perf",
+                op = "expand_generics",
+                "Expanded type parameters (time = {:?})",
+                dur
+            );
+        }
 
         Ok(ty)
     }
 
     /// Returns `Some(true)` if `child` extends `parent`.
+    #[instrument(name = "extends", skip(self, span, opts, child, parent))]
     pub(crate) fn extends(&mut self, span: Span, opts: ExtendsOpts, child: &Type, parent: &Type) -> Option<bool> {
         let child = child.normalize();
         let parent = parent.normalize();
@@ -443,7 +455,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
         let ty = ty.foldable();
 
         match ty {
-            Type::StaticThis(..) | Type::Symbol(..) => return ty,
+            Type::StaticThis(..) | Type::Intrinsic(..) | Type::Symbol(..) => return ty,
             Type::Ref(Ref {
                 span,
                 type_name: RTsEntityName::Ident(ref i),

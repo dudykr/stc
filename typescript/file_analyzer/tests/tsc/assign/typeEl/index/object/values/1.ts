@@ -1,0 +1,1 @@
+export var values1 = Object.values(1);                     // any[]

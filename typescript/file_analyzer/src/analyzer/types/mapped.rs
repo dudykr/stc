@@ -13,6 +13,7 @@ use stc_ts_types::{
 use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsTypeOperatorOp};
+use tracing::{debug, error, instrument};
 
 impl Analyzer<'_, '_> {
     /// Required because mapped type can specified by user, like
@@ -24,6 +25,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO: Handle index signatures.
+    #[instrument(name = "expand_mapped", skip(self, span, m))]
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
         let orig = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
 
@@ -31,13 +33,18 @@ impl Analyzer<'_, '_> {
         let ty = self.expand_mapped_inner(span, m);
         let end = Instant::now();
 
-        slog::debug!(self.logger, "[Timings] expand_mapped (time = {:?})", end - start);
+        debug!(
+            kind = "perf",
+            op = "expand_mapped",
+            "expand_mapped (time = {:?})",
+            end - start
+        );
 
         let ty = ty?;
         if let Some(ty) = &ty {
             let expanded = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
 
-            slog::debug!(self.logger, "[types/mapped]: Expanded {} as {}", orig, expanded);
+            debug!("[types/mapped]: Expanded {} as {}", orig, expanded);
         }
 
         Ok(ty)
@@ -279,7 +286,7 @@ impl Analyzer<'_, '_> {
             Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) => return Ok(None),
 
             _ => {
-                slog::error!(self.logger, "unimplemented: convert_type_to_keys: {:#?}", ty);
+                error!("unimplemented: convert_type_to_keys: {:#?}", ty);
                 return Ok(None);
             }
         }
@@ -384,7 +391,7 @@ impl Analyzer<'_, '_> {
 
                 return Ok(Some(keys));
             }
-            Type::Param(..) => Ok(None),
+            Type::Param(..) => return Ok(None),
 
             Type::Intersection(ty) => {
                 let keys_types = ty
@@ -455,16 +462,29 @@ impl Analyzer<'_, '_> {
 
                 return Ok(Some(result));
             }
-            Type::Tuple(..) | Type::Array(..) => Ok(None),
+            Type::Tuple(..) | Type::Array(..) => return Ok(None),
 
-            _ => {
-                unimplemented!(
-                    "get_property_names_for_mapped_type:\n{}\n{:#?}",
-                    dump_type_as_string(&self.cm, &ty),
-                    ty
-                );
-            }
+            Type::Mapped(m) => match m.type_param.constraint.as_deref().map(|ty| ty.normalize()) {
+                Some(Type::Operator(Operator {
+                    op: TsTypeOperatorOp::KeyOf,
+                    ty,
+                    ..
+                })) => {
+                    return self
+                        .get_property_names_for_mapped_type(span, ty)
+                        .context("tried to get property names by using `keyof` constraint")
+                }
+                _ => {}
+            },
+
+            _ => {}
         }
+
+        unimplemented!(
+            "get_property_names_for_mapped_type:\n{}\n{:#?}",
+            dump_type_as_string(&self.cm, &ty),
+            ty
+        );
     }
 
     pub(crate) fn apply_mapped_flags_to_type(

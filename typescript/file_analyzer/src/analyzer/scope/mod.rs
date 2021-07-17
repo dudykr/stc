@@ -44,6 +44,7 @@ use std::{
 use swc_atoms::js_word;
 use swc_common::{util::move_map::MoveMap, Mark, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
+use tracing::instrument;
 
 mod this;
 mod type_param;
@@ -671,6 +672,7 @@ impl Analyzer<'_, '_> {
     ///  - `expand_union` should be true if you are going to use it in
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
+    #[instrument(skip(self, span, ty, opts))]
     pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> ValidationResult {
         if !self.is_builtin {
             debug_assert_ne!(
@@ -766,10 +768,11 @@ impl Analyzer<'_, '_> {
     pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
         slog::debug!(self.logger, "[({})/types] Registering: {:?}", self.scope.depth(), name);
 
-        let should_check_for_mixed = match ty.normalize() {
-            Type::Param(..) => false,
-            _ => true,
-        };
+        let should_check_for_mixed = !self.is_builtin
+            && match ty.normalize() {
+                Type::Param(..) => false,
+                _ => true,
+            };
         if should_check_for_mixed {
             // Report an error for
             //
@@ -935,7 +938,8 @@ impl Analyzer<'_, '_> {
                     TypeOfMode::RValue,
                     IdCtx::Var,
                     Default::default(),
-                )?
+                )
+                .context("tried to access property to resolve `typeof`")?
             }
         };
         ty.reposition(span);
@@ -1245,11 +1249,24 @@ impl Analyzer<'_, '_> {
             spans.push((kind, span));
 
             if err {
+                let mut done = false;
                 for (_, span) in &**spans {
-                    self.storage.report(Error::DuplicateVar {
-                        name: name.clone(),
-                        span: *span,
-                    });
+                    if kind == VarKind::Param {
+                        self.storage.report(Error::DuplicateName {
+                            name: name.clone(),
+                            span: *span,
+                        });
+                        done = true;
+                    } else {
+                        self.storage.report(Error::DuplicateVar {
+                            name: name.clone(),
+                            span: *span,
+                        });
+                    }
+                }
+
+                if done {
+                    return Ok(());
                 }
             }
         }
@@ -1413,7 +1430,19 @@ impl Analyzer<'_, '_> {
                                             },
                                         )?;
 
-                                        let res = self.assign(&mut Default::default(), &ty, &var_ty, span);
+                                        let res = self
+                                            .assign_with_opts(
+                                                &mut Default::default(),
+                                                AssignOpts {
+                                                    span,
+                                                    for_overload: true,
+                                                    ..Default::default()
+                                                },
+                                                &ty,
+                                                &var_ty,
+                                            )
+                                            .context("tried to validate a varaible declared multiple times")
+                                            .convert_err(|err| Error::VarDeclNotCompatible { span: err.span() });
 
                                         if let Err(err) = res {
                                             self.storage.report(err);
@@ -2099,6 +2128,7 @@ impl Expander<'_, '_, '_> {
                             IdCtx::Type,
                             Default::default(),
                         )
+                        .context("tried to access property as a part of type expansion")
                         .report(&mut self.analyzer.storage)
                         .unwrap_or_else(|| Type::any(span));
                     return Ok(Some(ty));

@@ -225,7 +225,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if done {
-                            return Some(Err(Error::SimpleAssignFailed { span }
+                            return Some(Err(Error::SimpleAssignFailed { span, cause: None }
                                 .context("tried optimized assignment of `Promise<T>` to union")));
                         }
                     }

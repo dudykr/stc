@@ -3,7 +3,7 @@ use crate::{
     ValidationResult,
 };
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsKeywordType};
+use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsKeywordType, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
@@ -40,6 +40,23 @@ impl Analyzer<'_, '_> {
                 .context("tried to normalize")?;
 
             match ty.normalize() {
+                Type::Lit(ty) => {
+                    return self
+                        .keyof(
+                            span,
+                            &Type::Keyword(RTsKeywordType {
+                                span: ty.span,
+                                kind: match &ty.lit {
+                                    RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
+                                    RTsLit::Number(_) => TsKeywordTypeKind::TsNumberKeyword,
+                                    RTsLit::Str(_) => TsKeywordTypeKind::TsStringKeyword,
+                                    RTsLit::Bool(_) => TsKeywordTypeKind::TsBooleanKeyword,
+                                    RTsLit::Tpl(_) => unreachable!(),
+                                },
+                            }),
+                        )
+                        .context("tried applying `keyof` to a literal by delegating to keyword type handler")
+                }
                 Type::Keyword(RTsKeywordType { kind, .. }) => match kind {
                     TsKeywordTypeKind::TsAnyKeyword => {
                         let string = Type::Keyword(RTsKeywordType {

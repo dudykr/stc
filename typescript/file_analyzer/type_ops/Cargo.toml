@@ -12,4 +12,4 @@ stc_ts_ast_rnode = {path = "../../ast_rnode"}
 stc_ts_types = {path = "../../types"}
 stc_ts_utils = {path = "../../utils"}
 swc_common = "0.10.21"
-swc_ecma_ast = "0.46.0"
+swc_ecma_ast = "0.48.1"

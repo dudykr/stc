@@ -15,6 +15,7 @@ use stc_ts_errors::{Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Alias, CallSignature, Class, ClassDef, Function, Interface, Ref, TypeElement, TypeLit};
 use stc_ts_utils::PatExt;
+use std::borrow::Cow;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
@@ -105,7 +106,13 @@ impl Analyzer<'_, '_> {
                     .collect::<Result<_, _>>()?;
             }
 
-            let mut declared_ret_ty = try_opt!(f.return_type.validate_with(child));
+            let mut declared_ret_ty = {
+                let ctx = Ctx {
+                    in_actual_type: true,
+                    ..child.ctx
+                };
+                try_opt!(f.return_type.validate_with(&mut *child.with_ctx(ctx)))
+            };
 
             child.scope.declared_return_type = declared_ret_ty.clone();
 
@@ -179,8 +186,9 @@ impl Analyzer<'_, '_> {
 
                     if let Some(ref declared) = declared_ret_ty {
                         span = declared.span();
+                        let declared = child.normalize(Some(span), Cow::Borrowed(&declared), Default::default())?;
 
-                        match *declared.normalize() {
+                        match declared.normalize() {
                             Type::Keyword(RTsKeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..

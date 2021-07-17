@@ -25,6 +25,7 @@ use stc_utils::{error::context, stack};
 use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
+use tracing::{debug, error, instrument};
 
 mod expander;
 mod inference;
@@ -472,6 +473,7 @@ impl Analyzer<'_, '_> {
     /// arr([1, u]) // Ok
     /// arr([{}, u]) // Ok
     /// ```
+    #[instrument(name = "infer_type", skip(self, span, inferred, param, arg, opts))]
     fn infer_type(
         &mut self,
         span: Span,
@@ -480,6 +482,10 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> ValidationResult<()> {
+        if self.is_builtin {
+            return Ok(());
+        }
+
         let param_str = dump_type_as_string(&self.cm, &param);
         let arg_str = dump_type_as_string(&self.cm, &arg);
 
@@ -489,9 +495,10 @@ impl Analyzer<'_, '_> {
 
         let end = Instant::now();
 
-        slog::debug!(
-            self.logger,
-            "[Timings] infer_type: `{}` === `{}`. (took {:?})",
+        debug!(
+            kind = "perf",
+            op = "infer_type",
+            "infer_type: `{}` === `{}`. (took {:?})",
             param_str,
             arg_str,
             end - start
@@ -790,7 +797,6 @@ impl Analyzer<'_, '_> {
                                     return Ok(());
                                 }
 
-                                // TODO: Remove this
                                 // If we inferred T as `number`, we don't need to add `1`.
                                 if e.iter().any(|prev| {
                                     self.assign_with_opts(
@@ -805,6 +811,24 @@ impl Analyzer<'_, '_> {
                                     .is_ok()
                                 }) {
                                     return Ok(());
+                                }
+
+                                for prev in e.iter_mut() {
+                                    if self
+                                        .assign_with_opts(
+                                            &mut Default::default(),
+                                            AssignOpts {
+                                                span,
+                                                ..Default::default()
+                                            },
+                                            &arg,
+                                            prev,
+                                        )
+                                        .is_ok()
+                                    {
+                                        *prev = arg.clone().generalize_lit(marks);
+                                        return Ok(());
+                                    }
                                 }
 
                                 let param_ty = Type::union(e.clone()).cheap();
@@ -928,16 +952,7 @@ impl Analyzer<'_, '_> {
             Type::Function(p) => match arg {
                 Type::Function(a) => {
                     self.infer_type_of_fn_params(span, inferred, &p.params, &a.params, opts)?;
-                    self.infer_type(
-                        span,
-                        inferred,
-                        &p.ret_ty,
-                        &a.ret_ty,
-                        InferTypeOpts {
-                            append_type_as_union: opts.append_type_as_union || opts.for_fn_assignment,
-                            ..opts
-                        },
-                    )?;
+                    self.infer_type(span, inferred, &p.ret_ty, &a.ret_ty, InferTypeOpts { ..opts })?;
 
                     if let Some(arg_type_params) = &a.type_params {
                         self.rename_inferred(inferred, arg_type_params)?;
@@ -1352,6 +1367,8 @@ impl Analyzer<'_, '_> {
         );
         Ok(())
     }
+
+    #[instrument(skip(self, span, inferred, param, arg, opts))]
     fn infer_mapped(
         &mut self,
         span: Span,
@@ -1646,9 +1663,8 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 _ => {
-                                    slog::error!(
-                                        self.logger,
-                                        "not implemented yet: infer_mapped: Mapped <- Assign: TypeElement({:#?})",
+                                    error!(
+                                        "unimplemented: infer_mapped: Mapped <- Assign: TypeElement({:#?})",
                                         arg_member
                                     );
                                     return Ok(true);

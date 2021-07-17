@@ -2,10 +2,11 @@ use crate::{
     analyzer::{
         expr::{
             call_new::{ExtractKind, ReevalMode},
-            IdCtx, TypeOfMode,
+            AccessPropertyOpts, CallOpts, IdCtx, TypeOfMode,
         },
+        marks::MarkExt,
         types::NormalizeTypeOpts,
-        Analyzer, Ctx,
+        Analyzer,
     },
     ty::TypeExt,
     type_facts::TypeFacts,
@@ -24,8 +25,9 @@ use stc_ts_types::{
 };
 use std::{borrow::Cow, time::Instant};
 use swc_atoms::js_word;
-use swc_common::{Span, Spanned};
+use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
+use tracing::debug;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct GetIteratorOpts {
@@ -53,9 +55,9 @@ impl Analyzer<'_, '_> {
             .as_deref()
             .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty), Default::default()).ok());
 
-        let prefer_tuple = self.prefer_tuple(type_ann.as_deref());
+        let prefer_tuple = self.ctx.prefer_tuple || self.prefer_tuple(type_ann.as_deref());
         let is_empty = elems.is_empty();
-        let mut can_be_tuple = !self.ctx.cannot_be_tuple;
+        let mut can_be_tuple = self.ctx.prefer_tuple || !self.ctx.cannot_be_tuple;
         let mut elements = Vec::with_capacity(elems.len());
 
         for (idx, elem) in elems.iter().enumerate() {
@@ -174,6 +176,13 @@ impl Analyzer<'_, '_> {
                 types.push(if self.ctx.use_undefined_for_empty_tuple && is_empty {
                     Type::undefined(span)
                 } else {
+                    let span = span.with_ctxt(SyntaxContext::empty());
+                    let span = if !elems.is_empty() {
+                        marks.implicit_type_mark.apply_to_span(span)
+                    } else {
+                        span
+                    };
+
                     Type::any(span)
                 });
             }
@@ -194,9 +203,11 @@ impl Analyzer<'_, '_> {
             el.ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || el.ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
         });
 
-        if should_be_any {
+        if should_be_any && !self.ctx.prefer_tuple {
             elements.iter_mut().for_each(|el| {
-                el.ty = box Type::any(el.ty.span());
+                let span = el.ty.span().with_ctxt(SyntaxContext::empty());
+                let span = marks.implicit_type_mark.apply_to_span(span);
+                el.ty = box Type::any(span);
             });
         }
 
@@ -238,6 +249,54 @@ impl Analyzer<'_, '_> {
                     .get_element_from_iterator(span, iterator, n)
                     .context("tried to get element from an expanded iterator");
             }
+
+            Type::Union(u) => {
+                let can_use_undefined = u.types.iter().all(|ty| ty.normalize().is_tuple());
+
+                let mut types = vec![];
+                let mut errors = vec![];
+                for (idx, iterator_elem) in u.types.iter().enumerate() {
+                    let res = self
+                        .get_element_from_iterator(span, Cow::Borrowed(iterator_elem), n)
+                        .with_context(|| format!("failed to get element type from {}th element", idx))
+                        .convert_err(|err| match err {
+                            Error::TupleIndexError { span, .. } => Error::TupleTooShort { span },
+                            _ => err,
+                        })
+                        .map(Cow::into_owned);
+                    match res {
+                        Ok(ty) => {
+                            ty.assert_valid();
+                            types.push(ty);
+                        }
+                        Err(err) => {
+                            errors.push(err);
+                        }
+                    }
+                }
+
+                if !errors.is_empty() {
+                    if can_use_undefined && errors.len() != u.types.len() {
+                        types.push(Type::Keyword(RTsKeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        }));
+                        types.dedup_type();
+                        return Ok(Cow::Owned(Type::union(types)));
+                    }
+
+                    return Err(Error::NoSuchProperty {
+                        span,
+                        obj: Some(box iterator.into_owned()),
+                        prop: None,
+                    });
+                }
+
+                types.dedup_type();
+
+                return Ok(Cow::Owned(Type::union(types)));
+            }
+
             Type::Array(..) | Type::Tuple(..) => {
                 return self
                     .access_property(
@@ -270,23 +329,31 @@ impl Analyzer<'_, '_> {
                 &[],
                 &[],
                 None,
+                CallOpts { ..Default::default() },
             )
             .convert_err(|err| match err {
                 Error::NoCallabelPropertyWithName { span, .. }
                 | Error::NoSuchProperty { span, .. }
                 | Error::NoSuchPropertyInClass { span, .. } => {
+                    match iterator.normalize() {
+                        Type::Union(iterator) => {
+                            if iterator.types.iter().all(|ty| ty.normalize().is_tuple()) {
+                                return Error::NoSuchProperty {
+                                    span,
+                                    obj: None,
+                                    prop: None,
+                                };
+                            }
+                        }
+                        _ => {}
+                    }
                     Error::MustHaveSymbolIteratorThatReturnsIterator { span }
                 }
                 _ => err,
             })
             .context("tried calling `next()` to get element type of nth element of an iterator")?;
 
-        let ctx = Ctx {
-            disallow_indexing_array_with_string: true,
-            ..self.ctx
-        };
         let mut elem_ty = self
-            .with_ctx(ctx)
             .access_property(
                 span,
                 &next_ret_ty,
@@ -296,7 +363,10 @@ impl Analyzer<'_, '_> {
                 },
                 TypeOfMode::RValue,
                 IdCtx::Var,
-                Default::default(),
+                AccessPropertyOpts {
+                    disallow_indexing_array_with_string: true,
+                    ..Default::default()
+                },
             )
             .context(
                 "tried to get the type of property named `value` to determine the type of nth element of an iterator",
@@ -331,12 +401,7 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        let ctx = Ctx {
-            disallow_optional_object_property: true,
-            ..self.ctx
-        };
         let async_iterator = self
-            .with_ctx(ctx)
             .call_property(
                 span,
                 ExtractKind::Call,
@@ -356,6 +421,10 @@ impl Analyzer<'_, '_> {
                 &[],
                 &[],
                 None,
+                CallOpts {
+                    disallow_optional_object_property: true,
+                    ..Default::default()
+                },
             )
             .map(Cow::Owned);
 
@@ -376,6 +445,7 @@ impl Analyzer<'_, '_> {
                     Default::default(),
                     Default::default(),
                     Default::default(),
+                    CallOpts { ..Default::default() },
                 )
                 .context("tried to get the type of `next` of an async iterator")?;
 
@@ -415,13 +485,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         iterator_result: Cow<'a, Type>,
     ) -> ValidationResult<Cow<'a, Type>> {
-        let ctx = Ctx {
-            disallow_indexing_array_with_string: true,
-            disallow_creating_indexed_type_from_ty_els: true,
-            ..self.ctx
-        };
         let mut elem_ty = self
-            .with_ctx(ctx)
             .access_property(
                 span,
                 &iterator_result,
@@ -431,7 +495,11 @@ impl Analyzer<'_, '_> {
                 },
                 TypeOfMode::RValue,
                 IdCtx::Var,
-                Default::default(),
+                AccessPropertyOpts {
+                    disallow_indexing_array_with_string: true,
+                    disallow_creating_indexed_type_from_ty_els: true,
+                    ..Default::default()
+                },
             )
             .context("tried to get the type of property named `value` to determine the type of an iterator")
             .convert_err(|err| Error::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() })?;
@@ -497,7 +565,12 @@ impl Analyzer<'_, '_> {
 
         let end = Instant::now();
 
-        slog::debug!(self.logger, "[Timings] get_interator done. (time = {:?}", end - start);
+        debug!(
+            kind = "perf",
+            op = "get_iterator",
+            "get_iterator (time = {:?}",
+            end - start
+        );
 
         let iterator = iterator?;
 
@@ -609,40 +682,38 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            let ctx = Ctx {
-                disallow_optional_object_property: true,
-                ..self.ctx
-            };
-
-            self.with_ctx(ctx)
-                .call_property(
+            self.call_property(
+                span,
+                ExtractKind::Call,
+                Default::default(),
+                &ty,
+                &ty,
+                &Key::Computed(ComputedKey {
                     span,
-                    ExtractKind::Call,
-                    Default::default(),
-                    &ty,
-                    &ty,
-                    &Key::Computed(ComputedKey {
+                    expr: box RExpr::Invalid(RInvalid { span }),
+                    ty: box Type::Symbol(Symbol {
                         span,
-                        expr: box RExpr::Invalid(RInvalid { span }),
-                        ty: box Type::Symbol(Symbol {
-                            span,
-                            id: SymbolId::iterator(),
-                        }),
+                        id: SymbolId::iterator(),
                     }),
-                    None,
-                    &[],
-                    &[],
-                    &[],
-                    None,
-                )
-                .convert_err(|err| match err {
-                    Error::NoCallabelPropertyWithName { span, .. }
-                    | Error::NoSuchPropertyInClass { span, .. }
-                    | Error::NoSuchProperty { span, .. } => Error::MustHaveSymbolIteratorThatReturnsIterator { span },
-                    _ => err,
-                })
-                .map(Cow::Owned)
-                .context("tried to call `[Symbol.iterator]()`")
+                }),
+                None,
+                &[],
+                &[],
+                &[],
+                None,
+                CallOpts {
+                    disallow_optional_object_property: true,
+                    ..Default::default()
+                },
+            )
+            .convert_err(|err| match err {
+                Error::NoCallabelPropertyWithName { span, .. }
+                | Error::NoSuchPropertyInClass { span, .. }
+                | Error::NoSuchProperty { span, .. } => Error::MustHaveSymbolIteratorThatReturnsIterator { span },
+                _ => err,
+            })
+            .map(Cow::Owned)
+            .context("tried to call `[Symbol.iterator]()`")
         })();
 
         res.with_context(|| format!("tried to convert a type ({}) to an iterator", ty_str))
@@ -749,6 +820,7 @@ impl Analyzer<'_, '_> {
                 &[],
                 &[],
                 None,
+                Default::default(),
             )
             .convert_err(|err| match err {
                 Error::NoCallabelPropertyWithName { span, .. } => Error::NoMethodNamedNext { span },

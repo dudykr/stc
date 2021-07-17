@@ -36,14 +36,14 @@ impl Analyzer<'_, '_> {
                             positions.push(pos);
                             start += pos + 1;
                         }
-                        None => return Err(Error::SimpleAssignFailed { span }),
+                        None => return Err(Error::SimpleAssignFailed { span, cause: None }),
                     }
                 }
 
                 Ok(())
             }
 
-            _ => Err(Error::SimpleAssignFailed { span }),
+            _ => Err(Error::SimpleAssignFailed { span, cause: None }),
         }
     }
 }

@@ -11,14 +11,15 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, FnParam, Interface, Intersection, Key, Mapped, Operator, PropertySignature, Ref,
-    Tuple, Type, TypeElement, TypeLit, TypeParam,
+    Array, Conditional, EnumVariant, FnParam, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, Mapped,
+    Operator, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::stack;
 use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
+use tracing::{error, instrument};
 
 mod builtin;
 mod cast;
@@ -130,6 +131,8 @@ pub(crate) struct AssignOpts {
     pub allow_unknown_rhs_if_expanded: bool,
 
     pub infer_type_params_of_left: bool,
+
+    pub is_assigning_to_class_members: bool,
 }
 
 #[derive(Default)]
@@ -445,6 +448,7 @@ impl Analyzer<'_, '_> {
             | Type::IndexedAccessType(..)
             | Type::Alias(..)
             | Type::Instance(..)
+            | Type::Intrinsic(..)
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
@@ -515,6 +519,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Assigns, but does not wrap error with [Error::AssignFailed].
+    #[instrument(name = "assign", skip(self, data, to, rhs, opts))]
     fn assign_without_wrapping(
         &mut self,
         data: &mut AssignData,
@@ -656,6 +661,23 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
+        match (to, rhs) {
+            (Type::Rest(lr), r) => match lr.ty.normalize() {
+                Type::Array(la) => return self.assign_with_opts(data, opts, &la.elem_type, &r),
+                _ => {}
+            },
+
+            (l, Type::Rest(rr)) => match rr.ty.normalize() {
+                Type::Array(ra) => return self.assign_with_opts(data, opts, &l, &ra.elem_type),
+                _ => {}
+            },
+
+            (Type::Tuple(..) | Type::Array(..), Type::Function(..) | Type::Constructor(..)) => {
+                fail!()
+            }
+            _ => {}
+        }
+
         match rhs {
             Type::IndexedAccessType(rhs) => {
                 let err = Error::NoSuchProperty {
@@ -776,17 +798,29 @@ impl Analyzer<'_, '_> {
                 let rhs = rhs.clone().generalize_lit(self.marks());
                 match to {
                     Type::Keyword(k) if k.kind == *kwd => match rhs {
-                        Type::Interface(ref i) => {
+                        Type::Instance(Instance {
+                            ty: box Type::Interface(ref i),
+                            ..
+                        })
+                        | Type::Interface(ref i) => {
                             if i.name.as_str() == *interface {
                                 return Err(Error::AssignedWrapperToPrimitive { span });
                             }
                         }
                         _ => {}
                     },
-                    Type::Interface(ref i) if i.name.as_str() == *interface => match rhs {
-                        Type::Keyword(ref k) if k.kind == *kwd => return Ok(()),
-                        _ => {}
-                    },
+                    Type::Instance(Instance {
+                        ty: box Type::Interface(ref i),
+                        ..
+                    })
+                    | Type::Interface(ref i)
+                        if i.name.as_str() == *interface =>
+                    {
+                        match rhs {
+                            Type::Keyword(ref k) if k.kind == *kwd => return Ok(()),
+                            _ => {}
+                        }
+                    }
                     _ => {}
                 }
             }
@@ -961,17 +995,24 @@ impl Analyzer<'_, '_> {
                             rhs,
                         )
                         .context("tried to assign to an element of an intersection type")
-                        .convert_err(|err| Error::SimpleAssignFailed { span: err.span() })
-                    {
+                        .convert_err(|err| Error::SimpleAssignFailed {
+                            span: err.span(),
+                            cause: Some(box err),
+                        }) {
                         Ok(..) => {}
                         Err(err) => errors.push(err),
                     }
                 }
 
                 let left_contains_object = i.types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
+                let rhs_requires_unknown_property_check = match rhs.normalize() {
+                    Type::Keyword(..) => false,
+                    _ => true,
+                };
 
-                if !left_contains_object && !opts.allow_unknown_rhs {
+                if !left_contains_object && rhs_requires_unknown_property_check && !opts.allow_unknown_rhs {
                     let lhs = self.type_to_type_lit(span, to)?;
+
                     if let Some(lhs) = lhs {
                         self.assign_to_type_elements(data, opts, lhs.span, &lhs.members, &rhs, lhs.metadata)
                             .with_context(|| {
@@ -981,7 +1022,10 @@ impl Analyzer<'_, '_> {
                                     dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
                                 )
                             })
-                            .convert_err(|err| Error::SimpleAssignFailed { span: err.span() })?;
+                            .convert_err(|err| Error::SimpleAssignFailed {
+                                span: err.span(),
+                                cause: Some(box err),
+                            })?;
 
                         errors.retain(|err| match err.actual() {
                             Error::UnknownPropertyInObjectLiteralAssignment { .. } => false,
@@ -1009,7 +1053,7 @@ impl Analyzer<'_, '_> {
                         .assign_to_class(data, opts, l, rhs)
                         .context("tried to assign a type to an instance of a class")
                 }
-                Type::ClassDef(..) => {
+                Type::Array(..) | Type::ClassDef(..) => {
                     fail!()
                 }
                 _ => {}
@@ -1119,6 +1163,18 @@ impl Analyzer<'_, '_> {
 
             Type::Union(r) => {
                 if self.should_use_union_assignment(span, rhs)? {
+                    // TODO: We should assign rhs as full.
+                    //
+                    //
+                    // lhs = (undefined | {
+                    //     (x: number) : number;
+                    //     (s: string) : string;
+                    // });
+                    // rhs = (undefined | (x: number) => number | (s: string) => string);
+                    //
+                    // The assignment above is valid, but it only works if we create a type literal
+                    // with two call signatures using two functions in rhs.
+
                     r.types
                         .iter()
                         .map(|rhs| {
@@ -1266,6 +1322,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 _ => {
+                    if let Some(res) = self.try_assign_using_parent(data, to, rhs, opts) {
+                        return res;
+                    }
+
                     let r = self.type_to_type_lit(span, &rhs)?;
                     if let Some(r) = r {
                         for m in &r.members {
@@ -1594,7 +1654,8 @@ impl Analyzer<'_, '_> {
                                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                 ..
                             })
-                            | Type::Lit(..) => {
+                            | Type::Lit(..)
+                            | Type::Param(..) => {
                                 fail!()
                             }
 
@@ -1811,7 +1872,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Function(lf) => match rhs {
-                Type::Function(..) | Type::Lit(..) | Type::TypeLit(..) | Type::Interface(..) => {
+                Type::Function(..) | Type::TypeLit(..) | Type::Interface(..) => {
                     return self
                         .assign_to_function(data, opts, to, lf, rhs)
                         .context("tried to assign to a function type")
@@ -1836,7 +1897,9 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
                 })
-                | Type::Constructor(..) => {
+                | Type::Constructor(..)
+                | Type::Array(..)
+                | Type::Tuple(..) => {
                     fail!()
                 }
                 _ => {}
@@ -1877,7 +1940,18 @@ impl Analyzer<'_, '_> {
                                     _ => {}
                                 }
 
-                                errors.extend(self.assign_inner(data, &l.ty, &r.ty, opts).err());
+                                errors.extend(
+                                    self.assign_inner(
+                                        data,
+                                        &l.ty,
+                                        &r.ty,
+                                        AssignOpts {
+                                            allow_unknown_rhs: true,
+                                            ..opts
+                                        },
+                                    )
+                                    .err(),
+                                );
                             }
                         }
 
@@ -2051,19 +2125,38 @@ impl Analyzer<'_, '_> {
             )
             | (Type::Predicate(..), Type::Predicate(..)) => return Ok(()),
 
-            (Type::Rest(lr), r) => match lr.ty.normalize() {
-                Type::Array(la) => return self.assign_with_opts(data, opts, &la.elem_type, &r),
-                _ => {}
-            },
+            (Type::Intrinsic(l), r) => return self.assign_to_intrinsic(data, l, r, opts),
             _ => {}
         }
 
         // TODO: Implement full type checker
-        slog::error!(
-            self.logger,
+        error!(
             "unimplemented: assign: \nLeft: {}\nRight: {}",
             dump_type_as_string(&self.cm, to),
             dump_type_as_string(&self.cm, rhs)
+        );
+        Ok(())
+    }
+
+    /// Should be called only if `to` is not expandable.
+    fn assign_to_intrinsic(
+        &mut self,
+        data: &mut AssignData,
+        to: &Intrinsic,
+        r: &Type,
+        opts: AssignOpts,
+    ) -> ValidationResult<()> {
+        match to.kind {
+            IntrinsicKind::Uppercase => {}
+            IntrinsicKind::Lowercase => {}
+            IntrinsicKind::Capitalize => {}
+            IntrinsicKind::Uncapitalize => {}
+        }
+
+        error!(
+            "unimplemented: assign to intrinsic type\n{:?}\n{}",
+            to,
+            dump_type_as_string(&self.cm, r)
         );
         Ok(())
     }

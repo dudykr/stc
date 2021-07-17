@@ -425,6 +425,31 @@ impl Analyzer<'_, '_> {
                 is_static: false,
             }));
         }
+        {
+            let param = FnParam {
+                span: DUMMY_SP,
+                pat: RPat::Ident(RBindingIdent {
+                    node_id: NodeId::invalid(),
+                    id: RIdent::new("s".into(), DUMMY_SP),
+                    type_ann: None,
+                }),
+                required: true,
+                ty: box Type::Keyword(RTsKeywordType {
+                    span: DUMMY_SP,
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                }),
+            };
+            members.push(TypeElement::Index(IndexSignature {
+                span: e.span,
+                readonly: false,
+                params: vec![param],
+                type_ann: Some(box Type::Keyword(RTsKeywordType {
+                    span: DUMMY_SP,
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                })),
+                is_static: false,
+            }));
+        }
 
         Ok(TypeLit {
             span: e.span,

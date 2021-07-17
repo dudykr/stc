@@ -1,13 +1,13 @@
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        expr::{IdCtx, TypeOfMode},
+        expr::{AccessPropertyOpts, IdCtx, TypeOfMode},
         marks::MarkExt,
         scope::{ScopeKind, VarInfo},
         util::ResultExt,
         Analyzer, Ctx,
     },
-    ty::{Tuple, Type},
+    ty::Type,
     type_facts::TypeFacts,
     util::{type_ext::TypeVecExt, EndsWithRet},
     validator,
@@ -909,31 +909,14 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
 
-                        match ty.normalize() {
-                            Type::Tuple(Tuple { elems, .. }) => {
-                                if elems.len() > i {
-                                    self.try_assign_pat_with_opts(span, elem, &elems[i].ty, opts)
-                                        .report(&mut self.storage);
-                                } else {
-                                    self.storage.report(Error::TupleIndexError {
-                                        span,
-                                        len: elems.len() as _,
-                                        index: i as _,
-                                    });
-                                }
-                            }
-
-                            _ => {
-                                let elem_ty = self
-                                    .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
-                                    .context("tried to get an element of type to assign with an array pattern")
-                                    .report(&mut self.storage);
-                                if let Some(elem_ty) = elem_ty {
-                                    self.try_assign_pat_with_opts(span, elem, &elem_ty, opts)
-                                        .context("tried to assign an element of an array pattern")
-                                        .report(&mut self.storage);
-                                }
-                            }
+                        let elem_ty = self
+                            .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
+                            .context("tried to get an element of type to assign with an array pattern")
+                            .report(&mut self.storage);
+                        if let Some(elem_ty) = elem_ty {
+                            self.try_assign_pat_with_opts(span, elem, &elem_ty, opts)
+                                .context("tried to assign an element of an array pattern")
+                                .report(&mut self.storage);
                         }
                     }
                 }
@@ -946,13 +929,19 @@ impl Analyzer<'_, '_> {
                     match prop {
                         RObjectPatProp::KeyValue(kv) => {
                             let key = kv.key.validate_with(self)?;
-                            let ctx = Ctx {
-                                disallow_indexing_array_with_string: true,
-                                ..self.ctx
-                            };
                             let prop_ty = self
-                                .with_ctx(ctx)
-                                .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                                .access_property(
+                                    span,
+                                    ty,
+                                    &key,
+                                    TypeOfMode::RValue,
+                                    IdCtx::Var,
+                                    AccessPropertyOpts {
+                                        disallow_indexing_array_with_string: true,
+
+                                        ..Default::default()
+                                    },
+                                )
                                 .unwrap_or_else(|_| Type::any(span));
 
                             self.try_assign_pat_with_opts(span, &kv.value, &prop_ty, opts)
@@ -963,13 +952,19 @@ impl Analyzer<'_, '_> {
                                 span: a.key.span,
                                 sym: a.key.sym.clone(),
                             };
-                            let ctx = Ctx {
-                                disallow_indexing_array_with_string: true,
-                                ..self.ctx
-                            };
+
                             let prop_ty = self
-                                .with_ctx(ctx)
-                                .access_property(span, ty, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                                .access_property(
+                                    span,
+                                    ty,
+                                    &key,
+                                    TypeOfMode::RValue,
+                                    IdCtx::Var,
+                                    AccessPropertyOpts {
+                                        disallow_indexing_array_with_string: true,
+                                        ..Default::default()
+                                    },
+                                )
                                 .unwrap_or_else(|_| Type::any(span));
 
                             self.try_assign_pat_with_opts(
@@ -1144,11 +1139,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let ctx = Ctx {
-            disallow_creating_indexed_type_from_ty_els: true,
-            ..self.ctx
-        };
-        let prop_res = self.with_ctx(ctx).access_property(
+        let prop_res = self.access_property(
             src.span(),
             src,
             &Key::Normal {
@@ -1157,7 +1148,10 @@ impl Analyzer<'_, '_> {
             },
             TypeOfMode::RValue,
             IdCtx::Var,
-            Default::default(),
+            AccessPropertyOpts {
+                disallow_creating_indexed_type_from_ty_els: true,
+                ..Default::default()
+            },
         );
 
         match prop_res {

@@ -42,7 +42,18 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
+use tracing::instrument;
 use ty::TypeExt;
+
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct CallOpts {
+    pub disallow_invoking_implicit_constructors: bool,
+
+    /// Optional properties cannot be called.
+    ///
+    /// See: for-of29.ts
+    pub disallow_optional_object_property: bool,
+}
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -350,6 +361,7 @@ impl Analyzer<'_, '_> {
                         &arg_types,
                         &spread_arg_types,
                         type_ann,
+                        Default::default(),
                     )
                     .map(|ty| ty.fixed());
             }
@@ -441,6 +453,7 @@ impl Analyzer<'_, '_> {
                 &spread_arg_types,
                 type_args.as_ref(),
                 type_ann,
+                Default::default(),
             )?;
 
             return Ok(expanded_ty.fixed());
@@ -453,6 +466,20 @@ impl Analyzer<'_, '_> {
     ///
     ///  - `expr`: Can be default if argument does not include an arrow
     ///    expression nor a function expression.
+    #[instrument(skip(
+        self,
+        span,
+        kind,
+        expr,
+        this,
+        obj_type,
+        prop,
+        type_args,
+        args,
+        arg_types,
+        spread_arg_types,
+        type_ann
+    ))]
     pub(super) fn call_property(
         &mut self,
         span: Span,
@@ -466,6 +493,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
+        opts: CallOpts,
     ) -> ValidationResult {
         obj_type.assert_valid();
 
@@ -515,6 +543,7 @@ impl Analyzer<'_, '_> {
                         arg_types,
                         spread_arg_types,
                         type_ann,
+                        opts,
                     );
                 }
 
@@ -535,6 +564,7 @@ impl Analyzer<'_, '_> {
                                 arg_types,
                                 spread_arg_types,
                                 type_ann,
+                                opts,
                             )
                         })
                         .filter_map(Result::ok)
@@ -576,6 +606,7 @@ impl Analyzer<'_, '_> {
                             arg_types,
                             spread_arg_types,
                             type_ann,
+                            opts,
                         )
                         .context("tried to call a property of expanded type");
                 }
@@ -594,6 +625,7 @@ impl Analyzer<'_, '_> {
                         &arg_types,
                         &spread_arg_types,
                         type_ann,
+                        opts,
                     ) {
                         Ok(v) => return Ok(v),
                         Err(err) => err,
@@ -616,6 +648,7 @@ impl Analyzer<'_, '_> {
                             arg_types,
                             spread_arg_types,
                             type_ann,
+                            opts,
                         ) {
                             return Ok(v);
                         }
@@ -637,6 +670,7 @@ impl Analyzer<'_, '_> {
                         &arg_types,
                         &spread_arg_types,
                         type_ann,
+                        opts,
                     );
                 }
 
@@ -654,6 +688,7 @@ impl Analyzer<'_, '_> {
                         arg_types,
                         spread_arg_types,
                         type_ann,
+                        opts,
                     )? {
                         return Ok(v);
                     }
@@ -673,6 +708,7 @@ impl Analyzer<'_, '_> {
                         arg_types,
                         spread_arg_types,
                         type_ann,
+                        opts,
                     )? {
                         return Ok(v);
                     }
@@ -714,6 +750,7 @@ impl Analyzer<'_, '_> {
                         arg_types,
                         spread_arg_types,
                         type_ann,
+                        opts,
                     );
                     match obj_res {
                         Ok(v) => return Ok(v),
@@ -744,14 +781,17 @@ impl Analyzer<'_, '_> {
                 diallow_unknown_object_property: true,
                 ..self.ctx
             };
-            let callee = self.with_ctx(ctx).access_property(
-                span,
-                obj_type,
-                &prop,
-                TypeOfMode::RValue,
-                IdCtx::Var,
-                Default::default(),
-            )?;
+            let callee = self
+                .with_ctx(ctx)
+                .access_property(
+                    span,
+                    obj_type,
+                    &prop,
+                    TypeOfMode::RValue,
+                    IdCtx::Var,
+                    Default::default(),
+                )
+                .context("tried to sccess property to call it")?;
 
             let callee_before_expanding = dump_type_as_string(&self.cm, &callee);
             let callee = self
@@ -876,6 +916,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
+        opts: CallOpts,
     ) -> ValidationResult<Option<Type>> {
         let candidates = {
             // TODO: Deduplicate.
@@ -909,7 +950,7 @@ impl Analyzer<'_, '_> {
                             // TODO: Change error message from no callable
                             // property to property exists but not callable.
 
-                            if let Some(ty) = value.as_deref().map(Type::normalize) {
+                            if let Some(ty) = value.as_deref() {
                                 return self
                                     .extract(
                                         span,
@@ -921,6 +962,7 @@ impl Analyzer<'_, '_> {
                                         spread_arg_types,
                                         type_args,
                                         type_ann,
+                                        opts,
                                     )
                                     .map(Some);
                             }
@@ -966,6 +1008,7 @@ impl Analyzer<'_, '_> {
                 arg_types,
                 spread_arg_types,
                 type_ann,
+                opts,
             ) {
                 return Ok(Some(ret_ty));
             }
@@ -981,13 +1024,11 @@ impl Analyzer<'_, '_> {
         candidates: &mut Vec<CallCandidate>,
         m: &'a TypeElement,
         prop: &Key,
-        recuree: bool,
+        opts: CallOpts,
     ) {
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
-                if self.ctx.disallow_optional_object_property && m.optional {
-                    // See: for-of29.ts
-                    // Optional properties cannot be called.
+                if opts.disallow_optional_object_property && m.optional {
                     return;
                 }
 
@@ -1002,7 +1043,7 @@ impl Analyzer<'_, '_> {
             }
 
             TypeElement::Property(p) => {
-                if self.ctx.disallow_optional_object_property && p.optional {
+                if opts.disallow_optional_object_property && p.optional {
                     // See: for-of29.ts
                     // Optional properties cannot be called.
                     return;
@@ -1062,6 +1103,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
+        opts: CallOpts,
     ) -> ValidationResult {
         // Candidates of the method call.
         //
@@ -1070,7 +1112,7 @@ impl Analyzer<'_, '_> {
         let mut candidates = Vec::with_capacity(4);
 
         for m in members {
-            self.check_type_element_for_call(span, kind, &mut candidates, m, prop, true);
+            self.check_type_element_for_call(span, kind, &mut candidates, m, prop, opts);
         }
 
         // TODO: Move this to caller to prevent checking members of `Object` every time
@@ -1089,7 +1131,7 @@ impl Analyzer<'_, '_> {
 
             // TODO: Remove clone
             for m in methods {
-                self.check_type_element_for_call(span, kind, &mut candidates, m, prop, true);
+                self.check_type_element_for_call(span, kind, &mut candidates, m, prop, opts);
             }
         }
 
@@ -1191,6 +1233,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
+        opts: CallOpts,
     ) -> ValidationResult {
         if !self.is_builtin {
             ty.assert_valid();
@@ -1209,6 +1252,7 @@ impl Analyzer<'_, '_> {
                     spread_arg_types,
                     type_args,
                     type_ann,
+                    opts,
                 );
             }
 
@@ -1238,7 +1282,7 @@ impl Analyzer<'_, '_> {
                     }));
 
                     if cls.is_abstract {
-                        if self.ctx.disallow_invoking_implicit_constructors {
+                        if opts.disallow_invoking_implicit_constructors {
                             return Err(Error::NoNewSignature {
                                 span,
                                 callee: box ty.clone(),
@@ -1316,12 +1360,8 @@ impl Analyzer<'_, '_> {
                     // Check for consturctors decalred in the super class.
                     if let Some(super_class) = &cls.super_class {
                         //
-                        let ctx = Ctx {
-                            disallow_invoking_implicit_constructors: true,
-                            ..self.ctx
-                        };
 
-                        if let Ok(v) = self.with_ctx(ctx).extract(
+                        if let Ok(v) = self.extract(
                             span,
                             expr,
                             &super_class,
@@ -1331,12 +1371,16 @@ impl Analyzer<'_, '_> {
                             spread_arg_types,
                             type_args,
                             type_ann,
+                            CallOpts {
+                                disallow_invoking_implicit_constructors: true,
+                                ..opts
+                            },
                         ) {
                             return Ok(v);
                         }
                     }
 
-                    if self.ctx.disallow_invoking_implicit_constructors {
+                    if opts.disallow_invoking_implicit_constructors {
                         return Err(Error::NoNewSignature {
                             span,
                             callee: box ty.clone(),
@@ -1478,6 +1522,7 @@ impl Analyzer<'_, '_> {
                     spread_arg_types,
                     type_args,
                     type_ann,
+                    opts,
                 )
             }
 
@@ -1520,7 +1565,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Search for methods
-                match self.search_members_for_extract(
+                match self.call_type_element(
                     span,
                     expr,
                     &ty,
@@ -1550,6 +1595,7 @@ impl Analyzer<'_, '_> {
                                 spread_arg_types,
                                 type_args,
                                 type_ann,
+                                opts,
                             ) {
                                 return Ok(v);
                             }
@@ -1560,7 +1606,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(ref l) => {
-                return self.search_members_for_extract(
+                return self.call_type_element(
                     span,
                     expr,
                     &ty,
@@ -1590,7 +1636,21 @@ impl Analyzer<'_, '_> {
 
     /// Search for members and returns if there's a match
     #[inline(never)]
-    fn search_members_for_extract(
+    #[instrument(skip(
+        self,
+        span,
+        expr,
+        callee_ty,
+        type_params_of_type,
+        members,
+        kind,
+        args,
+        arg_types,
+        spread_arg_types,
+        type_args,
+        type_ann
+    ))]
+    fn call_type_element(
         &mut self,
         span: Span,
         expr: ReevalMode,
@@ -2196,6 +2256,20 @@ impl Analyzer<'_, '_> {
     ///  8. Type of the arrow function is `(a: number) => [number]`.
     ///  9. Type of the property `foo` is `<A, B>(a: A) => B` where A = `number`
     /// and B = `[number]`.
+    #[instrument(skip(
+        self,
+        span,
+        kind,
+        expr,
+        type_params,
+        params,
+        ret_ty,
+        type_args,
+        args,
+        arg_types,
+        spread_arg_types,
+        type_ann
+    ))]
     fn get_return_type(
         &mut self,
         span: Span,
@@ -3232,6 +3306,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                 IdCtx::Type,
                                 Default::default(),
                             )
+                            .context("tried to access property to simplify return type")
                             .report(&mut a.storage)
                         {
                             if types.iter().all(|prev_ty| !(*prev_ty).type_eq(&actual_ty)) {
