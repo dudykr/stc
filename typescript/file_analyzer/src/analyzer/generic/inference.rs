@@ -47,6 +47,10 @@ pub(crate) struct InferTypeOpts {
     ///
     /// This is `true` for array
     pub append_type_as_union: bool,
+
+    /// If `true`, inference for wrong types, e.g. `void` = [Type::Param] will
+    /// fail.
+    pub error_for_non_match: bool,
 }
 
 impl Analyzer<'_, '_> {

@@ -7,7 +7,6 @@ use crate::{
     util::unwrap_ref_with_single_arg,
     ValidationResult,
 };
-use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
 use stc_ts_errors::{DebugExt, Error};
@@ -255,6 +254,7 @@ impl Analyzer<'_, '_> {
                     &lf,
                     InferTypeOpts {
                         for_fn_assignment: true,
+                        error_for_non_match: true,
                         ..Default::default()
                     },
                 )?;

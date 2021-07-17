@@ -11,7 +11,7 @@ use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RIdent, RPat, RStr, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace, print_type},
-    DebugExt,
+    DebugExt, Error,
 };
 use stc_ts_generics::type_param::{finder::TypeParamUsageFinder, remover::TypeParamRemover, renamer::TypeParamRenamer};
 use stc_ts_type_ops::Fix;
@@ -681,6 +681,10 @@ impl Analyzer<'_, '_> {
                 if !param.normalize().is_type_param() {
                     self.insert_inferred(span, inferred, arg.name.clone(), Cow::Borrowed(&param), opts)?;
                     return Ok(());
+                }
+
+                if opts.error_for_non_match {
+                    return Err(Error::InferenceFailed { span });
                 }
             }
             _ => {}
