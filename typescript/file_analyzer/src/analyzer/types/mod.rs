@@ -35,6 +35,7 @@ mod index_signature;
 mod keyof;
 mod mapped;
 mod narrowing;
+mod relation;
 mod replace;
 mod type_param;
 
