@@ -2191,6 +2191,7 @@ impl Analyzer<'_, '_> {
                     ..opts
                 },
             )
+            .context("tried to infer type of a function parameter (reverse)")
         } else {
             self.infer_type(
                 span,
@@ -2203,6 +2204,7 @@ impl Analyzer<'_, '_> {
                     ..opts
                 },
             )
+            .context("tried to infer type of a function parameter")
         }
     }
 
