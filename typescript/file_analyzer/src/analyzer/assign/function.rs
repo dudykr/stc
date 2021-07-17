@@ -258,6 +258,14 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )?;
+
+                let new_l_params = self
+                    .expand_type_params(&map, l_params.to_vec(), Default::default())
+                    .context("tried to expand type parameters of lhs as a step of function assignemnt")?;
+                let new_l_ret_ty = self
+                    .expand_type_params(&map, l_ret_ty.cloned(), Default::default())
+                    .context("tried to expand return type of lhs as a step of function assignemnt")?;
+
                 let new_r_params = self
                     .expand_type_params(&map, r_params.to_vec(), Default::default())
                     .context("tried to expand type parameters of rhs as a step of function assignemnt")?;
@@ -270,8 +278,8 @@ impl Analyzer<'_, '_> {
                         data,
                         opts,
                         None,
-                        l_params,
-                        l_ret_ty,
+                        &new_l_params,
+                        new_l_ret_ty.as_ref(),
                         None,
                         &new_r_params,
                         new_r_ret_ty.as_ref(),

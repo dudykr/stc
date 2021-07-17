@@ -2177,17 +2177,33 @@ impl Analyzer<'_, '_> {
         arg: &FnParam,
         opts: InferTypeOpts,
     ) -> ValidationResult<()> {
-        self.infer_type(
-            span,
-            inferred,
-            &param.ty,
-            &arg.ty,
-            InferTypeOpts {
-                append_type_as_union: opts.append_type_as_union || opts.for_fn_assignment,
+        let rev = self.should_fn_param_reversed(span, &param.ty, &arg.ty)?;
 
-                ..opts
-            },
-        )
+        if rev {
+            self.infer_type(
+                span,
+                inferred,
+                &param.ty,
+                &arg.ty,
+                InferTypeOpts {
+                    append_type_as_union: opts.append_type_as_union || opts.for_fn_assignment,
+
+                    ..opts
+                },
+            )
+        } else {
+            self.infer_type(
+                span,
+                inferred,
+                &arg.ty,
+                &param.ty,
+                InferTypeOpts {
+                    append_type_as_union: opts.append_type_as_union || opts.for_fn_assignment,
+
+                    ..opts
+                },
+            )
+        }
     }
 
     fn infer_type_of_fn_params(
