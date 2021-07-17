@@ -494,7 +494,7 @@ impl Analyzer<'_, '_> {
 
         let res = self
             .infer_type_inner(span, inferred, param, arg, opts)
-            .with_context(|| format!("param = {}\narg = {}", param_str, arg_str,));
+            .with_context(|| format!("\nparam = {}\narg = {}", param_str, arg_str,));
 
         let end = Instant::now();
 
