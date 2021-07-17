@@ -740,7 +740,7 @@ impl Analyzer<'_, '_> {
         Ok(match (l.normalize_instance(), r.normalize_instance()) {
             (Type::Union(..), Type::Union(..)) => false,
 
-            (Type::Function(..), Type::Function(..)) => false,
+            (Type::Function(..), Type::Function(..)) => true,
 
             (Type::Function(..) | Type::Constructor(..) | Type::Class(..), Type::TypeLit(..) | Type::Interface(..)) => {
                 false
