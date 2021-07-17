@@ -35,6 +35,9 @@ pub struct Marks {
     ///
     /// Used to distinguish object literal with a reference to object literal.
     pub(crate) resolved_from_var: Mark,
+
+    /// Ported from `ObjectFlags.MarkerType` of `tsc`.
+    pub(crate) tsc_flag_marker: Mark,
 }
 
 impl Marks {
@@ -59,6 +62,7 @@ impl Marks {
             infected_by_this_in_object_literal: m(),
             prevent_converting_to_children: m(),
             resolved_from_var: m(),
+            tsc_flag_marker: m(),
         })
     }
 }

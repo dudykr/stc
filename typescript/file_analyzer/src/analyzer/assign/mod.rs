@@ -1,5 +1,5 @@
 use crate::{
-    analyzer::{types::NormalizeTypeOpts, Analyzer},
+    analyzer::{marks::MarkExt, types::NormalizeTypeOpts, Analyzer},
     ty::TypeExt,
     ValidationResult,
 };
@@ -2383,23 +2383,93 @@ impl Analyzer<'_, '_> {
         Ok(false)
     }
 
-    pub(crate) fn variance<F>(
+    /// Ported from `getMarkerTypeReference` of `tsc`.
+    ///
+    ///
+    /// Return a type reference where the source type parameter is replaced with
+    /// the target marker type, and flag the result as a marker type
+    /// reference.
+    #[instrument(name = "get_marker_type_reference", skip(self, ty, source, target))]
+    fn get_marker_type_reference(&mut self, ty: &Type, source: &TypeParam, target: &Type) -> ValidationResult<Type> {
+        let marks = self.marks();
+        let target = target.clone().cheap();
+
+        if let Some(type_params) = ty.type_params() {
+            let mut map = type_params
+                .params
+                .iter()
+                .map(|t| {
+                    (
+                        t.name.clone(),
+                        if t == source {
+                            target.clone()
+                        } else {
+                            Type::Param(t.clone()).cheap()
+                        },
+                    )
+                })
+                .collect();
+
+            let mut new_ty = self.expand_type_params(&map, ty.clone(), Default::default())?;
+            marks.tsc_flag_marker.apply_to_type(&mut new_ty);
+
+            return Ok(new_ty);
+        }
+
+        Ok(ty.clone())
+    }
+
+    /// Ported from `getVariances` of `tsc`.
+    #[instrument(name = "get_variances", skip(self, span, data, ty))]
+    pub(crate) fn get_variances(
         &mut self,
         span: Span,
         data: &mut AssignData,
-        param: TypeParam,
+        ty: &Type,
+    ) -> ValidationResult<Vec<VarianceFlag>> {
+        let ty = self.normalize(Some(span), Cow::Borrowed(&ty), Default::default())?;
+
+        match ty.normalize() {
+            Type::Array(..) | Type::Tuple(..) => return Ok(vec![VarianceFlag::COVARIANT]),
+
+            _ => {
+                if let Some(type_params) = ty.type_params() {
+                    let mut variances = vec![];
+
+                    for param in &type_params.params {
+                        let v = self.variance_inner(span, &ty, data, &param, |a, ty, source, target| {
+                            a.get_marker_type_reference(ty, source, target)
+                        })?;
+                        variances.push(v);
+                    }
+
+                    Ok(variances)
+                } else {
+                    Ok(vec![])
+                }
+            }
+        }
+    }
+
+    /// Ported from `getVariancesWorker` of `tsc`.
+    fn variance_inner<F>(
+        &mut self,
+        span: Span,
+        ty: &Type,
+        data: &mut AssignData,
+        param: &TypeParam,
         mut create_marker_type: F,
     ) -> ValidationResult<VarianceFlag>
     where
-        F: FnMut(&mut AssignData, &TypeParam, &Type) -> Type,
+        F: FnMut(&mut Analyzer, &Type, &TypeParam, &Type) -> ValidationResult<Type>,
     {
-        let old_unmesurable = take(&mut data.unmeasurable);
-        let old_unreliable = take(&mut data.unreliable);
-
         let mut variance = VarianceFlag::INVARIANT;
 
-        let type_with_super = create_marker_type(data, &param, &SUPER_TYPE_MARKER);
-        let type_with_sub = create_marker_type(data, &param, &SUB_TYPE_MARKER);
+        let type_with_super = create_marker_type(self, ty, &param, &SUPER_TYPE_MARKER)?;
+        let type_with_sub = create_marker_type(self, ty, &param, &SUB_TYPE_MARKER)?;
+
+        let old_unmesurable = take(&mut data.unmeasurable);
+        let old_unreliable = take(&mut data.unreliable);
 
         if let Ok(()) = self.assign_with_opts(data, Default::default(), &type_with_sub, &type_with_super) {
             variance |= VarianceFlag::CONTRAVARIANT;
