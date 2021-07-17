@@ -2220,6 +2220,7 @@ dependencies = [
 name = "stc_ts_types"
 version = "0.0.0"
 dependencies = [
+ "bitflags",
  "dashmap 3.11.10",
  "fxhash",
  "is-macro",

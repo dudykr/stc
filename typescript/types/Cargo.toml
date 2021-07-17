@@ -8,6 +8,7 @@ version = "0.0.0"
 [lib]
 
 [dependencies]
+bitflags = "1.2.1"
 dashmap = "3"
 fxhash = "0.2.1"
 is-macro = "0.1.7"
