@@ -682,10 +682,6 @@ impl Analyzer<'_, '_> {
                     self.insert_inferred(span, inferred, arg.name.clone(), Cow::Borrowed(&param), opts)?;
                     return Ok(());
                 }
-
-                if opts.error_for_non_match {
-                    return Err(Error::InferenceFailed { span });
-                }
             }
             _ => {}
         }
@@ -1357,6 +1353,12 @@ impl Analyzer<'_, '_> {
                 }
             }
             _ => {}
+        }
+
+        if arg.is_type_param() {
+            if opts.error_for_non_match {
+                return Err(Error::InferenceFailed { span });
+            }
         }
 
         match arg {
