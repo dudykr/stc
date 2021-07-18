@@ -1402,7 +1402,7 @@ impl Analyzer<'_, '_> {
 
                             // TODO: getIndexType(constraint, (target as IndexType).stringsOnly),
                             // reportErrors
-                            let index_type = self.keyof(span, constraint);
+                            let index_type = self.keyof(span, constraint)?;
 
                             if let Ok(()) = self.assign_with_opts(
                                 data,
@@ -1434,10 +1434,12 @@ impl Analyzer<'_, '_> {
 
                     let base_obj_type = self
                         .get_base_constraint_of_type(span, obj_type)?
+                        .map(Cow::Owned)
                         .unwrap_or_else(|| Cow::Borrowed(&**obj_type));
                     let base_index_type = self
-                        .get_base_constraint_of_type(span, base_index_type)?
-                        .unwrap_or_else(|| Cow::Borrowed(&**base_index_type));
+                        .get_base_constraint_of_type(span, &index_type)?
+                        .map(Cow::Owned)
+                        .unwrap_or_else(|| Cow::Borrowed(&**index_type));
 
                     if !is_generic_object_type(&base_obj_type) && !is_generic_object_type(&base_index_type) {
                         // TODO:
@@ -2726,6 +2728,23 @@ impl Analyzer<'_, '_> {
         Ok(false)
     }
 
+    /// Ported from `getResolvedBaseConstraint` of `tsc`.
+    fn get_resolved_base_constraint(&mut self, span: Span, ty: &Type) -> ValidationResult<Type> {}
+
+    /// Ported from `getBaseConstraintOfType` of `tsc`.
+    #[instrument(skip(self, span, ty))]
+    fn get_base_constraint_of_type(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Type>> {
+        let span = span.with_ctxt(SyntaxContext::empty());
+        let mut ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
+
+        match &*ty {
+            Type::Union(..) | Type::Intersection(..) => {}
+            _ => {}
+        }
+    }
+
+    /// Ported from `getKnownKeysOfTupleType` of `tsc`.
+    #[instrument(skip(self, span, ty))]
     fn get_known_keys_of_tuple(&mut self, span: Span, ty: &Tuple) -> ValidationResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
