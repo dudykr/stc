@@ -59,6 +59,7 @@ pub(crate) struct AssignOpts {
 
     pub for_overload: bool,
 
+    pub for_extends: bool,
     pub for_castablity: bool,
 
     /// If this is `false`, assignment of literals or some other strange type to
@@ -1382,8 +1383,52 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    _ => {}
+                    _ => {
+                        // Comment from tsc.
+                        //
+                        // A type S is assignable to keyof T if S is assignable
+                        // to keyof C, where C is the
+                        // simplified form of T or, if T doesn't simplify, the
+                        // constraint of T.
+
+                        let constraint = self.get_simplified_type_or_constraint(span, target_type)?;
+                        if let Some(constraint) = constraint {
+                            // Comment from tsc.
+                            //
+                            // We require Ternary.True here such that circular constraints don't cause
+                            // false positives. For example, given 'T extends { [K in keyof T]: string }',
+                            // 'keyof T' has itself as its constraint and produces a Ternary.Maybe when
+                            // related to other types.
+
+                            // TODO: getIndexType(constraint, (target as IndexType).stringsOnly),
+                            // reportErrors
+                            let index_type = self.get_index_type(constraint);
+
+                            if let Ok(()) = self.assign_with_opts(
+                                data,
+                                AssignOpts {
+                                    span,
+                                    ..Default::default()
+                                },
+                                &index_type,
+                                source,
+                            ) {
+                                return Ok(());
+                            }
+                        }
+                    }
                 }
+            }
+
+            (Type::IndexedAccessType(target), source) => {
+                // Comment from tsc.
+                //
+                // A type S is related to a type T[K] if S is related to C, where C is the base
+                // constraint of T[K] for writing.
+
+                // TODO: Make this check identical to
+                // if (relation === assignableRelation || relation === comparableRelation) {
+                if !opts.for_overload && !opts.for_extends {}
             }
 
             _ => {}
