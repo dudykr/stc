@@ -2738,11 +2738,11 @@ impl Analyzer<'_, '_> {
         )?;
 
         let mut tuple_keys = vec![];
-        for i in 0..ty.len() {
+        for i in 0..ty.elems.len() {
             tuple_keys.push(Type::Lit(RTsLitType {
                 node_id: NodeId::invalid(),
                 span,
-                lit: RTsLit::Str(Str {
+                lit: RTsLit::Str(RStr {
                     span,
                     value: i.to_string().into(),
                     has_escape: false,
