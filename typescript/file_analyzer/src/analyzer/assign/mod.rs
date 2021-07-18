@@ -1428,7 +1428,42 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Make this check identical to
                 // if (relation === assignableRelation || relation === comparableRelation) {
-                if !opts.for_overload && !opts.for_extends {}
+                if !opts.for_overload && !opts.for_extends {
+                    let obj_type = &target.obj_type;
+                    let index_type = &target.index_type;
+
+                    let base_obj_type = self
+                        .get_base_constraint_of_type(span, obj_type)?
+                        .unwrap_or_else(|| Cow::Borrowed(&**obj_type));
+                    let base_index_type = self
+                        .get_base_constraint_of_type(span, base_index_type)?
+                        .unwrap_or_else(|| Cow::Borrowed(&**base_index_type));
+
+                    if !is_generic_object_type(&base_obj_type) && !is_generic_object_type(&base_index_type) {
+                        // TODO:
+
+                        // const accessFlags = AccessFlags.Writing |
+                        // (baseObjectType !== objectType ?
+                        // AccessFlags.NoIndexSignatures : 0);
+                        //     const constraint =
+                        // getIndexedAccessTypeOrUndefined(baseObjectType,
+                        // baseIndexType,
+                        // (<IndexedAccessType>target).
+                        // noUncheckedIndexedAccessCandidate, /*accessNode*/
+                        // undefined, accessFlags);
+                        //     if (constraint && (result = isRelatedTo(source,
+                        // constraint, reportErrors))) {
+                        //         return result;
+                        //     }
+                    }
+                }
+            }
+
+            (target @ Type::Mapped(Mapped { name_type: None, .. }), source) if is_generic_mapped_type(&target) => {
+                // Comment from tsc.
+                //
+                // A source type T is related to a target type { [P in X]: T[P]
+                // }
             }
 
             _ => {}
