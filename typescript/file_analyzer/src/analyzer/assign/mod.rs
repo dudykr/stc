@@ -13,13 +13,13 @@ use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     markers::{SUB_TYPE_MARKER, SUPER_TYPE_MARKER},
     variance::VarianceFlag,
-    Array, Conditional, EnumVariant, FnParam, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, Mapped,
-    Operator, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
+    Array, Conditional, EnumVariant, FnParam, IndexedAccessType, Instance, Interface, Intersection, Intrinsic,
+    IntrinsicKind, Key, Mapped, Operator, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::stack;
 use std::{borrow::Cow, collections::HashMap, mem::take, time::Instant};
 use swc_atoms::js_word;
-use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
+use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::{error, instrument};
 
@@ -1268,6 +1268,123 @@ impl Analyzer<'_, '_> {
                 }) => return Ok(()),
                 _ => {}
             },
+
+            _ => {}
+        }
+
+        match (to, rhs) {
+            (
+                Type::Param(l),
+                Type::Mapped(Mapped {
+                    type_param:
+                        tp
+                        @
+                        TypeParam {
+                            constraint: Some(constraint),
+                            ..
+                        },
+                    name_type: None,
+                    optional: None | Some(TruePlusMinus::Minus),
+                    ..
+                }),
+            ) => {
+                // Comment from tsc.
+                //
+                // A source type { [P in Q]: X } is related to a target type T if keyof T is
+                // related to Q and X is related to T[Q].
+
+                let keys = self.keyof(span, to)?;
+
+                if let Ok(()) = self.assign_with_opts(
+                    data,
+                    AssignOpts {
+                        span,
+                        ..Default::default()
+                    },
+                    &constraint,
+                    &keys,
+                ) {
+                    let template_type = self.get_template_type_from_mapped_type(span, rhs)?;
+                    let indexed_access_type = Type::IndexedAccessType(IndexedAccessType {
+                        span: span.with_ctxt(SyntaxContext::empty()),
+                        readonly: Default::default(),
+                        obj_type: box to.clone(),
+                        index_type: box Type::Param(tp.clone()),
+                    });
+
+                    if let Ok(()) = self.assign_with_opts(
+                        data,
+                        AssignOpts {
+                            span,
+                            ..Default::default()
+                        },
+                        &template_type,
+                        &indexed_access_type,
+                    ) {
+                        return Ok(());
+                    }
+                }
+            }
+
+            (
+                Type::Operator(Operator {
+                    op: TsTypeOperatorOp::KeyOf,
+                    ty: target_type,
+                    ..
+                }),
+                source,
+            ) => {
+                match source {
+                    Type::Operator(Operator {
+                        op: TsTypeOperatorOp::KeyOf,
+                        ty: source_type,
+                        ..
+                    }) => {
+                        // Comment from tsc.
+                        //
+                        // A keyof S is related to a keyof T if T is related to S.
+
+                        if let Ok(()) = self.assign_with_opts(
+                            data,
+                            AssignOpts {
+                                span,
+                                ..Default::default()
+                            },
+                            &source_type,
+                            &target_type,
+                        ) {
+                            return Ok(());
+                        }
+                    }
+
+                    _ => {}
+                }
+
+                // Comment from tsc.
+                //
+                // An index type can have a tuple type target when the tuple type contains
+                // variadic elements. Check if the source is related to the
+                // known keys of the tuple type.
+                match target_type.normalize() {
+                    Type::Tuple(target) => {
+                        let known_keys = self.get_known_keys_of_tuple(span, target)?;
+
+                        if let Ok(()) = self.assign_with_opts(
+                            data,
+                            AssignOpts {
+                                span,
+                                ..Default::default()
+                            },
+                            &known_keys,
+                            source,
+                        ) {
+                            return Ok(());
+                        }
+                    }
+
+                    _ => {}
+                }
+            }
 
             _ => {}
         }
