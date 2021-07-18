@@ -2725,6 +2725,35 @@ impl Analyzer<'_, '_> {
 
         Ok(false)
     }
+
+    fn get_known_keys_of_tuple(&mut self, span: Span, ty: &Tuple) -> ValidationResult<Type> {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
+        let mut keys_of_array = self.keyof(
+            span,
+            &Type::Array(Array {
+                span,
+                elem_type: box Type::any(span),
+            }),
+        )?;
+
+        let mut tuple_keys = vec![];
+        for i in 0..ty.len() {
+            tuple_keys.push(Type::Lit(RTsLitType {
+                node_id: NodeId::invalid(),
+                span,
+                lit: RTsLit::Str(Str {
+                    span,
+                    value: i.to_string().into(),
+                    has_escape: false,
+                    kind: Default::default(),
+                }),
+            }));
+        }
+        tuple_keys.push(keys_of_array);
+
+        Ok(Type::union(tuple_keys))
+    }
 }
 
 /// Returns true if l and r are lieteral and equal to each other.
