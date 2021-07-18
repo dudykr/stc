@@ -13,7 +13,7 @@ use stc_ts_types::{
 use stc_utils::error::context;
 use std::borrow::Cow;
 use swc_atoms::js_word;
-use swc_common::{Span, TypeEq, DUMMY_SP};
+use swc_common::{Span, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
@@ -24,6 +24,7 @@ impl Analyzer<'_, '_> {
     /// ## `ty`
     /// Should be operand of `keyof`.
     pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> ValidationResult<Type> {
+        let span = span.with_ctxt(SyntaxContext::empty());
         let _ctx = context(format!("keyof: {}", dump_type_as_string(&self.cm, ty)));
 
         if !self.is_builtin {

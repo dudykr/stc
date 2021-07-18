@@ -1402,7 +1402,7 @@ impl Analyzer<'_, '_> {
 
                             // TODO: getIndexType(constraint, (target as IndexType).stringsOnly),
                             // reportErrors
-                            let index_type = self.get_index_type(constraint);
+                            let index_type = self.keyof(span, constraint);
 
                             if let Ok(()) = self.assign_with_opts(
                                 data,
