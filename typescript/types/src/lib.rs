@@ -48,7 +48,6 @@ use swc_ecma_utils::{
 use tracing::trace;
 
 mod convert;
-pub mod flags;
 mod id;
 mod intrinsic;
 pub mod macros;
