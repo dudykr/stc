@@ -1278,6 +1278,58 @@ impl Type {
             kind: TsKeywordTypeKind::TsUnknownKeyword,
         })
     }
+
+    /// `TypeFlags.Index` of `tsc`.
+    pub fn is_tsc_index(&self) -> bool {
+        match self.normalize() {
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::KeyOf,
+                ..
+            }) => true,
+            _ => false,
+        }
+    }
+
+    /// `TypeFlags.TypeVariable` of `tsc`.
+    pub fn is_tsc_type_variable(&self) -> bool {
+        match self.normalize() {
+            Type::Param(..) | Type::IndexedAccessType(..) => true,
+            _ => false,
+        }
+    }
+
+    /// TODO
+    pub fn is_tsc_substitution(&self) -> bool {
+        false
+    }
+
+    /// `TypeFlags.InstantiableNonPrimitive` of `tsc`.
+    pub fn is_tsc_instantiatable_non_primitive(&self) -> bool {
+        self.is_tsc_type_variable() || self.normalize().is_conditional() || self.is_tsc_substitution()
+    }
+
+    /// `TypeFlags.InstantiablePrimitive` of `tsc`.
+    pub fn is_tsc_instantiatable_primitive(&self) -> bool {
+        self.is_tsc_index() | self.normalize().is_tpl() || self.is_stc_string_mapping()
+    }
+
+    /// `TypeFlags.Instantiable` of `tsc`.
+    pub fn is_tsc_instantiatable(&self) -> bool {
+        self.is_tsc_instantiatable_non_primitive() || self.is_tsc_instantiatable_primitive()
+    }
+
+    /// `TypeFlags.StringMapping` of `tsc`.
+    pub fn is_stc_string_mapping(&self) -> bool {
+        match self.normalize() {
+            Type::Intrinsic(i) => match i.kind {
+                IntrinsicKind::Uppercase
+                | IntrinsicKind::Lowercase
+                | IntrinsicKind::Capitalize
+                | IntrinsicKind::Uncapitalize => true,
+            },
+            _ => false,
+        }
+    }
 }
 
 impl Type {
