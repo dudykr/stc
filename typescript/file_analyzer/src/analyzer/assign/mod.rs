@@ -1286,6 +1286,7 @@ impl Analyzer<'_, '_> {
                         },
                     name_type: None,
                     optional: None | Some(TruePlusMinus::Minus),
+                    ty: Some(rm_ty),
                     ..
                 }),
             ) => {
@@ -1296,6 +1297,7 @@ impl Analyzer<'_, '_> {
 
                 let keys = self.keyof(span, to)?;
 
+                // Check if keyof T is related to Q
                 if let Ok(()) = self.assign_with_opts(
                     data,
                     AssignOpts {
@@ -1305,7 +1307,6 @@ impl Analyzer<'_, '_> {
                     &constraint,
                     &keys,
                 ) {
-                    let template_type = self.get_template_type_from_mapped_type(span, rhs)?;
                     let indexed_access_type = Type::IndexedAccessType(IndexedAccessType {
                         span: span.with_ctxt(SyntaxContext::empty()),
                         readonly: Default::default(),
@@ -1313,13 +1314,14 @@ impl Analyzer<'_, '_> {
                         index_type: box Type::Param(tp.clone()),
                     });
 
+                    // Check if X is related to T[Q].
                     if let Ok(()) = self.assign_with_opts(
                         data,
                         AssignOpts {
                             span,
                             ..Default::default()
                         },
-                        &template_type,
+                        &rm_ty,
                         &indexed_access_type,
                     ) {
                         return Ok(());
