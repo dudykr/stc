@@ -2737,9 +2737,23 @@ impl Analyzer<'_, '_> {
         let span = span.with_ctxt(SyntaxContext::empty());
         let mut ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
 
-        match &*ty {
-            Type::Union(..) | Type::Intersection(..) => {}
-            _ => {}
+        if ty.is_tsc_instantiatable_non_primitive()
+            || ty.normalize().is_union_type()
+            || ty.normalize().is_intersection_type()
+            || ty.normalize().is_tpl()
+            || ty.is_stc_string_mapping()
+        {
+            let contraints = self.get_resolved_base_constraint(span, &ty)?;
+
+            return Ok(Some(contraints));
+        }
+
+        match ty.normalize() {
+            Type::Operator(Operator {
+                op: TsTypeOperatorOp::KeyOf,
+                ..
+            }) => Ok(Some(self.keyof(span, &Type::any(span))?)),
+            _ => Ok(None),
         }
     }
 
