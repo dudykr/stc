@@ -164,6 +164,13 @@ impl Analyzer<'_, '_> {
                     let ty = self.simplify(ty);
                     types.push(ty);
                 }
+                if types.is_empty() {
+                    if let Some(declared) = self.scope.declared_return_type().cloned() {
+                        if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true) {
+                            types.push(el_ty.into_owned());
+                        }
+                    }
+                }
 
                 let yield_ty = if types.is_empty() {
                     Type::any(DUMMY_SP)
