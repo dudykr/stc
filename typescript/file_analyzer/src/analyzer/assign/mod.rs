@@ -19,7 +19,7 @@ use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{error, instrument};
+use tracing::{debug, error, info, instrument};
 
 mod builtin;
 mod cast;
@@ -484,7 +484,7 @@ impl Analyzer<'_, '_> {
             .iter()
             .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(&right))
         {
-            slog::info!(self.logger, "[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
+            info!("[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
             return Ok(());
         }
         let _stack = stack::track(opts.span)?;
@@ -504,8 +504,7 @@ impl Analyzer<'_, '_> {
 
         let end = Instant::now();
 
-        slog::debug!(
-            self.logger,
+        debug!(
             "[assign ({:?}), (time = {:?})] {} = {}\n{:?} ",
             res.is_ok(),
             end - start,
