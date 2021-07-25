@@ -1119,7 +1119,7 @@ impl Analyzer<'_, '_> {
                                 done = true;
 
                                 if self
-                                    .assign(&mut Default::default(), &li.params[0].ty, &r_prop.key.ty(), span)
+                                    .assign(span, &mut Default::default(), &li.params[0].ty, &r_prop.key.ty())
                                     .is_ok()
                                     || li.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
                                 {
@@ -1143,7 +1143,7 @@ impl Analyzer<'_, '_> {
                                 done = true;
 
                                 if self
-                                    .assign(&mut Default::default(), &li.params[0].ty, &rm.key.ty(), span)
+                                    .assign(span, &mut Default::default(), &li.params[0].ty, &rm.key.ty())
                                     .is_ok()
                                     || li.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
                                 {
@@ -1331,10 +1331,10 @@ impl Analyzer<'_, '_> {
                         ClassMember::Method(_) => {}
                         ClassMember::Property(rp) => {
                             // Check for property
-                            if self.assign(data, &lp.key.ty(), &rp.key.ty(), opts.span).is_ok() {
+                            if self.assign(opts.span, data, &lp.key.ty(), &rp.key.ty()).is_ok() {
                                 if let Some(lt) = &lp.type_ann {
                                     if let Some(rt) = &rp.value {
-                                        self.assign(data, &lt, &rt, opts.span)?;
+                                        self.assign(opts.span, data, &lt, &rt)?;
                                         return Ok(());
                                     }
                                 }

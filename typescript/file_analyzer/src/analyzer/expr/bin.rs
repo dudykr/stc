@@ -1127,8 +1127,8 @@ impl Analyzer<'_, '_> {
                             (TypeElement::Index(lm), TypeElement::Index(rm)) if lm.params.type_eq(&rm.params) => {
                                 if let Some(lt) = &lm.type_ann {
                                     if let Some(rt) = &rm.type_ann {
-                                        if self.assign(&mut Default::default(), &lt, &rt, span).is_ok()
-                                            || self.assign(&mut Default::default(), &rt, &lt, span).is_ok()
+                                        if self.assign(span, &mut Default::default(), &lt, &rt).is_ok()
+                                            || self.assign(span, &mut Default::default(), &rt, &lt).is_ok()
                                         {
                                             continue;
                                         }
@@ -1250,7 +1250,7 @@ impl Analyzer<'_, '_> {
             for rm in r {
                 match (lm, rm) {
                     (TypeElement::Method(lm), TypeElement::Method(rm)) => {
-                        if let Ok(()) = self.assign(&mut Default::default(), &lm.key.ty(), &rm.key.ty(), span) {
+                        if let Ok(()) = self.assign(span, &mut Default::default(), &lm.key.ty(), &rm.key.ty()) {
                             if lm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
                                 != rm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
                             {
@@ -1391,6 +1391,7 @@ impl Analyzer<'_, '_> {
             // Ok if it's assignable to `Function`.
             Type::TypeLit(..) | Type::Interface(..) => {
                 if let Err(..) = self.assign(
+                    span,
                     &mut Default::default(),
                     &Type::Ref(Ref {
                         span,
@@ -1402,7 +1403,6 @@ impl Analyzer<'_, '_> {
                         type_args: None,
                     }),
                     &ty,
-                    span,
                 ) {
                     self.storage.report(Error::InvalidRhsInInstanceOf {
                         span,

@@ -336,13 +336,12 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    /// TODO: Change argument order. (Span should come first).
     pub(crate) fn assign(
         &mut self,
+        span: Span,
         data: &mut AssignData,
         left: &Type,
         right: &Type,
-        span: Span,
     ) -> ValidationResult<()> {
         self.assign_with_opts(
             data,

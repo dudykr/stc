@@ -675,7 +675,7 @@ impl Analyzer<'_, '_> {
                     };
 
                     if op == op!("=") {
-                        self.assign(&mut Default::default(), &lhs_ty, &ty, span)?;
+                        self.assign(span, &mut Default::default(), &lhs_ty, &ty)?;
                     } else {
                         self.assign_with_op(span, op, &lhs_ty, &ty)?;
                     }
