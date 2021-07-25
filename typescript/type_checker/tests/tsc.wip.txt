@@ -1,1 +1,5 @@
 controlFlow::controlFlowIIFE.ts
+es6::yieldExpressions::YieldExpression10_es6.ts
+es6::yieldExpressions::YieldStarExpression1_es6.ts
+es6::yieldExpressions::generatorTypeCheck48.ts
+es6::yieldExpressions::generatorTypeCheck8.ts
