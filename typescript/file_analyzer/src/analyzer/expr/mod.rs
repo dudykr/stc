@@ -3158,12 +3158,19 @@ impl Analyzer<'_, '_> {
                 name: i.clone().into(),
             })
         } else {
-            if let Some(declaring_prop) = self.scope.declaring_prop() {
-                if *declaring_prop.sym() == i.sym {
-                    return Err(Error::NoSuchVar {
-                        span,
-                        name: i.clone().into(),
-                    });
+            if let Some(scope) = self.scope.first_kind(|kind| match kind {
+                ScopeKind::Class | ScopeKind::ObjectLit => true,
+                _ => false,
+            }) {
+                if let ScopeKind::ObjectLit = scope.kind() {
+                    if let Some(declaring_prop) = self.scope.declaring_prop() {
+                        if *declaring_prop.sym() == i.sym {
+                            return Err(Error::NoSuchVar {
+                                span,
+                                name: i.clone().into(),
+                            });
+                        }
+                    }
                 }
             }
 
