@@ -1760,7 +1760,7 @@ impl Analyzer<'_, '_> {
                     errors.extend(res.err());
                 }
 
-                if errors.is_empty() {
+                if !extends.is_empty() && errors.is_empty() {
                     return Ok(());
                 }
 
