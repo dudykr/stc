@@ -1051,6 +1051,7 @@ es6/variableDeclarations/VariableDeclaration6_es6.ts
 es6/variableDeclarations/VariableDeclaration7_es6.ts
 es6/variableDeclarations/VariableDeclaration8_es6.ts
 es6/variableDeclarations/VariableDeclaration9_es6.ts
+es6/yieldExpressions/YieldExpression10_es6.ts
 es6/yieldExpressions/YieldExpression11_es6.ts
 es6/yieldExpressions/YieldExpression13_es6.ts
 es6/yieldExpressions/YieldExpression19_es6.ts
