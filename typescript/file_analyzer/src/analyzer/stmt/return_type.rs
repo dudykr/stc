@@ -23,6 +23,7 @@ use stc_utils::ext::SpanExt;
 use std::{borrow::Cow, mem::take, ops::AddAssign};
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
+use tracing::{debug, instrument};
 
 mod yield_check;
 
@@ -48,6 +49,7 @@ impl AddAssign for ReturnValues {
 
 impl Analyzer<'_, '_> {
     /// This method returns `Generator` if `yield` is found.
+    #[instrument(skip(self, span, is_async, is_generator, stmts))]
     pub(in crate::analyzer) fn visit_stmts_for_return(
         &mut self,
         span: Span,
@@ -57,7 +59,7 @@ impl Analyzer<'_, '_> {
     ) -> Result<Option<Type>, Error> {
         let marks = self.marks();
 
-        slog::debug!(self.logger, "visit_stmts_for_return()");
+        debug!("visit_stmts_for_return()");
         debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
         let cannot_fallback_to_iterable_iterator = self.rule().strict_null_checks && {
