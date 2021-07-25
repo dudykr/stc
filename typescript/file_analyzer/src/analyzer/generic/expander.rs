@@ -933,7 +933,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
         let ty = self.fold_type(ty);
         let expanded = dump_type_as_string(&self.analyzer.cm, &ty);
 
-        debug!("[generic/expander]: Expanded {} => {}", start, expanded,);
+        debug!(op = "generic:expand", "Expanded {} => {}", start, expanded,);
 
         ty
     }
