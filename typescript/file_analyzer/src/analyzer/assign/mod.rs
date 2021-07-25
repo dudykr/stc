@@ -1757,9 +1757,8 @@ impl Analyzer<'_, '_> {
                         &rhs,
                     );
                     if res.is_ok() {
-                        slog::debug!(
-                            self.logger,
-                            "[assign] Parent assign successful: {} = {}",
+                        debug!(
+                            "Parent assign successful: {} = {}",
                             dump_type_as_string(&self.cm, &parent),
                             dump_type_as_string(&self.cm, &rhs),
                         );
