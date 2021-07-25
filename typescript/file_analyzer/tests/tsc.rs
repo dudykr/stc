@@ -93,6 +93,7 @@ fn validate(input: &Path) -> Vec<StcError> {
                 let _tracing = tracing::subscriber::set_default(
                     tracing_subscriber::FmtSubscriber::builder()
                         .without_time()
+                        .with_target(false)
                         .with_max_level(tracing::Level::TRACE)
                         .with_ansi(true)
                         .with_test_writer()
