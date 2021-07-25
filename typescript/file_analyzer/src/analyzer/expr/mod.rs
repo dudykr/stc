@@ -48,7 +48,7 @@ use std::{
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
-use tracing::{debug, instrument};
+use tracing::{debug, instrument, warn};
 use ty::TypeExt;
 
 mod array;
@@ -3158,6 +3158,15 @@ impl Analyzer<'_, '_> {
                 name: i.clone().into(),
             })
         } else {
+            if let Some(declaring_prop) = self.scope.declaring_prop() {
+                if *declaring_prop.sym() == i.sym {
+                    return Err(Error::NoSuchVar {
+                        span,
+                        name: i.clone().into(),
+                    });
+                }
+            }
+
             if !self.ctx.disallow_suggesting_property_on_no_var && self.this_has_property_named(&i.clone().into()) {
                 dbg!();
                 Err(Error::NoSuchVarButThisHasSuchProperty {
