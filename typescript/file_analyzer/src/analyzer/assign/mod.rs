@@ -1756,16 +1756,12 @@ impl Analyzer<'_, '_> {
                         &parent,
                         &rhs,
                     );
-                    if res.is_ok() {
-                        debug!(
-                            "Parent assign successful: {} = {}",
-                            dump_type_as_string(&self.cm, &parent),
-                            dump_type_as_string(&self.cm, &rhs),
-                        );
-                        return Ok(());
-                    }
 
                     errors.extend(res.err());
+                }
+
+                if errors.is_empty() {
+                    return Ok(());
                 }
 
                 // TODO: Prevent recursion and uncomment the code below.
