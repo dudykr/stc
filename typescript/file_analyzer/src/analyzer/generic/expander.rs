@@ -413,45 +413,9 @@ pub(crate) struct GenericExpander<'a, 'b, 'c, 'd> {
     opts: ExpandGenericOpts<'d>,
 }
 
-impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
-    fn fold(&mut self, ty: Type) -> Type {
-        let _stack = match stack::track(ty.span()) {
-            Ok(v) => v,
-            _ => {
-                slog::error!(
-                    self.logger,
-                    "[generic/expander] Stack overflow: {}",
-                    dump_type_as_string(&self.analyzer.cm, &ty)
-                );
-                return ty;
-            }
-        };
-        let _context = context(format!(
-            "Expanding generics of {}",
-            dump_type_as_string(&self.analyzer.cm, &ty)
-        ));
-
-        let old_fully = self.fully;
-        self.fully |= match ty.normalize() {
-            Type::Mapped(..) => true,
-            _ => false,
-        };
+impl GenericExpander<'_, '_, '_, '_> {
+    fn fold_type(&mut self, ty: Type) -> Type {
         let span = ty.span();
-
-        {
-            let mut v = TypeParamUsageFinder::default();
-            ty.visit_with(&mut v);
-            let will_expand = v.params.iter().any(|param| self.params.contains_key(&param.name));
-            if !will_expand {
-                return ty;
-            }
-        }
-
-        slog::debug!(
-            self.logger,
-            "[generic/expander]: Expanding {}",
-            dump_type_as_string(&self.analyzer.cm, &ty)
-        );
         let ty = ty.foldable();
 
         match ty {
@@ -928,6 +892,50 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
 
             Type::Arc(a) => return (*a.ty).clone().fold_with(self),
         }
+    }
+}
+
+impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
+    fn fold(&mut self, ty: Type) -> Type {
+        let _stack = match stack::track(ty.span()) {
+            Ok(v) => v,
+            _ => {
+                slog::error!(
+                    self.logger,
+                    "[generic/expander] Stack overflow: {}",
+                    dump_type_as_string(&self.analyzer.cm, &ty)
+                );
+                return ty;
+            }
+        };
+        let _context = context(format!(
+            "Expanding generics of {}",
+            dump_type_as_string(&self.analyzer.cm, &ty)
+        ));
+
+        let old_fully = self.fully;
+        self.fully |= match ty.normalize() {
+            Type::Mapped(..) => true,
+            _ => false,
+        };
+        let span = ty.span();
+
+        {
+            let mut v = TypeParamUsageFinder::default();
+            ty.visit_with(&mut v);
+            let will_expand = v.params.iter().any(|param| self.params.contains_key(&param.name));
+            if !will_expand {
+                return ty;
+            }
+        }
+
+        let start = dump_type_as_string(&self.analyzer.cm, &ty);
+        let ty = self.fold_type(ty);
+        let expanded = dump_type_as_string(&self.analyzer.cm, &ty);
+
+        debug!("[generic/expander]: Expanded {} => {}", start, expanded,);
+
+        ty
     }
 }
 
