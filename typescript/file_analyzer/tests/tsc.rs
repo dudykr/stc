@@ -167,7 +167,9 @@ fn compare(input: PathBuf) {
 }
 
 fn invoke_tsc(input: &Path) -> Vec<TscError> {
-    let output = Command::new("tsc")
+    let output = Command::new("yarn")
+        .arg("run")
+        .arg("tsc")
         .arg("--pretty")
         .arg("--noEmit")
         .arg("--lib")
@@ -179,8 +181,6 @@ fn invoke_tsc(input: &Path) -> Vec<TscError> {
     let stderr = String::from_utf8_lossy(&output.stderr);
 
     eprintln!("tsc output: \nStdout:\n{}\nStderr:\n{}", stdout, stderr);
-
-    assert!(stderr.is_empty());
 
     TscError::parse_all(&stdout)
 }
