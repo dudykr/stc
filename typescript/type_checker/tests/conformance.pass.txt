@@ -1061,6 +1061,7 @@ es6/yieldExpressions/YieldExpression4_es6.ts
 es6/yieldExpressions/YieldExpression7_es6.ts
 es6/yieldExpressions/YieldExpression8_es6.ts
 es6/yieldExpressions/YieldExpression9_es6.ts
+es6/yieldExpressions/YieldStarExpression1_es6.ts
 es6/yieldExpressions/YieldStarExpression4_es6.ts
 es6/yieldExpressions/generatorInAmbientContext5.ts
 es6/yieldExpressions/generatorInAmbientContext6.ts
