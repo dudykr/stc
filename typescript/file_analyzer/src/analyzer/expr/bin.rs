@@ -190,7 +190,16 @@ impl Analyzer<'_, '_> {
 
         let rt = rhs;
 
-        self.report_errors_for_bin_expr(span, op, lt.as_ref(), rt.as_ref());
+        self.report_errors_for_bin_expr(
+            span,
+            op,
+            &lt.as_ref()
+                .map(Cow::Borrowed)
+                .unwrap_or_else(|| Cow::Owned(Type::any(left.span().with_ctxt(SyntaxContext::empty())))),
+            &rt.as_ref()
+                .map(Cow::Borrowed)
+                .unwrap_or_else(|| Cow::Owned(Type::any(left.span().with_ctxt(SyntaxContext::empty())))),
+        );
 
         if add_type_facts {
             if op == op!("||") {
@@ -1544,9 +1553,12 @@ impl Analyzer<'_, '_> {
         Ok(equals_to.into_owned())
     }
 
-    fn report_errors_for_bin_expr(&mut self, span: Span, op: BinaryOp, lt: Option<&Type>, rt: Option<&Type>) {
+    fn report_errors_for_bin_expr(&mut self, span: Span, op: BinaryOp, lt: &Type, rt: &Type) {
         let ls = lt.span();
         let rs = rt.span();
+
+        let lt = lt.normalize();
+        let rt = rt.normalize();
 
         let mut errors = Errors::default();
 
@@ -1556,17 +1568,13 @@ impl Analyzer<'_, '_> {
                 // validation of types is required to compute type of the
                 // expression.
             }
-            op!("||") | op!("&&") => {
-                if lt.is_some() {
-                    match *lt.as_ref().unwrap().normalize() {
-                        Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsVoidKeyword,
-                            ..
-                        }) => errors.push(Error::TS1345 { span }),
-                        _ => {}
-                    }
-                }
-            }
+            op!("||") | op!("&&") => match lt.normalize() {
+                Type::Keyword(RTsKeywordType {
+                    kind: TsKeywordTypeKind::TsVoidKeyword,
+                    ..
+                }) => errors.push(Error::TS1345 { span }),
+                _ => {}
+            },
 
             op!("*")
             | op!("/")
@@ -1578,116 +1586,107 @@ impl Analyzer<'_, '_> {
             | op!("&")
             | op!("^")
             | op!("|") => {
-                if lt.is_some() && rt.is_some() {
-                    let lt = lt.unwrap();
-                    let rt = rt.unwrap();
-
-                    let mut check = |ty: &Type, is_left| {
-                        if ty.is_any() {
-                            return;
-                        }
-                        if self.can_be_casted_to_number_in_rhs(ty.span(), &ty) {
-                            return;
-                        }
-
-                        match ty.normalize() {
-                            Type::Keyword(RTsKeywordType {
-                                span,
-                                kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                            }) => {
-                                self.storage.report(Error::ObjectIsPossiblyUndefined { span: *span });
-                            }
-
-                            Type::Keyword(RTsKeywordType {
-                                span,
-                                kind: TsKeywordTypeKind::TsNullKeyword,
-                            }) => {
-                                self.storage.report(Error::ObjectIsPossiblyNull { span: *span });
-                            }
-
-                            _ => errors.push(if is_left {
-                                Error::WrongTypeForLhsOfNumericOperation { span: ty.span() }
-                            } else {
-                                Error::WrongTypeForRhsOfNumericOperation { span: ty.span() }
-                            }),
-                        }
-                    };
-
-                    if (op == op!("&") || op == op!("^") || op == op!("|"))
-                        && match lt.normalize() {
-                            Type::Keyword(RTsKeywordType {
-                                kind: TsKeywordTypeKind::TsBooleanKeyword,
-                                ..
-                            })
-                            | Type::Lit(RTsLitType {
-                                lit: RTsLit::Bool(..), ..
-                            }) => true,
-                            _ => false,
-                        }
-                        && match rt.normalize() {
-                            Type::Keyword(RTsKeywordType {
-                                kind: TsKeywordTypeKind::TsBooleanKeyword,
-                                ..
-                            })
-                            | Type::Lit(RTsLitType {
-                                lit: RTsLit::Bool(..), ..
-                            }) => true,
-                            _ => false,
-                        }
-                    {
-                        errors.push(Error::TS2447 { span });
-                    } else {
-                        check(&lt, true);
-                        check(&rt, false);
+                let mut check = |ty: &Type, is_left| {
+                    if ty.is_any() {
+                        return;
                     }
+                    if self.can_be_casted_to_number_in_rhs(ty.span(), &ty) {
+                        return;
+                    }
+
+                    match ty.normalize() {
+                        Type::Keyword(RTsKeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        }) => {
+                            self.storage.report(Error::ObjectIsPossiblyUndefined { span: *span });
+                        }
+
+                        Type::Keyword(RTsKeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsNullKeyword,
+                        }) => {
+                            self.storage.report(Error::ObjectIsPossiblyNull { span: *span });
+                        }
+
+                        _ => errors.push(if is_left {
+                            Error::WrongTypeForLhsOfNumericOperation { span: ty.span() }
+                        } else {
+                            Error::WrongTypeForRhsOfNumericOperation { span: ty.span() }
+                        }),
+                    }
+                };
+
+                if (op == op!("&") || op == op!("^") || op == op!("|"))
+                    && match lt.normalize() {
+                        Type::Keyword(RTsKeywordType {
+                            kind: TsKeywordTypeKind::TsBooleanKeyword,
+                            ..
+                        })
+                        | Type::Lit(RTsLitType {
+                            lit: RTsLit::Bool(..), ..
+                        }) => true,
+                        _ => false,
+                    }
+                    && match rt.normalize() {
+                        Type::Keyword(RTsKeywordType {
+                            kind: TsKeywordTypeKind::TsBooleanKeyword,
+                            ..
+                        })
+                        | Type::Lit(RTsLitType {
+                            lit: RTsLit::Bool(..), ..
+                        }) => true,
+                        _ => false,
+                    }
+                {
+                    errors.push(Error::TS2447 { span });
+                } else {
+                    check(&lt, true);
+                    check(&rt, false);
                 }
             }
 
             op!("in") => {
-                if lt.is_some() {
-                    match lt.unwrap().normalize() {
-                        Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsNullKeyword,
-                            ..
-                        }) => {
-                            self.storage.report(Error::ObjectIsPossiblyNull { span });
-                        }
+                match lt.normalize() {
+                    Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsNullKeyword,
+                        ..
+                    }) => {
+                        self.storage.report(Error::ObjectIsPossiblyNull { span });
+                    }
 
-                        Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                            ..
-                        }) => {
-                            self.storage.report(Error::ObjectIsPossiblyUndefined { span });
-                        }
+                    Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        ..
+                    }) => {
+                        self.storage.report(Error::ObjectIsPossiblyUndefined { span });
+                    }
 
-                        ty => {
-                            if !self.is_valid_lhs_of_in(&ty) {
-                                errors.push(Error::TS2360 { span: ls });
-                            }
+                    ty => {
+                        if !self.is_valid_lhs_of_in(&ty) {
+                            errors.push(Error::TS2360 { span: ls });
                         }
                     }
                 }
 
-                if rt.is_some() {
-                    match rt.unwrap().normalize() {
-                        Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsNullKeyword,
-                            ..
-                        }) => {
-                            self.storage.report(Error::ObjectIsPossiblyNull { span });
-                        }
+                match rt.normalize() {
+                    Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsNullKeyword,
+                        ..
+                    }) => {
+                        self.storage.report(Error::ObjectIsPossiblyNull { span });
+                    }
 
-                        Type::Keyword(RTsKeywordType {
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                            ..
-                        }) => {
-                            self.storage.report(Error::ObjectIsPossiblyUndefined { span });
-                        }
+                    Type::Keyword(RTsKeywordType {
+                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        ..
+                    }) => {
+                        self.storage.report(Error::ObjectIsPossiblyUndefined { span });
+                    }
 
-                        _ => {
-                            if !self.is_valid_rhs_of_in(&rt.unwrap()) {
-                                errors.push(Error::TS2361 { span: rs })
-                            }
+                    _ => {
+                        if !self.is_valid_rhs_of_in(&rt) {
+                            errors.push(Error::TS2361 { span: rs })
                         }
                     }
                 }
