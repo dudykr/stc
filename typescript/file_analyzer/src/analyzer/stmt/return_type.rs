@@ -160,10 +160,18 @@ impl Analyzer<'_, '_> {
 
             if is_generator {
                 let mut types = Vec::with_capacity(values.yield_types.len());
+
+                let is_all_null_or_undefined = values.yield_types.iter().all(|ty| ty.is_null_or_undefined());
+
                 for ty in values.yield_types {
                     let ty = self.simplify(ty);
                     types.push(ty);
                 }
+
+                if is_all_null_or_undefined {
+                    types.clear();
+                }
+
                 if types.is_empty() {
                     if let Some(declared) = self.scope.declared_return_type().cloned() {
                         if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true) {
@@ -173,7 +181,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let yield_ty = if types.is_empty() {
-                    Type::any(DUMMY_SP)
+                    Type::any(DUMMY_SP.apply_mark(marks.implicit_type_mark))
                 } else {
                     Type::union(types)
                 };
