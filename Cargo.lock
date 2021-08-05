@@ -1568,7 +1568,7 @@ dependencies = [
  "Inflector",
  "rnode_macros",
  "stc_visit",
- "swc_common",
+ "swc_common 0.11.4",
 ]
 
 [[package]]
@@ -1839,7 +1839,7 @@ dependencies = [
  "stc_ts_type_checker",
  "stc_utils",
  "structopt",
- "swc_common",
+ "swc_common 0.11.4",
  "swc_ecma_parser",
  "tokio",
  "tracing",
@@ -1854,8 +1854,8 @@ dependencies = [
  "rayon",
  "structopt",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
  "swc_ecma_parser",
  "swc_ecma_utils",
  "swc_ecma_visit",
@@ -1882,8 +1882,8 @@ dependencies = [
  "stc_utils",
  "stc_visit",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
 ]
 
 [[package]]
@@ -1893,7 +1893,7 @@ dependencies = [
  "Inflector",
  "pmutil",
  "proc-macro2",
- "swc_common",
+ "swc_common 0.11.4",
  "swc_ecma_parser",
  "swc_macros_common",
  "syn",
@@ -1909,8 +1909,8 @@ dependencies = [
  "rayon",
  "stc_ts_builtin_macro",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
  "swc_ecma_parser",
  "swc_ecma_visit",
 ]
@@ -1932,8 +1932,8 @@ dependencies = [
  "stc_ts_storage",
  "stc_ts_types",
  "stc_ts_utils",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
  "swc_ecma_codegen",
  "swc_ecma_parser",
  "swc_ecma_transforms",
@@ -1970,8 +1970,8 @@ dependencies = [
  "stc_ts_types",
  "stc_utils",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
  "swc_ecma_codegen",
 ]
 
@@ -2013,8 +2013,8 @@ dependencies = [
  "stc_utils",
  "string_enum",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
  "swc_ecma_codegen",
  "swc_ecma_parser",
  "swc_ecma_transforms",
@@ -2032,8 +2032,8 @@ dependencies = [
  "pmutil",
  "proc-macro2",
  "quote",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
  "swc_ecma_parser",
  "swc_macros_common",
  "syn",
@@ -2050,7 +2050,7 @@ dependencies = [
  "stc_ts_utils",
  "stc_utils",
  "swc_atoms",
- "swc_common",
+ "swc_common 0.11.4",
 ]
 
 [[package]]
@@ -2082,8 +2082,8 @@ dependencies = [
  "slog",
  "stc_ts_types",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
  "swc_ecma_parser",
  "swc_ecma_visit",
 ]
@@ -2114,7 +2114,7 @@ dependencies = [
  "stc_ts_utils",
  "stc_utils",
  "swc_atoms",
- "swc_common",
+ "swc_common 0.11.4",
 ]
 
 [[package]]
@@ -2126,7 +2126,7 @@ dependencies = [
  "stc_ts_types",
  "stc_utils",
  "swc_atoms",
- "swc_common",
+ "swc_common 0.11.4",
 ]
 
 [[package]]
@@ -2139,8 +2139,8 @@ dependencies = [
  "stc_ts_ast_rnode",
  "stc_ts_types",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
  "swc_ecma_codegen",
  "swc_ecma_parser",
  "swc_ecma_utils",
@@ -2175,8 +2175,8 @@ dependencies = [
  "stc_ts_utils",
  "stc_utils",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
  "swc_ecma_codegen",
  "swc_ecma_parser",
  "swc_ecma_transforms",
@@ -2199,8 +2199,8 @@ dependencies = [
  "stc_ts_types",
  "stc_utils",
  "stc_visit",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
 ]
 
 [[package]]
@@ -2211,8 +2211,8 @@ dependencies = [
  "stc_ts_ast_rnode",
  "stc_ts_types",
  "stc_ts_utils",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
 ]
 
 [[package]]
@@ -2234,8 +2234,8 @@ dependencies = [
  "stc_utils",
  "stc_visit",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
  "swc_ecma_utils",
  "swc_ecma_visit",
  "swc_visit",
@@ -2252,8 +2252,8 @@ dependencies = [
  "stc_ts_ast_rnode",
  "stc_ts_types",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
 ]
 
 [[package]]
@@ -2264,7 +2264,7 @@ dependencies = [
  "jemallocator",
  "mimalloc",
  "once_cell",
- "swc_common",
+ "swc_common 0.11.4",
 ]
 
 [[package]]
@@ -2274,8 +2274,8 @@ dependencies = [
  "num-bigint",
  "stc_visit_macros",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.48.1",
 ]
 
 [[package]]
@@ -2388,6 +2388,31 @@ dependencies = [
  "num-bigint",
  "once_cell",
  "owning_ref",
+ "scoped-tls",
+ "serde",
+ "string_cache",
+ "swc_eq_ignore_macros",
+ "swc_visit",
+ "termcolor",
+ "unicode-width",
+]
+
+[[package]]
+name = "swc_common"
+version = "0.11.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f303985ebd578a033371a87be28cb54189d3ae5d492622523200f4de08db5275"
+dependencies = [
+ "ast_node",
+ "atty",
+ "cfg-if 0.1.10",
+ "either",
+ "from_variant",
+ "fxhash",
+ "log",
+ "num-bigint",
+ "once_cell",
+ "owning_ref",
  "parking_lot 0.7.1",
  "scoped-tls",
  "serde",
@@ -2409,21 +2434,35 @@ dependencies = [
  "serde",
  "string_enum",
  "swc_atoms",
- "swc_common",
+ "swc_common 0.10.21",
+]
+
+[[package]]
+name = "swc_ecma_ast"
+version = "0.49.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "228ab89e5a11289d43f14da2b65b9e37c8fb31091c33f4fad66791ef65c04a1b"
+dependencies = [
+ "is-macro",
+ "num-bigint",
+ "serde",
+ "string_enum",
+ "swc_atoms",
+ "swc_common 0.11.4",
 ]
 
 [[package]]
 name = "swc_ecma_codegen"
-version = "0.61.0"
+version = "0.66.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "936fd096ebfc8d8c8d7f5cfdc79b13d06e56e0810abbe3de37376b537a40debb"
+checksum = "f6979e1fd8c88c5b935a98e82f631bffe95429a61169dfd081852670f7a5a434"
 dependencies = [
  "bitflags",
  "num-bigint",
  "sourcemap",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.49.1",
  "swc_ecma_codegen_macros",
  "swc_ecma_parser",
 ]
@@ -2443,9 +2482,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_parser"
-version = "0.62.1"
+version = "0.66.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70e9ae66d3e29d21fc1715cb435ce741d40d86c466f9371d4c1cf56932824393"
+checksum = "86b3663c7d31f8ce7d679a86dcaf207483711db5fb8974fc30fb67f2f0dbee0f"
 dependencies = [
  "either",
  "enum_kind",
@@ -2456,21 +2495,21 @@ dependencies = [
  "serde",
  "smallvec 1.6.1",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.49.1",
  "swc_ecma_visit",
  "unicode-xid",
 ]
 
 [[package]]
 name = "swc_ecma_transforms"
-version = "0.58.0"
+version = "0.63.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f86a39b5e99c35c298bc1fa61bec4661adb6e4d642452e27bf0320f1dff85b8b"
+checksum = "3f53f948b9fb8a315b1e0d5f121b8c88786feb11b7f01f8406c16301e0ad2227"
 dependencies = [
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.49.1",
  "swc_ecma_parser",
  "swc_ecma_transforms_base",
  "swc_ecma_utils",
@@ -2480,9 +2519,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_transforms_base"
-version = "0.21.1"
+version = "0.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89df1c71ed7be8feed1a5b7c5bc935ca7bd8b3f2605dc365f10e9209b7a8ed93"
+checksum = "064628ed7d881ee8667df9d1372f37bc640dfcb71d628a58eb6216f33622ef4a"
 dependencies = [
  "fxhash",
  "once_cell",
@@ -2490,8 +2529,8 @@ dependencies = [
  "scoped-tls",
  "smallvec 1.6.1",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.49.1",
  "swc_ecma_parser",
  "swc_ecma_utils",
  "swc_ecma_visit",
@@ -2499,29 +2538,29 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_utils"
-version = "0.39.0"
+version = "0.41.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e9f5416db68768751b6ed4e5b1c3a0f1e43b66331cbfc51b89a268fbaecd628"
+checksum = "725fb37b8f7ac49b9edd7001dba006f0aa9b9a85623337994ab89b0f2b12032b"
 dependencies = [
  "once_cell",
  "scoped-tls",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.49.1",
  "swc_ecma_visit",
  "unicode-xid",
 ]
 
 [[package]]
 name = "swc_ecma_visit"
-version = "0.34.0"
+version = "0.35.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d5b93c94bd4fca51ad5c2588e34b46dc5a9b1f079c9b1ec595a968eb4ca8acf"
+checksum = "754afc3c64e5f39fc17874170548e4f94612bcfb52fd7882437c149f713b3473"
 dependencies = [
  "num-bigint",
  "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
+ "swc_common 0.11.4",
+ "swc_ecma_ast 0.49.1",
  "swc_visit",
 ]
 
@@ -2551,9 +2590,9 @@ dependencies = [
 
 [[package]]
 name = "swc_visit"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "583cfe83f6002e1118559308b88181f34b5936b403b72548cd0259bfcf0ca39e"
+checksum = "b24bd6153b94e06cae99d98d6a12b1fbe6063709cdb4b0f7ea25d2c0a62bdee7"
 dependencies = [
  "either",
  "swc_visit_macros",
@@ -2623,7 +2662,7 @@ dependencies = [
  "once_cell",
  "pretty_assertions",
  "regex",
- "swc_common",
+ "swc_common 0.10.21",
  "testing_macros",
 ]
 
