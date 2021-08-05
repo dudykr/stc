@@ -148,7 +148,7 @@ fn validate(input: &Path) -> Vec<StcError> {
 }
 
 /// This invokes `tsc` to get expected result.
-#[fixture("tsc/**/*.ts")]
+#[fixture("tests/tsc/**/*.ts")]
 fn compare(input: PathBuf) {
     let mut actual = validate(&input);
     actual.sort();

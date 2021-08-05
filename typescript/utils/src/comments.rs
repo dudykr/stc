@@ -11,8 +11,8 @@ type CommentMap = Arc<DashMap<BytePos, Vec<Comment>, FxBuildHasher>>;
 /// Multi-threaded implementation of [Comments]
 #[derive(Clone, Default)]
 pub struct StcComments {
-    leading: CommentMap,
-    trailing: CommentMap,
+    pub leading: CommentMap,
+    pub trailing: CommentMap,
 }
 
 impl Comments for StcComments {

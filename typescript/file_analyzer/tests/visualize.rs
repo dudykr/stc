@@ -173,7 +173,7 @@ fn run_test(file_name: PathBuf, logger: slog::Logger, for_error: bool) -> Option
     }
 }
 
-#[testing::fixture("visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
+#[testing::fixture("tests/visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn visualize(file_name: PathBuf) {
     if !should_run(&file_name) {
         return;
@@ -186,7 +186,7 @@ fn visualize(file_name: PathBuf) {
     println!("[SUCCESS]{}", file_name.display())
 }
 
-#[testing::fixture("pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
+#[testing::fixture("tests/pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn pass(file_name: PathBuf) {
     if !should_run(&file_name) {
         return;
