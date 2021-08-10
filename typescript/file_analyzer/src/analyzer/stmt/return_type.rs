@@ -23,6 +23,7 @@ use stc_utils::ext::SpanExt;
 use std::{borrow::Cow, mem::take, ops::AddAssign};
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
+use tracing::{debug, instrument};
 
 mod yield_check;
 
@@ -48,6 +49,7 @@ impl AddAssign for ReturnValues {
 
 impl Analyzer<'_, '_> {
     /// This method returns `Generator` if `yield` is found.
+    #[instrument(skip(self, span, is_async, is_generator, stmts))]
     pub(in crate::analyzer) fn visit_stmts_for_return(
         &mut self,
         span: Span,
@@ -57,7 +59,7 @@ impl Analyzer<'_, '_> {
     ) -> Result<Option<Type>, Error> {
         let marks = self.marks();
 
-        slog::debug!(self.logger, "visit_stmts_for_return()");
+        debug!("visit_stmts_for_return()");
         debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
         let cannot_fallback_to_iterable_iterator = self.rule().strict_null_checks && {
@@ -158,13 +160,28 @@ impl Analyzer<'_, '_> {
 
             if is_generator {
                 let mut types = Vec::with_capacity(values.yield_types.len());
+
+                let is_all_null_or_undefined = values.yield_types.iter().all(|ty| ty.is_null_or_undefined());
+
                 for ty in values.yield_types {
                     let ty = self.simplify(ty);
                     types.push(ty);
                 }
 
+                if is_all_null_or_undefined {
+                    types.clear();
+                }
+
+                if types.is_empty() {
+                    if let Some(declared) = self.scope.declared_return_type().cloned() {
+                        if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true) {
+                            types.push(el_ty.into_owned());
+                        }
+                    }
+                }
+
                 let yield_ty = if types.is_empty() {
-                    Type::any(DUMMY_SP)
+                    Type::any(DUMMY_SP.apply_mark(marks.implicit_type_mark))
                 } else {
                     Type::union(types)
                 };

@@ -733,7 +733,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        self.assign(&mut Default::default(), &declared.ty(), &cur.ty(), span)
+        self.assign(span, &mut Default::default(), &declared.ty(), &cur.ty())
             .is_ok()
     }
 
@@ -955,7 +955,7 @@ impl Analyzer<'_, '_> {
                     // I guess it's because javascript work in that way.
                     let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
                         && prop_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
-                        || self.assign(&mut Default::default(), &index_ty, &prop_ty, span).is_ok();
+                        || self.assign(span, &mut Default::default(), &index_ty, &prop_ty).is_ok();
 
                     if indexed {
                         if let Some(ref type_ann) = type_ann {
@@ -1662,7 +1662,7 @@ impl Analyzer<'_, '_> {
                                 let prop_ty = prop.ty();
 
                                 let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) && prop_ty.is_num())
-                                    || self.assign(&mut Default::default(), &index_ty, &prop_ty, span).is_ok();
+                                    || self.assign(span, &mut Default::default(), &index_ty, &prop_ty).is_ok();
 
                                 if indexed {
                                     return Ok(index.type_ann.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)));
@@ -2450,7 +2450,7 @@ impl Analyzer<'_, '_> {
                         // {
                         //     [P in string]: number;
                         // };
-                        if let Ok(()) = self.assign(&mut Default::default(), &index, &prop.ty(), span) {
+                        if let Ok(()) = self.assign(span, &mut Default::default(), &index, &prop.ty()) {
                             // We handle `Partial<string>` at here.
                             let ty = m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span));
 
@@ -3158,6 +3158,22 @@ impl Analyzer<'_, '_> {
                 name: i.clone().into(),
             })
         } else {
+            if let Some(scope) = self.scope.first_kind(|kind| match kind {
+                ScopeKind::Class | ScopeKind::ObjectLit => true,
+                _ => false,
+            }) {
+                if let ScopeKind::ObjectLit = scope.kind() {
+                    if let Some(declaring_prop) = self.scope.declaring_prop() {
+                        if *declaring_prop.sym() == i.sym {
+                            return Err(Error::NoSuchVar {
+                                span,
+                                name: i.clone().into(),
+                            });
+                        }
+                    }
+                }
+            }
+
             if !self.ctx.disallow_suggesting_property_on_no_var && self.this_has_property_named(&i.clone().into()) {
                 dbg!();
                 Err(Error::NoSuchVarButThisHasSuchProperty {

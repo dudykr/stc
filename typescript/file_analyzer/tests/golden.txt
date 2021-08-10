@@ -157,8 +157,6 @@ tests/pass/exprs/typeAssertion/9.ts
 tests/pass/exprs/unary/typeof/simple.ts
 tests/pass/exprs/unary/typeof/typeGuard/call/1.ts
 tests/pass/fn/generator/infer/1.ts
-tests/pass/fn/generator/selfReferential/1.ts
-tests/pass/fn/generator/selfReferential/nested-1.ts
 tests/pass/fn/overloading/union-1.ts
 tests/pass/fn/returnType/inference/1.ts
 tests/pass/fn/typeParam/typeParameterAssignabillity2/1.ts
@@ -246,6 +244,8 @@ tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.t
 tests/visualize/exprs/object/method/normalization-1.ts
 tests/visualize/exprs/object/method/normalization-2.ts
 tests/visualize/exprs/object/method/typeParam-1.ts
+tests/visualize/fn/generator/selfReferential/1.ts
+tests/visualize/fn/generator/selfReferential/nested-1.ts
 tests/visualize/fn/generics/seq.ts
 tests/visualize/override/symbol/call.ts
 tests/visualize/tuple-1-2.ts
