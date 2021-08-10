@@ -1051,6 +1051,7 @@ es6/variableDeclarations/VariableDeclaration6_es6.ts
 es6/variableDeclarations/VariableDeclaration7_es6.ts
 es6/variableDeclarations/VariableDeclaration8_es6.ts
 es6/variableDeclarations/VariableDeclaration9_es6.ts
+es6/yieldExpressions/YieldExpression10_es6.ts
 es6/yieldExpressions/YieldExpression11_es6.ts
 es6/yieldExpressions/YieldExpression13_es6.ts
 es6/yieldExpressions/YieldExpression19_es6.ts
@@ -1060,6 +1061,7 @@ es6/yieldExpressions/YieldExpression4_es6.ts
 es6/yieldExpressions/YieldExpression7_es6.ts
 es6/yieldExpressions/YieldExpression8_es6.ts
 es6/yieldExpressions/YieldExpression9_es6.ts
+es6/yieldExpressions/YieldStarExpression1_es6.ts
 es6/yieldExpressions/YieldStarExpression4_es6.ts
 es6/yieldExpressions/generatorInAmbientContext5.ts
 es6/yieldExpressions/generatorInAmbientContext6.ts
@@ -1118,6 +1120,7 @@ es6/yieldExpressions/generatorTypeCheck56.ts
 es6/yieldExpressions/generatorTypeCheck6.ts
 es6/yieldExpressions/generatorTypeCheck60.ts
 es6/yieldExpressions/generatorTypeCheck7.ts
+es6/yieldExpressions/generatorTypeCheck8.ts
 es6/yieldExpressions/generatorTypeCheck9.ts
 es7/exponentiationOperator/compoundExponentiationAssignmentLHSCanBeAssigned1.ts
 es7/exponentiationOperator/compoundExponentiationAssignmentLHSIsReference.ts

@@ -359,8 +359,8 @@ impl Analyzer<'_, '_> {
                                 if lm.params.type_eq(&rm.params) {
                                     if let Some(lt) = &lm.type_ann {
                                         if let Some(rt) = &rm.type_ann {
-                                            if self.assign(&mut Default::default(), &lt, &rt, span).is_err()
-                                                && self.assign(&mut Default::default(), &rt, &lt, span).is_err()
+                                            if self.assign(span, &mut Default::default(), &lt, &rt).is_err()
+                                                && self.assign(span, &mut Default::default(), &rt, &lt).is_err()
                                             {
                                                 return Ok(false);
                                             }

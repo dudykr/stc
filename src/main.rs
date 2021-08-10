@@ -21,6 +21,7 @@ enum Command {
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let sub = tracing_subscriber::FmtSubscriber::builder()
+        .with_target(false)
         .with_ansi(true)
         .without_time()
         .finish();

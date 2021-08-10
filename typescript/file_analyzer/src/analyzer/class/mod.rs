@@ -2229,7 +2229,7 @@ impl Analyzer<'_, '_> {
 
                     if !index.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
                         && self
-                            .assign(&mut Default::default(), &index.params[0].ty, &key.ty(), span)
+                            .assign(span, &mut Default::default(), &index.params[0].ty, &key.ty())
                             .is_err()
                     {
                         continue;

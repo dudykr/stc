@@ -1033,7 +1033,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 // We are interested only on methods named `prop`
-                if let Ok(()) = self.assign(&mut Default::default(), &m.key.ty(), &prop.ty(), span) {
+                if let Ok(()) = self.assign(span, &mut Default::default(), &m.key.ty(), &prop.ty()) {
                     candidates.push(CallCandidate {
                         type_params: m.type_params.as_ref().map(|v| v.params.clone()),
                         params: m.params.clone(),
@@ -2089,13 +2089,13 @@ impl Analyzer<'_, '_> {
                 if !param.ty.is_any()
                     && self
                         .assign(
+                            span,
                             &mut Default::default(),
                             &param.ty,
                             &Type::Keyword(RTsKeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                             }),
-                            span,
                         )
                         .is_ok()
                 {
@@ -2761,7 +2761,7 @@ impl Analyzer<'_, '_> {
                             match param_ty.normalize() {
                                 Type::Array(arr) => {
                                     // We should change type if the parameter is a rest parameter.
-                                    let res = self.assign(&mut Default::default(), &arr.elem_type, &arg.ty, arg.span());
+                                    let res = self.assign(arg.span(), &mut Default::default(), &arr.elem_type, &arg.ty);
                                     let err = match res {
                                         Ok(()) => continue,
                                         Err(err) => err,
@@ -2804,7 +2804,7 @@ impl Analyzer<'_, '_> {
                             Type::Array(arg) => {
                                 // We should change type if the parameter is a rest parameter.
                                 if let Ok(()) =
-                                    self.assign(&mut Default::default(), &param.ty, &arg.elem_type, arg.span())
+                                    self.assign(arg.span(), &mut Default::default(), &param.ty, &arg.elem_type)
                                 {
                                     continue;
                                 }
@@ -3088,7 +3088,7 @@ impl Analyzer<'_, '_> {
             return false;
         }
 
-        self.assign(&mut Default::default(), &arg, &param, span).is_ok()
+        self.assign(span, &mut Default::default(), &arg, &param).is_ok()
     }
 
     /// This method return [Err] if call is invalid

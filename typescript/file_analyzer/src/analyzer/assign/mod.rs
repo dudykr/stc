@@ -19,7 +19,7 @@ use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{error, instrument};
+use tracing::{debug, error, info, instrument};
 
 mod builtin;
 mod cast;
@@ -336,13 +336,12 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    /// TODO: Change argument order. (Span should come first).
     pub(crate) fn assign(
         &mut self,
+        span: Span,
         data: &mut AssignData,
         left: &Type,
         right: &Type,
-        span: Span,
     ) -> ValidationResult<()> {
         self.assign_with_opts(
             data,
@@ -485,7 +484,7 @@ impl Analyzer<'_, '_> {
             .iter()
             .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(&right))
         {
-            slog::info!(self.logger, "[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
+            info!("[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
             return Ok(());
         }
         let _stack = stack::track(opts.span)?;
@@ -505,8 +504,7 @@ impl Analyzer<'_, '_> {
 
         let end = Instant::now();
 
-        slog::debug!(
-            self.logger,
+        debug!(
             "[assign ({:?}), (time = {:?})] {} = {}\n{:?} ",
             res.is_ok(),
             end - start,
@@ -1758,17 +1756,12 @@ impl Analyzer<'_, '_> {
                         &parent,
                         &rhs,
                     );
-                    if res.is_ok() {
-                        slog::debug!(
-                            self.logger,
-                            "[assign] Parent assign successful: {} = {}",
-                            dump_type_as_string(&self.cm, &parent),
-                            dump_type_as_string(&self.cm, &rhs),
-                        );
-                        return Ok(());
-                    }
 
                     errors.extend(res.err());
+                }
+
+                if !extends.is_empty() && errors.is_empty() {
+                    return Ok(());
                 }
 
                 // TODO: Prevent recursion and uncomment the code below.

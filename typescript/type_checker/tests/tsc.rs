@@ -8,7 +8,7 @@ extern crate test;
 #[path = "common/mod.rs"]
 mod common;
 
-use self::common::{load_fixtures, SwcComments};
+use self::common::load_fixtures;
 use anyhow::{Context, Error};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
@@ -21,6 +21,7 @@ use stc_ts_file_analyzer::{
 };
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
+use stc_ts_utils::StcComments;
 use std::{
     collections::HashSet,
     env, fs,
@@ -293,7 +294,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
         // We parse files twice. At first, we read comments and detect
         // configurations for following parse.
 
-        let comments = SwcComments::default();
+        let comments = StcComments::default();
 
         let mut parser = Parser::new(
             Syntax::Typescript(TsConfig {
@@ -558,6 +559,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 let _tracing = tracing::subscriber::set_default(
                     tracing_subscriber::FmtSubscriber::builder()
                         .without_time()
+                        .with_target(false)
                         .with_max_level(tracing::Level::TRACE)
                         .with_ansi(true)
                         .with_test_writer()

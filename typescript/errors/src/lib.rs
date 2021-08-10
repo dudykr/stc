@@ -501,6 +501,7 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2663
     NoSuchVarButThisHasSuchProperty {
         span: Span,
         name: Id,

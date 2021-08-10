@@ -93,6 +93,7 @@ fn validate(input: &Path) -> Vec<StcError> {
                 let _tracing = tracing::subscriber::set_default(
                     tracing_subscriber::FmtSubscriber::builder()
                         .without_time()
+                        .with_target(false)
                         .with_max_level(tracing::Level::TRACE)
                         .with_ansi(true)
                         .with_test_writer()
@@ -147,7 +148,7 @@ fn validate(input: &Path) -> Vec<StcError> {
 }
 
 /// This invokes `tsc` to get expected result.
-#[fixture("tsc/**/*.ts")]
+#[fixture("tests/tsc/**/*.ts")]
 fn compare(input: PathBuf) {
     let mut actual = validate(&input);
     actual.sort();
@@ -166,7 +167,9 @@ fn compare(input: PathBuf) {
 }
 
 fn invoke_tsc(input: &Path) -> Vec<TscError> {
-    let output = Command::new("tsc")
+    let output = Command::new("yarn")
+        .arg("run")
+        .arg("tsc")
         .arg("--pretty")
         .arg("--noEmit")
         .arg("--lib")
@@ -178,8 +181,6 @@ fn invoke_tsc(input: &Path) -> Vec<TscError> {
     let stderr = String::from_utf8_lossy(&output.stderr);
 
     eprintln!("tsc output: \nStdout:\n{}\nStderr:\n{}", stdout, stderr);
-
-    assert!(stderr.is_empty());
 
     TscError::parse_all(&stdout)
 }

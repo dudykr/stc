@@ -5,7 +5,7 @@ cargo upgrade swc_atoms \
     swc_common \
     swc_visit \
     swc_visit_macros \
-    swc_emca_ast \
+    swc_ecma_ast \
     swc_ecma_codegen \
     swc_ecma_codegen_macros \
     swc_ecma_parser \

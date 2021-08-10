@@ -477,7 +477,7 @@ impl Analyzer<'_, '_> {
                 match (p, a) {
                     (TypeElement::Property(p), TypeElement::Property(a)) => {
                         if self
-                            .assign(&mut Default::default(), &p.key.ty(), &a.key.ty(), span)
+                            .assign(span, &mut Default::default(), &p.key.ty(), &a.key.ty())
                             .is_ok()
                         {
                             if let Some(pt) = &p.type_ann {
@@ -565,7 +565,7 @@ impl Analyzer<'_, '_> {
                         assert_eq!(p.params.len(), 1, "Index signature should have exactly one parameter");
 
                         if self
-                            .assign(&mut Default::default(), &p.params[0].ty, &a.key.ty(), span)
+                            .assign(span, &mut Default::default(), &p.params[0].ty, &a.key.ty())
                             .is_ok()
                             || p.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
                         {
@@ -590,7 +590,7 @@ impl Analyzer<'_, '_> {
 
                     (TypeElement::Method(p), TypeElement::Method(a)) => {
                         if self
-                            .assign(&mut Default::default(), &p.key.ty(), &a.key.ty(), span)
+                            .assign(span, &mut Default::default(), &p.key.ty(), &a.key.ty())
                             .is_ok()
                         {
                             self.infer_type_of_fn_params(span, inferred, &p.params, &a.params, opts)?;

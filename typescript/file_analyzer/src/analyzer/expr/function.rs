@@ -121,7 +121,7 @@ impl Analyzer<'_, '_> {
             if let Some(ref declared) = declared_ret_ty {
                 let span = inferred_return_type.span();
                 if let Some(ref inferred) = inferred_return_type {
-                    child.assign(&mut Default::default(), declared, inferred, span)?;
+                    child.assign(span, &mut Default::default(), declared, inferred)?;
                 }
             }
 
