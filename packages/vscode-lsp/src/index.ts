@@ -15,7 +15,7 @@ export function activate(context: ExtensionContext) {
         args: ['run', '--', 'lsp'],
         options: {
             cwd: __dirname
-        }
+        },
     };
 
 
