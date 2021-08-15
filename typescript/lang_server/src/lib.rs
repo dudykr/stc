@@ -3,6 +3,7 @@ use lspower::{
     lsp::*,
     Client, LanguageServer,
 };
+use stc_ts_checker_impl::FastTypeChecker;
 use swc_common::{sync::Lrc, SourceMap};
 use tracing::error;
 
@@ -11,6 +12,7 @@ mod swc;
 pub struct LspBackend {
     pub cm: Lrc<SourceMap>,
     pub client: Client,
+    pub checker: FastTypeChecker,
 }
 
 #[lspower::async_trait]
