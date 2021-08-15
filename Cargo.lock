@@ -2001,7 +2001,10 @@ dependencies = [
 name = "stc_ts_checker_impl"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "stc_ts_checker_api",
+ "stc_ts_file_analyzer",
+ "stc_ts_storage",
  "stc_ts_utils",
  "stc_utils",
  "swc_atoms",
