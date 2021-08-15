@@ -12,6 +12,7 @@ version = "0.1.0"
 perf = ["slog/release_max_level_off"]
 
 [dependencies]
+async-trait = "0.1.51"
 dashmap = {version = "3", features = ["raw-api"]}
 fxhash = "0.2.1"
 once_cell = "1.5.2"

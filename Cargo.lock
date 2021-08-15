@@ -2237,6 +2237,7 @@ name = "stc_ts_type_checker"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "dashmap 3.11.10",
  "fxhash",
  "ignore",
