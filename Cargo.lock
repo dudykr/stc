@@ -1916,6 +1916,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "stc_ts_checker_api"
+version = "0.1.0"
+dependencies = [
+ "stc_ts_errors",
+ "stc_ts_types",
+]
+
+[[package]]
 name = "stc_ts_dts"
 version = "0.1.0"
 dependencies = [
@@ -2166,6 +2174,7 @@ dependencies = [
  "stc_testing",
  "stc_ts_ast_rnode",
  "stc_ts_builtin_types",
+ "stc_ts_checker_api",
  "stc_ts_dts",
  "stc_ts_errors",
  "stc_ts_file_analyzer",

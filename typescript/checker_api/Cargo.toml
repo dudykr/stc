@@ -1,0 +1,12 @@
+[package]
+authors = ["강동윤 <kdy1997.dev@gmail.com>"]
+edition = "2018"
+name = "stc_ts_checker_api"
+publish = false
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+stc_ts_errors = {path = "../errors/"}
+stc_ts_types = {path = "../types/"}
