@@ -1919,6 +1919,7 @@ dependencies = [
 name = "stc_ts_checker_api"
 version = "0.1.0"
 dependencies = [
+ "auto_impl",
  "stc_ts_errors",
  "stc_ts_types",
  "stc_ts_utils",

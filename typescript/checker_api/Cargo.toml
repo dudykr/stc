@@ -8,6 +8,7 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+auto_impl = "0.4.1"
 stc_ts_errors = {path = "../errors/"}
 stc_ts_types = {path = "../types/"}
 stc_ts_utils = {path = "../utils/"}
