@@ -2062,6 +2062,7 @@ dependencies = [
  "stc_ts_env",
  "stc_ts_type_checker",
  "stc_ts_types",
+ "swc_common",
  "tokio",
  "tracing",
 ]
@@ -2375,10 +2376,11 @@ dependencies = [
 
 [[package]]
 name = "swc_common"
-version = "0.11.4"
+version = "0.11.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f303985ebd578a033371a87be28cb54189d3ae5d492622523200f4de08db5275"
+checksum = "0fc89b8c9f2fa3fc646e7d1a05ebc2063b1396b3ba5277afc741505bd7414fff"
 dependencies = [
+ "ahash 0.7.4",
  "ast_node",
  "atty",
  "cfg-if 0.1.10",
