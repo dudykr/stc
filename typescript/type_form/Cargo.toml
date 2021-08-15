@@ -13,7 +13,7 @@ stc_ts_ast_rnode = {path = "../ast_rnode"}
 stc_ts_types = {path = "../types"}
 stc_utils = {path = "../../utils"}
 stc_visit = {path = "../../visit"}
-swc_common = "0.11.4"
+swc_common = "0.11.6"
 swc_ecma_ast = "0.49.1"
 
 [dev-dependencies]
