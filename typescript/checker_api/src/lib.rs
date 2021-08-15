@@ -10,10 +10,11 @@ pub mod cache;
 /// Note that [swc_common::Globals] is shared.
 #[async_trait]
 #[auto_impl(Arc, Box)]
-pub trait TypeChecker: Sized {
-    async fn check(&self, name: FileName, src: &str) -> FileData;
+pub trait TypeChecker: Sized + Send + Sync {
+    async fn check(&self, name: &FileName, src: &str) -> FileData;
 }
 
+/// This is cheap to clone.
 #[derive(Clone)]
 pub struct FileData {
     pub cm: Lrc<SourceMap>,
