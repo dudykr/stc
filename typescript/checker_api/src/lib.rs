@@ -1,5 +1,6 @@
+use async_trait::async_trait;
 use auto_impl::auto_impl;
-use swc_common::{errors::Handler, sync::Lrc, SourceFile, SourceMap};
+use swc_common::{sync::Lrc, FileName, SourceFile, SourceMap};
 
 pub mod cache;
 
@@ -7,13 +8,14 @@ pub mod cache;
 ///
 ///
 /// Note that [swc_common::Globals] is shared.
+#[async_trait]
 #[auto_impl(Arc, Box)]
-pub trait TypeChecker {
-    fn check(&self, cm: Lrc<SourceMap>, handler: Lrc<Handler>, fm: Lrc<SourceFile>) -> FileResult;
+pub trait TypeChecker: Sized {
+    async fn check(&self, name: FileName, src: &str) -> FileData;
 }
 
 #[derive(Clone)]
-pub struct FileResult {
+pub struct FileData {
     pub cm: Lrc<SourceMap>,
     pub fm: Lrc<SourceFile>,
 }
