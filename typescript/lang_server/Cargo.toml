@@ -14,3 +14,4 @@ stc_ts_env = {path = "../env"}
 stc_ts_type_checker = {path = "../type_checker"}
 stc_ts_types = {path = "../types"}
 tokio = {version = "1.7.1", features = ["rt", "rt-multi-thread", "macros", "io-util", "io-std", "time", "fs"]}
+tracing = "0.1.26"

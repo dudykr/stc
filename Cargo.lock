@@ -2063,6 +2063,7 @@ dependencies = [
  "stc_ts_type_checker",
  "stc_ts_types",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
