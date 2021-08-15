@@ -2067,6 +2067,7 @@ version = "0.1.0"
 dependencies = [
  "lspower",
  "stc_ts_ast_rnode",
+ "stc_ts_checker_api",
  "stc_ts_env",
  "stc_ts_type_checker",
  "stc_ts_types",

@@ -10,6 +10,7 @@ version = "0.1.0"
 [dependencies]
 lspower = "1.1.0"
 stc_ts_ast_rnode = {path = "../ast_rnode"}
+stc_ts_checker_api = { path = "../checker_api/" }
 stc_ts_env = {path = "../env"}
 stc_ts_type_checker = {path = "../type_checker"}
 stc_ts_types = {path = "../types"}
