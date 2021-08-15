@@ -11,6 +11,7 @@ impl LspCommand {
     #[instrument(skip(self))]
     pub async fn run(self) {
         info!("Starting server");
+        eprintln!("Version of stc: {}", env!("CARGO_PKG_VERSION"));
 
         let stdin = tokio::io::stdin();
         let stdout = tokio::io::stdout();
