@@ -1,6 +1,8 @@
 use crate::{lsp::LspCommand, tsc::TscCommand};
 use anyhow::Error;
+use std::io;
 use structopt::StructOpt;
+use tracing::Level;
 
 mod lsp;
 mod tsc;
@@ -21,8 +23,10 @@ enum Command {
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     let sub = tracing_subscriber::FmtSubscriber::builder()
+        .with_writer(io::stderr)
         .with_target(false)
         .with_ansi(true)
+        .with_max_level(Level::TRACE)
         .without_time()
         .finish();
 
