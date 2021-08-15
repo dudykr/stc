@@ -1998,6 +1998,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "stc_ts_checker_impl"
+version = "0.1.0"
+dependencies = [
+ "stc_ts_checker_api",
+ "stc_ts_utils",
+ "stc_utils",
+ "swc_atoms",
+ "swc_common",
+]
+
+[[package]]
 name = "stc_ts_dts"
 version = "0.1.0"
 dependencies = [
@@ -2142,8 +2153,8 @@ dependencies = [
  "lspower",
  "stc_ts_ast_rnode",
  "stc_ts_checker_api",
+ "stc_ts_checker_impl",
  "stc_ts_env",
- "stc_ts_type_checker",
  "stc_ts_types",
  "swc_common",
  "tokio",
