@@ -3,14 +3,14 @@ use async_trait::async_trait;
 use double_checked_cell_async::DoubleCheckedCell;
 use std::sync::Arc;
 use swc_common::{collections::AHashMap, FileName};
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 
 #[derive(Clone)]
 pub struct Deduplicated<C>
 where
     C: TypeChecker,
 {
-    cur_tasks: Arc<Mutex<AHashMap<FileName, DoubleCheckedCell<FileData>>>>,
+    cur_tasks: Arc<RwLock<AHashMap<FileName, DoubleCheckedCell<FileData>>>>,
 
     inner: C,
 }
@@ -21,13 +21,25 @@ where
     C: TypeChecker,
 {
     async fn check(&self, name: &FileName, src: &str) -> FileData {
-        let mut lock = self.cur_tasks.clone().lock_owned().await;
+        let result = {
+            let global_read_lock = {
+                let mut lock = self.cur_tasks.clone().write_owned().await;
 
-        let entry = lock.entry(name.clone()).or_default();
+                // Insert
+                lock.entry(name.clone()).or_default();
 
-        entry
-            .get_or_init(async { self.inner.check(name, src).await })
-            .await
-            .clone()
+                lock.downgrade()
+            };
+
+            let cell = global_read_lock.get(&name).unwrap();
+
+            cell.get_or_init(async { self.inner.check(name, src).await })
+                .await
+                .clone()
+        };
+        let mut lock = self.cur_tasks.clone().write_owned().await;
+        lock.remove(name);
+
+        result
     }
 }
