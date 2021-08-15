@@ -21,6 +21,22 @@
 			"dependsOn": [
 				"cargo: build"
 			]
+		},
+		{
+			"type": "npm",
+			"script": "watch",
+			"path": "packages/vscode-lsp/",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"presentation": {
+				"reveal": "never"
+			},
+			"group": "build",
+			"label": "npm: watch",
+			"detail": "tsc",
+			"dependsOn": [
+				"cargo: build"
+			]
 		}
 	]
 }

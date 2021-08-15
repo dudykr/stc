@@ -8,7 +8,7 @@
             "outFiles": [
                 "${workspaceFolder}/packages/vscode-lsp/lib/**/*.js"
             ],
-            "preLaunchTask": "npm: build vscode extension",
+            "preLaunchTask": "npm: watch",
             "request": "launch",
             "type": "pwa-extensionHost"
         }
