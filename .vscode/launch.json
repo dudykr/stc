@@ -2,7 +2,9 @@
     "configurations": [
         {
             "args": [
-                "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-lsp"
+                "--disable-extensions",
+                "--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-lsp",
+                "${workspaceFolder}/typescript/type_checker/tests/conformance"
             ],
             "name": "Launch Extension",
             "outFiles": [
@@ -10,7 +12,7 @@
             ],
             "preLaunchTask": "npm: watch",
             "request": "launch",
-            "type": "pwa-extensionHost"
+            "type": "pwa-extensionHost",
         }
     ]
 }
