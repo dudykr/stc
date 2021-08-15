@@ -11,6 +11,7 @@ version = "0.1.0"
 ahash = "0.7.4"
 async-trait = "0.1.51"
 auto_impl = "0.4.1"
+double-checked-cell-async = "2.0.2"
 futures = "0.3.16"
 stc_ts_errors = {path = "../errors/"}
 stc_ts_types = {path = "../types/"}
