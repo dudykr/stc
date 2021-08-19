@@ -9,7 +9,7 @@ use std::{
 pub mod error;
 pub mod ext;
 pub mod panic_context;
-pub mod path_key;
+pub mod path;
 pub mod stack;
 
 pub type ABuilderHasher = ahash::RandomState;
