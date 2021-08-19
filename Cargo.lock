@@ -2003,6 +2003,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "stc_ts_checker_api",
+ "stc_ts_dep_graph",
  "stc_ts_file_analyzer",
  "stc_ts_storage",
  "stc_ts_utils",
@@ -2010,6 +2011,10 @@ dependencies = [
  "swc_atoms",
  "swc_common",
 ]
+
+[[package]]
+name = "stc_ts_dep_graph"
+version = "0.1.0"
 
 [[package]]
 name = "stc_ts_dts"
