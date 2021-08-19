@@ -97,12 +97,6 @@ impl Checker {
 }
 
 impl Checker {
-    /// Get type informations of a module.
-    pub fn get_types(&self, id: ModuleId) -> Option<Arc<ModuleTypeData>> {
-        let lock = self.module_types.read();
-        lock.get(&id).and_then(|v| v.get().cloned())
-    }
-
     /// Removes dts module from `self` and return it.
     pub fn take_dts(&self, id: ModuleId) -> Option<Module> {
         self.dts_modules.remove(&id).map(|v| v.1.into_orig())
