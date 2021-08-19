@@ -1,8 +1,9 @@
 use crate::{FileData, TypeChecker};
 use async_trait::async_trait;
 use double_checked_cell_async::DoubleCheckedCell;
+use stc_utils::path::intern::FileId;
 use std::sync::Arc;
-use swc_common::{collections::AHashMap, FileName};
+use swc_common::collections::AHashMap;
 use tokio::sync::RwLock;
 
 #[derive(Clone)]
@@ -10,7 +11,7 @@ pub struct Deduplicated<C>
 where
     C: TypeChecker,
 {
-    cur_tasks: Arc<RwLock<AHashMap<FileName, DoubleCheckedCell<FileData>>>>,
+    cur_tasks: Arc<RwLock<AHashMap<FileId, DoubleCheckedCell<FileData>>>>,
 
     inner: C,
 }
@@ -20,7 +21,7 @@ impl<C> TypeChecker for Deduplicated<C>
 where
     C: TypeChecker,
 {
-    async fn check(&self, name: &FileName, src: &str) -> FileData {
+    async fn check(&self, name: &FileId, src: &str) -> FileData {
         let result = {
             let global_read_lock = {
                 let mut lock = self.cur_tasks.clone().write_owned().await;

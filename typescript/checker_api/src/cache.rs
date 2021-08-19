@@ -1,7 +1,8 @@
 use crate::{FileData, TypeChecker};
 use async_trait::async_trait;
+use stc_utils::path::intern::FileId;
 use std::{collections::hash_map::Entry, sync::Arc};
-use swc_common::{collections::AHashMap, FileName};
+use swc_common::collections::AHashMap;
 use tokio::sync::Mutex;
 
 #[derive(Clone)]
@@ -10,7 +11,7 @@ where
     C: TypeChecker,
 {
     capacity: usize,
-    cache: Arc<Mutex<AHashMap<FileName, FileData>>>,
+    cache: Arc<Mutex<AHashMap<FileId, FileData>>>,
     inner: C,
 }
 
@@ -35,7 +36,7 @@ impl<C> TypeChecker for Cached<C>
 where
     C: TypeChecker,
 {
-    async fn check(&self, name: &FileName, src: &str) -> FileData {
+    async fn check(&self, name: &FileId, src: &str) -> FileData {
         {
             let mut cache = self.cache.clone().lock_owned().await;
 

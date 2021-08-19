@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use auto_impl::auto_impl;
-use swc_common::{sync::Lrc, FileName, SourceFile, SourceMap};
+use stc_utils::path::intern::FileId;
+use swc_common::{sync::Lrc, SourceFile, SourceMap};
 
 pub mod cache;
 pub mod dedup;
@@ -15,7 +16,7 @@ pub mod dedup;
 #[async_trait]
 #[auto_impl(Arc, Box)]
 pub trait TypeChecker: Sized + Send + Sync {
-    async fn check(&self, name: &FileName, src: &str) -> FileData;
+    async fn check(&self, name: &FileId, src: &str) -> FileData;
 }
 
 /// This is cheap to clone.
