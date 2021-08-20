@@ -9,6 +9,7 @@ version = "0.1.0"
 
 [dependencies]
 anyhow = "1.0.43"
+derive_more = "0.99.16"
 stc_ts_utils = {path = "../utils/"}
 stc_utils = {path = "../../utils/"}
 swc_atoms = "0.2.6"
