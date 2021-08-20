@@ -2072,6 +2072,7 @@ name = "stc_ts_dep_graph"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "auto_impl",
  "derivative",
  "derive_more",
  "stc_ts_utils",
