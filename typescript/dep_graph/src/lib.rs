@@ -6,6 +6,7 @@ use std::sync::Arc;
 use swc_common::{sync::Lrc, SourceFile, SourceMap};
 use swc_ecma_ast::Module;
 
+pub mod loaders;
 pub mod resolve;
 pub mod resolvers;
 
