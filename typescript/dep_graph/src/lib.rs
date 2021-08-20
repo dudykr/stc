@@ -6,6 +6,9 @@ use std::sync::Arc;
 use swc_common::{sync::Lrc, SourceFile, SourceMap};
 use swc_ecma_ast::Module;
 
+pub mod resolve;
+pub mod resolvers;
+
 #[derive(Debug, Clone)]
 pub enum Chunk {
     Cycle(Vec<ParsedModule>),
