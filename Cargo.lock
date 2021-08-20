@@ -2075,6 +2075,7 @@ dependencies = [
  "auto_impl",
  "derivative",
  "derive_more",
+ "once_cell",
  "stc_ts_utils",
  "stc_utils",
  "swc_atoms",
