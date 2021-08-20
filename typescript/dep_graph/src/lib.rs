@@ -10,6 +10,7 @@ use std::{
 use swc_common::{sync::Lrc, SourceFile, SourceMap};
 use swc_ecma_ast::Module;
 
+mod deps;
 pub mod loaders;
 pub mod resolvers;
 
