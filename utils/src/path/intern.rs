@@ -60,6 +60,9 @@ impl From<Arc<FileName>> for FileId {
 }
 
 impl FileId {
+    pub fn path(&self) -> Arc<FileName> {
+        with(|g| g.paths.get(&self.0).cloned()).unwrap()
+    }
     pub fn get(path: impl Into<FileName>) -> Self {
         let path = path.into();
 
