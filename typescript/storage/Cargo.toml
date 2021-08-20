@@ -12,5 +12,5 @@ fxhash = "0.2.1"
 stc_ts_errors = {path = "../errors"}
 stc_ts_types = {path = "../types"}
 stc_utils = {path = "../../utils"}
-swc_atoms = "0.2.6"
+swc_atoms = "0.2.7"
 swc_common = "0.11.6"

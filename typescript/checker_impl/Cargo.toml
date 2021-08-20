@@ -15,5 +15,5 @@ stc_ts_file_analyzer = {path = "../file_analyzer/"}
 stc_ts_storage = {path = "../storage/"}
 stc_ts_utils = {path = "../utils/"}
 stc_utils = {path = "../../utils/"}
-swc_atoms = "0.2.6"
+swc_atoms = "0.2.7"
 swc_common = "0.11.6"
