@@ -2079,6 +2079,7 @@ dependencies = [
  "derive_more",
  "fxhash",
  "once_cell",
+ "rayon",
  "stc_ts_utils",
  "stc_utils",
  "swc_atoms",
