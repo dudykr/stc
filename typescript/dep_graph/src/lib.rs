@@ -20,6 +20,21 @@ pub enum Chunk {
     Single(Arc<ParsedModule>),
 }
 
+#[derive(Debug)]
+pub struct MultiError {
+    pub errors: Vec<Error>,
+}
+
+impl Display for MultiError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        for e in &self.errors {
+            write!(f, "{}", e)?;
+        }
+
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ParsingError {
     pub errors: Vec<swc_ecma_parser::error::Error>,
