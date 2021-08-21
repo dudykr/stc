@@ -16,6 +16,7 @@ derivative = "2.2.0"
 derive_more = "0.99.16"
 fxhash = "0.2.1"
 once_cell = "1.8.0"
+petgraph = "0.6.0"
 rayon = "1.5.1"
 stc_ts_utils = {path = "../utils/"}
 stc_utils = {path = "../../utils/"}
