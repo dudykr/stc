@@ -2071,10 +2071,13 @@ dependencies = [
 name = "stc_ts_dep_graph"
 version = "0.1.0"
 dependencies = [
+ "ahash 0.7.4",
  "anyhow",
  "auto_impl",
+ "dashmap 4.0.2",
  "derivative",
  "derive_more",
+ "fxhash",
  "once_cell",
  "stc_ts_utils",
  "stc_utils",
