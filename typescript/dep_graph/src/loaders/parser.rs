@@ -142,7 +142,7 @@ where
         Ok(())
     }
 
-    fn load_dep(&self, base: FileId, module_specifier: &str) -> Result<(), Error> {
+    fn load_dep(&self, base: FileId, module_specifier: &str) -> Result<FileId, Error> {
         (|| -> Result<_, Error> {
             let dep = self
                 .resolver
@@ -160,7 +160,7 @@ where
                 lock.insert(base, dep);
             }
 
-            Ok(())
+            Ok(dep)
         })()
         .with_context(|| format!("failed to load `{}` from `{}`", module_specifier, base))
     }
@@ -171,6 +171,17 @@ where
     R: Resolve,
 {
     fn load(&self, base: FileId, module_specifier: &str) -> Result<Chunk, Error> {
-        self.load_dep(base, module_specifier)?;
+        let dep_id = self.load_dep(base, module_specifier)?;
+
+        let m = self
+            .cache
+            .get(&dep_id)
+            .ok_or_else(|| anyhow!("Not loaded: {}", dep_id))?;
+
+        let m = (*m).clone();
+
+        // TODO: Detect cycle
+
+        Ok(Chunk::Single(m))
     }
 }

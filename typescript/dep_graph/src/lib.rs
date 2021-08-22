@@ -17,7 +17,7 @@ pub mod resolvers;
 #[derive(Debug, Clone)]
 pub enum Chunk {
     Cycle(Vec<ParsedModule>),
-    Single(Arc<ParsedModule>),
+    Single(ParsedModule),
 }
 
 #[derive(Debug)]
