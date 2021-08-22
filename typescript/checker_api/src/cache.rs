@@ -36,7 +36,7 @@ impl<C> TypeChecker for Cached<C>
 where
     C: TypeChecker,
 {
-    async fn check(&self, name: &FileId, src: &str) -> FileData {
+    async fn check(&self, name: FileId, src: &str) -> FileData {
         {
             let mut cache = self.cache.clone().lock_owned().await;
 

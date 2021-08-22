@@ -16,7 +16,7 @@ pub mod dedup;
 #[async_trait]
 #[auto_impl(Arc, Box)]
 pub trait TypeChecker: Sized + Send + Sync {
-    async fn check(&self, name: &FileId, src: &str) -> FileData;
+    async fn check(&self, name: FileId, src: &str) -> FileData;
 }
 
 /// This is cheap to clone.

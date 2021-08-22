@@ -2077,6 +2077,7 @@ dependencies = [
  "stc_ts_dep_graph",
  "stc_ts_file_analyzer",
  "stc_ts_storage",
+ "stc_ts_types",
  "stc_ts_utils",
  "stc_utils",
  "swc_atoms",

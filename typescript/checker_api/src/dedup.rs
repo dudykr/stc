@@ -21,7 +21,7 @@ impl<C> TypeChecker for Deduplicated<C>
 where
     C: TypeChecker,
 {
-    async fn check(&self, name: &FileId, src: &str) -> FileData {
+    async fn check(&self, name: FileId, src: &str) -> FileData {
         let result = {
             let global_read_lock = {
                 let mut lock = self.cur_tasks.clone().write_owned().await;
@@ -39,7 +39,7 @@ where
                 .clone()
         };
         let mut lock = self.cur_tasks.clone().write_owned().await;
-        lock.remove(name);
+        lock.remove(&name);
 
         result
     }
