@@ -2099,6 +2099,7 @@ dependencies = [
  "once_cell",
  "petgraph 0.6.0",
  "rayon",
+ "stc_ts_ast_rnode",
  "stc_ts_utils",
  "stc_utils",
  "swc_atoms",
