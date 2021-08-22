@@ -1,13 +1,25 @@
 use crate::{deps::find_deps, Chunk, Load, MultiError, ParsedModule, ParsingError, Resolve};
 use anyhow::{anyhow, bail, Context, Error};
 use dashmap::DashMap;
+use fxhash::FxHashSet;
+use petgraph::graphmap::DiGraphMap;
 use rayon::prelude::*;
 use stc_ts_utils::StcComments;
 use stc_utils::path::intern::FileId;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use swc_common::{input::SourceFileInput, sync::Lrc, FileName, FilePathMapping, SourceMap};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
+
+#[derive(Debug, Default)]
+struct DepData {
+    cycles: Vec<FxHashSet<FileId>>,
+    graph: DiGraphMap<FileId, ()>,
+}
+
+impl DepData {
+    fn insert(&mut self, base: FileId, dep: FileId) {}
+}
 
 /// The layer connecting [Load] and [Resolve].
 ///
@@ -21,6 +33,8 @@ where
     resolver: R,
     parser_config: TsConfig,
     parser_target: EsVersion,
+
+    deps: Mutex<DepData>,
 }
 
 impl<R> ParsingLoader<R>
@@ -33,6 +47,7 @@ where
             parser_config,
             parser_target,
             cache: Default::default(),
+            deps: Default::default(),
         }
     }
 }
@@ -106,7 +121,8 @@ where
         let (module, fresh) = self.parse_file(file)?;
 
         if fresh {
-            let deps = find_deps(&module.module);
+            let mut deps = find_deps(&module.module);
+            deps.dedup();
 
             let errors = deps
                 .into_par_iter()
@@ -134,6 +150,15 @@ where
                 .with_context(|| format!("failed to resolve `{}` from `{}`", module_specifier, base))?;
 
             self.load_file_recursively(dep)?;
+
+            {
+                let mut lock = self
+                    .deps
+                    .lock()
+                    .expect("failed to lock the mutex for a dependency graph");
+
+                lock.insert(base, dep);
+            }
 
             Ok(())
         })()
