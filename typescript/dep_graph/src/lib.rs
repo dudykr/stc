@@ -66,7 +66,7 @@ pub struct ParsedModule {
 
 #[auto_impl(Arc, Box, &)]
 pub trait Load: Send + Sync {
-    fn load(&self, base: FileId, module_specifier: &str) -> Result<Chunk, Error>;
+    fn load(&self, file: FileId) -> Result<Chunk, Error>;
 }
 
 #[auto_impl(Arc, Box, &)]

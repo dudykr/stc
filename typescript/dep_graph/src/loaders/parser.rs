@@ -170,13 +170,13 @@ impl<R> Load for ParsingLoader<R>
 where
     R: Resolve,
 {
-    fn load(&self, base: FileId, module_specifier: &str) -> Result<Chunk, Error> {
-        let dep_id = self.load_dep(base, module_specifier)?;
+    fn load(&self, file_id: FileId) -> Result<Chunk, Error> {
+        self.load_file_recursively(file_id)?;
 
         let m = self
             .cache
-            .get(&dep_id)
-            .ok_or_else(|| anyhow!("Not loaded: {}", dep_id))?;
+            .get(&file_id)
+            .ok_or_else(|| anyhow!("Not loaded: {}", file_id))?;
 
         let m = (*m).clone();
 
