@@ -2081,6 +2081,7 @@ dependencies = [
  "stc_utils",
  "swc_atoms",
  "swc_common",
+ "tokio",
 ]
 
 [[package]]
