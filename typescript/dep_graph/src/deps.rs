@@ -1,12 +1,11 @@
+use rnode::{Visit, VisitWith};
+use stc_ts_ast_rnode::{RExportAll, RImportDecl, RModule, RNamedExport};
 use swc_atoms::JsWord;
-use swc_common::DUMMY_SP;
-use swc_ecma_ast::*;
-use swc_ecma_visit::{Node, Visit, VisitWith};
 
-pub(crate) fn find_deps(m: &Module) -> Vec<JsWord> {
+pub(crate) fn find_deps(m: &RModule) -> Vec<JsWord> {
     let mut v = DepFinder::default();
 
-    m.visit_with(&Invalid { span: DUMMY_SP }, &mut v);
+    m.visit_with(&mut v);
 
     v.files
 }
@@ -16,17 +15,22 @@ struct DepFinder {
     files: Vec<JsWord>,
 }
 
-impl Visit for DepFinder {
-    fn visit_import_decl(&mut self, import: &ImportDecl, _: &dyn Node) {
+impl Visit<RImportDecl> for DepFinder {
+    fn visit(&mut self, import: &RImportDecl) {
         self.files.push(import.src.value.clone());
     }
+}
 
-    fn visit_named_export(&mut self, export: &NamedExport, _: &dyn Node) {
+impl Visit<RNamedExport> for DepFinder {
+    fn visit(&mut self, export: &RNamedExport) {
         if let Some(src) = &export.src {
             self.files.push(src.value.clone());
         }
     }
-    fn visit_export_all(&mut self, export: &ExportAll, _: &dyn Node) {
+}
+
+impl Visit<RExportAll> for DepFinder {
+    fn visit(&mut self, export: &RExportAll) {
         self.files.push(export.src.value.clone());
     }
 }

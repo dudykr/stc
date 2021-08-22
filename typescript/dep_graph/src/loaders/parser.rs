@@ -4,12 +4,16 @@ use dashmap::DashMap;
 use fxhash::FxHashSet;
 use petgraph::graphmap::DiGraphMap;
 use rayon::prelude::*;
+use rnode::{NodeIdGenerator, RNode};
+use stc_ts_ast_rnode::RModule;
 use stc_ts_utils::StcComments;
 use stc_utils::path::intern::FileId;
 use std::sync::{Arc, Mutex};
-use swc_common::{input::SourceFileInput, sync::Lrc, FileName, FilePathMapping, SourceMap};
+use swc_common::{input::SourceFileInput, sync::Lrc, FileName, FilePathMapping, Mark, SourceMap};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
+use swc_ecma_transforms_base::resolver::ts_resolver;
+use swc_ecma_visit::FoldWith;
 
 #[derive(Debug, Default)]
 struct DepData {
@@ -29,10 +33,13 @@ pub struct ParsingLoader<R>
 where
     R: Resolve,
 {
-    cache: DashMap<FileId, ParsedModule, fxhash::FxBuildHasher>,
     resolver: R,
     parser_config: TsConfig,
     parser_target: EsVersion,
+
+    top_level_mark: Mark,
+
+    cache: DashMap<FileId, ParsedModule, fxhash::FxBuildHasher>,
 
     deps: Mutex<DepData>,
 }
@@ -41,11 +48,12 @@ impl<R> ParsingLoader<R>
 where
     R: Resolve,
 {
-    pub fn new(resolver: R, parser_config: TsConfig, parser_target: EsVersion) -> Self {
+    pub fn new(resolver: R, parser_config: TsConfig, parser_target: EsVersion, top_level_mark: Mark) -> Self {
         ParsingLoader {
             resolver,
             parser_config,
             parser_target,
+            top_level_mark,
             cache: Default::default(),
             deps: Default::default(),
         }
@@ -94,10 +102,18 @@ where
                 return Err(anyhow!(err));
             }
 
+            let mut module = module.unwrap();
+
+            let module = {
+                let mut node_id_gen = NodeIdGenerator::default();
+                module = module.fold_with(&mut ts_resolver(self.top_level_mark));
+                RModule::from_orig(&mut node_id_gen, module)
+            };
+
             Ok(ParsedModule {
                 cm: cm.clone(),
                 fm: fm.clone(),
-                module: Lrc::new(module.unwrap()),
+                module: Lrc::new(module),
                 comments: Arc::new(comments),
             })
         })()

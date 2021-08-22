@@ -1,6 +1,10 @@
+#![feature(specialization)]
+#![allow(incomplete_features)]
+
 use anyhow::Error;
 use auto_impl::auto_impl;
 use derivative::Derivative;
+use stc_ts_ast_rnode::RModule;
 use stc_ts_utils::StcComments;
 use stc_utils::path::intern::FileId;
 use std::{
@@ -8,7 +12,6 @@ use std::{
     sync::Arc,
 };
 use swc_common::{sync::Lrc, SourceFile, SourceMap};
-use swc_ecma_ast::Module;
 
 mod deps;
 pub mod loaders;
@@ -58,7 +61,7 @@ pub struct ParsedModule {
     #[derivative(Debug = "ignore")]
     pub fm: Lrc<SourceFile>,
 
-    pub module: Arc<Module>,
+    pub module: Arc<RModule>,
 
     #[derivative(Debug = "ignore")]
     pub comments: Arc<StcComments>,
