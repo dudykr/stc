@@ -7,6 +7,7 @@ use petgraph::{algo::all_simple_paths, graphmap::DiGraphMap};
 use rayon::prelude::*;
 use slog::Logger;
 use stc_ts_types::{module_id, ModuleId};
+use stc_utils::path::intern::FileId;
 use std::{
     collections::HashSet,
     path::{Path, PathBuf},
@@ -32,7 +33,7 @@ where
     comments: Option<C>,
 
     id_generator: module_id::Generator,
-    paths: DashMap<ModuleId, Arc<PathBuf>, FxBuildHasher>,
+    paths: DashMap<ModuleId, FileId, FxBuildHasher>,
     loaded: DashMap<ModuleId, Arc<Module>, FxBuildHasher>,
     resolver: R,
 
@@ -92,7 +93,7 @@ where
         Ok(module_id)
     }
 
-    pub fn path(&self, id: ModuleId) -> Arc<PathBuf> {
+    pub fn path(&self, id: ModuleId) -> FileId {
         self.paths.get(&id).unwrap().clone()
     }
 
@@ -135,8 +136,8 @@ where
             None => return Ok(()),
         };
 
-        let (_, id) = self.id_generator.generate(path);
-        self.paths.insert(id, path.clone());
+        let (_, id) = self.id_generator.generate((**path).clone().into());
+        self.paths.insert(id, (**path).clone().into());
 
         let res = self.loaded.insert(id, loaded.module);
         assert_eq!(res, None, "duplicate?");
@@ -147,8 +148,8 @@ where
             .map(|dep_path| -> Result<_, Error> {
                 let _ = self.load_including_deps(&dep_path);
 
-                let id = self.id_generator.generate(&dep_path).1;
-                self.paths.insert(id, dep_path.clone());
+                let id = self.id_generator.generate((*dep_path).clone().into()).1;
+                self.paths.insert(id, (*dep_path).clone().into());
                 Ok(id)
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -191,7 +192,7 @@ where
     ///
     /// Note that this methods does not modify `self.loaded`.
     fn load(&self, path: &Arc<PathBuf>) -> Result<Option<LoadResult>, Error> {
-        let (new, module_id) = self.id_generator.generate(path);
+        let (new, module_id) = self.id_generator.generate((**path).clone().into());
 
         if !new || self.loaded.contains_key(&module_id) {
             return Ok(None);

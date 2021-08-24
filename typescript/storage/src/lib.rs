@@ -45,7 +45,7 @@ pub trait Mode: TypeStore + ErrorStore {
     /// Returns the id of the module where statement #`stmt_index` came from.
     fn module_id(&self, stmt_index: usize) -> ModuleId;
 
-    fn path(&self, id: ModuleId) -> Arc<PathBuf>;
+    fn path(&self, id: ModuleId) -> FileId;
 
     fn subscope(&self) -> Storage;
 
@@ -121,7 +121,7 @@ where
         (**self).module_id(stmt_index)
     }
 
-    fn path(&self, id: ModuleId) -> Arc<PathBuf> {
+    fn path(&self, id: ModuleId) -> FileId {
         (**self).path(id)
     }
 
@@ -134,7 +134,7 @@ where
 pub struct Single<'a> {
     pub parent: Option<&'a Single<'a>>,
     pub id: ModuleId,
-    pub path: Arc<PathBuf>,
+    pub path: FileId,
     pub info: Info,
 }
 
@@ -262,7 +262,7 @@ impl<'a> Mode for Single<'a> {
         self.id
     }
 
-    fn path(&self, id: ModuleId) -> Arc<PathBuf> {
+    fn path(&self, id: ModuleId) -> FileId {
         debug_assert_eq!(id, self.id);
         self.path.clone()
     }
@@ -418,7 +418,7 @@ impl Mode for Group<'_> {
         unreachable!("failed to get module id")
     }
 
-    fn path(&self, id: ModuleId) -> Arc<PathBuf> {
+    fn path(&self, id: ModuleId) -> FileId {
         for file in self.files.iter() {
             if file.id == id {
                 return file.path.clone();
@@ -510,7 +510,7 @@ impl Mode for Builtin {
         ModuleId::builtin()
     }
 
-    fn path(&self, _: ModuleId) -> Arc<PathBuf> {
+    fn path(&self, _: ModuleId) -> FileId {
         unreachable!("builtin.path()")
     }
 
