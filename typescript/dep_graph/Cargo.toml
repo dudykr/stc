@@ -20,6 +20,7 @@ petgraph = "0.6.0"
 rayon = "1.5.1"
 rnode = {path = "../../rnode/"}
 stc_ts_ast_rnode = {path = "../ast_rnode/"}
+stc_ts_types = {path = "../types"}
 stc_ts_utils = {path = "../utils/"}
 stc_utils = {path = "../../utils/"}
 swc_atoms = "0.2.7"

@@ -2073,8 +2073,11 @@ name = "stc_ts_checker_impl"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "slog",
  "stc_ts_checker_api",
  "stc_ts_dep_graph",
+ "stc_ts_dts",
+ "stc_ts_dts_mutations",
  "stc_ts_file_analyzer",
  "stc_ts_storage",
  "stc_ts_types",
@@ -2101,6 +2104,7 @@ dependencies = [
  "rayon",
  "rnode",
  "stc_ts_ast_rnode",
+ "stc_ts_types",
  "stc_ts_utils",
  "stc_utils",
  "swc_atoms",
