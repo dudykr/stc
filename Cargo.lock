@@ -2078,6 +2078,7 @@ dependencies = [
  "stc_ts_dep_graph",
  "stc_ts_dts",
  "stc_ts_dts_mutations",
+ "stc_ts_errors",
  "stc_ts_file_analyzer",
  "stc_ts_storage",
  "stc_ts_types",
