@@ -3,6 +3,7 @@
 use fxhash::FxHashMap;
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, Type};
+use stc_utils::path::intern::FileId;
 use std::{collections::hash_map::Entry, mem::take, path::PathBuf, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{iter::IdentifyLast, Span, TypeEq, DUMMY_SP};
@@ -279,7 +280,7 @@ impl<'a> Mode for Single<'a> {
 #[derive(Debug, Clone)]
 pub struct File {
     pub id: ModuleId,
-    pub path: Arc<PathBuf>,
+    pub path: FileId,
     pub stmt_count: usize,
 }
 
@@ -521,6 +522,7 @@ impl Mode for Builtin {
 #[cfg(test)]
 mod tests {
     use stc_ts_types::module_id;
+    use stc_utils::path::intern::FileId;
 
     use super::*;
 
@@ -528,15 +530,15 @@ mod tests {
     fn group_01() {
         let gen = module_id::Generator::default();
 
-        let path1 = Arc::new(PathBuf::from("1"));
+        let path1 = FileId::from(PathBuf::from("1"));
         let file1 = File {
-            id: gen.generate(&path1).1,
+            id: gen.generate(path1).1,
             path: path1.clone(),
             stmt_count: 4,
         };
-        let path2 = Arc::new(PathBuf::from("2"));
+        let path2 = FileId::from(PathBuf::from("2"));
         let file2 = File {
-            id: gen.generate(&path2).1,
+            id: gen.generate(path2).1,
             path: path2.clone(),
             stmt_count: 5,
         };

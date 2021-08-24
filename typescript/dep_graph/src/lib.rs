@@ -5,6 +5,7 @@ use anyhow::Error;
 use auto_impl::auto_impl;
 use derivative::Derivative;
 use stc_ts_ast_rnode::RModule;
+use stc_ts_types::ModuleId;
 use stc_ts_utils::StcComments;
 use stc_utils::path::intern::FileId;
 use std::{
@@ -65,6 +66,9 @@ pub struct ParsedModule {
 
     #[derivative(Debug = "ignore")]
     pub comments: Arc<StcComments>,
+
+    #[derivative(Debug = "ignore")]
+    pub id: ModuleId,
 }
 
 #[auto_impl(Arc, Box, &)]

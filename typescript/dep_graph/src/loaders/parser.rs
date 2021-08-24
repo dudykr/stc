@@ -1,11 +1,13 @@
 use crate::{deps::find_deps, Chunk, Load, MultiError, ParsedModule, ParsingError, Resolve};
 use anyhow::{anyhow, bail, Context, Error};
 use dashmap::DashMap;
+use derivative::Derivative;
 use fxhash::FxHashSet;
 use petgraph::graphmap::DiGraphMap;
 use rayon::prelude::*;
 use rnode::{NodeIdGenerator, RNode};
 use stc_ts_ast_rnode::RModule;
+use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
 use stc_utils::path::intern::FileId;
 use std::sync::{Arc, Mutex};
@@ -28,7 +30,8 @@ impl DepData {
 /// The layer connecting [Load] and [Resolve].
 ///
 /// This struct manages the cache.
-#[derive(Debug)]
+#[derive(Derivative)]
+#[derivative(Debug)]
 pub struct ParsingLoader<R>
 where
     R: Resolve,
@@ -36,6 +39,9 @@ where
     resolver: R,
     parser_config: TsConfig,
     parser_target: EsVersion,
+
+    #[derivative(Debug = "ignore")]
+    module_id_gen: module_id::Generator,
 
     top_level_mark: Mark,
 
@@ -53,6 +59,7 @@ where
             resolver,
             parser_config,
             parser_target,
+            module_id_gen: Default::default(),
             top_level_mark,
             cache: Default::default(),
             deps: Default::default(),
@@ -110,11 +117,14 @@ where
                 RModule::from_orig(&mut node_id_gen, module)
             };
 
+            let (_, id) = self.module_id_gen.generate(file);
+
             Ok(ParsedModule {
                 cm: cm.clone(),
                 fm: fm.clone(),
                 module: Lrc::new(module),
                 comments: Arc::new(comments),
+                id,
             })
         })()
         .with_context(|| format!("failed to parse file at `{}`", file))

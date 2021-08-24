@@ -36,7 +36,7 @@ where
                     let mut storage = Single {
                         parent: None,
                         id,
-                        path: path.clone(),
+                        path: name.path(),
                         info: Default::default(),
                     };
                     let mut mutations;

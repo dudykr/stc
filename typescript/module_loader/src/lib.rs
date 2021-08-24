@@ -87,7 +87,7 @@ where
             _ => {}
         }
 
-        let (_, module_id) = self.id_generator.generate(entry);
+        let (_, module_id) = self.id_generator.generate((**entry).clone().into());
 
         Ok(module_id)
     }
@@ -105,7 +105,7 @@ where
             .cloned()
     }
 
-    pub fn id(&self, path: &Arc<PathBuf>) -> ModuleId {
+    pub fn id(&self, path: FileId) -> ModuleId {
         let res = self.id_generator.generate(path);
         self.paths.insert(res.1, path.clone());
         res.1
