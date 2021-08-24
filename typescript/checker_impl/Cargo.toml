@@ -9,8 +9,11 @@ version = "0.1.0"
 
 [dependencies]
 async-trait = "0.1.51"
+slog = "2.7.0"
 stc_ts_checker_api = {path = "../checker_api/"}
 stc_ts_dep_graph = {path = "../dep_graph/"}
+stc_ts_dts = {path = "../dts"}
+stc_ts_dts_mutations = {path = "../dts_mutations/"}
 stc_ts_file_analyzer = {path = "../file_analyzer/"}
 stc_ts_storage = {path = "../storage/"}
 stc_ts_types = {path = "../types/"}

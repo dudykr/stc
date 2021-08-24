@@ -3,6 +3,7 @@
 use async_trait::async_trait;
 use stc_ts_checker_api::{cache::Cached, dedup::Deduplicated, FileData, TypeChecker};
 use stc_ts_dep_graph::{Chunk, Load};
+use stc_ts_dts::{apply_mutations, cleanup_module_for_dts};
 use stc_ts_file_analyzer::{analyzer::Analyzer, env::Env};
 use stc_ts_storage::Single;
 use stc_utils::path::intern::FileId;
