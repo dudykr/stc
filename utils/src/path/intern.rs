@@ -2,6 +2,7 @@ use once_cell::sync::Lazy;
 use std::{
     collections::hash_map::Entry,
     fmt::{self, Debug, Display, Formatter},
+    path::PathBuf,
     sync::{Arc, Mutex},
 };
 use swc_common::{collections::AHashMap, FileName};
@@ -56,6 +57,18 @@ impl From<Arc<FileName>> for FileId {
 
             FileId(cur_id)
         })
+    }
+}
+
+impl From<PathBuf> for FileId {
+    fn from(path: PathBuf) -> Self {
+        Self::from(FileName::Real(path))
+    }
+}
+
+impl From<FileName> for FileId {
+    fn from(path: FileName) -> Self {
+        Self::from(Arc::new(path))
     }
 }
 
