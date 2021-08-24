@@ -124,6 +124,7 @@ where
                 fm: fm.clone(),
                 module: Lrc::new(module),
                 comments: Arc::new(comments),
+                file_id: file,
                 id,
             })
         })()

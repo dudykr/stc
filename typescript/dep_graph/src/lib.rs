@@ -68,6 +68,9 @@ pub struct ParsedModule {
     pub comments: Arc<StcComments>,
 
     #[derivative(Debug = "ignore")]
+    pub file_id: FileId,
+
+    #[derivative(Debug = "ignore")]
     pub id: ModuleId,
 }
 

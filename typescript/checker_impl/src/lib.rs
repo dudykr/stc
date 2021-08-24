@@ -6,6 +6,7 @@ use stc_ts_dep_graph::{Chunk, Load};
 use stc_ts_dts::{apply_mutations, cleanup_module_for_dts};
 use stc_ts_file_analyzer::{analyzer::Analyzer, env::Env};
 use stc_ts_storage::Single;
+use stc_ts_types::module_id;
 use stc_utils::path::intern::FileId;
 use std::sync::Arc;
 use tokio::task::spawn_blocking;
@@ -18,6 +19,7 @@ where
     L: Load,
 {
     env: Env,
+
     loader: L,
 }
 
@@ -35,14 +37,14 @@ where
                 Chunk::Single(m) => {
                     let mut storage = Single {
                         parent: None,
-                        id,
-                        path: name.path(),
+                        id: m.id,
+                        path: m.file_id,
                         info: Default::default(),
                     };
                     let mut mutations;
                     {
                         let mut a = Analyzer::root(
-                            self.logger.new(slog::o!("file" => path.to_string_lossy().to_string())),
+                            self.logger.clone(),
                             self.env.clone(),
                             m.cm.clone(),
                             box &mut storage,
@@ -68,4 +70,4 @@ where
     }
 }
 
-impl<L> stc_ts_file_analyzer::loader::Load for Checker<L> where L: Load {}
+impl<L: 'static> stc_ts_file_analyzer::loader::Load for Checker<L> where L: Load {}
