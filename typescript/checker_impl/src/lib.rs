@@ -34,11 +34,13 @@ where
 
             match module {
                 Chunk::Cycle(_) => todo!(),
-                Chunk::Single(m) => {
+                Chunk::Single(parsed) => {
+                    let mut m = (*parsed.module).clone();
+
                     let mut storage = Single {
                         parent: None,
-                        id: m.id,
-                        path: m.file_id,
+                        id: parsed.id,
+                        path: parsed.file_id,
                         info: Default::default(),
                     };
                     let mut mutations;
@@ -46,13 +48,13 @@ where
                         let mut a = Analyzer::root(
                             self.logger.clone(),
                             self.env.clone(),
-                            m.cm.clone(),
+                            parsed.cm.clone(),
                             box &mut storage,
                             self,
                             self.debugger.clone(),
                         );
 
-                        m.module.visit_with(&mut a);
+                        parsed.module.visit_with(&mut a);
                         mutations = a.mutations.unwrap();
                     }
 
