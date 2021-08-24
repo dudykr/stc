@@ -23,7 +23,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn get_imported_items(&mut self, span: Span, dst: &JsWord) -> (ModuleId, Arc<ModuleTypeData>) {
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);
-        let dep_id = self.loader.module_id(&base, &dst);
+        let dep_id = self.loader.module_id(base, &dst);
         let dep_id = match dep_id {
             Some(v) => v,
             None => {
@@ -77,7 +77,7 @@ impl Analyzer<'_, '_> {
             let span = import.span;
 
             let base = self.storage.path(ctxt);
-            let dep_id = self.loader.module_id(&base, &import.src);
+            let dep_id = self.loader.module_id(base, &import.src);
             let dep_id = match dep_id {
                 Some(v) => v,
                 None => {

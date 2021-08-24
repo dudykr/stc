@@ -30,7 +30,7 @@ use stc_ts_errors::{
 };
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData};
-use stc_utils::{AHashMap, AHashSet};
+use stc_utils::{path::intern::FileId, AHashMap, AHashSet};
 use std::{
     fmt::Debug,
     mem::take,
@@ -753,7 +753,7 @@ impl<'b, 'c> DerefMut for WithCtx<'_, 'b, 'c> {
 pub struct NoopLoader;
 
 impl Load for NoopLoader {
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
+    fn module_id(&self, base: FileId, src: &JsWord) -> Option<ModuleId> {
         unreachable!()
     }
 

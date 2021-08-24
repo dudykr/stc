@@ -12,6 +12,7 @@ use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_storage::Single;
 use stc_ts_types::{ModuleId, ModuleTypeData};
+use stc_utils::path::intern::FileId;
 use std::{path::PathBuf, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{FileName, SourceMap};
@@ -43,7 +44,7 @@ where
         let mut storage = Single {
             parent: None,
             id: ModuleId::builtin(),
-            path: Arc::new(PathBuf::new()),
+            path: PathBuf::new().into(),
             info: Default::default(),
         };
 
@@ -96,7 +97,7 @@ impl Tester<'_, '_> {
 struct Loader {}
 
 impl Load for Loader {
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
+    fn module_id(&self, base: FileId, src: &JsWord) -> Option<ModuleId> {
         unimplemented!()
     }
 

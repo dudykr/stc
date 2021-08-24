@@ -1,5 +1,6 @@
 use crate::ValidationResult;
 use stc_ts_types::{ModuleId, ModuleTypeData};
+use stc_utils::path::intern::FileId;
 use std::{path::PathBuf, sync::Arc};
 use swc_atoms::JsWord;
 
@@ -13,7 +14,7 @@ pub struct ModuleInfo {
 ///
 /// Group of circular imports are handled by one thread. This
 pub trait Load: 'static + Send + Sync {
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId>;
+    fn module_id(&self, base: FileId, src: &JsWord) -> Option<ModuleId>;
 
     /// Note: This method called within a thread
     fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool;
@@ -39,7 +40,7 @@ impl<T> Load for Arc<T>
 where
     T: ?Sized + Load,
 {
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
+    fn module_id(&self, base: FileId, src: &JsWord) -> Option<ModuleId> {
         (**self).module_id(base, src)
     }
 
@@ -65,7 +66,7 @@ impl<T> Load for Box<T>
 where
     T: ?Sized + Load,
 {
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
+    fn module_id(&self, base: FileId, src: &JsWord) -> Option<ModuleId> {
         (**self).module_id(base, src)
     }
 
