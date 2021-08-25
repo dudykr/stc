@@ -2039,7 +2039,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 child
-                    .validate_index_signature_of_class(&class)
+                    .report_errors_for_class_member_incompatible_with_index_signature(&class)
                     .report(&mut child.storage);
 
                 child.validate_inherited_members_from_super_class(None, &class);
@@ -2213,7 +2213,10 @@ impl Analyzer<'_, '_> {
 
     /// If a class have an index signature, properties should be compatible with
     /// it.
-    fn validate_index_signature_of_class(&mut self, class: &ClassDef) -> ValidationResult<()> {
+    fn report_errors_for_class_member_incompatible_with_index_signature(
+        &mut self,
+        class: &ClassDef,
+    ) -> ValidationResult<()> {
         let index = match self
             .get_index_signature_from_class(class.span, class)
             .context("tried to get index signature from a class")?
