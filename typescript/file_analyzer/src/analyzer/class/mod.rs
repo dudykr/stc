@@ -1014,7 +1014,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn check_ambient_methods(&mut self, c: &RClass, declare: bool) -> ValidationResult<()> {
+    fn report_errors_for_wrong_ambient_methods_of_class(&mut self, c: &RClass, declare: bool) -> ValidationResult<()> {
         if self.ctx.in_declare || self.is_builtin {
             return Ok(());
         }
@@ -1731,7 +1731,9 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Check for implements
 
-                child.check_ambient_methods(c, false).report(&mut child.storage);
+                child
+                    .report_errors_for_wrong_ambient_methods_of_class(c, false)
+                    .report(&mut child.storage);
                 child
                     .report_errors_for_statics_mixed_with_instances(&c)
                     .report(&mut child.storage);
