@@ -2700,6 +2700,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    /// Expand type paramters using `type_args`.
     pub(crate) fn expand_type_args(
         &mut self,
         span: Span,
