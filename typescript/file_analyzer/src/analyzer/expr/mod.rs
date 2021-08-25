@@ -2675,6 +2675,7 @@ impl Analyzer<'_, '_> {
         unimplemented!("access_property(MemberExpr):\nObject: {:?}\nProp: {:?}", obj, prop);
     }
 
+    /// TODO(kdy1): Clarify this.
     fn type_to_query_if_required(&mut self, span: Span, i: &RIdent, ty: Type) -> Type {
         if self.scope.is_in_call() {
             return ty;
