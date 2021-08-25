@@ -59,7 +59,6 @@ mod decl_merging;
 mod enums;
 mod export;
 mod expr;
-mod finalizer;
 mod function;
 mod generalize;
 mod generic;
@@ -379,7 +378,7 @@ impl Analyzer<'_, '_> {
         };
         self.storage.report_all(errors);
 
-        Ok(self.finalize(make_module_ty(
+        Ok(make_module_ty(
             span,
             RTsModuleName::Str(RStr {
                 span: DUMMY_SP,
@@ -388,7 +387,7 @@ impl Analyzer<'_, '_> {
                 value: js_word!(""),
             }),
             data,
-        )))
+        ))
     }
 }
 
@@ -993,11 +992,11 @@ impl Analyzer<'_, '_> {
                 }
 
                 if is_builtin || !global {
-                    let ty = child.finalize(ty::Module {
+                    let ty = ty::Module {
                         name: decl.id.clone(),
                         span,
                         exports: box exports,
-                    });
+                    };
                     let ty = Type::Module(ty).cheap();
                     return Ok(Some(ty));
                 }
