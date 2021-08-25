@@ -1855,6 +1855,7 @@ dependencies = [
  "swc_common",
  "swc_ecma_ast",
  "swc_ecma_codegen",
+ "tracing",
 ]
 
 [[package]]
