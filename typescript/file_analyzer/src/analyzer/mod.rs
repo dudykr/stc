@@ -229,7 +229,6 @@ impl Ctx {
 
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.
 pub struct Analyzer<'scope, 'b> {
-    pub(crate) logger: Logger,
     env: Env,
     pub(crate) cm: Arc<SourceMap>,
 

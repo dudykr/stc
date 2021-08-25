@@ -42,7 +42,7 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::instrument;
+use tracing::{debug, instrument};
 use ty::TypeExt;
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -222,7 +222,7 @@ impl Analyzer<'_, '_> {
 
         let marks = self.marks();
 
-        slog::debug!(self.logger, "extract_call_new_expr_member");
+        debug!("extract_call_new_expr_member");
 
         let type_args = match type_args {
             Some(v) => {
@@ -1259,11 +1259,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        slog::debug!(
-            self.logger,
-            "[exprs/call] Calling {}",
-            dump_type_as_string(&self.cm, &ty)
-        );
+        debug!("[exprs/call] Calling {}", dump_type_as_string(&self.cm, &ty));
 
         match kind {
             ExtractKind::Call => match ty.normalize() {
@@ -1923,7 +1919,7 @@ impl Analyzer<'_, '_> {
         // candidates.
         let mut candidates = self.extract_callee_candidates(span, kind, &callee)?;
 
-        slog::info!(self.logger, "get_best_return_type: {} candidates", candidates.len());
+        info!("get_best_return_type: {} candidates", candidates.len());
 
         if let Some(v) = self.select_and_invoke(
             span,
