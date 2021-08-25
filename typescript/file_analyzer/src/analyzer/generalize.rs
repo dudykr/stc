@@ -18,6 +18,9 @@ use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{info, trace};
 
 impl Analyzer<'_, '_> {
+    /// TODO(kdy1): Remove this.
+    ///
+    /// Check if it's okay to generalize `ty`.
     pub(super) fn may_generalize(&self, ty: &Type) -> bool {
         trace!("may_generalize({:?})", ty);
         match ty.normalize() {
