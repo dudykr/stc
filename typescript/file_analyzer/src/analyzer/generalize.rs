@@ -18,6 +18,9 @@ use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{info, trace};
 
 impl Analyzer<'_, '_> {
+    /// TODO(kdy1): Remove this.
+    ///
+    /// Check if it's okay to generalize `ty`.
     pub(super) fn may_generalize(&self, ty: &Type) -> bool {
         trace!("may_generalize({:?})", ty);
         match ty.normalize() {
@@ -55,14 +58,14 @@ impl Analyzer<'_, '_> {
         true
     }
 
-    /// TODO: Optimize by visiting only literal types.
+    /// TODO(kdy1): Optimize by visiting only tuple types.
     pub(super) fn prevent_generalize(&self, ty: &mut Type) {
         ty.visit_mut_with(&mut Marker {
             mark: self.marks().prevent_generalization_mark,
         });
     }
 
-    /// TODO: Optimize by visiting only tuple types.
+    /// TODO(kdy1): Optimize by visiting only tuple types.
     pub(super) fn prevent_tuple_to_array(&self, ty: &mut Type) {
         ty.visit_mut_with(&mut Marker {
             mark: self.marks().prevent_tuple_to_array,

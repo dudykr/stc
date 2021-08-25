@@ -37,6 +37,8 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    /// Handle declaration merging. This method is used to avoid implementing
+    /// same logic twice.
     fn merge_from_to(&mut self, span: Span, a: Type, b: Type) -> ValidationResult<Option<Type>> {
         if self.is_builtin {
             return Ok(None);
@@ -69,7 +71,7 @@ impl Analyzer<'_, '_> {
                 let mut new_members = a.body.clone();
 
                 let b = self
-                    .type_to_type_lit(span, &b)
+                    .convert_type_to_type_lit(span, &b)
                     .context("tried to convert an interface to a type literal to merge with a class definition")?;
                 if let Some(b) = b {
                     for el in &b.members {
@@ -107,7 +109,7 @@ impl Analyzer<'_, '_> {
 
                 // Convert to a type literal first.
                 if let Some(b) = self
-                    .type_to_type_lit(span, &b)
+                    .convert_type_to_type_lit(span, &b)
                     .context("tried to convert an interface to a type literal to merge with another interface")?
                 {
                     new_members.extend(b.into_owned().members);
@@ -125,6 +127,7 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
+    /// Handle declaration merging.
     fn merge_types(&mut self, span: Span, orig: Type, new: Type) -> ValidationResult<Type> {
         debug_assert!(orig.is_clone_cheap());
         debug_assert!(new.is_clone_cheap());

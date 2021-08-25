@@ -707,6 +707,7 @@ impl Analyzer<'_, '_> {
         res
     }
 
+    /// Expands the type if it's [Type::Ref].
     pub(crate) fn expand_top_ref<'a>(
         &mut self,
         span: Span,
@@ -742,7 +743,7 @@ impl Analyzer<'_, '_> {
 
     /// This should be called after calling `register_type`.
 
-    pub(crate) fn store_unmergedable_type_span(&mut self, id: Id, span: Span) {
+    pub(crate) fn store_unmergeable_type_span(&mut self, id: Id, span: Span) {
         if self.is_builtin {
             return;
         }
@@ -1540,6 +1541,9 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    /// Check if `ty` stores infer type in it. **Note**: This mehods only checks
+    /// for [Mark], and this method should be used with
+    /// [crate::util::contains_infer_type] in most case.
     pub(crate) fn contains_infer_type<T>(&self, ty: &T) -> bool
     where
         T: VisitWith<MarkFinder>,
@@ -1549,6 +1553,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
+    /// Apply metadata `infer_type_container` to `span`.
     pub(crate) fn mark_as_infer_type_container(&self, span: Span) -> Span {
         span.apply_mark(self.marks().contains_infer_type_mark)
     }
@@ -1576,6 +1581,7 @@ impl Analyzer<'_, '_> {
         ty.respan(span);
     }
 
+    /// Mark `ty` as not expanded by default.
     pub(crate) fn prevent_expansion<T>(&self, ty: &mut T)
     where
         T: VisitMutWith<ExpansionPreventer>,
@@ -1589,6 +1595,8 @@ impl Analyzer<'_, '_> {
         });
     }
 
+    /// Mark `ty` as expandable. This has higher precedence than
+    /// `prevent_expansion`.
     pub(crate) fn allow_expansion<T>(&self, ty: &mut T)
     where
         T: VisitMutWith<ExpansionPreventer>,

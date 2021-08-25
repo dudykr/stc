@@ -459,7 +459,7 @@ impl Analyzer<'_, '_> {
                         let e: Option<_> = $e.validate_with(self).try_opt()?;
                         box e.unwrap_or_else(|| {
                             let mut ty = Type::any(span);
-                            self.mark_as_implicit(&mut ty);
+                            self.mark_as_implicitly_typed(&mut ty);
                             ty
                         })
                     }
@@ -821,7 +821,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn check_duplicate_of_class(&mut self, c: &RClass) -> ValidationResult<()> {
+    fn report_errors_for_duplicate_class_members(&mut self, c: &RClass) -> ValidationResult<()> {
         fn normalize_prop_name(p: &RPropName) -> Cow<RPropName> {
             match p {
                 RPropName::Num(v) => Cow::Owned(RPropName::Ident(RIdent::new(
@@ -941,7 +941,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn check_static_mixed_with_instance(&mut self, c: &RClass) -> ValidationResult<()> {
+    fn report_errors_for_statics_mixed_with_instances(&mut self, c: &RClass) -> ValidationResult<()> {
         if self.ctx.in_declare {
             return Ok(());
         }
@@ -1014,7 +1014,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn check_ambient_methods(&mut self, c: &RClass, declare: bool) -> ValidationResult<()> {
+    fn report_errors_for_wrong_ambient_methods_of_class(&mut self, c: &RClass, declare: bool) -> ValidationResult<()> {
         if self.ctx.in_declare || self.is_builtin {
             return Ok(());
         }
@@ -1326,13 +1326,14 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn validate_interface_conflicts(&mut self, interfaces: &[TsExpr]) {
+    /// TODO(kdy1): Implement this.
+    fn report_errors_for_confliicting_interfaces(&mut self, interfaces: &[TsExpr]) {
         if self.is_builtin {
             return;
         }
     }
 
-    fn validate_inherited_members_from_interfaces(&mut self, name: Option<Span>, class: &ClassDef) {
+    fn report_errors_for_wrong_impls_of_class(&mut self, name: Option<Span>, class: &ClassDef) {
         if self.is_builtin {
             return;
         }
@@ -1420,11 +1421,11 @@ impl Analyzer<'_, '_> {
         if let Some(super_ty) = &class.super_class {
             self.validate_super_class(super_ty);
 
-            self.validate_class_impls(span, &class.body, &super_ty)
+            self.report_error_for_wrong_super_class_inheritance(span, &class.body, &super_ty)
         }
     }
 
-    fn validate_class_impls(&mut self, span: Span, members: &[ClassMember], super_ty: &Type) {
+    fn report_error_for_wrong_super_class_inheritance(&mut self, span: Span, members: &[ClassMember], super_ty: &Type) {
         let super_ty = self.normalize(Some(span), Cow::Borrowed(super_ty), Default::default());
         let super_ty = match super_ty {
             Ok(v) => v,
@@ -1513,7 +1514,7 @@ impl Analyzer<'_, '_> {
                         // Check super class of super class
                         if let Some(super_ty) = &sc.super_class {
                             new_members.extend(members.to_vec());
-                            self.validate_class_impls(span, &new_members, &super_ty);
+                            self.report_error_for_wrong_super_class_inheritance(span, &new_members, &super_ty);
                         }
                     }
                 }
@@ -1731,9 +1732,15 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Check for implements
 
-                child.check_ambient_methods(c, false).report(&mut child.storage);
-                child.check_static_mixed_with_instance(&c).report(&mut child.storage);
-                child.check_duplicate_of_class(&c).report(&mut child.storage);
+                child
+                    .report_errors_for_wrong_ambient_methods_of_class(c, false)
+                    .report(&mut child.storage);
+                child
+                    .report_errors_for_statics_mixed_with_instances(&c)
+                    .report(&mut child.storage);
+                child
+                    .report_errors_for_duplicate_class_members(&c)
+                    .report(&mut child.storage);
 
                 child.scope.super_class = super_class
                     .clone()
@@ -1969,7 +1976,7 @@ impl Analyzer<'_, '_> {
                             child.scope.this_class_members.push((index, member.into()));
                         }
                         child
-                            .validate_constructor_overloads(&ambient_cons, cons_with_body.as_ref())
+                            .report_errors_for_wrong_constructor_overloads(&ambient_cons, cons_with_body.as_ref())
                             .report(&mut child.storage);
                     }
 
@@ -1993,7 +2000,7 @@ impl Analyzer<'_, '_> {
                         .map(|v| v.0)
                         .collect::<Vec<_>>();
 
-                    let order = child.calc_order_of_class_methods(remaining, &c.body);
+                    let order = child.calc_eval_order_of_class_methods(remaining, &c.body);
 
                     for index in order {
                         let ty = c.body[index].validate_with(child)?;
@@ -2032,12 +2039,12 @@ impl Analyzer<'_, '_> {
                 };
 
                 child
-                    .validate_index_signature_of_class(&class)
+                    .report_errors_for_class_member_incompatible_with_index_signature(&class)
                     .report(&mut child.storage);
 
                 child.validate_inherited_members_from_super_class(None, &class);
-                child.validate_inherited_members_from_interfaces(None, &class);
-                child.validate_interface_conflicts(&class.implements);
+                child.report_errors_for_wrong_impls_of_class(None, &class);
+                child.report_errors_for_confliicting_interfaces(&class.implements);
 
                 Ok(class)
             },
@@ -2118,6 +2125,8 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// This method combines setters and getters, and merge it just like a
+    /// normal property.
     fn combine_class_properties(&mut self, body: Vec<(usize, ClassMember)>) -> Vec<(usize, ClassMember)> {
         let mut getters = vec![];
         let mut setters = vec![];
@@ -2204,7 +2213,10 @@ impl Analyzer<'_, '_> {
 
     /// If a class have an index signature, properties should be compatible with
     /// it.
-    fn validate_index_signature_of_class(&mut self, class: &ClassDef) -> ValidationResult<()> {
+    fn report_errors_for_class_member_incompatible_with_index_signature(
+        &mut self,
+        class: &ClassDef,
+    ) -> ValidationResult<()> {
         let index = match self
             .get_index_signature_from_class(class.span, class)
             .context("tried to get index signature from a class")?
@@ -2259,7 +2271,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn validate_constructor_overloads(
+    fn report_errors_for_wrong_constructor_overloads(
         &mut self,
         ambient: &[ConstructorSignature],
         cons_with_body: Option<&ConstructorSignature>,

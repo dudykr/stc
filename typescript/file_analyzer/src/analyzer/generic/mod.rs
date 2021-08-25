@@ -1008,7 +1008,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Interface(..) | Type::Enum(..) | Type::Alias(..) => {
-                    if let Some(arg) = self.type_to_type_lit(span, arg)? {
+                    if let Some(arg) = self.convert_type_to_type_lit(span, arg)? {
                         return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, &arg, opts);
                     }
                 }
@@ -1019,7 +1019,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Tuple(param) => match arg {
-                Type::Tuple(arg) => return self.infer_tuple(span, inferred, param, arg, opts),
+                Type::Tuple(arg) => return self.infer_type_using_tuple_and_tuple(span, inferred, param, arg, opts),
                 _ => {
                     dbg!();
                 }
@@ -1126,7 +1126,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Mapped(param) => {
-                if self.infer_mapped(span, inferred, param, arg, opts)? {
+                if self.infer_type_using_mapped_type(span, inferred, param, arg, opts)? {
                     dbg!();
                     return Ok(());
                 }
@@ -1217,7 +1217,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Operator(param) => {
-                self.infer_type_from_operator(span, inferred, param, arg, opts)?;
+                self.infer_type_using_operator(span, inferred, param, arg, opts)?;
 
                 // We need to check parents
                 match arg {
@@ -1341,7 +1341,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[instrument(skip(self, span, inferred, param, arg, opts))]
-    fn infer_mapped(
+    fn infer_type_using_mapped_type(
         &mut self,
         span: Span,
         inferred: &mut InferData,
@@ -1370,7 +1370,7 @@ impl Analyzer<'_, '_> {
 
                 match arg.normalize() {
                     Type::Ref(..) => return Ok(false),
-                    _ => return self.infer_mapped(span, inferred, param, &arg, opts),
+                    _ => return self.infer_type_using_mapped_type(span, inferred, param, &arg, opts),
                 }
             }
             Type::Mapped(arg) => {
@@ -1392,12 +1392,12 @@ impl Analyzer<'_, '_> {
             | Type::Class(..)
             | Type::Interface(..) => {
                 let arg = self
-                    .type_to_type_lit(span, arg)
+                    .convert_type_to_type_lit(span, arg)
                     .context("tried to convert a type into a type literal to infer mapped type")?
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(arg) = arg {
-                    return self.infer_mapped(span, inferred, param, &arg, opts);
+                    return self.infer_type_using_mapped_type(span, inferred, param, &arg, opts);
                 }
             }
             _ => {}
@@ -2079,7 +2079,7 @@ impl Analyzer<'_, '_> {
         Ok(false)
     }
 
-    fn infer_tuple(
+    fn infer_type_using_tuple_and_tuple(
         &mut self,
         span: Span,
         inferred: &mut InferData,

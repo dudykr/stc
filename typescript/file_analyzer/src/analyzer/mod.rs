@@ -59,7 +59,6 @@ mod decl_merging;
 mod enums;
 mod export;
 mod expr;
-mod finalizer;
 mod function;
 mod generalize;
 mod generic;
@@ -379,7 +378,7 @@ impl Analyzer<'_, '_> {
         };
         self.storage.report_all(errors);
 
-        Ok(self.finalize(make_module_ty(
+        Ok(make_module_ty(
             span,
             RTsModuleName::Str(RStr {
                 span: DUMMY_SP,
@@ -388,7 +387,7 @@ impl Analyzer<'_, '_> {
                 value: js_word!(""),
             }),
             data,
-        )))
+        ))
     }
 }
 
@@ -675,6 +674,8 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         ret
     }
 
+    /// Used for debugging. Returns the line and column of `span.lo` in form of
+    /// `(line, column)`.
     fn line_col(&self, span: Span) -> String {
         if span.is_dummy() {
             return "".into();
@@ -824,7 +825,7 @@ impl Analyzer<'_, '_> {
             });
 
             if !self.ctx.in_declare {
-                self.validate_ambient_fns(&items);
+                self.report_error_for_wrong_top_level_ambient_fns(&items);
             }
 
             if self.is_builtin {
@@ -832,8 +833,6 @@ impl Analyzer<'_, '_> {
             } else {
                 self.validate_stmts_and_collect(&items_ref);
             }
-
-            self.handle_pending_exports();
 
             Ok(())
         })
@@ -995,11 +994,11 @@ impl Analyzer<'_, '_> {
                 }
 
                 if is_builtin || !global {
-                    let ty = child.finalize(ty::Module {
+                    let ty = ty::Module {
                         name: decl.id.clone(),
                         span,
                         exports: box exports,
-                    });
+                    };
                     let ty = Type::Module(ty).cheap();
                     return Ok(Some(ty));
                 }

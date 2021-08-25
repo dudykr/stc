@@ -665,6 +665,7 @@ pub struct Conditional {
 
 assert_eq_size!(Conditional, [u8; 48]);
 
+/// TODO: Remove this and create `keyof`, `unique` and `readonly` types.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Operator {
     pub span: Span,

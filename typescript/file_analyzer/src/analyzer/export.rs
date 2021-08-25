@@ -28,73 +28,6 @@ use swc_ecma_ast::*;
 // unimplemented!("export namespace"),
 
 impl Analyzer<'_, '_> {
-    /// This methods exports unresolved expressions, which depends on
-    /// expressions that comes after the expression.
-    pub(super) fn handle_pending_exports(&mut self) {
-        // let pending_exports: Vec<_> = replace(&mut self.pending_exports,
-        // Default::default());
-
-        // for ((sym, span), mut expr) in pending_exports {
-        //     // TODO: Allow multiple exports with same name.
-
-        //     let tmp;
-        //     let exported_sym = if sym.as_str() != "default" {
-        //         Some(&sym)
-        //     } else {
-        //         match expr {
-        //             RExpr::Ident(ref i) => {
-        //                 tmp = i.clone().into();
-        //                 Some(&tmp)
-        //             }
-        //             _ => None,
-        //         }
-        //     };
-        //     let ty = match exported_sym
-        //         .and_then(|exported_sym|
-        // self.scope.types.remove(&exported_sym))     {
-        //         Some(export) => {
-        //             for ty in export {
-        //                 self.storage.store_private_type(self.ctx.module_id,
-        // sym, ty);             }
-
-        //             self.storage.export_type(span, self.ctx.module_id, sym);
-        //         }
-        //         None => match expr.validate_with_default(self) {
-        //             Ok(ty) => {
-        //                 self.storage.store_private_type(self.ctx.module_id,
-        // sym, ty);
-
-        //                 self.storage.export_type(span, self.ctx.module_id,
-        // sym);             }
-        //             Err(err) => {
-        //                 self.storage.report(err);
-        //             }
-        //         },
-        //     };
-        // }
-
-        // assert_eq!(self.pending_exports, vec![]);
-
-        // if self.info.exports.types.is_empty() &&
-        // self.info.exports.vars.is_empty() {     self.info
-        //         .exports
-        //         .vars
-        //         .extend(self.scope.vars.drain().map(|(k, v)| {
-        //             (
-        //                 k,
-        //                 v.ty.map(|ty| ty.cheap())
-        //                     .unwrap_or_else(|| Type::any(DUMMY_SP)),
-        //             )
-        //         }));
-        //     self.info.exports.types.extend(
-        //         self.scope
-        //             .types
-        //             .drain()
-        //             .map(|(k, v)| (k, v.into_iter().map(|v|
-        // v.cheap()).collect())),     );
-        // }
-    }
-
     pub(super) fn export_default_expr(&mut self, expr: &mut RExpr) {
         let span = expr.span();
         // assert_eq!(
@@ -152,12 +85,12 @@ impl Analyzer<'_, '_> {
                 RDecl::TsInterface(ref i) => {
                     i.visit_with(a);
 
-                    a.export(i.span(), i.id.clone().into(), None)
+                    a.export_type(i.span(), i.id.clone().into(), None)
                 }
 
                 RDecl::Class(ref c) => {
                     c.visit_with(a);
-                    a.export(c.span(), c.ident.clone().into(), None);
+                    a.export_type(c.span(), c.ident.clone().into(), None);
                     a.export_var(c.span(), c.ident.clone().into(), None, true);
                 }
                 RDecl::Var(ref var) => {
@@ -211,7 +144,7 @@ impl Analyzer<'_, '_> {
 
                     // TODO: Handle type parameters.
 
-                    a.export(span, decl.id.clone().into(), None)
+                    a.export_type(span, decl.id.clone().into(), None)
                 }
             }
 
@@ -278,7 +211,7 @@ impl Analyzer<'_, '_> {
                 let class_ty = Type::ClassDef(class_ty).cheap();
                 self.register_type(var_name.clone(), class_ty.clone());
 
-                self.export(span, Id::word(js_word!("default")), Some(var_name.clone()));
+                self.export_type(span, Id::word(js_word!("default")), Some(var_name.clone()));
 
                 self.declare_var(
                     span,
@@ -300,7 +233,7 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Register type
 
-                self.export(span, Id::word(js_word!("default")), Some(i))
+                self.export_type(span, Id::word(js_word!("default")), Some(i))
             }
         };
 
@@ -311,7 +244,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// Currently noop because we need to know if a function is last item among
     /// overloads
-    fn check_for_duplicate_export_of_var(&mut self, span: Span, sym: JsWord) {
+    fn report_errors_for_duplicated_exports_of_var(&mut self, span: Span, sym: JsWord) {
         if self.ctx.reevaluating() {
             return;
         }
@@ -334,7 +267,7 @@ impl Analyzer<'_, '_> {
     #[extra_validator]
     fn export_var(&mut self, span: Span, name: Id, orig_name: Option<Id>, check_duplicate: bool) {
         if check_duplicate {
-            self.check_for_duplicate_export_of_var(span, name.sym().clone());
+            self.report_errors_for_duplicated_exports_of_var(span, name.sym().clone());
         }
 
         self.storage
@@ -349,7 +282,7 @@ impl Analyzer<'_, '_> {
     /// Note: We don't freeze types at here because doing so may prevent proper
     /// finalization.
     #[extra_validator]
-    fn export(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
+    fn export_type(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
         let orig_name = orig_name.unwrap_or_else(|| name.clone());
 
         let types = match self.find_type(self.ctx.module_id, &orig_name) {
@@ -384,7 +317,7 @@ impl Analyzer<'_, '_> {
 
     /// Exports a variable.
     fn export_expr(&mut self, name: Id, item_node_id: NodeId, e: &RExpr) -> ValidationResult<()> {
-        self.check_for_duplicate_export_of_var(e.span(), name.sym().clone());
+        self.report_errors_for_duplicated_exports_of_var(e.span(), name.sym().clone());
 
         let ty = e.validate_with_default(self)?;
 
@@ -566,7 +499,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn export_named(&mut self, span: Span, ctxt: ModuleId, orig: Id, id: Id) {
         if self.storage.get_local_var(ctxt, orig.clone()).is_some() {
-            self.check_for_duplicate_export_of_var(span, id.sym().clone());
+            self.report_errors_for_duplicated_exports_of_var(span, id.sym().clone());
 
             self.storage.export_var(span, ctxt, id.clone(), orig.clone());
         }

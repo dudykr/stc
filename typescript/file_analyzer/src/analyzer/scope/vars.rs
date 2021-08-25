@@ -664,7 +664,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Intersection(..) | Type::Class(..) | Type::Interface(..) | Type::ClassDef(..) => {
                     let ty = self
-                        .type_to_type_lit(ty.span(), &ty)?
+                        .convert_type_to_type_lit(ty.span(), &ty)?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit);
                     if let Some(ty) = ty {
@@ -734,6 +734,7 @@ impl Analyzer<'_, '_> {
         Ok(ty.fixed())
     }
 
+    /// TODO(kdy1): Remove this. All logics are merged into add_vars.
     pub(super) fn declare_vars_inner_with_ty(
         &mut self,
         kind: VarKind,
