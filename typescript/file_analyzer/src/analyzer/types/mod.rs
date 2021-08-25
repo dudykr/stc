@@ -934,7 +934,7 @@ impl Analyzer<'_, '_> {
 
     /// Note: `span` is only used while expanding type (to prevent panic) in the
     /// case of [Type::Ref].
-    pub(crate) fn type_to_type_lit<'a>(
+    pub(crate) fn convert_type_to_type_lit<'a>(
         &mut self,
         span: Span,
         ty: &'a Type,
@@ -956,7 +956,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 let ty = self
-                    .type_to_type_lit(span, &Type::Keyword(RTsKeywordType { span: ty.span, kind }))
+                    .convert_type_to_type_lit(span, &Type::Keyword(RTsKeywordType { span: ty.span, kind }))
                     .context("tried to convert a literal to type literal")?
                     .map(Cow::into_owned);
                 return Ok(ty.map(Cow::Owned));
@@ -974,7 +974,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 return Ok(self
-                    .type_to_type_lit(
+                    .convert_type_to_type_lit(
                         span,
                         &Type::Ref(Ref {
                             span,
@@ -990,7 +990,7 @@ impl Analyzer<'_, '_> {
             Type::Ref(..) => {
                 let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
                 return self
-                    .type_to_type_lit(span, &ty)
+                    .convert_type_to_type_lit(span, &ty)
                     .map(|o| o.map(Cow::into_owned).map(Cow::Owned));
             }
 
@@ -1007,7 +1007,7 @@ impl Analyzer<'_, '_> {
                         parent.type_args.as_deref(),
                     )?;
 
-                    let super_els = self.type_to_type_lit(span, &parent)?;
+                    let super_els = self.convert_type_to_type_lit(span, &parent)?;
 
                     members.extend(super_els.into_iter().map(Cow::into_owned).flat_map(|v| v.members))
                 }
@@ -1031,7 +1031,7 @@ impl Analyzer<'_, '_> {
                 let mut members = vec![];
                 if let Some(super_class) = &c.def.super_class {
                     let super_class = self.instantiate_class(span, super_class)?;
-                    let super_els = self.type_to_type_lit(span, &super_class)?;
+                    let super_els = self.convert_type_to_type_lit(span, &super_class)?;
                     members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
                 }
 
@@ -1051,7 +1051,7 @@ impl Analyzer<'_, '_> {
             Type::ClassDef(c) => {
                 let mut members = vec![];
                 if let Some(super_class) = &c.super_class {
-                    let super_els = self.type_to_type_lit(span, super_class)?;
+                    let super_els = self.convert_type_to_type_lit(span, super_class)?;
                     members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
                 }
 
@@ -1071,7 +1071,7 @@ impl Analyzer<'_, '_> {
             Type::Intersection(t) => {
                 let mut members = vec![];
                 for ty in &t.types {
-                    let opt = self.type_to_type_lit(span, ty)?;
+                    let opt = self.convert_type_to_type_lit(span, ty)?;
                     members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
                 }
 
@@ -1082,7 +1082,7 @@ impl Analyzer<'_, '_> {
                 })
             }
 
-            Type::Alias(ty) => return self.type_to_type_lit(span, &ty.ty),
+            Type::Alias(ty) => return self.convert_type_to_type_lit(span, &ty.ty),
 
             Type::Constructor(ty) => {
                 let el = TypeElement::Constructor(ConstructorSignature {
@@ -1166,7 +1166,10 @@ impl Analyzer<'_, '_> {
             Type::Mapped(m) => {
                 let ty = self.expand_mapped(span, m)?;
                 if let Some(ty) = ty {
-                    let ty = self.type_to_type_lit(span, &ty)?.map(Cow::into_owned).map(Cow::Owned);
+                    let ty = self
+                        .convert_type_to_type_lit(span, &ty)?
+                        .map(Cow::into_owned)
+                        .map(Cow::Owned);
 
                     match ty {
                         Some(v) => v,
@@ -1183,7 +1186,7 @@ impl Analyzer<'_, '_> {
                     .normalize(None, Cow::Borrowed(ty), Default::default())
                     .context("tried to normalize a type to convert it to type literal")?;
                 let ty = self
-                    .type_to_type_lit(span, &ty)
+                    .convert_type_to_type_lit(span, &ty)
                     .context("tried to convert a normalized type to type liteal")?
                     .map(Cow::into_owned)
                     .map(Cow::Owned);
@@ -1232,6 +1235,8 @@ impl Analyzer<'_, '_> {
         ty.fix();
     }
 
+    /// This is used to determine `form` of `els`. Each type has a value. e.g.
+    /// `1` for [TypeElement::Call].
     pub(crate) fn kinds_of_type_elements(&mut self, els: &[TypeElement]) -> Vec<u8> {
         let mut v = els
             .iter()
