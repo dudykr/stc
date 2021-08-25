@@ -2459,7 +2459,7 @@ impl Analyzer<'_, '_> {
             }
 
             if !self.ctx.reevaluating_call_or_new {
-                slog::debug!(self.logger, "Reevaluating a call");
+                debug!("Reevaluating a call");
                 let ctx = Ctx {
                     reevaluating_call_or_new: true,
                     ..self.ctx
@@ -2549,25 +2549,25 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            print_type(&logger, "Return", &self.cm, &ret_ty);
+            print_type("Return", &self.cm, &ret_ty);
             let mut ty = self.expand_type_params(&inferred, ret_ty, Default::default())?;
-            print_type(&logger, "Return, expanded", &self.cm, &ty);
+            print_type("Return, expanded", &self.cm, &ty);
 
             ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
 
-            print_type(&logger, "Return, simplified", &self.cm, &ty);
+            print_type("Return, simplified", &self.cm, &ty);
 
             ty = self.simplify(ty);
 
-            print_type(&logger, "Return, simplified again", &self.cm, &ty);
+            print_type("Return, simplified again", &self.cm, &ty);
 
             ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer: self });
 
-            print_type(&logger, "Return, generalized", &self.cm, &ty);
+            print_type("Return, generalized", &self.cm, &ty);
 
             self.add_required_type_params(&mut ty);
 
-            print_type(&logger, "Return, after adding type params", &self.cm, &ty);
+            print_type("Return, after adding type params", &self.cm, &ty);
 
             if kind == ExtractKind::Call {
                 self.add_call_facts(&expanded_param_types, &args, &mut ty);
@@ -2580,12 +2580,12 @@ impl Analyzer<'_, '_> {
 
         self.validate_arg_types(&params, &spread_arg_types);
 
-        print_type(&logger, "Return", &self.cm, &ret_ty);
+        print_type("Return", &self.cm, &ret_ty);
 
         ret_ty.reposition(span);
         ret_ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
 
-        print_type(&logger, "Return, simplified", &self.cm, &ret_ty);
+        print_type("Return, simplified", &self.cm, &ret_ty);
 
         self.add_required_type_params(&mut ret_ty);
 
@@ -2597,7 +2597,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread]) {
-        slog::info!(self.logger, "[exprs] Validating arguments");
+        info!("[exprs] Validating arguments");
 
         let marks = self.marks();
 
