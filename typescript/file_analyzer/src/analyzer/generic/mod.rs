@@ -1126,7 +1126,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Mapped(param) => {
-                if self.infer_mapped(span, inferred, param, arg, opts)? {
+                if self.infer_type_using_mapped_type(span, inferred, param, arg, opts)? {
                     dbg!();
                     return Ok(());
                 }
@@ -1341,7 +1341,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[instrument(skip(self, span, inferred, param, arg, opts))]
-    fn infer_mapped(
+    fn infer_type_using_mapped_type(
         &mut self,
         span: Span,
         inferred: &mut InferData,
@@ -1370,7 +1370,7 @@ impl Analyzer<'_, '_> {
 
                 match arg.normalize() {
                     Type::Ref(..) => return Ok(false),
-                    _ => return self.infer_mapped(span, inferred, param, &arg, opts),
+                    _ => return self.infer_type_using_mapped_type(span, inferred, param, &arg, opts),
                 }
             }
             Type::Mapped(arg) => {
@@ -1397,7 +1397,7 @@ impl Analyzer<'_, '_> {
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(arg) = arg {
-                    return self.infer_mapped(span, inferred, param, &arg, opts);
+                    return self.infer_type_using_mapped_type(span, inferred, param, &arg, opts);
                 }
             }
             _ => {}
