@@ -526,6 +526,8 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns the type of discriminant.
+    ///
+    /// TODO(kdy1): Implement this.
     fn report_errors_for_incomparable_switch_cases(&mut self, s: &RSwitchStmt) -> ValidationResult {
         let discriminant_ty = s.discriminant.validate_with_default(self)?;
         for case in &s.cases {
