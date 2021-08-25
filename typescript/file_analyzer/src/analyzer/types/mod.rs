@@ -840,6 +840,7 @@ impl Analyzer<'_, '_> {
         self.apply_type_facts_to_type(type_facts, ty)
     }
 
+    /// Collect all class members, including inherited members.
     ///
     /// # Parmeters
     ///
