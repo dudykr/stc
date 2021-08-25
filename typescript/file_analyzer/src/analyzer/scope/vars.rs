@@ -734,6 +734,7 @@ impl Analyzer<'_, '_> {
         Ok(ty.fixed())
     }
 
+    /// TODO(kdy1): Remove this. All logics are merged into add_vars.
     pub(super) fn declare_vars_inner_with_ty(
         &mut self,
         kind: VarKind,
