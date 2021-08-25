@@ -244,7 +244,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// Currently noop because we need to know if a function is last item among
     /// overloads
-    fn check_for_duplicate_export_of_var(&mut self, span: Span, sym: JsWord) {
+    fn report_errors_for_duplicated_exports_of_var(&mut self, span: Span, sym: JsWord) {
         if self.ctx.reevaluating() {
             return;
         }
@@ -267,7 +267,7 @@ impl Analyzer<'_, '_> {
     #[extra_validator]
     fn export_var(&mut self, span: Span, name: Id, orig_name: Option<Id>, check_duplicate: bool) {
         if check_duplicate {
-            self.check_for_duplicate_export_of_var(span, name.sym().clone());
+            self.report_errors_for_duplicated_exports_of_var(span, name.sym().clone());
         }
 
         self.storage
@@ -317,7 +317,7 @@ impl Analyzer<'_, '_> {
 
     /// Exports a variable.
     fn export_expr(&mut self, name: Id, item_node_id: NodeId, e: &RExpr) -> ValidationResult<()> {
-        self.check_for_duplicate_export_of_var(e.span(), name.sym().clone());
+        self.report_errors_for_duplicated_exports_of_var(e.span(), name.sym().clone());
 
         let ty = e.validate_with_default(self)?;
 
@@ -499,7 +499,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn export_named(&mut self, span: Span, ctxt: ModuleId, orig: Id, id: Id) {
         if self.storage.get_local_var(ctxt, orig.clone()).is_some() {
-            self.check_for_duplicate_export_of_var(span, id.sym().clone());
+            self.report_errors_for_duplicated_exports_of_var(span, id.sym().clone());
 
             self.storage.export_var(span, ctxt, id.clone(), orig.clone());
         }
