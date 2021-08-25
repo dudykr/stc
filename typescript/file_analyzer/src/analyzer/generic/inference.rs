@@ -24,7 +24,7 @@ use std::{
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::error;
+use tracing::{error, info};
 
 /// # Default
 ///
@@ -159,12 +159,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let marks = self.marks();
 
-        slog::info!(
-            self.logger,
-            "Inferred {} as {}",
-            name,
-            dump_type_as_string(&self.cm, &ty)
-        );
+        info!("Inferred {} as {}", name, dump_type_as_string(&self.cm, &ty));
 
         match ty.normalize() {
             Type::Param(ty) => {
@@ -661,11 +656,9 @@ impl Analyzer<'_, '_> {
             TsTypeOperatorOp::ReadOnly => return self.infer_type(span, inferred, &param.ty, arg, opts),
         }
 
-        slog::error!(
-            self.logger,
+        error!(
             "infer_type_from_operator_and_tuple: unimplemented\nparam  = {:#?}\narg = {:#?}",
-            param,
-            arg,
+            param, arg,
         );
         Ok(())
     }

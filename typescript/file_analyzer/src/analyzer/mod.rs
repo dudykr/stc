@@ -18,7 +18,6 @@ use crate::{
 };
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::VisitWith;
-use slog::Logger;
 use stc_ts_ast_rnode::{
     RDecorator, RExpr, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsImportEqualsDecl, RTsModuleDecl,
     RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
@@ -229,7 +228,6 @@ impl Ctx {
 
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.
 pub struct Analyzer<'scope, 'b> {
-    pub(crate) logger: Logger,
     env: Env,
     pub(crate) cm: Arc<SourceMap>,
 
@@ -369,7 +367,7 @@ impl Analyzer<'_, '_> {
         let span = node.span;
 
         let (errors, data) = {
-            let mut new = self.new(Scope::root(self.logger.clone()), Default::default());
+            let mut new = self.new(Scope::root(), Default::default());
             {
                 node.visit_children_with(&mut new);
             }
@@ -403,7 +401,6 @@ fn _assert_types() {
 
 impl<'scope, 'b> Analyzer<'scope, 'b> {
     pub fn root(
-        logger: Logger,
         env: Env,
         cm: Arc<SourceMap>,
         mut storage: Storage<'b>,
@@ -415,13 +412,12 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         }
 
         Self::new_inner(
-            logger.clone(),
             env,
             cm,
             storage,
             Some(Default::default()),
             loader,
-            Scope::root(logger),
+            Scope::root(),
             false,
             debugger,
             Default::default(),
@@ -429,10 +425,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
     }
 
     pub(crate) fn for_builtin(env: StableEnv, storage: &'b mut Builtin) -> Self {
-        let logger = env.logger_for_builtin();
-
         Self::new_inner(
-            logger.clone(),
             Env::new(
                 env,
                 Default::default(),
@@ -444,7 +437,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             box storage,
             None,
             &NoopLoader,
-            Scope::root(logger),
+            Scope::root(),
             true,
             None,
             Default::default(),
@@ -453,7 +446,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
 
     fn new(&'b self, scope: Scope<'scope>, data: AnalyzerData) -> Self {
         Self::new_inner(
-            self.logger.clone(),
             self.env.clone(),
             self.cm.clone(),
             self.storage.subscope(),
@@ -467,7 +459,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
     }
 
     fn new_inner(
-        logger: Logger,
         env: Env,
         cm: Arc<SourceMap>,
         storage: Storage<'b>,
@@ -479,7 +470,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         data: AnalyzerData,
     ) -> Self {
         Self {
-            logger,
             env,
             cm,
             storage,

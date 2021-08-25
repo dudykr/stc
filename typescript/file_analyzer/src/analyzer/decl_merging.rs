@@ -3,6 +3,7 @@ use fxhash::FxHashMap;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_types::{ClassDef, ClassMember, ClassProperty, Id, Interface, Method, Type, TypeElement, TypeParam};
 use swc_common::{Span, Spanned};
+use tracing::info;
 
 impl Analyzer<'_, '_> {
     fn type_element_to_class_member(&mut self, el: &TypeElement) -> ValidationResult<Option<ClassMember>> {
@@ -148,8 +149,7 @@ impl Analyzer<'_, '_> {
         let orig = orig.next().unwrap().into_owned();
 
         let new = self.merge_types(new.span(), orig, new)?;
-        slog::info!(
-            self.logger,
+        info!(
             "Merging declaration {} with type {}",
             name,
             dump_type_as_string(&self.cm, &new)

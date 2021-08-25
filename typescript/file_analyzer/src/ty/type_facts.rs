@@ -11,6 +11,7 @@ use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
+use tracing::debug;
 
 impl Analyzer<'_, '_> {
     /// TODO: Note: This method preserves [Type::Ref] in some cases.
@@ -108,13 +109,7 @@ impl Analyzer<'_, '_> {
 
         let after = dump_type_as_string(&self.cm, &ty);
 
-        slog::debug!(
-            self.logger,
-            "[types/fact] {} => {}\nTypeFacts: {:?}",
-            before,
-            after,
-            facts
-        );
+        debug!("[types/fact] {} => {}\nTypeFacts: {:?}", before, after, facts);
 
         ty.fixed()
     }

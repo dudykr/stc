@@ -10,7 +10,6 @@ mod common;
 
 use self::common::load_fixtures;
 use once_cell::sync::Lazy;
-use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_errors::debug::debugger::Debugger;
 use stc_ts_file_analyzer::{
@@ -218,10 +217,8 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
             let (handler_for_errors, error_text) = new_handler(cm.clone());
             let handler_for_errors = Arc::new(handler_for_errors);
 
-            let log = logger();
             let type_info_handler = Arc::new(type_info_handler);
             let mut checker = Checker::new(
-                log.logger,
                 cm.clone(),
                 handler_for_errors.clone(),
                 Env::simple(rule, target, ModuleConfig::None, &libs),

@@ -4,7 +4,6 @@
 extern crate test;
 
 use rnode::{NodeIdGenerator, RNode};
-use slog::Logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_dts::cleanup_module_for_dts;
@@ -200,14 +199,7 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
 
             let mut module = module.clone();
             {
-                let mut analyzer = Analyzer::root(
-                    Logger::root(slog::Discard, slog::o!()),
-                    env.clone(),
-                    cm.clone(),
-                    box &mut storage,
-                    &NoopLoader,
-                    None,
-                );
+                let mut analyzer = Analyzer::root(env.clone(), cm.clone(), box &mut storage, &NoopLoader, None);
                 GLOBALS.set(stable_env.swc_globals(), || {
                     module.validate_with(&mut analyzer).unwrap();
                 });

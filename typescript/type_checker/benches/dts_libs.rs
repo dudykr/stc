@@ -3,7 +3,6 @@
 
 extern crate test;
 
-use slog::Logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::{Env, ModuleConfig};
 use stc_ts_module_loader::resolver::node::NodeResolver;
@@ -54,7 +53,6 @@ fn run_bench(b: &mut Bencher, path: &Path) {
 
         b.iter(|| {
             let mut checker = Checker::new(
-                Logger::root(slog::Discard, slog::o!()),
                 cm.clone(),
                 handler.clone(),
                 Env::simple(

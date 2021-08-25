@@ -8,7 +8,6 @@ use derivative::Derivative;
 use fxhash::{FxBuildHasher, FxHashMap};
 use once_cell::sync::{Lazy, OnceCell};
 use rnode::{NodeIdGenerator, RNode, VisitWith};
-use slog::Logger;
 use stc_ts_ast_rnode::{RDecl, RIdent, RModule, RModuleItem, RStmt, RTsModuleName, RVarDecl};
 use stc_ts_builtin_types::Lib;
 use stc_ts_errors::Error;
@@ -22,6 +21,7 @@ use swc_atoms::JsWord;
 use swc_common::{Globals, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_parser::JscTarget;
+use tracing::info;
 
 #[derive(Debug, Default)]
 pub struct BuiltIn {
@@ -37,7 +37,7 @@ impl BuiltIn {
 
         let mut node_id_gen = NodeIdGenerator::default();
 
-        slog::info!(env.logger, "Loading typescript builtins: {:?}", libs);
+        info!("Loading typescript builtins: {:?}", libs);
 
         let modules = stc_ts_builtin_types::load(libs);
 
@@ -61,7 +61,7 @@ impl BuiltIn {
     where
         I: IntoIterator<Item = RModuleItem>,
     {
-        slog::info!(env.logger, "Merging builtins");
+        info!("Merging builtins");
 
         let start = Instant::now();
 
@@ -316,10 +316,6 @@ impl Env {
         self.rule
     }
 
-    pub(crate) fn logger_for_builtin(&self) -> Logger {
-        self.stable.logger_for_builtin().clone()
-    }
-
     pub(crate) fn declare_global_var(&mut self, name: JsWord, ty: Type) {
         unimplemented!("declare_global_var")
     }
@@ -376,27 +372,21 @@ impl Env {
 #[derive(Clone, Derivative)]
 #[derivative(Debug)]
 pub struct StableEnv {
-    /// Logger for builtins.
-    logger: Logger,
     #[derivative(Debug = "ignore")]
     globals: Arc<Globals>,
     marks: Marks,
 }
 
 impl StableEnv {
-    pub fn new(logger: Logger, globals: Arc<Globals>) -> Self {
+    pub fn new(globals: Arc<Globals>) -> Self {
         let marks = Marks::new(&globals);
-        Self { logger, globals, marks }
+        Self { globals, marks }
     }
 
     /// Note: The return marks should not be modified as it will not has any
     /// effect.
     pub const fn marks(&self) -> Marks {
         self.marks
-    }
-
-    pub(crate) fn logger_for_builtin(&self) -> Logger {
-        self.logger.clone()
     }
 
     pub fn swc_globals(&self) -> &Arc<Globals> {
@@ -406,7 +396,7 @@ impl StableEnv {
 
 impl Default for StableEnv {
     fn default() -> Self {
-        Self::new(Logger::root(slog::Discard, slog::o!()), Default::default())
+        Self::new(Default::default())
     }
 }
 

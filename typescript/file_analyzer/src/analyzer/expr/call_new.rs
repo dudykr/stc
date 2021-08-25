@@ -42,7 +42,7 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::instrument;
+use tracing::{debug, info, instrument};
 use ty::TypeExt;
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -222,7 +222,7 @@ impl Analyzer<'_, '_> {
 
         let marks = self.marks();
 
-        slog::debug!(self.logger, "extract_call_new_expr_member");
+        debug!("extract_call_new_expr_member");
 
         let type_args = match type_args {
             Some(v) => {
@@ -1259,11 +1259,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        slog::debug!(
-            self.logger,
-            "[exprs/call] Calling {}",
-            dump_type_as_string(&self.cm, &ty)
-        );
+        debug!("[exprs/call] Calling {}", dump_type_as_string(&self.cm, &ty));
 
         match kind {
             ExtractKind::Call => match ty.normalize() {
@@ -1923,7 +1919,7 @@ impl Analyzer<'_, '_> {
         // candidates.
         let mut candidates = self.extract_callee_candidates(span, kind, &callee)?;
 
-        slog::info!(self.logger, "get_best_return_type: {} candidates", candidates.len());
+        info!("get_best_return_type: {} candidates", candidates.len());
 
         if let Some(v) = self.select_and_invoke(
             span,
@@ -2284,8 +2280,6 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> ValidationResult {
-        let logger = self.logger.clone();
-
         // TODO: Optimize by skipping clone if `this type` is not used.
         let params = params
             .iter()
@@ -2306,16 +2300,14 @@ impl Analyzer<'_, '_> {
             arg_check_res.report(&mut self.storage);
         }
 
-        slog::debug!(
-            logger,
+        debug!(
             "get_return_type: \ntype_params = {:?}\nret_ty = {:?}",
-            type_params,
-            ret_ty
+            type_params, ret_ty
         );
 
         if let Some(type_params) = type_params {
             for param in type_params {
-                slog::info!(self.logger, "({}) Defining {}", self.scope.depth(), param.name);
+                info!("({}) Defining {}", self.scope.depth(), param.name);
 
                 self.register_type(param.name.clone(), Type::Param(param.clone()));
             }
@@ -2342,7 +2334,7 @@ impl Analyzer<'_, '_> {
                 params
             };
 
-            slog::debug!(self.logger, "Inferring arg types for a call");
+            debug!("Inferring arg types for a call");
             let mut inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
             let expanded_param_types = params
@@ -2363,13 +2355,13 @@ impl Analyzer<'_, '_> {
             for (idx, (arg, param)) in args.into_iter().zip(expanded_param_types.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
                 print_type(
-                    &self.logger,
+                    &
                     &format!("Expanded parameter at {}", idx),
                     &self.cm,
                     &param.ty,
                 );
                 print_type(
-                    &self.logger,
+                    &
                     &format!("Original argument at {}", idx),
                     &self.cm,
                     &arg_ty.ty,
@@ -2432,7 +2424,7 @@ impl Analyzer<'_, '_> {
                             patch_arg(idx, pat)?;
                         }
 
-                        slog::info!(self.logger, "Inferring type of arrow expr with updated type");
+                        info!( "Inferring type of arrow expr with updated type");
                         // It's okay to use default as we have patched parameters.
                         let mut ty = box Type::Function(arrow.validate_with_default(&mut *self.with_ctx(ctx))?);
                         self.add_required_type_params(&mut ty);
@@ -2443,7 +2435,7 @@ impl Analyzer<'_, '_> {
                             patch_arg(idx, &param.pat)?;
                         }
 
-                        slog::info!(self.logger, "Inferring type of function expr with updated type");
+                        info!( "Inferring type of function expr with updated type");
                         let mut ty = box Type::Function(
                             fn_expr
                                 .function
@@ -2455,7 +2447,7 @@ impl Analyzer<'_, '_> {
                     _ => arg_ty.ty.clone(),
                 };
                 print_type(
-                    &self.logger,
+                    &
                     &format!("Mapped argument at {}", idx),
                     &self.cm,
                     &arg_ty.ty,
@@ -2467,7 +2459,7 @@ impl Analyzer<'_, '_> {
             }
 
             if !self.ctx.reevaluating_call_or_new {
-                slog::debug!(self.logger, "Reevaluating a call");
+                debug!("Reevaluating a call");
                 let ctx = Ctx {
                     reevaluating_call_or_new: true,
                     ..self.ctx
@@ -2487,7 +2479,7 @@ impl Analyzer<'_, '_> {
             if arg_types.len() > expanded_param_types.len() {
                 for idx in expanded_param_types.len()..arg_types.len() {
                     let ty = &arg_types[idx].ty;
-                    print_type(&self.logger, &format!("Expanded param type at {}", idx), &self.cm, &ty);
+                    print_type(& &format!("Expanded param type at {}", idx), &self.cm, &ty);
                 }
                 new_args.extend(arg_types[expanded_param_types.len()..].iter().cloned());
             }
@@ -2557,25 +2549,25 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            print_type(&logger, "Return", &self.cm, &ret_ty);
+            print_type("Return", &self.cm, &ret_ty);
             let mut ty = self.expand_type_params(&inferred, ret_ty, Default::default())?;
-            print_type(&logger, "Return, expanded", &self.cm, &ty);
+            print_type("Return, expanded", &self.cm, &ty);
 
             ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
 
-            print_type(&logger, "Return, simplified", &self.cm, &ty);
+            print_type("Return, simplified", &self.cm, &ty);
 
             ty = self.simplify(ty);
 
-            print_type(&logger, "Return, simplified again", &self.cm, &ty);
+            print_type("Return, simplified again", &self.cm, &ty);
 
             ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer: self });
 
-            print_type(&logger, "Return, generalized", &self.cm, &ty);
+            print_type("Return, generalized", &self.cm, &ty);
 
             self.add_required_type_params(&mut ty);
 
-            print_type(&logger, "Return, after adding type params", &self.cm, &ty);
+            print_type("Return, after adding type params", &self.cm, &ty);
 
             if kind == ExtractKind::Call {
                 self.add_call_facts(&expanded_param_types, &args, &mut ty);
@@ -2588,12 +2580,12 @@ impl Analyzer<'_, '_> {
 
         self.validate_arg_types(&params, &spread_arg_types);
 
-        print_type(&logger, "Return", &self.cm, &ret_ty);
+        print_type("Return", &self.cm, &ret_ty);
 
         ret_ty.reposition(span);
         ret_ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
 
-        print_type(&logger, "Return, simplified", &self.cm, &ret_ty);
+        print_type("Return, simplified", &self.cm, &ret_ty);
 
         self.add_required_type_params(&mut ret_ty);
 
@@ -2605,7 +2597,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread]) {
-        slog::info!(self.logger, "[exprs] Validating arguments");
+        info!("[exprs] Validating arguments");
 
         let marks = self.marks();
 

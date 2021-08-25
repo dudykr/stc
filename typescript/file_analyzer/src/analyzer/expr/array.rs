@@ -223,8 +223,7 @@ impl Analyzer<'_, '_> {
         iterator: Cow<'a, Type>,
         n: usize,
     ) -> ValidationResult<Cow<'a, Type>> {
-        slog::debug!(
-            self.logger,
+        debug!(
             "Caculating element type of an iterator ({})",
             dump_type_as_string(&self.cm, &iterator)
         );
@@ -606,7 +605,7 @@ impl Analyzer<'_, '_> {
         opts: GetIteratorOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
         let ty_str = dump_type_as_string(&self.cm, &ty);
-        slog::debug!(self.logger, "[exprs/array] get_iterator({})", ty_str);
+        debug!("[exprs/array] get_iterator({})", ty_str);
         ty.assert_valid();
 
         let ty = self
