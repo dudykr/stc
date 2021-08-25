@@ -2701,7 +2701,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Expand type paramters using `type_args`.
-    pub(crate) fn expand_type_args(
+    pub(crate) fn expand_generics_with_type_args(
         &mut self,
         span: Span,
         ty: Type,
@@ -2760,7 +2760,7 @@ impl Analyzer<'_, '_> {
         }
         ty.assert_valid();
         if let Some(type_args) = type_args {
-            ty = self.expand_type_args(span, ty, type_args)?;
+            ty = self.expand_generics_with_type_args(span, ty, type_args)?;
             ty.fix();
         }
         let mut need_intersection = true;
