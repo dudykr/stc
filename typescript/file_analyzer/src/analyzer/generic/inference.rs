@@ -246,6 +246,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    /// Infer types, using `param` and `arg`.
     pub(crate) fn infer_type_with_types(
         &mut self,
         span: Span,
