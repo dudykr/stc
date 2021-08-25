@@ -1844,6 +1844,7 @@ version = "0.1.0"
 name = "stc_ts_errors"
 version = "0.1.0"
 dependencies = [
+ "ansi_term 0.12.1",
  "backtrace",
  "fxhash",
  "rnode",
