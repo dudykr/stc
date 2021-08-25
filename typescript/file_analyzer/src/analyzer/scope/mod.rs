@@ -743,7 +743,7 @@ impl Analyzer<'_, '_> {
 
     /// This should be called after calling `register_type`.
 
-    pub(crate) fn store_unmergedable_type_span(&mut self, id: Id, span: Span) {
+    pub(crate) fn store_unmergeable_type_span(&mut self, id: Id, span: Span) {
         if self.is_builtin {
             return;
         }
