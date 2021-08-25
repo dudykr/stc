@@ -153,7 +153,7 @@ impl Analyzer<'_, '_> {
             return Some(true);
         }
 
-        slog::debug!(
+        debug!(
             self.logger,
             "[generic/extends] Checking if {} extends {}",
             dump_type_as_string(&self.cm, &child),
@@ -437,11 +437,11 @@ impl GenericExpander<'_, '_, '_, '_> {
                 }
 
                 if self.dejavu.contains(&i.into()) {
-                    slog::debug!(self.logger, "Dejavu: {}", i.sym);
+                    debug!(self.logger, "Dejavu: {}", i.sym);
                     return ty;
                 }
 
-                slog::info!(self.logger, "Ref: {}", Id::from(i));
+                info!(self.logger, "Ref: {}", Id::from(i));
 
                 return ty.fold_children_with(self);
             }
@@ -493,7 +493,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                 }
 
                 if let Some(ty) = self.params.get(&param.name) {
-                    slog::info!(
+                    info!(
                         self.logger,
                         "generic_expand: Expanding type parameter `{}` => {}",
                         param.name,
@@ -508,10 +508,9 @@ impl GenericExpander<'_, '_, '_, '_> {
                     return ty;
                 }
 
-                slog::warn!(
+                warn!(
                     self.logger,
-                    "generic_expand: Failed to found type parameter instantiation: {}",
-                    param.name,
+                    "generic_expand: Failed to found type parameter instantiation: {}", param.name,
                 );
 
                 return Type::Param(param);
@@ -533,7 +532,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                 c = c.fold_with(self);
 
                 if let Some(..) = &c.def.type_params {
-                    slog::error!(
+                    error!(
                         self.logger,
                         "A class has type parameters. It may not be fully expanded."
                     );
@@ -684,7 +683,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                         ty: box Type::Union(ref u),
                         ..
                     })) => {
-                        slog::error!(self.logger, "Union!");
+                        error!(self.logger, "Union!");
                     }
                     _ => {}
                 }
@@ -900,7 +899,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
         let _stack = match stack::track(ty.span()) {
             Ok(v) => v,
             _ => {
-                slog::error!(
+                error!(
                     self.logger,
                     "[generic/expander] Stack overflow: {}",
                     dump_type_as_string(&self.analyzer.cm, &ty)

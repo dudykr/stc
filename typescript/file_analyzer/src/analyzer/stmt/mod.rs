@@ -77,7 +77,7 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     fn check_for_inifinite_loop(&mut self, test: &Type, body: &RStmt) {
-        slog::trace!(self.logger, "Checking for infinite loop");
+        trace!(self.logger, "Checking for infinite loop");
 
         // Of `s` is always executed and we enter infinite loop, return type should be
         // never

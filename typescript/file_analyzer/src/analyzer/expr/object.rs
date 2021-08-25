@@ -415,7 +415,7 @@ impl Analyzer<'_, '_> {
 
         let end = Instant::now();
 
-        slog::debug!(self.logger, "Normlaized unions (time = {:?})", end - start);
+        debug!(self.logger, "Normlaized unions (time = {:?})", end - start);
     }
 
     pub(crate) fn report_errors_for_type_literal(&mut self, ty: &Type, is_type_ann: bool) {

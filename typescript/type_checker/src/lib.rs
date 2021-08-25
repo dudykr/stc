@@ -6,7 +6,6 @@ use fxhash::{FxBuildHasher, FxHashMap};
 use once_cell::sync::OnceCell;
 use parking_lot::{Mutex, RwLock};
 use rnode::{NodeIdGenerator, RNode, VisitWith};
-use slog::Logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_dts::{apply_mutations, cleanup_module_for_dts};
 use stc_ts_errors::{debug::debugger::Debugger, Error};
@@ -32,7 +31,6 @@ use swc_ecma_visit::FoldWith;
 
 /// Onc instance per swc::Compiler
 pub struct Checker {
-    logger: Logger,
     cm: Arc<SourceMap>,
     handler: Arc<Handler>,
     /// Cache
@@ -55,7 +53,6 @@ pub struct Checker {
 
 impl Checker {
     pub fn new(
-        logger: Logger,
         cm: Arc<SourceMap>,
         handler: Arc<Handler>,
         env: Env,
@@ -64,7 +61,6 @@ impl Checker {
         resolver: Arc<dyn Resolve>,
     ) -> Self {
         Checker {
-            logger: logger.clone(),
             env: env.clone(),
             cm: cm.clone(),
             handler,
@@ -212,7 +208,7 @@ impl Checker {
                             // TODO: Prevent duplicate work.
                             match self.dts_modules.insert(*id, dts_module) {
                                 Some(..) => {
-                                    slog::warn!(
+                                    warn!(
                                         self.logger,
                                         "Duplicated work: `{}`: (.d.ts already computed)",
                                         path.display()
@@ -233,7 +229,7 @@ impl Checker {
                                 match res {
                                     Ok(()) => {}
                                     Err(..) => {
-                                        slog::warn!(
+                                        warn!(
                                             self.logger,
                                             "Duplicated work: `{}`: (type info is already cached)",
                                             path.display()
@@ -248,7 +244,7 @@ impl Checker {
                     return lock.get(&id).map(|cell| cell.get().cloned()).flatten().unwrap();
                 }
             }
-            slog::info!(
+            info!(
                 &self.logger,
                 "Request: {}\nRequested by {:?}\nCircular set: {:?}",
                 path.display(),
@@ -378,7 +374,7 @@ impl Load for Checker {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 
-        slog::info!(self.logger, "({}): Loading {}", base_path.display(), dep_path.display());
+        info!(self.logger, "({}): Loading {}", base_path.display(), dep_path.display());
 
         let data = self.analyze_module(Some(base_path.clone()), dep_path.clone());
 

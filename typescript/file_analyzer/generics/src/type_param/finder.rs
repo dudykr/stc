@@ -35,7 +35,7 @@ impl Visit<TypeParam> for TypeParamUsageFinder {
             }
         }
 
-        // slog::info!(self.logger, "Found type parameter({})", node.name);
+        // info!(self.logger, "Found type parameter({})", node.name);
 
         self.params.push(node.clone());
     }

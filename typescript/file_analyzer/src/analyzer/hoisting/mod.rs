@@ -271,7 +271,7 @@ impl Analyzer<'_, '_> {
         }
 
         if self.scope.is_root() {
-            slog::warn!(&self.logger, "Order: {:?}", orders);
+            warn!(&self.logger, "Order: {:?}", orders);
         }
 
         (orders, skip)

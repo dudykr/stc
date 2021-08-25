@@ -159,7 +159,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let marks = self.marks();
 
-        slog::info!(
+        info!(
             self.logger,
             "Inferred {} as {}",
             name,
@@ -661,11 +661,9 @@ impl Analyzer<'_, '_> {
             TsTypeOperatorOp::ReadOnly => return self.infer_type(span, inferred, &param.ty, arg, opts),
         }
 
-        slog::error!(
+        error!(
             self.logger,
-            "infer_type_from_operator_and_tuple: unimplemented\nparam  = {:#?}\narg = {:#?}",
-            param,
-            arg,
+            "infer_type_from_operator_and_tuple: unimplemented\nparam  = {:#?}\narg = {:#?}", param, arg,
         );
         Ok(())
     }

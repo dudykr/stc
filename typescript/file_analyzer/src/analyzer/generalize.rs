@@ -19,7 +19,7 @@ use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 
 impl Analyzer<'_, '_> {
     pub(super) fn may_generalize(&self, ty: &Type) -> bool {
-        slog::trace!(self.logger, "may_generalize({:?})", ty);
+        trace!(self.logger, "may_generalize({:?})", ty);
         match ty.normalize() {
             Type::Function(f) => {
                 if !self.may_generalize(&f.ret_ty) {
@@ -80,7 +80,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn simplify(&self, ty: Type) -> Type {
-        slog::info!(self.logger, "Simplifying {}", dump_type_as_string(&self.cm, &ty));
+        info!(self.logger, "Simplifying {}", dump_type_as_string(&self.cm, &ty));
         ty.fold_with(&mut Simplifier {
             env: &self.env,
             logger: self.logger.clone(),

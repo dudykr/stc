@@ -107,14 +107,14 @@ impl Analyzer<'_, '_> {
         match pat {
             RPat::Ident(i) => {
                 if let Some(ty) = &ty {
-                    slog::debug!(
+                    debug!(
                         &self.logger,
                         "[vars]: Declaring {} as {}",
                         i.id.sym,
                         dump_type_as_string(&self.cm, &ty)
                     );
                 } else {
-                    slog::debug!(&self.logger, "[vars]: Declaring {} without type", i.id.sym);
+                    debug!(&self.logger, "[vars]: Declaring {} without type", i.id.sym);
                 }
 
                 let ty = opt_union(span, ty, default);

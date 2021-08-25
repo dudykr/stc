@@ -36,7 +36,7 @@ impl BuiltIn {
 
         let mut node_id_gen = NodeIdGenerator::default();
 
-        slog::info!(env.logger, "Loading typescript builtins: {:?}", libs);
+        info!(env.logger, "Loading typescript builtins: {:?}", libs);
 
         let modules = stc_ts_builtin_types::load(libs);
 
@@ -60,7 +60,7 @@ impl BuiltIn {
     where
         I: IntoIterator<Item = RModuleItem>,
     {
-        slog::info!(env.logger, "Merging builtins");
+        info!(env.logger, "Merging builtins");
 
         let start = Instant::now();
 
