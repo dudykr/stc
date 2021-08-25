@@ -14,7 +14,7 @@ use stc_utils::stack;
 use std::time::Instant;
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_utils::Value::Known;
-use tracing::{span, warn, Level};
+use tracing::{span, trace, warn, Level};
 
 mod ambient_decl;
 mod loops;
@@ -77,7 +77,7 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     fn check_for_inifinite_loop(&mut self, test: &Type, body: &RStmt) {
-        trace!( "Checking for infinite loop");
+        trace!("Checking for infinite loop");
 
         // Of `s` is always executed and we enter infinite loop, return type should be
         // never

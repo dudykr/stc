@@ -29,7 +29,7 @@ use std::{
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{error, instrument, trace};
+use tracing::{debug, error, instrument, trace};
 
 mod index_signature;
 mod keyof;
@@ -820,7 +820,7 @@ impl Analyzer<'_, '_> {
         self.exclude_types(span, ty, Some(types_to_exclude));
         let after = dump_type_as_string(&self.cm, &ty);
 
-        debug!( "[types/facts] Excluded types: {} => {}", before, after);
+        debug!("[types/facts] Excluded types: {} => {}", before, after);
     }
 
     pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
@@ -833,7 +833,7 @@ impl Analyzer<'_, '_> {
                 .copied()
                 .unwrap_or(TypeFacts::None);
 
-        debug!( "[types/fact] Facts for {:?} is {:?}", name, type_facts);
+        debug!("[types/fact] Facts for {:?} is {:?}", name, type_facts);
 
         self.apply_type_facts_to_type(type_facts, ty)
     }

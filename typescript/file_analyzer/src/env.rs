@@ -21,6 +21,7 @@ use swc_atoms::JsWord;
 use swc_common::{Globals, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_parser::JscTarget;
+use tracing::info;
 
 #[derive(Debug, Default)]
 pub struct BuiltIn {
@@ -313,10 +314,6 @@ impl Env {
 
     pub const fn rule(&self) -> Rule {
         self.rule
-    }
-
-    pub(crate) fn logger_for_builtin(&self) -> Logger {
-        self.stable.logger_for_builtin().clone()
     }
 
     pub(crate) fn declare_global_var(&mut self, name: JsWord, ty: Type) {
