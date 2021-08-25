@@ -643,7 +643,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn infer_type_from_operator(
+    pub(super) fn infer_type_using_operator(
         &mut self,
         span: Span,
         inferred: &mut InferData,
