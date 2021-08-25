@@ -2354,18 +2354,8 @@ impl Analyzer<'_, '_> {
             let mut new_args = vec![];
             for (idx, (arg, param)) in args.into_iter().zip(expanded_param_types.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
-                print_type(
-                    &
-                    &format!("Expanded parameter at {}", idx),
-                    &self.cm,
-                    &param.ty,
-                );
-                print_type(
-                    &
-                    &format!("Original argument at {}", idx),
-                    &self.cm,
-                    &arg_ty.ty,
-                );
+                print_type(&&format!("Expanded parameter at {}", idx), &self.cm, &param.ty);
+                print_type(&&format!("Original argument at {}", idx), &self.cm, &arg_ty.ty);
 
                 let (type_param_decl, actual_params) = match &*param.ty {
                     Type::Function(f) => (&f.type_params, &f.params),
@@ -2424,7 +2414,7 @@ impl Analyzer<'_, '_> {
                             patch_arg(idx, pat)?;
                         }
 
-                        info!( "Inferring type of arrow expr with updated type");
+                        info!("Inferring type of arrow expr with updated type");
                         // It's okay to use default as we have patched parameters.
                         let mut ty = box Type::Function(arrow.validate_with_default(&mut *self.with_ctx(ctx))?);
                         self.add_required_type_params(&mut ty);
@@ -2435,7 +2425,7 @@ impl Analyzer<'_, '_> {
                             patch_arg(idx, &param.pat)?;
                         }
 
-                        info!( "Inferring type of function expr with updated type");
+                        info!("Inferring type of function expr with updated type");
                         let mut ty = box Type::Function(
                             fn_expr
                                 .function
@@ -2446,12 +2436,7 @@ impl Analyzer<'_, '_> {
                     }
                     _ => arg_ty.ty.clone(),
                 };
-                print_type(
-                    &
-                    &format!("Mapped argument at {}", idx),
-                    &self.cm,
-                    &arg_ty.ty,
-                );
+                print_type(&&format!("Mapped argument at {}", idx), &self.cm, &arg_ty.ty);
 
                 let new_arg = TypeOrSpread { ty, ..arg_ty.clone() };
 
@@ -2479,7 +2464,7 @@ impl Analyzer<'_, '_> {
             if arg_types.len() > expanded_param_types.len() {
                 for idx in expanded_param_types.len()..arg_types.len() {
                     let ty = &arg_types[idx].ty;
-                    print_type(& &format!("Expanded param type at {}", idx), &self.cm, &ty);
+                    print_type(&&format!("Expanded param type at {}", idx), &self.cm, &ty);
                 }
                 new_args.extend(arg_types[expanded_param_types.len()..].iter().cloned());
             }
@@ -2924,7 +2909,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> ValidationResult {
+    fn narrow_type_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> ValidationResult {
         let orig_ty = self
             .normalize(Some(span), Cow::Borrowed(orig_ty), Default::default())
             .context("tried to normalize original type")?;
@@ -3032,7 +3017,7 @@ impl Analyzer<'_, '_> {
                     .map(Cow::into_owned)
                 {
                     let new_ty = self
-                        .narrow_with_predicate(span, &previous_types, new_ty.clone())?
+                        .narrow_type_with_predicate(span, &previous_types, new_ty.clone())?
                         .cheap();
 
                     self.add_type_fact(&var_name.into(), new_ty);
