@@ -1019,7 +1019,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Tuple(param) => match arg {
-                Type::Tuple(arg) => return self.infer_tuple(span, inferred, param, arg, opts),
+                Type::Tuple(arg) => return self.infer_type_using_tuple_and_tuple(span, inferred, param, arg, opts),
                 _ => {
                     dbg!();
                 }
@@ -2079,7 +2079,7 @@ impl Analyzer<'_, '_> {
         Ok(false)
     }
 
-    fn infer_tuple(
+    fn infer_type_using_tuple_and_tuple(
         &mut self,
         span: Span,
         inferred: &mut InferData,
