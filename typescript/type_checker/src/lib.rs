@@ -28,7 +28,7 @@ use swc_ecma_ast::Module;
 use swc_ecma_parser::TsConfig;
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
-use tracing::warn;
+use tracing::{info, warn};
 
 /// Onc instance per swc::Compiler
 pub struct Checker {
@@ -236,7 +236,7 @@ impl Checker {
                 }
             }
             info!(
-                &"Request: {}\nRequested by {:?}\nCircular set: {:?}",
+                "Request: {}\nRequested by {:?}\nCircular set: {:?}",
                 path.display(),
                 starter,
                 circular_set
@@ -291,7 +291,6 @@ impl Checker {
             let mut mutations;
             {
                 let mut a = Analyzer::root(
-                    self.logger.new(slog::o!("file" => path.to_string_lossy().to_string())),
                     self.env.clone(),
                     self.cm.clone(),
                     box &mut storage,

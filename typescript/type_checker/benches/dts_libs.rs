@@ -53,7 +53,6 @@ fn run_bench(b: &mut Bencher, path: &Path) {
 
         b.iter(|| {
             let mut checker = Checker::new(
-                Logger::root(slog::Discard, slog::o!()),
                 cm.clone(),
                 handler.clone(),
                 Env::simple(

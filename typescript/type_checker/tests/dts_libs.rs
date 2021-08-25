@@ -2,7 +2,7 @@
 
 use anyhow::{Context, Error};
 use ignore::WalkBuilder;
-use stc_testing::{get_git_root, term_logger};
+use stc_testing::get_git_root;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::{Env, ModuleConfig};
 use stc_ts_module_loader::resolver::node::NodeResolver;
@@ -102,7 +102,6 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
 
         let handler = Arc::new(handler);
         let mut checker = Checker::new(
-            term_logger(),
             cm.clone(),
             handler.clone(),
             Env::simple(

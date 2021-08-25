@@ -13,7 +13,6 @@ use anyhow::{Context, Error};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use serde::Deserialize;
-use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::{
     env::{Env, ModuleConfig},
@@ -540,10 +539,8 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let tester = Tester::new();
         let diagnostics = tester
             .errors(|cm, handler| {
-                let log = logger();
                 let handler = Arc::new(handler);
                 let mut checker = Checker::new(
-                    log.logger,
                     cm.clone(),
                     handler.clone(),
                     Env::simple(rule, target, module_config, &libs),
