@@ -32,7 +32,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(super) fn assign_from_query_type(
+    pub(super) fn assign_query_type_to_type(
         &mut self,
         data: &mut AssignData,
         opts: AssignOpts,

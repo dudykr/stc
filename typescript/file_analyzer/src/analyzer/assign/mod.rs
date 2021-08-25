@@ -1105,7 +1105,7 @@ impl Analyzer<'_, '_> {
 
             Type::Query(rhs) => {
                 return self
-                    .assign_from_query_type(data, opts, to, &rhs)
+                    .assign_query_type_to_type(data, opts, to, &rhs)
                     .context("tried to assign a query type to another type")
             }
 
