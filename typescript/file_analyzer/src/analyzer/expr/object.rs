@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
                 ret = a.append_prop_or_spread_to_type(&mut known_keys, ret, prop, type_ann.as_deref())?;
             }
 
-            a.report_errors_for_type_literal(&ret, false);
+            a.validate_type_literals(&ret, false);
 
             Ok(ret)
         })
@@ -419,11 +419,11 @@ impl Analyzer<'_, '_> {
         debug!("Normlaized unions (time = {:?})", end - start);
     }
 
-    pub(crate) fn report_errors_for_type_literal(&mut self, ty: &Type, is_type_ann: bool) {
+    pub(crate) fn validate_type_literals(&mut self, ty: &Type, is_type_ann: bool) {
         match ty.normalize() {
             Type::Union(ty) => {
                 for ty in &ty.types {
-                    self.report_errors_for_type_literal(ty, is_type_ann);
+                    self.validate_type_literals(ty, is_type_ann);
                 }
             }
             Type::TypeLit(ty) => {
