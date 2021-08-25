@@ -88,7 +88,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(..) | Type::Interface(..) => {
-                let rhs = self.type_to_type_lit(opts.span, r)?.unwrap();
+                let rhs = self.convert_type_to_type_lit(opts.span, r)?.unwrap();
 
                 let mut lhs_members = vec![];
                 for lm in &l.body {

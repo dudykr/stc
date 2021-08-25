@@ -471,7 +471,7 @@ impl Analyzer<'_, '_> {
             } {
                 Some(rhs_ty) => {
                     let lhs;
-                    analyzer.check_rvalue(
+                    analyzer.report_error_for_invalid_rvalue(
                         span,
                         match &e.left {
                             RPatOrExpr::Expr(_) => {
@@ -2675,6 +2675,7 @@ impl Analyzer<'_, '_> {
         unimplemented!("access_property(MemberExpr):\nObject: {:?}\nProp: {:?}", obj, prop);
     }
 
+    /// TODO(kdy1): Clarify this.
     fn type_to_query_if_required(&mut self, span: Span, i: &RIdent, ty: Type) -> Type {
         if self.scope.is_in_call() {
             return ty;
@@ -2699,7 +2700,8 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn expand_type_args(
+    /// Expand type paramters using `type_args`.
+    pub(crate) fn expand_generics_with_type_args(
         &mut self,
         span: Span,
         ty: Type,
@@ -2758,7 +2760,7 @@ impl Analyzer<'_, '_> {
         }
         ty.assert_valid();
         if let Some(type_args) = type_args {
-            ty = self.expand_type_args(span, ty, type_args)?;
+            ty = self.expand_generics_with_type_args(span, ty, type_args)?;
             ty.fix();
         }
         let mut need_intersection = true;

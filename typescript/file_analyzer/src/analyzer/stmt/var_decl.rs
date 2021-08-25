@@ -246,7 +246,7 @@ impl Analyzer<'_, '_> {
                             })
                         })();
                         ty.assert_valid();
-                        self.check_rvalue(span, &v.name, &ty);
+                        self.report_error_for_invalid_rvalue(span, &v.name, &ty);
 
                         self.scope.this = Some(ty.clone().remove_falsy());
                         let mut value_ty = get_value_ty!(Some(&ty));
@@ -519,7 +519,7 @@ impl Analyzer<'_, '_> {
                         }
                         ty.assert_valid();
 
-                        self.check_rvalue(span, &v.name, &ty);
+                        self.report_error_for_invalid_rvalue(span, &v.name, &ty);
 
                         let mut type_errors = Errors::default();
 

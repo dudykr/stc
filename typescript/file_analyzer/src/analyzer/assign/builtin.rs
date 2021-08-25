@@ -13,6 +13,9 @@ use swc_atoms::js_word;
 use swc_common::{Spanned, TypeEq};
 
 impl Analyzer<'_, '_> {
+    /// - Handles assignment of `Function` types.
+    /// - Handles assignment of various array types.
+    /// - Handles assignment of promise types.
     pub(super) fn assign_to_builtins(
         &mut self,
         data: &mut AssignData,

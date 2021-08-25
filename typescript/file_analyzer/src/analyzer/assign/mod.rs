@@ -155,6 +155,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    /// Used to validate assignments like `a += b`.
     pub(crate) fn assign_with_op(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> ValidationResult<()> {
         debug_assert_ne!(op, op!("="));
 
@@ -336,6 +337,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
+    /// Assign `right` to `left`. You can just use default for [AssignData].
     pub(crate) fn assign(
         &mut self,
         span: Span,
@@ -354,6 +356,7 @@ impl Analyzer<'_, '_> {
         )
     }
 
+    /// Assign `right` to `left`. You can just use default for [AssignData].
     pub(crate) fn assign_with_opts(
         &mut self,
         data: &mut AssignData,
@@ -1009,7 +1012,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 if !left_contains_object && rhs_requires_unknown_property_check && !opts.allow_unknown_rhs {
-                    let lhs = self.type_to_type_lit(span, to)?;
+                    let lhs = self.convert_type_to_type_lit(span, to)?;
 
                     if let Some(lhs) = lhs {
                         self.assign_to_type_elements(data, opts, lhs.span, &lhs.members, &rhs, lhs.metadata)
@@ -1105,7 +1108,7 @@ impl Analyzer<'_, '_> {
 
             Type::Query(rhs) => {
                 return self
-                    .assign_from_query_type(data, opts, to, &rhs)
+                    .assign_query_type_to_type(data, opts, to, &rhs)
                     .context("tried to assign a query type to another type")
             }
 
@@ -1160,7 +1163,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Union(r) => {
-                if self.should_use_union_assignment(span, rhs)? {
+                if self.should_use_special_union_assignment(span, rhs)? {
                     // TODO: We should assign rhs as full.
                     //
                     //
@@ -1324,7 +1327,7 @@ impl Analyzer<'_, '_> {
                         return res;
                     }
 
-                    let r = self.type_to_type_lit(span, &rhs)?;
+                    let r = self.convert_type_to_type_lit(span, &rhs)?;
                     if let Some(r) = r {
                         for m in &r.members {
                             match m {
@@ -1809,7 +1812,7 @@ impl Analyzer<'_, '_> {
                 // We should check for unknown rhs, while allowing assignment to parent
                 // interfaces.
                 if !opts.allow_unknown_rhs && !opts.allow_unknown_rhs_if_expanded {
-                    let lhs = self.type_to_type_lit(span, to)?;
+                    let lhs = self.convert_type_to_type_lit(span, to)?;
                     if let Some(lhs) = lhs {
                         self.assign_to_type_elements(data, opts, span, &lhs.members, rhs, Default::default())
                             .with_context(|| {
@@ -2198,7 +2201,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ty) = self
-            .type_to_type_lit(span, &ty)?
+            .convert_type_to_type_lit(span, &ty)?
             .map(Cow::into_owned)
             .map(Type::TypeLit)
         {
@@ -2266,7 +2269,11 @@ impl Analyzer<'_, '_> {
 
             match r.normalize() {
                 Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) | Type::Intersection(..) => {
-                    if let Some(r) = self.type_to_type_lit(span, &r)?.map(Cow::into_owned).map(Type::TypeLit) {
+                    if let Some(r) = self
+                        .convert_type_to_type_lit(span, &r)?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit)
+                    {
                         self.assign_to_mapped(data, opts, l, &r)
                             .context("tried to assign a type to a mapped type by converting it to a type literal")?;
                         return Ok(());
@@ -2347,7 +2354,7 @@ impl Analyzer<'_, '_> {
     /// Returns true for `A | B | | C = A | B` and simillar cases.
     ///
     /// Should be called iff lhs is a union type.
-    fn should_use_union_assignment(&mut self, span: Span, r: &Type) -> ValidationResult<bool> {
+    fn should_use_special_union_assignment(&mut self, span: Span, r: &Type) -> ValidationResult<bool> {
         match r.normalize() {
             Type::Union(..) => return Ok(true),
             Type::TypeLit(r) => {
@@ -2371,6 +2378,7 @@ impl Analyzer<'_, '_> {
         Ok(false)
     }
 
+    /// TODO(kdy1): I'm not sure about this.
     fn variance(&mut self, ty: &Conditional) -> ValidationResult<Variance> {
         let convariant =
             self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;

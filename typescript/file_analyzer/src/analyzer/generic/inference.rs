@@ -246,6 +246,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    /// Infer types, using `param` and `arg`.
     pub(crate) fn infer_type_with_types(
         &mut self,
         span: Span,
@@ -363,7 +364,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Tuple(..) => {
                 // Convert to a type literal.
-                if let Some(arg) = self.type_to_type_lit(span, arg)? {
+                if let Some(arg) = self.convert_type_to_type_lit(span, arg)? {
                     self.infer_type_using_type_elements_and_type_elements(
                         span,
                         inferred,
@@ -426,8 +427,8 @@ impl Analyzer<'_, '_> {
         match (p, a) {
             (Type::Constructor(..), Type::Class(..)) | (Type::Function(..), Type::Function(..)) => return Ok(false),
             (Type::Constructor(..), _) | (Type::Function(..), _) => {
-                let p = self.type_to_type_lit(span, p)?;
-                let a = self.type_to_type_lit(span, a)?;
+                let p = self.convert_type_to_type_lit(span, p)?;
+                let a = self.convert_type_to_type_lit(span, a)?;
                 if let Some(p) = p {
                     if let Some(a) = a {
                         self.infer_type_using_type_elements_and_type_elements(
@@ -642,7 +643,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn infer_type_from_operator(
+    pub(super) fn infer_type_using_operator(
         &mut self,
         span: Span,
         inferred: &mut InferData,

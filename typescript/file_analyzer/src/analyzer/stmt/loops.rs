@@ -92,7 +92,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    fn check_lhs_of_for_loop(&mut self, e: &RVarDeclOrPat, elem_ty: &Type, kind: ForHeadKind) {
+    fn validate_lhs_of_for_loop(&mut self, e: &RVarDeclOrPat, elem_ty: &Type, kind: ForHeadKind) {
         let span = e.span();
 
         match self.validate_lhs_of_for_in_of_loop(&e, kind) {
@@ -362,7 +362,7 @@ impl Analyzer<'_, '_> {
 
                 child.scope.declaring.clear();
 
-                child.check_lhs_of_for_loop(left, &elem_ty, kind);
+                child.validate_lhs_of_for_loop(left, &elem_ty, kind);
 
                 child
                     .validate_loop_body_with_scope(None, &body)

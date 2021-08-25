@@ -61,7 +61,7 @@ impl Analyzer<'_, '_> {
                     // Special case, but many usages can be handled with this check.
                     if (&**ty).type_eq(&mapped_ty) {
                         let mut new_type = self
-                            .type_to_type_lit(span, &ty)
+                            .convert_type_to_type_lit(span, &ty)
                             .context("tried to convert a type to type literal to expand mapped type")?
                             .map(Cow::into_owned);
 
@@ -494,7 +494,7 @@ impl Analyzer<'_, '_> {
         optional: Option<TruePlusMinus>,
         readonly: Option<TruePlusMinus>,
     ) -> ValidationResult<Type> {
-        let type_lit = self.type_to_type_lit(span, &ty)?.map(Cow::into_owned);
+        let type_lit = self.convert_type_to_type_lit(span, &ty)?.map(Cow::into_owned);
         if let Some(mut type_lit) = type_lit {
             for m in &mut type_lit.members {
                 self.apply_mapped_flags(m, optional, readonly);

@@ -525,7 +525,10 @@ impl Analyzer<'_, '_> {
         Ok(new)
     }
 
-    fn check_switch_discriminant(&mut self, s: &RSwitchStmt) -> ValidationResult {
+    /// Returns the type of discriminant.
+    ///
+    /// TODO(kdy1): Implement this.
+    fn report_errors_for_incomparable_switch_cases(&mut self, s: &RSwitchStmt) -> ValidationResult {
         let discriminant_ty = s.discriminant.validate_with_default(self)?;
         for case in &s.cases {
             if let Some(test) = &case.test {
@@ -546,7 +549,9 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, stmt: &RSwitchStmt) -> ValidationResult<()> {
         self.record(stmt);
 
-        let discriminant_ty = self.check_switch_discriminant(stmt).report(&mut self.storage);
+        let discriminant_ty = self
+            .report_errors_for_incomparable_switch_cases(stmt)
+            .report(&mut self.storage);
 
         let mut false_facts = CondFacts::default();
         let mut base_true_facts = self.cur_facts.true_facts.take();
@@ -1060,6 +1065,8 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    /// While this type fact is in scope, the var named `sym` will be treated as
+    /// `ty`.
     pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type) {
         info!("add_type_fact({}); ty = {:?}", sym, ty);
 

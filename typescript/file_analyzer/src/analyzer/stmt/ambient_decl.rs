@@ -5,7 +5,7 @@ use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn validate_ambient_fns(&mut self, nodes: &[RModuleItem]) {
+    pub(crate) fn report_error_for_wrong_top_level_ambient_fns(&mut self, nodes: &[RModuleItem]) {
         if self.is_builtin {
             return;
         }

@@ -9,12 +9,19 @@ use stc_ts_ast_rnode::{RClassMember, RExpr, RExprOrSuper, RMemberExpr};
 use stc_ts_types::{rprop_name_to_expr, Id};
 
 impl Analyzer<'_, '_> {
+    /// Calculate the order of the evaluation of class members.
+    /// This is used to avoid reevaluation if possible.
+    ///
+    /// Note that this is not perfect, and if class methods references each
+    /// other, we have to evaluate them again with `any` for references.
+    ///
+    ///
     /// This method ignores order of class properties or parameter properties.
     /// So the length of returned vector can be smaller than length of
     /// `members`.
     ///
     /// Note that the boey constructor is analyzed.
-    pub(super) fn calc_order_of_class_methods(
+    pub(super) fn calc_eval_order_of_class_methods(
         &mut self,
         mut remaining_indexes: Vec<usize>,
         members: &[RClassMember],

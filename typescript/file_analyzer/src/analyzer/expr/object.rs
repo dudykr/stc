@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
                 ret = a.append_prop_or_spread_to_type(&mut known_keys, ret, prop, type_ann.as_deref())?;
             }
 
-            a.report_errors_for_type_literal(&ret, false);
+            a.validate_type_literals(&ret, false);
 
             Ok(ret)
         })
@@ -419,21 +419,21 @@ impl Analyzer<'_, '_> {
         debug!("Normlaized unions (time = {:?})", end - start);
     }
 
-    pub(crate) fn report_errors_for_type_literal(&mut self, ty: &Type, is_type_ann: bool) {
+    pub(crate) fn validate_type_literals(&mut self, ty: &Type, is_type_ann: bool) {
         match ty.normalize() {
             Type::Union(ty) => {
                 for ty in &ty.types {
-                    self.report_errors_for_type_literal(ty, is_type_ann);
+                    self.validate_type_literals(ty, is_type_ann);
                 }
             }
             Type::TypeLit(ty) => {
-                self.report_error_for_mixed_optional_method_signatures(&ty.members);
+                self.report_errors_for_mixed_optional_method_signatures(&ty.members);
             }
             _ => {}
         }
     }
 
-    pub(crate) fn report_error_for_mixed_optional_method_signatures(&mut self, elems: &[TypeElement]) {
+    pub(crate) fn report_errors_for_mixed_optional_method_signatures(&mut self, elems: &[TypeElement]) {
         let mut keys: Vec<(&Key, bool)> = vec![];
         for elem in elems {
             match elem {
@@ -556,7 +556,7 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(..) | Type::Class(..) | Type::Intersection(..) | Type::Mapped(..) => {
                 // Append as a type literal.
-                if let Some(rhs) = self.type_to_type_lit(rhs.span(), &rhs)? {
+                if let Some(rhs) = self.convert_type_to_type_lit(rhs.span(), &rhs)? {
                     return self.append_type(to, Type::TypeLit(rhs.into_owned()));
                 }
             }
