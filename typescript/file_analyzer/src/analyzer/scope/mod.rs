@@ -681,7 +681,6 @@ impl Analyzer<'_, '_> {
         let orig = dump_type_as_string(&self.cm, &ty);
 
         let mut v = Expander {
-            logger: self.logger.clone(),
             span,
             analyzer: self,
             dejavu: Default::default(),
@@ -1709,7 +1708,7 @@ impl<'a> Scope<'a> {
     }
 
     pub fn new(parent: &'a Scope<'a>, kind: ScopeKind, facts: CondFacts) -> Self {
-        Self::new_inner(parent.logger.clone(), Some(parent), kind, facts)
+        Self::new_inner(Some(parent), kind, facts)
     }
 
     pub fn root() -> Self {
@@ -2241,7 +2240,7 @@ impl Expander<'_, '_, '_> {
                                 if let Some(ty) = self.analyzer.find_var_type(&id, TypeOfMode::RValue) {
                                     cond_ty.check_type = box ty.into_owned();
                                 } else {
-                                    error!(self.analyzer.logger, "Failed to find variable named {:?}", id);
+                                    error!("Failed to find variable named {:?}", id);
                                 }
                             }
 

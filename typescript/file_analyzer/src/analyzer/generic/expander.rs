@@ -115,7 +115,6 @@ impl Analyzer<'_, '_> {
 
         let start = Instant::now();
         let ty = ty.fold_with(&mut GenericExpander {
-            logger: self.logger.clone(),
             analyzer: self,
             params,
             fully,
