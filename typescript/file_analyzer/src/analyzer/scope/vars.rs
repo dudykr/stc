@@ -664,7 +664,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Intersection(..) | Type::Class(..) | Type::Interface(..) | Type::ClassDef(..) => {
                     let ty = self
-                        .type_to_type_lit(ty.span(), &ty)?
+                        .convert_type_to_type_lit(ty.span(), &ty)?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit);
                     if let Some(ty) = ty {

@@ -366,7 +366,10 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Interface(..) => {
-                let ty = self.type_to_type_lit(span, r)?.map(Cow::into_owned).map(Type::TypeLit);
+                let ty = self
+                    .convert_type_to_type_lit(span, r)?
+                    .map(Cow::into_owned)
+                    .map(Type::TypeLit);
                 if let Some(ty) = ty {
                     return self
                         .assign_to_function(data, opts, lt, l, &ty)
@@ -452,7 +455,10 @@ impl Analyzer<'_, '_> {
                 }
             }
             Type::Interface(..) => {
-                let ty = self.type_to_type_lit(span, r)?.map(Cow::into_owned).map(Type::TypeLit);
+                let ty = self
+                    .convert_type_to_type_lit(span, r)?
+                    .map(Cow::into_owned)
+                    .map(Type::TypeLit);
                 if let Some(ty) = ty {
                     return self
                         .assign_to_constructor(data, opts, lt, l, &ty)

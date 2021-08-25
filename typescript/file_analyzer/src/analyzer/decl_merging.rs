@@ -71,7 +71,7 @@ impl Analyzer<'_, '_> {
                 let mut new_members = a.body.clone();
 
                 let b = self
-                    .type_to_type_lit(span, &b)
+                    .convert_type_to_type_lit(span, &b)
                     .context("tried to convert an interface to a type literal to merge with a class definition")?;
                 if let Some(b) = b {
                     for el in &b.members {
@@ -109,7 +109,7 @@ impl Analyzer<'_, '_> {
 
                 // Convert to a type literal first.
                 if let Some(b) = self
-                    .type_to_type_lit(span, &b)
+                    .convert_type_to_type_lit(span, &b)
                     .context("tried to convert an interface to a type literal to merge with another interface")?
                 {
                     new_members.extend(b.into_owned().members);

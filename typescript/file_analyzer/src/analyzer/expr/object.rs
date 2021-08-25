@@ -556,7 +556,7 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(..) | Type::Class(..) | Type::Intersection(..) | Type::Mapped(..) => {
                 // Append as a type literal.
-                if let Some(rhs) = self.type_to_type_lit(rhs.span(), &rhs)? {
+                if let Some(rhs) = self.convert_type_to_type_lit(rhs.span(), &rhs)? {
                     return self.append_type(to, Type::TypeLit(rhs.into_owned()));
                 }
             }
