@@ -833,8 +833,6 @@ impl Analyzer<'_, '_> {
                 self.validate_stmts_and_collect(&items_ref);
             }
 
-            self.handle_pending_exports();
-
             Ok(())
         })
     }
