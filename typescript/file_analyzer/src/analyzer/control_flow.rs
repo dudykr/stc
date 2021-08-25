@@ -35,6 +35,7 @@ use std::{
 use swc_atoms::JsWord;
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
+use tracing::info;
 
 /// Conditional facts
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -1060,7 +1061,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type) {
-        slog::info!(self.logger, "add_type_fact({}); ty = {:?}", sym, ty);
+        info!("add_type_fact({}); ty = {:?}", sym, ty);
 
         debug_assert!(ty.is_clone_cheap());
 

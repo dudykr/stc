@@ -5,7 +5,6 @@ use fxhash::{FxBuildHasher, FxHashSet};
 use parking_lot::{Mutex, RwLock};
 use petgraph::{algo::all_simple_paths, graphmap::DiGraphMap};
 use rayon::prelude::*;
-use slog::Logger;
 use stc_ts_types::{module_id, ModuleId};
 use std::{
     collections::HashSet,
@@ -16,6 +15,7 @@ use swc_atoms::JsWord;
 use swc_common::{comments::Comments, SourceMap};
 use swc_ecma_ast::Module;
 use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};
+use tracing::error;
 
 mod deps;
 pub mod resolver;
@@ -25,7 +25,6 @@ where
     C: Comments + Send + Sync,
     R: Resolve,
 {
-    logger: Logger,
     cm: Arc<SourceMap>,
     parser_config: TsConfig,
     target: JscTarget,
@@ -56,7 +55,6 @@ where
     R: Resolve,
 {
     pub fn new(
-        logger: Logger,
         cm: Arc<SourceMap>,
         comments: Option<C>,
         resolver: R,
@@ -64,7 +62,6 @@ where
         target: JscTarget,
     ) -> Self {
         Self {
-            logger,
             cm,
             comments,
             parser_config,
@@ -82,7 +79,7 @@ where
         let res = self.load_including_deps(entry);
         match res {
             Err(err) => {
-                slog::error!(self.logger, "Failed to load {}:\n{:?}", entry.display(), err);
+                error!("Failed to load {}:\n{:?}", entry.display(), err);
             }
             _ => {}
         }
