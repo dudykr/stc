@@ -1326,13 +1326,14 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn validate_interface_conflicts(&mut self, interfaces: &[TsExpr]) {
+    /// TODO(kdy1): Implement this.
+    fn report_errors_for_confliicting_interfaces(&mut self, interfaces: &[TsExpr]) {
         if self.is_builtin {
             return;
         }
     }
 
-    fn validate_inherited_members_from_interfaces(&mut self, name: Option<Span>, class: &ClassDef) {
+    fn report_errors_for_wrong_impls_of_class(&mut self, name: Option<Span>, class: &ClassDef) {
         if self.is_builtin {
             return;
         }
@@ -2042,8 +2043,8 @@ impl Analyzer<'_, '_> {
                     .report(&mut child.storage);
 
                 child.validate_inherited_members_from_super_class(None, &class);
-                child.validate_inherited_members_from_interfaces(None, &class);
-                child.validate_interface_conflicts(&class.implements);
+                child.report_errors_for_wrong_impls_of_class(None, &class);
+                child.report_errors_for_confliicting_interfaces(&class.implements);
 
                 Ok(class)
             },
