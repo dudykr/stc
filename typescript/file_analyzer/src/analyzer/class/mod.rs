@@ -1976,7 +1976,7 @@ impl Analyzer<'_, '_> {
                             child.scope.this_class_members.push((index, member.into()));
                         }
                         child
-                            .validate_constructor_overloads(&ambient_cons, cons_with_body.as_ref())
+                            .report_errors_for_wrong_constructor_overloads(&ambient_cons, cons_with_body.as_ref())
                             .report(&mut child.storage);
                     }
 
@@ -2271,7 +2271,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn validate_constructor_overloads(
+    fn report_errors_for_wrong_constructor_overloads(
         &mut self,
         ambient: &[ConstructorSignature],
         cons_with_body: Option<&ConstructorSignature>,
