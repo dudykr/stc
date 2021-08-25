@@ -42,7 +42,7 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::{debug, instrument};
+use tracing::{debug, info, instrument};
 use ty::TypeExt;
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -2280,8 +2280,6 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> ValidationResult {
-        let logger = self.logger.clone();
-
         // TODO: Optimize by skipping clone if `this type` is not used.
         let params = params
             .iter()
@@ -2302,16 +2300,14 @@ impl Analyzer<'_, '_> {
             arg_check_res.report(&mut self.storage);
         }
 
-        slog::debug!(
-            logger,
+        debug!(
             "get_return_type: \ntype_params = {:?}\nret_ty = {:?}",
-            type_params,
-            ret_ty
+            type_params, ret_ty
         );
 
         if let Some(type_params) = type_params {
             for param in type_params {
-                slog::info!(self.logger, "({}) Defining {}", self.scope.depth(), param.name);
+                info!("({}) Defining {}", self.scope.depth(), param.name);
 
                 self.register_type(param.name.clone(), Type::Param(param.clone()));
             }
@@ -2338,7 +2334,7 @@ impl Analyzer<'_, '_> {
                 params
             };
 
-            slog::debug!(self.logger, "Inferring arg types for a call");
+            debug!("Inferring arg types for a call");
             let mut inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
             let expanded_param_types = params
@@ -2428,7 +2424,7 @@ impl Analyzer<'_, '_> {
                             patch_arg(idx, pat)?;
                         }
 
-                        slog::info!(self.logger, "Inferring type of arrow expr with updated type");
+                        info!(self.logger, "Inferring type of arrow expr with updated type");
                         // It's okay to use default as we have patched parameters.
                         let mut ty = box Type::Function(arrow.validate_with_default(&mut *self.with_ctx(ctx))?);
                         self.add_required_type_params(&mut ty);
@@ -2439,7 +2435,7 @@ impl Analyzer<'_, '_> {
                             patch_arg(idx, &param.pat)?;
                         }
 
-                        slog::info!(self.logger, "Inferring type of function expr with updated type");
+                        info!(self.logger, "Inferring type of function expr with updated type");
                         let mut ty = box Type::Function(
                             fn_expr
                                 .function
