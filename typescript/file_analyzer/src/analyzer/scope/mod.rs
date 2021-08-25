@@ -707,6 +707,7 @@ impl Analyzer<'_, '_> {
         res
     }
 
+    /// Expands the type if it's [Type::Ref].
     pub(crate) fn expand_top_ref<'a>(
         &mut self,
         span: Span,
