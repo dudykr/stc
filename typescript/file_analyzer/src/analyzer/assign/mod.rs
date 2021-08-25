@@ -155,6 +155,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    /// Used to validate assignments like `a += b`.
     pub(crate) fn assign_with_op(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> ValidationResult<()> {
         debug_assert_ne!(op, op!("="));
 
@@ -336,6 +337,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
+    /// Assign `right` to `left`. You can just use default for [AssignData].
     pub(crate) fn assign(
         &mut self,
         span: Span,
@@ -354,6 +356,7 @@ impl Analyzer<'_, '_> {
         )
     }
 
+    /// Assign `right` to `left`. You can just use default for [AssignData].
     pub(crate) fn assign_with_opts(
         &mut self,
         data: &mut AssignData,
