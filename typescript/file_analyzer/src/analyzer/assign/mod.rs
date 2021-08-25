@@ -2374,6 +2374,7 @@ impl Analyzer<'_, '_> {
         Ok(false)
     }
 
+    /// TODO(kdy1): I'm not sure about this.
     fn variance(&mut self, ty: &Conditional) -> ValidationResult<Variance> {
         let convariant =
             self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
