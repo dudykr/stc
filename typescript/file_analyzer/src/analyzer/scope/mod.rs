@@ -1581,6 +1581,7 @@ impl Analyzer<'_, '_> {
         ty.respan(span);
     }
 
+    /// Mark `ty` as not expanded by default.
     pub(crate) fn prevent_expansion<T>(&self, ty: &mut T)
     where
         T: VisitMutWith<ExpansionPreventer>,
@@ -1594,6 +1595,8 @@ impl Analyzer<'_, '_> {
         });
     }
 
+    /// Mark `ty` as expandable. This has higher precedence than
+    /// `prevent_expansion`.
     pub(crate) fn allow_expansion<T>(&self, ty: &mut T)
     where
         T: VisitMutWith<ExpansionPreventer>,
