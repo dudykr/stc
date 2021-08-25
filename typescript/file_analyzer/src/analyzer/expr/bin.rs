@@ -49,7 +49,7 @@ impl Analyzer<'_, '_> {
 
         let prev_facts = self.cur_facts.clone();
 
-        self.check_for_mixed_nullish_coalescing(e);
+        self.report_errors_for_mixed_nullish_coalescing(e);
 
         let mut errors = vec![];
 
@@ -1781,7 +1781,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    fn check_for_mixed_nullish_coalescing(&mut self, e: &RBinExpr) {
+    fn report_errors_for_mixed_nullish_coalescing(&mut self, e: &RBinExpr) {
         fn search(span: Span, op: BinaryOp, operand: &RExpr) -> ValidationResult<()> {
             if op == op!("??") {
                 match operand {
