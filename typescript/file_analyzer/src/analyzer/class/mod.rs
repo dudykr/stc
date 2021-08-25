@@ -941,7 +941,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn check_static_mixed_with_instance(&mut self, c: &RClass) -> ValidationResult<()> {
+    fn report_errors_for_statics_mixed_with_instances(&mut self, c: &RClass) -> ValidationResult<()> {
         if self.ctx.in_declare {
             return Ok(());
         }
@@ -1732,7 +1732,9 @@ impl Analyzer<'_, '_> {
                 // TODO: Check for implements
 
                 child.check_ambient_methods(c, false).report(&mut child.storage);
-                child.check_static_mixed_with_instance(&c).report(&mut child.storage);
+                child
+                    .report_errors_for_statics_mixed_with_instances(&c)
+                    .report(&mut child.storage);
                 child
                     .report_errors_for_duplicate_class_members(&c)
                     .report(&mut child.storage);
