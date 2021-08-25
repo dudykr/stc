@@ -28,6 +28,7 @@ use swc_ecma_ast::Module;
 use swc_ecma_parser::TsConfig;
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
+use tracing::warn;
 
 /// Onc instance per swc::Compiler
 pub struct Checker {
@@ -67,7 +68,6 @@ impl Checker {
             module_types: Default::default(),
             dts_modules: Default::default(),
             module_graph: Arc::new(ModuleGraph::new(
-                logger,
                 cm,
                 Some(Default::default()),
                 resolver,
@@ -186,7 +186,6 @@ impl Checker {
                         let mut mutations;
                         {
                             let mut a = Analyzer::root(
-                                self.logger.new(slog::o!("file" => path.to_string_lossy().to_string())),
                                 self.env.clone(),
                                 self.cm.clone(),
                                 box &mut storage,
@@ -208,11 +207,7 @@ impl Checker {
                             // TODO: Prevent duplicate work.
                             match self.dts_modules.insert(*id, dts_module) {
                                 Some(..) => {
-                                    warn!(
-                                        
-                                        "Duplicated work: `{}`: (.d.ts already computed)",
-                                        path.display()
-                                    );
+                                    warn!("Duplicated work: `{}`: (.d.ts already computed)", path.display());
                                 }
                                 None => {}
                             }
@@ -229,11 +224,7 @@ impl Checker {
                                 match res {
                                     Ok(()) => {}
                                     Err(..) => {
-                                        warn!(
-                                            
-                                            "Duplicated work: `{}`: (type info is already cached)",
-                                            path.display()
-                                        );
+                                        warn!("Duplicated work: `{}`: (type info is already cached)", path.display());
                                     }
                                 }
                             }
@@ -245,8 +236,7 @@ impl Checker {
                 }
             }
             info!(
-                &
-                "Request: {}\nRequested by {:?}\nCircular set: {:?}",
+                &"Request: {}\nRequested by {:?}\nCircular set: {:?}",
                 path.display(),
                 starter,
                 circular_set
@@ -374,7 +364,7 @@ impl Load for Checker {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 
-        info!( "({}): Loading {}", base_path.display(), dep_path.display());
+        info!("({}): Loading {}", base_path.display(), dep_path.display());
 
         let data = self.analyze_module(Some(base_path.clone()), dep_path.clone());
 

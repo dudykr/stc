@@ -1,4 +1,3 @@
-use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::{BuiltIn, Env, ModuleConfig, StableEnv};
 use std::sync::Arc;
@@ -10,8 +9,7 @@ pub fn builtin() {
         let globals = Arc::new(Globals::default());
 
         GLOBALS.set(&globals, || {
-            let log = logger();
-            let shared = StableEnv::new(log.logger, globals.clone());
+            let shared = StableEnv::new(globals.clone());
             let mut libs = vec![];
             for s in &[
                 "es2020.full",
@@ -67,8 +65,7 @@ pub fn intl() {
         let globals = Arc::new(Globals::default());
 
         GLOBALS.set(&globals, || {
-            let log = logger();
-            let shared = StableEnv::new(log.logger, globals.clone());
+            let shared = StableEnv::new(globals.clone());
             let mut libs = vec![];
             for s in &["es5"] {
                 libs.extend(Lib::load(&s));

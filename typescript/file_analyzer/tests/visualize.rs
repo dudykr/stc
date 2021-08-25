@@ -6,7 +6,7 @@
 
 use once_cell::sync::Lazy;
 use rnode::{NodeIdGenerator, RNode};
-use stc_testing::{load_txt, logger};
+use stc_testing::load_txt;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_errors::{debug::debugger::Debugger, Error};
@@ -41,7 +41,7 @@ fn should_run(input: &Path) -> bool {
 }
 
 /// If `for_error` is false, this function will run as type dump mode.
-fn run_test(file_name: PathBuf, logger: slog::Logger, for_error: bool) -> Option<NormalizedOutput> {
+fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
     let fname = file_name.display().to_string();
     println!("{}", fname);
 
@@ -130,7 +130,6 @@ fn run_test(file_name: PathBuf, logger: slog::Logger, for_error: bool) -> Option
             {
                 GLOBALS.set(stable_env.swc_globals(), || {
                     let mut analyzer = Analyzer::root(
-                        logger,
                         env,
                         cm.clone(),
                         box &mut storage,
@@ -179,8 +178,7 @@ fn visualize(file_name: PathBuf) {
         return;
     }
 
-    let log = logger();
-    let res = run_test(file_name.clone(), log.logger, false).unwrap();
+    let res = run_test(file_name.clone(), false).unwrap();
     res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
 
     println!("[SUCCESS]{}", file_name.display())
@@ -192,12 +190,10 @@ fn pass(file_name: PathBuf) {
         return;
     }
 
-    let null_logger = slog::Logger::root(slog::Discard, slog::o!());
-    let res = run_test(file_name.clone(), null_logger, false).unwrap();
+    let res = run_test(file_name.clone(), false).unwrap();
     println!("TYPES: {}", res);
 
-    let log = logger();
-    run_test(file_name.clone(), log.logger, true);
+    run_test(file_name.clone(), true);
 
     res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
 
