@@ -1163,7 +1163,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Union(r) => {
-                if self.should_use_union_assignment(span, rhs)? {
+                if self.should_use_special_union_assignment(span, rhs)? {
                     // TODO: We should assign rhs as full.
                     //
                     //
@@ -2350,7 +2350,7 @@ impl Analyzer<'_, '_> {
     /// Returns true for `A | B | | C = A | B` and simillar cases.
     ///
     /// Should be called iff lhs is a union type.
-    fn should_use_union_assignment(&mut self, span: Span, r: &Type) -> ValidationResult<bool> {
+    fn should_use_special_union_assignment(&mut self, span: Span, r: &Type) -> ValidationResult<bool> {
         match r.normalize() {
             Type::Union(..) => return Ok(true),
             Type::TypeLit(r) => {
