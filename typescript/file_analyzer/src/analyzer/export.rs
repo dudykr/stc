@@ -85,12 +85,12 @@ impl Analyzer<'_, '_> {
                 RDecl::TsInterface(ref i) => {
                     i.visit_with(a);
 
-                    a.export(i.span(), i.id.clone().into(), None)
+                    a.export_type(i.span(), i.id.clone().into(), None)
                 }
 
                 RDecl::Class(ref c) => {
                     c.visit_with(a);
-                    a.export(c.span(), c.ident.clone().into(), None);
+                    a.export_type(c.span(), c.ident.clone().into(), None);
                     a.export_var(c.span(), c.ident.clone().into(), None, true);
                 }
                 RDecl::Var(ref var) => {
@@ -144,7 +144,7 @@ impl Analyzer<'_, '_> {
 
                     // TODO: Handle type parameters.
 
-                    a.export(span, decl.id.clone().into(), None)
+                    a.export_type(span, decl.id.clone().into(), None)
                 }
             }
 
@@ -211,7 +211,7 @@ impl Analyzer<'_, '_> {
                 let class_ty = Type::ClassDef(class_ty).cheap();
                 self.register_type(var_name.clone(), class_ty.clone());
 
-                self.export(span, Id::word(js_word!("default")), Some(var_name.clone()));
+                self.export_type(span, Id::word(js_word!("default")), Some(var_name.clone()));
 
                 self.declare_var(
                     span,
@@ -233,7 +233,7 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Register type
 
-                self.export(span, Id::word(js_word!("default")), Some(i))
+                self.export_type(span, Id::word(js_word!("default")), Some(i))
             }
         };
 
@@ -282,7 +282,7 @@ impl Analyzer<'_, '_> {
     /// Note: We don't freeze types at here because doing so may prevent proper
     /// finalization.
     #[extra_validator]
-    fn export(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
+    fn export_type(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
         let orig_name = orig_name.unwrap_or_else(|| name.clone());
 
         let types = match self.find_type(self.ctx.module_id, &orig_name) {
