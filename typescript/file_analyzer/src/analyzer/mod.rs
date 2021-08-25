@@ -823,7 +823,7 @@ impl Analyzer<'_, '_> {
             });
 
             if !self.ctx.in_declare {
-                self.validate_ambient_fns(&items);
+                self.report_error_for_wrong_top_level_ambient_fns(&items);
             }
 
             if self.is_builtin {
