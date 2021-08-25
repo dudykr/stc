@@ -2125,6 +2125,8 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    /// This method combines setters and getters, and merge it just like a
+    /// normal property.
     fn combine_class_properties(&mut self, body: Vec<(usize, ClassMember)>) -> Vec<(usize, ClassMember)> {
         let mut getters = vec![];
         let mut setters = vec![];
