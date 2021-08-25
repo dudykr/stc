@@ -310,7 +310,7 @@ impl Analyzer<'_, '_> {
         let members = lit.members.validate_with(self)?;
 
         self.report_error_for_duplicate_type_elements(&members);
-        self.report_error_for_mixed_optional_method_signatures(&members);
+        self.report_errors_for_mixed_optional_method_signatures(&members);
 
         Ok(TypeLit {
             span: lit.span,

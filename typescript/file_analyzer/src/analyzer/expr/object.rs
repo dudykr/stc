@@ -427,13 +427,13 @@ impl Analyzer<'_, '_> {
                 }
             }
             Type::TypeLit(ty) => {
-                self.report_error_for_mixed_optional_method_signatures(&ty.members);
+                self.report_errors_for_mixed_optional_method_signatures(&ty.members);
             }
             _ => {}
         }
     }
 
-    pub(crate) fn report_error_for_mixed_optional_method_signatures(&mut self, elems: &[TypeElement]) {
+    pub(crate) fn report_errors_for_mixed_optional_method_signatures(&mut self, elems: &[TypeElement]) {
         let mut keys: Vec<(&Key, bool)> = vec![];
         for elem in elems {
             match elem {
