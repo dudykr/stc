@@ -1531,7 +1531,7 @@ impl Analyzer<'_, '_> {
         ty.fix();
     }
 
-    /// We precomputes all type declarations in the scope.
+    /// We precomputes all type declarations in the scope, using this method.
     pub(crate) fn fill_known_type_names<N>(&mut self, node: N)
     where
         N: VisitWith<KnownTypeVisitor>,
