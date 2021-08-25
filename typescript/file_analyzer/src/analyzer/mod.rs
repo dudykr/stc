@@ -425,10 +425,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
     }
 
     pub(crate) fn for_builtin(env: StableEnv, storage: &'b mut Builtin) -> Self {
-        let logger = env.logger_for_builtin();
-
         Self::new_inner(
-            logger.clone(),
             Env::new(
                 env,
                 Default::default(),
@@ -440,7 +437,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             box storage,
             None,
             &NoopLoader,
-            Scope::root(logger),
+            Scope::root(),
             true,
             None,
             Default::default(),
@@ -449,7 +446,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
 
     fn new(&'b self, scope: Scope<'scope>, data: AnalyzerData) -> Self {
         Self::new_inner(
-            self.logger.clone(),
             self.env.clone(),
             self.cm.clone(),
             self.storage.subscope(),

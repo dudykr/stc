@@ -43,7 +43,7 @@ use std::{
 use swc_atoms::js_word;
 use swc_common::{util::move_map::MoveMap, Mark, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, instrument};
+use tracing::{debug, error, info, instrument};
 
 mod this;
 mod type_param;
@@ -1858,7 +1858,6 @@ impl ScopeKind {
 }
 
 struct Expander<'a, 'b, 'c> {
-    logger: Logger,
     span: Span,
     analyzer: &'a mut Analyzer<'b, 'c>,
     dejavu: FxHashSet<Id>,
@@ -1996,10 +1995,7 @@ impl Expander<'_, '_, '_> {
                                         self.opts.generic,
                                     )?;
                                     let after = dump_type_as_string(&self.analyzer.cm, &ty);
-                                    debug!(
-                                        &self.analyzer.logger,
-                                        "[expand] Expanded generics: {} => {}", before, after
-                                    );
+                                    debug!("[expand] Expanded generics: {} => {}", before, after);
 
                                     match ty {
                                         Type::ClassDef(def) => {
