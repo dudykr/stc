@@ -459,7 +459,7 @@ impl Analyzer<'_, '_> {
                         let e: Option<_> = $e.validate_with(self).try_opt()?;
                         box e.unwrap_or_else(|| {
                             let mut ty = Type::any(span);
-                            self.mark_as_implicit(&mut ty);
+                            self.mark_as_implicitly_typed(&mut ty);
                             ty
                         })
                     }

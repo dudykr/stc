@@ -37,7 +37,7 @@ pub(super) enum PatMode {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn mark_as_implicit(&mut self, ty: &mut Type) {
+    pub(crate) fn mark_as_implicitly_typed(&mut self, ty: &mut Type) {
         let span = ty.span();
         let span = span.apply_mark(self.marks().implicit_type_mark);
         ty.respan(span);
