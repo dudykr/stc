@@ -2285,11 +2285,11 @@ impl Analyzer<'_, '_> {
             .iter()
             .map(|param| {
                 let mut ty = param.ty.clone();
-                self.expand_this(&mut ty);
+                self.expand_this_in_type(&mut ty);
                 FnParam { ty, ..param.clone() }
             })
             .collect_vec();
-        self.expand_this(&mut ret_ty);
+        self.expand_this_in_type(&mut ret_ty);
 
         {
             let arg_check_res = self.validate_arg_count(span, &params, args, arg_types, spread_arg_types);

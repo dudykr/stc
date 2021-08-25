@@ -39,7 +39,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Expand `this` contained in `ty`.
-    pub(crate) fn expand_this(&mut self, ty: &mut Type) {
+    pub(crate) fn expand_this_in_type(&mut self, ty: &mut Type) {
         let this_ty = self.scope.this();
 
         if let Some(this) = this_ty.map(Cow::into_owned) {
