@@ -674,6 +674,8 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         ret
     }
 
+    /// Used for debugging. Returns the line and column of `span.lo` in form of
+    /// `(line, column)`.
     fn line_col(&self, span: Span) -> String {
         if span.is_dummy() {
             return "".into();
