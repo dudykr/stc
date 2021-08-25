@@ -8,6 +8,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_ordering::{stmt::TypedId, types::Sortable};
 use stc_ts_types::Id;
 use stc_ts_utils::{AsModuleDecl, HasNodeId};
+use tracing::warn;
 
 #[cfg(test)]
 mod tests;
@@ -271,7 +272,7 @@ impl Analyzer<'_, '_> {
         }
 
         if self.scope.is_root() {
-            warn!(&"Order: {:?}", orders);
+            warn!("Order: {:?}", orders);
         }
 
         (orders, skip)

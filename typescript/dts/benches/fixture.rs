@@ -4,7 +4,6 @@
 extern crate test;
 
 use rnode::{NodeIdGenerator, RNode};
-use slog::Logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_dts::cleanup_module_for_dts;

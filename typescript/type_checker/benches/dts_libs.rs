@@ -3,7 +3,6 @@
 
 extern crate test;
 
-use slog::Logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::{Env, ModuleConfig};
 use stc_ts_module_loader::resolver::node::NodeResolver;

@@ -83,7 +83,6 @@ impl Analyzer<'_, '_> {
         info!("Simplifying {}", dump_type_as_string(&self.cm, &ty));
         ty.fold_with(&mut Simplifier {
             env: &self.env,
-            logger: self.logger.clone(),
             prevent_generalize_mark: self.marks().prevent_generalization_mark,
             prevent_inference_mark: self.marks().prevent_complex_simplification_mark,
         })

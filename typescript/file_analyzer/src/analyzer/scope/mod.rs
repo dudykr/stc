@@ -19,7 +19,6 @@ use fxhash::{FxHashMap, FxHashSet};
 use iter::once;
 use once_cell::sync::Lazy;
 use rnode::{Fold, FoldWith, Visit, VisitMut, VisitMutWith, VisitWith};
-use slog::Logger;
 use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsKeywordType, RTsQualifiedName};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
@@ -44,7 +43,7 @@ use std::{
 use swc_atoms::js_word;
 use swc_common::{util::move_map::MoveMap, Mark, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::instrument;
+use tracing::{debug, instrument};
 
 mod this;
 mod type_param;
@@ -61,7 +60,6 @@ macro_rules! no_ref {
 
 #[derive(Debug)]
 pub(crate) struct Scope<'a> {
-    logger: Logger,
     parent: Option<&'a Scope<'a>>,
     kind: ScopeKind,
     pub declaring: Vec<Id>,
@@ -348,7 +346,6 @@ impl Scope<'_> {
 
     pub fn remove_parent(self) -> Scope<'static> {
         Scope {
-            logger: 
             parent: None,
             kind: self.kind,
             declaring: self.declaring,
@@ -561,12 +558,8 @@ impl Scope<'_> {
             Entry::Occupied(mut e) => {
                 let prev = e.get_mut();
                 debug!(
-                    
                     "Scope.register_type({}): override = {:?}; prev = {:?}; new_ty = {:?}",
-                    name,
-                    should_override,
-                    prev,
-                    ty,
+                    name, should_override, prev, ty,
                 );
                 if should_override {
                     *prev = ty;
@@ -593,7 +586,7 @@ impl Scope<'_> {
                 }
             }
             Entry::Vacant(e) => {
-                debug!( "Scope.register_type({}): {:?}", name, should_override);
+                debug!("Scope.register_type({}): {:?}", name, should_override);
                 e.insert(ty);
             }
         }
@@ -702,7 +695,7 @@ impl Analyzer<'_, '_> {
         ty.assert_valid();
 
         let new = dump_type_as_string(&self.cm, &ty);
-        debug!( "[expander] expand: {} => {}", orig, new);
+        debug!("[expander] expand: {} => {}", orig, new);
 
         Ok(ty)
     }
@@ -766,7 +759,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
-        debug!( "[({})/types] Registering: {:?}", self.scope.depth(), name);
+        debug!("[({})/types] Registering: {:?}", self.scope.depth(), name);
 
         let should_check_for_mixed = !self.is_builtin
             && match ty.normalize() {
@@ -979,7 +972,7 @@ impl Analyzer<'_, '_> {
         if let Some(v) = self.cur_facts.true_facts.vars.get(&Name::from(name)) {
             v.assert_valid();
 
-            debug!( "Scope.find_var_type({}): Handled with cur_facts", name);
+            debug!("Scope.find_var_type({}): Handled with cur_facts", name);
 
             return Some(Cow::Borrowed(v));
         }
@@ -990,7 +983,7 @@ impl Analyzer<'_, '_> {
             if let Some(ref v) = s.facts.vars.get(&Name::from(name)) {
                 v.assert_valid();
 
-                debug!( "Scope.find_var_type({}): Handled from facts", name);
+                debug!("Scope.find_var_type({}): Handled from facts", name);
                 return Some(Cow::Borrowed(v));
             }
 
@@ -1003,7 +996,7 @@ impl Analyzer<'_, '_> {
                 if let Some(var_ty) = info.data.vars.get(name.sym()) {
                     var_ty.assert_valid();
 
-                    debug!( "Scope.find_var_type({}): Handled with imports", name);
+                    debug!("Scope.find_var_type({}): Handled with imports", name);
                     return Some(Cow::Borrowed(var_ty));
                 }
             }
@@ -1011,7 +1004,6 @@ impl Analyzer<'_, '_> {
 
         if let Some(var) = self.find_var(name) {
             debug!(
-                
                 "({}) find_var_type({}): Handled from scope.find_var",
                 self.scope.depth(),
                 name
@@ -1056,7 +1048,7 @@ impl Analyzer<'_, '_> {
             if let Some(ty) = self.storage.get_local_var(self.ctx.module_id, name.clone()) {
                 ty.assert_valid();
 
-                debug!( "Scope.find_var_type({}): Handled with storage", name);
+                debug!("Scope.find_var_type({}): Handled with storage", name);
                 return Some(Cow::Owned(ty));
             }
         }
@@ -1112,24 +1104,20 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        debug!( "({}) Analyzer.find_type(`{}`)", self.scope.depth(), name);
+        debug!("({}) Analyzer.find_type(`{}`)", self.scope.depth(), name);
 
         let mut src = vec![];
         if !self.is_builtin {
             if let Ok(ty) = self.env.get_global_type(DUMMY_SP, name.sym()) {
                 debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
-                debug!(
-                    
-                    "Using builtin / global type: {}",
-                    dump_type_as_string(&self.cm, &ty)
-                );
+                debug!("Using builtin / global type: {}", dump_type_as_string(&self.cm, &ty));
                 src.push(ty.clone());
             }
         }
 
         if let Some(ty) = self.scope.find_type(name) {
-            debug!( "Using type from scope: {:?}", ty);
+            debug!("Using type from scope: {:?}", ty);
             src.extend(ty.into_iter().map(Cow::into_owned));
             return Some(ItemRef::Owned(
                 vec![Type::intersection(DUMMY_SP, src).cheap()].into_iter(),
@@ -1141,7 +1129,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !self.is_builtin {
-            debug!( "Scope.find_type: failed to find type '{}'", name);
+            debug!("Scope.find_type: failed to find type '{}'", name);
         }
 
         None
@@ -1195,19 +1183,13 @@ impl Analyzer<'_, '_> {
         if let Some(ty) = &ty {
             ty.assert_valid();
             debug!(
-                
                 "[({})/vars]: Declaring {} as {}",
                 self.scope.depth(),
                 name,
                 dump_type_as_string(&self.cm, ty)
             );
         } else {
-            debug!(
-                
-                "[({})/vars]: Declaring {} without type",
-                self.scope.depth(),
-                name,
-            );
+            debug!("[({})/vars]: Declaring {} without type", self.scope.depth(), name,);
         }
 
         if let Some(ty) = &actual_ty {
@@ -1300,12 +1282,7 @@ impl Analyzer<'_, '_> {
         };
 
         if let Some(ty) = &ty {
-            debug!(
-                
-                "[vars]: Expanded {} as {}",
-                name,
-                dump_type_as_string(&self.cm, ty)
-            );
+            debug!("[vars]: Expanded {} as {}", name, dump_type_as_string(&self.cm, ty));
         }
 
         let ty = ty.map(|ty| ty.cheap());
@@ -1735,13 +1712,12 @@ impl<'a> Scope<'a> {
         Self::new_inner(parent.logger.clone(), Some(parent), kind, facts)
     }
 
-    pub fn root(logger: Logger) -> Self {
-        Self::new_inner(logger, None, ScopeKind::Fn, Default::default())
+    pub fn root() -> Self {
+        Self::new_inner(None, ScopeKind::Fn, Default::default())
     }
 
-    fn new_inner(logger: Logger, parent: Option<&'a Scope<'a>>, kind: ScopeKind, facts: CondFacts) -> Self {
+    fn new_inner(parent: Option<&'a Scope<'a>>, kind: ScopeKind, facts: CondFacts) -> Self {
         Scope {
-            logger,
             parent,
             kind,
             declaring: Default::default(),
@@ -1775,7 +1751,7 @@ impl<'a> Scope<'a> {
 
     /// This method does **not** handle imported types.
     fn find_type(&self, name: &Id) -> Option<ItemRef<Type>> {
-        debug!( "Analyzer.find_type('{}')", name);
+        debug!("Analyzer.find_type('{}')", name);
 
         if let Some(ty) = self.facts.types.get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
@@ -1925,14 +1901,13 @@ impl Expander<'_, '_, '_> {
                     return Ok(Some(Type::any(span)));
                 }
 
-                info!( "Info: {}{:?}", i.sym, i.span.ctxt);
+                info!("Info: {}{:?}", i.sym, i.span.ctxt);
                 if !trying_primitive_expansion && self.dejavu.contains(&i.into()) {
-                    error!( "Dejavu: {}{:?}", &i.sym, i.span.ctxt);
+                    error!("Dejavu: {}{:?}", &i.sym, i.span.ctxt);
                     return Ok(None);
                 }
                 if let Some(types) = self.analyzer.find_type(ctxt, &i.into())? {
                     info!(
-                        
                         "expand: expanding `{}` using analyzer: {}",
                         Id::from(i),
                         types.clone().into_iter().count()
@@ -1995,7 +1970,7 @@ impl Expander<'_, '_, '_> {
                                 if let Some(type_params) = type_params {
                                     let type_args: Option<_> = type_args.cloned().fold_with(self);
 
-                                    info!( "expand: expanding type parameters");
+                                    info!("expand: expanding type parameters");
                                     let mut inferred = self.analyzer.infer_arg_types(
                                         self.span,
                                         type_args.as_ref(),
@@ -2097,7 +2072,6 @@ impl Expander<'_, '_, '_> {
                 }
 
                 error!(
-                    
                     "({}) Failed to find type: {}{:?}",
                     self.analyzer.scope.depth(),
                     i.sym,
@@ -2193,7 +2167,6 @@ impl Expander<'_, '_, '_> {
             Err(..) => {
                 print_backtrace();
                 error!(
-                    
                     "[expander] Stack overflow: {}",
                     dump_type_as_string(&self.analyzer.cm, &ty)
                 );
@@ -2619,7 +2592,6 @@ impl Fold<Type> for Expander<'_, '_, '_> {
         }
 
         debug!(
-            
             "[expander (time = {:?})]: {} => {}",
             end - start,
             before,
