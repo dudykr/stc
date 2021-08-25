@@ -471,7 +471,7 @@ impl Analyzer<'_, '_> {
             } {
                 Some(rhs_ty) => {
                     let lhs;
-                    analyzer.check_rvalue(
+                    analyzer.report_error_for_invalid_rvalue(
                         span,
                         match &e.left {
                             RPatOrExpr::Expr(_) => {
