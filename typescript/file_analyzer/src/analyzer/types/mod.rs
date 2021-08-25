@@ -795,6 +795,8 @@ impl Analyzer<'_, '_> {
         })
     }
 
+    /// Exclude types from `ty` using type facts with key `name`, for the
+    /// current scope.
     pub(crate) fn exclude_types_using_fact(&mut self, span: Span, name: &Name, ty: &mut Type) {
         debug_assert!(!span.is_dummy(), "exclude_types should not be called with a dummy span");
 
