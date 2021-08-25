@@ -37,6 +37,8 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    /// Handle declaration merging. This method is used to avoid implementing
+    /// same logic twice.
     fn merge_from_to(&mut self, span: Span, a: Type, b: Type) -> ValidationResult<Option<Type>> {
         if self.is_builtin {
             return Ok(None);
@@ -125,6 +127,7 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
+    /// Handle declaration merging.
     fn merge_types(&mut self, span: Span, orig: Type, new: Type) -> ValidationResult<Type> {
         debug_assert!(orig.is_clone_cheap());
         debug_assert!(new.is_clone_cheap());

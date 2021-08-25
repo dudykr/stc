@@ -1065,6 +1065,8 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    /// While this type fact is in scope, the var named `sym` will be treated as
+    /// `ty`.
     pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type) {
         info!("add_type_fact({}); ty = {:?}", sym, ty);
 
