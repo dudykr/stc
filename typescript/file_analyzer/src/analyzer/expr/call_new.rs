@@ -2355,13 +2355,13 @@ impl Analyzer<'_, '_> {
             for (idx, (arg, param)) in args.into_iter().zip(expanded_param_types.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
                 print_type(
-                    &self.logger,
+                    &
                     &format!("Expanded parameter at {}", idx),
                     &self.cm,
                     &param.ty,
                 );
                 print_type(
-                    &self.logger,
+                    &
                     &format!("Original argument at {}", idx),
                     &self.cm,
                     &arg_ty.ty,
@@ -2424,7 +2424,7 @@ impl Analyzer<'_, '_> {
                             patch_arg(idx, pat)?;
                         }
 
-                        info!(self.logger, "Inferring type of arrow expr with updated type");
+                        info!( "Inferring type of arrow expr with updated type");
                         // It's okay to use default as we have patched parameters.
                         let mut ty = box Type::Function(arrow.validate_with_default(&mut *self.with_ctx(ctx))?);
                         self.add_required_type_params(&mut ty);
@@ -2435,7 +2435,7 @@ impl Analyzer<'_, '_> {
                             patch_arg(idx, &param.pat)?;
                         }
 
-                        info!(self.logger, "Inferring type of function expr with updated type");
+                        info!( "Inferring type of function expr with updated type");
                         let mut ty = box Type::Function(
                             fn_expr
                                 .function
@@ -2447,7 +2447,7 @@ impl Analyzer<'_, '_> {
                     _ => arg_ty.ty.clone(),
                 };
                 print_type(
-                    &self.logger,
+                    &
                     &format!("Mapped argument at {}", idx),
                     &self.cm,
                     &arg_ty.ty,
@@ -2479,7 +2479,7 @@ impl Analyzer<'_, '_> {
             if arg_types.len() > expanded_param_types.len() {
                 for idx in expanded_param_types.len()..arg_types.len() {
                     let ty = &arg_types[idx].ty;
-                    print_type(&self.logger, &format!("Expanded param type at {}", idx), &self.cm, &ty);
+                    print_type(& &format!("Expanded param type at {}", idx), &self.cm, &ty);
                 }
                 new_args.extend(arg_types[expanded_param_types.len()..].iter().cloned());
             }

@@ -209,7 +209,7 @@ impl Checker {
                             match self.dts_modules.insert(*id, dts_module) {
                                 Some(..) => {
                                     warn!(
-                                        self.logger,
+                                        
                                         "Duplicated work: `{}`: (.d.ts already computed)",
                                         path.display()
                                     );
@@ -230,7 +230,7 @@ impl Checker {
                                     Ok(()) => {}
                                     Err(..) => {
                                         warn!(
-                                            self.logger,
+                                            
                                             "Duplicated work: `{}`: (type info is already cached)",
                                             path.display()
                                         );
@@ -245,7 +245,7 @@ impl Checker {
                 }
             }
             info!(
-                &self.logger,
+                &
                 "Request: {}\nRequested by {:?}\nCircular set: {:?}",
                 path.display(),
                 starter,
@@ -374,7 +374,7 @@ impl Load for Checker {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 
-        info!(self.logger, "({}): Loading {}", base_path.display(), dep_path.display());
+        info!( "({}): Loading {}", base_path.display(), dep_path.display());
 
         let data = self.analyze_module(Some(base_path.clone()), dep_path.clone());
 

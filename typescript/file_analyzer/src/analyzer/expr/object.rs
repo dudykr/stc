@@ -21,6 +21,7 @@ use std::{borrow::Cow, iter::repeat, time::Instant};
 use swc_atoms::JsWord;
 use swc_common::{Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
+use tracing::debug;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -415,7 +416,7 @@ impl Analyzer<'_, '_> {
 
         let end = Instant::now();
 
-        debug!(self.logger, "Normlaized unions (time = {:?})", end - start);
+        debug!("Normlaized unions (time = {:?})", end - start);
     }
 
     pub(crate) fn report_errors_for_type_literal(&mut self, ty: &Type, is_type_ann: bool) {

@@ -1,5 +1,3 @@
-use std::time::{Duration, Instant};
-
 use crate::{
     analyzer::{assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, Analyzer, Ctx},
     ty::{Array, IndexedAccessType, Mapped, Operator, PropertySignature, Ref, Type, TypeElement, TypeLit},
@@ -7,7 +5,6 @@ use crate::{
 };
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Fold, FoldWith, VisitWith};
-use slog::Logger;
 use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::{type_param::finder::TypeParamUsageFinder, ExpandGenericOpts};
@@ -16,10 +13,11 @@ use stc_ts_types::{
     ComputedKey, Function, Id, IdCtx, Interface, Key, MethodSignature, TypeParam, TypeParamDecl, TypeParamInstantiation,
 };
 use stc_utils::{error::context, ext::SpanExt, stack};
+use std::time::{Duration, Instant};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, instrument};
+use tracing::{debug, info, instrument, warn};
 
 /// All fields default to false.
 #[derive(Debug, Clone, Copy, Default)]
@@ -154,7 +152,6 @@ impl Analyzer<'_, '_> {
         }
 
         debug!(
-            self.logger,
             "[generic/extends] Checking if {} extends {}",
             dump_type_as_string(&self.cm, &child),
             dump_type_as_string(&self.cm, &parent),
@@ -404,7 +401,6 @@ impl Analyzer<'_, '_> {
 /// This struct does not expands ref to other thpe. See Analyzer.expand to do
 /// such operation.
 pub(crate) struct GenericExpander<'a, 'b, 'c, 'd> {
-    logger: Logger,
     analyzer: &'a mut Analyzer<'b, 'c>,
     params: &'d FxHashMap<Id, Type>,
     /// Expand fully?
@@ -437,11 +433,11 @@ impl GenericExpander<'_, '_, '_, '_> {
                 }
 
                 if self.dejavu.contains(&i.into()) {
-                    debug!(self.logger, "Dejavu: {}", i.sym);
+                    debug!("Dejavu: {}", i.sym);
                     return ty;
                 }
 
-                info!(self.logger, "Ref: {}", Id::from(i));
+                info!("Generic expander: Ref: {}", Id::from(i));
 
                 return ty.fold_children_with(self);
             }
@@ -494,7 +490,6 @@ impl GenericExpander<'_, '_, '_, '_> {
 
                 if let Some(ty) = self.params.get(&param.name) {
                     info!(
-                        self.logger,
                         "generic_expand: Expanding type parameter `{}` => {}",
                         param.name,
                         dump_type_as_string(&self.analyzer.cm, &ty)
@@ -509,8 +504,8 @@ impl GenericExpander<'_, '_, '_, '_> {
                 }
 
                 warn!(
-                    self.logger,
-                    "generic_expand: Failed to found type parameter instantiation: {}", param.name,
+                    "generic_expand: Failed to found type parameter instantiation: {}",
+                    param.name,
                 );
 
                 return Type::Param(param);
@@ -532,10 +527,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                 c = c.fold_with(self);
 
                 if let Some(..) = &c.def.type_params {
-                    error!(
-                        self.logger,
-                        "A class has type parameters. It may not be fully expanded."
-                    );
+                    error!("A class has type parameters. It may not be fully expanded.");
                 }
 
                 return Type::Class(c);
@@ -683,7 +675,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                         ty: box Type::Union(ref u),
                         ..
                     })) => {
-                        error!(self.logger, "Union!");
+                        error!("Union!");
                     }
                     _ => {}
                 }
@@ -900,7 +892,6 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             Ok(v) => v,
             _ => {
                 error!(
-                    self.logger,
                     "[generic/expander] Stack overflow: {}",
                     dump_type_as_string(&self.analyzer.cm, &ty)
                 );

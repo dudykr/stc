@@ -143,7 +143,7 @@ impl Analyzer<'_, '_> {
             }
 
             debug!(
-                self.logger,
+                
                 "visit_stmts_for_return: types.len() = {}",
                 values.return_types.len()
             );

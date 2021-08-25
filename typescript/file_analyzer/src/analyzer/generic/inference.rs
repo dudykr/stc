@@ -159,12 +159,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let marks = self.marks();
 
-        info!(
-            self.logger,
-            "Inferred {} as {}",
-            name,
-            dump_type_as_string(&self.cm, &ty)
-        );
+        info!("Inferred {} as {}", name, dump_type_as_string(&self.cm, &ty));
 
         match ty.normalize() {
             Type::Param(ty) => {
@@ -662,8 +657,8 @@ impl Analyzer<'_, '_> {
         }
 
         error!(
-            self.logger,
-            "infer_type_from_operator_and_tuple: unimplemented\nparam  = {:#?}\narg = {:#?}", param, arg,
+            "infer_type_from_operator_and_tuple: unimplemented\nparam  = {:#?}\narg = {:#?}",
+            param, arg,
         );
         Ok(())
     }

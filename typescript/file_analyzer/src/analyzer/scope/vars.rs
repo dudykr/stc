@@ -108,13 +108,12 @@ impl Analyzer<'_, '_> {
             RPat::Ident(i) => {
                 if let Some(ty) = &ty {
                     debug!(
-                        &self.logger,
-                        "[vars]: Declaring {} as {}",
+                        &"[vars]: Declaring {} as {}",
                         i.id.sym,
                         dump_type_as_string(&self.cm, &ty)
                     );
                 } else {
-                    debug!(&self.logger, "[vars]: Declaring {} without type", i.id.sym);
+                    debug!(&"[vars]: Declaring {} without type", i.id.sym);
                 }
 
                 let ty = opt_union(span, ty, default);

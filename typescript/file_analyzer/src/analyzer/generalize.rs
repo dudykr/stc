@@ -5,7 +5,6 @@ use crate::{
     util::{type_ext::TypeVecExt, Marker},
 };
 use rnode::{Fold, FoldWith, NodeId, VisitMutWith};
-use slog::Logger;
 use stc_ts_ast_rnode::{RNumber, RStr, RTsKeywordType, RTsLit, RTsLitType};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::is_str_lit_or_union;
@@ -16,10 +15,11 @@ use stc_ts_types::{
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Mark, Span, Spanned};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use tracing::{info, trace};
 
 impl Analyzer<'_, '_> {
     pub(super) fn may_generalize(&self, ty: &Type) -> bool {
-        trace!(self.logger, "may_generalize({:?})", ty);
+        trace!("may_generalize({:?})", ty);
         match ty.normalize() {
             Type::Function(f) => {
                 if !self.may_generalize(&f.ret_ty) {
@@ -80,7 +80,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn simplify(&self, ty: Type) -> Type {
-        info!(self.logger, "Simplifying {}", dump_type_as_string(&self.cm, &ty));
+        info!("Simplifying {}", dump_type_as_string(&self.cm, &ty));
         ty.fold_with(&mut Simplifier {
             env: &self.env,
             logger: self.logger.clone(),
@@ -93,7 +93,6 @@ impl Analyzer<'_, '_> {
 /// Simplifies the type.
 struct Simplifier<'a> {
     env: &'a Env,
-    logger: Logger,
     prevent_generalize_mark: Mark,
     prevent_inference_mark: Mark,
 }

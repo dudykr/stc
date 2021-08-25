@@ -820,7 +820,7 @@ impl Analyzer<'_, '_> {
         self.exclude_types(span, ty, Some(types_to_exclude));
         let after = dump_type_as_string(&self.cm, &ty);
 
-        debug!(self.logger, "[types/facts] Excluded types: {} => {}", before, after);
+        debug!( "[types/facts] Excluded types: {} => {}", before, after);
     }
 
     pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
@@ -833,7 +833,7 @@ impl Analyzer<'_, '_> {
                 .copied()
                 .unwrap_or(TypeFacts::None);
 
-        debug!(self.logger, "[types/fact] Facts for {:?} is {:?}", name, type_facts);
+        debug!( "[types/fact] Facts for {:?} is {:?}", name, type_facts);
 
         self.apply_type_facts_to_type(type_facts, ty)
     }

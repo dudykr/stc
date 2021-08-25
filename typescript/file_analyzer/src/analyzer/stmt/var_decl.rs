@@ -223,7 +223,7 @@ impl Analyzer<'_, '_> {
                 //  Check if v_ty is assignable to ty
                 match declared_ty {
                     Some(ty) => {
-                        debug!(self.logger, "var: user declared type");
+                        debug!( "var: user declared type");
                         let ty = match ty.validate_with(self) {
                             Ok(ty) => ty,
                             Err(err) => {
@@ -328,7 +328,7 @@ impl Analyzer<'_, '_> {
 
                         let should_generalize_fully = self.may_generalize(&ty) && !contains_type_param(&ty);
 
-                        debug!(self.logger, "var: user did not declare type");
+                        debug!( "var: user did not declare type");
                         let mut ty = self.rename_type_params(span, ty, None)?;
                         ty.fix();
                         ty.assert_valid();
@@ -347,7 +347,7 @@ impl Analyzer<'_, '_> {
                         ty.assert_valid();
 
                         debug!(
-                            self.logger,
+                            
                             "[vars]: Type after generalization: {}",
                             dump_type_as_string(&self.cm, &ty)
                         );
@@ -371,7 +371,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         debug!(
-                            self.logger,
+                            
                             "[vars]: Type after normalization: {}",
                             dump_type_as_string(&self.cm, &ty)
                         );
@@ -388,7 +388,7 @@ impl Analyzer<'_, '_> {
                                 ty.assert_valid();
 
                                 debug!(
-                                    self.logger,
+                                    
                                     "[vars]: Type after expansion: {}",
                                     dump_type_as_string(&self.cm, &ty)
                                 );
