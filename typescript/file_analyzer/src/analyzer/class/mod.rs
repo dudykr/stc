@@ -1993,7 +1993,7 @@ impl Analyzer<'_, '_> {
                         .map(|v| v.0)
                         .collect::<Vec<_>>();
 
-                    let order = child.calc_order_of_class_methods(remaining, &c.body);
+                    let order = child.calc_eval_order_of_class_methods(remaining, &c.body);
 
                     for index in order {
                         let ty = c.body[index].validate_with(child)?;
