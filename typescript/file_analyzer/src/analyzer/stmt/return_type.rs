@@ -142,8 +142,8 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            slog::debug!(
-                self.logger,
+            debug!(
+                
                 "visit_stmts_for_return: types.len() = {}",
                 values.return_types.len()
             );

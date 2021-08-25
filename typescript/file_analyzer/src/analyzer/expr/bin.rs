@@ -31,6 +31,7 @@ use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{op, BinaryOp, TsKeywordTypeKind, TsTypeOperatorOp};
 use swc_ecma_utils::Value::Known;
+use tracing::info;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -76,9 +77,7 @@ impl Analyzer<'_, '_> {
             },
         );
 
-        let orig_logger = self.logger.clone();
         let lt = {
-            self.logger = orig_logger.new(slog::o!("type" => "lhs"));
             let mut a = self.with_ctx(ctx);
             left.validate_with_args(&mut *a, child_ctxt)
         }
@@ -134,7 +133,6 @@ impl Analyzer<'_, '_> {
                 ScopeKind::Flow,
                 true_facts_for_rhs.clone(),
                 |child: &mut Analyzer| -> ValidationResult<_> {
-                    child.logger = orig_logger.new(slog::o!("type" => "rhs"));
                     child.ctx.should_store_truthy_for_access = false;
 
                     let truthy_lt;
@@ -186,7 +184,6 @@ impl Analyzer<'_, '_> {
                 },
             )
             .store(&mut errors);
-        self.logger = orig_logger;
 
         let rt = rhs;
 
@@ -785,7 +782,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 //
                 let name = Name::try_from(&**arg);
-                slog::info!(self.logger, "cond_facts: typeof {:?}", name);
+                info!("cond_facts: typeof {:?}", name);
                 match r {
                     RExpr::Tpl(RTpl { quasis, .. }) if quasis.len() == 1 => {
                         let value = &quasis[0].cooked.as_ref()?.value;

@@ -1,5 +1,3 @@
-use std::time::{Duration, Instant};
-
 use crate::{
     analyzer::{assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, Analyzer, Ctx},
     ty::{Array, IndexedAccessType, Mapped, Operator, PropertySignature, Ref, Type, TypeElement, TypeLit},
@@ -7,7 +5,6 @@ use crate::{
 };
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Fold, FoldWith, VisitWith};
-use slog::Logger;
 use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::{type_param::finder::TypeParamUsageFinder, ExpandGenericOpts};
@@ -16,10 +13,11 @@ use stc_ts_types::{
     ComputedKey, Function, Id, IdCtx, Interface, Key, MethodSignature, TypeParam, TypeParamDecl, TypeParamInstantiation,
 };
 use stc_utils::{error::context, ext::SpanExt, stack};
+use std::time::{Duration, Instant};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, instrument};
+use tracing::{debug, error, info, instrument, warn};
 
 /// All fields default to false.
 #[derive(Debug, Clone, Copy, Default)]
@@ -117,7 +115,6 @@ impl Analyzer<'_, '_> {
 
         let start = Instant::now();
         let ty = ty.fold_with(&mut GenericExpander {
-            logger: self.logger.clone(),
             analyzer: self,
             params,
             fully,
@@ -153,8 +150,7 @@ impl Analyzer<'_, '_> {
             return Some(true);
         }
 
-        slog::debug!(
-            self.logger,
+        debug!(
             "[generic/extends] Checking if {} extends {}",
             dump_type_as_string(&self.cm, &child),
             dump_type_as_string(&self.cm, &parent),
@@ -404,7 +400,6 @@ impl Analyzer<'_, '_> {
 /// This struct does not expands ref to other thpe. See Analyzer.expand to do
 /// such operation.
 pub(crate) struct GenericExpander<'a, 'b, 'c, 'd> {
-    logger: Logger,
     analyzer: &'a mut Analyzer<'b, 'c>,
     params: &'d FxHashMap<Id, Type>,
     /// Expand fully?
@@ -437,11 +432,11 @@ impl GenericExpander<'_, '_, '_, '_> {
                 }
 
                 if self.dejavu.contains(&i.into()) {
-                    slog::debug!(self.logger, "Dejavu: {}", i.sym);
+                    debug!("Dejavu: {}", i.sym);
                     return ty;
                 }
 
-                slog::info!(self.logger, "Ref: {}", Id::from(i));
+                info!("Generic expander: Ref: {}", Id::from(i));
 
                 return ty.fold_children_with(self);
             }
@@ -493,8 +488,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                 }
 
                 if let Some(ty) = self.params.get(&param.name) {
-                    slog::info!(
-                        self.logger,
+                    info!(
                         "generic_expand: Expanding type parameter `{}` => {}",
                         param.name,
                         dump_type_as_string(&self.analyzer.cm, &ty)
@@ -508,8 +502,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                     return ty;
                 }
 
-                slog::warn!(
-                    self.logger,
+                warn!(
                     "generic_expand: Failed to found type parameter instantiation: {}",
                     param.name,
                 );
@@ -533,10 +526,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                 c = c.fold_with(self);
 
                 if let Some(..) = &c.def.type_params {
-                    slog::error!(
-                        self.logger,
-                        "A class has type parameters. It may not be fully expanded."
-                    );
+                    error!("A class has type parameters. It may not be fully expanded.");
                 }
 
                 return Type::Class(c);
@@ -684,7 +674,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                         ty: box Type::Union(ref u),
                         ..
                     })) => {
-                        slog::error!(self.logger, "Union!");
+                        error!("Union!");
                     }
                     _ => {}
                 }
@@ -900,8 +890,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
         let _stack = match stack::track(ty.span()) {
             Ok(v) => v,
             _ => {
-                slog::error!(
-                    self.logger,
+                error!(
                     "[generic/expander] Stack overflow: {}",
                     dump_type_as_string(&self.analyzer.cm, &ty)
                 );

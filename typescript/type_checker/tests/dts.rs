@@ -6,7 +6,7 @@
 extern crate test;
 
 use anyhow::Context;
-use stc_testing::{get_git_root, logger};
+use stc_testing::get_git_root;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::{Env, ModuleConfig};
 use stc_ts_module_loader::resolver::node::NodeResolver;
@@ -55,11 +55,9 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
     let mut expected = NormalizedOutput::from(String::from("<iinvalid>"));
 
     let res = testing::Tester::new().print_errors(|cm, handler| {
-        let log = logger();
         let handler = Arc::new(handler);
 
         let mut checker = Checker::new(
-            log.logger.clone(),
             cm.clone(),
             handler.clone(),
             Env::simple(

@@ -48,7 +48,7 @@ use std::{
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
-use tracing::{debug, instrument};
+use tracing::{debug, info, instrument, warn};
 use ty::TypeExt;
 
 mod array;
@@ -987,7 +987,7 @@ impl Analyzer<'_, '_> {
         if has_index_signature && !opts.disallow_creating_indexed_type_from_ty_els {
             // This check exists to prefer a specific property over generic index signature.
             if prop.is_computed() || matching_elements.is_empty() {
-                slog::warn!(self.logger, "Creating a indexed access type from a type literal");
+                warn!("Creating a indexed access type from a type literal");
                 let ty = Type::IndexedAccessType(IndexedAccessType {
                     span,
                     obj_type: box obj.clone(),
@@ -1131,12 +1131,9 @@ impl Analyzer<'_, '_> {
 
         let ty_str = dump_type_as_string(&self.cm, &ty);
 
-        slog::debug!(
-            self.logger,
+        debug!(
             "[expr] Accessed property:\nObject: {}\nResult: {}\n{:?}",
-            obj_str,
-            ty_str,
-            type_mode
+            obj_str, ty_str, type_mode
         );
 
         if !self.is_builtin && ty.span().is_dummy() && !span.is_dummy() {
@@ -1157,11 +1154,7 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy());
 
-            slog::debug!(
-                &self.logger,
-                "access_property: obj = {}",
-                dump_type_as_string(&self.cm, &obj)
-            );
+            debug!("access_property: obj = {}", dump_type_as_string(&self.cm, &obj));
         }
 
         let _stack = stack::track(span)?;
@@ -1328,7 +1321,7 @@ impl Analyzer<'_, '_> {
 
                     let prop_ty = prop.clone().computed().unwrap().ty;
 
-                    slog::warn!(self.logger, "Creating an indexed access type with this as the object");
+                    warn!("Creating an indexed access type with this as the object");
 
                     // TODO: Handle string literals like
                     //
@@ -1773,10 +1766,7 @@ impl Analyzer<'_, '_> {
                     self.prevent_generalize(&mut prop_ty);
                 }
 
-                slog::warn!(
-                    self.logger,
-                    "Creating an indexed access type with type parameter as the object"
-                );
+                warn!("Creating an indexed access type with type parameter as the object");
 
                 return Ok(Type::IndexedAccessType(IndexedAccessType {
                     span,
@@ -2509,10 +2499,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                slog::warn!(
-                    self.logger,
-                    "Creating an indexed access type with mapped type as the object"
-                );
+                warn!("Creating an indexed access type with mapped type as the object");
 
                 return Ok(Type::IndexedAccessType(IndexedAccessType {
                     span,
@@ -2528,10 +2515,7 @@ impl Analyzer<'_, '_> {
                         Type::Param(..) => {
                             let index_type = computed.ty.clone();
 
-                            slog::warn!(
-                                self.logger,
-                                "Creating an indexed access type with a type parameter as the object"
-                            );
+                            warn!("Creating an indexed access type with a type parameter as the object");
 
                             // Return something like SimpleDBRecord<Flag>[Flag];
                             return Ok(Type::IndexedAccessType(IndexedAccessType {
@@ -2632,8 +2616,7 @@ impl Analyzer<'_, '_> {
 
             Type::Rest(rest) => {
                 // I'm not sure if this impl is correct, so let's print a log for debugging.
-                slog::warn!(
-                    self.logger,
+                warn!(
                     "[expr] accessing property of rest type({})",
                     dump_type_as_string(&self.cm, &rest.ty)
                 );
@@ -2859,7 +2842,7 @@ impl Analyzer<'_, '_> {
             ty.make_cheap();
         }
 
-        slog::debug!(self.logger, "type_of_var({:?}): {:?}", id, ty);
+        debug!("type_of_var({:?}): {:?}", id, ty);
 
         ty.reposition(i.span);
 
@@ -2875,7 +2858,7 @@ impl Analyzer<'_, '_> {
     /// Returned type does not reflects conditional type facts. (like Truthy /
     /// exclusion)
     fn type_of_raw_var(&mut self, i: &RIdent, type_mode: TypeOfMode) -> ValidationResult {
-        slog::info!(self.logger, "({}) type_of_raw_var({})", self.scope.depth(), Id::from(i));
+        info!("({}) type_of_raw_var({})", self.scope.depth(), Id::from(i));
 
         // See documentation on Analyzer.cur_module_name to understand what we are doing
         // here.
@@ -2900,11 +2883,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(ref cls_name) = self.scope.this_class_name {
             if *cls_name == i {
-                slog::warn!(
-                    self.logger,
-                    "Creating ref because we are currently defining a class: {}",
-                    i.sym
-                );
+                warn!("Creating ref because we are currently defining a class: {}", i.sym);
                 return Ok(Type::StaticThis(StaticThis { span }));
             }
         }
@@ -2980,12 +2959,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ty) = self.find_imported_var(&i.into())? {
-            slog::debug!(
-                self.logger,
-                "({}) type_of({}): resolved import",
-                self.scope.depth(),
-                Id::from(i)
-            );
+            debug!("({}) type_of({}): resolved import", self.scope.depth(), Id::from(i));
             return Ok(ty.clone());
         }
 
@@ -2996,13 +2970,13 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            slog::debug!(self.logger, "found var with name");
+            debug!("found var with name");
             match type_mode {
                 TypeOfMode::LValue => {
                     if let Some(ty) = &v.ty {
                         ty.assert_valid();
 
-                        slog::debug!(self.logger, "Type of var: {:?}", ty);
+                        debug!("Type of var: {:?}", ty);
                         return Ok(ty.clone());
                     }
                 }
@@ -3011,7 +2985,7 @@ impl Analyzer<'_, '_> {
                     if let Some(ty) = &v.actual_ty {
                         ty.assert_valid();
 
-                        slog::debug!(self.logger, "Type of var: {:?}", ty);
+                        debug!("Type of var: {:?}", ty);
                         return Ok(ty.clone());
                     }
                 }
@@ -3020,12 +2994,7 @@ impl Analyzer<'_, '_> {
 
         // Check `declaring` before checking variables.
         if self.scope.is_declaring(&i.into()) {
-            slog::debug!(
-                self.logger,
-                "({}) reference in initialization: {}",
-                self.scope.depth(),
-                i.sym
-            );
+            debug!("({}) reference in initialization: {}", self.scope.depth(), i.sym);
 
             // Report an error if a variable is used before initialization.
             (|| {
@@ -3077,7 +3046,7 @@ impl Analyzer<'_, '_> {
             ty.assert_valid();
 
             let ty_str = dump_type_as_string(&self.cm, &ty);
-            slog::debug!(self.logger, "find_var_type returned a type: {}", ty_str);
+            debug!("find_var_type returned a type: {}", ty_str);
             let mut span = span;
             let mut ty = ty.into_owned();
             if self.scope.kind().allows_respanning() {
@@ -3089,7 +3058,7 @@ impl Analyzer<'_, '_> {
                 }
                 ty.respan(span);
             }
-            slog::debug!(self.logger, "{:?}", ty);
+            debug!("{:?}", ty);
             return Ok(ty);
         }
 
@@ -3322,7 +3291,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                slog::warn!(self.logger, "Creating Type::Ref: {:?}", i);
+                warn!("Creating Type::Ref: {:?}", i);
 
                 Ok(Type::Ref(Ref {
                     span,

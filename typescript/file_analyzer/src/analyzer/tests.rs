@@ -7,7 +7,6 @@ use crate::{
 };
 use once_cell::sync::Lazy;
 use rnode::{NodeIdGenerator, RNode};
-use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_storage::Single;
@@ -47,10 +46,9 @@ where
             info: Default::default(),
         };
 
-        let log = logger();
         let handler = Arc::new(handler);
         swc_common::GLOBALS.set(&crate::tests::GLOBALS, || {
-            let analyzer = Analyzer::root(log.logger, ENV.clone(), cm.clone(), box &mut storage, &Loader {}, None);
+            let analyzer = Analyzer::root(ENV.clone(), cm.clone(), box &mut storage, &Loader {}, None);
             let mut tester = Tester {
                 cm: cm.clone(),
                 analyzer,

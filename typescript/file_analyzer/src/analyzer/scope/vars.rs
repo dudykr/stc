@@ -22,6 +22,7 @@ use stc_utils::TryOpt;
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
+use tracing::debug;
 
 /// The kind of binding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -107,14 +108,13 @@ impl Analyzer<'_, '_> {
         match pat {
             RPat::Ident(i) => {
                 if let Some(ty) = &ty {
-                    slog::debug!(
-                        &self.logger,
+                    debug!(
                         "[vars]: Declaring {} as {}",
                         i.id.sym,
                         dump_type_as_string(&self.cm, &ty)
                     );
                 } else {
-                    slog::debug!(&self.logger, "[vars]: Declaring {} without type", i.id.sym);
+                    debug!("[vars]: Declaring {} without type", i.id.sym);
                 }
 
                 let ty = opt_union(span, ty, default);

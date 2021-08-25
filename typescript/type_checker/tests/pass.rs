@@ -10,7 +10,6 @@ mod common;
 
 use common::load_fixtures;
 use serde::Deserialize;
-use stc_testing::logger;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::env::{Env, ModuleConfig};
 use stc_ts_module_loader::resolver::node::NodeResolver;
@@ -49,10 +48,8 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
     let (libs, rule, ts_config, target) = (vec![Lib::Es5], Default::default(), Default::default(), JscTarget::Es5);
 
     let res = ::testing::run_test2(false, |cm, handler| {
-        let log = logger();
         let handler = Arc::new(handler);
         let mut checker = Checker::new(
-            log.logger,
             cm.clone(),
             handler.clone(),
             Env::simple(rule, target, ModuleConfig::None, &libs),
