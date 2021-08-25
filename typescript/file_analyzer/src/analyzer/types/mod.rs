@@ -169,7 +169,7 @@ impl Analyzer<'_, '_> {
 
                     Type::Intrinsic(i) => {
                         let ty = self
-                            .handle_intrinsic_types(actual_span, i)
+                            .expand_intrinsic_types(actual_span, i)
                             .context("tried to expand intrinsic type as a part of normalization")?;
 
                         return Ok(Cow::Owned(ty));
@@ -1252,7 +1252,7 @@ impl Analyzer<'_, '_> {
         v
     }
 
-    pub(crate) fn handle_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> ValidationResult {
+    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> ValidationResult {
         let arg = &ty.type_args;
 
         match ty.kind {
