@@ -38,6 +38,7 @@ impl Analyzer<'_, '_> {
         false
     }
 
+    /// Expand `this` contained in `ty`.
     pub(crate) fn expand_this(&mut self, ty: &mut Type) {
         let this_ty = self.scope.this();
 
