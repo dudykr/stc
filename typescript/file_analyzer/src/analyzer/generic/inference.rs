@@ -24,7 +24,7 @@ use std::{
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::error;
+use tracing::{error, info};
 
 /// # Default
 ///

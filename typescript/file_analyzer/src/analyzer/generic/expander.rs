@@ -17,7 +17,7 @@ use std::time::{Duration, Instant};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, info, instrument, warn};
+use tracing::{debug, error, info, instrument, warn};
 
 /// All fields default to false.
 #[derive(Debug, Clone, Copy, Default)]

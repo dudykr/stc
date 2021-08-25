@@ -25,7 +25,7 @@ use stc_utils::{error::context, stack};
 use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, error, instrument};
+use tracing::{debug, error, info, instrument, warn};
 
 mod expander;
 mod inference;
@@ -69,7 +69,7 @@ impl Analyzer<'_, '_> {
         let mut params = Vec::with_capacity(type_params.len());
         for type_param in type_params {
             if let Some(ty) = inferred.remove(&type_param.name) {
-                info!( "infer_arg_type: {}", type_param.name);
+                info!("infer_arg_type: {}", type_param.name);
                 params.push(ty);
             } else {
                 match type_param.constraint {
@@ -79,17 +79,14 @@ impl Analyzer<'_, '_> {
 
                         if let Some(actual) = inferred.remove(&p.name) {
                             info!(
-                                
                                 "infer_arg_type: {} => {} => {:?} because of the extends clause",
-                                type_param.name,
-                                p.name,
-                                actual
+                                type_param.name, p.name, actual
                             );
                             params.push(actual);
                         } else {
                             info!(
-                                
-                                "infer_arg_type: {} => {} because of the extends clause", type_param.name, p.name
+                                "infer_arg_type: {} => {} because of the extends clause",
+                                type_param.name, p.name
                             );
                             params.push(Type::Param(p.clone()));
                         }
@@ -122,10 +119,7 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
 
-                warn!(
-                    
-                    "instantiate: A type parameter {} defaults to {{}}", type_param.name
-                );
+                warn!("instantiate: A type parameter {} defaults to {{}}", type_param.name);
 
                 // Defaults to {}
                 params.push(Type::TypeLit(TypeLit {
@@ -151,7 +145,6 @@ impl Analyzer<'_, '_> {
         default_ty: Option<&Type>,
     ) -> ValidationResult<FxHashMap<Id, Type>> {
         warn!(
-            
             "infer_arg_types: {:?}",
             type_params.iter().map(|p| format!("{}, ", p.name)).collect::<String>()
         );
@@ -164,12 +157,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(base) = base {
             for (param, type_param) in base.params.iter().zip(type_params) {
-                info!(
-                    
-                    "User provided `{:?} = {:?}`",
-                    type_param.name,
-                    param.clone()
-                );
+                info!("User provided `{:?} = {:?}`", type_param.name, param.clone());
                 inferred
                     .type_params
                     .insert(type_param.name.clone(), InferredType::Other(vec![param.clone()]));
@@ -265,18 +253,15 @@ impl Analyzer<'_, '_> {
 
                     if let Some(actual) = inferred.type_params.remove(&p.name) {
                         info!(
-                            
                             "infer_arg_type: {} => {} => {:?} because of the extends clause",
-                            type_param.name,
-                            p.name,
-                            actual
+                            type_param.name, p.name, actual
                         );
                         inferred.type_params.insert(p.name.clone(), actual.clone());
                         inferred.type_params.insert(type_param.name.clone(), actual);
                     } else {
                         info!(
-                            
-                            "infer_arg_type: {} => {} because of the extends clause", type_param.name, p.name
+                            "infer_arg_type: {} => {} because of the extends clause",
+                            type_param.name, p.name
                         );
                         self.insert_inferred(
                             span,
@@ -350,8 +335,8 @@ impl Analyzer<'_, '_> {
 
                     if let Some(default_ty) = default_ty {
                         error!(
-                            
-                            "infer: A type parameter {} defaults to {:?}", type_param.name, default_ty
+                            "infer: A type parameter {} defaults to {:?}",
+                            type_param.name, default_ty
                         );
 
                         self.insert_inferred(
@@ -372,7 +357,7 @@ impl Analyzer<'_, '_> {
 
         let end = Instant::now();
 
-        warn!( "infer_arg_types is finished. (time = {:?})", end - start);
+        warn!("infer_arg_types is finished. (time = {:?})", end - start);
 
         Ok(map)
     }
@@ -543,8 +528,8 @@ impl Analyzer<'_, '_> {
         let param = param.normalize();
         let arg = arg.normalize();
 
-        print_type(& "param", &self.cm, &param);
-        print_type(& "arg", &self.cm, &arg);
+        print_type(&"param", &self.cm, &param);
+        print_type(&"arg", &self.cm, &arg);
 
         match param {
             Type::Instance(..) => {
@@ -703,13 +688,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                trace!( "infer_type: type parameter: {} = {:?}", name, constraint);
+                trace!("infer_type: type parameter: {} = {:?}", name, constraint);
 
                 if constraint.is_some() && is_literals(&constraint.as_ref().unwrap()) {
-                    info!(
-                        
-                        "infer from literal constraint: {} = {:?}", name, constraint
-                    );
+                    info!("infer from literal constraint: {} = {:?}", name, constraint);
                     if let Some(orig) = inferred.type_params.get(&name) {
                         let orig = match orig.clone() {
                             InferredType::Union(ty) => ty,
@@ -777,7 +759,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                info!( "({}): infer: {} = {:?}", self.scope.depth(), name, arg);
+                info!("({}): infer: {} = {:?}", self.scope.depth(), name, arg);
 
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
@@ -1107,7 +1089,7 @@ impl Analyzer<'_, '_> {
                         ignore_expand_prevention_for_all: false,
                         ..self.ctx
                     };
-                    debug!( "infer_type: expanding param");
+                    debug!("infer_type: expanding param");
                     let param = self.with_ctx(ctx).expand(
                         span,
                         Type::Ref(param.clone()),
@@ -1121,7 +1103,7 @@ impl Analyzer<'_, '_> {
                         Type::Ref(..) => {
                             dbg!();
 
-                            info!( "Ref: {:?}", param);
+                            info!("Ref: {:?}", param);
                         }
                         _ => return self.infer_type(span, inferred, &param, arg, opts),
                     }
@@ -1351,7 +1333,6 @@ impl Analyzer<'_, '_> {
         }
 
         error!(
-            
             "infer_arg_type: unimplemented\nparam  = {}\narg = {}",
             dump_type_as_string(&self.cm, param),
             dump_type_as_string(&self.cm, arg),
@@ -1505,8 +1486,8 @@ impl Analyzer<'_, '_> {
             }) = matches(param)
             {
                 debug!(
-                    
-                    "[generic/inference] Found form of `P in keyof T` where T = {}, P = {}", name, key_name
+                    "[generic/inference] Found form of `P in keyof T` where T = {}, P = {}",
+                    name, key_name
                 );
                 match arg {
                     Type::TypeLit(arg) => {
@@ -1740,10 +1721,8 @@ impl Analyzer<'_, '_> {
                 Some(constraint) => match constraint.normalize() {
                     Type::Param(type_param) => {
                         debug!(
-                            
                             "[generic/inference] Found form of `P in T` where T = {}, P = {}",
-                            type_param.name,
-                            param.type_param.name
+                            type_param.name, param.type_param.name
                         );
 
                         match arg {
@@ -2078,7 +2057,7 @@ impl Analyzer<'_, '_> {
                         Some(param_ty) => match arg {
                             Type::TypeLit(arg_lit) => {
                                 let revesed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default());
-                                print_type(& "reversed", &self.cm, &revesed_param_ty);
+                                print_type(&"reversed", &self.cm, &revesed_param_ty);
 
                                 self.infer_type(span, inferred, &revesed_param_ty, arg, opts)?;
 
@@ -2227,7 +2206,6 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
         debug!(
-            
             "rename_type_params(has_ann = {:?}, ty = {})",
             type_ann.is_some(),
             dump_type_as_string(&self.cm, &ty)
@@ -2242,7 +2220,7 @@ impl Analyzer<'_, '_> {
         let mut usage_visitor = TypeParamUsageFinder::default();
         ty.normalize().visit_with(&mut usage_visitor);
         if usage_visitor.params.is_empty() {
-            debug!( "rename_type_param: No type parameter is used in type");
+            debug!("rename_type_param: No type parameter is used in type");
             match ty.normalize_mut() {
                 Type::Function(ref mut f) => {
                     f.type_params = None;
@@ -2259,8 +2237,8 @@ impl Analyzer<'_, '_> {
 
             self.infer_type(span, &mut inferred, &ty, type_ann, Default::default())?;
             info!(
-                
-                "renaming type parameters based on type annotation provided by user\ntype_ann = {:?}", type_ann
+                "renaming type parameters based on type annotation provided by user\ntype_ann = {:?}",
+                type_ann
             );
 
             let map = self.finalize_inference(inferred);
