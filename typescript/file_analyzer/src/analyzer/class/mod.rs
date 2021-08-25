@@ -821,7 +821,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn check_duplicate_of_class(&mut self, c: &RClass) -> ValidationResult<()> {
+    fn report_errors_for_duplicate_class_members(&mut self, c: &RClass) -> ValidationResult<()> {
         fn normalize_prop_name(p: &RPropName) -> Cow<RPropName> {
             match p {
                 RPropName::Num(v) => Cow::Owned(RPropName::Ident(RIdent::new(
@@ -1733,7 +1733,9 @@ impl Analyzer<'_, '_> {
 
                 child.check_ambient_methods(c, false).report(&mut child.storage);
                 child.check_static_mixed_with_instance(&c).report(&mut child.storage);
-                child.check_duplicate_of_class(&c).report(&mut child.storage);
+                child
+                    .report_errors_for_duplicate_class_members(&c)
+                    .report(&mut child.storage);
 
                 child.scope.super_class = super_class
                     .clone()
