@@ -1421,11 +1421,11 @@ impl Analyzer<'_, '_> {
         if let Some(super_ty) = &class.super_class {
             self.validate_super_class(super_ty);
 
-            self.validate_class_impls(span, &class.body, &super_ty)
+            self.report_error_for_wrong_super_class_inheritance(span, &class.body, &super_ty)
         }
     }
 
-    fn validate_class_impls(&mut self, span: Span, members: &[ClassMember], super_ty: &Type) {
+    fn report_error_for_wrong_super_class_inheritance(&mut self, span: Span, members: &[ClassMember], super_ty: &Type) {
         let super_ty = self.normalize(Some(span), Cow::Borrowed(super_ty), Default::default());
         let super_ty = match super_ty {
             Ok(v) => v,
@@ -1514,7 +1514,7 @@ impl Analyzer<'_, '_> {
                         // Check super class of super class
                         if let Some(super_ty) = &sc.super_class {
                             new_members.extend(members.to_vec());
-                            self.validate_class_impls(span, &new_members, &super_ty);
+                            self.report_error_for_wrong_super_class_inheritance(span, &new_members, &super_ty);
                         }
                     }
                 }
