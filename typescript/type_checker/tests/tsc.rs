@@ -11,7 +11,6 @@ mod common;
 use self::common::load_fixtures;
 use anyhow::{Context, Error};
 use once_cell::sync::Lazy;
-use opentelemetry::sdk::export::trace::stdout;
 use parking_lot::Mutex;
 use serde::Deserialize;
 use stc_ts_builtin_types::Lib;
@@ -42,7 +41,7 @@ use swc_ecma_parser::{JscTarget, Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
 use testing::{StdErr, Tester};
-use tracing_subscriber::{prelude::*, Registry};
+use tracing_subscriber::prelude::*;
 
 struct RecordOnPanic {
     stats: Stats,
@@ -555,7 +554,9 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 );
 
                 // Install a new OpenTelemetry trace pipeline
-                let tracer = stdout::new_pipeline().install_simple();
+                let tracer = opentelemetry_jaeger::new_pipeline()
+                    .install_simple()
+                    .expect("failed to create open telemtry pipeline");
 
                 // Don't print logs from builtin modules.
                 let log_sub = tracing_subscriber::FmtSubscriber::builder()
@@ -601,9 +602,9 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         if !cfg!(debug_assertions) {
             record_time(time);
 
-            // if time > Duration::new(0, 500_000_000) {
-            //     let _ = fs::write(file_name.with_extension("timings.txt"),
-            // format!("{:?}", time)); }
+            if time > Duration::new(0, 500_000_000) {
+                let _ = fs::write(file_name.with_extension("timings.txt"), format!("{:?}", time));
+            }
         }
 
         let mut extra_errors = diagnostics
