@@ -11,6 +11,7 @@ mod common;
 use self::common::load_fixtures;
 use anyhow::{Context, Error};
 use once_cell::sync::Lazy;
+use opentelemetry::sdk::export::trace::stdout;
 use parking_lot::Mutex;
 use serde::Deserialize;
 use stc_ts_builtin_types::Lib;
@@ -41,6 +42,7 @@ use swc_ecma_parser::{JscTarget, Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
 use testing::{StdErr, Tester};
+use tracing_subscriber::{prelude::*, Registry};
 
 struct RecordOnPanic {
     stats: Stats,
@@ -552,19 +554,28 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                     Arc::new(NodeResolver),
                 );
 
+                // Install a new OpenTelemetry trace pipeline
+                let tracer = stdout::new_pipeline().install_simple();
+
                 // Don't print logs from builtin modules.
-                let _tracing = tracing::subscriber::set_default(
-                    tracing_subscriber::FmtSubscriber::builder()
-                        .without_time()
-                        .with_target(false)
-                        .with_ansi(true)
-                        .with_test_writer()
-                        .pretty()
-                        .finish(),
-                );
+                let log_sub = tracing_subscriber::FmtSubscriber::builder()
+                    .without_time()
+                    .with_target(false)
+                    .with_ansi(true)
+                    .with_test_writer()
+                    .pretty()
+                    .finish();
+
+                // Create a tracing subscriber with the configured tracer
+                let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+
+                let collector = log_sub.with(telemetry);
 
                 let start = Instant::now();
+
+                let _guard = tracing::subscriber::set_default(collector);
                 checker.check(Arc::new(file_name.into()));
+
                 let end = Instant::now();
 
                 time = end - start;
