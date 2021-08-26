@@ -559,6 +559,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                         .with_target(false)
                         .with_ansi(true)
                         .with_test_writer()
+                        .pretty()
                         .finish(),
                 );
 
