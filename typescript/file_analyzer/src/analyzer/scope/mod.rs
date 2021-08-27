@@ -1876,6 +1876,10 @@ struct Expander<'a, 'b, 'c> {
 }
 
 impl Expander<'_, '_, '_> {
+    #[instrument(
+        name = "Expander.expand_ts_entity_name",
+        skip(self, span, ctxt, type_name, type_args, was_top_level, trying_primitive_expansion)
+    )]
     fn expand_ts_entity_name(
         &mut self,
         span: Span,
@@ -2115,6 +2119,8 @@ impl Expander<'_, '_, '_> {
 
         Ok(Some(Type::any(span)))
     }
+
+    #[instrument(name = "Expander.expandP_ref", skip(self, r, was_top_level))]
     fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> ValidationResult<Option<Type>> {
         let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
 
@@ -2156,6 +2162,7 @@ impl Expander<'_, '_, '_> {
         Ok(ty)
     }
 
+    #[instrument(name = "Expander.expand_type", skip(self, ty))]
     fn expand_type(&mut self, mut ty: Type) -> Type {
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,

@@ -41,6 +41,7 @@ use swc_ecma_parser::{JscTarget, Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
 use testing::{StdErr, Tester};
+use tracing_subscriber::prelude::*;
 
 struct RecordOnPanic {
     stats: Stats,
@@ -81,18 +82,18 @@ fn record_time(time: Duration) {
         return;
     }
 
-    let time = {
+    let _time = {
         let mut guard = TOTAL.lock();
         *guard += time;
         *guard
     };
 
-    let content = format!("{:#?}", time);
+    // let content = format!("{:#?}", time);
 
     // If we are testing everything, update stats file.
-    if is_all_test_enabled() {
-        fs::write("tests/tsc.timings.rust-debug", &content).unwrap();
-    }
+    // if is_all_test_enabled() {
+    //     fs::write("tests/tsc.timings.rust-debug", &content).unwrap();
+    // }
 }
 
 /// Add stats and return total stats.
@@ -500,6 +501,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 }
 
 fn do_test(file_name: &Path) -> Result<(), StdErr> {
+    let file_stem = file_name.file_stem().unwrap();
     let fname = file_name.display().to_string();
     let mut expected_errors = load_expected_errors(&file_name).unwrap();
 
@@ -552,18 +554,31 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                     Arc::new(NodeResolver),
                 );
 
+                // Install a new OpenTelemetry trace pipeline
+                let tracer = opentelemetry_jaeger::new_pipeline()
+                    .with_service_name(file_stem.to_string_lossy().to_string())
+                    .install_simple()
+                    .expect("failed to create open telemtry pipeline");
+
                 // Don't print logs from builtin modules.
-                let _tracing = tracing::subscriber::set_default(
-                    tracing_subscriber::FmtSubscriber::builder()
-                        .without_time()
-                        .with_target(false)
-                        .with_ansi(true)
-                        .with_test_writer()
-                        .finish(),
-                );
+                let log_sub = tracing_subscriber::FmtSubscriber::builder()
+                    .without_time()
+                    .with_target(false)
+                    .with_ansi(true)
+                    .with_test_writer()
+                    .pretty()
+                    .finish();
+
+                // Create a tracing subscriber with the configured tracer
+                let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+
+                let collector = log_sub.with(telemetry);
 
                 let start = Instant::now();
+
+                let _guard = tracing::subscriber::set_default(collector);
                 checker.check(Arc::new(file_name.into()));
+
                 let end = Instant::now();
 
                 time = end - start;
@@ -589,9 +604,9 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         if !cfg!(debug_assertions) {
             record_time(time);
 
-            if time > Duration::new(0, 500_000_000) {
-                let _ = fs::write(file_name.with_extension("timings.txt"), format!("{:?}", time));
-            }
+            // if time > Duration::new(0, 500_000_000) {
+            //     let _ = fs::write(file_name.with_extension("timings.txt"),
+            // format!("{:?}", time)); }
         }
 
         let mut extra_errors = diagnostics

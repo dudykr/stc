@@ -2701,6 +2701,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Expand type paramters using `type_args`.
+    #[instrument(skip(self, span, ty, type_args))]
     pub(crate) fn expand_generics_with_type_args(
         &mut self,
         span: Span,
@@ -2734,6 +2735,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returned type reflects conditional type facts.
+    #[instrument(skip(self, i, type_mode, type_args))]
     pub(super) fn type_of_var(
         &mut self,
         i: &RIdent,
