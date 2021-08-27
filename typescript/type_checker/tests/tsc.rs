@@ -555,6 +555,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
                 // Install a new OpenTelemetry trace pipeline
                 let tracer = opentelemetry_jaeger::new_pipeline()
+                    .with_service_name(fname.to_string())
                     .install_simple()
                     .expect("failed to create open telemtry pipeline");
 
