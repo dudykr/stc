@@ -209,17 +209,13 @@ pub fn validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
                         let start = std::time::Instant::now();
                         let (conext_pats) = ctxt;
 
-                        let ret = (|| body)();
+                        let ret = {
+                            let _tracing_guard =
+                                tracing::span!(tracing::Level::INFO, "validate<{}>", stringify!(NodeType)).entered();
+                            (|| body)()
+                        };
 
                         let end = std::time::Instant::now();
-
-                        tracing::trace!(
-                            kind = "perf",
-                            op = "validate",
-                            "Validate<{}>: (time = {:?})",
-                            stringify!(NodeType),
-                            end - start
-                        );
 
                         ret
                     }
