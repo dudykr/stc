@@ -45,7 +45,7 @@ use swc_ecma_utils::{
     Value,
     Value::{Known, Unknown},
 };
-use tracing::trace;
+use tracing::{instrument, trace};
 
 mod convert;
 mod id;
@@ -1521,6 +1521,7 @@ impl Type {
     /// `Type::Static` is normalized.
     ///
     /// TODO: Remove if possible
+    #[instrument(skip(self))]
     pub fn normalize_mut(&mut self) -> &mut Type {
         match self {
             Type::Arc(Freezed { ty, span }) => {
