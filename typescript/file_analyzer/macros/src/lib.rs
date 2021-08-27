@@ -211,7 +211,8 @@ pub fn validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
 
                         let ret = {
                             let _tracing_guard =
-                                tracing::span!(tracing::Level::INFO, "validate<{}>", stringify!(NodeType)).entered();
+                                tracing::span!(tracing::Level::INFO, concat!("validate<", stringify!(NodeType), ">"))
+                                    .entered();
                             (|| body)()
                         };
 
