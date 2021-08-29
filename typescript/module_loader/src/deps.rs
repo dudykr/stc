@@ -17,6 +17,10 @@ struct DepFinder {
 }
 
 impl Visit for DepFinder {
+    fn visit_export_all(&mut self, export: &ExportAll, _: &dyn Node) {
+        self.files.push(export.src.value.clone());
+    }
+
     fn visit_import_decl(&mut self, import: &ImportDecl, _: &dyn Node) {
         self.files.push(import.src.value.clone());
     }
@@ -25,9 +29,5 @@ impl Visit for DepFinder {
         if let Some(src) = &export.src {
             self.files.push(src.value.clone());
         }
-    }
-
-    fn visit_export_all(&mut self, export: &ExportAll, _: &dyn Node) {
-        self.files.push(export.src.value.clone());
     }
 }
