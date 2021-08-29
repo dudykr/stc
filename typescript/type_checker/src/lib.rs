@@ -111,7 +111,12 @@ impl Checker {
     /// After calling this method, you can get errors using `.take_errors()`
     pub fn check(&self, entry: Arc<PathBuf>) -> ModuleId {
         self.run(|| {
+            let start = Instant::now();
+
             let id = self.module_graph.load_all(&entry).unwrap();
+
+            let end = Instant::now();
+            eprintln!("Loading `{}` (and deps) took {:?}", entry.display(), end - start);
 
             self.analyze_module(None, entry.clone());
 
@@ -263,8 +268,6 @@ impl Checker {
 
                 let dur = Instant::now() - start;
                 if did_work {
-                    eprintln!("[Timing] Full analysis of {}: {:?}", path.display(), dur);
-                } else {
                     eprintln!("[Timing] Waited for {}: {:?}", path.display(), dur);
                 }
 
