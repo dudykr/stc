@@ -65,7 +65,7 @@ async fn main() -> Result<(), Error> {
     {
         let end = Instant::now();
 
-        log::info!("Initialized in {:?}", end - start);
+        log::trace!("Initialized in {:?}", end - start);
     }
 
     match command {

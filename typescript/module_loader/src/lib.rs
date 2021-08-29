@@ -190,7 +190,7 @@ where
     fn load(&self, path: &Arc<PathBuf>) -> Result<Option<LoadResult>, Error> {
         let (new, module_id) = self.id_generator.generate(path);
 
-        eprintln!("Loading {}: {:?}", path.display(), new);
+        log::debug!("Loading {}: {:?}", path.display(), new);
 
         if self.loaded.contains_key(&module_id) {
             return Ok(None);

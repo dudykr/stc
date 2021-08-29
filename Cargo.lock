@@ -2119,6 +2119,7 @@ dependencies = [
  "anyhow",
  "dashmap 3.11.10",
  "fxhash",
+ "log",
  "num_cpus",
  "once_cell",
  "parking_lot 0.11.1",
