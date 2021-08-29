@@ -1869,6 +1869,7 @@ dependencies = [
  "stc_utils",
  "structopt",
  "swc_common",
+ "swc_ecma_ast",
  "swc_ecma_parser",
  "tokio",
  "tracing",
@@ -2401,10 +2402,11 @@ dependencies = [
 
 [[package]]
 name = "swc_common"
-version = "0.11.4"
+version = "0.11.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f303985ebd578a033371a87be28cb54189d3ae5d492622523200f4de08db5275"
+checksum = "f2bcafc4aad3933ee8e00a560521dcf77b39f66713a073de19841c1bd2c4c49c"
 dependencies = [
+ "ahash 0.7.4",
  "ast_node",
  "atty",
  "cfg-if 0.1.10",
@@ -2427,9 +2429,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_ast"
-version = "0.49.1"
+version = "0.49.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "228ab89e5a11289d43f14da2b65b9e37c8fb31091c33f4fad66791ef65c04a1b"
+checksum = "72f135a9c200f058d5bec4e63b34712f412db0d2e894bf22b8b44b0740be6607"
 dependencies = [
  "is-macro",
  "num-bigint",
