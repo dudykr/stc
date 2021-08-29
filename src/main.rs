@@ -62,6 +62,12 @@ async fn main() -> Result<(), Error> {
         Arc::new(Handler::with_emitter(true, false, emitter))
     };
 
+    {
+        let end = Instant::now();
+
+        log::info!("Initialized in {:?}", end - start);
+    }
+
     match command {
         Command::Check(cmd) => {
             let mut checker = Checker::new(
