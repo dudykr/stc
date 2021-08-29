@@ -14,7 +14,7 @@ use stc_utils::stack;
 use std::time::Instant;
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_utils::Value::Known;
-use tracing::{span, trace, warn, Level};
+use tracing::{instrument, span, trace, warn, Level};
 
 mod ambient_decl;
 mod loops;
@@ -144,6 +144,7 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     /// Validate that parent interfaces are all resolved.
+    #[instrument(skip(self, parents))]
     pub(super) fn resolve_parent_interfaces(&mut self, parents: &[RTsExprWithTypeArgs]) {
         if self.is_builtin {
             return;

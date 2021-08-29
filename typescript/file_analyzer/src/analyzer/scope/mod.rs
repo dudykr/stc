@@ -1590,6 +1590,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Mark `ty` as not expanded by default.
+    #[instrument(skip(self, ty))]
     pub(crate) fn prevent_expansion<T>(&self, ty: &mut T)
     where
         T: VisitMutWith<ExpansionPreventer>,
