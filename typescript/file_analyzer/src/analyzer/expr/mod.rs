@@ -2672,7 +2672,12 @@ impl Analyzer<'_, '_> {
         }
 
         print_backtrace();
-        unimplemented!("access_property(MemberExpr):\nObject: {:?}\nProp: {:?}", obj, prop);
+        unimplemented!(
+            "access_property(MemberExpr):\nObject: {:?}\nProp: {:?}\nPath: {}",
+            obj,
+            prop,
+            self.storage.path(self.ctx.module_id).display()
+        );
     }
 
     /// TODO(kdy1): Clarify this.
