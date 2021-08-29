@@ -3,6 +3,7 @@
 use rnode::{NodeIdGenerator, RNode, VisitWith};
 use stc_testing::init_logger;
 use stc_ts_ast_rnode::RModule;
+use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::{
     analyzer::{Analyzer, NoopLoader},
     env::{Env, ModuleConfig},
@@ -23,7 +24,7 @@ fn bench_lib(path: &Path) {
     testing::run_test2(false, |cm, _handler| {
         let fm = cm.load_file(path).unwrap();
 
-        let env = Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &[]);
+        let env = Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &[Lib::Es5]);
 
         let mut node_id_gen = NodeIdGenerator::default();
         let mut module = {
