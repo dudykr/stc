@@ -82,18 +82,18 @@ fn record_time(time: Duration) {
         return;
     }
 
-    let _time = {
+    let time = {
         let mut guard = TOTAL.lock();
         *guard += time;
         *guard
     };
 
-    // let content = format!("{:#?}", time);
+    let content = format!("{:#?}", time);
 
     // If we are testing everything, update stats file.
-    // if is_all_test_enabled() {
-    //     fs::write("tests/tsc.timings.rust-debug", &content).unwrap();
-    // }
+    if is_all_test_enabled() {
+        fs::write("tests/tsc.timings.rust-debug", &content).unwrap();
+    }
 }
 
 /// Add stats and return total stats.
