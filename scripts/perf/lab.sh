@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -eu
 
-cargo install --release --path .
+cargo install --path .
