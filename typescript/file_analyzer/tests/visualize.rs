@@ -144,6 +144,16 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
                         },
                     );
 
+                    let log_sub = tracing_subscriber::FmtSubscriber::builder()
+                        .without_time()
+                        .with_target(false)
+                        .with_ansi(true)
+                        .with_test_writer()
+                        .pretty()
+                        .finish();
+
+                    let _guard = tracing::subscriber::set_default(log_sub);
+
                     module.validate_with(&mut analyzer).unwrap();
                 });
             }
