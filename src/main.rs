@@ -7,7 +7,7 @@ use stc_ts_file_analyzer::{
 };
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
-use std::{env, path::PathBuf, sync::Arc};
+use std::{env, path::PathBuf, sync::Arc, time::Instant};
 use structopt::StructOpt;
 use swc_common::{
     errors::{ColorConfig, EmitterWriter, Handler},
@@ -36,6 +36,8 @@ enum Command {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    let start = Instant::now();
+
     env_logger::init();
 
     let sub = tracing_subscriber::FmtSubscriber::builder()
@@ -90,6 +92,10 @@ async fn main() -> Result<(), Error> {
         }
         Command::Lsp(c) => c.run().await,
     }
+
+    let end = Instant::now();
+
+    log::info!("Done in {:?}", end - start);
 
     Ok(())
 }
