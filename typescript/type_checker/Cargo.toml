@@ -19,6 +19,7 @@ once_cell = "1.5.2"
 parking_lot = "0.11.1"
 rayon = "1.5.1"
 rnode = {path = "../../rnode"}
+serde = {version = "1.0.130", features = ["derive"]}
 stc_ts_ast_rnode = {path = "../ast_rnode"}
 stc_ts_builtin_types = {path = "../builtin_types"}
 stc_ts_dts = {path = "../dts"}
