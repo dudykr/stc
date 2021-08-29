@@ -1,6 +1,4 @@
-use std::{env, sync::Arc};
-
-use crate::{lsp::LspCommand, tsc::TscCommand};
+use crate::{check::CheckCommand, lsp::LspCommand, tsc::TscCommand};
 use anyhow::Error;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::{
@@ -9,6 +7,7 @@ use stc_ts_file_analyzer::{
 };
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
+use std::{env, path::PathBuf, sync::Arc};
 use structopt::StructOpt;
 use swc_common::{
     errors::{ColorConfig, Handler},
@@ -17,6 +16,7 @@ use swc_common::{
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::TsConfig;
 
+mod check;
 mod lsp;
 mod tsc;
 
@@ -28,6 +28,7 @@ mod tsc;
     rename_all = "camel"
 )]
 enum Command {
+    Check(CheckCommand),
     /// Compatibillity layer for `tsc` cli.
     Tsc(TscCommand),
     Lsp(LspCommand),
@@ -54,7 +55,7 @@ async fn main() -> Result<(), Error> {
     ));
 
     match command {
-        Command::Tsc(c) => {
+        Command::Check(cmd) => {
             let mut checker = Checker::new(
                 cm.clone(),
                 handler.clone(),
@@ -68,6 +69,18 @@ async fn main() -> Result<(), Error> {
                 None,
                 Arc::new(NodeResolver),
             );
+
+            let path = Arc::new(PathBuf::from(cmd.file));
+
+            checker.check(path);
+
+            for err in checker.take_errors() {
+                err.emit(&handler);
+            }
+        }
+
+        Command::Tsc(cmd) => {
+            todo!("tsc")
         }
         Command::Lsp(c) => c.run().await,
     }
