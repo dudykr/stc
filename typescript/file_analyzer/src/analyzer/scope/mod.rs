@@ -2129,7 +2129,7 @@ impl Expander<'_, '_, '_> {
         Ok(Some(Type::any(span)))
     }
 
-    #[instrument(name = "Expander.expandP_ref", skip(self, r, was_top_level))]
+    #[instrument(name = "Expander.expand_ref", skip(self, r, was_top_level))]
     fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> ValidationResult<Option<Type>> {
         let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
 
