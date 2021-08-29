@@ -281,7 +281,7 @@ impl Checker {
 
                 let dur = Instant::now() - start;
                 if !did_work {
-                    eprintln!("[Timing] Waited for {}: {:?}", path.display(), dur);
+                    log::warn!("Waited for {}: {:?}", path.display(), dur);
                 }
 
                 res
