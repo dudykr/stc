@@ -16,8 +16,20 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Spanned, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
+use tracing::instrument;
 
 impl Analyzer<'_, '_> {
+    #[instrument(skip(
+        self,
+        data,
+        opts,
+        l_type_params,
+        l_params,
+        l_ret_ty,
+        r_type_params,
+        r_params,
+        r_ret_ty
+    ))]
     pub(crate) fn assign_to_fn_like(
         &mut self,
         data: &mut AssignData,
