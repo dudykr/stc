@@ -569,14 +569,17 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                     .pretty()
                     .finish();
 
-                // Create a tracing subscriber with the configured tracer
-                let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
-
-                let collector = log_sub.with(telemetry);
-
                 let start = Instant::now();
 
-                let _guard = tracing::subscriber::set_default(collector);
+                let _guard = if cfg!(debug_assertions) {
+                    tracing::subscriber::set_default(log_sub)
+                } else {
+                    // Create a tracing subscriber with the configured tracer
+                    let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+
+                    let collector = log_sub.with(telemetry);
+                    tracing::subscriber::set_default(collector)
+                };
                 checker.check(Arc::new(file_name.into()));
 
                 let end = Instant::now();
