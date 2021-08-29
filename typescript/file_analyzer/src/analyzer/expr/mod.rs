@@ -3399,6 +3399,12 @@ impl Analyzer<'_, '_> {
 
         let name: Option<Name> = expr.try_into().ok();
 
+        if let Some(name) = &name {
+            if let Some(ty) = self.scope.facts.vars.get(name).cloned() {
+                return Ok(ty);
+            }
+        }
+
         let mut errors = Errors::default();
 
         let mut is_obj_opt_chain = false;
