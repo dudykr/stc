@@ -3,4 +3,6 @@ set -eu
 
 cargo install --path .
 
-(cd stc-lab/rxjs && stc)
+export LD_LIBRARY_PATH="$(rustc --print sysroot)/lib"
+
+(cd stc-lab/rxjs && stc tsc)
