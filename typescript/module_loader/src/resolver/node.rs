@@ -56,7 +56,7 @@ impl NodeResolver {
         // 1. If X/package.json is a file, use it.
         let pkg_path = path.join("package.json");
         if pkg_path.is_file() {
-            let main = self.resolve_package_main(&pkg_path);
+            let main = self.resolve_using_package_json(&pkg_path);
             if main.is_ok() {
                 return main;
             }
@@ -67,7 +67,7 @@ impl NodeResolver {
     }
 
     /// Resolve using the package.json "main" key.
-    fn resolve_package_main(&self, pkg_path: &PathBuf) -> Result<PathBuf, Error> {
+    fn resolve_using_package_json(&self, pkg_path: &PathBuf) -> Result<PathBuf, Error> {
         // TODO how to not always initialise this here?
         let root = PathBuf::from("/");
         let pkg_dir = pkg_path.parent().unwrap_or(&root);

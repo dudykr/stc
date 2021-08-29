@@ -18,6 +18,7 @@ impl Checker {
         let result = NodeResolver
             .resolve_as_file(&dir)
             .or_else(|_| NodeResolver.resolve_as_directory(&dir));
+
         match result {
             Ok(entry) => {
                 let entry = Arc::new(entry);
@@ -66,8 +67,19 @@ impl Checker {
     /// - https://www.typescriptlang.org/tsconfig#typeRoots
     /// - https://www.typescriptlang.org/tsconfig#types
     pub fn load_typings(&self, _type_roots: Option<&[PathBuf]>, types: Option<&[String]>) {
-        let dir =
+        let cur_dir =
             env::current_dir().expect("failed to get current directory which is required to load typing packages");
-        self.load_typings_from_dir(&dir, types)
+
+        let mut dirs = vec![];
+
+        let mut cur = Some(&*cur_dir);
+        while let Some(c) = cur {
+            dirs.push(c.to_path_buf());
+            cur = c.parent();
+        }
+
+        dirs.into_par_iter().for_each(|dir| {
+            self.load_typings_from_dir(&dir, types);
+        });
     }
 }
