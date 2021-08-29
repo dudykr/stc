@@ -70,6 +70,18 @@ async fn main() -> Result<(), Error> {
 
     match command {
         Command::Check(cmd) => {
+            let libs = {
+                let start = Instant::now();
+
+                let libs = Lib::load(&env::var("STC_LIBS").unwrap_or("es5".into()));
+
+                let end = Instant::now();
+
+                log::info!("Loading builtin libraries took {:?}", end - start);
+
+                libs
+            };
+
             let mut checker = Checker::new(
                 cm.clone(),
                 handler.clone(),
@@ -77,7 +89,7 @@ async fn main() -> Result<(), Error> {
                     Rule { ..Default::default() },
                     EsVersion::latest(),
                     ModuleConfig::None,
-                    &Lib::load(&env::var("STC_LIBS").unwrap_or("es5".into())),
+                    &libs,
                 ),
                 TsConfig { ..Default::default() },
                 None,
@@ -88,8 +100,15 @@ async fn main() -> Result<(), Error> {
 
             checker.check(path);
 
-            for err in checker.take_errors() {
-                err.emit(&handler);
+            {
+                let start = Instant::now();
+                for err in checker.take_errors() {
+                    err.emit(&handler);
+                }
+
+                let end = Instant::now();
+
+                log::info!("Error reporting took {:?}", end - start);
             }
         }
 
