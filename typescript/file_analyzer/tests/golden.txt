@@ -156,6 +156,7 @@ tests/pass/exprs/typeAssertion/8.ts
 tests/pass/exprs/typeAssertion/9.ts
 tests/pass/exprs/unary/typeof/simple.ts
 tests/pass/exprs/unary/typeof/typeGuard/call/1.ts
+tests/pass/facts/deep/equality/1.ts
 tests/pass/fn/generator/infer/1.ts
 tests/pass/fn/overloading/union-1.ts
 tests/pass/fn/returnType/inference/1.ts
@@ -173,6 +174,7 @@ tests/pass/types/builtin/extension/simple-1.ts
 tests/pass/types/conditional/conditionalTypes1/1.ts
 tests/pass/types/conditional/conditionalTypes1/3.ts
 tests/pass/types/conditional/conditionalTypes1/4.ts
+tests/pass/types/conditional/conditionalTypes1/8.ts
 tests/pass/types/enums/controlFlow/if-lit-1.ts
 tests/pass/types/enums/controlFlow/switch-lit-1.ts
 tests/pass/types/enums/object/entries.ts
