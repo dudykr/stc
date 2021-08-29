@@ -75,8 +75,9 @@ fn print_matched_errors() -> bool {
     !env::var("DONT_PRINT_MATCHED").map(|s| s == "1").unwrap_or(false)
 }
 
-fn record_time(time: Duration) {
+fn record_time(line_count: usize, time: Duration) {
     static TOTAL: Lazy<Mutex<Duration>> = Lazy::new(|| Default::default());
+    static LINES: Lazy<Mutex<usize>> = Lazy::new(|| Default::default());
 
     if cfg!(debug_assertions) {
         return;
@@ -87,8 +88,25 @@ fn record_time(time: Duration) {
         *guard += time;
         *guard
     };
+    let line_count = {
+        let mut guard = LINES.lock();
+        *guard += line_count;
+        *guard
+    };
 
-    let content = format!("{:#?}", time);
+    let content = format!(
+        "{:#?}",
+        Timings {
+            lines: line_count,
+            dur: time
+        }
+    );
+
+    #[derive(Debug)]
+    struct Timings {
+        lines: usize,
+        dur: Duration,
+    }
 
     // If we are testing everything, update stats file.
     if is_all_test_enabled() {
@@ -584,7 +602,12 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         mem::forget(stat_guard);
 
         if !cfg!(debug_assertions) {
-            record_time(time);
+            let line_cnt = {
+                let content = fs::read_to_string(&file_name).unwrap();
+
+                content.lines().count()
+            };
+            record_time(line_cnt, time);
 
             // if time > Duration::new(0, 500_000_000) {
             //     let _ = fs::write(file_name.with_extension("timings.txt"),
