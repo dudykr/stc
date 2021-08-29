@@ -3,6 +3,7 @@ set -eu
 
 cargo install --offline --path .
 
+export RUST_LOG=debug
 export LD_LIBRARY_PATH="$(rustc --print sysroot)/lib"
 # export RUST_BACKTRACE=1
 
