@@ -42,8 +42,6 @@ tracing = {version = "0.1.26", features = ["release_max_level_trace"]}
 [dev-dependencies]
 anyhow = "1.0.37"
 ignore = "0.4.17"
-opentelemetry = "0.16.0"
-opentelemetry-jaeger = "0.15.0"
 serde = {version = "1.0.118", features = ["derive"]}
 serde_json = "1.0.61"
 stc_testing = {path = "../../testing"}
@@ -52,6 +50,4 @@ swc_ecma_codegen = "0.66.1"
 swc_ecma_utils = "0.41.0"
 testing = "0.12.0"
 testing_macros = "0.1.1"
-tracing-opentelemetry = "0.15.0"
-tracing-subscriber = "0.2.19"
 walkdir = "2.3.1"

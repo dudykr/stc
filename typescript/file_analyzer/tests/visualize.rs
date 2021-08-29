@@ -6,7 +6,7 @@
 
 use once_cell::sync::Lazy;
 use rnode::{NodeIdGenerator, RNode};
-use stc_testing::load_txt;
+use stc_testing::{load_txt, logger};
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_errors::{debug::debugger::Debugger, Error};
@@ -29,7 +29,6 @@ use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use testing::NormalizedOutput;
-use tracing::Level;
 
 fn should_run(input: &Path) -> bool {
     static GOLDENS: Lazy<Vec<String>> = Lazy::new(|| load_txt("tests/golden.txt"));
@@ -145,14 +144,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
                         },
                     );
 
-                    let log_sub = tracing_subscriber::FmtSubscriber::builder()
-                        .without_time()
-                        .with_target(false)
-                        .with_ansi(true)
-                        .with_test_writer()
-                        .with_max_level(Level::TRACE)
-                        .pretty()
-                        .finish();
+                    let log_sub = logger();
 
                     let _guard = tracing::subscriber::set_default(log_sub);
 

@@ -2,6 +2,7 @@
 
 use itertools::Itertools;
 use rnode::{NodeIdGenerator, RNode, VisitWith};
+use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::{
@@ -87,15 +88,7 @@ fn validate(input: &Path) -> Vec<StcError> {
 
             {
                 // Don't print logs from builtin modules.
-                let _tracing = tracing::subscriber::set_default(
-                    tracing_subscriber::FmtSubscriber::builder()
-                        .without_time()
-                        .with_target(false)
-                        .with_max_level(tracing::Level::TRACE)
-                        .with_ansi(true)
-                        .with_test_writer()
-                        .finish(),
-                );
+                let _tracing = tracing::subscriber::set_default(logger());
 
                 let mut analyzer = Analyzer::root(env.clone(), cm.clone(), box &mut storage, &NoopLoader, None);
                 module.visit_with(&mut analyzer);
