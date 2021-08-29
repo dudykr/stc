@@ -15,7 +15,7 @@ use swc_atoms::JsWord;
 use swc_common::{comments::Comments, SourceMap};
 use swc_ecma_ast::Module;
 use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};
-use tracing::error;
+use tracing::{error, info};
 
 mod deps;
 pub mod resolver;
@@ -135,8 +135,8 @@ where
         let (_, id) = self.id_generator.generate(path);
         self.paths.insert(id, path.clone());
 
-        let res = self.loaded.insert(id, loaded.module);
-        assert_eq!(res, None, "duplicate?");
+        let _res = self.loaded.insert(id, loaded.module);
+        // assert_eq!(res, None, "duplicate?");
 
         let dep_module_ids = loaded
             .deps
@@ -190,7 +190,9 @@ where
     fn load(&self, path: &Arc<PathBuf>) -> Result<Option<LoadResult>, Error> {
         let (new, module_id) = self.id_generator.generate(path);
 
-        if !new || self.loaded.contains_key(&module_id) {
+        eprintln!("Loading {}: {:?}", path.display(), new);
+
+        if self.loaded.contains_key(&module_id) {
             return Ok(None);
         }
         let fm = self.cm.load_file(&path)?;
