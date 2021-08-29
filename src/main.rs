@@ -10,7 +10,7 @@ use stc_ts_type_checker::Checker;
 use std::{env, path::PathBuf, sync::Arc};
 use structopt::StructOpt;
 use swc_common::{
-    errors::{ColorConfig, Handler},
+    errors::{ColorConfig, EmitterWriter, Handler},
     SourceMap,
 };
 use swc_ecma_ast::EsVersion;
@@ -48,12 +48,15 @@ async fn main() -> Result<(), Error> {
     let command = Command::from_args();
 
     let cm = Arc::new(SourceMap::default());
-    let handler = Arc::new(Handler::with_tty_emitter(
-        ColorConfig::Always,
-        true,
-        false,
-        Some(cm.clone()),
-    ));
+    let handler = {
+        let emitter = Box::new(EmitterWriter::stderr(
+            ColorConfig::Never,
+            Some(cm.clone()),
+            false,
+            false,
+        ));
+        Arc::new(Handler::with_emitter(true, false, emitter))
+    };
 
     match command {
         Command::Check(cmd) => {
