@@ -280,7 +280,7 @@ impl Checker {
                     .clone();
 
                 let dur = Instant::now() - start;
-                if did_work {
+                if !did_work {
                     eprintln!("[Timing] Waited for {}: {:?}", path.display(), dur);
                 }
 
