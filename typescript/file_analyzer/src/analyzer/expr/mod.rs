@@ -3397,6 +3397,8 @@ impl Analyzer<'_, '_> {
             ..
         } = *expr;
 
+        let name: Option<Name> = expr.try_into().ok();
+
         let mut errors = Errors::default();
 
         let mut is_obj_opt_chain = false;
@@ -3474,7 +3476,6 @@ impl Analyzer<'_, '_> {
             .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var, Default::default())
             .context("tried to access property of an object to calculate type of a member expression")?;
 
-        let name: Option<Name> = expr.try_into().ok();
         if !self.is_builtin {
             if let Some(name) = name {
                 ty = self.apply_type_facts(&name, ty);
