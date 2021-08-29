@@ -40,6 +40,7 @@ async fn main() -> Result<(), Error> {
         .with_target(false)
         .with_ansi(true)
         .without_time()
+        .pretty()
         .finish();
 
     tracing::subscriber::set_global_default(sub).unwrap();
