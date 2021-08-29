@@ -30,6 +30,8 @@ use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use tracing::{info, warn};
 
+mod typings;
+
 /// Onc instance per swc::Compiler
 pub struct Checker {
     cm: Arc<SourceMap>,
