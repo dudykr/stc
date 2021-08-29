@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -eu
 
-cargo install --debug --offline --path .
+cargo install --offline --path .
 
 export LD_LIBRARY_PATH="$(rustc --print sysroot)/lib"
-export RUST_BACKTRACE=1
+# export RUST_BACKTRACE=1
 
 # The type checker is buggy.
 #
@@ -15,4 +15,4 @@ export RUST_BACKTRACE=1
 # (cd stc-lab/ant-design-mobile && stc check src/index.ts)
 
 
-(cd stc-lab/jest/packages/jest-cli && stc check src/index.ts)
+(cd stc-lab/jest/packages/jest-cli && time stc check src/index.ts)

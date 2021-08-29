@@ -118,7 +118,12 @@ impl Checker {
             let end = Instant::now();
             eprintln!("Loading `{}` (and deps) took {:?}", entry.display(), end - start);
 
+            let start = Instant::now();
+
             self.analyze_module(None, entry.clone());
+
+            let end = Instant::now();
+            eprintln!("Analyzing `{}` (and deps) took {:?}", entry.display(), end - start);
 
             id
         })
