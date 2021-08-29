@@ -2208,6 +2208,7 @@ dependencies = [
  "opentelemetry",
  "opentelemetry-jaeger",
  "parking_lot 0.11.1",
+ "rayon",
  "rnode",
  "serde",
  "serde_json",
