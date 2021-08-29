@@ -80,7 +80,7 @@ async fn main() -> Result<(), Error> {
             }
         }
 
-        Command::Tsc(cmd) => {
+        Command::Tsc(..) => {
             todo!("tsc")
         }
         Command::Lsp(c) => c.run().await,
