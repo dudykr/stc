@@ -11,7 +11,10 @@ interface B {
 export declare const foo: { obj: { obj2: A | B } };
 
 
+function useA(a: A) {
+}
+
 if (foo.obj.obj2.type === 'a') {
-    const a: 'a' = foo.obj.obj2.type;
+    useA(foo.obj.obj2)
 }
 
