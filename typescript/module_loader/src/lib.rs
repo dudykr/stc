@@ -15,7 +15,7 @@ use swc_atoms::JsWord;
 use swc_common::{comments::Comments, SourceMap};
 use swc_ecma_ast::Module;
 use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};
-use tracing::{error, info};
+use tracing::error;
 
 mod deps;
 pub mod resolver;
