@@ -188,13 +188,14 @@ where
     ///
     /// Note that this methods does not modify `self.loaded`.
     fn load(&self, path: &Arc<PathBuf>) -> Result<Option<LoadResult>, Error> {
-        let (new, module_id) = self.id_generator.generate(path);
-
-        log::debug!("Loading {}: {:?}", path.display(), new);
+        let (_new, module_id) = self.id_generator.generate(path);
 
         if self.loaded.contains_key(&module_id) {
             return Ok(None);
         }
+
+        log::debug!("Loading {}", path.display());
+
         let fm = self.cm.load_file(&path)?;
         let lexer = Lexer::new(
             Syntax::Typescript(TsConfig {
