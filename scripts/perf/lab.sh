@@ -4,6 +4,7 @@ set -eu
 cargo install --debug --offline --path .
 
 export LD_LIBRARY_PATH="$(rustc --print sysroot)/lib"
+export RUST_BACKTRACE=1
 
 # The type checker is buggy.
 #

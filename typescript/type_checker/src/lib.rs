@@ -278,7 +278,10 @@ impl Checker {
             let start = Instant::now();
 
             let mut node_id_gen = NodeIdGenerator::default();
-            let mut module = self.module_graph.clone_module(id).unwrap();
+            let mut module = self
+                .module_graph
+                .clone_module(id)
+                .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", id, path.display()));
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
             let mut module = RModule::from_orig(&mut node_id_gen, module);
 
