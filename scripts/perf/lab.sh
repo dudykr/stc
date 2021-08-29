@@ -5,4 +5,4 @@ cargo install --path .
 
 export LD_LIBRARY_PATH="$(rustc --print sysroot)/lib"
 
-(cd stc-lab/rxjs && stc tsc)
+(cd stc-lab/rxjs && stc check src/index.ts)
