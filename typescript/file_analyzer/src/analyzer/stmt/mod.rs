@@ -154,7 +154,9 @@ impl Analyzer<'_, '_> {
             // Verify parent interface
             let res: Result<_, _> = try {
                 let type_args = try_opt!(parent.type_args.validate_with(self));
-                self.type_of_ts_entity_name(parent.span, self.ctx.module_id, &parent.expr, type_args.as_ref())?;
+                let span = parent.span;
+
+                self.report_error_for_unresolve_type(span, &parent.expr, type_args.as_ref())?;
             };
 
             res.report(&mut self.storage);
