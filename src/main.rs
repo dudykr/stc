@@ -36,6 +36,8 @@ enum Command {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    env_logger::init();
+
     let sub = tracing_subscriber::FmtSubscriber::builder()
         .with_target(false)
         .with_ansi(true)

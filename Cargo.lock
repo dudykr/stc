@@ -434,7 +434,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "44533bbbb3bb3c1fa17d9f2e4e38bbbaf8396ba82193c4cb1b6445d711445d36"
 dependencies = [
  "atty",
- "humantime",
+ "humantime 1.3.0",
+ "log",
+ "regex",
+ "termcolor",
+]
+
+[[package]]
+name = "env_logger"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b2cf0344971ee6c64c31be0d530793fba457d322dfec2810c453d0ef228f9c3"
+dependencies = [
+ "atty",
+ "humantime 2.1.0",
  "log",
  "regex",
  "termcolor",
@@ -674,6 +687,12 @@ checksum = "df004cfca50ef23c36850aaaa59ad52cc70d0e90243c3c7737a4dd32dc7a3c4f"
 dependencies = [
  "quick-error",
 ]
+
+[[package]]
+name = "humantime"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "ident_case"
@@ -1860,6 +1879,7 @@ name = "stc"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "env_logger 0.9.0",
  "lspower",
  "stc_ts_builtin_types",
  "stc_ts_file_analyzer",
@@ -2181,6 +2201,7 @@ dependencies = [
  "dashmap 3.11.10",
  "fxhash",
  "ignore",
+ "log",
  "once_cell",
  "opentelemetry",
  "opentelemetry-jaeger",
@@ -2630,7 +2651,7 @@ checksum = "14c1ecb819cc019f96a0d1f268e080588c47eab4cc804d8dadac52e34f264430"
 dependencies = [
  "ansi_term 0.12.1",
  "difference",
- "env_logger",
+ "env_logger 0.7.1",
  "log",
  "once_cell",
  "pretty_assertions",

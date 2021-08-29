@@ -14,6 +14,7 @@ perf = ["tracing/release_max_level_off"]
 [dependencies]
 dashmap = {version = "3", features = ["raw-api"]}
 fxhash = "0.2.1"
+log = "0.4.14"
 once_cell = "1.5.2"
 parking_lot = "0.11.1"
 rnode = {path = "../../rnode"}
