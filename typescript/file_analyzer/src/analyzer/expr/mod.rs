@@ -3222,6 +3222,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[instrument(skip(self, span, ctxt, n, type_args))]
     pub(crate) fn type_of_ts_entity_name(
         &mut self,
         span: Span,
