@@ -3400,7 +3400,7 @@ impl Analyzer<'_, '_> {
         let name: Option<Name> = expr.try_into().ok();
 
         if let Some(name) = &name {
-            if let Some(ty) = self.scope.facts.vars.get(name).cloned() {
+            if let Some(ty) = self.scope.get_type_from_name(name) {
                 return Ok(ty);
             }
         }

@@ -494,6 +494,14 @@ impl Scope<'_> {
         self.vars.insert(name, v);
     }
 
+    pub fn get_type_from_name(&self, name: &Name) -> Option<Type> {
+        if let Some(ty) = self.facts.vars.get(name) {
+            return Some(ty.clone());
+        }
+
+        self.parent?.get_type_from_name(name)
+    }
+
     /// This method does **not** search for parent scope.
     pub fn get_var_mut(&mut self, name: &Id) -> Option<&mut VarInfo> {
         self.vars.get_mut(name)
