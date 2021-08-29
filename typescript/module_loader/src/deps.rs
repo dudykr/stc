@@ -30,4 +30,8 @@ impl Visit for DepFinder {
             self.files.push(src.value.clone());
         }
     }
+
+    fn visit_ts_external_module_ref(&mut self, import: &TsExternalModuleRef, _: &dyn Node) {
+        self.files.push(import.expr.value.clone());
+    }
 }
