@@ -70,7 +70,11 @@ macro_rules! try_cache {
         if let Some(v) = cached {
             Ok(v)
         } else {
-            let v = $default_op?;
+            let v = $default_op;
+            let v = match v {
+                Ok(v) => v,
+                Err(err) => return Err(err),
+            };
             let v = $cache.insert(key, v);
 
             Ok(v)
