@@ -70,7 +70,7 @@ macro_rules! try_cache {
         if let Some(v) = cached {
             v
         } else {
-            let v = $default_op;
+            let v: Result<_, _> = (|| $default_op)();
             let v = match v {
                 Ok(v) => v,
                 Err(err) => return Err(err),
