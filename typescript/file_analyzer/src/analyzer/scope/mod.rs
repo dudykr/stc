@@ -1066,6 +1066,7 @@ impl Analyzer<'_, '_> {
         None
     }
 
+    #[instrument(skip(self))]
     pub fn find_type(&self, target: ModuleId, name: &Id) -> ValidationResult<Option<ItemRef<Type>>> {
         if target == self.ctx.module_id || target.is_builtin() {
             if let Some(v) = self.find_local_type(name) {
