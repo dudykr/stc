@@ -1803,7 +1803,7 @@ impl<'a> Scope<'a> {
 //
 /// pub expand_params: bool,
 /// pub expand_return_type: bool,
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, TypeEq)]
 pub(crate) struct ExpandOpts {
     /// TODO: Document this.
     pub full: bool,

@@ -1,7 +1,9 @@
+use swc_common::TypeEq;
+
 #[derive(Debug)]
 pub struct CacheMap<K, V>
 where
-    K: PartialEq,
+    K: TypeEq,
     V: Freeze,
 {
     data: Vec<(K, V)>,
@@ -9,7 +11,7 @@ where
 
 impl<K, V> Default for CacheMap<K, V>
 where
-    K: PartialEq,
+    K: TypeEq,
     V: Freeze,
 {
     fn default() -> Self {
@@ -21,12 +23,12 @@ where
 
 impl<K, V> CacheMap<K, V>
 where
-    K: PartialEq,
+    K: TypeEq,
     V: Freeze,
 {
     pub fn get(&self, key: &K) -> Option<V> {
         for (k, v) in &self.data {
-            if *k == *key {
+            if k.type_eq(key) {
                 return Some(v.clone());
             }
         }
