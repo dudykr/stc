@@ -2316,6 +2316,7 @@ dependencies = [
  "mimalloc",
  "once_cell",
  "swc_common",
+ "tracing",
 ]
 
 [[package]]
