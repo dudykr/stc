@@ -21,7 +21,7 @@ use stc_ts_types::{
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
-use std::{borrow::Cow, collections::HashMap, time::Instant};
+use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
@@ -66,8 +66,6 @@ impl Analyzer<'_, '_> {
         ty: Cow<'a, Type>,
         mut opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
-        let start = Instant::now();
-
         let res = (|| {
             ty.assert_valid();
 
