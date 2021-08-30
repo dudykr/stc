@@ -21,15 +21,11 @@ use stc_ts_types::{
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
-use std::{
-    borrow::Cow,
-    collections::HashMap,
-    time::{Duration, Instant},
-};
+use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{debug, error, instrument, trace};
+use tracing::{debug, error, instrument};
 
 mod index_signature;
 mod keyof;
@@ -460,12 +456,6 @@ impl Analyzer<'_, '_> {
 
             Ok(ty)
         })();
-
-        let end = Instant::now();
-        let dur = end - start;
-        if dur > Duration::from_micros(100) {
-            trace!(kind = "perf", op = "normalize", "Normalized a type. (time = {:?})", dur);
-        }
 
         res
     }
