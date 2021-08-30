@@ -1928,6 +1928,7 @@ impl Type {
 
     /// Make cloning cheap.
     #[inline]
+    #[instrument(skip(self))]
     pub fn make_cheap(&mut self) {
         self.visit_mut_with(&mut CheapClone);
     }
