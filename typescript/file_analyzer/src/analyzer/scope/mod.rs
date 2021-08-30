@@ -1801,13 +1801,13 @@ impl<'a> Scope<'a> {
 //
 /// pub expand_params: bool,
 /// pub expand_return_type: bool,
-#[derive(Debug, Clone, Default)]
-pub(crate) struct ExpandOpts<'a> {
+#[derive(Debug, Clone, Default, PartialEq)]
+pub(crate) struct ExpandOpts {
     /// TODO: Document this.
     pub full: bool,
     pub expand_union: bool,
 
-    pub generic: ExpandGenericOpts<'a>,
+    pub generic: ExpandGenericOpts,
 }
 
 #[derive(Debug, Clone)]
@@ -1881,7 +1881,7 @@ struct Expander<'a, 'b, 'c> {
     expand_union: bool,
     /// Should we expand top level references?
     expand_top_level: bool,
-    opts: ExpandOpts<'a>,
+    opts: ExpandOpts,
 }
 
 impl Expander<'_, '_, '_> {

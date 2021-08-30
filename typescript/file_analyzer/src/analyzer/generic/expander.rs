@@ -10,7 +10,7 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::{type_param::finder::TypeParamUsageFinder, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    ComputedKey, Function, Id, IdCtx, Interface, Key, MethodSignature, TypeParam, TypeParamDecl, TypeParamInstantiation,
+    ComputedKey, Function, Id, IdCtx, Interface, Key, TypeParam, TypeParamDecl, TypeParamInstantiation,
 };
 use stc_utils::{error::context, ext::SpanExt, stack};
 use std::time::{Duration, Instant};
@@ -20,7 +20,7 @@ use swc_ecma_ast::*;
 use tracing::{debug, error, info, instrument, warn};
 
 /// All fields default to false.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub(crate) struct ExtendsOpts {
     /// If true, different classes are treated as not extending each other even
     /// though those are empty.
@@ -405,7 +405,7 @@ pub(crate) struct GenericExpander<'a, 'b, 'c, 'd> {
     /// Expand fully?
     fully: bool,
     dejavu: FxHashSet<Id>,
-    opts: ExpandGenericOpts<'d>,
+    opts: ExpandGenericOpts,
 }
 
 impl GenericExpander<'_, '_, '_, '_> {
@@ -925,30 +925,6 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
         debug!(op = "generic:expand", "Expanded {} => {}", start, expanded,);
 
         ty
-    }
-}
-
-impl Fold<PropertySignature> for GenericExpander<'_, '_, '_, '_> {
-    fn fold(&mut self, v: PropertySignature) -> PropertySignature {
-        if !self.opts.props.is_empty() {
-            if self.opts.props.iter().all(|enabled| !enabled.type_eq(&v.key)) {
-                return v;
-            }
-        }
-
-        v.fold_children_with(self)
-    }
-}
-
-impl Fold<MethodSignature> for GenericExpander<'_, '_, '_, '_> {
-    fn fold(&mut self, v: MethodSignature) -> MethodSignature {
-        if !self.opts.props.is_empty() {
-            if self.opts.props.iter().all(|enabled| !enabled.type_eq(&v.key)) {
-                return v;
-            }
-        }
-
-        v.fold_children_with(self)
     }
 }
 

@@ -2548,7 +2548,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let expand_opts = ExpandOpts {
-                    generic: ExpandGenericOpts { props: &[prop.clone()] },
+                    generic: ExpandGenericOpts {},
                     ..Default::default()
                 };
 
