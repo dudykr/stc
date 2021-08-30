@@ -6,6 +6,7 @@ use std::{
     env,
 };
 
+pub mod cache;
 pub mod error;
 pub mod ext;
 pub mod panic_context;
