@@ -6,6 +6,7 @@ use stc_ts_ast_rnode::{RBool, RNumber, RStr, RTsKeywordType, RTsLit, RTsLitType}
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 pub(crate) use stc_ts_types::*;
 use swc_ecma_ast::TsKeywordTypeKind;
+use tracing::instrument;
 
 mod generalize;
 pub mod type_facts;
@@ -141,10 +142,12 @@ impl Fold<TypeLit> for LitGeneralizer {
 }
 
 pub trait TypeExt: Into<Type> {
+    #[instrument(skip(self, marks))]
     fn generalize_lit(self, marks: Marks) -> Type {
         self.into().fold_with(&mut LitGeneralizer { marks }).fixed()
     }
 
+    #[instrument(skip(self))]
     fn generalize_tuple(self) -> Type {
         self.into().fold_with(&mut TupleToArray)
     }

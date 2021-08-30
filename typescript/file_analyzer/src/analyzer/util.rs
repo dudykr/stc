@@ -16,6 +16,7 @@ use stc_ts_types::{
 use std::iter::once;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::TsKeywordTypeKind;
+use tracing::instrument;
 use ty::TypeExt;
 
 impl Analyzer<'_, '_> {
@@ -31,6 +32,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// `span` and `callee` is used only for error reporting.
+    #[instrument(skip(self, span, callee, elements))]
     fn make_instance_from_type_elements(
         &mut self,
         span: Span,
@@ -59,6 +61,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO: Use Cow
+    #[instrument(skip(self, span, ty))]
     pub(super) fn make_instance_or_report(&mut self, span: Span, ty: &Type) -> Type {
         if span.is_dummy() {
             panic!("Cannot make an instance with dummy span")
@@ -80,6 +83,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO: Use Cow
+    #[instrument(skip(self, span, ty))]
     pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> ValidationResult {
         let ty = ty.normalize();
 

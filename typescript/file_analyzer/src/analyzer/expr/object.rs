@@ -21,7 +21,7 @@ use std::{borrow::Cow, iter::repeat, time::Instant};
 use swc_atoms::JsWord;
 use swc_common::{Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::debug;
+use tracing::{debug, instrument};
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -320,6 +320,7 @@ impl UnionNormalizer<'_, '_, '_> {
         u.types = new_types;
     }
 
+    #[instrument(skip(self, u))]
     fn normalize_keys(&self, u: &mut Union) {
         if u.types.len() <= 1 {
             return;
@@ -407,6 +408,7 @@ impl Analyzer<'_, '_> {
     ///
     /// Type of `a` in the code above is `{ a: number, b?: undefined } | {
     /// a:number, b: string }`.
+    #[instrument(skip(self, ty, preserve_specified))]
     pub(super) fn normalize_union(&mut self, ty: &mut Type, preserve_specified: bool) {
         let start = Instant::now();
         ty.visit_mut_with(&mut UnionNormalizer {
@@ -419,6 +421,7 @@ impl Analyzer<'_, '_> {
         debug!("Normlaized unions (time = {:?})", end - start);
     }
 
+    #[instrument(skip(self, ty, is_type_ann))]
     pub(crate) fn validate_type_literals(&mut self, ty: &Type, is_type_ann: bool) {
         match ty.normalize() {
             Type::Union(ty) => {
@@ -433,6 +436,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[instrument(skip(self, elems))]
     pub(crate) fn report_errors_for_mixed_optional_method_signatures(&mut self, elems: &[TypeElement]) {
         let mut keys: Vec<(&Key, bool)> = vec![];
         for elem in elems {
@@ -453,6 +457,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[instrument(skip(self, known_keys, to, prop, object_type))]
     fn append_prop_or_spread_to_type(
         &mut self,
         known_keys: &mut Vec<Key>,
@@ -515,6 +520,7 @@ impl Analyzer<'_, '_> {
     ///
     /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
     /// number } | { a: number, c: number }`
+    #[instrument(skip(self, to, rhs))]
     fn append_type(&mut self, to: Type, rhs: Type) -> ValidationResult<Type> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
@@ -607,6 +613,7 @@ impl Analyzer<'_, '_> {
         unimplemented!("append_type:\n{:?}\n{:?}", to, rhs)
     }
 
+    #[instrument(skip(self, to, rhs))]
     fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> ValidationResult {
         if to.is_any() || to.is_unknown() {
             return Ok(to);

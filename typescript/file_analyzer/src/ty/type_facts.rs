@@ -11,7 +11,7 @@ use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::debug;
+use tracing::{debug, instrument};
 
 impl Analyzer<'_, '_> {
     /// TODO: Note: This method preserves [Type::Ref] in some cases.
@@ -19,6 +19,7 @@ impl Analyzer<'_, '_> {
     /// Those are preserved if
     ///
     ///  - it's Promise<T>
+    #[instrument(skip(self, facts, ty))]
     pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
         if self.is_builtin {
             return ty;
@@ -122,6 +123,7 @@ struct TypeFactsHandler<'a, 'b, 'c> {
 }
 
 impl TypeFactsHandler<'_, '_, '_> {
+    #[instrument(skip(self, ty))]
     fn can_be_primitive(&mut self, ty: &Type) -> bool {
         let ty = if let Ok(ty) = self
             .analyzer

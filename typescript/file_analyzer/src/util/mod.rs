@@ -8,6 +8,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_types::{Id, InferType, Ref, TypeParam};
 use swc_common::{Mark, Span, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
+use tracing::instrument;
 
 pub(crate) mod dashmap;
 pub(crate) mod graph;
@@ -85,6 +86,7 @@ impl Visit<Type> for MarkFinder {
     }
 }
 
+#[instrument(skip(n, mark))]
 pub(crate) fn contains_mark<T>(n: &T, mark: Mark) -> bool
 where
     T: VisitWith<MarkFinder>,

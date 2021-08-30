@@ -682,6 +682,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[instrument(skip(self, span, ty))]
     pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type) -> ValidationResult<bool> {
         let ty = self
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())
@@ -718,6 +719,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
+    #[instrument(skip(self, ty))]
     pub(crate) fn expand_type_ann<'a>(&mut self, ty: Option<&'a Type>) -> ValidationResult<Option<Cow<'a, Type>>> {
         let ty = match ty {
             Some(v) => v,
@@ -729,6 +731,7 @@ impl Analyzer<'_, '_> {
         Ok(Some(ty))
     }
 
+    #[instrument(skip(self, def))]
     pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> ValidationResult<TypeLit> {
         let mut members = vec![];
 
@@ -785,6 +788,7 @@ impl Analyzer<'_, '_> {
 
     /// Exclude types from `ty` using type facts with key `name`, for the
     /// current scope.
+    #[instrument(skip(self, span, name, ty))]
     pub(crate) fn exclude_types_using_fact(&mut self, span: Span, name: &Name, ty: &mut Type) {
         debug_assert!(!span.is_dummy(), "exclude_types should not be called with a dummy span");
 
@@ -813,6 +817,7 @@ impl Analyzer<'_, '_> {
         debug!("[types/facts] Excluded types: {} => {}", before, after);
     }
 
+    #[instrument(skip(self, name, ty))]
     pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
         let type_facts = self.scope.get_type_facts(&name)
             | self
@@ -835,6 +840,7 @@ impl Analyzer<'_, '_> {
     /// ## excluded
     ///
     /// Memebers of base class.
+    #[instrument(skip(self, excluded, ty))]
     pub(crate) fn collect_class_members(
         &mut self,
         excluded: &[&ClassMember],
