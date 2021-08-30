@@ -38,7 +38,7 @@ use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, Method, ModuleId, Operator,
     OptionalType, PropertySignature, QueryExpr, QueryType, StaticThis,
 };
-use stc_utils::{error::context, stack};
+use stc_utils::{error::context, stack, try_cache};
 use std::{
     borrow::Cow,
     collections::HashMap,
@@ -3224,6 +3224,21 @@ impl Analyzer<'_, '_> {
 
     #[instrument(skip(self, span, ctxt, n, type_args))]
     pub(crate) fn type_of_ts_entity_name(
+        &mut self,
+        span: Span,
+        ctxt: ModuleId,
+        n: &RTsEntityName,
+        type_args: Option<&TypeParamInstantiation>,
+    ) -> ValidationResult {
+        try_cache!(
+            self.data.cache.ts_entity_name,
+            (ctxt, n.clone(), type_args.cloned()),
+            self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
+        )
+    }
+
+    #[instrument(skip(self, span, ctxt, n, type_args))]
+    fn type_of_ts_entity_name_inner(
         &mut self,
         span: Span,
         ctxt: ModuleId,
