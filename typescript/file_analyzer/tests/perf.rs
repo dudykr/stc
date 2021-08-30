@@ -1,7 +1,7 @@
 #![feature(box_syntax)]
 
 use rnode::{NodeIdGenerator, RNode, VisitWith};
-use stc_testing::init_logger;
+use stc_testing::init_tracing;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::{
@@ -20,7 +20,7 @@ use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 
-fn bench_lib(path: &Path) {
+fn profile_file(name: &str, path: &Path) {
     testing::run_test2(false, |cm, _handler| {
         let fm = cm.load_file(path).unwrap();
 
@@ -44,7 +44,7 @@ fn bench_lib(path: &Path) {
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         // Don't print logs from builtin modules.
-        let _guard = init_logger();
+        let _guard = init_tracing(format!("file/{}", name));
 
         let mut storage = Single {
             parent: None,
@@ -64,6 +64,9 @@ fn bench_lib(path: &Path) {
 }
 
 #[test]
-fn bench_csstypes() {
-    bench_lib(&PathBuf::new().join("node_modules").join("csstype").join("index.d.ts"));
+fn profile_csstypes() {
+    profile_file(
+        "csstype",
+        &PathBuf::new().join("node_modules").join("csstype").join("index.d.ts"),
+    );
 }
