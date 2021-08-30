@@ -228,7 +228,7 @@ impl Ctx {
 
 #[derive(Debug, Default)]
 struct TypeCache {
-    expand: CacheMap<(Span, Type, ExpandOpts), Type>,
+    expand: CacheMap<(Type, ExpandOpts), Type>,
 
     ts_entity_name: CacheMap<(ModuleId, RTsEntityName, Option<TypeParamInstantiation>), Type>,
 }

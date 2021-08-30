@@ -683,7 +683,7 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        Ok(try_cache!(self.data.cache.expand, (span, ty.clone(), opts), {
+        Ok(try_cache!(self.data.cache.expand, (ty.clone(), opts), {
             ty.assert_valid();
 
             let _ctx = context(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
