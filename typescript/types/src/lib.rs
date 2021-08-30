@@ -26,7 +26,7 @@ use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
     RTsKeywordType, RTsLit, RTsLitType, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
-use stc_utils::error::context;
+use stc_utils::{cache::Freeze, error::context};
 use stc_visit::{Visit, Visitable};
 use std::{
     borrow::Cow,
@@ -2070,5 +2070,11 @@ impl EqIgnoreSpan for Accessor {
 impl TypeEq for Accessor {
     fn type_eq(&self, _: &Self) -> bool {
         true
+    }
+}
+
+impl Freeze for Type {
+    fn make_clone_cheap(&mut self) {
+        self.make_cheap();
     }
 }
