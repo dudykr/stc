@@ -29,7 +29,7 @@ use stc_ts_errors::{
     Error,
 };
 use stc_ts_storage::{Builtin, Info, Storage};
-use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData, TypeParamInstantiation};
+use stc_ts_types::{Id, IdCtx, Mapped, ModuleId, ModuleTypeData, TypeParamInstantiation};
 use stc_utils::{cache::CacheMap, AHashMap, AHashSet};
 use std::{
     fmt::Debug,
@@ -228,6 +228,8 @@ impl Ctx {
 
 #[derive(Debug, Default)]
 struct TypeCache {
+    expand_mapped: CacheMap<Mapped, Option<Type>>,
+
     expand: CacheMap<(Type, ExpandOpts), Type>,
 
     ts_entity_name: CacheMap<(ModuleId, RTsEntityName, Option<TypeParamInstantiation>), Type>,
