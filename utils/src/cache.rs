@@ -68,7 +68,7 @@ macro_rules! try_cache {
         let cached = $cache.get(&key);
 
         if let Some(v) = cached {
-            Ok(v)
+            v
         } else {
             let v = $default_op;
             let v = match v {
@@ -77,7 +77,7 @@ macro_rules! try_cache {
             };
             let v = $cache.insert(key, v);
 
-            Ok(v)
+            v
         }
     }};
 }
