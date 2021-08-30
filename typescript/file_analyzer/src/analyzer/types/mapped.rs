@@ -10,7 +10,7 @@ use stc_ts_types::{
     Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, Mapped, Operator, PropertySignature, Type,
     TypeElement, TypeLit,
 };
-use std::{borrow::Cow, collections::HashMap, time::Instant};
+use std::{borrow::Cow, collections::HashMap};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsTypeOperatorOp};
 use tracing::{debug, error, instrument};
@@ -29,16 +29,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
         let orig = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
 
-        let start = Instant::now();
         let ty = self.expand_mapped_inner(span, m);
-        let end = Instant::now();
-
-        debug!(
-            kind = "perf",
-            op = "expand_mapped",
-            "expand_mapped (time = {:?})",
-            end - start
-        );
 
         let ty = ty?;
         if let Some(ty) = &ty {
