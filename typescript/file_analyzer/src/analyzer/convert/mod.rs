@@ -36,7 +36,7 @@ use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::warn;
+use tracing::{instrument, warn};
 
 mod interface;
 
@@ -978,6 +978,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
+    #[instrument(skip(self, elems))]
     fn report_error_for_duplicate_type_elements(&mut self, elems: &[TypeElement]) {
         if self.is_builtin {
             return;
@@ -1019,6 +1020,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[instrument(skip(self, params))]
     fn report_error_for_duplicate_params(&mut self, params: &[FnParam]) {
         if self.is_builtin {
             return;
@@ -1046,6 +1048,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
+    #[instrument(skip(self, i))]
     fn report_error_for_type_param_usages_in_static_members(&mut self, i: &RIdent) {
         let span = i.span;
         let id = i.into();
