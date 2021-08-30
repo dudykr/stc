@@ -683,7 +683,7 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        try_cache!(self.data.cache.expand, (span, ty.clone(), opts), {
+        Ok(try_cache!(self.data.cache.expand, (span, ty.clone(), opts), {
             ty.assert_valid();
 
             let _ctx = context(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
@@ -706,7 +706,7 @@ impl Analyzer<'_, '_> {
             debug!("[expander] expand: {} => {}", orig, new);
 
             Ok(ty)
-        })
+        }))
     }
 
     pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> ValidationResult {
