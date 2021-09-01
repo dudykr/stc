@@ -917,63 +917,76 @@ impl Analyzer<'_, '_> {
 
         let _ctx = error::context(format!("validate\nTsType: {:?}", ty));
 
-        let ty = match ty {
-            RTsType::TsThisType(this) => Type::This(this.clone()),
-            RTsType::TsLitType(ty) => {
-                match &ty.lit {
-                    RTsLit::Tpl(t) => return Ok(t.validate_with(self)?.into()),
-                    _ => {}
-                }
-                let mut ty = Type::Lit(ty.clone());
-                self.prevent_generalize(&mut ty);
-                ty
-            }
-            RTsType::TsKeywordType(ty) => {
-                if let TsKeywordTypeKind::TsIntrinsicKeyword = ty.kind {
-                    if !self.is_builtin {
-                        let span = ty.span;
-
-                        self.storage.report(Error::NoSuchType {
-                            span,
-                            name: Id::word("intrinsic".into()),
-                        });
-                        return Ok(Type::any(span.with_ctxt(SyntaxContext::empty())));
-                    }
-                }
-                Type::Keyword(ty.clone())
-            }
-            RTsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(self)?),
-            RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => {
-                Type::Union(u.validate_with(self)?).fixed()
-            }
-            RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(i)) => {
-                Type::Intersection(i.validate_with(self)?).fixed()
-            }
-            RTsType::TsArrayType(arr) => Type::Array(arr.validate_with(self)?),
-            RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(f)) => {
-                Type::Function(f.validate_with(self)?)
-            }
-            RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsConstructorType(c)) => {
-                Type::Constructor(c.validate_with(self)?)
-            }
-            RTsType::TsTypeLit(lit) => Type::TypeLit(lit.validate_with(self)?),
-            RTsType::TsConditionalType(cond) => Type::Conditional(cond.validate_with(self)?),
-            RTsType::TsMappedType(ty) => Type::Mapped(ty.validate_with(self)?),
-            RTsType::TsTypeOperator(ty) => Type::Operator(ty.validate_with(self)?),
-            RTsType::TsParenthesizedType(ty) => return ty.validate_with(self),
-            RTsType::TsTypeRef(ty) => ty.validate_with(self)?,
-            RTsType::TsTypeQuery(ty) => Type::Query(ty.validate_with(self)?),
-            RTsType::TsOptionalType(ty) => Type::Optional(ty.validate_with(self)?),
-            RTsType::TsRestType(ty) => Type::Rest(ty.validate_with(self)?),
-            RTsType::TsInferType(ty) => Type::Infer(ty.validate_with(self)?),
-            RTsType::TsIndexedAccessType(ty) => ty.validate_with(self)?,
-            RTsType::TsTypePredicate(ty) => Type::Predicate(ty.validate_with(self)?),
-            RTsType::TsImportType(ty) => Type::Import(ty.validate_with(self)?),
+        let is_topmost_type = !self.ctx.is_not_topmost_type;
+        let ctx = Ctx {
+            is_not_topmost_type: true,
+            ..self.ctx
         };
+        let ty = self.with_ctx(ctx).with(|a| {
+            let ty = match ty {
+                RTsType::TsThisType(this) => Type::This(this.clone()),
+                RTsType::TsLitType(ty) => {
+                    match &ty.lit {
+                        RTsLit::Tpl(t) => return Ok(t.validate_with(a)?.into()),
+                        _ => {}
+                    }
+                    let mut ty = Type::Lit(ty.clone());
+                    a.prevent_generalize(&mut ty);
+                    ty
+                }
+                RTsType::TsKeywordType(ty) => {
+                    if let TsKeywordTypeKind::TsIntrinsicKeyword = ty.kind {
+                        if !a.is_builtin {
+                            let span = ty.span;
 
-        ty.assert_valid();
+                            a.storage.report(Error::NoSuchType {
+                                span,
+                                name: Id::word("intrinsic".into()),
+                            });
+                            return Ok(Type::any(span.with_ctxt(SyntaxContext::empty())));
+                        }
+                    }
+                    Type::Keyword(ty.clone())
+                }
+                RTsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(a)?),
+                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => {
+                    Type::Union(u.validate_with(a)?).fixed()
+                }
+                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(i)) => {
+                    Type::Intersection(i.validate_with(a)?).fixed()
+                }
+                RTsType::TsArrayType(arr) => Type::Array(arr.validate_with(a)?),
+                RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(f)) => {
+                    Type::Function(f.validate_with(a)?)
+                }
+                RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsConstructorType(c)) => {
+                    Type::Constructor(c.validate_with(a)?)
+                }
+                RTsType::TsTypeLit(lit) => Type::TypeLit(lit.validate_with(a)?),
+                RTsType::TsConditionalType(cond) => Type::Conditional(cond.validate_with(a)?),
+                RTsType::TsMappedType(ty) => Type::Mapped(ty.validate_with(a)?),
+                RTsType::TsTypeOperator(ty) => Type::Operator(ty.validate_with(a)?),
+                RTsType::TsParenthesizedType(ty) => return ty.validate_with(a),
+                RTsType::TsTypeRef(ty) => ty.validate_with(a)?,
+                RTsType::TsTypeQuery(ty) => Type::Query(ty.validate_with(a)?),
+                RTsType::TsOptionalType(ty) => Type::Optional(ty.validate_with(a)?),
+                RTsType::TsRestType(ty) => Type::Rest(ty.validate_with(a)?),
+                RTsType::TsInferType(ty) => Type::Infer(ty.validate_with(a)?),
+                RTsType::TsIndexedAccessType(ty) => ty.validate_with(a)?,
+                RTsType::TsTypePredicate(ty) => Type::Predicate(ty.validate_with(a)?),
+                RTsType::TsImportType(ty) => Type::Import(ty.validate_with(a)?),
+            };
 
-        Ok(ty.cheap())
+            ty.assert_valid();
+
+            Ok(ty)
+        })?;
+
+        if is_topmost_type {
+            Ok(ty.cheap())
+        } else {
+            Ok(ty)
+        }
     }
 }
 

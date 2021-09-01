@@ -214,6 +214,9 @@ pub(crate) struct Ctx {
 
     /// Should be modified directly instead of using `with_ctx`.
     in_unreachable: bool,
+
+    /// `true` for top-level type annotations.
+    is_not_topmost_type: bool,
 }
 
 impl Ctx {
@@ -547,6 +550,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 allow_new_target: false,
                 disallow_suggesting_property_on_no_var: false,
                 in_unreachable: false,
+                is_not_topmost_type: false,
             },
             loader,
             is_builtin,
