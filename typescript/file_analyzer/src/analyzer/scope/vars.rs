@@ -22,7 +22,7 @@ use stc_utils::TryOpt;
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
-use tracing::debug;
+use tracing::{debug, instrument};
 
 /// The kind of binding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -68,6 +68,7 @@ impl Analyzer<'_, '_> {
     /// ## default
     ///
     /// The type of default value specified by an assignment pattern.
+    #[instrument(skip(self, pat, ty, actual, default, opts))]
     pub(crate) fn add_vars(
         &mut self,
         pat: &RPat,
@@ -615,6 +616,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[instrument(skip(self, span, ty, keys))]
     pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
         let ty = (|| -> ValidationResult<_> {
             let ty = self.normalize(

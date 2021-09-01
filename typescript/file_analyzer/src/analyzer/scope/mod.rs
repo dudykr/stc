@@ -1555,6 +1555,7 @@ impl Analyzer<'_, '_> {
     /// Check if `ty` stores infer type in it. **Note**: This mehods only checks
     /// for [Mark], and this method should be used with
     /// [crate::util::contains_infer_type] in most case.
+    #[instrument(skip(self, ty))]
     pub(crate) fn contains_infer_type<T>(&self, ty: &T) -> bool
     where
         T: VisitWith<MarkFinder>,

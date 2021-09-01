@@ -735,7 +735,9 @@ impl Analyzer<'_, '_> {
         }
 
         if !self.is_builtin {
-            warn!("Creating a ref from TsTypeRef: {:?}", t.type_name);
+            if !cfg!(feature = "profile") {
+                warn!("Creating a ref from TsTypeRef: {:?}", t.type_name);
+            }
 
             if !reported_type_not_found {
                 self.report_error_for_unresolve_type(t.span, &t.type_name, type_args.as_deref())
