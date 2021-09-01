@@ -1307,6 +1307,7 @@ impl Analyzer<'_, '_> {
         Ok(Type::Intrinsic(ty.clone()))
     }
 
+    #[instrument(skip(self, span, type_name, type_args))]
     pub(crate) fn report_error_for_unresolve_type(
         &mut self,
         span: Span,
