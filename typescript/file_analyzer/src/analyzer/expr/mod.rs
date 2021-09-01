@@ -3347,13 +3347,17 @@ impl Analyzer<'_, '_> {
                             Type::Union(ty) => {
                                 // TODO: Expand types
                                 if !self.is_builtin {
-                                    dbg!(&ty);
+                                    if cfg!(debug_assertions) {
+                                        dbg!(&ty);
+                                    }
                                 }
                             }
                             Type::Intersection(ty) => {
                                 // TODO: Expand types
                                 if !self.is_builtin {
-                                    dbg!(&ty);
+                                    if cfg!(debug_assertions) {
+                                        dbg!(&ty);
+                                    }
                                 }
                             }
                             Type::Operator(_) => {}
@@ -3364,7 +3368,9 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                warn!("Creating Type::Ref: {:?}", i);
+                if cfg!(debug_assertions) {
+                    warn!("Creating Type::Ref: {:?}", i);
+                }
 
                 Ok(Type::Ref(Ref {
                     span,

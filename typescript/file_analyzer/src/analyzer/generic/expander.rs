@@ -38,6 +38,7 @@ pub(crate) struct ExtendsOpts {
 
 /// Generic expander.
 impl Analyzer<'_, '_> {
+    #[instrument(skip(self, span, type_params, type_args))]
     pub(in super::super) fn instantiate_type_params_using_args(
         &mut self,
         span: Span,
