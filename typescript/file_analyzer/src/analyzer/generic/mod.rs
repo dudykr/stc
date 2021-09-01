@@ -2515,19 +2515,25 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
     };
 
     match v {
-        TruePlusMinus::True => match element_ty.normalize_mut() {
-            Type::Optional(ty) => {
-                let ty = ty.ty.take();
-                let ty = ty.remove_falsy();
+        TruePlusMinus::True => {
+            if element_ty.normalize().is_optional() {
+                match element_ty.normalize_mut() {
+                    Type::Optional(ty) => {
+                        let ty = ty.ty.take();
+                        let ty = ty.remove_falsy();
 
-                *element_ty = ty;
-            }
-            _ => {
+                        *element_ty = ty;
+                    }
+                    _ => {
+                        unreachable!()
+                    }
+                }
+            } else {
                 let new_ty = element_ty.take().remove_falsy();
 
                 *element_ty = new_ty;
             }
-        },
+        }
         TruePlusMinus::Plus => match element_ty.normalize() {
             Type::Optional(ty) => {}
             _ => {
