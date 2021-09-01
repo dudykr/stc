@@ -427,16 +427,19 @@ impl Analyzer<'_, '_> {
     fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Type>) -> ValidationResult<Vec<Type>> {
         types.iter_mut().for_each(|ty| {
             // Tuple -> Array
-            match ty.normalize_mut() {
-                Type::Tuple(tuple) => {
-                    let span = tuple.span;
 
-                    let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
-                    elem_types.dedup_type();
-                    let elem_type = box Type::union(elem_types);
-                    *ty = Type::Array(Array { span, elem_type });
+            if ty.normalize().is_tuple() {
+                match ty.normalize_mut() {
+                    Type::Tuple(tuple) => {
+                        let span = tuple.span;
+
+                        let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
+                        elem_types.dedup_type();
+                        let elem_type = box Type::union(elem_types);
+                        *ty = Type::Array(Array { span, elem_type });
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
         });
 
