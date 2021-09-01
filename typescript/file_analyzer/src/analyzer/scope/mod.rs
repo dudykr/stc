@@ -508,6 +508,7 @@ impl Scope<'_> {
     }
 
     /// Add a type to the scope.
+    #[instrument(name = "Scope::register_type", skip(self, name, ty, should_override))]
     fn register_type(&mut self, name: Id, ty: Type, should_override: bool) {
         ty.assert_valid();
 
@@ -565,10 +566,12 @@ impl Scope<'_> {
         match self.types.entry(name.clone()) {
             Entry::Occupied(mut e) => {
                 let prev = e.get_mut();
-                debug!(
-                    "Scope.register_type({}): override = {:?}; prev = {:?}; new_ty = {:?}",
-                    name, should_override, prev, ty,
-                );
+                if cfg!(debug_assertions) {
+                    debug!(
+                        "Scope.register_type({}): override = {:?}; prev = {:?}; new_ty = {:?}",
+                        name, should_override, prev, ty,
+                    );
+                }
                 if should_override {
                     *prev = ty;
                     return;
