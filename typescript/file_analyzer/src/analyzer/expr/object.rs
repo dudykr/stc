@@ -335,43 +335,45 @@ impl UnionNormalizer<'_, '_, '_> {
 
         // Add properties.
         for ty in u.types.iter_mut() {
-            match ty.normalize_mut() {
-                Type::TypeLit(ty) => {
-                    ty.metadata.inexact |= inexact;
-                    ty.metadata.normalized = true;
+            if matches!(ty.normalize(), Type::TypeLit(..)) {
+                match ty.normalize_mut() {
+                    Type::TypeLit(ty) => {
+                        ty.metadata.inexact |= inexact;
+                        ty.metadata.normalized = true;
 
-                    for key in &keys {
-                        let has_key = ty.members.iter().any(|member| {
-                            if let Some(member_key) = member.non_computed_key() {
-                                *key == *member_key
-                            } else {
-                                false
+                        for key in &keys {
+                            let has_key = ty.members.iter().any(|member| {
+                                if let Some(member_key) = member.non_computed_key() {
+                                    *key == *member_key
+                                } else {
+                                    false
+                                }
+                            });
+
+                            if !has_key {
+                                ty.members.push(TypeElement::Property(PropertySignature {
+                                    span: DUMMY_SP,
+                                    accessibility: None,
+                                    readonly: false,
+                                    key: Key::Normal {
+                                        span: DUMMY_SP,
+                                        sym: key.clone(),
+                                    },
+                                    optional: true,
+                                    params: Default::default(),
+                                    type_ann: Some(box Type::Keyword(RTsKeywordType {
+                                        span: DUMMY_SP,
+                                        kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
+                                    })),
+                                    type_params: Default::default(),
+                                    metadata: Default::default(),
+                                    accessor: Default::default(),
+                                }))
                             }
-                        });
-
-                        if !has_key {
-                            ty.members.push(TypeElement::Property(PropertySignature {
-                                span: DUMMY_SP,
-                                accessibility: None,
-                                readonly: false,
-                                key: Key::Normal {
-                                    span: DUMMY_SP,
-                                    sym: key.clone(),
-                                },
-                                optional: true,
-                                params: Default::default(),
-                                type_ann: Some(box Type::Keyword(RTsKeywordType {
-                                    span: DUMMY_SP,
-                                    kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
-                                })),
-                                type_params: Default::default(),
-                                metadata: Default::default(),
-                                accessor: Default::default(),
-                            }))
                         }
                     }
+                    _ => {}
                 }
-                _ => {}
             }
         }
     }
