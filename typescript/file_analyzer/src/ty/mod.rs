@@ -72,6 +72,7 @@ impl Fold<Tuple> for LitGeneralizer {
 
 impl Fold<Type> for LitGeneralizer {
     fn fold(&mut self, mut ty: Type) -> Type {
+        // TODO: PERF
         ty.normalize_mut();
 
         match &ty {

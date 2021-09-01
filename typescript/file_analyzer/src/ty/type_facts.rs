@@ -88,6 +88,8 @@ impl Analyzer<'_, '_> {
                 params: vec![param],
                 ret_ty: box Type::any(DUMMY_SP),
             });
+
+            // TODO: PERF
             match ty.normalize_mut() {
                 Type::Union(u) => {
                     let has_fn = u.types.iter().any(|ty| match ty.normalize() {

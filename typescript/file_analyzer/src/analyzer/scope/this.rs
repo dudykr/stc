@@ -90,6 +90,7 @@ impl VisitMut<Type> for ThisReplacer<'_, '_, '_> {
             }
         }
 
+        // TODO: PERF
         ty.normalize_mut();
         ty.visit_mut_children_with(self);
         match ty {

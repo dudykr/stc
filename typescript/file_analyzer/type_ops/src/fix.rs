@@ -134,6 +134,7 @@ impl Fixer {
             }
         }
 
+        // TODO: PERF
         ty.normalize_mut();
         ty.visit_mut_children_with(self);
 

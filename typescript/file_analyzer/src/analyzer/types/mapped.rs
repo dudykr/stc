@@ -644,6 +644,7 @@ impl VisitMut<Type> for IndexedAccessTypeReplacer<'_> {
             }
         }
 
+        // TODO: PERF
         ty.normalize_mut();
 
         match ty {

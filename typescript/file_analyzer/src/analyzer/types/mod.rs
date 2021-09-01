@@ -274,6 +274,8 @@ impl Analyzer<'_, '_> {
 
                         // TOOD: Optimize
                         // If we can calculate type using constraints, do so.
+
+                        // TODO: PERF
                         match check_type.normalize_mut() {
                             Type::Param(TypeParam {
                                 name,
@@ -1462,6 +1464,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        // TODO: PERF
         match ty.normalize_mut() {
             Type::Union(ty) => {
                 for ty in &mut ty.types {

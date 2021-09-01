@@ -1042,18 +1042,20 @@ impl Analyzer<'_, '_> {
             ty.assert_valid();
 
             if let Some(ref excludes) = self.scope.facts.excludes.get(&name) {
-                match ty.normalize_mut() {
-                    Type::Union(ty::Union { ref mut types, .. }) => {
-                        for ty in types {
-                            let span = (*ty).span();
-                            for excluded_ty in excludes.iter() {
-                                if ty.type_eq(excluded_ty) {
-                                    *ty = Type::never(span)
+                if ty.normalize().is_union_type() {
+                    match ty.normalize_mut() {
+                        Type::Union(ty::Union { ref mut types, .. }) => {
+                            for ty in types {
+                                let span = (*ty).span();
+                                for excluded_ty in excludes.iter() {
+                                    if ty.type_eq(excluded_ty) {
+                                        *ty = Type::never(span)
+                                    }
                                 }
                             }
                         }
+                        _ => {}
                     }
-                    _ => {}
                 }
 
                 ty.fix();
@@ -2271,8 +2273,10 @@ impl Expander<'_, '_, '_> {
         // Start handling type expansion.
         let res: ValidationResult<()> = try {
             if self.analyzer.contains_infer_type(&ty) || contains_infer_type(&ty) {
+                // TODO: PERF
                 match ty.normalize_mut() {
                     Type::Conditional(cond_ty) => {
+                        // TODO: PERF
                         match cond_ty.check_type.normalize_mut() {
                             Type::Query(QueryType {
                                 span,
@@ -2560,14 +2564,16 @@ impl Expander<'_, '_, '_> {
                         .unwrap();
                 }
 
-                match check_type.normalize_mut() {
-                    Type::Class(check_type) => match extends_type.normalize() {
-                        Type::Constructor(..) => {
-                            return *true_type;
-                        }
+                if check_type.normalize().is_class() {
+                    match check_type.normalize_mut() {
+                        Type::Class(check_type) => match extends_type.normalize() {
+                            Type::Constructor(..) => {
+                                return *true_type;
+                            }
+                            _ => {}
+                        },
                         _ => {}
-                    },
-                    _ => {}
+                    }
                 }
 
                 return Type::Conditional(Conditional {
@@ -2691,6 +2697,7 @@ impl VisitMut<Ref> for ExpansionPreventer {
 
 impl VisitMut<Type> for ExpansionPreventer {
     fn visit_mut(&mut self, ty: &mut Type) {
+        // TODO: PERF
         ty.normalize_mut();
         ty.visit_mut_children_with(self)
     }
