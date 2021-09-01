@@ -1099,6 +1099,7 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
+    #[instrument(skip(self, name))]
     fn find_local_type(&self, name: &Id) -> Option<ItemRef<Type>> {
         #[allow(dead_code)]
         static ANY: Type = Type::Keyword(RTsKeywordType {
