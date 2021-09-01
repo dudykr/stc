@@ -6,6 +6,6 @@ docker run -d -p6831:6831/udp -p6832:6832/udp -p16686:16686 jaegertracing/all-in
 
 
 
-export RUST_LOG=trace,swc_common=off
+export RUST_LOG=trace,swc_common=off,swc_ecma_parser=off
 
 cargo test --test perf --release --features profile $@ -- --nocapture
