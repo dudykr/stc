@@ -2264,6 +2264,7 @@ dependencies = [
  "stc_ts_utils",
  "swc_common",
  "swc_ecma_ast",
+ "tracing",
 ]
 
 [[package]]
