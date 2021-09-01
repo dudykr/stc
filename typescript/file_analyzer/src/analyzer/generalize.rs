@@ -162,6 +162,7 @@ impl Fold<Union> for Simplifier<'_> {
 
 impl Fold<Type> for Simplifier<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
+        // TODO: PERF
         ty = ty.foldable();
 
         match ty {
@@ -387,9 +388,12 @@ impl Fold<Type> for Simplifier<'_> {
                 let mut members = obj
                     .types
                     .into_iter()
-                    .filter_map(|ty| match ty.foldable() {
-                        Type::TypeLit(ty) => Some(ty.members),
-                        _ => None,
+                    .filter_map(|ty| {
+                        // TODO: PERF
+                        match ty.foldable() {
+                            Type::TypeLit(ty) => Some(ty.members),
+                            _ => None,
+                        }
                     })
                     .flatten()
                     .collect::<Vec<_>>();

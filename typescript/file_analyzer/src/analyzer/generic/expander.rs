@@ -413,6 +413,7 @@ impl GenericExpander<'_, '_, '_, '_> {
     fn fold_type(&mut self, ty: Type) -> Type {
         let span = ty.span();
         let ty = ty.foldable();
+        // TODO: PERF
 
         match ty {
             Type::StaticThis(..) | Type::Intrinsic(..) | Type::Symbol(..) => return ty,
@@ -680,6 +681,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                     _ => {}
                 }
 
+                // TODO: PERF
                 m.ty = m.ty.map(|v| box v.foldable());
                 m.ty = match m.ty {
                     Some(box Type::IndexedAccessType(IndexedAccessType {
@@ -689,6 +691,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                         index_type,
                     })) => {
                         let obj_type = box obj_type.foldable();
+                        // TODO: PERF
                         match *obj_type {
                             Type::TypeLit(TypeLit {
                                 span,
@@ -973,6 +976,7 @@ impl Fold<Type> for MappedHandler<'_, '_, '_, '_> {
             _ => {}
         }
 
+        // TODO: PERF
         ty = ty.foldable();
         ty = ty.fold_children_with(self);
 

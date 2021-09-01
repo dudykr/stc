@@ -270,6 +270,7 @@ impl Analyzer<'_, '_> {
         let actual_ty =
             self.type_of_ts_entity_name(span, self.ctx.module_id, &ty.type_name, ty.type_args.as_deref())?;
 
+        // TODO: PERF
         let type_params = match actual_ty.foldable() {
             Type::Alias(Alias {
                 type_params: Some(type_params),

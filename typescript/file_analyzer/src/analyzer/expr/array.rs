@@ -91,6 +91,8 @@ impl Analyzer<'_, '_> {
                     let element_type = expr.validate_with_default(self)?;
                     let element_type = element_type.foldable();
 
+                    // TODO: PERF
+
                     match element_type {
                         Type::Array(array) => {
                             can_be_tuple = false;

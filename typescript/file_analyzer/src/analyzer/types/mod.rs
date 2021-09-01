@@ -572,6 +572,8 @@ impl Analyzer<'_, '_> {
             },
         )?;
         let actual_span = ty.span();
+
+        // TODO: PERF
         let ty = ty.into_owned().foldable();
 
         Ok(match ty {

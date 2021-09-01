@@ -573,6 +573,8 @@ impl Analyzer<'_, '_> {
         }
 
         let mut to = to.foldable();
+        // TODO: PERF
+
         match to {
             Type::TypeLit(ref mut lit) => {
                 lit.metadata.inexact = true;

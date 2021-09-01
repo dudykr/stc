@@ -1058,6 +1058,8 @@ impl Analyzer<'_, '_> {
                         .unwrap_or_else(|_| ty);
                     let ty = ty.foldable();
 
+                    // TODO: PERF
+
                     match ty {
                         Type::Keyword(RTsKeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,

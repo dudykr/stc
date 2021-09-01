@@ -413,6 +413,8 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             _ => {}
         }
 
+        // TODO: PERF
+
         ty = ty.foldable();
         ty = ty.fold_children_with(self);
 

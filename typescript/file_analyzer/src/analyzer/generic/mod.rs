@@ -559,6 +559,7 @@ impl Analyzer<'_, '_> {
         let p;
         let param = match param {
             Type::Mapped(..) => {
+                // TODO: PERF
                 p = box param.clone().foldable().fold_with(&mut MappedIndexedSimplifier);
                 &p
             }
@@ -954,6 +955,9 @@ impl Analyzer<'_, '_> {
                             },
                         )?
                         .foldable();
+
+                    // TODO: PERF
+
                     match arg_obj_ty {
                         Type::Mapped(arg_obj_ty) => match &arg_obj_ty.type_param {
                             TypeParam {
@@ -1571,6 +1575,8 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Index(i) => {
                                     let type_ann = if let Some(arg_prop_ty) = &i.type_ann {
                                         if let Some(param_ty) = &param.ty {
+                                            // TODO: PERF
+
                                             let mapped_param_ty = arg_prop_ty.clone().foldable().fold_with(
                                                 &mut SingleTypeParamReplacer {
                                                     name: &name,
@@ -2246,6 +2252,7 @@ impl Analyzer<'_, '_> {
 
             let map = self.finalize_inference(inferred);
 
+            // TODO: PERF
             return Ok(ty
                 .foldable()
                 .fold_with(&mut TypeParamRenamer {

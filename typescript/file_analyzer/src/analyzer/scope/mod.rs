@@ -704,6 +704,7 @@ impl Analyzer<'_, '_> {
                 opts,
             };
 
+            // TODO: PERF
             let ty = ty.foldable().fold_with(&mut v).fixed();
             ty.assert_valid();
 
@@ -2032,6 +2033,7 @@ impl Expander<'_, '_, '_> {
                                     });
 
                                     let before = dump_type_as_string(&self.analyzer.cm, &ty);
+                                    // TODO: PERF
                                     let mut ty = self.analyzer.expand_type_params(
                                         &inferred,
                                         ty.foldable(),
@@ -2073,6 +2075,7 @@ impl Expander<'_, '_, '_> {
                                     _ => {}
                                 }
 
+                                // TODO: PERF
                                 let mut ty = ty.foldable();
 
                                 if is_alias {
@@ -2102,6 +2105,7 @@ impl Expander<'_, '_, '_> {
 
                     if let Some(t) = stored_ref {
                         self.expand_top_level = true;
+                        // TODO: PERF
                         return Ok(Some(t.into_owned().foldable().fold_with(self).fixed()));
                     }
                 }
@@ -2199,6 +2203,7 @@ impl Expander<'_, '_, '_> {
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
             Type::Arc(..) => {
+                // TODO: PERF
                 return ty.foldable().fold_with(self);
             }
             _ => {}
@@ -2302,6 +2307,7 @@ impl Expander<'_, '_, '_> {
             }
         };
 
+        // TODO: PERF
         let ty = ty.foldable();
         match ty {
             Type::Intersection(mut i) if was_top_level => {
@@ -2511,6 +2517,7 @@ impl Expander<'_, '_, '_> {
                     ret_ty,
                 }) => {
                     let ret_ty = self.analyzer.rename_type_params(span, *ret_ty, None)?;
+                    // TODO: PERF
                     let ret_ty = box ret_ty.foldable().fold_with(self);
 
                     return Type::Function(ty::Function {
@@ -2624,6 +2631,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
             Type::Arc(..) => {
+                // TODO: PERF
                 return ty.foldable().fold_with(self);
             }
             _ => {}
