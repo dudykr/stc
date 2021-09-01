@@ -175,7 +175,7 @@ pub enum Type {
 }
 
 impl Clone for Type {
-    #[instrument(skip(self))]
+    #[instrument(name = "Type::clone", skip(self))]
     fn clone(&self) -> Self {
         match self {
             Type::Arc(ty) => ty.clone().into(),

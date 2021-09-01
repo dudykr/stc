@@ -768,6 +768,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[instrument(skip(self, name, ty))]
     pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
         debug!("[({})/types] Registering: {:?}", self.scope.depth(), name);
 
