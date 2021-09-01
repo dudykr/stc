@@ -372,14 +372,16 @@ impl Analyzer<'_, '_> {
             )?;
 
         // TODO: Remove `done: true` instead of removing `any` from value.
-        match elem_ty.normalize_mut() {
-            Type::Union(u) => {
-                u.types.retain(|ty| !ty.is_any());
-                if u.types.is_empty() {
-                    u.types = vec![Type::any(u.span)]
+        if matches!(elem_ty.normalize(), Type::Union(..)) {
+            match elem_ty.normalize_mut() {
+                Type::Union(u) => {
+                    u.types.retain(|ty| !ty.is_any());
+                    if u.types.is_empty() {
+                        u.types = vec![Type::any(u.span)]
+                    }
                 }
+                _ => {}
             }
-            _ => {}
         }
 
         elem_ty = self.apply_type_facts_to_type(TypeFacts::Truthy, elem_ty);
@@ -504,14 +506,16 @@ impl Analyzer<'_, '_> {
             .convert_err(|err| Error::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() })?;
 
         // TODO: Remove `done: true` instead of removing `any` from value.
-        match elem_ty.normalize_mut() {
-            Type::Union(u) => {
-                u.types.retain(|ty| !ty.is_any());
-                if u.types.is_empty() {
-                    u.types = vec![Type::any(u.span)]
+        if matches!(elem_ty.normalize(), Type::Union(..)) {
+            match elem_ty.normalize_mut() {
+                Type::Union(u) => {
+                    u.types.retain(|ty| !ty.is_any());
+                    if u.types.is_empty() {
+                        u.types = vec![Type::any(u.span)]
+                    }
                 }
+                _ => {}
             }
-            _ => {}
         }
 
         elem_ty = self.apply_type_facts_to_type(TypeFacts::Truthy, elem_ty);
