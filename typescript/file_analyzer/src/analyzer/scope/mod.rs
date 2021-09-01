@@ -770,7 +770,9 @@ impl Analyzer<'_, '_> {
 
     #[instrument(skip(self, name, ty))]
     pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
-        debug!("[({})/types] Registering: {:?}", self.scope.depth(), name);
+        if cfg!(debug_assertions) {
+            debug!("[({})/types] Registering: {:?}", self.scope.depth(), name);
+        }
 
         let should_check_for_mixed = !self.is_builtin
             && match ty.normalize() {
