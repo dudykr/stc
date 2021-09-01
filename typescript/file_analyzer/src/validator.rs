@@ -2,6 +2,7 @@ use rnode::RNode;
 use stc_ts_ast_rnode::{
     RClassMember, RParam, RPat, RTsExprWithTypeArgs, RTsFnParam, RTsTupleElement, RTsType, RTsTypeElement, RTsTypeParam,
 };
+use std::any::type_name;
 
 /// Visit with output
 pub trait Validate<'context, T: ?Sized>
@@ -78,6 +79,12 @@ where
     type Context = <Self as Validate<'c, T>>::Context;
 
     fn validate(&mut self, nodes: &Vec<T>, ctxt: Self::Context) -> Self::Output {
+        let _tracing_guard = if cfg!(debug_assertions) {
+            let ty = type_name::<T>();
+            Some(tracing::span!(tracing::Level::ERROR, "validate<Vec<T>>", ty = ty).entered())
+        } else {
+            None
+        };
         nodes.iter().map(|node| self.validate(node, ctxt)).collect()
     }
 }

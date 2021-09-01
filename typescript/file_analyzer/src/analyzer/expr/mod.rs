@@ -625,6 +625,7 @@ impl Analyzer<'_, '_> {
         true
     }
 
+    #[instrument(skip(self, prop, computed))]
     pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
         if computed {
             prop.validate_with_default(self)
