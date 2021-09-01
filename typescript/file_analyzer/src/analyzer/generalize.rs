@@ -15,12 +15,13 @@ use stc_ts_types::{
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Mark, Span, Spanned};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{info, trace};
+use tracing::{info, instrument, trace};
 
 impl Analyzer<'_, '_> {
     /// TODO(kdy1): Remove this.
     ///
     /// Check if it's okay to generalize `ty`.
+    #[instrument(skip(self, ty))]
     pub(super) fn may_generalize(&self, ty: &Type) -> bool {
         trace!("may_generalize({:?})", ty);
         match ty.normalize() {
@@ -59,6 +60,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Optimize by visiting only tuple types.
+    #[instrument(skip(self, ty))]
     pub(super) fn prevent_generalize(&self, ty: &mut Type) {
         ty.visit_mut_with(&mut Marker {
             mark: self.marks().prevent_generalization_mark,
@@ -66,12 +68,14 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Optimize by visiting only tuple types.
+    #[instrument(skip(self, ty))]
     pub(super) fn prevent_tuple_to_array(&self, ty: &mut Type) {
         ty.visit_mut_with(&mut Marker {
             mark: self.marks().prevent_tuple_to_array,
         });
     }
 
+    #[instrument(skip(self, ty))]
     pub(super) fn prevent_inference_while_simplifying(&self, ty: &mut Type) {
         ty.visit_mut_with(&mut Marker {
             mark: self.marks().prevent_complex_simplification_mark,
@@ -82,6 +86,7 @@ impl Analyzer<'_, '_> {
         span.apply_mark(self.marks().prevent_generalization_mark)
     }
 
+    #[instrument(skip(self, ty))]
     pub(super) fn simplify(&self, ty: Type) -> Type {
         info!("Simplifying {}", dump_type_as_string(&self.cm, &ty));
         ty.fold_with(&mut Simplifier {

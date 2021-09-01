@@ -106,6 +106,7 @@ impl Visit<InferType> for InferTypeFinder {
     }
 }
 
+#[instrument(skip(n))]
 pub(crate) fn contains_infer_type(n: &Type) -> bool {
     let mut v = InferTypeFinder { found: false };
     n.visit_with(&mut v);
