@@ -355,20 +355,21 @@ impl Analyzer<'_, '_> {
                     let ty = ty.unwrap_or_else(|| {
                         let mut ty = default_value_ty.generalize_lit(marks).foldable();
 
-                        // TODO: PERF
+                        if matches!(ty.normalize(), Type::Tuple(..)) {
+                            match ty {
+                                Type::Tuple(tuple) => {
+                                    let mut types =
+                                        tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
 
-                        match ty {
-                            Type::Tuple(tuple) => {
-                                let mut types = tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
+                                    types.dedup_type();
 
-                                types.dedup_type();
-
-                                ty = Type::Array(Array {
-                                    span: tuple.span,
-                                    elem_type: box Type::union(types),
-                                });
+                                    ty = Type::Array(Array {
+                                        span: tuple.span,
+                                        elem_type: box Type::union(types),
+                                    });
+                                }
+                                _ => {}
                             }
-                            _ => {}
                         }
 
                         Ok(ty)
