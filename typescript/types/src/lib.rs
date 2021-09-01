@@ -1897,11 +1897,11 @@ struct CheapClone;
 
 impl VisitMut<Type> for CheapClone {
     fn visit_mut(&mut self, ty: &mut Type) {
-        ty.visit_mut_children_with(self);
-
         if ty.is_clone_cheap() {
             return;
         }
+
+        ty.visit_mut_children_with(self);
 
         let new_ty = replace(
             ty,
