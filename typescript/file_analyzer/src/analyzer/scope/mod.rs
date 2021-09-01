@@ -1116,20 +1116,26 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        debug!("({}) Analyzer.find_type(`{}`)", self.scope.depth(), name);
+        if cfg!(debug_assertions) {
+            debug!("({}) Analyzer.find_type(`{}`)", self.scope.depth(), name);
+        }
 
         let mut src = vec![];
         if !self.is_builtin {
             if let Ok(ty) = self.env.get_global_type(DUMMY_SP, name.sym()) {
                 debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
-                debug!("Using builtin / global type: {}", dump_type_as_string(&self.cm, &ty));
+                if cfg!(debug_assertions) {
+                    debug!("Using builtin / global type: {}", dump_type_as_string(&self.cm, &ty));
+                }
                 src.push(ty.clone());
             }
         }
 
         if let Some(ty) = self.scope.find_type(name) {
-            debug!("Using type from scope: {:?}", ty);
+            if cfg!(debug_assertions) {
+                debug!("Using type from scope: {:?}", ty);
+            }
             src.extend(ty.into_iter().map(Cow::into_owned));
             return Some(ItemRef::Owned(
                 vec![Type::intersection(DUMMY_SP, src).cheap()].into_iter(),
@@ -1141,7 +1147,9 @@ impl Analyzer<'_, '_> {
         }
 
         if !self.is_builtin {
-            debug!("Scope.find_type: failed to find type '{}'", name);
+            if cfg!(debug_assertions) {
+                debug!("Scope.find_type: failed to find type '{}'", name);
+            }
         }
 
         None
