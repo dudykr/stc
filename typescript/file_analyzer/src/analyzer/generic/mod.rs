@@ -2260,16 +2260,15 @@ impl Analyzer<'_, '_> {
             params: usage_visitor.params,
         });
 
-        match ty.normalize_mut() {
-            Type::Function(ref mut f) => {
-                f.type_params = decl;
+        if matches!(ty.normalize(), Type::Function(..)) {
+            match ty.normalize_mut() {
+                Type::Function(ref mut f) => {
+                    f.type_params = decl;
+                }
+                _ => {}
             }
-
-            Type::ClassDef(..) | Type::Class(..) => {
-                return Ok(ty);
-            }
-
-            _ => {}
+        } else if matches!(ty.normalize(), Type::ClassDef(..) | Type::Class(..)) {
+            return Ok(ty);
         }
 
         Ok(ty.fold_with(&mut TypeParamRemover::new()).fixed())
