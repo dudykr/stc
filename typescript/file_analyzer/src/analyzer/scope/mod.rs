@@ -597,7 +597,9 @@ impl Scope<'_> {
                 }
             }
             Entry::Vacant(e) => {
-                debug!("Scope.register_type({}): {:?}", name, should_override);
+                if cfg!(debug_assertions) {
+                    debug!("Scope.register_type({}): {:?}", name, should_override);
+                }
                 e.insert(ty);
             }
         }
