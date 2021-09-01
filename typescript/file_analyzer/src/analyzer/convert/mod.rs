@@ -754,8 +754,7 @@ impl Analyzer<'_, '_> {
             ctxt: self.ctx.module_id,
             type_name: t.type_name.clone(),
             type_args,
-        })
-        .cheap())
+        }))
     }
 }
 
