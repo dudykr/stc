@@ -37,6 +37,13 @@ where
     type Context = <Self as Validate<'c, T>>::Context;
 
     fn validate(&mut self, node: &Option<T>, ctxt: Self::Context) -> Self::Output {
+        let _tracing_guard = if cfg!(feature = "profile") {
+            let ty = type_name::<T>();
+            Some(tracing::span!(tracing::Level::ERROR, "validate<Option<T>>", ty = ty).entered())
+        } else {
+            None
+        };
+
         match node {
             Some(ref n) => Some(self.validate(n, ctxt)),
             None => None,
@@ -79,7 +86,7 @@ where
     type Context = <Self as Validate<'c, T>>::Context;
 
     fn validate(&mut self, nodes: &Vec<T>, ctxt: Self::Context) -> Self::Output {
-        let _tracing_guard = if cfg!(debug_assertions) {
+        let _tracing_guard = if cfg!(feature = "profile") {
             let ty = type_name::<T>();
             Some(tracing::span!(tracing::Level::ERROR, "validate<Vec<T>>", ty = ty).entered())
         } else {
