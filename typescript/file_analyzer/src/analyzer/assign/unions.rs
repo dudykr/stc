@@ -50,6 +50,7 @@ impl Analyzer<'_, '_> {
                 let mut tuple = Type::Tuple(Tuple {
                     span: ty.span,
                     elems: Default::default(),
+                    metadata: Default::default(),
                 });
 
                 for el in &ty.elems {

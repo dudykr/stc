@@ -8,12 +8,13 @@ use crate::{
     ValidationResult,
 };
 use rnode::NodeId;
-use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, Function, Key, MethodSignature, ModuleId, Operator, PropertySignature, Ref,
-    Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union,
+    Array, Class, ClassDef, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, ModuleId, Operator,
+    PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union,
+    UnionMetadata,
 };
 use stc_utils::ext::SpanExt;
 use std::borrow::Cow;
@@ -61,7 +62,7 @@ impl Analyzer<'_, '_> {
             .next();
 
         if let Some(numeric_keyed_ty) = numeric_keyed_ty {
-            let any = box Type::any(span);
+            let any = box Type::any(span, Default::default());
             let numeric_keyed_ty = numeric_keyed_ty.unwrap_or(&any);
 
             match *rhs.normalize() {
@@ -243,6 +244,10 @@ impl Analyzer<'_, '_> {
                                 let r_elem_type = Type::Union(Union {
                                     span: r_tuple.span,
                                     types: r_tuple.elems.iter().map(|el| *el.ty.clone()).collect(),
+                                    metadata: UnionMetadata {
+                                        common: r_tuple.metadata.common,
+                                        ..Default::default()
+                                    },
                                 })
                                 .fixed();
 
@@ -384,34 +389,34 @@ impl Analyzer<'_, '_> {
                         .context("tried to assign a class instance to type elements");
                 }
 
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBigIntKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::Number(..),
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::BigInt(..),
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::Str(..), ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::Bool(..), ..
                 })
                 | Type::Mapped(..)
@@ -455,19 +460,19 @@ impl Analyzer<'_, '_> {
                         });
                 }
 
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: kind @ TsKeywordTypeKind::TsStringKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: kind @ TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: kind @ TsKeywordTypeKind::TsBooleanKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: kind @ TsKeywordTypeKind::TsBigIntKeyword,
                     ..
                 }) => {
@@ -523,19 +528,19 @@ impl Analyzer<'_, '_> {
                         });
                 }
 
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: lit @ RTsLit::Number(..),
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: lit @ RTsLit::Str(..),
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: lit @ RTsLit::Bool(..),
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: lit @ RTsLit::BigInt(..),
                     ..
                 }) => {
@@ -547,7 +552,7 @@ impl Analyzer<'_, '_> {
                             opts,
                             lhs_span,
                             lhs,
-                            &Type::Keyword(RTsKeywordType {
+                            &Type::Keyword(KeywordType {
                                 span,
                                 kind: match lit {
                                     RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
@@ -558,6 +563,7 @@ impl Analyzer<'_, '_> {
                                         unreachable!()
                                     }
                                 },
+                                metadata: Default::default(),
                             }),
                             lhs_metadata,
                         )
@@ -565,19 +571,19 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Param(..)
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
                 }) => return Err(Error::SimpleAssignFailed { span, cause: None }),
 
                 // TODO: Strict mode
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) => return Ok(()),
 
                 // TODO: Strict mode
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 }) => return Ok(()),
@@ -614,7 +620,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsObjectKeyword,
                     ..
                 }) => {
@@ -753,11 +759,11 @@ impl Analyzer<'_, '_> {
 
                 Type::Tuple(..)
                 | Type::Array(..)
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
                 }) => return Ok(()),
@@ -969,8 +975,8 @@ impl Analyzer<'_, '_> {
 
                                         self.assign_inner(
                                             data,
-                                            lp.type_ann.as_deref().unwrap_or(&Type::any(span)),
-                                            rp.type_ann.as_deref().unwrap_or(&Type::any(span)),
+                                            lp.type_ann.as_deref().unwrap_or(&Type::any(span, Default::default())),
+                                            rp.type_ann.as_deref().unwrap_or(&Type::any(span, Default::default())),
                                             opts,
                                         )
                                     })()?;
@@ -1007,7 +1013,10 @@ impl Analyzer<'_, '_> {
                                                     type_params: rm.type_params.clone(),
                                                     params: rm.params.clone(),
                                                     ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
-                                                        box Type::any(span.with_ctxt(SyntaxContext::empty()))
+                                                        box Type::any(
+                                                            span.with_ctxt(SyntaxContext::empty()),
+                                                            Default::default(),
+                                                        )
                                                     }),
                                                 }),
                                             )
