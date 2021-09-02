@@ -19,11 +19,11 @@ use fxhash::FxHashMap;
 use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
-use rnode::{FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
+use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use static_assertions::assert_eq_size;
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
-    RTsKeywordType, RTsLit, RTsLitType, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
+    RTsKeywordType, RTsLit, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
 use stc_utils::{cache::Freeze, error::context};
 use stc_visit::{Visit, Visitable};
@@ -116,7 +116,7 @@ pub enum Type {
     Instance(Instance),
     StaticThis(StaticThis),
     This(RTsThisType),
-    Lit(RTsLitType),
+    Lit(LitType),
     Query(QueryType),
     Infer(InferType),
     Import(ImportType),
@@ -347,8 +347,7 @@ impl Key {
     pub fn ty(&self) -> Cow<Type> {
         match self {
             Key::Computed(prop) => Cow::Borrowed(&*prop.ty),
-            Key::Normal { span, sym } => Cow::Owned(Type::Lit(RTsLitType {
-                node_id: NodeId::invalid(),
+            Key::Normal { span, sym } => Cow::Owned(Type::Lit(LitType {
                 span: *span,
                 lit: RTsLit::Str(RStr {
                     span: *span,
@@ -356,16 +355,17 @@ impl Key {
                     has_escape: false,
                     kind: Default::default(),
                 }),
+                metadata: Default::default(),
             })),
-            Key::Num(n) => Cow::Owned(Type::Lit(RTsLitType {
-                node_id: NodeId::invalid(),
+            Key::Num(n) => Cow::Owned(Type::Lit(LitType {
                 span: n.span,
                 lit: RTsLit::Number(n.clone()),
+                metadata: Default::default(),
             })),
-            Key::BigInt(n) => Cow::Owned(Type::Lit(RTsLitType {
-                node_id: NodeId::invalid(),
+            Key::BigInt(n) => Cow::Owned(Type::Lit(LitType {
                 span: n.span,
                 lit: RTsLit::BigInt(n.clone()),
+                metadata: Default::default(),
             })),
             Key::Private(..) => unimplemented!("access to type elements using private name"),
         }
@@ -422,6 +422,15 @@ pub struct Instance {
 }
 
 assert_eq_size!(Instance, [u8; 24]);
+
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct LitType {
+    pub span: Span,
+
+    #[use_eq_ignore_span]
+    pub lit: RTsLit,
+    pub metadata: LitTypeMetadata,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Symbol {
@@ -662,7 +671,7 @@ pub struct Tuple {
     pub metadata: TupleMetadata,
 }
 
-assert_eq_size!(Tuple, [u8; 40]);
+assert_eq_size!(Tuple, [u8; 48]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TupleElement {
@@ -699,7 +708,7 @@ pub struct TypeLit {
     pub metadata: TypeLitMetadata,
 }
 
-assert_eq_size!(TypeLit, [u8; 40]);
+assert_eq_size!(TypeLit, [u8; 48]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeParamDecl {
@@ -1558,7 +1567,7 @@ impl Type {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
             })
-            | Type::Lit(RTsLitType {
+            | Type::Lit(LitType {
                 lit: RTsLit::Str(..), ..
             }) => true,
             _ => false,
@@ -1567,7 +1576,7 @@ impl Type {
 
     pub fn is_str_lit(&self) -> bool {
         match self.normalize() {
-            Type::Lit(RTsLitType {
+            Type::Lit(LitType {
                 lit: RTsLit::Str(..), ..
             }) => true,
             _ => false,
@@ -1580,7 +1589,7 @@ impl Type {
                 kind: TsKeywordTypeKind::TsNumberKeyword,
                 ..
             })
-            | Type::Lit(RTsLitType {
+            | Type::Lit(LitType {
                 lit: RTsLit::Number(..),
                 ..
             }) => true,
@@ -1590,7 +1599,7 @@ impl Type {
 
     pub fn is_num_lit(&self) -> bool {
         match self.normalize() {
-            Type::Lit(RTsLitType {
+            Type::Lit(LitType {
                 lit: RTsLit::Number(..),
                 ..
             }) => true,
@@ -1605,7 +1614,7 @@ impl Type {
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                 ..
             })
-            | Type::Lit(RTsLitType {
+            | Type::Lit(LitType {
                 lit: RTsLit::Bool(..), ..
             }) => true,
             _ => false,

@@ -94,7 +94,7 @@ pub struct CommonTypeMetadata {
 impl_basic_traits!(CommonTypeMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct LitMetadata {
+pub struct LitTypeMetadata {
     pub common: CommonTypeMetadata,
 
     /// If the mark is applied, it means that the literal should not be
@@ -102,7 +102,7 @@ pub struct LitMetadata {
     pub prevent_generalization: bool,
 }
 
-impl_traits!(LitMetadata);
+impl_traits!(LitTypeMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TupleMetadata {
