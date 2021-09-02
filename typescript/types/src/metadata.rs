@@ -7,7 +7,11 @@ use rnode::{FoldWith, VisitMutWith, VisitWith};
 use stc_visit::Visitable;
 use swc_common::{EqIgnoreSpan, TypeEq};
 
-macro_rules! impl_traits {
+pub trait TypeMetadata {
+    fn common(&self) -> CommonTypeMetadata;
+}
+
+macro_rules! impl_basic_traits {
     ($T:ty) => {
         /// # Note
         ///
@@ -55,8 +59,64 @@ macro_rules! impl_traits {
     };
 }
 
+macro_rules! impl_traits {
+    ($T:ty) => {
+        impl_basic_traits!($T);
+
+        impl TypeMetadata for $T {
+            fn common(&self) -> CommonTypeMetadata {
+                self.common
+            }
+        }
+    };
+}
+
+/// Common metadata shared among [crate::Type]s.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct CommonTypeMetadata {
+    pub implicit: bool,
+
+    /// This can be ignored based on the context.
+    pub prevent_expansion: bool,
+
+    pub contains_infer_type: bool,
+
+    /// If this mark is applied, type will not be inferred (based on constraint)
+    /// while simplifying.
+    pub prevent_complex_simplification: bool,
+
+    /// This mark is applied to types resolved from variables.
+    ///
+    /// Used to distinguish object literal with a reference to object literal.
+    pub resolved_from_var: bool,
+}
+
+impl_basic_traits!(CommonTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct LitMetadata {
+    pub common: CommonTypeMetadata,
+
+    /// If the mark is applied, it means that the literal should not be
+    /// generalized.
+    pub prevent_generalization: bool,
+}
+
+impl_traits!(LitMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TupleMetadata {
+    pub common: CommonTypeMetadata,
+
+    pub prevent_tuple_to_array: bool,
+}
+
+impl_traits!(TupleMetadata);
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {
+    pub common: CommonTypeMetadata,
+
     /// `true` if a spread element is used while initializing.
     pub inexact: bool,
     /// `true` if a type literal is modified by object union normalizer.
@@ -96,6 +156,8 @@ pub struct TypeLitMetadata {
     pub specified: bool,
 }
 
+impl_traits!(TypeLitMetadata);
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeElMetadata {
     /// If `true`, it means the element has a default value.
@@ -105,5 +167,4 @@ pub struct TypeElMetadata {
     pub has_default: bool,
 }
 
-impl_traits!(TypeLitMetadata);
-impl_traits!(TypeElMetadata);
+impl_basic_traits!(TypeElMetadata);

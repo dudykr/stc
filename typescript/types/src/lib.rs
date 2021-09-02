@@ -12,7 +12,7 @@ pub use self::{
     convert::rprop_name_to_expr,
     id::Id,
     intrinsic::{Intrinsic, IntrinsicKind},
-    metadata::{TypeElMetadata, TypeLitMetadata},
+    metadata::*,
     module_id::ModuleId,
 };
 use fxhash::FxHashMap;
@@ -659,6 +659,7 @@ assert_eq_size!(Operator, [u8; 24]);
 pub struct Tuple {
     pub span: Span,
     pub elems: Vec<TupleElement>,
+    pub metadata: TupleMetadata,
 }
 
 assert_eq_size!(Tuple, [u8; 40]);
