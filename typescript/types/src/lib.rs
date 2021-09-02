@@ -449,9 +449,10 @@ assert_eq_size!(KeywordType, [u8; 20]);
 pub struct Symbol {
     pub span: Span,
     pub id: SymbolId,
+    pub metadata: SymbolMetadata,
 }
 
-assert_eq_size!(Symbol, [u8; 24]);
+assert_eq_size!(Symbol, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct RestType {

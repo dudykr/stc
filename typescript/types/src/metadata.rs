@@ -135,6 +135,13 @@ pub struct TupleMetadata {
 impl_traits!(TupleMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct SymbolMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(SymbolMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {
     pub common: CommonTypeMetadata,
 
