@@ -2058,3 +2058,63 @@ impl Freeze for Type {
         self.make_cheap();
     }
 }
+
+pub trait Valid: Sized + VisitWith<ValidityChecker> {
+    fn is_valid(&self) -> bool {
+        let mut v = ValidityChecker { valid: true };
+        self.visit_with(&mut v);
+        v.valid
+    }
+}
+
+impl<T> Valid for T where Self: VisitWith<ValidityChecker> {}
+
+pub struct ValidityChecker {
+    valid: bool,
+}
+
+impl Visit<Union> for ValidityChecker {
+    fn visit(&mut self, ty: &Union) {
+        for (i, t1) in ty.types.iter().enumerate() {
+            for (j, t2) in ty.types.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+                if t1.type_eq(t2) {
+                    self.valid = false;
+                    return;
+                }
+            }
+        }
+
+        if ty.types.len() <= 1 {
+            self.valid = false;
+            return;
+        }
+
+        ty.visit_children_with(self);
+    }
+}
+
+impl Visit<Intersection> for ValidityChecker {
+    fn visit(&mut self, ty: &Intersection) {
+        for (i, t1) in ty.types.iter().enumerate() {
+            for (j, t2) in ty.types.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+                if t1.type_eq(t2) {
+                    self.valid = false;
+                    return;
+                }
+            }
+        }
+
+        if ty.types.len() <= 1 {
+            self.valid = false;
+            return;
+        }
+
+        ty.visit_children_with(self);
+    }
+}
