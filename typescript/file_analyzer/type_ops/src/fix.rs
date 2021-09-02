@@ -131,9 +131,9 @@ impl Fixer {
             return;
         }
 
-        if ty.is_valid() {
-            return;
-        }
+        // if ty.is_valid() {
+        //     return;
+        // }
 
         ty.normalize_mut();
         ty.visit_mut_children_with(self);
