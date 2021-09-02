@@ -1171,7 +1171,10 @@ impl Analyzer<'_, '_> {
                                                 type_params: rm.type_params.clone(),
                                                 params: rm.params.clone(),
                                                 ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
-                                                    box Type::any(rm.span.with_ctxt(SyntaxContext::empty()))
+                                                    box Type::any(
+                                                        rm.span.with_ctxt(SyntaxContext::empty()),
+                                                        Default::default(),
+                                                    )
                                                 }),
                                             }),
                                         )
