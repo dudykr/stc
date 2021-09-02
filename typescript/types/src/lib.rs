@@ -2060,6 +2060,7 @@ impl Freeze for Type {
 }
 
 pub trait Valid: Sized + VisitWith<ValidityChecker> {
+    #[instrument(skip(self))]
     fn is_valid(&self) -> bool {
         let mut v = ValidityChecker { valid: true };
         self.visit_with(&mut v);
