@@ -425,7 +425,6 @@ impl GenericExpander<'_, '_, '_, '_> {
         }
 
         let ty = ty.foldable();
-        // TODO: PERF
 
         match ty {
             Type::StaticThis(..) | Type::Intrinsic(..) | Type::Symbol(..) => return ty,
