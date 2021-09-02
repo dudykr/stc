@@ -525,6 +525,7 @@ impl Analyzer<'_, '_> {
 
                         // Handle implicit any
 
+                        // TODO: PERF
                         match ty.normalize_mut() {
                             Type::Tuple(Tuple { ref mut elems, .. }) if !elems.is_empty() => {
                                 for (i, element) in elems.iter_mut().enumerate() {

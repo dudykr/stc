@@ -20,15 +20,15 @@ use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
 use rnode::{FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
-use scoped_tls::scoped_thread_local;
 use static_assertions::assert_eq_size;
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
     RTsKeywordType, RTsLit, RTsLitType, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
-use stc_utils::error::context;
+use stc_utils::{cache::Freeze, error::context};
 use stc_visit::{Visit, Visitable};
 use std::{
+    self,
     borrow::Cow,
     fmt,
     fmt::{Debug, Formatter},
@@ -36,7 +36,6 @@ use std::{
     mem::{replace, transmute},
     ops::AddAssign,
     sync::Arc,
-    time::{Duration, Instant},
 };
 use swc_atoms::{js_word, JsWord};
 use swc_common::{EqIgnoreSpan, FromVariant, Span, Spanned, TypeEq, DUMMY_SP};
@@ -45,7 +44,7 @@ use swc_ecma_utils::{
     Value,
     Value::{Known, Unknown},
 };
-use tracing::{instrument, trace};
+use tracing::instrument;
 
 mod convert;
 mod id;
@@ -176,66 +175,46 @@ pub enum Type {
 }
 
 impl Clone for Type {
+    #[instrument(name = "Type::clone", skip(self))]
     fn clone(&self) -> Self {
-        scoped_thread_local!(static NO_LOG: ());
-        let log = !NO_LOG.is_set();
-
-        NO_LOG.set(&(), || match self {
+        match self {
             Type::Arc(ty) => ty.clone().into(),
             Type::Keyword(ty) => ty.clone().into(),
             Type::StaticThis(ty) => ty.clone().into(),
             Type::This(ty) => ty.clone().into(),
             Type::Symbol(ty) => ty.clone().into(),
             Type::Intrinsic(ty) => ty.clone().into(),
-
-            _ => {
-                let start = Instant::now();
-
-                let new = match self {
-                    Type::Instance(ty) => ty.clone().into(),
-                    Type::Lit(ty) => ty.clone().into(),
-                    Type::Query(ty) => ty.clone().into(),
-                    Type::Infer(ty) => ty.clone().into(),
-                    Type::Import(ty) => ty.clone().into(),
-                    Type::Predicate(ty) => ty.clone().into(),
-                    Type::IndexedAccessType(ty) => ty.clone().into(),
-                    Type::Ref(ty) => ty.clone().into(),
-                    Type::TypeLit(ty) => ty.clone().into(),
-                    Type::Conditional(ty) => ty.clone().into(),
-                    Type::Tuple(ty) => ty.clone().into(),
-                    Type::Array(ty) => ty.clone().into(),
-                    Type::Union(ty) => ty.clone().into(),
-                    Type::Intersection(ty) => ty.clone().into(),
-                    Type::Function(ty) => ty.clone().into(),
-                    Type::Constructor(ty) => ty.clone().into(),
-                    Type::Operator(ty) => ty.clone().into(),
-                    Type::Param(ty) => ty.clone().into(),
-                    Type::EnumVariant(ty) => ty.clone().into(),
-                    Type::Interface(ty) => ty.clone().into(),
-                    Type::Enum(ty) => ty.clone().into(),
-                    Type::Mapped(ty) => ty.clone().into(),
-                    Type::Alias(ty) => ty.clone().into(),
-                    Type::Namespace(ty) => ty.clone().into(),
-                    Type::Module(ty) => ty.clone().into(),
-                    Type::Class(ty) => ty.clone().into(),
-                    Type::ClassDef(ty) => ty.clone().into(),
-                    Type::Rest(ty) => ty.clone().into(),
-                    Type::Optional(ty) => ty.clone().into(),
-                    Type::Tpl(ty) => ty.clone().into(),
-                    _ => unreachable!(),
-                };
-
-                if log {
-                    let end = Instant::now();
-                    let dur = end - start;
-                    if dur >= Duration::from_millis(1) {
-                        trace!(kind = "perf", op = "Type.clone", "took {:?}", dur);
-                    }
-                }
-
-                new
-            }
-        })
+            Type::Instance(ty) => ty.clone().into(),
+            Type::Lit(ty) => ty.clone().into(),
+            Type::Query(ty) => ty.clone().into(),
+            Type::Infer(ty) => ty.clone().into(),
+            Type::Import(ty) => ty.clone().into(),
+            Type::Predicate(ty) => ty.clone().into(),
+            Type::IndexedAccessType(ty) => ty.clone().into(),
+            Type::Ref(ty) => ty.clone().into(),
+            Type::TypeLit(ty) => ty.clone().into(),
+            Type::Conditional(ty) => ty.clone().into(),
+            Type::Tuple(ty) => ty.clone().into(),
+            Type::Array(ty) => ty.clone().into(),
+            Type::Union(ty) => ty.clone().into(),
+            Type::Intersection(ty) => ty.clone().into(),
+            Type::Function(ty) => ty.clone().into(),
+            Type::Constructor(ty) => ty.clone().into(),
+            Type::Operator(ty) => ty.clone().into(),
+            Type::Param(ty) => ty.clone().into(),
+            Type::EnumVariant(ty) => ty.clone().into(),
+            Type::Interface(ty) => ty.clone().into(),
+            Type::Enum(ty) => ty.clone().into(),
+            Type::Mapped(ty) => ty.clone().into(),
+            Type::Alias(ty) => ty.clone().into(),
+            Type::Namespace(ty) => ty.clone().into(),
+            Type::Module(ty) => ty.clone().into(),
+            Type::Class(ty) => ty.clone().into(),
+            Type::ClassDef(ty) => ty.clone().into(),
+            Type::Rest(ty) => ty.clone().into(),
+            Type::Optional(ty) => ty.clone().into(),
+            Type::Tpl(ty) => ty.clone().into(),
+        }
     }
 }
 
@@ -1918,11 +1897,11 @@ struct CheapClone;
 
 impl VisitMut<Type> for CheapClone {
     fn visit_mut(&mut self, ty: &mut Type) {
-        ty.visit_mut_children_with(self);
-
         if ty.is_clone_cheap() {
             return;
         }
+
+        ty.visit_mut_children_with(self);
 
         let new_ty = replace(
             ty,
@@ -1949,6 +1928,7 @@ impl Type {
 
     /// Make cloning cheap.
     #[inline]
+    #[instrument(skip(self))]
     pub fn make_cheap(&mut self) {
         self.visit_mut_with(&mut CheapClone);
     }
@@ -2070,5 +2050,86 @@ impl EqIgnoreSpan for Accessor {
 impl TypeEq for Accessor {
     fn type_eq(&self, _: &Self) -> bool {
         true
+    }
+}
+
+impl Freeze for Type {
+    fn make_clone_cheap(&mut self) {
+        self.make_cheap();
+    }
+}
+
+pub trait Valid: Sized + VisitWith<ValidityChecker> {
+    #[instrument(skip(self))]
+    fn is_valid(&self) -> bool {
+        let mut v = ValidityChecker { valid: true };
+        self.visit_with(&mut v);
+        v.valid
+    }
+}
+
+impl Valid for Type {}
+
+impl Valid for Intersection {}
+
+impl Valid for Union {}
+
+pub struct ValidityChecker {
+    valid: bool,
+}
+
+impl Visit<Union> for ValidityChecker {
+    fn visit(&mut self, ty: &Union) {
+        for (i, t1) in ty.types.iter().enumerate() {
+            for (j, t2) in ty.types.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+                if t1.type_eq(t2) {
+                    self.valid = false;
+                    return;
+                }
+            }
+        }
+
+        if ty.types.len() <= 1 {
+            self.valid = false;
+            return;
+        }
+
+        if ty.types.iter().map(Type::normalize).any(|t| t.is_union_type()) {
+            self.valid = false;
+            return;
+        }
+
+        ty.visit_children_with(self);
+    }
+}
+
+impl Visit<Intersection> for ValidityChecker {
+    fn visit(&mut self, ty: &Intersection) {
+        for (i, t1) in ty.types.iter().enumerate() {
+            for (j, t2) in ty.types.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+                if t1.type_eq(t2) {
+                    self.valid = false;
+                    return;
+                }
+            }
+        }
+
+        if ty.types.len() <= 1 {
+            self.valid = false;
+            return;
+        }
+
+        if ty.types.iter().map(Type::normalize).any(|t| t.is_intersection_type()) {
+            self.valid = false;
+            return;
+        }
+
+        ty.visit_children_with(self);
     }
 }

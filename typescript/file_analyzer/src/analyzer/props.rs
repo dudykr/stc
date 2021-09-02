@@ -26,6 +26,7 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
+use tracing::instrument;
 
 #[derive(Debug, Clone, Copy)]
 pub(super) enum ComputedPropMode {
@@ -240,6 +241,7 @@ impl Analyzer<'_, '_> {
     ///
     /// See: `computedPropertyNames32_ES5.ts`
     #[extra_validator]
+    #[instrument(skip(self, used_type_params, span))]
     pub(crate) fn report_error_for_usage_of_type_param_of_declaring_class(
         &mut self,
         used_type_params: &[TypeParam],
@@ -278,6 +280,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[instrument(skip(self, span, ty))]
     fn is_type_valid_for_computed_key(&mut self, span: Span, ty: &Type) -> bool {
         let marks = self.marks();
 
@@ -353,6 +356,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[instrument(skip(self, prop, object_type))]
     fn validate_prop_inner(&mut self, prop: &RProp, object_type: Option<&Type>) -> ValidationResult<TypeElement> {
         let computed = match prop {
             RProp::KeyValue(ref kv) => match &kv.key {

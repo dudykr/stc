@@ -10,7 +10,8 @@ use stc_ts_types::{
     Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, Mapped, Operator, PropertySignature, Type,
     TypeElement, TypeLit,
 };
-use std::{borrow::Cow, collections::HashMap, time::Instant};
+use stc_utils::try_cache;
+use std::{borrow::Cow, collections::HashMap};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsTypeOperatorOp};
 use tracing::{debug, error, instrument};
@@ -27,25 +28,20 @@ impl Analyzer<'_, '_> {
     /// TODO: Handle index signatures.
     #[instrument(name = "expand_mapped", skip(self, span, m))]
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
-        let orig = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
+        let ty = try_cache!(self.data.cache.expand_mapped, m.clone(), {
+            let orig = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
 
-        let start = Instant::now();
-        let ty = self.expand_mapped_inner(span, m);
-        let end = Instant::now();
+            let ty = self.expand_mapped_inner(span, m);
 
-        debug!(
-            kind = "perf",
-            op = "expand_mapped",
-            "expand_mapped (time = {:?})",
-            end - start
-        );
+            let ty = ty?;
+            if let Some(ty) = &ty {
+                let expanded = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
 
-        let ty = ty?;
-        if let Some(ty) = &ty {
-            let expanded = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
+                debug!("[types/mapped]: Expanded {} as {}", orig, expanded);
+            }
 
-            debug!("[types/mapped]: Expanded {} as {}", orig, expanded);
-        }
+            Ok(ty)
+        });
 
         Ok(ty)
     }
@@ -648,6 +644,7 @@ impl VisitMut<Type> for IndexedAccessTypeReplacer<'_> {
             }
         }
 
+        // TODO: PERF
         ty.normalize_mut();
 
         match ty {

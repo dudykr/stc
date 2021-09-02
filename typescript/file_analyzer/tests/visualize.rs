@@ -6,7 +6,7 @@
 
 use once_cell::sync::Lazy;
 use rnode::{NodeIdGenerator, RNode};
-use stc_testing::load_txt;
+use stc_testing::{load_txt, logger};
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_errors::{debug::debugger::Debugger, Error};
@@ -143,6 +143,10 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
                             })
                         },
                     );
+
+                    let log_sub = logger();
+
+                    let _guard = tracing::subscriber::set_default(log_sub);
 
                     module.validate_with(&mut analyzer).unwrap();
                 });

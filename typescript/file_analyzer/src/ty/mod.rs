@@ -1,11 +1,12 @@
 use self::generalize::TupleToArray;
 use crate::{analyzer::marks::MarkExt, util::type_ext::TypeVecExt, Marks};
 use retain_mut::RetainMut;
-use rnode::{Fold, FoldWith};
+use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RBool, RNumber, RStr, RTsKeywordType, RTsLit, RTsLitType};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 pub(crate) use stc_ts_types::*;
 use swc_ecma_ast::TsKeywordTypeKind;
+use tracing::instrument;
 
 mod generalize;
 pub mod type_facts;
@@ -71,6 +72,18 @@ impl Fold<Tuple> for LitGeneralizer {
 
 impl Fold<Type> for LitGeneralizer {
     fn fold(&mut self, mut ty: Type) -> Type {
+        {
+            let mut checker = LitChecker {
+                marks: self.marks,
+                found: false,
+            };
+            ty.visit_with(&mut checker);
+
+            if !checker.found {
+                return ty;
+            }
+        }
+
         ty.normalize_mut();
 
         match &ty {
@@ -140,11 +153,36 @@ impl Fold<TypeLit> for LitGeneralizer {
     }
 }
 
+struct LitChecker {
+    marks: Marks,
+    found: bool,
+}
+
+impl Visit<Type> for LitChecker {
+    fn visit(&mut self, ty: &Type) {
+        match ty {
+            Type::Lit(RTsLitType { span, ref lit, .. }) => {
+                if self.marks.prevent_generalization_mark.is_marked(span) {
+                    return;
+                }
+
+                self.found = true;
+                return;
+            }
+            _ => {}
+        }
+
+        ty.visit_children_with(self);
+    }
+}
+
 pub trait TypeExt: Into<Type> {
+    #[instrument(skip(self, marks))]
     fn generalize_lit(self, marks: Marks) -> Type {
         self.into().fold_with(&mut LitGeneralizer { marks }).fixed()
     }
 
+    #[instrument(skip(self))]
     fn generalize_tuple(self) -> Type {
         self.into().fold_with(&mut TupleToArray)
     }

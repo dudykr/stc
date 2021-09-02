@@ -4,13 +4,13 @@ use crate::{
     ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
-use rnode::{Fold, FoldWith, VisitWith};
+use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::{type_param::finder::TypeParamUsageFinder, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    ComputedKey, Function, Id, IdCtx, Interface, Key, MethodSignature, TypeParam, TypeParamDecl, TypeParamInstantiation,
+    ComputedKey, Function, Id, IdCtx, Interface, Key, TypeParam, TypeParamDecl, TypeParamInstantiation,
 };
 use stc_utils::{error::context, ext::SpanExt, stack};
 use std::time::{Duration, Instant};
@@ -20,7 +20,7 @@ use swc_ecma_ast::*;
 use tracing::{debug, error, info, instrument, warn};
 
 /// All fields default to false.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub(crate) struct ExtendsOpts {
     /// If true, different classes are treated as not extending each other even
     /// though those are empty.
@@ -38,6 +38,7 @@ pub(crate) struct ExtendsOpts {
 
 /// Generic expander.
 impl Analyzer<'_, '_> {
+    #[instrument(skip(self, span, type_params, type_args))]
     pub(in super::super) fn instantiate_type_params_using_args(
         &mut self,
         span: Span,
@@ -405,12 +406,24 @@ pub(crate) struct GenericExpander<'a, 'b, 'c, 'd> {
     /// Expand fully?
     fully: bool,
     dejavu: FxHashSet<Id>,
-    opts: ExpandGenericOpts<'d>,
+    opts: ExpandGenericOpts,
 }
 
 impl GenericExpander<'_, '_, '_, '_> {
     fn fold_type(&mut self, ty: Type) -> Type {
         let span = ty.span();
+
+        {
+            let mut checker = GenericChecker {
+                params: &self.params,
+                found: false,
+            };
+            ty.visit_with(&mut checker);
+            if !checker.found {
+                return ty;
+            }
+        }
+
         let ty = ty.foldable();
 
         match ty {
@@ -679,6 +692,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                     _ => {}
                 }
 
+                // TODO: PERF
                 m.ty = m.ty.map(|v| box v.foldable());
                 m.ty = match m.ty {
                     Some(box Type::IndexedAccessType(IndexedAccessType {
@@ -688,6 +702,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                         index_type,
                     })) => {
                         let obj_type = box obj_type.foldable();
+                        // TODO: PERF
                         match *obj_type {
                             Type::TypeLit(TypeLit {
                                 span,
@@ -928,27 +943,26 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
     }
 }
 
-impl Fold<PropertySignature> for GenericExpander<'_, '_, '_, '_> {
-    fn fold(&mut self, v: PropertySignature) -> PropertySignature {
-        if !self.opts.props.is_empty() {
-            if self.opts.props.iter().all(|enabled| !enabled.type_eq(&v.key)) {
-                return v;
-            }
-        }
-
-        v.fold_children_with(self)
-    }
+/// This [Visit] implementation is used to check if one of the type parameters
+/// are used.
+struct GenericChecker<'a> {
+    params: &'a FxHashMap<Id, Type>,
+    found: bool,
 }
 
-impl Fold<MethodSignature> for GenericExpander<'_, '_, '_, '_> {
-    fn fold(&mut self, v: MethodSignature) -> MethodSignature {
-        if !self.opts.props.is_empty() {
-            if self.opts.props.iter().all(|enabled| !enabled.type_eq(&v.key)) {
-                return v;
+impl Visit<Type> for GenericChecker<'_> {
+    fn visit(&mut self, ty: &Type) {
+        match ty {
+            Type::Param(p) => {
+                if self.params.contains_key(&p.name) {
+                    self.found = true;
+                    return;
+                }
             }
+            _ => {}
         }
 
-        v.fold_children_with(self)
+        ty.visit_children_with(self);
     }
 }
 
@@ -996,6 +1010,7 @@ impl Fold<Type> for MappedHandler<'_, '_, '_, '_> {
             _ => {}
         }
 
+        // TODO: PERF
         ty = ty.foldable();
         ty = ty.fold_children_with(self);
 

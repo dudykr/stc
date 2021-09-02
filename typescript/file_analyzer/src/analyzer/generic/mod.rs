@@ -559,6 +559,7 @@ impl Analyzer<'_, '_> {
         let p;
         let param = match param {
             Type::Mapped(..) => {
+                // TODO: PERF
                 p = box param.clone().foldable().fold_with(&mut MappedIndexedSimplifier);
                 &p
             }
@@ -954,6 +955,9 @@ impl Analyzer<'_, '_> {
                             },
                         )?
                         .foldable();
+
+                    // TODO: PERF
+
                     match arg_obj_ty {
                         Type::Mapped(arg_obj_ty) => match &arg_obj_ty.type_param {
                             TypeParam {
@@ -1571,6 +1575,8 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Index(i) => {
                                     let type_ann = if let Some(arg_prop_ty) = &i.type_ann {
                                         if let Some(param_ty) = &param.ty {
+                                            // TODO: PERF
+
                                             let mapped_param_ty = arg_prop_ty.clone().foldable().fold_with(
                                                 &mut SingleTypeParamReplacer {
                                                     name: &name,
@@ -2221,12 +2227,15 @@ impl Analyzer<'_, '_> {
         ty.normalize().visit_with(&mut usage_visitor);
         if usage_visitor.params.is_empty() {
             debug!("rename_type_param: No type parameter is used in type");
-            match ty.normalize_mut() {
-                Type::Function(ref mut f) => {
-                    f.type_params = None;
-                }
 
-                _ => {}
+            if matches!(ty.normalize(), Type::Function(..)) {
+                match ty.normalize_mut() {
+                    Type::Function(ref mut f) => {
+                        f.type_params = None;
+                    }
+
+                    _ => {}
+                }
             }
 
             return Ok(ty);
@@ -2243,6 +2252,7 @@ impl Analyzer<'_, '_> {
 
             let map = self.finalize_inference(inferred);
 
+            // TODO: PERF
             return Ok(ty
                 .foldable()
                 .fold_with(&mut TypeParamRenamer {
@@ -2257,16 +2267,15 @@ impl Analyzer<'_, '_> {
             params: usage_visitor.params,
         });
 
-        match ty.normalize_mut() {
-            Type::Function(ref mut f) => {
-                f.type_params = decl;
+        if matches!(ty.normalize(), Type::Function(..)) {
+            match ty.normalize_mut() {
+                Type::Function(ref mut f) => {
+                    f.type_params = decl;
+                }
+                _ => {}
             }
-
-            Type::ClassDef(..) | Type::Class(..) => {
-                return Ok(ty);
-            }
-
-            _ => {}
+        } else if matches!(ty.normalize(), Type::ClassDef(..) | Type::Class(..)) {
+            return Ok(ty);
         }
 
         Ok(ty.fold_with(&mut TypeParamRemover::new()).fixed())
@@ -2513,19 +2522,25 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
     };
 
     match v {
-        TruePlusMinus::True => match element_ty.normalize_mut() {
-            Type::Optional(ty) => {
-                let ty = ty.ty.take();
-                let ty = ty.remove_falsy();
+        TruePlusMinus::True => {
+            if element_ty.normalize().is_optional() {
+                match element_ty.normalize_mut() {
+                    Type::Optional(ty) => {
+                        let ty = ty.ty.take();
+                        let ty = ty.remove_falsy();
 
-                *element_ty = ty;
-            }
-            _ => {
+                        *element_ty = ty;
+                    }
+                    _ => {
+                        unreachable!()
+                    }
+                }
+            } else {
                 let new_ty = element_ty.take().remove_falsy();
 
                 *element_ty = new_ty;
             }
-        },
+        }
         TruePlusMinus::Plus => match element_ty.normalize() {
             Type::Optional(ty) => {}
             _ => {

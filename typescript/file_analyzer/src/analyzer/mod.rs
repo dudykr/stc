@@ -19,8 +19,8 @@ use crate::{
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{
-    RDecorator, RExpr, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsImportEqualsDecl, RTsModuleDecl,
-    RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
+    RDecorator, RExpr, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsEntityName, RTsImportEqualsDecl,
+    RTsModuleDecl, RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
 };
 use stc_ts_dts_mutations::Mutations;
 use stc_ts_errors::{
@@ -28,8 +28,8 @@ use stc_ts_errors::{
     Error,
 };
 use stc_ts_storage::{Builtin, Info, Storage};
-use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData};
-use stc_utils::{AHashMap, AHashSet};
+use stc_ts_types::{Id, IdCtx, Mapped, ModuleId, ModuleTypeData, TypeParamInstantiation};
+use stc_utils::{cache::CacheMap, AHashMap, AHashSet};
 use std::{
     fmt::Debug,
     mem::take,
@@ -213,6 +213,9 @@ pub(crate) struct Ctx {
 
     /// Should be modified directly instead of using `with_ctx`.
     in_unreachable: bool,
+
+    /// `true` for top-level type annotations.
+    is_not_topmost_type: bool,
 }
 
 impl Ctx {
@@ -223,6 +226,13 @@ impl Ctx {
     pub fn can_generalize_literals(self) -> bool {
         !self.in_const_assertion && !self.in_argument && !self.in_cond
     }
+}
+
+#[derive(Debug, Default)]
+struct TypeCache {
+    expand_mapped: CacheMap<Mapped, Option<Type>>,
+
+    ts_entity_name: CacheMap<(ModuleId, RTsEntityName, Option<TypeParamInstantiation>), Type>,
 }
 
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.
@@ -301,6 +311,8 @@ struct AnalyzerData {
     /// We mimic it by storing names of wrong overloads.
     /// Only first wrong overload should be added to this set.
     known_wrong_overloads: FxHashSet<Id>,
+
+    cache: TypeCache,
 }
 
 #[derive(Debug, Default)]
@@ -535,6 +547,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 allow_new_target: false,
                 disallow_suggesting_property_on_no_var: false,
                 in_unreachable: false,
+                is_not_topmost_type: false,
             },
             loader,
             is_builtin,

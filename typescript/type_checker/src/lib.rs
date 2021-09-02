@@ -30,6 +30,8 @@ use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use tracing::{info, warn};
 
+mod typings;
+
 /// Onc instance per swc::Compiler
 pub struct Checker {
     cm: Arc<SourceMap>,
@@ -111,9 +113,27 @@ impl Checker {
     /// After calling this method, you can get errors using `.take_errors()`
     pub fn check(&self, entry: Arc<PathBuf>) -> ModuleId {
         self.run(|| {
+            let start = Instant::now();
+
             let id = self.module_graph.load_all(&entry).unwrap();
 
+            let end = Instant::now();
+            log::info!(
+                "Loading of `{}` and dependencies took {:?}",
+                entry.display(),
+                end - start
+            );
+
+            let start = Instant::now();
+
             self.analyze_module(None, entry.clone());
+
+            let end = Instant::now();
+            log::info!(
+                "Analysis of `{}` and dependencies took {:?}",
+                entry.display(),
+                end - start
+            );
 
             id
         })
@@ -262,10 +282,8 @@ impl Checker {
                     .clone();
 
                 let dur = Instant::now() - start;
-                if did_work {
-                    eprintln!("[Timing] Full analysis of {}: {:?}", path.display(), dur);
-                } else {
-                    eprintln!("[Timing] Waited for {}: {:?}", path.display(), dur);
+                if !did_work {
+                    log::warn!("Waited for {}: {:?}", path.display(), dur);
                 }
 
                 res
@@ -278,7 +296,10 @@ impl Checker {
             let start = Instant::now();
 
             let mut node_id_gen = NodeIdGenerator::default();
-            let mut module = self.module_graph.clone_module(id).unwrap();
+            let mut module = self
+                .module_graph
+                .clone_module(id)
+                .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", id, path.display()));
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
             let mut module = RModule::from_orig(&mut node_id_gen, module);
 

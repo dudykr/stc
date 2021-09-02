@@ -434,7 +434,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "44533bbbb3bb3c1fa17d9f2e4e38bbbaf8396ba82193c4cb1b6445d711445d36"
 dependencies = [
  "atty",
- "humantime",
+ "humantime 1.3.0",
+ "log",
+ "regex",
+ "termcolor",
+]
+
+[[package]]
+name = "env_logger"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b2cf0344971ee6c64c31be0d530793fba457d322dfec2810c453d0ef228f9c3"
+dependencies = [
+ "atty",
+ "humantime 2.1.0",
  "log",
  "regex",
  "termcolor",
@@ -674,6 +687,12 @@ checksum = "df004cfca50ef23c36850aaaa59ad52cc70d0e90243c3c7737a4dd32dc7a3c4f"
 dependencies = [
  "quick-error",
 ]
+
+[[package]]
+name = "humantime"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "ident_case"
@@ -1751,18 +1770,18 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "serde"
-version = "1.0.126"
+version = "1.0.130"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec7505abeacaec74ae4778d9d9328fe5a5d04253220a85c4ee022239fc996d03"
+checksum = "f12d06de37cf59146fbdecab66aa99f9fe4f78722e3607577a5375d66bd0c913"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.126"
+version = "1.0.130"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "963a7dbc9895aeac7ac90e74f34a5d5261828f79df35cbed41e10189d3804d43"
+checksum = "d7bc1a1ab1961464eae040d96713baa5a724a8152c1222492465b54322ec508b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1860,6 +1879,8 @@ name = "stc"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "env_logger 0.9.0",
+ "log",
  "lspower",
  "stc_ts_builtin_types",
  "stc_ts_file_analyzer",
@@ -1869,6 +1890,7 @@ dependencies = [
  "stc_utils",
  "structopt",
  "swc_common",
+ "swc_ecma_ast",
  "swc_ecma_parser",
  "tokio",
  "tracing",
@@ -1897,6 +1919,10 @@ version = "0.0.0"
 dependencies = [
  "ansi_term 0.12.1",
  "once_cell",
+ "opentelemetry-jaeger",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -1986,6 +2012,7 @@ version = "0.1.0"
 name = "stc_ts_errors"
 version = "0.1.0"
 dependencies = [
+ "ansi_term 0.12.1",
  "backtrace",
  "fxhash",
  "rnode",
@@ -2046,7 +2073,6 @@ dependencies = [
  "swc_ecma_visit",
  "testing",
  "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -2096,6 +2122,7 @@ dependencies = [
  "anyhow",
  "dashmap 3.11.10",
  "fxhash",
+ "log",
  "num_cpus",
  "once_cell",
  "parking_lot 0.11.1",
@@ -2179,10 +2206,10 @@ dependencies = [
  "dashmap 3.11.10",
  "fxhash",
  "ignore",
+ "log",
  "once_cell",
- "opentelemetry",
- "opentelemetry-jaeger",
  "parking_lot 0.11.1",
+ "rayon",
  "rnode",
  "serde",
  "serde_json",
@@ -2210,8 +2237,6 @@ dependencies = [
  "testing",
  "testing_macros 0.1.2",
  "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
  "walkdir",
 ]
 
@@ -2239,6 +2264,7 @@ dependencies = [
  "stc_ts_utils",
  "swc_common",
  "swc_ecma_ast",
+ "tracing",
 ]
 
 [[package]]
@@ -2291,6 +2317,7 @@ dependencies = [
  "mimalloc",
  "once_cell",
  "swc_common",
+ "tracing",
 ]
 
 [[package]]
@@ -2400,10 +2427,11 @@ dependencies = [
 
 [[package]]
 name = "swc_common"
-version = "0.11.4"
+version = "0.11.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f303985ebd578a033371a87be28cb54189d3ae5d492622523200f4de08db5275"
+checksum = "042a1efcb6b394d2e06f6118f1811ea7fbcff317c69e4d5c131f5fcf9766dd6b"
 dependencies = [
+ "ahash 0.7.4",
  "ast_node",
  "atty",
  "cfg-if 0.1.10",
@@ -2426,9 +2454,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_ast"
-version = "0.49.1"
+version = "0.49.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "228ab89e5a11289d43f14da2b65b9e37c8fb31091c33f4fad66791ef65c04a1b"
+checksum = "72f135a9c200f058d5bec4e63b34712f412db0d2e894bf22b8b44b0740be6607"
 dependencies = [
  "is-macro",
  "num-bigint",
@@ -2627,7 +2655,7 @@ checksum = "14c1ecb819cc019f96a0d1f268e080588c47eab4cc804d8dadac52e34f264430"
 dependencies = [
  "ansi_term 0.12.1",
  "difference",
- "env_logger",
+ "env_logger 0.7.1",
  "log",
  "once_cell",
  "pretty_assertions",
@@ -2865,9 +2893,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-subscriber"
-version = "0.2.19"
+version = "0.2.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab69019741fca4d98be3c62d2b75254528b5432233fd8a4d2739fec20278de48"
+checksum = "b9cbe87a2fa7e35900ce5de20220a582a9483a7063811defce79d7cbd59d4cfe"
 dependencies = [
  "ansi_term 0.12.1",
  "chrono",

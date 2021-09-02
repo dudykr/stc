@@ -142,11 +142,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            debug!(
-                
-                "visit_stmts_for_return: types.len() = {}",
-                values.return_types.len()
-            );
+            debug!("visit_stmts_for_return: types.len() = {}", values.return_types.len());
 
             let mut actual = Vec::with_capacity(values.return_types.len());
             for mut ty in values.return_types {
@@ -544,6 +540,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                     // };
                     // `S2[keyof S2]`;
 
+                    // TODO: PERF
                     match index_ty.foldable() {
                         Type::TypeLit(obj) => {
                             let mut types: Vec<Type> = vec![];
@@ -589,6 +586,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                     // =>
                     // `T["a" | "b"]`
 
+                    // TODO: PERF
                     match index_ty.foldable() {
                         Type::TypeLit(obj) => {
                             let mut types: Vec<Type> = vec![];

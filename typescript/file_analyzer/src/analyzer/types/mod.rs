@@ -21,15 +21,11 @@ use stc_ts_types::{
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
-use std::{
-    borrow::Cow,
-    collections::HashMap,
-    time::{Duration, Instant},
-};
+use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{debug, error, instrument, trace};
+use tracing::{debug, error, instrument};
 
 mod index_signature;
 mod keyof;
@@ -70,8 +66,6 @@ impl Analyzer<'_, '_> {
         ty: Cow<'a, Type>,
         mut opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
-        let start = Instant::now();
-
         let res = (|| {
             ty.assert_valid();
 
@@ -280,6 +274,8 @@ impl Analyzer<'_, '_> {
 
                         // TOOD: Optimize
                         // If we can calculate type using constraints, do so.
+
+                        // TODO: PERF
                         match check_type.normalize_mut() {
                             Type::Param(TypeParam {
                                 name,
@@ -461,12 +457,6 @@ impl Analyzer<'_, '_> {
             Ok(ty)
         })();
 
-        let end = Instant::now();
-        let dur = end - start;
-        if dur > Duration::from_micros(100) {
-            trace!(kind = "perf", op = "normalize", "Normalized a type. (time = {:?})", dur);
-        }
-
         res
     }
 
@@ -582,6 +572,8 @@ impl Analyzer<'_, '_> {
             },
         )?;
         let actual_span = ty.span();
+
+        // TODO: PERF
         let ty = ty.into_owned().foldable();
 
         Ok(match ty {
@@ -694,6 +686,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[instrument(skip(self, span, ty))]
     pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type) -> ValidationResult<bool> {
         let ty = self
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())
@@ -730,6 +723,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
+    #[instrument(skip(self, ty))]
     pub(crate) fn expand_type_ann<'a>(&mut self, ty: Option<&'a Type>) -> ValidationResult<Option<Cow<'a, Type>>> {
         let ty = match ty {
             Some(v) => v,
@@ -741,6 +735,7 @@ impl Analyzer<'_, '_> {
         Ok(Some(ty))
     }
 
+    #[instrument(skip(self, def))]
     pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> ValidationResult<TypeLit> {
         let mut members = vec![];
 
@@ -797,6 +792,7 @@ impl Analyzer<'_, '_> {
 
     /// Exclude types from `ty` using type facts with key `name`, for the
     /// current scope.
+    #[instrument(skip(self, span, name, ty))]
     pub(crate) fn exclude_types_using_fact(&mut self, span: Span, name: &Name, ty: &mut Type) {
         debug_assert!(!span.is_dummy(), "exclude_types should not be called with a dummy span");
 
@@ -825,6 +821,7 @@ impl Analyzer<'_, '_> {
         debug!("[types/facts] Excluded types: {} => {}", before, after);
     }
 
+    #[instrument(skip(self, name, ty))]
     pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
         let type_facts = self.scope.get_type_facts(&name)
             | self
@@ -847,6 +844,7 @@ impl Analyzer<'_, '_> {
     /// ## excluded
     ///
     /// Memebers of base class.
+    #[instrument(skip(self, excluded, ty))]
     pub(crate) fn collect_class_members(
         &mut self,
         excluded: &[&ClassMember],
@@ -1313,6 +1311,7 @@ impl Analyzer<'_, '_> {
         Ok(Type::Intrinsic(ty.clone()))
     }
 
+    #[instrument(skip(self, span, type_name, type_args))]
     pub(crate) fn report_error_for_unresolve_type(
         &mut self,
         span: Span,
@@ -1467,6 +1466,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        // TODO: PERF
         match ty.normalize_mut() {
             Type::Union(ty) => {
                 for ty in &mut ty.types {

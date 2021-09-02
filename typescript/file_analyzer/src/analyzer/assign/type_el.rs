@@ -20,6 +20,7 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{Accessibility, TsKeywordTypeKind, TsTypeOperatorOp};
+use tracing::instrument;
 
 impl Analyzer<'_, '_> {
     /// This method is called when lhs of assignment is interface or type
@@ -30,6 +31,7 @@ impl Analyzer<'_, '_> {
     /// let a: A = foo;
     /// let b: { key: string } = foo;
     /// ```
+    #[instrument(skip(self, data, opts, lhs_span, lhs, rhs, lhs_metadata))]
     pub(super) fn assign_to_type_elements(
         &mut self,
         data: &mut AssignData,
