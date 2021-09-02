@@ -135,8 +135,8 @@ where
         let (_, id) = self.id_generator.generate(path);
         self.paths.insert(id, path.clone());
 
-        let res = self.loaded.insert(id, loaded.module);
-        assert_eq!(res, None, "duplicate?");
+        let _res = self.loaded.insert(id, loaded.module);
+        // assert_eq!(res, None, "duplicate?");
 
         let dep_module_ids = loaded
             .deps
@@ -188,11 +188,14 @@ where
     ///
     /// Note that this methods does not modify `self.loaded`.
     fn load(&self, path: &Arc<PathBuf>) -> Result<Option<LoadResult>, Error> {
-        let (new, module_id) = self.id_generator.generate(path);
+        let (_new, module_id) = self.id_generator.generate(path);
 
-        if !new || self.loaded.contains_key(&module_id) {
+        if self.loaded.contains_key(&module_id) {
             return Ok(None);
         }
+
+        log::debug!("Loading {}", path.display());
+
         let fm = self.cm.load_file(&path)?;
         let lexer = Lexer::new(
             Syntax::Typescript(TsConfig {

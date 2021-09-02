@@ -62,7 +62,7 @@ pub struct TscCommand {
 
     /// Ensure TypeScript can determine where to find the outputs of the
     /// referenced project to compile project.
-    #[structopt(long = "composite")]
+    #[structopt(long = "composite", default_value = "true")]
     pub composite: TrueBool,
 
     /// Generates corresponding .d.ts file.
@@ -71,7 +71,7 @@ pub struct TscCommand {
 
     /// Output directory for generated declaration files.
     #[structopt(long = "declarationDir")]
-    pub declaration_dir: String,
+    pub declaration_dir: Option<String>,
 
     #[structopt(long = "declarationMap")]
     pub declaration_map: bool,

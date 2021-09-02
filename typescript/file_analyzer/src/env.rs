@@ -21,7 +21,7 @@ use swc_atoms::JsWord;
 use swc_common::{Globals, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_parser::JscTarget;
-use tracing::info;
+use tracing::{info, instrument};
 
 #[derive(Debug, Default)]
 pub struct BuiltIn {
@@ -332,6 +332,7 @@ impl Env {
         }
     }
 
+    #[instrument(skip(self, span))]
     pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
         if let Some(ty) = self.global_vars.get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
@@ -350,6 +351,7 @@ impl Env {
         })
     }
 
+    #[instrument(skip(self, span))]
     pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
         if let Some(ty) = self.global_types.get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);

@@ -34,7 +34,7 @@ impl NodeResolver {
 
     /// Resolve a path as a file. If `path` refers to a file, it is returned;
     /// otherwise the `path` + each extension is tried.
-    fn resolve_as_file(&self, path: &Path) -> Result<PathBuf, Error> {
+    pub fn resolve_as_file(&self, path: &Path) -> Result<PathBuf, Error> {
         // 1. If X is a file, load X as JavaScript text.
         if path.is_file() {
             return Ok(path.to_path_buf());
@@ -52,11 +52,11 @@ impl NodeResolver {
 
     /// Resolve a path as a directory, using the "main" key from a package.json
     /// file if it exists, or resolving to the index.EXT file if it exists.
-    fn resolve_as_directory(&self, path: &PathBuf) -> Result<PathBuf, Error> {
+    pub fn resolve_as_directory(&self, path: &Path) -> Result<PathBuf, Error> {
         // 1. If X/package.json is a file, use it.
         let pkg_path = path.join("package.json");
         if pkg_path.is_file() {
-            let main = self.resolve_package_main(&pkg_path);
+            let main = self.resolve_using_package_json(&pkg_path);
             if main.is_ok() {
                 return main;
             }
@@ -67,7 +67,7 @@ impl NodeResolver {
     }
 
     /// Resolve using the package.json "main" key.
-    fn resolve_package_main(&self, pkg_path: &PathBuf) -> Result<PathBuf, Error> {
+    fn resolve_using_package_json(&self, pkg_path: &PathBuf) -> Result<PathBuf, Error> {
         // TODO how to not always initialise this here?
         let root = PathBuf::from("/");
         let pkg_dir = pkg_path.parent().unwrap_or(&root);
@@ -88,7 +88,7 @@ impl NodeResolver {
     }
 
     /// Resolve a directory to its index.EXT.
-    fn resolve_index(&self, path: &PathBuf) -> Result<PathBuf, Error> {
+    fn resolve_index(&self, path: &Path) -> Result<PathBuf, Error> {
         // 1. If X/index.js is a file, load X/index.js as JavaScript text.
         // 2. If X/index.json is a file, parse X/index.json to a JavaScript object.
         // 3. If X/index.node is a file, load X/index.node as binary addon.

@@ -5,8 +5,10 @@ use crate::{
 use stc_ts_errors::Error;
 use stc_ts_types::TsExpr;
 use swc_common::{Span, TypeEq};
+use tracing::instrument;
 
 impl Analyzer<'_, '_> {
+    #[instrument(skip(self, span, parent))]
     pub(crate) fn report_error_for_conflicting_parents(&mut self, span: Span, parent: &[TsExpr]) {
         if self.is_builtin {
             return;

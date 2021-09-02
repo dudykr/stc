@@ -38,7 +38,7 @@ use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, Method, ModuleId, Operator,
     OptionalType, PropertySignature, QueryExpr, QueryType, StaticThis,
 };
-use stc_utils::{error::context, stack};
+use stc_utils::{error::context, stack, try_cache};
 use std::{
     borrow::Cow,
     collections::HashMap,
@@ -625,6 +625,7 @@ impl Analyzer<'_, '_> {
         true
     }
 
+    #[instrument(skip(self, prop, computed))]
     pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
         if computed {
             prop.validate_with_default(self)
@@ -2548,7 +2549,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let expand_opts = ExpandOpts {
-                    generic: ExpandGenericOpts { props: &[prop.clone()] },
+                    generic: ExpandGenericOpts {},
                     ..Default::default()
                 };
 
@@ -2672,7 +2673,12 @@ impl Analyzer<'_, '_> {
         }
 
         print_backtrace();
-        unimplemented!("access_property(MemberExpr):\nObject: {:?}\nProp: {:?}", obj, prop);
+        unimplemented!(
+            "access_property(MemberExpr):\nObject: {:?}\nProp: {:?}\nPath: {}",
+            obj,
+            prop,
+            self.storage.path(self.ctx.module_id).display()
+        );
     }
 
     /// TODO(kdy1): Clarify this.
@@ -2732,6 +2738,53 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(ty)
+    }
+
+    #[instrument(skip(self, span, name, type_mode, type_args))]
+    pub(super) fn type_of_name(
+        &mut self,
+        span: Span,
+        name: &[Id],
+        type_mode: TypeOfMode,
+        type_args: Option<&TypeParamInstantiation>,
+    ) -> ValidationResult {
+        assert!(name.len() > 0, "Cannot determine type of empty name");
+
+        let mut id: RIdent = name[0].clone().into();
+        id.span.lo = span.lo;
+        id.span.hi = span.hi;
+
+        match name.len() {
+            1 => {
+                return self
+                    .type_of_var(&id, TypeOfMode::RValue, None)
+                    .context("tried to get type of a name with len == 1");
+            }
+
+            _ => {
+                let last_id = name.last().unwrap();
+
+                let obj = self
+                    .type_of_name(span, &name[..name.len() - 1], type_mode, type_args)
+                    .context("tried to get type of &names[..-1]")?;
+
+                let ty = self
+                    .access_property(
+                        span,
+                        &obj,
+                        &Key::Normal {
+                            span: id.span,
+                            sym: last_id.sym().clone(),
+                        },
+                        type_mode,
+                        IdCtx::Var,
+                        AccessPropertyOpts { ..Default::default() },
+                    )
+                    .context("tried to access property to calculate type of name")?;
+
+                Ok(ty)
+            }
+        }
     }
 
     /// Returned type reflects conditional type facts.
@@ -3170,7 +3223,23 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[instrument(skip(self, span, ctxt, n, type_args))]
     pub(crate) fn type_of_ts_entity_name(
+        &mut self,
+        span: Span,
+        ctxt: ModuleId,
+        n: &RTsEntityName,
+        type_args: Option<&TypeParamInstantiation>,
+    ) -> ValidationResult {
+        Ok(try_cache!(
+            self.data.cache.ts_entity_name,
+            (ctxt, n.clone(), type_args.cloned()),
+            self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
+        ))
+    }
+
+    #[instrument(skip(self, span, ctxt, n, type_args))]
+    fn type_of_ts_entity_name_inner(
         &mut self,
         span: Span,
         ctxt: ModuleId,
@@ -3207,22 +3276,25 @@ impl Analyzer<'_, '_> {
                             Type::Namespace(_)
                             | Type::Module(_)
                             | Type::Instance(..)
-                            | Type::Interface(_)
-                            | Type::Class(_)
-                            | Type::ClassDef(_)
                             | Type::Enum(_)
                             | Type::EnumVariant(_)
                             | Type::This(_)
                             | Type::StaticThis(_)
                             | Type::Param(_)
                             | Type::Constructor(_)
-                            | Type::Function(_)
-                            | Type::TypeLit(_)
-                            | Type::Keyword(_)
-                            | Type::Optional(_)
                             | Type::Rest(_)
                             | Type::Lit(_)
+                            | Type::Optional(_)
+                            | Type::Keyword(_)
+                            | Type::Function(_)
+                            | Type::TypeLit(_)
                             | Type::Tpl(_) => {
+                                let mut ty = ty.into_owned().clone();
+                                ty.respan(span);
+                                return Ok(ty);
+                            }
+
+                            Type::Interface(_) | Type::Class(_) | Type::ClassDef(_) | Type::Alias(_) => {
                                 let mut ty = ty.into_owned().clone();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
@@ -3278,24 +3350,29 @@ impl Analyzer<'_, '_> {
                             Type::Union(ty) => {
                                 // TODO: Expand types
                                 if !self.is_builtin {
-                                    dbg!(&ty);
+                                    if cfg!(debug_assertions) {
+                                        dbg!(&ty);
+                                    }
                                 }
                             }
                             Type::Intersection(ty) => {
                                 // TODO: Expand types
                                 if !self.is_builtin {
-                                    dbg!(&ty);
+                                    if cfg!(debug_assertions) {
+                                        dbg!(&ty);
+                                    }
                                 }
                             }
                             Type::Operator(_) => {}
                             Type::Mapped(_) => {}
-                            Type::Alias(_) => {}
                             Type::Arc(_) => {}
                         }
                     }
                 }
 
-                warn!("Creating Type::Ref: {:?}", i);
+                if cfg!(debug_assertions) {
+                    warn!("Creating Type::Ref: {:?}", i);
+                }
 
                 Ok(Type::Ref(Ref {
                     span,
@@ -3349,6 +3426,14 @@ impl Analyzer<'_, '_> {
             span,
             ..
         } = *expr;
+
+        let name: Option<Name> = expr.try_into().ok();
+
+        if let Some(name) = &name {
+            if let Some(ty) = self.scope.get_type_from_name(name) {
+                return Ok(ty);
+            }
+        }
 
         let mut errors = Errors::default();
 
@@ -3427,7 +3512,6 @@ impl Analyzer<'_, '_> {
             .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var, Default::default())
             .context("tried to access property of an object to calculate type of a member expression")?;
 
-        let name: Option<Name> = expr.try_into().ok();
         if !self.is_builtin {
             if let Some(name) = name {
                 ty = self.apply_type_facts(&name, ty);

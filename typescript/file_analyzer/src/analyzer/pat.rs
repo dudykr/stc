@@ -26,6 +26,7 @@ use stc_utils::TryOpt;
 use swc_atoms::js_word;
 use swc_common::{Mark, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
+use tracing::instrument;
 
 #[derive(Debug, Clone, Copy)]
 pub(super) enum PatMode {
@@ -37,6 +38,7 @@ pub(super) enum PatMode {
 }
 
 impl Analyzer<'_, '_> {
+    #[instrument(skip(self, ty))]
     pub(crate) fn mark_as_implicitly_typed(&mut self, ty: &mut Type) {
         let span = ty.span();
         let span = span.apply_mark(self.marks().implicit_type_mark);
@@ -47,6 +49,7 @@ impl Analyzer<'_, '_> {
         self.is_implicitly_typed_span(ty.span())
     }
 
+    #[instrument(skip(self, span))]
     pub(crate) fn is_implicitly_typed_span(&self, span: Span) -> bool {
         let mut ctxt: SyntaxContext = span.ctxt;
         loop {
@@ -64,6 +67,7 @@ impl Analyzer<'_, '_> {
         false
     }
 
+    #[instrument(skip(self, pat))]
     pub(crate) fn default_type_for_pat(&mut self, pat: &RPat) -> ValidationResult<Type> {
         let implicit_type_mark = self.marks().implicit_type_mark;
 
@@ -351,18 +355,21 @@ impl Analyzer<'_, '_> {
                     let ty = ty.unwrap_or_else(|| {
                         let mut ty = default_value_ty.generalize_lit(marks).foldable();
 
-                        match ty {
-                            Type::Tuple(tuple) => {
-                                let mut types = tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
+                        if matches!(ty.normalize(), Type::Tuple(..)) {
+                            match ty {
+                                Type::Tuple(tuple) => {
+                                    let mut types =
+                                        tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
 
-                                types.dedup_type();
+                                    types.dedup_type();
 
-                                ty = Type::Array(Array {
-                                    span: tuple.span,
-                                    elem_type: box Type::union(types),
-                                });
+                                    ty = Type::Array(Array {
+                                        span: tuple.span,
+                                        elem_type: box Type::union(types),
+                                    });
+                                }
+                                _ => {}
                             }
-                            _ => {}
                         }
 
                         Ok(ty)

@@ -1,6 +1,7 @@
 use rnode::{VisitMut, VisitMutWith};
 use stc_ts_types::{Array, Conditional, FnParam, Intersection, Type, TypeOrSpread, TypeParam, Union};
 use swc_common::TypeEq;
+use tracing::instrument;
 
 pub trait Fix: Sized {
     fn fix(&mut self);
@@ -44,6 +45,7 @@ where
 macro_rules! impl_fix {
     ($T:ty) => {
         impl Fix for $T {
+            #[instrument(skip(self))]
             fn fix(&mut self) {
                 self.visit_mut_with(&mut Fixer);
             }
@@ -125,11 +127,8 @@ impl VisitMut<Intersection> for Fixer {
 
 impl Fixer {
     fn fix_type(&mut self, ty: &mut Type) {
-        {
-            let ty = ty.normalize();
-            if ty.is_keyword() || ty.is_lit() {
-                return;
-            }
+        if matches!(ty.normalize(), Type::Keyword(..) | Type::Lit(..)) {
+            return;
         }
 
         ty.normalize_mut();

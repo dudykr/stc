@@ -1451,16 +1451,13 @@ impl Analyzer<'_, '_> {
         // We create a type fact for `foo` in `if (foo.type === 'bar');`
 
         let ids = name.as_ids();
-        if name.len() != 2 {
-            unimplemented!("calculating type facts for names with 3+ elements");
-        }
 
         let prop = Key::Normal {
             span,
             sym: ids[ids.len() - 1].sym().clone(),
         };
 
-        let ty = self.type_of_var(&id, TypeOfMode::RValue, None)?;
+        let ty = self.type_of_name(span, &name.as_ids()[..name.len() - 1], TypeOfMode::RValue, None)?;
         let ty = self
             .expand_top_ref(span, Cow::Owned(ty), Default::default())?
             .into_owned();
@@ -1488,7 +1485,7 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     }
                 }
-                let actual = Name::from(&ids[0]);
+                let actual = Name::from(&name.as_ids()[..name.len() - 1]);
 
                 return Ok((actual, Type::union(candidates)));
             }

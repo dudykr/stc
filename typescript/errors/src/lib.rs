@@ -4,6 +4,7 @@
 #![feature(specialization)]
 
 pub use self::result_ext::DebugExt;
+use ansi_term::Color::Yellow;
 use fmt::Formatter;
 use static_assertions::assert_eq_size;
 use stc_ts_ast_rnode::RTsModuleName;
@@ -1352,7 +1353,7 @@ impl Debug for DebugContext {
         let mut next = Some(self);
 
         while let Some(cur) = next.take() {
-            writeln!(f, "context: {}", cur.context)?;
+            writeln!(f, "{}: {}", Yellow.paint("context"), cur.context)?;
 
             match &*cur.inner {
                 Error::DebugContext(c) => next = Some(c),

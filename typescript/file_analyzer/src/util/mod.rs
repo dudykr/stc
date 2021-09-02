@@ -8,6 +8,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_types::{Id, InferType, Ref, TypeParam};
 use swc_common::{Mark, Span, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
+use tracing::instrument;
 
 pub(crate) mod dashmap;
 pub(crate) mod graph;
@@ -85,6 +86,7 @@ impl Visit<Type> for MarkFinder {
     }
 }
 
+#[instrument(skip(n, mark))]
 pub(crate) fn contains_mark<T>(n: &T, mark: Mark) -> bool
 where
     T: VisitWith<MarkFinder>,
@@ -104,6 +106,7 @@ impl Visit<InferType> for InferTypeFinder {
     }
 }
 
+#[instrument(skip(n))]
 pub(crate) fn contains_infer_type(n: &Type) -> bool {
     let mut v = InferTypeFinder { found: false };
     n.visit_with(&mut v);
@@ -128,6 +131,7 @@ impl VisitMut<RIdent> for Marker {
 
 impl VisitMut<Type> for Marker {
     fn visit_mut(&mut self, ty: &mut Type) {
+        // TODO: PERF
         ty.normalize_mut();
         ty.visit_mut_children_with(self);
     }

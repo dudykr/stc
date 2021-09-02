@@ -1,5 +1,8 @@
-controlFlow::controlFlowIIFE.ts
-es6::yieldExpressions::YieldExpression10_es6.ts
-es6::yieldExpressions::YieldStarExpression1_es6.ts
-es6::yieldExpressions::generatorTypeCheck48.ts
-es6::yieldExpressions::generatorTypeCheck8.ts
+types::objectTypeLiteral::constructSignatures::constructSignaturesWithOverloads2.ts
+types::objectTypeLiteral::indexSignatures::multipleNumericIndexers.ts
+types::objectTypeLiteral::indexSignatures::multipleStringIndexers.ts
+types::objectTypeLiteral::indexSignatures::numericIndexerConstrainsPropertyDeclarations2.ts
+types::objectTypeLiteral::indexSignatures::stringIndexerConstrainsPropertyDeclarations2.ts
+types::objectTypeLiteral::methodSignatures::functionLiterals.ts
+types::objectTypeLiteral::methodSignatures::methodSignaturesWithOverloads2.ts
+types::objectTypeLiteral::propertySignatures::numericStringNamedPropertyEquivalence.ts

@@ -1,11 +1,13 @@
 use stc_ts_types::Type;
 use swc_common::TypeEq;
+use tracing::instrument;
 
 pub trait TypeVecExt {
     fn dedup_type(&mut self);
 }
 
 impl TypeVecExt for Vec<Type> {
+    #[instrument(skip(self))]
     fn dedup_type(&mut self) {
         let mut types: Vec<Type> = Vec::with_capacity(self.capacity());
         for ty in self.drain(..) {

@@ -494,12 +494,21 @@ impl Scope<'_> {
         self.vars.insert(name, v);
     }
 
+    pub fn get_type_from_name(&self, name: &Name) -> Option<Type> {
+        if let Some(ty) = self.facts.vars.get(name) {
+            return Some(ty.clone());
+        }
+
+        self.parent?.get_type_from_name(name)
+    }
+
     /// This method does **not** search for parent scope.
     pub fn get_var_mut(&mut self, name: &Id) -> Option<&mut VarInfo> {
         self.vars.get_mut(name)
     }
 
     /// Add a type to the scope.
+    #[instrument(name = "Scope::register_type", skip(self, name, ty, should_override))]
     fn register_type(&mut self, name: Id, ty: Type, should_override: bool) {
         ty.assert_valid();
 
@@ -557,10 +566,12 @@ impl Scope<'_> {
         match self.types.entry(name.clone()) {
             Entry::Occupied(mut e) => {
                 let prev = e.get_mut();
-                debug!(
-                    "Scope.register_type({}): override = {:?}; prev = {:?}; new_ty = {:?}",
-                    name, should_override, prev, ty,
-                );
+                if cfg!(debug_assertions) {
+                    debug!(
+                        "Scope.register_type({}): override = {:?}; prev = {:?}; new_ty = {:?}",
+                        name, should_override, prev, ty,
+                    );
+                }
                 if should_override {
                     *prev = ty;
                     return;
@@ -586,7 +597,9 @@ impl Scope<'_> {
                 }
             }
             Entry::Vacant(e) => {
-                debug!("Scope.register_type({}): {:?}", name, should_override);
+                if cfg!(debug_assertions) {
+                    debug!("Scope.register_type({}): {:?}", name, should_override);
+                }
                 e.insert(ty);
             }
         }
@@ -690,6 +703,7 @@ impl Analyzer<'_, '_> {
             opts,
         };
 
+        // TODO: PERF
         let ty = ty.foldable().fold_with(&mut v).fixed();
         ty.assert_valid();
 
@@ -758,8 +772,11 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[instrument(skip(self, name, ty))]
     pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
-        debug!("[({})/types] Registering: {:?}", self.scope.depth(), name);
+        if cfg!(debug_assertions) {
+            debug!("[({})/types] Registering: {:?}", self.scope.depth(), name);
+        }
 
         let should_check_for_mixed = !self.is_builtin
             && match ty.normalize() {
@@ -1024,18 +1041,20 @@ impl Analyzer<'_, '_> {
             ty.assert_valid();
 
             if let Some(ref excludes) = self.scope.facts.excludes.get(&name) {
-                match ty.normalize_mut() {
-                    Type::Union(ty::Union { ref mut types, .. }) => {
-                        for ty in types {
-                            let span = (*ty).span();
-                            for excluded_ty in excludes.iter() {
-                                if ty.type_eq(excluded_ty) {
-                                    *ty = Type::never(span)
+                if ty.normalize().is_union_type() {
+                    match ty.normalize_mut() {
+                        Type::Union(ty::Union { ref mut types, .. }) => {
+                            for ty in types {
+                                let span = (*ty).span();
+                                for excluded_ty in excludes.iter() {
+                                    if ty.type_eq(excluded_ty) {
+                                        *ty = Type::never(span)
+                                    }
                                 }
                             }
                         }
+                        _ => {}
                     }
-                    _ => {}
                 }
 
                 ty.fix();
@@ -1056,6 +1075,7 @@ impl Analyzer<'_, '_> {
         None
     }
 
+    #[instrument(skip(self))]
     pub fn find_type(&self, target: ModuleId, name: &Id) -> ValidationResult<Option<ItemRef<Type>>> {
         if target == self.ctx.module_id || target.is_builtin() {
             if let Some(v) = self.find_local_type(name) {
@@ -1088,6 +1108,7 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
+    #[instrument(skip(self, name))]
     fn find_local_type(&self, name: &Id) -> Option<ItemRef<Type>> {
         #[allow(dead_code)]
         static ANY: Type = Type::Keyword(RTsKeywordType {
@@ -1104,20 +1125,26 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        debug!("({}) Analyzer.find_type(`{}`)", self.scope.depth(), name);
+        if cfg!(debug_assertions) {
+            debug!("({}) Analyzer.find_type(`{}`)", self.scope.depth(), name);
+        }
 
         let mut src = vec![];
         if !self.is_builtin {
             if let Ok(ty) = self.env.get_global_type(DUMMY_SP, name.sym()) {
                 debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
-                debug!("Using builtin / global type: {}", dump_type_as_string(&self.cm, &ty));
+                if cfg!(debug_assertions) {
+                    debug!("Using builtin / global type: {}", dump_type_as_string(&self.cm, &ty));
+                }
                 src.push(ty.clone());
             }
         }
 
         if let Some(ty) = self.scope.find_type(name) {
-            debug!("Using type from scope: {:?}", ty);
+            if cfg!(debug_assertions) {
+                debug!("Using type from scope: {:?}", ty);
+            }
             src.extend(ty.into_iter().map(Cow::into_owned));
             return Some(ItemRef::Owned(
                 vec![Type::intersection(DUMMY_SP, src).cheap()].into_iter(),
@@ -1129,7 +1156,9 @@ impl Analyzer<'_, '_> {
         }
 
         if !self.is_builtin {
-            debug!("Scope.find_type: failed to find type '{}'", name);
+            if cfg!(debug_assertions) {
+                debug!("Scope.find_type: failed to find type '{}'", name);
+            }
         }
 
         None
@@ -1544,6 +1573,7 @@ impl Analyzer<'_, '_> {
     /// Check if `ty` stores infer type in it. **Note**: This mehods only checks
     /// for [Mark], and this method should be used with
     /// [crate::util::contains_infer_type] in most case.
+    #[instrument(name = "Analyzer::contains_infer_type", skip(self, ty))]
     pub(crate) fn contains_infer_type<T>(&self, ty: &T) -> bool
     where
         T: VisitWith<MarkFinder>,
@@ -1582,6 +1612,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Mark `ty` as not expanded by default.
+    #[instrument(skip(self, ty))]
     pub(crate) fn prevent_expansion<T>(&self, ty: &mut T)
     where
         T: VisitMutWith<ExpansionPreventer>,
@@ -1792,13 +1823,13 @@ impl<'a> Scope<'a> {
 //
 /// pub expand_params: bool,
 /// pub expand_return_type: bool,
-#[derive(Debug, Clone, Default)]
-pub(crate) struct ExpandOpts<'a> {
+#[derive(Debug, Clone, Copy, Default, PartialEq, TypeEq)]
+pub(crate) struct ExpandOpts {
     /// TODO: Document this.
     pub full: bool,
     pub expand_union: bool,
 
-    pub generic: ExpandGenericOpts<'a>,
+    pub generic: ExpandGenericOpts,
 }
 
 #[derive(Debug, Clone)]
@@ -1872,7 +1903,7 @@ struct Expander<'a, 'b, 'c> {
     expand_union: bool,
     /// Should we expand top level references?
     expand_top_level: bool,
-    opts: ExpandOpts<'a>,
+    opts: ExpandOpts,
 }
 
 impl Expander<'_, '_, '_> {
@@ -2000,6 +2031,7 @@ impl Expander<'_, '_, '_> {
                                     });
 
                                     let before = dump_type_as_string(&self.analyzer.cm, &ty);
+                                    // TODO: PERF
                                     let mut ty = self.analyzer.expand_type_params(
                                         &inferred,
                                         ty.foldable(),
@@ -2041,6 +2073,7 @@ impl Expander<'_, '_, '_> {
                                     _ => {}
                                 }
 
+                                // TODO: PERF
                                 let mut ty = ty.foldable();
 
                                 if is_alias {
@@ -2070,6 +2103,7 @@ impl Expander<'_, '_, '_> {
 
                     if let Some(t) = stored_ref {
                         self.expand_top_level = true;
+                        // TODO: PERF
                         return Ok(Some(t.into_owned().foldable().fold_with(self).fixed()));
                     }
                 }
@@ -2120,7 +2154,7 @@ impl Expander<'_, '_, '_> {
         Ok(Some(Type::any(span)))
     }
 
-    #[instrument(name = "Expander.expandP_ref", skip(self, r, was_top_level))]
+    #[instrument(name = "Expander.expand_ref", skip(self, r, was_top_level))]
     fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> ValidationResult<Option<Type>> {
         let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
 
@@ -2167,6 +2201,7 @@ impl Expander<'_, '_, '_> {
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
             Type::Arc(..) => {
+                // TODO: PERF
                 return ty.foldable().fold_with(self);
             }
             _ => {}
@@ -2241,8 +2276,10 @@ impl Expander<'_, '_, '_> {
         // Start handling type expansion.
         let res: ValidationResult<()> = try {
             if self.analyzer.contains_infer_type(&ty) || contains_infer_type(&ty) {
+                // TODO: PERF
                 match ty.normalize_mut() {
                     Type::Conditional(cond_ty) => {
+                        // TODO: PERF
                         match cond_ty.check_type.normalize_mut() {
                             Type::Query(QueryType {
                                 span,
@@ -2268,6 +2305,7 @@ impl Expander<'_, '_, '_> {
             }
         };
 
+        // TODO: PERF
         let ty = ty.foldable();
         match ty {
             Type::Intersection(mut i) if was_top_level => {
@@ -2477,6 +2515,7 @@ impl Expander<'_, '_, '_> {
                     ret_ty,
                 }) => {
                     let ret_ty = self.analyzer.rename_type_params(span, *ret_ty, None)?;
+                    // TODO: PERF
                     let ret_ty = box ret_ty.foldable().fold_with(self);
 
                     return Type::Function(ty::Function {
@@ -2530,14 +2569,16 @@ impl Expander<'_, '_, '_> {
                         .unwrap();
                 }
 
-                match check_type.normalize_mut() {
-                    Type::Class(check_type) => match extends_type.normalize() {
-                        Type::Constructor(..) => {
-                            return *true_type;
-                        }
+                if check_type.normalize().is_class() {
+                    match check_type.normalize_mut() {
+                        Type::Class(check_type) => match extends_type.normalize() {
+                            Type::Constructor(..) => {
+                                return *true_type;
+                            }
+                            _ => {}
+                        },
                         _ => {}
-                    },
-                    _ => {}
+                    }
                 }
 
                 return Type::Conditional(Conditional {
@@ -2588,6 +2629,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
             Type::Arc(..) => {
+                // TODO: PERF
                 return ty.foldable().fold_with(self);
             }
             _ => {}
@@ -2661,6 +2703,7 @@ impl VisitMut<Ref> for ExpansionPreventer {
 
 impl VisitMut<Type> for ExpansionPreventer {
     fn visit_mut(&mut self, ty: &mut Type) {
+        // TODO: PERF
         ty.normalize_mut();
         ty.visit_mut_children_with(self)
     }

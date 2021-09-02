@@ -11,7 +11,7 @@ use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::debug;
+use tracing::{debug, instrument};
 
 impl Analyzer<'_, '_> {
     /// TODO: Note: This method preserves [Type::Ref] in some cases.
@@ -19,6 +19,7 @@ impl Analyzer<'_, '_> {
     /// Those are preserved if
     ///
     ///  - it's Promise<T>
+    #[instrument(skip(self, facts, ty))]
     pub fn apply_type_facts_to_type(&mut self, facts: TypeFacts, mut ty: Type) -> Type {
         if self.is_builtin {
             return ty;
@@ -87,6 +88,8 @@ impl Analyzer<'_, '_> {
                 params: vec![param],
                 ret_ty: box Type::any(DUMMY_SP),
             });
+
+            // TODO: PERF
             match ty.normalize_mut() {
                 Type::Union(u) => {
                     let has_fn = u.types.iter().any(|ty| match ty.normalize() {
@@ -122,6 +125,7 @@ struct TypeFactsHandler<'a, 'b, 'c> {
 }
 
 impl TypeFactsHandler<'_, '_, '_> {
+    #[instrument(skip(self, ty))]
     fn can_be_primitive(&mut self, ty: &Type) -> bool {
         let ty = if let Ok(ty) = self
             .analyzer
@@ -408,6 +412,8 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             }
             _ => {}
         }
+
+        // TODO: PERF
 
         ty = ty.foldable();
         ty = ty.fold_children_with(self);

@@ -13,6 +13,7 @@ use anyhow::{Context, Error};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use serde::Deserialize;
+use stc_testing::init_tracing;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::{
     env::{Env, ModuleConfig},
@@ -41,7 +42,6 @@ use swc_ecma_parser::{JscTarget, Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
 use testing::{StdErr, Tester};
-use tracing_subscriber::prelude::*;
 
 struct RecordOnPanic {
     stats: Stats,
@@ -75,25 +75,43 @@ fn print_matched_errors() -> bool {
     !env::var("DONT_PRINT_MATCHED").map(|s| s == "1").unwrap_or(false)
 }
 
-fn record_time(time: Duration) {
+fn record_time(line_count: usize, time: Duration) {
     static TOTAL: Lazy<Mutex<Duration>> = Lazy::new(|| Default::default());
+    static LINES: Lazy<Mutex<usize>> = Lazy::new(|| Default::default());
 
     if cfg!(debug_assertions) {
         return;
     }
 
-    let _time = {
+    let time = {
         let mut guard = TOTAL.lock();
         *guard += time;
         *guard
     };
+    let line_count = {
+        let mut guard = LINES.lock();
+        *guard += line_count;
+        *guard
+    };
 
-    // let content = format!("{:#?}", time);
+    let content = format!(
+        "{:#?}",
+        Timings {
+            lines: line_count,
+            dur: time
+        }
+    );
+
+    #[derive(Debug)]
+    struct Timings {
+        lines: usize,
+        dur: Duration,
+    }
 
     // If we are testing everything, update stats file.
-    // if is_all_test_enabled() {
-    //     fs::write("tests/tsc.timings.rust-debug", &content).unwrap();
-    // }
+    if is_all_test_enabled() {
+        fs::write("tests/tsc.timings.rust-debug", &content).unwrap();
+    }
 }
 
 /// Add stats and return total stats.
@@ -555,28 +573,10 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 );
 
                 // Install a new OpenTelemetry trace pipeline
-                let tracer = opentelemetry_jaeger::new_pipeline()
-                    .with_service_name(file_stem.to_string_lossy().to_string())
-                    .install_simple()
-                    .expect("failed to create open telemtry pipeline");
-
-                // Don't print logs from builtin modules.
-                let log_sub = tracing_subscriber::FmtSubscriber::builder()
-                    .without_time()
-                    .with_target(false)
-                    .with_ansi(true)
-                    .with_test_writer()
-                    .pretty()
-                    .finish();
-
-                // Create a tracing subscriber with the configured tracer
-                let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
-
-                let collector = log_sub.with(telemetry);
+                let _guard = init_tracing(file_stem.to_string_lossy().to_string());
 
                 let start = Instant::now();
 
-                let _guard = tracing::subscriber::set_default(collector);
                 checker.check(Arc::new(file_name.into()));
 
                 let end = Instant::now();
@@ -602,7 +602,12 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         mem::forget(stat_guard);
 
         if !cfg!(debug_assertions) {
-            record_time(time);
+            let line_cnt = {
+                let content = fs::read_to_string(&file_name).unwrap();
+
+                content.lines().count()
+            };
+            record_time(line_cnt, time);
 
             // if time > Duration::new(0, 500_000_000) {
             //     let _ = fs::write(file_name.with_extension("timings.txt"),
