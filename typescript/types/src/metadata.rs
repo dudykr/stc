@@ -94,6 +94,20 @@ pub struct CommonTypeMetadata {
 impl_basic_traits!(CommonTypeMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct UnionMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(UnionMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct IntersectionMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(IntersectionMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct KeywordTypeMetadata {
     pub common: CommonTypeMetadata,
 }

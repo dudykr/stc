@@ -851,9 +851,10 @@ assert_eq_size!(Array, [u8; 24]);
 pub struct Union {
     pub span: Span,
     pub types: Vec<Type>,
+    pub metadata: UnionMetadata,
 }
 
-assert_eq_size!(Union, [u8; 40]);
+assert_eq_size!(Union, [u8; 48]);
 
 impl Union {
     pub fn assert_valid(&self) {
@@ -897,9 +898,10 @@ pub struct FnParam {
 pub struct Intersection {
     pub span: Span,
     pub types: Vec<Type>,
+    pub metadata: IntersectionMetadata,
 }
 
-assert_eq_size!(Intersection, [u8; 40]);
+assert_eq_size!(Intersection, [u8; 48]);
 
 impl Intersection {
     pub fn assert_valid(&self) {
@@ -1037,7 +1039,11 @@ impl Type {
         match tys.len() {
             0 => Type::never(span, Default::default()),
             1 => tys.into_iter().next().unwrap(),
-            _ => Type::Intersection(Intersection { span, types: tys }),
+            _ => Type::Intersection(Intersection {
+                span,
+                types: tys,
+                metadata: Default::default(),
+            }),
         }
     }
 
@@ -1084,7 +1090,11 @@ impl Type {
         let ty = match elements.len() {
             0 => Type::never(span, Default::default()),
             1 => elements.into_iter().next().unwrap(),
-            _ => Type::Union(Union { span, types: elements }),
+            _ => Type::Union(Union {
+                span,
+                types: elements,
+                metadata: Default::default(),
+            }),
         };
         ty.assert_valid();
         ty
