@@ -2071,7 +2071,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
-                Type::any(c.span())
+                Type::any(c.span(), Default::default())
             }
         };
 
@@ -2355,7 +2355,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
-                Type::any(c.span())
+                Type::any(c.span(), Default::default())
             }
         };
         let ty = ty.cheap();

@@ -22,7 +22,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{name::Name, Array, Id, Key, Union};
+use stc_ts_types::{name::Name, Array, Id, Key, KeywordType, Union};
 use stc_ts_utils::MapWithMut;
 use stc_utils::ext::SpanExt;
 use std::{
@@ -259,7 +259,7 @@ impl Merge for Type {
     fn or(&mut self, r: Self) {
         let l_span = self.span();
 
-        let l = replace(self, Type::never(l_span));
+        let l = replace(self, Type::never(DUMMY_SP, Default::default()));
 
         *self = Type::union(vec![l, r]);
     }
@@ -457,7 +457,7 @@ impl Analyzer<'_, '_> {
         fn need_work(ty: &Type) -> bool {
             match ty.normalize() {
                 Type::Lit(..)
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) => false,

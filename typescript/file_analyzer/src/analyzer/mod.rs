@@ -891,7 +891,7 @@ impl Analyzer<'_, '_> {
                         .type_of_ts_entity_name(node.span, analyzer.ctx.module_id, e, None)
                         .unwrap_or_else(|err| {
                             analyzer.storage.report(err);
-                            Type::any(node.span)
+                            Type::any(node.span, Default::default())
                         })
                         .cheap();
                     ty.assert_valid();
