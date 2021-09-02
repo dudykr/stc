@@ -1,5 +1,5 @@
 use rnode::{VisitMut, VisitMutWith};
-use stc_ts_types::{Array, Conditional, FnParam, Intersection, Type, TypeOrSpread, TypeParam, Union, Valid};
+use stc_ts_types::{Array, Conditional, FnParam, Intersection, Type, TypeOrSpread, TypeParam, Union};
 use swc_common::TypeEq;
 use tracing::instrument;
 
@@ -130,10 +130,6 @@ impl Fixer {
         if matches!(ty.normalize(), Type::Keyword(..) | Type::Lit(..)) {
             return;
         }
-
-        // if ty.is_valid() {
-        //     return;
-        // }
 
         ty.normalize_mut();
         ty.visit_mut_children_with(self);

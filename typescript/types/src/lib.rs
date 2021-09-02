@@ -2068,7 +2068,11 @@ pub trait Valid: Sized + VisitWith<ValidityChecker> {
     }
 }
 
-impl<T> Valid for T where Self: VisitWith<ValidityChecker> {}
+impl Valid for Type {}
+
+impl Valid for Intersection {}
+
+impl Valid for Union {}
 
 pub struct ValidityChecker {
     valid: bool,
@@ -2093,6 +2097,11 @@ impl Visit<Union> for ValidityChecker {
             return;
         }
 
+        if ty.types.iter().map(Type::normalize).any(|t| t.is_union_type()) {
+            self.valid = false;
+            return;
+        }
+
         ty.visit_children_with(self);
     }
 }
@@ -2112,6 +2121,11 @@ impl Visit<Intersection> for ValidityChecker {
         }
 
         if ty.types.len() <= 1 {
+            self.valid = false;
+            return;
+        }
+
+        if ty.types.iter().map(Type::normalize).any(|t| t.is_intersection_type()) {
             self.valid = false;
             return;
         }
