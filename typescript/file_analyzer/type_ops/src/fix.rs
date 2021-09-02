@@ -127,11 +127,8 @@ impl VisitMut<Intersection> for Fixer {
 
 impl Fixer {
     fn fix_type(&mut self, ty: &mut Type) {
-        {
-            let ty = ty.normalize();
-            if ty.is_keyword() || ty.is_lit() {
-                return;
-            }
+        if matches!(ty.normalize(), Type::Keyword(..) | Type::Lit(..)) {
+            return;
         }
 
         // TODO: PERF
