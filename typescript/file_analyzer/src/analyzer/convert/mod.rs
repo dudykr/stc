@@ -169,9 +169,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
 
-        ann.type_ann
-            .validate_with(&mut *self.with_ctx(ctx))
-            .map(|ty: Type| ty.fixed())
+        ann.type_ann.validate_with(&mut *self.with_ctx(ctx))
     }
 }
 
