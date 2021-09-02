@@ -4,7 +4,7 @@ use crate::{
     ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
-use rnode::{Fold, FoldWith, VisitWith};
+use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::{type_param::finder::TypeParamUsageFinder, ExpandGenericOpts};
@@ -412,6 +412,18 @@ pub(crate) struct GenericExpander<'a, 'b, 'c, 'd> {
 impl GenericExpander<'_, '_, '_, '_> {
     fn fold_type(&mut self, ty: Type) -> Type {
         let span = ty.span();
+
+        {
+            let mut checker = GenericChecker {
+                params: &self.params,
+                found: false,
+            };
+            ty.visit_with(&mut checker);
+            if !checker.found {
+                return ty;
+            }
+        }
+
         let ty = ty.foldable();
         // TODO: PERF
 
@@ -929,6 +941,29 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
         debug!(op = "generic:expand", "Expanded {} => {}", start, expanded,);
 
         ty
+    }
+}
+
+/// This [Visit] implementation is used to check if one of the type parameters
+/// are used.
+struct GenericChecker<'a> {
+    params: &'a FxHashMap<Id, Type>,
+    found: bool,
+}
+
+impl Visit<Type> for GenericChecker<'_> {
+    fn visit(&mut self, ty: &Type) {
+        match ty {
+            Type::Param(p) => {
+                if self.params.contains_key(&p.name) {
+                    self.found = true;
+                    return;
+                }
+            }
+            _ => {}
+        }
+
+        ty.visit_children_with(self);
     }
 }
 
