@@ -3276,22 +3276,25 @@ impl Analyzer<'_, '_> {
                             Type::Namespace(_)
                             | Type::Module(_)
                             | Type::Instance(..)
-                            | Type::Interface(_)
-                            | Type::Class(_)
-                            | Type::ClassDef(_)
                             | Type::Enum(_)
                             | Type::EnumVariant(_)
                             | Type::This(_)
                             | Type::StaticThis(_)
                             | Type::Param(_)
                             | Type::Constructor(_)
-                            | Type::Function(_)
-                            | Type::TypeLit(_)
-                            | Type::Keyword(_)
-                            | Type::Optional(_)
                             | Type::Rest(_)
                             | Type::Lit(_)
+                            | Type::Optional(_)
+                            | Type::Keyword(_)
+                            | Type::Function(_)
+                            | Type::TypeLit(_)
                             | Type::Tpl(_) => {
+                                let mut ty = ty.into_owned().clone();
+                                ty.respan(span);
+                                return Ok(ty);
+                            }
+
+                            Type::Interface(_) | Type::Class(_) | Type::ClassDef(_) | Type::Alias(_) => {
                                 let mut ty = ty.into_owned().clone();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
@@ -3362,7 +3365,6 @@ impl Analyzer<'_, '_> {
                             }
                             Type::Operator(_) => {}
                             Type::Mapped(_) => {}
-                            Type::Alias(_) => {}
                             Type::Arc(_) => {}
                         }
                     }
