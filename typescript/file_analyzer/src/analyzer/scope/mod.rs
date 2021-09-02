@@ -30,7 +30,7 @@ use stc_ts_types::{
     name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection,
     Key, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement, TypeParam, TypeParamInstantiation,
 };
-use stc_utils::{error::context, stack, try_cache};
+use stc_utils::{error::context, stack};
 use std::{
     borrow::Cow,
     collections::hash_map::Entry,
@@ -688,31 +688,29 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        Ok(try_cache!(self.data.cache.expand, (ty.clone(), opts), {
-            ty.assert_valid();
+        ty.assert_valid();
 
-            let _ctx = context(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
-            let orig = dump_type_as_string(&self.cm, &ty);
+        let _ctx = context(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
+        let orig = dump_type_as_string(&self.cm, &ty);
 
-            let mut v = Expander {
-                span,
-                analyzer: self,
-                dejavu: Default::default(),
-                full: opts.full,
-                expand_union: opts.expand_union,
-                expand_top_level: true,
-                opts,
-            };
+        let mut v = Expander {
+            span,
+            analyzer: self,
+            dejavu: Default::default(),
+            full: opts.full,
+            expand_union: opts.expand_union,
+            expand_top_level: true,
+            opts,
+        };
 
-            // TODO: PERF
-            let ty = ty.foldable().fold_with(&mut v).fixed();
-            ty.assert_valid();
+        // TODO: PERF
+        let ty = ty.foldable().fold_with(&mut v).fixed();
+        ty.assert_valid();
 
-            let new = dump_type_as_string(&self.cm, &ty);
-            debug!("[expander] expand: {} => {}", orig, new);
+        let new = dump_type_as_string(&self.cm, &ty);
+        debug!("[expander] expand: {} => {}", orig, new);
 
-            Ok(ty)
-        }))
+        Ok(ty)
     }
 
     pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> ValidationResult {

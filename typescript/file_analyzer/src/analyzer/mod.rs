@@ -8,7 +8,6 @@ use self::{
     util::ResultExt,
 };
 use crate::{
-    analyzer::scope::ExpandOpts,
     env::{Env, ModuleConfig, StableEnv},
     loader::{Load, ModuleInfo},
     ty,
@@ -232,8 +231,6 @@ impl Ctx {
 #[derive(Debug, Default)]
 struct TypeCache {
     expand_mapped: CacheMap<Mapped, Option<Type>>,
-
-    expand: CacheMap<(Type, ExpandOpts), Type>,
 
     ts_entity_name: CacheMap<(ModuleId, RTsEntityName, Option<TypeParamInstantiation>), Type>,
 }
