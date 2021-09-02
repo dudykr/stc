@@ -126,7 +126,7 @@ pub enum Type {
     #[is(name = "ref_type")]
     Ref(Ref),
     TypeLit(TypeLit),
-    Keyword(RTsKeywordType),
+    Keyword(KeywordType),
     Conditional(Conditional),
     Tuple(Tuple),
     Array(Array),
@@ -431,6 +431,19 @@ pub struct LitType {
     pub lit: RTsLit,
     pub metadata: LitTypeMetadata,
 }
+
+assert_eq_size!(LitType, [u8; 96]);
+
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct KeywordType {
+    pub span: Span,
+
+    #[use_eq_ignore_span]
+    pub kind: TsKeywordTypeKind,
+    pub metadata: KeywordTypeMetadata,
+}
+
+assert_eq_size!(KeywordType, [u8; 20]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Symbol {
@@ -1014,15 +1027,15 @@ impl Type {
         let has_num = tys.iter().any(|ty| ty.is_num());
 
         if (has_str && has_bool) || (has_bool && has_num) || (has_num && has_str) {
-            return Type::never(span);
+            return Type::never(span, Default::default());
         }
 
         if tys.iter().any(|ty| ty.is_never()) {
-            return Type::never(span);
+            return Type::never(span, Default::default());
         }
 
         match tys.len() {
-            0 => Type::never(span),
+            0 => Type::never(span, Default::default()),
             1 => tys.into_iter().next().unwrap(),
             _ => Type::Intersection(Intersection { span, types: tys }),
         }
@@ -1069,7 +1082,7 @@ impl Type {
         elements.retain(|ty| !ty.is_never());
 
         let ty = match elements.len() {
-            0 => Type::never(span),
+            0 => Type::never(span, Default::default()),
             1 => elements.into_iter().next().unwrap(),
             _ => Type::Union(Union { span, types: elements }),
         };
@@ -1080,7 +1093,7 @@ impl Type {
     /// If `self` is [Type::Lit], convert it to [Type::Keyword].
     pub fn force_generalize_top_level_literals(self) -> Self {
         match self {
-            Type::Lit(lit) => Type::Keyword(RTsKeywordType {
+            Type::Lit(lit) => Type::Keyword(KeywordType {
                 span: lit.span,
                 kind: match lit.lit {
                     RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
@@ -1091,6 +1104,10 @@ impl Type {
                         unreachable!()
                     }
                 },
+                metadata: KeywordTypeMetadata {
+                    common: lit.metadata.common,
+                    ..Default::default()
+                },
             }),
             _ => self,
         }
@@ -1100,7 +1117,7 @@ impl Type {
         match self.normalize() {
             Type::Instance(ty) => ty.ty.contains_void(),
 
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
             }) => true,
@@ -1113,7 +1130,7 @@ impl Type {
 
     pub fn is_any(&self) -> bool {
         match self.normalize() {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => true,
@@ -1128,7 +1145,7 @@ impl Type {
 
     pub fn is_unknown(&self) -> bool {
         match *self.normalize() {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => true,
@@ -1141,7 +1158,7 @@ impl Type {
 
     pub fn contains_undefined(&self) -> bool {
         match *self.normalize() {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
             }) => true,
@@ -1185,7 +1202,7 @@ impl Type {
     pub fn is_kwd(&self, k: TsKeywordTypeKind) -> bool {
         match self.normalize() {
             Type::Instance(ty) => ty.ty.is_kwd(k),
-            Type::Keyword(RTsKeywordType { kind, .. }) if *kind == k => true,
+            Type::Keyword(KeywordType { kind, .. }) if *kind == k => true,
             _ => false,
         }
     }
@@ -1205,38 +1222,43 @@ impl Type {
         self.is_kwd(TsKeywordTypeKind::TsNeverKeyword)
     }
 
-    pub fn never<'any>(span: Span) -> Self {
-        Type::Keyword(RTsKeywordType {
+    pub fn never<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+        Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsNeverKeyword,
+            metadata,
         })
     }
 
-    pub fn undefined<'any>(span: Span) -> Self {
-        Type::Keyword(RTsKeywordType {
+    pub fn undefined<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+        Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsUndefinedKeyword,
+            metadata,
         })
     }
 
-    pub fn any<'any>(span: Span) -> Self {
-        Type::Keyword(RTsKeywordType {
+    pub fn any<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+        Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsAnyKeyword,
+            metadata,
         })
     }
 
-    pub fn void<'any>(span: Span) -> Self {
-        Type::Keyword(RTsKeywordType {
+    pub fn void<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+        Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsVoidKeyword,
+            metadata,
         })
     }
 
-    pub fn unknown<'any>(span: Span) -> Self {
-        Type::Keyword(RTsKeywordType {
+    pub fn unknown<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+        Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsUnknownKeyword,
+            metadata,
         })
     }
 }
@@ -1516,7 +1538,7 @@ impl Type {
             Type::Arc(Freezed { ty, span }) => {
                 let ty = Arc::make_mut(ty);
                 ty.respan(*span);
-                *self = replace(ty, Type::any(DUMMY_SP));
+                *self = replace(ty, Type::any(DUMMY_SP, Default::default()));
             }
             _ => {}
         }
@@ -1563,7 +1585,7 @@ impl Type {
     /// Returns true if `self` is a `string` or a string literal.
     pub fn is_str(&self) -> bool {
         match self.normalize() {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
             })
@@ -1585,7 +1607,7 @@ impl Type {
 
     pub fn is_num(&self) -> bool {
         match self.normalize() {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNumberKeyword,
                 ..
             })
@@ -1610,7 +1632,7 @@ impl Type {
     /// Returns true if `self` is a `boolean` or a boolean literal.
     pub fn is_bool(&self) -> bool {
         match self.normalize() {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                 ..
             })
@@ -1915,9 +1937,10 @@ impl VisitMut<Type> for CheapClone {
 
         let new_ty = replace(
             ty,
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsAnyKeyword,
+                metadata: Default::default(),
             }),
         );
 
@@ -1956,7 +1979,7 @@ impl Type {
                 RTsLit::Bool(v) => v.value,
                 RTsLit::BigInt(v) => v.value != BigInt::zero(),
             }),
-            Type::Keyword(RTsKeywordType { kind, .. }) => Known(match kind {
+            Type::Keyword(KeywordType { kind, .. }) => Known(match kind {
                 TsKeywordTypeKind::TsNeverKeyword
                 | TsKeywordTypeKind::TsStringKeyword
                 | TsKeywordTypeKind::TsNumberKeyword

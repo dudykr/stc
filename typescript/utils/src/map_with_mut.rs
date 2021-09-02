@@ -3,7 +3,7 @@ use stc_ts_ast_rnode::{
     RBool, RClassMember, RDecl, REmptyStmt, RExpr, RIdent, RInvalid, RModuleItem, RPat, RPropName, RStmt,
     RTsKeywordType, RTsLit, RTsLitType, RTsType, RVarDecl,
 };
-use stc_ts_types::Type;
+use stc_ts_types::{LitType, Type};
 use std::mem::replace;
 use swc_atoms::js_word;
 use swc_common::DUMMY_SP;
@@ -31,13 +31,13 @@ pub trait MapWithMut: Sized {
 
 impl MapWithMut for Type {
     fn dummy() -> Self {
-        Type::Lit(RTsLitType {
-            node_id: NodeId::invalid(),
+        Type::Lit(LitType {
             span: DUMMY_SP,
             lit: RTsLit::Bool(RBool {
                 span: DUMMY_SP,
                 value: false,
             }),
+            metadata: Default::default(),
         })
     }
 }

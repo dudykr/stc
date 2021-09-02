@@ -94,6 +94,13 @@ pub struct CommonTypeMetadata {
 impl_basic_traits!(CommonTypeMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct KeywordTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(KeywordTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct LitTypeMetadata {
     pub common: CommonTypeMetadata,
 
