@@ -293,19 +293,15 @@ impl AddAssign for CondFacts {
 
         for (k, v) in rhs.vars {
             match self.vars.entry(k) {
-                Entry::Occupied(mut e) => {
-                    if e.get().normalize().is_union_type() {
-                        match e.get_mut().normalize_mut() {
-                            Type::Union(u) => {
-                                u.types.push(v);
-                            }
-                            _ => {}
-                        }
-                    } else {
-                        let prev = e.get_mut().take();
+                Entry::Occupied(mut e) => match e.get_mut().normalize_mut() {
+                    Type::Union(u) => {
+                        u.types.push(v);
+                    }
+                    prev => {
+                        let prev = prev.take();
                         *e.get_mut() = Type::union(vec![prev, v]).cheap();
                     }
-                }
+                },
                 Entry::Vacant(e) => {
                     e.insert(v);
                 }
@@ -431,19 +427,16 @@ impl Analyzer<'_, '_> {
     fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Type>) -> ValidationResult<Vec<Type>> {
         types.iter_mut().for_each(|ty| {
             // Tuple -> Array
+            match ty.normalize_mut() {
+                Type::Tuple(tuple) => {
+                    let span = tuple.span;
 
-            if ty.normalize().is_tuple() {
-                match ty.normalize_mut() {
-                    Type::Tuple(tuple) => {
-                        let span = tuple.span;
-
-                        let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
-                        elem_types.dedup_type();
-                        let elem_type = box Type::union(elem_types);
-                        *ty = Type::Array(Array { span, elem_type });
-                    }
-                    _ => {}
+                    let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
+                    elem_types.dedup_type();
+                    let elem_type = box Type::union(elem_types);
+                    *ty = Type::Array(Array { span, elem_type });
                 }
+                _ => {}
             }
         });
 
