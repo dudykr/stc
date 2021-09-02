@@ -1,7 +1,7 @@
 use rnode::NodeId;
 use stc_ts_ast_rnode::{
     RBool, RClassMember, RDecl, REmptyStmt, RExpr, RIdent, RInvalid, RModuleItem, RPat, RPropName, RStmt,
-    RTsKeywordType, RTsLit, RTsLitType, RTsType, RVarDecl,
+    RTsKeywordType, RTsLit, RTsType, RVarDecl,
 };
 use stc_ts_types::{LitType, Type};
 use std::mem::replace;

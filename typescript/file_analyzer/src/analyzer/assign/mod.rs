@@ -11,8 +11,8 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, FnParam, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, Mapped,
-    Operator, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
+    Array, Conditional, EnumVariant, FnParam, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key,
+    KeywordType, LitType, Mapped, Operator, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::stack;
 use std::{borrow::Cow, collections::HashMap, time::Instant};
@@ -436,7 +436,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 // TODO: Check if ref points global.
-                return Ok(Cow::Owned(Type::Keyword(RTsKeywordType {
+                return Ok(Cow::Owned(Type::Keyword(KeywordType {
                     span: *span,
                     kind: match type_name.sym {
                         js_word!("Boolean") => TsKeywordTypeKind::TsBooleanKeyword,
@@ -444,6 +444,7 @@ impl Analyzer<'_, '_> {
                         js_word!("String") => TsKeywordTypeKind::TsStringKeyword,
                         _ => return Ok(Cow::Borrowed(ty)),
                     },
+                    metadata: Default::default(),
                 })));
             }
             Type::Conditional(..)
@@ -593,9 +594,10 @@ impl Analyzer<'_, '_> {
                         .assign_inner(
                             data,
                             to,
-                            &Type::Keyword(RTsKeywordType {
+                            &Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
+                                metadata: Default::default(),
                             }),
                             opts,
                         )
@@ -607,9 +609,10 @@ impl Analyzer<'_, '_> {
                         .assign_inner(
                             data,
                             to,
-                            &Type::Keyword(RTsKeywordType {
+                            &Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsStringKeyword,
+                                metadata: Default::default(),
                             }),
                             opts,
                         )
@@ -621,9 +624,10 @@ impl Analyzer<'_, '_> {
                         .assign_inner(
                             data,
                             to,
-                            &Type::Keyword(RTsKeywordType {
+                            &Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
+                                metadata: Default::default(),
                             }),
                             opts,
                         )
@@ -635,13 +639,15 @@ impl Analyzer<'_, '_> {
                         data,
                         to,
                         &Type::union(vec![
-                            Type::Keyword(RTsKeywordType {
+                            Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
+                                metadata: Default::default(),
                             }),
-                            Type::Keyword(RTsKeywordType {
+                            Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsStringKeyword,
+                                metadata: Default::default(),
                             }),
                         ]),
                         opts,
@@ -710,10 +716,10 @@ impl Analyzer<'_, '_> {
             }
 
             // Str contains `kind`, and it's not handled properly by type_eq.
-            Type::Lit(RTsLitType {
+            Type::Lit(LitType {
                 lit: RTsLit::Str(to), ..
             }) => match rhs {
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::Str(rhs), ..
                 }) => {
                     if to.value == rhs.value {
@@ -773,11 +779,11 @@ impl Analyzer<'_, '_> {
         // Allow v = null and v = undefined if strict null check is false
         if !self.rule().strict_null_checks {
             match rhs {
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 }) => return Ok(()),
@@ -895,18 +901,18 @@ impl Analyzer<'_, '_> {
 
         match to {
             // let a: any = 'foo'
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => return Ok(()),
 
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
             }) => fail!(),
 
             // Anything is assignable to unknown
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => return Ok(()),
@@ -937,11 +943,11 @@ impl Analyzer<'_, '_> {
                 };
 
                 match rhs.normalize() {
-                    Type::Lit(RTsLitType {
+                    Type::Lit(LitType {
                         lit: RTsLit::Number(..),
                         ..
                     })
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) => {
@@ -958,15 +964,15 @@ impl Analyzer<'_, '_> {
 
                     Type::Lit(..)
                     | Type::TypeLit(..)
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsVoidKeyword,
                         ..
                     })
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
                     })
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsBooleanKeyword,
                         ..
                     }) => fail!(),
