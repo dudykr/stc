@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use crate::ty::{Intersection, Type, Union};
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RIdent, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
-use stc_ts_types::{Id, InferType, KeywordType, LitType, Ref, TypeParam};
+use stc_ts_types::{Id, InferType, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeParam};
 use swc_common::{Mark, Span, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
 use tracing::instrument;
@@ -170,7 +170,15 @@ impl RemoveTypes for Type {
             Type::Lit(LitType {
                 lit: RTsLit::Bool(RBool { value: false, span, .. }),
                 ..
-            }) => return Type::never(span),
+            }) => {
+                return Type::never(
+                    span,
+                    KeywordTypeMetadata {
+                        common: self.metadata().common,
+                        ..Default::default()
+                    },
+                )
+            }
 
             Type::Union(u) => return u.remove_falsy(),
             Type::Intersection(i) => return i.remove_falsy(),
@@ -185,7 +193,15 @@ impl RemoveTypes for Type {
             Type::Lit(LitType {
                 lit: RTsLit::Bool(RBool { value: true, span, .. }),
                 ..
-            }) => return Type::never(span),
+            }) => {
+                return Type::never(
+                    span,
+                    KeywordTypeMetadata {
+                        common: self.metadata().common,
+                        ..Default::default()
+                    },
+                )
+            }
 
             Type::Union(u) => u.remove_truthy(),
             Type::Intersection(i) => i.remove_truthy(),
@@ -199,7 +215,13 @@ impl RemoveTypes for Intersection {
         let types = self.types.into_iter().map(|ty| ty.remove_falsy()).collect::<Vec<_>>();
 
         if types.iter().any(|ty| ty.is_never()) {
-            return Type::never(self.span);
+            return Type::never(
+                self.span,
+                KeywordTypeMetadata {
+                    common: self.metadata.common,
+                    ..Default::default()
+                },
+            );
         }
 
         if types.len() == 1 {
@@ -217,7 +239,13 @@ impl RemoveTypes for Intersection {
     fn remove_truthy(self) -> Type {
         let types = self.types.into_iter().map(|ty| ty.remove_truthy()).collect::<Vec<_>>();
         if types.iter().any(|ty| ty.is_never()) {
-            return Type::never(self.span);
+            return Type::never(
+                self.span,
+                KeywordTypeMetadata {
+                    common: self.metadata.common,
+                    ..Default::default()
+                },
+            );
         }
 
         if types.len() == 1 {
@@ -243,7 +271,13 @@ impl RemoveTypes for Union {
             .collect();
 
         if types.is_empty() {
-            return Type::never(self.span);
+            return Type::never(
+                self.span,
+                KeywordTypeMetadata {
+                    common: self.metadata.common,
+                    ..Default::default()
+                },
+            );
         }
 
         if types.len() == 1 {
@@ -267,7 +301,13 @@ impl RemoveTypes for Union {
             .collect();
 
         if types.is_empty() {
-            return Type::never(self.span);
+            return Type::never(
+                self.span,
+                KeywordTypeMetadata {
+                    common: self.metadata.common,
+                    ..Default::default()
+                },
+            );
         }
 
         if types.len() == 1 {
