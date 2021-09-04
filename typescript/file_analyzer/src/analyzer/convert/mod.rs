@@ -28,8 +28,8 @@ use stc_ts_types::{
     Conditional, ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType,
     InferTypeMetadata, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
     LitType, LitTypeMetadata, Mapped, MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr,
-    QueryType, Ref, RestType, Symbol, TplType, TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit,
-    TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+    QueryType, Ref, RefMetadata, RestType, Symbol, ThisType, TplType, TsExpr, Tuple, TupleElement, Type, TypeElement,
+    TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
 use stc_utils::{error, AHashSet};
@@ -770,16 +770,19 @@ impl Analyzer<'_, '_> {
                     .report(&mut self.storage);
             }
         }
-        let mut span = t.span;
-        if contains_infer {
-            span = self.mark_as_infer_type_container(span);
-        }
 
         Ok(Type::Ref(Ref {
-            span,
+            span: t.span.with_ctxt(SyntaxContext::empty()),
             ctxt: self.ctx.module_id,
             type_name: t.type_name.clone(),
             type_args,
+            metadata: RefMetadata {
+                common: CommonTypeMetadata {
+                    contains_infer_type: contains_infer,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
         }))
     }
 }
@@ -965,7 +968,10 @@ impl Analyzer<'_, '_> {
         };
         let ty = self.with_ctx(ctx).with(|a| {
             let ty = match ty {
-                RTsType::TsThisType(this) => Type::This(this.clone()),
+                RTsType::TsThisType(this) => Type::This(ThisType {
+                    span: this.span,
+                    metadata: Default::default(),
+                }),
                 RTsType::TsLitType(ty) => {
                     match &ty.lit {
                         RTsLit::Tpl(t) => return Ok(t.validate_with(a)?.into()),
@@ -975,7 +981,10 @@ impl Analyzer<'_, '_> {
                         span: ty.span,
                         lit: ty.lit.clone(),
                         metadata: LitTypeMetadata {
-                            prevent_generalization: true,
+                            common: CommonTypeMetadata {
+                                prevent_generalization: true,
+                                ..Default::default()
+                            },
                             ..Default::default()
                         },
                     });
