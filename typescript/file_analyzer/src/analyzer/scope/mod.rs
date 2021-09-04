@@ -26,10 +26,7 @@ use stc_ts_errors::{
 };
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{
-    name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection,
-    Key, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement, TypeParam, TypeParamInstantiation,
-};
+use stc_ts_types::{Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection, Key, KeywordType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement, TypeParam, TypeParamInstantiation, name::Name};
 use stc_utils::{error::context, stack};
 use std::{
     borrow::Cow,

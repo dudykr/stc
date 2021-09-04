@@ -19,7 +19,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{
-    Array, Instance, Key, PropertySignature, Tuple, TupleElement, TypeElMetadata, TypeElement, TypeLit,
+    Array, Instance, Key, KeywordType, PropertySignature, Tuple, TupleElement, TypeElMetadata, TypeElement, TypeLit,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;

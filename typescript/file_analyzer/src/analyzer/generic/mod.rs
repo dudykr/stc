@@ -16,9 +16,9 @@ use stc_ts_errors::{
 use stc_ts_generics::type_param::{finder::TypeParamUsageFinder, remover::TypeParamRemover, renamer::TypeParamRenamer};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, Mapped, ModuleId,
-    Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeOrSpread,
-    TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+    Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType,
+    LitType, Mapped, ModuleId, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, Type, TypeElement,
+    TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error::context, stack};

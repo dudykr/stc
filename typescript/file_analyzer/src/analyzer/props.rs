@@ -20,7 +20,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Accessor, ComputedKey, Key, PrivateName, TypeParam};
+use stc_ts_types::{Accessor, ComputedKey, Key, KeywordType, PrivateName, TypeParam};
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;

@@ -10,7 +10,8 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::{type_param::finder::TypeParamUsageFinder, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    ComputedKey, Function, Id, IdCtx, Interface, Key, TypeParam, TypeParamDecl, TypeParamInstantiation,
+    ComputedKey, Function, Id, IdCtx, Interface, Key, KeywordType, LitType, TypeParam, TypeParamDecl,
+    TypeParamInstantiation,
 };
 use stc_utils::{error::context, ext::SpanExt, stack};
 use std::time::{Duration, Instant};

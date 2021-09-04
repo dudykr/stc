@@ -13,7 +13,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Id, ModuleId, Operator, Ref, TypeParamInstantiation};
+use stc_ts_types::{Id, KeywordType, ModuleId, Operator, Ref, TypeParamInstantiation};
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, DUMMY_SP};

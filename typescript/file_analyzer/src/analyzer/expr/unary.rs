@@ -8,7 +8,7 @@ use crate::{
 use rnode::NodeId;
 use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, RStr, RTsLit, RUnaryExpr};
 use stc_ts_errors::{Error, Errors};
-use stc_ts_types::Union;
+use stc_ts_types::{KeywordType, LitType, Union};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;

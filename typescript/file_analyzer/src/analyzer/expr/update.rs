@@ -6,7 +6,7 @@ use crate::{
 };
 use stc_ts_ast_rnode::{RExpr, RLit, RParenExpr, RTsLit, RUpdateExpr};
 use stc_ts_errors::Error;
-use stc_ts_types::Type;
+use stc_ts_types::{KeywordType, LitType, Type};
 use std::borrow::Cow;
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
