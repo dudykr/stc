@@ -21,7 +21,7 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     type_id::SymbolId, Array, CommonTypeMetadata, ComputedKey, Intersection, Key, KeywordType, KeywordTypeMetadata,
-    LitType, Symbol, Tuple, TupleElement, Type, TypeParamInstantiation, Union,
+    LitType, Symbol, Tuple, TupleElement, Type, TypeParamInstantiation, Union, UnionMetadata,
 };
 use std::{borrow::Cow, time::Instant};
 use swc_atoms::js_word;
@@ -726,6 +726,7 @@ impl Analyzer<'_, '_> {
                     ty: box Type::Symbol(Symbol {
                         span,
                         id: SymbolId::iterator(),
+                        metadata: Default::default(),
                     }),
                 }),
                 None,
@@ -781,6 +782,7 @@ impl Analyzer<'_, '_> {
             return Ok(Cow::Owned(Type::Keyword(KeywordType {
                 span: iterator.span(),
                 kind: TsKeywordTypeKind::TsStringKeyword,
+                metadata: Default::default(),
             })));
         }
 
@@ -788,13 +790,21 @@ impl Analyzer<'_, '_> {
             Type::Array(arr) => return Ok(Cow::Owned(*arr.elem_type.clone())),
             Type::Tuple(tuple) => {
                 if tuple.elems.is_empty() {
-                    return Ok(Cow::Owned(Type::any(tuple.span)));
+                    return Ok(Cow::Owned(Type::any(
+                        tuple.span,
+                        KeywordTypeMetadata {
+                            common: tuple.metadata.common,
+                        },
+                    )));
                 }
                 let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect_vec();
                 return Ok(Cow::Owned(
                     Type::Union(Union {
                         span: tuple.span,
                         types,
+                        metadata: UnionMetadata {
+                            common: tuple.metadata.common,
+                        },
                     })
                     .fixed(),
                 ));
@@ -809,7 +819,14 @@ impl Analyzer<'_, '_> {
                     .map(|ty| ty.map(Cow::into_owned))
                     .collect::<Result<Vec<_>, _>>()?;
 
-                return Ok(Cow::Owned(Type::Union(Union { span: u.span, types }).fixed()));
+                return Ok(Cow::Owned(
+                    Type::Union(Union {
+                        span: u.span,
+                        types,
+                        metadata: u.metadata,
+                    })
+                    .fixed(),
+                ));
             }
 
             Type::Intersection(i) => {
@@ -823,7 +840,11 @@ impl Analyzer<'_, '_> {
                     .collect::<Result<Vec<_>, _>>()?;
                 types.dedup_type();
 
-                return Ok(Cow::Owned(Type::Intersection(Intersection { span: i.span, types })));
+                return Ok(Cow::Owned(Type::Intersection(Intersection {
+                    span: i.span,
+                    types,
+                    metadata: i.metadata,
+                })));
             }
 
             _ => {}
