@@ -148,6 +148,27 @@ pub struct SymbolMetadata {
 impl_traits!(SymbolMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct InstanceMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(InstanceMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ThisTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ThisTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct StaticThisMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(StaticThisMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {
     pub common: CommonTypeMetadata,
 

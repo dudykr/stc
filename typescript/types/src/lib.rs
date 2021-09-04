@@ -115,7 +115,7 @@ impl AddAssign for ModuleTypeData {
 pub enum Type {
     Instance(Instance),
     StaticThis(StaticThis),
-    This(RTsThisType),
+    This(ThisType),
     Lit(LitType),
     Query(QueryType),
     Infer(InferType),
@@ -419,6 +419,7 @@ assert_eq_size!(ComputedKey, [u8; 32]);
 pub struct Instance {
     pub span: Span,
     pub ty: Box<Type>,
+    pub metadata: InstanceMetadata,
 }
 
 assert_eq_size!(Instance, [u8; 24]);
@@ -1275,6 +1276,48 @@ impl Type {
 }
 
 impl Type {
+    pub fn metadata(&self) -> CommonTypeMetadata {
+        match self.normalize() {
+            Type::Instance(ty) => ty.metadata.common,
+            Type::StaticThis(ty) => ty.metadata.common,
+            Type::This(ty) => ty.metadata.common,
+            Type::Lit(ty) => ty.metadata.common,
+            Type::Query(ty) => ty.metadata.common,
+            Type::Infer(ty) => ty.metadata.common,
+            Type::Import(ty) => ty.metadata.common,
+            Type::Predicate(ty) => ty.metadata.common,
+            Type::IndexedAccessType(ty) => ty.metadata.common,
+            Type::Ref(ty) => ty.metadata.common,
+            Type::TypeLit(ty) => ty.metadata.common,
+            Type::Keyword(ty) => ty.metadata.common,
+            Type::Conditional(ty) => ty.metadata.common,
+            Type::Tuple(ty) => ty.metadata.common,
+            Type::Array(ty) => ty.metadata.common,
+            Type::Union(ty) => ty.metadata.common,
+            Type::Intersection(ty) => ty.metadata.common,
+            Type::Function(ty) => ty.metadata.common,
+            Type::Constructor(ty) => ty.metadata.common,
+            Type::Operator(ty) => ty.metadata.common,
+            Type::Param(ty) => ty.metadata.common,
+            Type::EnumVariant(ty) => ty.metadata.common,
+            Type::Interface(ty) => ty.metadata.common,
+            Type::Enum(ty) => ty.metadata.common,
+            Type::Mapped(ty) => ty.metadata.common,
+            Type::Alias(ty) => ty.metadata.common,
+            Type::Namespace(ty) => ty.metadata.common,
+            Type::Module(ty) => ty.metadata.common,
+            Type::Class(ty) => ty.metadata.common,
+            Type::ClassDef(ty) => ty.metadata.common,
+            Type::Rest(ty) => ty.metadata.common,
+            Type::Optional(ty) => ty.metadata.common,
+            Type::Symbol(ty) => ty.metadata.common,
+            Type::Tpl(ty) => ty.metadata.common,
+            Type::Intrinsic(ty) => ty.metadata.common,
+
+            Type::Arc(_) => unreachable!(),
+        }
+    }
+
     /// Respan but preserve SyntaxContext
     pub fn reposition(&mut self, from: Span) {
         let ctxt = self.span().ctxt;
@@ -2015,9 +2058,18 @@ impl Type {
 #[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct StaticThis {
     pub span: Span,
+    pub metadata: StaticThisMetadata,
 }
 
 assert_eq_size!(StaticThis, [u8; 12]);
+
+#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct ThisType {
+    pub span: Span,
+    pub metadata: ThisTypeMetadata,
+}
+
+assert_eq_size!(ThisType, [u8; 12]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TplType {
