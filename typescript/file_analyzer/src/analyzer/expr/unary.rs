@@ -249,55 +249,59 @@ impl Analyzer<'_, '_> {
 
 fn negate(ty: Type) -> Type {
     match ty {
-        Type::Lit(LitType { ref lit, span, node_id }) => match *lit {
+        Type::Lit(LitType {
+            ref lit,
+            span,
+            metadata,
+        }) => match *lit {
             RTsLit::Bool(ref v) => {
                 return Type::Lit(LitType {
-                    node_id,
                     lit: RTsLit::Bool(RBool {
                         value: !v.value,
                         ..v.clone()
                     }),
                     span,
+                    metadata,
                 });
             }
             RTsLit::Number(ref v) => {
                 return Type::Lit(LitType {
-                    node_id: NodeId::invalid(),
                     lit: RTsLit::Bool(RBool {
                         value: v.value != 0.0,
                         span: v.span,
                     }),
                     span,
+                    metadata,
                 });
             }
             RTsLit::Str(ref v) => {
                 return Type::Lit(LitType {
-                    node_id: NodeId::invalid(),
                     lit: RTsLit::Bool(RBool {
                         value: v.value != js_word!(""),
                         span: v.span,
                     }),
                     span,
+                    metadata,
                 });
             }
             RTsLit::Tpl(ref v) => {
                 return Type::Lit(LitType {
-                    node_id: NodeId::invalid(),
                     lit: RTsLit::Bool(RBool {
                         value: v.quasis.iter().next().as_ref().unwrap().raw.value != js_word!(""),
                         span: v.span,
                     }),
                     span,
+                    metadata,
                 });
             }
             RTsLit::BigInt(ref v) => {
                 return Type::Lit(LitType {
-                    node_id: NodeId::invalid(),
                     lit: RTsLit::BigInt(RBigInt {
                         value: -v.value.clone(),
                         span: v.span,
                     }),
                     span,
+                    metadata,
                 });
             }
         },

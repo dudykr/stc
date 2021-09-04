@@ -596,6 +596,7 @@ impl Analyzer<'_, '_> {
                             &Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
+                                metadata: Default::default(),
                             }),
                             opts,
                         )
@@ -610,6 +611,7 @@ impl Analyzer<'_, '_> {
                             &Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsStringKeyword,
+                                metadata: Default::default(),
                             }),
                             opts,
                         )
@@ -624,6 +626,7 @@ impl Analyzer<'_, '_> {
                             &Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
+                                metadata: Default::default(),
                             }),
                             opts,
                         )
@@ -638,10 +641,12 @@ impl Analyzer<'_, '_> {
                             Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
+                                metadata: Default::default(),
                             }),
                             Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsStringKeyword,
+                                metadata: Default::default(),
                             }),
                         ]),
                         opts,
@@ -2083,6 +2088,7 @@ impl Analyzer<'_, '_> {
                         &Type::Keyword(KeywordType {
                             span: DUMMY_SP,
                             kind: TsKeywordTypeKind::TsStringKeyword,
+                            metadata: Default::default(),
                         }),
                         rhs,
                     )
