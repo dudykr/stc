@@ -607,6 +607,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     span,
+                    metadata: Default::default(),
                 }));
             }
 
@@ -614,6 +615,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    metadata: Default::default(),
                 }));
             }
 
@@ -628,6 +630,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    metadata: Default::default(),
                 }));
             }
 
@@ -649,6 +652,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    metadata: Default::default(),
                 }));
             }
 
@@ -673,6 +677,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    metadata: Default::default(),
                 }));
             }
 
@@ -708,7 +713,7 @@ impl Analyzer<'_, '_> {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
-                    }) => return Ok(Type::any(span)),
+                    }) => return Ok(Type::any(span, Default::default())),
 
                     _ => {}
                 }
@@ -1038,6 +1043,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Union(Union {
                     span: orig.span,
                     types: new_types,
+                    metadata: orig.metadata,
                 })
                 .fixed());
             }
