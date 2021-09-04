@@ -20,7 +20,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{Array, EnumVariant, Id, Instance, Operator, QueryExpr, QueryType, Symbol};
+use stc_ts_types::{Array, EnumVariant, Id, Instance, KeywordType, Operator, QueryExpr, QueryType, Symbol};
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use std::borrow::Cow;
 use swc_atoms::js_word;

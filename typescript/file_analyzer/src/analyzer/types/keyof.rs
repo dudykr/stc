@@ -7,8 +7,8 @@ use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    Class, ClassMember, ClassProperty, Method, MethodSignature, ModuleId, PropertySignature, Ref, Type, TypeElement,
-    Union,
+    Class, ClassMember, ClassProperty, KeywordType, Method, MethodSignature, ModuleId, PropertySignature, Ref, Type,
+    TypeElement, Union,
 };
 use stc_utils::error::context;
 use std::borrow::Cow;

@@ -13,8 +13,8 @@ use rnode::{Fold, FoldWith, NodeId, Visit, VisitWith};
 use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RYieldExpr};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{
-    IndexedAccessType, Key, MethodSignature, ModuleId, Operator, PropertySignature, Ref, TypeElement,
-    TypeParamInstantiation,
+    IndexedAccessType, Key, KeywordType, LitType, MethodSignature, ModuleId, Operator, PropertySignature, Ref,
+    TypeElement, TypeParamInstantiation,
 };
 use stc_utils::ext::SpanExt;
 use std::{borrow::Cow, mem::take, ops::AddAssign};

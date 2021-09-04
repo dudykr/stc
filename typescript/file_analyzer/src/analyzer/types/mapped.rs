@@ -7,8 +7,8 @@ use stc_ts_ast_rnode::{RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_types::{
-    Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, Mapped, Operator, PropertySignature, Type,
-    TypeElement, TypeLit,
+    Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, LitType, Mapped, Operator, PropertySignature,
+    Type, TypeElement, TypeLit,
 };
 use stc_utils::try_cache;
 use std::{borrow::Cow, collections::HashMap};
