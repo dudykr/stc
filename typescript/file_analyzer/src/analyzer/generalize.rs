@@ -211,6 +211,7 @@ impl Fold<Type> for Simplifier<'_> {
                 readonly,
                 obj_type: box Type::Keyword(k),
                 index_type,
+                ..
             }) => {
                 let obj_type = self
                     .env

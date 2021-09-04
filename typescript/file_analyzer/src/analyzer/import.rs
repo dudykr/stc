@@ -143,12 +143,12 @@ impl Analyzer<'_, '_> {
         if !found_entry {
             self.data.unresolved_imports.insert(id.clone());
 
-            self.register_type(id.clone(), Type::any(span));
+            self.register_type(id.clone(), Type::any(span, Default::default()));
             self.declare_var(
                 span,
                 VarKind::Import,
                 id.clone(),
-                Some(Type::any(span)),
+                Some(Type::any(span, Default::default())),
                 None,
                 true,
                 false,
@@ -202,7 +202,7 @@ impl Analyzer<'_, '_> {
                             ns.span,
                             VarKind::Import,
                             ns.local.clone().into(),
-                            Some(Type::any(ns.span)),
+                            Some(Type::any(ns.span, Default::default())),
                             None,
                             true,
                             false,
@@ -217,6 +217,7 @@ impl Analyzer<'_, '_> {
                                 span: ns.span,
                                 name: ns.local.clone().into(),
                                 exports: box (*data).clone(),
+                                metadata: Default::default(),
                             })),
                             None,
                             true,
