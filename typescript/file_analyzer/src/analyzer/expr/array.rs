@@ -254,6 +254,7 @@ impl Analyzer<'_, '_> {
             return Ok(Cow::Owned(Type::Keyword(KeywordType {
                 span,
                 kind: TsKeywordTypeKind::TsStringKeyword,
+                metadata: Default::default(),
             })));
         }
 
@@ -298,6 +299,7 @@ impl Analyzer<'_, '_> {
                         types.push(Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            metadata: Default::default(),
                         }));
                         types.dedup_type();
                         return Ok(Cow::Owned(Type::union(types)));
@@ -554,8 +556,8 @@ impl Analyzer<'_, '_> {
             let ty = iterator.into_owned().foldable().tuple().unwrap();
 
             return Ok(Cow::Owned(Type::Tuple(Tuple {
-                span: ty.span,
                 elems: ty.elems.into_iter().skip(start_index).collect(),
+                ..ty
             })));
         }
 
@@ -688,7 +690,11 @@ impl Analyzer<'_, '_> {
                             }
                             _ => err,
                         })?;
-                    let new = Type::Union(Union { span: u.span, types });
+                    let new = Type::Union(Union {
+                        span: u.span,
+                        types,
+                        metadata: u.metadata,
+                    });
                     return Ok(Cow::Owned(new));
                 }
                 Type::Intersection(i) => {
@@ -698,7 +704,11 @@ impl Analyzer<'_, '_> {
                         .map(|v| self.get_iterator(v.span(), Cow::Borrowed(v), opts))
                         .map(|res| res.map(Cow::into_owned))
                         .collect::<Result<_, _>>()?;
-                    let new = Type::Intersection(Intersection { span: i.span, types });
+                    let new = Type::Intersection(Intersection {
+                        span: i.span,
+                        types,
+                        metadata: i.metadata,
+                    });
                     return Ok(Cow::Owned(new));
                 }
                 _ => {}
