@@ -111,7 +111,7 @@ impl Analyzer<'_, '_> {
 
                     errors.push(err);
                     // TODO: Change this to something else (maybe any)
-                    Type::unknown(span)
+                    Type::unknown(span, Default::default())
                 }
             };
 
@@ -462,7 +462,7 @@ impl Analyzer<'_, '_> {
                             key,
                             optional: false,
                             params: vec![param],
-                            type_ann: Some(box Type::any(param_span)),
+                            type_ann: Some(box Type::any(param_span, Default::default())),
                             type_params: Default::default(),
                             metadata: Default::default(),
                             accessor: Accessor {
@@ -545,6 +545,7 @@ impl Analyzer<'_, '_> {
                                     Type::Keyword(KeywordType {
                                         span: body.span,
                                         kind: TsKeywordTypeKind::TsVoidKeyword,
+                                        metadata: Default::default(),
                                     })
                                 });
 
@@ -555,7 +556,7 @@ impl Analyzer<'_, '_> {
                                     .infected_by_this_in_object_literal
                                     .is_marked(&inferred_ret_ty)
                                 {
-                                    Type::any(span)
+                                    Type::any(span, Default::default())
                                 } else {
                                     inferred_ret_ty
                                 };
@@ -630,7 +631,7 @@ impl Analyzer<'_, '_> {
             type_ann: if computed {
                 type_ann.map(Box::new)
             } else {
-                Some(box Type::any(n.span))
+                Some(box Type::any(n.span, Default::default()))
             },
             type_params: Default::default(),
             metadata: Default::default(),

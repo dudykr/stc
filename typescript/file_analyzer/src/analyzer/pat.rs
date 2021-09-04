@@ -394,7 +394,7 @@ impl Analyzer<'_, '_> {
             None => match p {
                 RPat::Assign(p) => match self.ctx.pat_mode {
                     PatMode::Decl => Some(p.right.validate_with_default(self)?.generalize_lit(marks)),
-                    PatMode::Assign => Some(default_value_ty.unwrap_or_else(|| Type::any(p.span))),
+                    PatMode::Assign => Some(default_value_ty.unwrap_or_else(|| Type::any(p.span, Default::default()))),
                 },
                 _ => None,
             },
