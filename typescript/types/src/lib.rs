@@ -681,6 +681,7 @@ pub struct Operator {
     #[use_eq]
     pub op: TsTypeOperatorOp,
     pub ty: Box<Type>,
+    pub metadata: OperatorMetadata,
 }
 
 assert_eq_size!(Operator, [u8; 24]);
@@ -970,6 +971,7 @@ pub struct Function {
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
     pub ret_ty: Box<Type>,
+    pub metadata: FunctionMetadata,
 }
 
 assert_eq_size!(Function, [u8; 88]);
@@ -982,6 +984,7 @@ pub struct Constructor {
     /// The return type.
     pub type_ann: Box<Type>,
     pub is_abstract: bool,
+    pub metadata: ConstructorMetadata,
 }
 
 assert_eq_size!(Constructor, [u8; 88]);

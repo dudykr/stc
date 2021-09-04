@@ -232,6 +232,27 @@ pub struct ConditionalMetadata {
 impl_traits!(ConditionalMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct FunctionMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(FunctionMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ConstructorMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ConstructorMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct OperatorMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(OperatorMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {
     pub common: CommonTypeMetadata,
 
