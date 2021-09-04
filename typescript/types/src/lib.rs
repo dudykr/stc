@@ -422,7 +422,7 @@ pub struct Instance {
     pub metadata: InstanceMetadata,
 }
 
-assert_eq_size!(Instance, [u8; 24]);
+assert_eq_size!(Instance, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct LitType {
@@ -462,7 +462,7 @@ pub struct RestType {
     pub metadata: RestTypeMetadata,
 }
 
-assert_eq_size!(RestType, [u8; 24]);
+assert_eq_size!(RestType, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct OptionalType {
@@ -471,7 +471,7 @@ pub struct OptionalType {
     pub metadata: OptionalTypeMetadata,
 }
 
-assert_eq_size!(OptionalType, [u8; 24]);
+assert_eq_size!(OptionalType, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct IndexedAccessType {
@@ -482,7 +482,7 @@ pub struct IndexedAccessType {
     pub metadata: IndexedAccessTypeMetadata,
 }
 
-assert_eq_size!(IndexedAccessType, [u8; 32]);
+assert_eq_size!(IndexedAccessType, [u8; 40]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Ref {
@@ -495,7 +495,7 @@ pub struct Ref {
     pub metadata: RefMetadata,
 }
 
-assert_eq_size!(Ref, [u8; 64]);
+assert_eq_size!(Ref, [u8; 72]);
 
 impl Debug for Ref {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
@@ -514,7 +514,7 @@ pub struct InferType {
     pub metadata: InferTypeMetadata,
 }
 
-assert_eq_size!(InferType, [u8; 64]);
+assert_eq_size!(InferType, [u8; 80]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct QueryType {
@@ -523,7 +523,7 @@ pub struct QueryType {
     pub metadata: QueryTypeMetdata,
 }
 
-assert_eq_size!(QueryType, [u8; 24]);
+assert_eq_size!(QueryType, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
 pub enum QueryExpr {
@@ -541,7 +541,7 @@ pub struct ImportType {
     pub metadata: ImportTypeMetadata,
 }
 
-assert_eq_size!(ImportType, [u8; 88]);
+assert_eq_size!(ImportType, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Module {
@@ -552,7 +552,7 @@ pub struct Module {
     pub metadata: ModuleTypeMetadata,
 }
 
-assert_eq_size!(Module, [u8; 64]);
+assert_eq_size!(Module, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Enum {
@@ -568,7 +568,7 @@ pub struct Enum {
     pub metadata: EnumMetadata,
 }
 
-assert_eq_size!(Enum, [u8; 72]);
+assert_eq_size!(Enum, [u8; 80]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct EnumMember {
@@ -586,7 +586,7 @@ pub struct Class {
     pub metadata: ClassMetadata,
 }
 
-assert_eq_size!(Class, [u8; 24]);
+assert_eq_size!(Class, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ClassDef {
@@ -600,7 +600,7 @@ pub struct ClassDef {
     pub metadata: ClassDefMetadata,
 }
 
-assert_eq_size!(ClassDef, [u8; 112]);
+assert_eq_size!(ClassDef, [u8; 120]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is)]
 pub enum ClassMember {
@@ -668,7 +668,7 @@ pub struct Mapped {
     pub metadata: MappedMetadata,
 }
 
-assert_eq_size!(Mapped, [u8; 80]);
+assert_eq_size!(Mapped, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Conditional {
@@ -680,7 +680,7 @@ pub struct Conditional {
     pub metadata: ConditionalMetadata,
 }
 
-assert_eq_size!(Conditional, [u8; 48]);
+assert_eq_size!(Conditional, [u8; 56]);
 
 /// TODO: Remove this and create `keyof`, `unique` and `readonly` types.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -692,7 +692,7 @@ pub struct Operator {
     pub metadata: OperatorMetadata,
 }
 
-assert_eq_size!(Operator, [u8; 24]);
+assert_eq_size!(Operator, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Tuple {
@@ -719,7 +719,7 @@ pub struct Alias {
     pub metadata: AliasMetadata,
 }
 
-assert_eq_size!(Alias, [u8; 64]);
+assert_eq_size!(Alias, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Interface {
@@ -864,7 +864,7 @@ pub struct Array {
     pub metadata: ArrayMetadata,
 }
 
-assert_eq_size!(Array, [u8; 24]);
+assert_eq_size!(Array, [u8; 32]);
 
 /// a | b
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -975,7 +975,7 @@ pub struct EnumVariant {
     pub metadata: EnumVariantMetadata,
 }
 
-assert_eq_size!(EnumVariant, [u8; 40]);
+assert_eq_size!(EnumVariant, [u8; 48]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Function {
@@ -986,7 +986,7 @@ pub struct Function {
     pub metadata: FunctionMetadata,
 }
 
-assert_eq_size!(Function, [u8; 88]);
+assert_eq_size!(Function, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Constructor {
@@ -999,7 +999,7 @@ pub struct Constructor {
     pub metadata: ConstructorMetadata,
 }
 
-assert_eq_size!(Constructor, [u8; 88]);
+assert_eq_size!(Constructor, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Predicate {
@@ -1011,7 +1011,7 @@ pub struct Predicate {
     pub metadata: PredicateMetadata,
 }
 
-assert_eq_size!(Predicate, [u8; 64]);
+assert_eq_size!(Predicate, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeOrSpread {
@@ -2105,7 +2105,7 @@ pub struct TplType {
     pub metadata: TplTypeMetadata,
 }
 
-assert_eq_size!(TplType, [u8; 64]);
+assert_eq_size!(TplType, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq)]
 pub struct Freezed {
