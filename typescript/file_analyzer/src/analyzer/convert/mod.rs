@@ -24,12 +24,12 @@ use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    type_id::SymbolId, Accessor, Alias, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
-    ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, Interface,
-    Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped,
-    MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RestType, Symbol,
-    TplType, TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
-    TypeParamInstantiation, Union,
+    type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey,
+    Conditional, ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType,
+    Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata,
+    Mapped, MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RestType,
+    Symbol, TplType, TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam,
+    TypeParamDecl, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
 use stc_utils::{error, AHashSet};
@@ -82,6 +82,7 @@ impl Analyzer<'_, '_> {
                         name,
                         constraint: None,
                         default: None,
+                        metadata: Default::default(),
                     })
                     .cheap(),
                 );
@@ -135,6 +136,7 @@ impl Analyzer<'_, '_> {
             name: p.name.clone().into(),
             constraint,
             default,
+            metadata: Default::default(),
         };
         self.register_type(param.name.clone().into(), param.clone().into());
 
@@ -178,7 +180,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsTypeAliasDecl) -> ValidationResult<Alias> {
         self.record(d);
-        let mut span = d.span;
+        let span = d.span;
 
         let alias = {
             self.with_child(
@@ -216,27 +218,37 @@ impl Analyzer<'_, '_> {
                                             name: v.name,
                                             constraint: Default::default(),
                                             default: Default::default(),
+                                            metadata: Default::default(),
                                         })
                                     })
                                     .collect(),
                             },
+                            metadata: Default::default(),
                         }),
 
                         _ => d.type_ann.validate_with(child)?,
                     };
 
+                    let contains_infer_type = contains_infer_type(&ty) || child.contains_infer_type(&ty);
+
                     // If infer type exists, it should be expanded to remove infer type.
-                    if contains_infer_type(&ty) || child.contains_infer_type(&ty) {
-                        span = child.mark_as_infer_type_container(span);
+                    if contains_infer_type {
                         child.mark_type_as_infer_type_container(&mut ty);
                     } else {
                         child.prevent_expansion(&mut ty);
                     }
                     ty.make_cheap();
                     let alias = Alias {
-                        span,
+                        span: span.with_ctxt(SyntaxContext::empty()),
                         ty: box ty,
                         type_params,
+                        metadata: AliasMetadata {
+                            common: CommonTypeMetadata {
+                                contains_infer_type,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
                     };
                     Ok(alias)
                 },
