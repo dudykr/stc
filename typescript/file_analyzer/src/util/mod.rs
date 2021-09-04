@@ -174,7 +174,7 @@ impl RemoveTypes for Type {
                 return Type::never(
                     span,
                     KeywordTypeMetadata {
-                        common: self.metadata().common,
+                        common: self.metadata(),
                         ..Default::default()
                     },
                 )
@@ -197,7 +197,7 @@ impl RemoveTypes for Type {
                 return Type::never(
                     span,
                     KeywordTypeMetadata {
-                        common: self.metadata().common,
+                        common: self.metadata(),
                         ..Default::default()
                     },
                 )

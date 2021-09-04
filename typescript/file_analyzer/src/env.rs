@@ -117,6 +117,7 @@ impl BuiltIn {
                                                 .validate_with(analyzer)
                                                 .map(Box::new)
                                                 .unwrap(),
+                                            metadata: Default::default(),
                                         }))
                                     })
                                     .unwrap();
@@ -160,6 +161,7 @@ impl BuiltIn {
                                                     private_types: Default::default(),
                                                     types: data.types,
                                                 },
+                                                metadata: Default::default(),
                                             })
                                             .cheap(),
                                         );
