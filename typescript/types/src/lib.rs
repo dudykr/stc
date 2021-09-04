@@ -507,6 +507,7 @@ impl Debug for Ref {
 pub struct InferType {
     pub span: Span,
     pub type_param: TypeParam,
+    pub metadata: InferTypeMetadata,
 }
 
 assert_eq_size!(InferType, [u8; 64]);
@@ -515,6 +516,7 @@ assert_eq_size!(InferType, [u8; 64]);
 pub struct QueryType {
     pub span: Span,
     pub expr: Box<QueryExpr>,
+    pub metadata: QueryTypeMetdata,
 }
 
 assert_eq_size!(QueryType, [u8; 24]);
