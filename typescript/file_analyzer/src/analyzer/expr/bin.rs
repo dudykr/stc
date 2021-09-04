@@ -1616,6 +1616,7 @@ impl Analyzer<'_, '_> {
                         Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            ..
                         }) => {
                             self.storage.report(Error::ObjectIsPossiblyUndefined { span: *span });
                         }
@@ -1623,6 +1624,7 @@ impl Analyzer<'_, '_> {
                         Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsNullKeyword,
+                            ..
                         }) => {
                             self.storage.report(Error::ObjectIsPossiblyNull { span: *span });
                         }

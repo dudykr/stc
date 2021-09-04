@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
 
                 self.scope.mark_as_super_called();
 
-                return Ok(Type::any(span));
+                return Ok(Type::any(span, Default::default()));
             }
             RExprOrSuper::Expr(callee) => callee,
         };
@@ -299,6 +299,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Symbol(Symbol {
                     span,
                     id: SymbolId::generate(),
+                    metadata: Default::default(),
                 }));
             }
 
@@ -323,6 +324,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::from(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
+                            metadata: Default::default(),
                         }));
                     }
                 }
