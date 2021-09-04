@@ -22,9 +22,9 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    KeywordType, RArrayPat, RBindingIdent, RCallExpr, RExpr, RExprOrSpread, RExprOrSuper, RIdent, RInvalid, RLit,
-    RMemberExpr, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, LitType,
-    RTsThisType, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
+    RArrayPat, RBindingIdent, RCallExpr, RExpr, RExprOrSpread, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr,
+    RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisType, RTsThisTypeOrIdent,
+    RTsType, RTsTypeParamInstantiation, RTsTypeRef,
 };
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace, print_type},

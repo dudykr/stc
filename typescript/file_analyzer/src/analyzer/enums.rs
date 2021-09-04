@@ -6,8 +6,8 @@ use crate::{
 use fxhash::FxHashMap;
 use rnode::{NodeId, Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    KeywordType, LitType, RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl,
-    RTsEnumMember, RTsEnumMemberId, RTsLit,
+    RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl, RTsEnumMember, RTsEnumMemberId,
+    RTsLit,
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, PropertySignature, TypeElement, TypeLit};

@@ -8,8 +8,8 @@ use crate::{
 };
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{
-    KeywordType, RDoWhileStmt, RExpr, RForInStmt, RForOfStmt, RIdent, RPat, RStmt, RTsEntityName, RVarDecl,
-    RVarDeclOrPat, RWhileStmt,
+    RDoWhileStmt, RExpr, RForInStmt, RForOfStmt, RIdent, RPat, RStmt, RTsEntityName, RVarDecl, RVarDeclOrPat,
+    RWhileStmt,
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;

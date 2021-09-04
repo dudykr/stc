@@ -5,7 +5,7 @@ use crate::{
 };
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Fold, FoldWith, Visit, VisitWith};
-use stc_ts_ast_rnode::{KeywordType, RExpr, RInvalid, RTsEntityName, RTsLit, LitType};
+use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsLit};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::{type_param::finder::TypeParamUsageFinder, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;

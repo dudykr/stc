@@ -5,9 +5,7 @@ use crate::{
     validator::ValidateWith,
 };
 use rnode::{NodeId, VisitWith};
-use stc_ts_ast_rnode::{
-    RBlockStmt, RBool, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, LitType, RWithStmt,
-};
+use stc_ts_ast_rnode::{RBlockStmt, RBool, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RWithStmt};
 use stc_ts_errors::Error;
 use stc_ts_types::Type;
 use stc_utils::stack;

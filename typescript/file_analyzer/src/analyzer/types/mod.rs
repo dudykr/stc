@@ -8,8 +8,8 @@ use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
 use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    KeywordType, RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl,
-    RTsLit, LitType, RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
+    RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsLit,
+    RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;

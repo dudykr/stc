@@ -3,7 +3,7 @@ use crate::{
     ValidationResult,
 };
 use itertools::Itertools;
-use stc_ts_ast_rnode::{KeywordType, RIdent, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{

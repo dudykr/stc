@@ -2,9 +2,9 @@ use crate::{
     analyzer::{assign::AssignOpts, Analyzer},
     ValidationResult,
 };
-use stc_ts_ast_rnode::{LitType, RTsLit};
+use stc_ts_ast_rnode::RTsLit;
 use stc_ts_errors::Error;
-use stc_ts_types::{TplType, Type};
+use stc_ts_types::{LitType, TplType, Type};
 
 impl Analyzer<'_, '_> {
     /// # Implementation notes

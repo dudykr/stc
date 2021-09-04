@@ -12,7 +12,7 @@ use stc_ts_errors::{
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, FnParam, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key,
-    KeywordType, Mapped, Operator, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
+    KeywordType, LitType, Mapped, Operator, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::stack;
 use std::{borrow::Cow, collections::HashMap, time::Instant};

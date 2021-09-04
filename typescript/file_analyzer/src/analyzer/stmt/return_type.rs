@@ -10,10 +10,7 @@ use crate::{
     ValidationResult,
 };
 use rnode::{Fold, FoldWith, NodeId, Visit, VisitWith};
-use stc_ts_ast_rnode::{
-    KeywordType, RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, LitType,
-    RYieldExpr,
-};
+use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RYieldExpr};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{
     IndexedAccessType, Key, MethodSignature, ModuleId, Operator, PropertySignature, Ref, TypeElement,

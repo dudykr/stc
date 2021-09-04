@@ -23,9 +23,9 @@ use crate::{
 use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    KeywordType, RAssignExpr, RBindingIdent, RClassExpr, RExpr, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr,
-    RNull, RNumber, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RThisExpr, RTpl, RTsEntityName,
-    RTsEnumMemberId, RTsLit, LitType, RTsNonNullExpr, RTsThisType, RUnaryExpr,
+    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr, RNull, RNumber,
+    RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit,
+    RTsNonNullExpr, RTsThisType, RUnaryExpr,
 };
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},

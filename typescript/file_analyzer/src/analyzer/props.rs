@@ -15,8 +15,8 @@ use crate::{
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    KeywordType, RAssignProp, RComputedPropName, RExpr, RExprOrSuper, RGetterProp, RIdent, RKeyValueProp, RLit,
-    RMemberExpr, RMethodProp, RNumber, RPrivateName, RProp, RPropName, RSetterProp, RStr,
+    RAssignProp, RComputedPropName, RExpr, RExprOrSuper, RGetterProp, RIdent, RKeyValueProp, RLit, RMemberExpr,
+    RMethodProp, RNumber, RPrivateName, RProp, RPropName, RSetterProp, RStr,
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;

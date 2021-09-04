@@ -8,7 +8,7 @@ use fxhash::FxHashMap;
 use indexmap::IndexSet;
 use itertools::Itertools;
 use rnode::{FoldWith, NodeId, VisitMut, VisitMutWith};
-use stc_ts_ast_rnode::{KeywordType, RBindingIdent, RIdent, RObjectLit, RPat, RPropOrSpread, RSpreadElement};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RObjectLit, RPat, RPropOrSpread, RSpreadElement};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;

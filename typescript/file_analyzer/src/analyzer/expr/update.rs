@@ -4,7 +4,7 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use stc_ts_ast_rnode::{KeywordType, LitType, RExpr, RLit, RParenExpr, RTsLit, RUpdateExpr};
+use stc_ts_ast_rnode::{RExpr, RLit, RParenExpr, RTsLit, RUpdateExpr};
 use stc_ts_errors::Error;
 use stc_ts_types::Type;
 use std::borrow::Cow;

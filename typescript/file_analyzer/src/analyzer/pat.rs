@@ -14,8 +14,8 @@ use crate::{
 };
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{
-    KeywordType, RArrayPat, RAssignPat, RAssignPatProp, RBindingIdent, RExpr, RIdent, RKeyValuePatProp, RKeyValueProp,
-    RObjectPat, RObjectPatProp, RParam, RPat, RProp, RPropOrSpread, RRestPat,
+    RArrayPat, RAssignPat, RAssignPatProp, RBindingIdent, RExpr, RIdent, RKeyValuePatProp, RKeyValueProp, RObjectPat,
+    RObjectPatProp, RParam, RPat, RProp, RPropOrSpread, RRestPat,
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{

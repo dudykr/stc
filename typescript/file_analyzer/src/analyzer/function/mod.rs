@@ -8,9 +8,7 @@ use crate::{
 };
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith};
-use stc_ts_ast_rnode::{
-    KeywordType, RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName,
-};
+use stc_ts_ast_rnode::{RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName};
 use stc_ts_errors::{Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Alias, CallSignature, Class, ClassDef, Function, Interface, Ref, TypeElement, TypeLit};

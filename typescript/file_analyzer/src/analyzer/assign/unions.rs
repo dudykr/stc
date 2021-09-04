@@ -84,6 +84,7 @@ impl Analyzer<'_, '_> {
                 *to = Type::Union(Union {
                     span: el_ty.span,
                     types: to_types,
+                    metadata: el_ty.metadata,
                 });
 
                 return Ok(());

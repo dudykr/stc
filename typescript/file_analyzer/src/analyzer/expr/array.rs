@@ -16,7 +16,7 @@ use crate::{
     ValidationResult,
 };
 use itertools::Itertools;
-use stc_ts_ast_rnode::{KeywordType, RArrayLit, RExpr, RExprOrSpread, RInvalid, RNumber, RTsLit, LitType};
+use stc_ts_ast_rnode::{RArrayLit, RExpr, RExprOrSpread, RInvalid, RNumber, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{

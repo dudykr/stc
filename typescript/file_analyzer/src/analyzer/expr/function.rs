@@ -6,7 +6,7 @@ use crate::{
     ValidationResult,
 };
 use itertools::{EitherOrBoth, Itertools};
-use stc_ts_ast_rnode::{KeywordType, RArrowExpr, RBlockStmtOrExpr};
+use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr};
 use stc_ts_types::{Class, Function, Type};
 use stc_ts_utils::{OptionExt, PatExt};
 use swc_common::Spanned;

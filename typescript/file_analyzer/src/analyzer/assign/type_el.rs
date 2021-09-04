@@ -8,12 +8,12 @@ use crate::{
     ValidationResult,
 };
 use rnode::NodeId;
-use stc_ts_ast_rnode::{KeywordType, RIdent, RTsEntityName, RTsLit, LitType};
+use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, Function, Key, MethodSignature, ModuleId, Operator, PropertySignature, Ref,
-    Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union,
+    Array, Class, ClassDef, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, ModuleId, Operator,
+    PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union,
 };
 use stc_utils::ext::SpanExt;
 use std::borrow::Cow;

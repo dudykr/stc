@@ -17,12 +17,12 @@ use crate::{
 use fxhash::FxHashMap;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    KeywordType, RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt,
-    RSwitchCase, RSwitchStmt,
+    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase,
+    RSwitchStmt,
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{name::Name, Array, Id, Key, Union};
+use stc_ts_types::{name::Name, Array, Id, Key, KeywordType, Union};
 use stc_ts_utils::MapWithMut;
 use stc_utils::ext::SpanExt;
 use std::{

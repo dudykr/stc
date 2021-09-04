@@ -6,9 +6,7 @@ use crate::{
     ValidationResult,
 };
 use rnode::NodeId;
-use stc_ts_ast_rnode::{
-    KeywordType, RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, RStr, RTsLit, LitType, RUnaryExpr,
-};
+use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, RStr, RTsLit, RUnaryExpr};
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::Union;
 use swc_atoms::js_word;

@@ -8,7 +8,7 @@ use crate::{
 use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{KeywordType, RIdent, RPat, RStr, RTsEntityName, RTsLit, LitType};
+use stc_ts_ast_rnode::{RIdent, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace, print_type},
     DebugExt,

@@ -17,16 +17,16 @@ use crate::{
 use itertools::Itertools;
 use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    KeywordType, RArrowExpr, RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod,
-    RClassProp, RComputedPropName, RConstructor, RDecl, RExpr, RExprOrSuper, RFunction, RIdent, RLit, RMemberExpr,
-    RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RSeqExpr, RStmt, RSuper, RTsEntityName,
+    RArrowExpr, RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp,
+    RComputedPropName, RConstructor, RDecl, RExpr, RExprOrSuper, RFunction, RIdent, RLit, RMemberExpr, RParam,
+    RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RSeqExpr, RStmt, RSuper, RTsEntityName,
     RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
     Accessor, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, ConstructorSignature, FnParam, Id,
-    Intersection, Key, Method, Operator, QueryExpr, QueryType, Ref, TsExpr, Type,
+    Intersection, Key, KeywordType, Method, Operator, QueryExpr, QueryType, Ref, TsExpr, Type,
 };
 use stc_utils::{AHashSet, TryOpt};
 use std::{

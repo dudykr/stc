@@ -11,9 +11,7 @@ use crate::{
 };
 use itertools::Itertools;
 use rnode::NodeId;
-use stc_ts_ast_rnode::{
-    RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit, LitType,
-};
+use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Array, Key, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};

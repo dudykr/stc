@@ -12,7 +12,7 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use stc_ts_ast_rnode::{KeywordType, RTsAsExpr, RTsLit, LitType, RTsTypeAssertion};
+use stc_ts_ast_rnode::{RTsAsExpr, RTsLit, RTsTypeAssertion};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Interface, TypeElement, TypeParamInstantiation};
 use std::borrow::Cow;

@@ -19,7 +19,7 @@ use fxhash::{FxHashMap, FxHashSet};
 use iter::once;
 use once_cell::sync::Lazy;
 use rnode::{Fold, FoldWith, Visit, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{KeywordType, RPat, RTsEntityName, RTsQualifiedName};
+use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
     DebugExt, Error,

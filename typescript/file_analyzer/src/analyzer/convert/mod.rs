@@ -11,14 +11,14 @@ use crate::{
 use itertools::Itertools;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    KeywordType, RArrayPat, RAssignPatProp, RBindingIdent, RComputedPropName, RExpr, RIdent, RInvalid, RObjectPat,
-    RObjectPatProp, RPat, RTsArrayType, RTsCallSignatureDecl, RTsConditionalType, RTsConstructSignatureDecl,
-    RTsConstructorType, RTsEntityName, RTsExprWithTypeArgs, RTsFnOrConstructorType, RTsFnParam, RTsFnType,
-    RTsImportType, RTsIndexSignature, RTsIndexedAccessType, RTsInferType, RTsInterfaceBody, RTsInterfaceDecl,
-    RTsIntersectionType, RTsLit, RTsMappedType, RTsMethodSignature, RTsOptionalType, RTsParenthesizedType,
-    RTsPropertySignature, RTsRestType, RTsTplLitType, RTsTupleElement, RTsTupleType, RTsType, RTsTypeAliasDecl,
-    RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation,
-    RTsTypePredicate, RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
+    RArrayPat, RAssignPatProp, RBindingIdent, RComputedPropName, RExpr, RIdent, RInvalid, RObjectPat, RObjectPatProp,
+    RPat, RTsArrayType, RTsCallSignatureDecl, RTsConditionalType, RTsConstructSignatureDecl, RTsConstructorType,
+    RTsEntityName, RTsExprWithTypeArgs, RTsFnOrConstructorType, RTsFnParam, RTsFnType, RTsImportType,
+    RTsIndexSignature, RTsIndexedAccessType, RTsInferType, RTsInterfaceBody, RTsInterfaceDecl, RTsIntersectionType,
+    RTsLit, RTsMappedType, RTsMethodSignature, RTsOptionalType, RTsParenthesizedType, RTsPropertySignature,
+    RTsRestType, RTsTplLitType, RTsTupleElement, RTsTupleType, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RTsTypeElement,
+    RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation, RTsTypePredicate,
+    RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
