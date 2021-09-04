@@ -26,10 +26,10 @@ use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey,
     Conditional, ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType,
-    Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata,
-    Mapped, MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RestType,
-    Symbol, TplType, TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam,
-    TypeParamDecl, TypeParamInstantiation, Union,
+    InferTypeMetadata, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
+    LitType, LitTypeMetadata, Mapped, MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr,
+    QueryType, Ref, RestType, Symbol, TplType, TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit,
+    TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
 use stc_utils::{error, AHashSet};
@@ -282,6 +282,7 @@ impl Analyzer<'_, '_> {
                     type_params: try_opt!(d.type_params.validate_with(&mut *child)),
                     extends: d.extends.validate_with(child)?,
                     body: d.body.validate_with(child)?,
+                    metadata: Default::default(),
                 };
                 child.prevent_expansion(&mut ty.body);
 
@@ -561,6 +562,7 @@ impl Analyzer<'_, '_> {
             extends_type,
             true_type,
             false_type,
+            metadata: Default::default(),
         })
     }
 }
@@ -577,6 +579,7 @@ impl Analyzer<'_, '_> {
             name_type: try_opt!(ty.name_type.validate_with(self)).map(Box::new),
             type_param,
             ty: try_opt!(ty.type_ann.validate_with(self)).map(Box::new),
+            metadata: Default::default(),
         })
     }
 }
@@ -588,6 +591,7 @@ impl Analyzer<'_, '_> {
             span: ty.span,
             op: ty.op,
             ty: box ty.type_ann.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -598,6 +602,7 @@ impl Analyzer<'_, '_> {
         Ok(Array {
             span: node.span,
             elem_type: box node.elem_type.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -661,6 +666,7 @@ impl Analyzer<'_, '_> {
                 type_params,
                 params,
                 ret_ty,
+                metadata: Default::default(),
             })
         })
     }
@@ -681,6 +687,7 @@ impl Analyzer<'_, '_> {
             params: t.params.validate_with(self)?,
             type_ann: t.type_ann.validate_with(self).map(Box::new)?,
             is_abstract: t.is_abstract,
+            metadata: Default::default(),
         })
     }
 }
@@ -709,6 +716,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::Array(Array {
                         span: t.span,
                         elem_type: box type_args.unwrap().params.into_iter().next().unwrap(),
+                        metadata: Default::default(),
                     }));
                 }
             }
@@ -784,6 +792,13 @@ impl Analyzer<'_, '_> {
         Ok(InferType {
             span: t.span,
             type_param: t.type_param.validate_with(self)?,
+            metadata: InferTypeMetadata {
+                common: CommonTypeMetadata {
+                    contains_infer_type: true,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
         })
     }
 }
@@ -798,6 +813,7 @@ impl Analyzer<'_, '_> {
             arg: t.arg.clone(),
             qualifier: t.qualifier.clone(),
             type_params: try_opt!(t.type_args.validate_with(self)).map(Box::new),
+            metadata: Default::default(),
         })
     }
 }
@@ -824,6 +840,7 @@ impl Analyzer<'_, '_> {
         Ok(RestType {
             span: t.span,
             ty: box t.type_ann.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -836,6 +853,7 @@ impl Analyzer<'_, '_> {
         Ok(OptionalType {
             span: t.span,
             ty: box t.type_ann.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -848,6 +866,7 @@ impl Analyzer<'_, '_> {
         Ok(QueryType {
             span: t.span,
             expr: box t.expr_name.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -869,6 +888,7 @@ impl Analyzer<'_, '_> {
             param_name: t.param_name.clone(),
             asserts: t.asserts,
             ty,
+            metadata: Default::default(),
         })
     }
 }
@@ -908,6 +928,7 @@ impl Analyzer<'_, '_> {
             readonly: t.readonly,
             obj_type,
             index_type,
+            metadata: Default::default(),
         }))
     }
 }
@@ -925,6 +946,7 @@ impl Analyzer<'_, '_> {
             span: t.span,
             quasis: t.quasis.clone(),
             types,
+            metadata: Default::default(),
         })
     }
 }
