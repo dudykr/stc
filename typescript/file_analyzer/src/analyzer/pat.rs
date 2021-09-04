@@ -19,7 +19,8 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{
-    Array, Instance, Key, KeywordType, PropertySignature, Tuple, TupleElement, TypeElMetadata, TypeElement, TypeLit,
+    Array, ArrayMetadata, Instance, Key, KeywordType, PropertySignature, Tuple, TupleElement, TypeElMetadata,
+    TypeElement, TypeLit,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
@@ -84,7 +85,7 @@ impl Analyzer<'_, '_> {
                             // any
                             let ty = match elem {
                                 Some(v) => self.default_type_for_pat(v)?,
-                                None => Type::any(span),
+                                None => Type::any(span, Default::default()),
                             };
 
                             Ok(TupleElement {
@@ -95,6 +96,7 @@ impl Analyzer<'_, '_> {
                             })
                         })
                         .collect::<ValidationResult<_>>()?,
+                    metadata: Default::default(),
                 }));
             }
             RPat::Rest(r) => match &*r.arg {
@@ -159,9 +161,9 @@ impl Analyzer<'_, '_> {
         }
 
         if self.ctx.in_argument {
-            Ok(Type::unknown(pat.span()))
+            Ok(Type::unknown(pat.span(), Default::default()))
         } else {
-            Ok(Type::any(pat.span()))
+            Ok(Type::any(pat.span(), Default::default()))
         }
     }
 }
@@ -236,7 +238,11 @@ impl Analyzer<'_, '_> {
                             if !should_instantiate_type_ann(&ty) {
                                 return ty;
                             }
-                            Type::Instance(Instance { span, ty: box ty })
+                            Type::Instance(Instance {
+                                span,
+                                ty: box ty,
+                                metadata: Default::default(),
+                            })
                         })
                     }),
                 }
@@ -366,6 +372,10 @@ impl Analyzer<'_, '_> {
                                     ty = Type::Array(Array {
                                         span: tuple.span,
                                         elem_type: box Type::union(types),
+                                        metadata: ArrayMetadata {
+                                            common: tuple.metadata.common,
+                                            ..Default::default()
+                                        },
                                     });
                                 }
                                 _ => {}
