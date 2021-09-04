@@ -14,8 +14,8 @@ use stc_ts_file_analyzer_macros::validator;
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Accessor, CallSignature, FnParam, Function, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit,
-    TypeLitMetadata, TypeParamDecl, Union,
+    Accessor, CallSignature, FnParam, Function, Key, KeywordType, MethodSignature, PropertySignature, Type,
+    TypeElement, TypeLit, TypeLitMetadata, TypeParamDecl, Union,
 };
 use std::{borrow::Cow, iter::repeat, time::Instant};
 use swc_atoms::JsWord;
@@ -364,6 +364,7 @@ impl UnionNormalizer<'_, '_, '_> {
                                     type_ann: Some(box Type::Keyword(KeywordType {
                                         span: DUMMY_SP,
                                         kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
+                                        metadata: Default::default(),
                                     })),
                                     type_params: Default::default(),
                                     metadata: Default::default(),

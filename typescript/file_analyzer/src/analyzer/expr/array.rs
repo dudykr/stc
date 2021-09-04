@@ -20,7 +20,7 @@ use stc_ts_ast_rnode::{RArrayLit, RExpr, RExprOrSpread, RInvalid, RNumber, RTsLi
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    type_id::SymbolId, Array, ComputedKey, Intersection, Key, Symbol, Tuple, TupleElement, Type,
+    type_id::SymbolId, Array, ComputedKey, Intersection, Key, KeywordType, LitType, Symbol, Tuple, TupleElement, Type,
     TypeParamInstantiation, Union,
 };
 use std::{borrow::Cow, time::Instant};

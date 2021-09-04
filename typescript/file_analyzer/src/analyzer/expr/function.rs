@@ -7,7 +7,7 @@ use crate::{
 };
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr};
-use stc_ts_types::{Class, Function, Type};
+use stc_ts_types::{Class, Function, KeywordType, Type};
 use stc_ts_utils::{OptionExt, PatExt};
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;

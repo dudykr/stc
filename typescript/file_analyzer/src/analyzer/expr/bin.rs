@@ -21,7 +21,9 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
-use stc_ts_types::{name::Name, Class, IdCtx, Intersection, Key, ModuleId, Ref, TypeElement, Union};
+use stc_ts_types::{
+    name::Name, Class, IdCtx, Intersection, Key, KeywordType, LitType, ModuleId, Ref, TypeElement, Union,
+};
 use std::{
     borrow::Cow,
     collections::hash_map::Entry,

@@ -14,7 +14,7 @@ use crate::{
 };
 use stc_ts_ast_rnode::{RTsAsExpr, RTsLit, RTsTypeAssertion};
 use stc_ts_errors::{DebugExt, Error};
-use stc_ts_types::{Interface, TypeElement, TypeParamInstantiation};
+use stc_ts_types::{Interface, KeywordType, LitType, TypeElement, TypeParamInstantiation};
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;

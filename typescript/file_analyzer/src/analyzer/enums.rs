@@ -11,7 +11,8 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{
-    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, PropertySignature, TypeElement, TypeLit,
+    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, PropertySignature, TypeElement,
+    TypeLit,
 };
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
@@ -551,12 +552,10 @@ impl Analyzer<'_, '_> {
         for m in &e.members {
             match &*m.val {
                 RExpr::Lit(RLit::Str(lit)) => values.push(Type::Lit(LitType {
-                    node_id: NodeId::invalid(),
                     span: m.span,
                     lit: RTsLit::Str(lit.clone()),
                 })),
                 RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(LitType {
-                    node_id: NodeId::invalid(),
                     span: m.span,
                     lit: RTsLit::Number(lit.clone()),
                 })),

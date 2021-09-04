@@ -35,8 +35,8 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, Method, ModuleId, Operator,
-    OptionalType, PropertySignature, QueryExpr, QueryType, StaticThis,
+    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, KeywordType, LitType, Method,
+    ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType, StaticThis,
 };
 use stc_utils::{error::context, stack, try_cache};
 use std::{
@@ -180,6 +180,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::Keyword(KeywordType {
                             span: i.span.with_ctxt(SyntaxContext::empty()),
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            metadata: Default::default(),
                         }));
                     }
                     let ty = self.type_of_var(i, mode, type_args)?;
@@ -196,21 +197,18 @@ impl Analyzer<'_, '_> {
 
                 RExpr::Lit(RLit::Bool(v)) => {
                     return Ok(Type::Lit(LitType {
-                        node_id: NodeId::invalid(),
                         span: v.span,
                         lit: RTsLit::Bool(v.clone()),
                     }));
                 }
                 RExpr::Lit(RLit::Str(ref v)) => {
                     return Ok(Type::Lit(LitType {
-                        node_id: NodeId::invalid(),
                         span: v.span,
                         lit: RTsLit::Str(v.clone()),
                     }));
                 }
                 RExpr::Lit(RLit::Num(v)) => {
                     return Ok(Type::Lit(LitType {
-                        node_id: NodeId::invalid(),
                         span: v.span,
                         lit: RTsLit::Number(v.clone()),
                     }));
