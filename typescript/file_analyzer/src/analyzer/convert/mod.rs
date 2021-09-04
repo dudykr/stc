@@ -955,10 +955,14 @@ impl Analyzer<'_, '_> {
                                 span,
                                 name: Id::word("intrinsic".into()),
                             });
-                            return Ok(Type::any(span.with_ctxt(SyntaxContext::empty())));
+                            return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                         }
                     }
-                    Type::Keyword(ty.clone())
+                    Type::Keyword(KeywordType {
+                        span: ty.span,
+                        kind: ty.kind,
+                        metadata: Default::default(),
+                    })
                 }
                 RTsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(a)?),
                 RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => {
