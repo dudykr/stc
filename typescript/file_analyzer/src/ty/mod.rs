@@ -2,7 +2,7 @@ use self::generalize::TupleToArray;
 use crate::{analyzer::marks::MarkExt, util::type_ext::TypeVecExt, Marks};
 use retain_mut::RetainMut;
 use rnode::{Fold, FoldWith, Visit, VisitWith};
-use stc_ts_ast_rnode::{RBool, RNumber, RStr, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_ast_rnode::{RBool, RNumber, RStr, RTsLit};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 pub(crate) use stc_ts_types::*;
 use swc_ecma_ast::TsKeywordTypeKind;

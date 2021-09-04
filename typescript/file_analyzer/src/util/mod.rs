@@ -242,7 +242,12 @@ impl RemoveTypes for Union {
             return types.into_iter().next().unwrap();
         }
 
-        Union { span: self.span, types }.into()
+        Union {
+            span: self.span,
+            types,
+            metadata: self.metadata,
+        }
+        .into()
     }
 
     fn remove_truthy(self) -> Type {
@@ -261,7 +266,12 @@ impl RemoveTypes for Union {
             return types.into_iter().next().unwrap();
         }
 
-        Union { span: self.span, types }.into()
+        Union {
+            span: self.span,
+            types,
+            metadata: self.metadata,
+        }
+        .into()
     }
 }
 

@@ -9,7 +9,7 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use rnode::{Fold, FoldWith, NodeId, Visit, VisitWith};
+use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RYieldExpr};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{

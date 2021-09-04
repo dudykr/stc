@@ -3,7 +3,6 @@ use crate::{
     ty::TypeExt,
     ValidationResult,
 };
-use rnode::NodeId;
 use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RStr, RTsEntityName, RTsLit, RTsThisType};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},

@@ -116,6 +116,7 @@ impl Analyzer<'_, '_> {
         Ok(Type::Keyword(KeywordType {
             kind: TsKeywordTypeKind::TsNumberKeyword,
             span,
+            metadata: Default::default(),
         }))
     }
 }

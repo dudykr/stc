@@ -6,7 +6,7 @@ use crate::{
 };
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
-use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
+use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsLit,
     RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
