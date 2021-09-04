@@ -151,6 +151,7 @@ impl Analyzer<'_, '_> {
             return Ok(Type::Array(Array {
                 span,
                 elem_type: box Type::any(span, Default::default()),
+                metadata: Default::default(),
             }));
         }
 
@@ -198,6 +199,7 @@ impl Analyzer<'_, '_> {
                 Array {
                     span,
                     elem_type: box Type::union(types),
+                    metadata: Default::default(),
                 }
                 .fixed(),
             );
@@ -398,7 +400,13 @@ impl Analyzer<'_, '_> {
                 Type::Union(u) => {
                     u.types.retain(|ty| !ty.is_any());
                     if u.types.is_empty() {
-                        u.types = vec![Type::any(u.span)]
+                        u.types = vec![Type::any(
+                            u.span,
+                            KeywordTypeMetadata {
+                                common: u.metadata.common,
+                                ..Default::default()
+                            },
+                        )]
                     }
                 }
                 _ => {}
@@ -436,6 +444,7 @@ impl Analyzer<'_, '_> {
                     ty: box Type::Symbol(Symbol {
                         span,
                         id: SymbolId::async_iterator(),
+                        metadata: Default::default(),
                     }),
                 }),
                 None,
@@ -532,7 +541,13 @@ impl Analyzer<'_, '_> {
                 Type::Union(u) => {
                     u.types.retain(|ty| !ty.is_any());
                     if u.types.is_empty() {
-                        u.types = vec![Type::any(u.span)]
+                        u.types = vec![Type::any(
+                            u.span,
+                            KeywordTypeMetadata {
+                                common: u.metadata.common,
+                                ..Default::default()
+                            },
+                        )]
                     }
                 }
                 _ => {}
