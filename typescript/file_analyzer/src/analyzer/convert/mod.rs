@@ -26,8 +26,8 @@ use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, Array, CallSignature, ComputedKey, Conditional, ConstructorSignature, FnParam,
     Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, Interface, Intersection, Intrinsic,
-    IntrinsicKind, Key, Mapped, MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr,
-    QueryType, Ref, RestType, Symbol, TplType, TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit,
+    IntrinsicKind, Key, KeywordType, Mapped, MethodSignature, Operator, OptionalType, Predicate, PropertySignature,
+    QueryExpr, QueryType, Ref, RestType, Symbol, TplType, TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit,
     TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
@@ -193,7 +193,7 @@ impl Analyzer<'_, '_> {
                         }) if !child.is_builtin => {
                             let span = *span;
                             child.storage.report(Error::IntrinsicIsBuiltinOnly { span });
-                            Type::any(span.with_ctxt(SyntaxContext::empty()))
+                            Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
                         }
 
                         RTsType::TsKeywordType(KeywordType {

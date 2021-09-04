@@ -10,7 +10,9 @@ use stc_ts_ast_rnode::{
     RTsLit,
 };
 use stc_ts_errors::{Error, Errors};
-use stc_ts_types::{Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, PropertySignature, TypeElement, TypeLit};
+use stc_ts_types::{
+    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, PropertySignature, TypeElement, TypeLit,
+};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -412,6 +414,7 @@ impl Analyzer<'_, '_> {
                 ty: box Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
+                    metadata: Default::default(),
                 }),
             };
             members.push(TypeElement::Index(IndexSignature {
@@ -421,6 +424,7 @@ impl Analyzer<'_, '_> {
                 type_ann: Some(box Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
+                    metadata: Default::default(),
                 })),
                 is_static: false,
             }));
