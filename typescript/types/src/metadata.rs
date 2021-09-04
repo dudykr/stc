@@ -197,6 +197,20 @@ pub struct InferTypeMetadata {
 impl_traits!(InferTypeMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ImportTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ImportTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct PredicateMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(PredicateMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {
     pub common: CommonTypeMetadata,
 

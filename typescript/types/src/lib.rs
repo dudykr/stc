@@ -534,6 +534,7 @@ pub struct ImportType {
     #[use_eq_ignore_span]
     pub qualifier: Option<RTsEntityName>,
     pub type_params: Option<Box<TypeParamInstantiation>>,
+    pub metadata: ImportTypeMetadata,
 }
 
 assert_eq_size!(ImportType, [u8; 88]);
@@ -989,6 +990,7 @@ pub struct Predicate {
     pub param_name: RTsThisTypeOrIdent,
     pub asserts: bool,
     pub ty: Option<Box<Type>>,
+    pub metadata: PredicateMetadata,
 }
 
 assert_eq_size!(Predicate, [u8; 64]);
