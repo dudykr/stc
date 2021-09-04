@@ -2,9 +2,7 @@ use std::fmt::Debug;
 
 use crate::ty::{Intersection, Type, Union};
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{
-    RBlockStmt, RBool, RIdent, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType,
-};
+use stc_ts_ast_rnode::{RBlockStmt, RBool, RIdent, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
 use stc_ts_types::{Id, InferType, KeywordType, LitType, Ref, TypeParam};
 use swc_common::{Mark, Span, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
@@ -139,10 +137,10 @@ impl VisitMut<Type> for Marker {
 
 pub(crate) fn is_str_or_union(t: &Type) -> bool {
     match t.normalize() {
-        Type::Lit(RTsLitType {
+        Type::Lit(LitType {
             lit: RTsLit::Str(..), ..
         }) => true,
-        Type::Keyword(RTsKeywordType {
+        Type::Keyword(KeywordType {
             kind: TsKeywordTypeKind::TsStringKeyword,
             ..
         }) => true,
