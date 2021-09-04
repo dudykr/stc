@@ -192,12 +192,18 @@ impl Analyzer<'_, '_> {
         self.report_errors_for_bin_expr(
             span,
             op,
-            &lt.as_ref()
-                .map(Cow::Borrowed)
-                .unwrap_or_else(|| Cow::Owned(Type::any(left.span().with_ctxt(SyntaxContext::empty())))),
-            &rt.as_ref()
-                .map(Cow::Borrowed)
-                .unwrap_or_else(|| Cow::Owned(Type::any(left.span().with_ctxt(SyntaxContext::empty())))),
+            &lt.as_ref().map(Cow::Borrowed).unwrap_or_else(|| {
+                Cow::Owned(Type::any(
+                    left.span().with_ctxt(SyntaxContext::empty()),
+                    Default::default(),
+                ))
+            }),
+            &rt.as_ref().map(Cow::Borrowed).unwrap_or_else(|| {
+                Cow::Owned(Type::any(
+                    left.span().with_ctxt(SyntaxContext::empty()),
+                    Default::default(),
+                ))
+            }),
         );
 
         if add_type_facts {
@@ -383,6 +389,7 @@ impl Analyzer<'_, '_> {
                                     Type::Intersection(Intersection {
                                         span,
                                         types: vec![orig_ty, narrowed_ty],
+                                        metadata: Default::default(),
                                     })
                                     .fixed()
                                     .cheap(),
@@ -454,6 +461,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
+                        metadata: Default::default(),
                     }));
                 }
 
@@ -471,6 +479,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
+                        metadata: Default::default(),
                     }));
                 }
 
@@ -487,7 +496,11 @@ impl Analyzer<'_, '_> {
 
                     None
                 }) {
-                    return Ok(Type::Keyword(KeywordType { span, kind }));
+                    return Ok(Type::Keyword(KeywordType {
+                        span,
+                        kind,
+                        metadata: Default::default(),
+                    }));
                 }
 
                 if c.any(|(_, ty)| {
@@ -518,6 +531,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
+                        metadata: Default::default(),
                     }));
                 }
                 // At this point rhs cannot be string.
@@ -530,6 +544,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
+                        metadata: Default::default(),
                     }));
                 }
 
@@ -541,6 +556,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
+                    metadata: Default::default(),
                 }));
             }
 
