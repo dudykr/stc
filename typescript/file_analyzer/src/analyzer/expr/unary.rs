@@ -100,6 +100,7 @@ impl Analyzer<'_, '_> {
                                 has_escape: false,
                                 kind: Default::default(),
                             }),
+                            metadata: Default::default(),
                         })
                         .map(Type::Lit)
                         .collect(),
