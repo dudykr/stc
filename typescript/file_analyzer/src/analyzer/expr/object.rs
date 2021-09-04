@@ -608,6 +608,7 @@ impl Analyzer<'_, '_> {
                         .into_iter()
                         .map(|to| self.append_type(to, rhs.clone()))
                         .collect::<Result<_, _>>()?,
+                    metadata: to.metadata,
                 })
                 .fixed())
             }
@@ -652,6 +653,7 @@ impl Analyzer<'_, '_> {
                     .into_iter()
                     .map(|to| self.append_type_element(to, rhs.clone()))
                     .collect::<Result<_, _>>()?,
+                metadata: to.metadata,
             })
             .fixed()),
             _ => {

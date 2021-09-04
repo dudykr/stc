@@ -65,7 +65,7 @@ impl Analyzer<'_, '_> {
                 Some(Ok(ty)) => Some(ty),
                 Some(Err(err)) => {
                     child.storage.report(err);
-                    Some(Type::any(f.span))
+                    Some(Type::any(f.span, Default::default()))
                 }
                 None => None,
             };
@@ -130,7 +130,7 @@ impl Analyzer<'_, '_> {
                 params,
                 type_params,
                 ret_ty: box declared_ret_ty
-                    .unwrap_or_else(|| inferred_return_type.unwrap_or_else(|| Type::void(f.span))),
+                    .unwrap_or_else(|| inferred_return_type.unwrap_or_else(|| Type::void(f.span, Default::default()))),
             })
         })
     }
