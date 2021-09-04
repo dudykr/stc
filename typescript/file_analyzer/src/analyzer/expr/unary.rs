@@ -104,11 +104,13 @@ impl Analyzer<'_, '_> {
                         })
                         .map(Type::Lit)
                         .collect(),
+                        metadata: Default::default(),
                     }));
                 }
                 return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsStringKeyword,
+                    metadata: Default::default(),
                 }));
             }
 
@@ -138,6 +140,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
+                    metadata: Default::default(),
                 }));
             }
 
@@ -145,6 +148,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
+                    metadata: Default::default(),
                 }));
             }
             _ => {}
@@ -177,6 +181,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    metadata: Default::default(),
                 }))
             }
 

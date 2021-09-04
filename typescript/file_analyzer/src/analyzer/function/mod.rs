@@ -212,6 +212,7 @@ impl Analyzer<'_, '_> {
                                 m.for_fns.entry(f.node_id).or_default().ret_ty = Some(Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsVoidKeyword,
+                                    metadata: Default::default(),
                                 }));
                             }
                         }
@@ -219,9 +220,10 @@ impl Analyzer<'_, '_> {
                     Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsVoidKeyword,
+                        metadata: Default::default(),
                     })
                 }
-                None => Type::any(f.span),
+                None => Type::any(f.span, Default::default()),
             };
 
             if f.return_type.is_none() {
@@ -427,7 +429,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => Type::Function(ty).fixed().cheap(),
             Err(err) => {
                 self.storage.report(err);
-                Type::any(f.span)
+                Type::any(f.span, Default::default())
             }
         }
     }
