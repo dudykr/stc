@@ -24,11 +24,12 @@ use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    type_id::SymbolId, Accessor, Alias, Array, CallSignature, ComputedKey, Conditional, ConstructorSignature, FnParam,
-    Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, Interface, Intersection, Intrinsic,
-    IntrinsicKind, Key, KeywordType, LitType, LitTypeMetadata, Mapped, MethodSignature, Operator, OptionalType,
-    Predicate, PropertySignature, QueryExpr, QueryType, Ref, RestType, Symbol, TplType, TsExpr, Tuple, TupleElement,
-    Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+    type_id::SymbolId, Accessor, Alias, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
+    ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, Interface,
+    Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped,
+    MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RestType, Symbol,
+    TplType, TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
+    TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
 use stc_utils::{error, AHashSet};
@@ -1137,14 +1138,20 @@ impl Analyzer<'_, '_> {
                     .report(Error::ImplicitAny { span: i.id.span }.context("default type"));
             }
         }
-        let implicit_type_mark = self.marks().implicit_type_mark;
 
         if let Some(m) = &mut self.mutations {
-            m.for_pats
-                .entry(i.node_id)
-                .or_default()
-                .ty
-                .fill_with(|| Type::any(DUMMY_SP.apply_mark(implicit_type_mark)));
+            m.for_pats.entry(i.node_id).or_default().ty.fill_with(|| {
+                Type::any(
+                    DUMMY_SP,
+                    KeywordTypeMetadata {
+                        common: CommonTypeMetadata {
+                            implicit: true,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
+                )
+            });
         }
     }
 
@@ -1182,7 +1189,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        _ => Type::any(DUMMY_SP),
+                        _ => Type::any(DUMMY_SP, Default::default()),
                     };
 
                     TupleElement {
@@ -1193,6 +1200,7 @@ impl Analyzer<'_, '_> {
                     }
                 })
                 .collect(),
+            metadata: Default::default(),
         });
         if let Some(m) = &mut self.mutations {
             m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert_with(|| ty);
