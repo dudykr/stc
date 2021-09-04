@@ -85,6 +85,7 @@ impl Analyzer<'_, '_> {
                                 &Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    metadata: Default::default(),
                                 }),
                             )
                             .is_err()
@@ -124,7 +125,9 @@ impl Analyzer<'_, '_> {
                 ty: box Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
+                    metadata: Default::default(),
                 }),
+                metadata: ty.metadata(),
             }),
             _ => ty,
         }))
@@ -386,7 +389,7 @@ impl Analyzer<'_, '_> {
                     span: p.span,
                     required: !i.id.optional,
                     pat: RPat::Ident(i.clone()),
-                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span)),
+                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span, Default::default())),
                 })
             }
             RTsParamPropParam::Assign(RAssignPat {
@@ -429,7 +432,7 @@ impl Analyzer<'_, '_> {
                     span: p.span,
                     required: !i.id.optional,
                     pat: RPat::Ident(i.clone()),
-                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span)),
+                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span, Default::default())),
                 })
             }
             _ => unreachable!(),
@@ -457,7 +460,7 @@ impl Analyzer<'_, '_> {
                     None => {
                         let e: Option<_> = $e.validate_with(self).try_opt()?;
                         box e.unwrap_or_else(|| {
-                            let mut ty = Type::any(span);
+                            let mut ty = Type::any(span, Default::default());
                             self.mark_as_implicitly_typed(&mut ty);
                             ty
                         })
@@ -549,7 +552,7 @@ impl Analyzer<'_, '_> {
                     params,
                     box declared_ret_ty
                         .or_else(|| inferred_ret_ty)
-                        .unwrap_or_else(|| Type::any(key_span)),
+                        .unwrap_or_else(|| Type::any(key_span, Default::default())),
                 ))
             },
         )?;
@@ -723,6 +726,7 @@ impl Analyzer<'_, '_> {
                     } else {
                         TsKeywordTypeKind::TsAnyKeyword
                     },
+                    metadata: Default::default(),
                 })
             })
         });
