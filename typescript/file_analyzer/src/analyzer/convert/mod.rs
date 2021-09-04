@@ -26,9 +26,9 @@ use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, Array, CallSignature, ComputedKey, Conditional, ConstructorSignature, FnParam,
     Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, Interface, Intersection, Intrinsic,
-    IntrinsicKind, Key, KeywordType, Mapped, MethodSignature, Operator, OptionalType, Predicate, PropertySignature,
-    QueryExpr, QueryType, Ref, RestType, Symbol, TplType, TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit,
-    TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+    IntrinsicKind, Key, KeywordType, LitType, LitTypeMetadata, Mapped, MethodSignature, Operator, OptionalType,
+    Predicate, PropertySignature, QueryExpr, QueryType, Ref, RestType, Symbol, TplType, TsExpr, Tuple, TupleElement,
+    Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
 use stc_utils::{error, AHashSet};
@@ -936,8 +936,14 @@ impl Analyzer<'_, '_> {
                         RTsLit::Tpl(t) => return Ok(t.validate_with(a)?.into()),
                         _ => {}
                     }
-                    let mut ty = Type::Lit(ty.clone());
-                    a.prevent_generalize(&mut ty);
+                    let ty = Type::Lit(LitType {
+                        span: ty.span,
+                        lit: ty.lit.clone(),
+                        metadata: LitTypeMetadata {
+                            prevent_generalization: true,
+                            ..Default::default()
+                        },
+                    });
                     ty
                 }
                 RTsType::TsKeywordType(ty) => {
