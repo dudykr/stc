@@ -725,13 +725,13 @@ assert_eq_size!(Alias, [u8; 72]);
 pub struct Interface {
     pub span: Span,
     pub name: Id,
-    pub type_params: Option<TypeParamDecl>,
+    pub type_params: Option<Box<TypeParamDecl>>,
     pub extends: Vec<TsExpr>,
     pub body: Vec<TypeElement>,
     pub metadata: InterfaceMetadata,
 }
 
-assert_eq_size!(Interface, [u8; 120]);
+assert_eq_size!(Interface, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeLit {
@@ -2084,7 +2084,7 @@ pub struct StaticThis {
     pub metadata: StaticThisMetadata,
 }
 
-assert_eq_size!(StaticThis, [u8; 12]);
+assert_eq_size!(StaticThis, [u8; 20]);
 
 #[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ThisType {
@@ -2092,7 +2092,7 @@ pub struct ThisType {
     pub metadata: ThisTypeMetadata,
 }
 
-assert_eq_size!(ThisType, [u8; 12]);
+assert_eq_size!(ThisType, [u8; 20]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TplType {
