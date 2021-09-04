@@ -6,7 +6,7 @@ use crate::{
     ValidationResult,
 };
 use itertools::{EitherOrBoth, Itertools};
-use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr, RTsKeywordType};
+use stc_ts_ast_rnode::{KeywordType, RArrowExpr, RBlockStmtOrExpr};
 use stc_ts_types::{Class, Function, Type};
 use stc_ts_utils::{OptionExt, PatExt};
 use swc_common::Spanned;
@@ -105,7 +105,7 @@ impl Analyzer<'_, '_> {
                 match &mut ty {
                     Type::Union(ty) => {
                         ty.types.retain(|ty| match ty.normalize() {
-                            Type::Keyword(RTsKeywordType {
+                            Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                                 ..
                             }) => false,

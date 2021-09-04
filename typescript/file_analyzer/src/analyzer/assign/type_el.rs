@@ -8,7 +8,7 @@ use crate::{
     ValidationResult,
 };
 use rnode::NodeId;
-use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_ast_rnode::{KeywordType, RIdent, RTsEntityName, RTsLit, LitType};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
@@ -384,34 +384,34 @@ impl Analyzer<'_, '_> {
                         .context("tried to assign a class instance to type elements");
                 }
 
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBigIntKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::Number(..),
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::BigInt(..),
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::Str(..), ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::Bool(..), ..
                 })
                 | Type::Mapped(..)
@@ -455,19 +455,19 @@ impl Analyzer<'_, '_> {
                         });
                 }
 
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: kind @ TsKeywordTypeKind::TsStringKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: kind @ TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: kind @ TsKeywordTypeKind::TsBooleanKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: kind @ TsKeywordTypeKind::TsBigIntKeyword,
                     ..
                 }) => {
@@ -523,19 +523,19 @@ impl Analyzer<'_, '_> {
                         });
                 }
 
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: lit @ RTsLit::Number(..),
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: lit @ RTsLit::Str(..),
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: lit @ RTsLit::Bool(..),
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: lit @ RTsLit::BigInt(..),
                     ..
                 }) => {
@@ -547,7 +547,7 @@ impl Analyzer<'_, '_> {
                             opts,
                             lhs_span,
                             lhs,
-                            &Type::Keyword(RTsKeywordType {
+                            &Type::Keyword(KeywordType {
                                 span,
                                 kind: match lit {
                                     RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
@@ -565,19 +565,19 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Param(..)
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
                 }) => return Err(Error::SimpleAssignFailed { span, cause: None }),
 
                 // TODO: Strict mode
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) => return Ok(()),
 
                 // TODO: Strict mode
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 }) => return Ok(()),
@@ -614,7 +614,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsObjectKeyword,
                     ..
                 }) => {
@@ -753,11 +753,11 @@ impl Analyzer<'_, '_> {
 
                 Type::Tuple(..)
                 | Type::Array(..)
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
                 }) => return Ok(()),

@@ -6,8 +6,8 @@ use crate::{
 use fxhash::FxHashMap;
 use rnode::{NodeId, Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl, RTsEnumMember, RTsEnumMemberId,
-    RTsKeywordType, RTsLit, RTsLitType,
+    KeywordType, LitType, RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl,
+    RTsEnumMember, RTsEnumMemberId, RTsLit,
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, PropertySignature, TypeElement, TypeLit};
@@ -409,7 +409,7 @@ impl Analyzer<'_, '_> {
                     type_ann: None,
                 }),
                 required: true,
-                ty: box Type::Keyword(RTsKeywordType {
+                ty: box Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                 }),
@@ -418,7 +418,7 @@ impl Analyzer<'_, '_> {
                 span: e.span,
                 readonly: false,
                 params: vec![param],
-                type_ann: Some(box Type::Keyword(RTsKeywordType {
+                type_ann: Some(box Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                 })),
@@ -434,7 +434,7 @@ impl Analyzer<'_, '_> {
                     type_ann: None,
                 }),
                 required: true,
-                ty: box Type::Keyword(RTsKeywordType {
+                ty: box Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                 }),
@@ -443,7 +443,7 @@ impl Analyzer<'_, '_> {
                 span: e.span,
                 readonly: false,
                 params: vec![param],
-                type_ann: Some(box Type::Keyword(RTsKeywordType {
+                type_ann: Some(box Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
                 })),
@@ -465,7 +465,7 @@ impl Analyzer<'_, '_> {
             Type::Enum(ref e) if e.is_const => {
                 self.storage.report(Error::InvalidUseOfConstEnum { span });
             }
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
             }) => {
@@ -546,12 +546,12 @@ impl Analyzer<'_, '_> {
 
         for m in &e.members {
             match &*m.val {
-                RExpr::Lit(RLit::Str(lit)) => values.push(Type::Lit(RTsLitType {
+                RExpr::Lit(RLit::Str(lit)) => values.push(Type::Lit(LitType {
                     node_id: NodeId::invalid(),
                     span: m.span,
                     lit: RTsLit::Str(lit.clone()),
                 })),
-                RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(RTsLitType {
+                RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(LitType {
                     node_id: NodeId::invalid(),
                     span: m.span,
                     lit: RTsLit::Number(lit.clone()),
@@ -581,7 +581,7 @@ impl Analyzer<'_, '_> {
                                 }) {
                                     match *v.val {
                                         RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => {
-                                            return Ok(Type::Lit(RTsLitType {
+                                            return Ok(Type::Lit(LitType {
                                                 node_id: NodeId::invalid(),
                                                 span: v.span,
                                                 lit: match *v.val.clone() {

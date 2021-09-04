@@ -23,9 +23,9 @@ use crate::{
 use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr, RNull, RNumber,
-    RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId,
-    RTsKeywordType, RTsLit, RTsLitType, RTsNonNullExpr, RTsThisType, RUnaryExpr,
+    KeywordType, RAssignExpr, RBindingIdent, RClassExpr, RExpr, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr,
+    RNull, RNumber, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RThisExpr, RTpl, RTsEntityName,
+    RTsEnumMemberId, RTsLit, LitType, RTsNonNullExpr, RTsThisType, RUnaryExpr,
 };
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
@@ -177,7 +177,7 @@ impl Analyzer<'_, '_> {
 
                 RExpr::Ident(ref i) => {
                     if i.sym == js_word!("undefined") {
-                        return Ok(Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(KeywordType {
                             span: i.span.with_ctxt(SyntaxContext::empty()),
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         }));
@@ -195,21 +195,21 @@ impl Analyzer<'_, '_> {
                 RExpr::Array(arr) => return arr.validate_with_args(self, (mode, type_args, type_ann)),
 
                 RExpr::Lit(RLit::Bool(v)) => {
-                    return Ok(Type::Lit(RTsLitType {
+                    return Ok(Type::Lit(LitType {
                         node_id: NodeId::invalid(),
                         span: v.span,
                         lit: RTsLit::Bool(v.clone()),
                     }));
                 }
                 RExpr::Lit(RLit::Str(ref v)) => {
-                    return Ok(Type::Lit(RTsLitType {
+                    return Ok(Type::Lit(LitType {
                         node_id: NodeId::invalid(),
                         span: v.span,
                         lit: RTsLit::Str(v.clone()),
                     }));
                 }
                 RExpr::Lit(RLit::Num(v)) => {
-                    return Ok(Type::Lit(RTsLitType {
+                    return Ok(Type::Lit(LitType {
                         node_id: NodeId::invalid(),
                         span: v.span,
                         lit: RTsLit::Number(v.clone()),
@@ -218,13 +218,13 @@ impl Analyzer<'_, '_> {
                 RExpr::Lit(RLit::Null(RNull { span })) => {
                     if self.ctx.in_export_default_expr {
                         // TODO: strict mode
-                        return Ok(Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(KeywordType {
                             span: *span,
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                         }));
                     }
 
-                    return Ok(Type::Keyword(RTsKeywordType {
+                    return Ok(Type::Keyword(KeywordType {
                         span: *span,
                         kind: TsKeywordTypeKind::TsNullKeyword,
                     }));
@@ -1034,7 +1034,7 @@ impl Analyzer<'_, '_> {
             } {
                 // See if key is number.
                 match prop.ty().normalize() {
-                    Type::Lit(RTsLitType {
+                    Type::Lit(LitType {
                         lit: RTsLit::Number(prop),
                         ..
                     }) => return self.access_property(span, obj, &Key::Num(prop.clone()), type_mode, id_ctx, opts),
@@ -1044,7 +1044,7 @@ impl Analyzer<'_, '_> {
 
             // See if key is string.
             match prop.ty().normalize() {
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::Str(prop), ..
                 }) => {
                     let res = self
@@ -1076,7 +1076,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::Number(n), ..
                 }) => {
                     // As some types has rules about computed propeties, we use the result only if
@@ -1419,7 +1419,7 @@ impl Analyzer<'_, '_> {
                 return self
                     .access_property(
                         span,
-                        &Type::Keyword(RTsKeywordType {
+                        &Type::Keyword(KeywordType {
                             span: obj.span,
                             kind: match &obj.lit {
                                 RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
@@ -1472,7 +1472,7 @@ impl Analyzer<'_, '_> {
                             //         | TsEnumMemberId::Str(Str { value: ref
                             // sym, .. }) => {
                             //             if sym == $sym {
-                            //                 return Ok(Type::Lit(RTsLitType {
+                            //                 return Ok(Type::Lit(LitType {
                             //                     span: m.span(),
                             //                     lit: match m.val.clone() {
                             //                         RExpr::Lit(RLit::Str(s))
@@ -1513,7 +1513,7 @@ impl Analyzer<'_, '_> {
                                 RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => true,
                                 _ => false,
                             } {
-                                let new_obj_ty = Type::Lit(RTsLitType {
+                                let new_obj_ty = Type::Lit(LitType {
                                     node_id: NodeId::invalid(),
                                     span,
                                     lit: match *v.val.clone() {
@@ -1525,7 +1525,7 @@ impl Analyzer<'_, '_> {
                                 return self.access_property(span, &new_obj_ty, prop, type_mode, id_ctx, opts);
                             }
                         }
-                        return Ok(Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                         }));
@@ -1541,7 +1541,7 @@ impl Analyzer<'_, '_> {
                         // enumBasics.ts says
                         //
                         // Reverse mapping of enum returns string name of property
-                        return Ok(Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(KeywordType {
                             span: prop.span(),
                             kind: TsKeywordTypeKind::TsStringKeyword,
                         }));
@@ -1569,7 +1569,7 @@ impl Analyzer<'_, '_> {
                                         RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => true,
                                         _ => false,
                                     } {
-                                        let new_obj_ty = Type::Lit(RTsLitType {
+                                        let new_obj_ty = Type::Lit(LitType {
                                             node_id: NodeId::invalid(),
                                             span: *span,
                                             lit: match *v.val.clone() {
@@ -1690,11 +1690,11 @@ impl Analyzer<'_, '_> {
                         //
                         //
                         // and it's not error.
-                        Type::Keyword(RTsKeywordType {
+                        Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             ..
                         })
-                        | Type::Lit(RTsLitType {
+                        | Type::Lit(LitType {
                             lit: RTsLit::Str(..), ..
                         }) => true,
                         _ => false,
@@ -1738,7 +1738,7 @@ impl Analyzer<'_, '_> {
 
                 let mut prop_ty = match prop {
                     Key::Computed(key) => key.ty.clone(),
-                    Key::Normal { span, sym } => box Type::Lit(RTsLitType {
+                    Key::Normal { span, sym } => box Type::Lit(LitType {
                         node_id: NodeId::invalid(),
                         span: *span,
                         lit: RTsLit::Str(RStr {
@@ -1748,12 +1748,12 @@ impl Analyzer<'_, '_> {
                             kind: Default::default(),
                         }),
                     }),
-                    Key::Num(n) => box Type::Lit(RTsLitType {
+                    Key::Num(n) => box Type::Lit(LitType {
                         node_id: NodeId::invalid(),
                         span: n.span,
                         lit: RTsLit::Number(n.clone()),
                     }),
-                    Key::BigInt(n) => box Type::Lit(RTsLitType {
+                    Key::BigInt(n) => box Type::Lit(LitType {
                         node_id: NodeId::invalid(),
                         span: n.span,
                         lit: RTsLit::BigInt(n.clone()),
@@ -1777,17 +1777,17 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => {
-                return Ok(Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                 }));
             }
 
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => {
@@ -1795,12 +1795,12 @@ impl Analyzer<'_, '_> {
                 return Err(Error::Unknown { span });
             }
 
-            Type::Keyword(RTsKeywordType { kind, .. }) if !self.is_builtin => {
+            Type::Keyword(KeywordType { kind, .. }) if !self.is_builtin => {
                 match prop {
                     Key::Computed(prop) => match (*kind, prop.ty.normalize()) {
                         (
                             TsKeywordTypeKind::TsObjectKeyword,
-                            Type::Keyword(RTsKeywordType {
+                            Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsStringKeyword,
                                 ..
                             }),
@@ -1853,11 +1853,11 @@ impl Analyzer<'_, '_> {
 
                 if let Key::Computed(prop) = prop {
                     match prop.ty.normalize() {
-                        Type::Keyword(RTsKeywordType {
+                        Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsNumberKeyword,
                             ..
                         })
-                        | Type::Lit(RTsLitType {
+                        | Type::Lit(LitType {
                             lit: RTsLit::Number(..),
                             ..
                         }) => return Ok(elem_type.clone()),
@@ -1883,11 +1883,11 @@ impl Analyzer<'_, '_> {
                         //
                         //
                         // and it's not error.
-                        Type::Keyword(RTsKeywordType {
+                        Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             ..
                         })
-                        | Type::Lit(RTsLitType {
+                        | Type::Lit(LitType {
                             lit: RTsLit::Str(..), ..
                         }) => true,
                         _ => false,
@@ -1922,11 +1922,11 @@ impl Analyzer<'_, '_> {
                             //
                             //
                             // and it's not error.
-                            Type::Keyword(RTsKeywordType {
+                            Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsStringKeyword,
                                 ..
                             })
-                            | Type::Lit(RTsLitType {
+                            | Type::Lit(LitType {
                                 lit: RTsLit::Str(..), ..
                             }) => Ok(Type::any(span)),
                             _ => Err(err),
@@ -2101,7 +2101,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     if !errors.is_empty() {
                         if is_all_tuple && errors.len() != types.len() {
-                            tys.push(Type::Keyword(RTsKeywordType {
+                            tys.push(Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             }));
@@ -2154,7 +2154,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             if opts.use_undefined_for_tuple_index_error {
-                                return Ok(Type::Keyword(RTsKeywordType {
+                                return Ok(Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                 }));
@@ -2169,7 +2169,7 @@ impl Analyzer<'_, '_> {
                                     }
                                     .context("returning undefined because it's l-value context"),
                                 );
-                                return Ok(Type::Keyword(RTsKeywordType {
+                                return Ok(Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                 }));
@@ -2191,13 +2191,13 @@ impl Analyzer<'_, '_> {
                         ..
                     } => {
                         if elems.iter().any(|el| el.ty.normalize().is_rest()) {
-                            return Ok(Type::Keyword(RTsKeywordType {
+                            return Ok(Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
                             }));
                         }
 
-                        return Ok(Type::Lit(RTsLitType {
+                        return Ok(Type::Lit(LitType {
                             node_id: NodeId::invalid(),
                             span,
                             lit: RTsLit::Number(RNumber {
@@ -2447,7 +2447,7 @@ impl Analyzer<'_, '_> {
 
                             let ty = match m.optional {
                                 Some(TruePlusMinus::Plus) | Some(TruePlusMinus::True) => {
-                                    let undefined = Type::Keyword(RTsKeywordType {
+                                    let undefined = Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     });
@@ -3686,7 +3686,7 @@ impl Analyzer<'_, '_> {
                     return false;
                 }
                 match el.params[0].ty.normalize() {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) => true,
@@ -3713,14 +3713,14 @@ impl Analyzer<'_, '_> {
         e.exprs.visit_with(self);
 
         if e.exprs.is_empty() {
-            return Ok(Type::Lit(RTsLitType {
+            return Ok(Type::Lit(LitType {
                 node_id: NodeId::invalid(),
                 span: e.span,
                 lit: RTsLit::Str(e.quasis[0].cooked.clone().unwrap_or_else(|| e.quasis[0].raw.clone())),
             }));
         }
 
-        Ok(Type::Keyword(RTsKeywordType {
+        Ok(Type::Keyword(KeywordType {
             span: e.span,
             kind: TsKeywordTypeKind::TsStringKeyword,
         }))

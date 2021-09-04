@@ -22,8 +22,8 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RBindingIdent, RCallExpr, RExpr, RExprOrSpread, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr,
-    RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType,
+    KeywordType, RArrayPat, RBindingIdent, RCallExpr, RExpr, RExprOrSpread, RExprOrSuper, RIdent, RInvalid, RLit,
+    RMemberExpr, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, LitType,
     RTsThisType, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
 };
 use stc_ts_errors::{
@@ -320,7 +320,7 @@ impl Analyzer<'_, '_> {
                     // Handle toString()
 
                     if prop == js_word!("toString") {
-                        return Ok(Type::from(RTsKeywordType {
+                        return Ok(Type::from(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                         }));
@@ -331,14 +331,14 @@ impl Analyzer<'_, '_> {
                 let obj_type = obj.validate_with_default(self)?.generalize_lit(marks);
 
                 let mut obj_type = match *obj_type.normalize() {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) => self
                         .env
                         .get_global_type(span, &js_word!("Number"))
                         .expect("Builtin type named 'Number' should exist"),
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
                     }) => self
@@ -399,7 +399,7 @@ impl Analyzer<'_, '_> {
             let mut callee_ty = {
                 let callee_ty = callee.validate_with_default(analyzer)?;
                 match callee_ty.normalize() {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
                     }) if type_args.is_some() => {
@@ -502,7 +502,7 @@ impl Analyzer<'_, '_> {
 
         let res = (|| {
             match obj_type.normalize() {
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                     ..
                 }) => {
@@ -714,7 +714,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                     ..
                 }) => {
@@ -1061,7 +1061,7 @@ impl Analyzer<'_, '_> {
                     // TODO: PERF
 
                     match ty {
-                        Type::Keyword(RTsKeywordType {
+                        Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
                         }) => candidates.push(CallCandidate {
@@ -1181,7 +1181,7 @@ impl Analyzer<'_, '_> {
                             }));
                         }
 
-                        Type::Keyword(RTsKeywordType {
+                        Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
@@ -1464,12 +1464,12 @@ impl Analyzer<'_, '_> {
                 return Ok(make_instance_type(self.ctx.module_id, ty.clone()));
             }
 
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => return Ok(Type::any(span)),
 
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => {
@@ -2090,7 +2090,7 @@ impl Analyzer<'_, '_> {
                             span,
                             &mut Default::default(),
                             &param.ty,
-                            &Type::Keyword(RTsKeywordType {
+                            &Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                             }),
@@ -2386,7 +2386,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(ty) = default_any_ty {
                         match &ty {
-                            Type::Keyword(RTsKeywordType {
+                            Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                             }) if self.is_implicitly_typed_span(*span) => {
@@ -2527,7 +2527,7 @@ impl Analyzer<'_, '_> {
                     if !inferred.contains_key(&tp.name) {
                         inferred.insert(
                             tp.name.clone(),
-                            Type::Keyword(RTsKeywordType {
+                            Type::Keyword(KeywordType {
                                 span: tp.span,
                                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                             }),
@@ -3224,13 +3224,13 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
         match ty {
             Type::IndexedAccessType(IndexedAccessType {
                 obj_type:
-                    box Type::Keyword(RTsKeywordType {
+                    box Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                     }),
                 ..
             }) => {
-                *ty = Type::Keyword(RTsKeywordType {
+                *ty = Type::Keyword(KeywordType {
                     span: *span,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                 });
@@ -3247,7 +3247,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
 
                 for index_ty in index_type.iter_union() {
                     let (lit_span, value) = match &*index_ty {
-                        Type::Lit(RTsLitType {
+                        Type::Lit(LitType {
                             span: lit_span,
                             lit: RTsLit::Str(RStr { value, .. }),
                             ..

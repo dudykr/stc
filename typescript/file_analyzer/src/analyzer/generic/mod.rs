@@ -8,7 +8,7 @@ use crate::{
 use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RIdent, RPat, RStr, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_ast_rnode::{KeywordType, RIdent, RPat, RStr, RTsEntityName, RTsLit, LitType};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace, print_type},
     DebugExt,
@@ -1254,7 +1254,7 @@ impl Analyzer<'_, '_> {
                 );
             }
 
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => return Ok(()),
@@ -1308,15 +1308,15 @@ impl Analyzer<'_, '_> {
         }
 
         match arg {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNullKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
             }) => {
@@ -1515,7 +1515,7 @@ impl Analyzer<'_, '_> {
                         for arg_member in &arg.members {
                             if let Some(key) = arg_member.key() {
                                 match key {
-                                    Key::Normal { span: i_span, sym } => key_types.push(Type::Lit(RTsLitType {
+                                    Key::Normal { span: i_span, sym } => key_types.push(Type::Lit(LitType {
                                         node_id: NodeId::invalid(),
                                         span: param.span,
                                         lit: RTsLit::Str(RStr {
@@ -1526,7 +1526,7 @@ impl Analyzer<'_, '_> {
                                         }),
                                     })),
                                     Key::Num(n) => {
-                                        key_types.push(Type::Lit(RTsLitType {
+                                        key_types.push(Type::Lit(LitType {
                                             node_id: NodeId::invalid(),
                                             span: param.span,
                                             lit: RTsLit::Number(n.clone()),
@@ -1738,7 +1738,7 @@ impl Analyzer<'_, '_> {
                                         Key::Normal {
                                             span: i_span,
                                             sym: i_sym,
-                                        } => Some(Type::Lit(RTsLitType {
+                                        } => Some(Type::Lit(LitType {
                                             node_id: NodeId::invalid(),
                                             span: param.span,
                                             lit: RTsLit::Str(RStr {
@@ -2321,7 +2321,7 @@ impl VisitMut<Type> for TypeParamInliner<'_> {
 
         match ty {
             Type::Param(p) if p.name == *self.param => {
-                *ty = Type::Lit(RTsLitType {
+                *ty = Type::Lit(LitType {
                     node_id: NodeId::invalid(),
                     span: p.span,
                     lit: RTsLit::Str(self.value.clone()),

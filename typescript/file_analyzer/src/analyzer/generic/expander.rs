@@ -5,7 +5,7 @@ use crate::{
 };
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Fold, FoldWith, Visit, VisitWith};
-use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_ast_rnode::{KeywordType, RExpr, RInvalid, RTsEntityName, RTsLit, LitType};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::{type_param::finder::TypeParamUsageFinder, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;
@@ -258,7 +258,7 @@ impl Analyzer<'_, '_> {
         }
 
         match parent {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNullKeyword,
                 ..
             }) => return Some(false),
@@ -824,25 +824,25 @@ impl GenericExpander<'_, '_, '_, '_> {
                 ty.obj_type.fix();
 
                 let key = match ty.index_type.normalize() {
-                    Type::Lit(RTsLitType {
+                    Type::Lit(LitType {
                         lit: RTsLit::Str(s), ..
                     }) => Some(Key::Normal {
                         span: s.span,
                         sym: s.value.clone(),
                     }),
-                    Type::Lit(RTsLitType {
+                    Type::Lit(LitType {
                         lit: RTsLit::Number(v), ..
                     }) => Some(Key::Num(v.clone())),
 
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
                     })
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     })
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsBooleanKeyword,
                         ..
                     }) => Some(Key::Computed(ComputedKey {

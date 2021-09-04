@@ -11,11 +11,11 @@ use crate::{
 use itertools::Itertools;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RAssignPatProp, RBindingIdent, RComputedPropName, RExpr, RIdent, RInvalid, RObjectPat, RObjectPatProp,
-    RPat, RTsArrayType, RTsCallSignatureDecl, RTsConditionalType, RTsConstructSignatureDecl, RTsConstructorType,
-    RTsEntityName, RTsExprWithTypeArgs, RTsFnOrConstructorType, RTsFnParam, RTsFnType, RTsImportType,
-    RTsIndexSignature, RTsIndexedAccessType, RTsInferType, RTsInterfaceBody, RTsInterfaceDecl, RTsIntersectionType,
-    RTsKeywordType, RTsLit, RTsMappedType, RTsMethodSignature, RTsOptionalType, RTsParenthesizedType,
+    KeywordType, RArrayPat, RAssignPatProp, RBindingIdent, RComputedPropName, RExpr, RIdent, RInvalid, RObjectPat,
+    RObjectPatProp, RPat, RTsArrayType, RTsCallSignatureDecl, RTsConditionalType, RTsConstructSignatureDecl,
+    RTsConstructorType, RTsEntityName, RTsExprWithTypeArgs, RTsFnOrConstructorType, RTsFnParam, RTsFnType,
+    RTsImportType, RTsIndexSignature, RTsIndexedAccessType, RTsInferType, RTsInterfaceBody, RTsInterfaceDecl,
+    RTsIntersectionType, RTsLit, RTsMappedType, RTsMethodSignature, RTsOptionalType, RTsParenthesizedType,
     RTsPropertySignature, RTsRestType, RTsTplLitType, RTsTupleElement, RTsTupleType, RTsType, RTsTypeAliasDecl,
     RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation,
     RTsTypePredicate, RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
@@ -187,7 +187,7 @@ impl Analyzer<'_, '_> {
                     let type_params = try_opt!(d.type_params.validate_with(child));
 
                     let mut ty = match &*d.type_ann {
-                        RTsType::TsKeywordType(RTsKeywordType {
+                        RTsType::TsKeywordType(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsIntrinsicKeyword,
                         }) if !child.is_builtin => {
@@ -196,7 +196,7 @@ impl Analyzer<'_, '_> {
                             Type::any(span.with_ctxt(SyntaxContext::empty()))
                         }
 
-                        RTsType::TsKeywordType(RTsKeywordType {
+                        RTsType::TsKeywordType(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsIntrinsicKeyword,
                         }) => Type::Intrinsic(Intrinsic {

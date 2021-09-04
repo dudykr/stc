@@ -15,8 +15,8 @@ use crate::{
 };
 use rnode::{FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RCallExpr, RExpr, RExprOrSuper, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsKeywordType,
-    RTsTypeAssertion, RVarDecl, RVarDeclarator,
+    KeywordType, RArrayPat, RCallExpr, RExpr, RExprOrSuper, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsTypeAssertion,
+    RVarDecl, RVarDeclarator,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
@@ -407,12 +407,12 @@ impl Analyzer<'_, '_> {
 
                                 let ty = match ty.normalize() {
                                     // `err is Error` => boolean
-                                    Type::Predicate(..) => Type::Keyword(RTsKeywordType {
+                                    Type::Predicate(..) => Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsBooleanKeyword,
                                     }),
 
-                                    Type::Keyword(RTsKeywordType {
+                                    Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                                     })
@@ -420,7 +420,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         op: TsTypeOperatorOp::Unique,
                                         ty:
-                                            box Type::Keyword(RTsKeywordType {
+                                            box Type::Keyword(KeywordType {
                                                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                                                 ..
                                             }),
@@ -431,13 +431,13 @@ impl Analyzer<'_, '_> {
                                             VarDeclKind::Const if is_symbol_call => Type::Operator(Operator {
                                                 span: *span,
                                                 op: TsTypeOperatorOp::Unique,
-                                                ty: box Type::Keyword(RTsKeywordType {
+                                                ty: box Type::Keyword(KeywordType {
                                                     span: *span,
                                                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                                                 }),
                                             }),
 
-                                            _ => Type::Keyword(RTsKeywordType {
+                                            _ => Type::Keyword(KeywordType {
                                                 span: *span,
                                                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                                             }),
@@ -459,12 +459,12 @@ impl Analyzer<'_, '_> {
                                             elem_type: match constraint {
                                                 Some(_constraint) => {
                                                     // TODO: We need something smarter
-                                                    box Type::Keyword(RTsKeywordType {
+                                                    box Type::Keyword(KeywordType {
                                                         span: *elem_span,
                                                         kind: TsKeywordTypeKind::TsAnyKeyword,
                                                     })
                                                 }
-                                                None => box Type::Keyword(RTsKeywordType {
+                                                None => box Type::Keyword(KeywordType {
                                                     span: *elem_span,
                                                     kind: TsKeywordTypeKind::TsAnyKeyword,
                                                 }),
@@ -473,7 +473,7 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     // We failed to infer type of the type parameter.
-                                    Type::Param(TypeParam { span, .. }) => Type::Keyword(RTsKeywordType {
+                                    Type::Param(TypeParam { span, .. }) => Type::Keyword(KeywordType {
                                         span: *span,
                                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                                     }),
@@ -532,11 +532,11 @@ impl Analyzer<'_, '_> {
                                     let span = element.span();
 
                                     match *element.ty.normalize() {
-                                        Type::Keyword(RTsKeywordType {
+                                        Type::Keyword(KeywordType {
                                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                             ..
                                         })
-                                        | Type::Keyword(RTsKeywordType {
+                                        | Type::Keyword(KeywordType {
                                             kind: TsKeywordTypeKind::TsNullKeyword,
                                             ..
                                         }) => {}

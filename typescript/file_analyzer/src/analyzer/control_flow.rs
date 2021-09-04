@@ -17,8 +17,8 @@ use crate::{
 use fxhash::FxHashMap;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase,
-    RSwitchStmt, RTsKeywordType,
+    KeywordType, RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt,
+    RSwitchCase, RSwitchStmt,
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_type_ops::Fix;
@@ -457,7 +457,7 @@ impl Analyzer<'_, '_> {
         fn need_work(ty: &Type) -> bool {
             match ty.normalize() {
                 Type::Lit(..)
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) => false,

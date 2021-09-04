@@ -15,8 +15,8 @@ use crate::{
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RAssignProp, RComputedPropName, RExpr, RExprOrSuper, RGetterProp, RIdent, RKeyValueProp, RLit, RMemberExpr,
-    RMethodProp, RNumber, RPrivateName, RProp, RPropName, RSetterProp, RStr, RTsKeywordType,
+    KeywordType, RAssignProp, RComputedPropName, RExpr, RExprOrSuper, RGetterProp, RIdent, RKeyValueProp, RLit,
+    RMemberExpr, RMethodProp, RNumber, RPrivateName, RProp, RPropName, RSetterProp, RStr,
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -166,7 +166,7 @@ impl Analyzer<'_, '_> {
 
             if check_for_validity && check_for_symbol_form && is_symbol_access {
                 match ty.normalize() {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
                     })
@@ -190,10 +190,10 @@ impl Analyzer<'_, '_> {
             }
 
             // match *ty {
-            //     Type::Lit(RTsLitType {
+            //     Type::Lit(LitType {
             //         lit: RTsLit::Number(n), ..
             //     }) => return Ok(Key::Num(n)),
-            //     Type::Lit(RTsLitType {
+            //     Type::Lit(LitType {
             //         lit: RTsLit::Str(s), ..
             //     }) => {
             //         return Ok(Key::Normal {
@@ -300,26 +300,26 @@ impl Analyzer<'_, '_> {
             }
         };
         match ty.normalize() {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNumberKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                 ..
             })
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::Unique,
                 ty:
-                    box Type::Keyword(RTsKeywordType {
+                    box Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
                     }),
@@ -542,7 +542,7 @@ impl Analyzer<'_, '_> {
                                     &body.stmts,
                                 )?
                                 .unwrap_or_else(|| {
-                                    Type::Keyword(RTsKeywordType {
+                                    Type::Keyword(KeywordType {
                                         span: body.span,
                                         kind: TsKeywordTypeKind::TsVoidKeyword,
                                     })

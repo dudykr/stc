@@ -16,7 +16,7 @@ use crate::{
     ValidationResult,
 };
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RArrayLit, RExpr, RExprOrSpread, RInvalid, RNumber, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_ast_rnode::{KeywordType, RArrayLit, RExpr, RExprOrSpread, RInvalid, RNumber, RTsLit, LitType};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
@@ -108,7 +108,7 @@ impl Analyzer<'_, '_> {
                             }
                             elements.extend(tuple.elems);
                         }
-                        Type::Keyword(RTsKeywordType {
+                        Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
                         }) => {
@@ -234,7 +234,7 @@ impl Analyzer<'_, '_> {
             return Ok(iterator);
         }
         if iterator.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
-            return Ok(Cow::Owned(Type::Keyword(RTsKeywordType {
+            return Ok(Cow::Owned(Type::Keyword(KeywordType {
                 span,
                 kind: TsKeywordTypeKind::TsStringKeyword,
             })));
@@ -278,7 +278,7 @@ impl Analyzer<'_, '_> {
 
                 if !errors.is_empty() {
                     if can_use_undefined && errors.len() != u.types.len() {
-                        types.push(Type::Keyword(RTsKeywordType {
+                        types.push(Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         }));
@@ -633,27 +633,27 @@ impl Analyzer<'_, '_> {
                     return self.get_iterator(span, ty, opts);
                 }
 
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBigIntKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::Number(..),
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::BigInt(..),
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::Bool(..), ..
                 }) => return Err(Error::NotArrayType { span }),
 
@@ -751,7 +751,7 @@ impl Analyzer<'_, '_> {
         })?;
 
         if iterator.is_str() {
-            return Ok(Cow::Owned(Type::Keyword(RTsKeywordType {
+            return Ok(Cow::Owned(Type::Keyword(KeywordType {
                 span: iterator.span(),
                 kind: TsKeywordTypeKind::TsStringKeyword,
             })));

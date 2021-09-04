@@ -8,7 +8,7 @@ use crate::{
 };
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{
-    RDoWhileStmt, RExpr, RForInStmt, RForOfStmt, RIdent, RPat, RStmt, RTsEntityName, RTsKeywordType, RVarDecl,
+    KeywordType, RDoWhileStmt, RExpr, RForInStmt, RForOfStmt, RIdent, RPat, RStmt, RTsEntityName, RVarDecl,
     RVarDeclOrPat, RWhileStmt,
 };
 use stc_ts_errors::{DebugExt, Error};
@@ -197,7 +197,7 @@ impl Analyzer<'_, '_> {
         let rhs = rhs.normalize();
 
         if rhs.is_kwd(TsKeywordTypeKind::TsObjectKeyword) || rhs.is_array() || rhs.is_tuple() {
-            return Ok(Type::Keyword(RTsKeywordType {
+            return Ok(Type::Keyword(KeywordType {
                 span: rhs.span(),
                 kind: TsKeywordTypeKind::TsStringKeyword,
             }));
@@ -226,7 +226,7 @@ impl Analyzer<'_, '_> {
                             span: DUMMY_SP,
                             params: vec![
                                 contraint.clone(),
-                                Type::Keyword(RTsKeywordType {
+                                Type::Keyword(KeywordType {
                                     span: rhs.span(),
                                     kind: TsKeywordTypeKind::TsStringKeyword,
                                 }),
@@ -243,11 +243,11 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let s = Type::Keyword(RTsKeywordType {
+        let s = Type::Keyword(KeywordType {
             span: rhs.span(),
             kind: TsKeywordTypeKind::TsStringKeyword,
         });
-        let n = Type::Keyword(RTsKeywordType {
+        let n = Type::Keyword(KeywordType {
             span: rhs.span(),
             kind: TsKeywordTypeKind::TsNumberKeyword,
         });

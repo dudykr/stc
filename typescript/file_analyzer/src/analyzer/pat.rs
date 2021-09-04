@@ -14,8 +14,8 @@ use crate::{
 };
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{
-    RArrayPat, RAssignPat, RAssignPatProp, RBindingIdent, RExpr, RIdent, RKeyValuePatProp, RKeyValueProp, RObjectPat,
-    RObjectPatProp, RParam, RPat, RProp, RPropOrSpread, RRestPat, RTsKeywordType,
+    KeywordType, RArrayPat, RAssignPat, RAssignPatProp, RBindingIdent, RExpr, RIdent, RKeyValuePatProp, RKeyValueProp,
+    RObjectPat, RObjectPatProp, RParam, RPat, RProp, RPropOrSpread, RRestPat,
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{
@@ -451,7 +451,7 @@ impl Analyzer<'_, '_> {
 
                 match value_ty.normalize() {
                     Type::Array(..)
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
                     }) => {}
@@ -465,7 +465,7 @@ impl Analyzer<'_, '_> {
 
                 match *ty.normalize() {
                     Type::Array(..)
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
                     }) => {}

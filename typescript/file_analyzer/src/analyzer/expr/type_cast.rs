@@ -12,7 +12,7 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use stc_ts_ast_rnode::{RTsAsExpr, RTsKeywordType, RTsLit, RTsLitType, RTsTypeAssertion};
+use stc_ts_ast_rnode::{KeywordType, RTsAsExpr, RTsLit, LitType, RTsTypeAssertion};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Interface, TypeElement, TypeParamInstantiation};
 use std::borrow::Cow;
@@ -264,67 +264,67 @@ impl Analyzer<'_, '_> {
 
         match (from, to) {
             (
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::Number(..),
                     ..
                 }),
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 }),
             ) => return Ok(true),
             (
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::Str(..), ..
                 }),
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
                 }),
             ) => return Ok(true),
             (
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::Bool(..), ..
                 }),
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
                 }),
             ) => return Ok(true),
             (
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::BigInt(..),
                     ..
                 }),
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBigIntKeyword,
                     ..
                 }),
             ) => return Ok(true),
             (
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::Number(..),
                     ..
                 }),
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::Number(..),
                     ..
                 }),
             )
             | (
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::Str(..), ..
                 }),
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::Str(..), ..
                 }),
             )
             | (
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::BigInt(..),
                     ..
                 }),
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::BigInt(..),
                     ..
                 }),

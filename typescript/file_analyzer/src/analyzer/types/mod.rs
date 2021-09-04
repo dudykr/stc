@@ -8,8 +8,8 @@ use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
 use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsKeywordType,
-    RTsLit, RTsLitType, RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
+    KeywordType, RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl,
+    RTsLit, LitType, RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
@@ -954,7 +954,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 let ty = self
-                    .convert_type_to_type_lit(span, &Type::Keyword(RTsKeywordType { span: ty.span, kind }))
+                    .convert_type_to_type_lit(span, &Type::Keyword(KeywordType { span: ty.span, kind }))
                     .context("tried to convert a literal to type literal")?
                     .map(Cow::into_owned);
                 return Ok(ty.map(Cow::Owned));
@@ -1142,7 +1142,7 @@ impl Analyzer<'_, '_> {
                     },
                     optional: false,
                     params: Default::default(),
-                    type_ann: Some(box Type::Keyword(RTsKeywordType {
+                    type_ann: Some(box Type::Keyword(KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                     })),
@@ -1258,7 +1258,7 @@ impl Analyzer<'_, '_> {
             | IntrinsicKind::Lowercase
             | IntrinsicKind::Capitalize
             | IntrinsicKind::Uncapitalize => match arg.params[0].normalize() {
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::Str(s), ..
                 }) => {
                     let new_val = match ty.kind {
@@ -1292,7 +1292,7 @@ impl Analyzer<'_, '_> {
                         }
                     };
 
-                    return Ok(Type::Lit(RTsLitType {
+                    return Ok(Type::Lit(LitType {
                         node_id: NodeId::invalid(),
                         span: arg.params[0].span(),
                         lit: RTsLit::Str(RStr {

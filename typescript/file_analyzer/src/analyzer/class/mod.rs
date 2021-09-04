@@ -17,11 +17,10 @@ use crate::{
 use itertools::Itertools;
 use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrowExpr, RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp,
-    RComputedPropName, RConstructor, RDecl, RExpr, RExprOrSuper, RFunction, RIdent, RLit, RMemberExpr, RParam,
-    RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RSeqExpr, RStmt, RSuper, RTsEntityName,
-    RTsFnParam, RTsKeywordType, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl,
-    RVarDeclarator,
+    KeywordType, RArrowExpr, RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod,
+    RClassProp, RComputedPropName, RConstructor, RDecl, RExpr, RExprOrSuper, RFunction, RIdent, RLit, RMemberExpr,
+    RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RSeqExpr, RStmt, RSuper, RTsEntityName,
+    RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -83,7 +82,7 @@ impl Analyzer<'_, '_> {
                                     ..Default::default()
                                 },
                                 &ty,
-                                &Type::Keyword(RTsKeywordType {
+                                &Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                 }),
@@ -122,7 +121,7 @@ impl Analyzer<'_, '_> {
             Type::Symbol(..) if readonly && is_static => Type::Operator(Operator {
                 span: ty.span(),
                 op: TsTypeOperatorOp::Unique,
-                ty: box Type::Keyword(RTsKeywordType {
+                ty: box Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                 }),
@@ -245,7 +244,7 @@ impl Analyzer<'_, '_> {
             && self.ctx.in_class_with_super
             && c.body.is_some()
             && match super_class.map(Type::normalize) {
-                Some(Type::Keyword(RTsKeywordType {
+                Some(Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 })) => false,
@@ -717,7 +716,7 @@ impl Analyzer<'_, '_> {
 
         let ret_ty = box declared_ret_ty.unwrap_or_else(|| {
             inferred_ret_ty.map(|ty| ty.generalize_lit(marks)).unwrap_or_else(|| {
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     span: c_span,
                     kind: if c.function.body.is_some() {
                         TsKeywordTypeKind::TsVoidKeyword
@@ -1308,7 +1307,7 @@ impl Analyzer<'_, '_> {
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::Unique,
                 ty:
-                    box Type::Keyword(RTsKeywordType {
+                    box Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
                     }),
@@ -1613,15 +1612,15 @@ impl Analyzer<'_, '_> {
 
                             child.validate_with(|a| match super_ty.normalize() {
                                 Type::Lit(..)
-                                | Type::Keyword(RTsKeywordType {
+                                | Type::Keyword(KeywordType {
                                     kind: TsKeywordTypeKind::TsStringKeyword,
                                     ..
                                 })
-                                | Type::Keyword(RTsKeywordType {
+                                | Type::Keyword(KeywordType {
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
                                     ..
                                 })
-                                | Type::Keyword(RTsKeywordType {
+                                | Type::Keyword(KeywordType {
                                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                                     ..
                                 }) => Err(Error::InvalidSuperClass { span: super_ty.span() }),

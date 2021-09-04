@@ -12,7 +12,7 @@ use crate::{
 use itertools::Itertools;
 use rnode::NodeId;
 use stc_ts_ast_rnode::{
-    RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit, RTsLitType,
+    RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit, LitType,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
@@ -687,17 +687,17 @@ impl Analyzer<'_, '_> {
                     let mut key_types = keys
                         .iter()
                         .filter_map(|key| match key {
-                            Key::BigInt(v) => Some(Type::Lit(RTsLitType {
+                            Key::BigInt(v) => Some(Type::Lit(LitType {
                                 node_id: NodeId::invalid(),
                                 span: v.span,
                                 lit: RTsLit::BigInt(v.clone()),
                             })),
-                            Key::Num(v) => Some(Type::Lit(RTsLitType {
+                            Key::Num(v) => Some(Type::Lit(LitType {
                                 node_id: NodeId::invalid(),
                                 span: v.span,
                                 lit: RTsLit::Number(v.clone()),
                             })),
-                            Key::Normal { span, sym } => Some(Type::Lit(RTsLitType {
+                            Key::Normal { span, sym } => Some(Type::Lit(LitType {
                                 node_id: NodeId::invalid(),
                                 span: *span,
                                 lit: RTsLit::Str(RStr {

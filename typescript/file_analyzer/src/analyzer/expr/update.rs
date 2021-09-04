@@ -4,7 +4,7 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use stc_ts_ast_rnode::{RExpr, RLit, RParenExpr, RTsKeywordType, RTsLit, RTsLitType, RUpdateExpr};
+use stc_ts_ast_rnode::{KeywordType, LitType, RExpr, RLit, RParenExpr, RTsLit, RUpdateExpr};
 use stc_ts_errors::Error;
 use stc_ts_types::Type;
 use std::borrow::Cow;
@@ -26,22 +26,22 @@ impl Analyzer<'_, '_> {
 
         let ty = res
             .and_then(|ty| match ty.normalize() {
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::Str(..), ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::Bool(..), ..
                 })
                 | Type::TypeLit(..)
@@ -71,11 +71,11 @@ impl Analyzer<'_, '_> {
                     Err(Error::CannotAssignToNonVariable { span: e.arg.span() })
                 }
 
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::Number(..),
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 }) => {
@@ -113,7 +113,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(Type::Keyword(RTsKeywordType {
+        Ok(Type::Keyword(KeywordType {
             kind: TsKeywordTypeKind::TsNumberKeyword,
             span,
         }))

@@ -6,7 +6,7 @@ use crate::{
 };
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RBlockStmt, RBool, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RTsLitType, RWithStmt,
+    RBlockStmt, RBool, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, LitType, RWithStmt,
 };
 use stc_ts_errors::Error;
 use stc_ts_types::Type;
@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
         node.init.visit_with(self);
 
         let test = try_opt!(node.test.validate_with_default(self));
-        let always_true = Type::Lit(RTsLitType {
+        let always_true = Type::Lit(LitType {
             node_id: NodeId::invalid(),
             span: node.span,
             lit: RTsLit::Bool(RBool {

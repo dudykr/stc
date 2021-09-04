@@ -11,7 +11,7 @@ use crate::{
 };
 use rnode::{Fold, FoldWith, NodeId, Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType,
+    KeywordType, RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, LitType,
     RYieldExpr,
 };
 use stc_ts_errors::{DebugExt, Error};
@@ -207,7 +207,7 @@ impl Analyzer<'_, '_> {
                         params: vec![
                             yield_ty,
                             ret_ty,
-                            Type::Keyword(RTsKeywordType {
+                            Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                             }),
@@ -296,7 +296,7 @@ impl Analyzer<'_, '_> {
         } {
             res?
         } else {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 span: node.span,
                 kind: TsKeywordTypeKind::TsVoidKeyword,
             })
@@ -451,7 +451,7 @@ impl Analyzer<'_, '_> {
 
             self.scope.return_values.yield_types.push(item_ty);
         } else {
-            self.scope.return_values.yield_types.push(Type::Keyword(RTsKeywordType {
+            self.scope.return_values.yield_types.push(Type::Keyword(KeywordType {
                 span: e.span,
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
             }));
@@ -611,7 +611,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
 
                                         match key {
                                             Key::Normal { span: i_span, sym: key } => {
-                                                let ty = Type::Lit(RTsLitType {
+                                                let ty = Type::Lit(LitType {
                                                     node_id: NodeId::invalid(),
                                                     span: i_span,
                                                     lit: RTsLit::Str(RStr {

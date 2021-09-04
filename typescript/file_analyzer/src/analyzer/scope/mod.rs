@@ -19,7 +19,7 @@ use fxhash::{FxHashMap, FxHashSet};
 use iter::once;
 use once_cell::sync::Lazy;
 use rnode::{Fold, FoldWith, Visit, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsKeywordType, RTsQualifiedName};
+use stc_ts_ast_rnode::{KeywordType, RPat, RTsEntityName, RTsQualifiedName};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
     DebugExt, Error,
@@ -1111,7 +1111,7 @@ impl Analyzer<'_, '_> {
     #[instrument(skip(self, name))]
     fn find_local_type(&self, name: &Id) -> Option<ItemRef<Type>> {
         #[allow(dead_code)]
-        static ANY: Type = Type::Keyword(RTsKeywordType {
+        static ANY: Type = Type::Keyword(KeywordType {
             span: DUMMY_SP,
             kind: TsKeywordTypeKind::TsAnyKeyword,
         });

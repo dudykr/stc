@@ -3,7 +3,7 @@ use crate::{
     ValidationResult,
 };
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsKeywordType, RTsLit};
+use stc_ts_ast_rnode::{KeywordType, RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
@@ -44,7 +44,7 @@ impl Analyzer<'_, '_> {
                     return self
                         .keyof(
                             span,
-                            &Type::Keyword(RTsKeywordType {
+                            &Type::Keyword(KeywordType {
                                 span: ty.span,
                                 kind: match &ty.lit {
                                     RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
@@ -57,17 +57,17 @@ impl Analyzer<'_, '_> {
                         )
                         .context("tried applying `keyof` to a literal by delegating to keyword type handler")
                 }
-                Type::Keyword(RTsKeywordType { kind, .. }) => match kind {
+                Type::Keyword(KeywordType { kind, .. }) => match kind {
                     TsKeywordTypeKind::TsAnyKeyword => {
-                        let string = Type::Keyword(RTsKeywordType {
+                        let string = Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                         });
-                        let number = Type::Keyword(RTsKeywordType {
+                        let number = Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsNumberKeyword,
                         });
-                        let symbol = Type::Keyword(RTsKeywordType {
+                        let symbol = Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsSymbolKeyword,
                         });
@@ -81,7 +81,7 @@ impl Analyzer<'_, '_> {
                     | TsKeywordTypeKind::TsNullKeyword
                     | TsKeywordTypeKind::TsUnknownKeyword
                     | TsKeywordTypeKind::TsObjectKeyword => {
-                        return Ok(Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsNeverKeyword,
                         }));
@@ -120,15 +120,15 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::Union(Union {
                             span,
                             types: vec![
-                                Type::Keyword(RTsKeywordType {
+                                Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsStringKeyword,
                                 }),
-                                Type::Keyword(RTsKeywordType {
+                                Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
                                 }),
-                                Type::Keyword(RTsKeywordType {
+                                Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                                 }),
@@ -291,7 +291,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Param(..) => {
-                    return Ok(Type::Keyword(RTsKeywordType {
+                    return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
                     }))

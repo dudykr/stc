@@ -5,7 +5,7 @@ use crate::{
     util::{type_ext::TypeVecExt, Marker},
 };
 use rnode::{Fold, FoldWith, NodeId, VisitMutWith};
-use stc_ts_ast_rnode::{RNumber, RStr, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_ast_rnode::{KeywordType, RNumber, RStr, RTsLit, LitType};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
@@ -221,7 +221,7 @@ impl Fold<Type> for Simplifier<'_> {
                             TsKeywordTypeKind::TsUnknownKeyword => return Type::unknown(span),
                             TsKeywordTypeKind::TsNeverKeyword => return Type::never(span),
                             TsKeywordTypeKind::TsIntrinsicKeyword => {
-                                return Type::Keyword(RTsKeywordType {
+                                return Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsIntrinsicKeyword,
                                 })
@@ -247,7 +247,7 @@ impl Fold<Type> for Simplifier<'_> {
                     .unwrap();
 
                 let s = match &*index_type {
-                    Type::Lit(RTsLitType {
+                    Type::Lit(LitType {
                         lit: RTsLit::Str(s), ..
                     }) => s.clone(),
                     _ => {
@@ -304,7 +304,7 @@ impl Fold<Type> for Simplifier<'_> {
                 let members = constraint
                     .iter_union()
                     .filter_map(|ty| match ty {
-                        Type::Lit(RTsLitType {
+                        Type::Lit(LitType {
                             lit: RTsLit::Str(s), ..
                         }) => Some(s),
                         _ => None,
@@ -364,13 +364,13 @@ impl Fold<Type> for Simplifier<'_> {
                 obj_type: box Type::Intersection(obj),
                 index_type:
                     index_type
-                    @ box Type::Lit(RTsLitType {
+                    @ box Type::Lit(LitType {
                         lit: RTsLit::Str(..), ..
                     }),
                 ..
             }) if obj.types.iter().all(|ty| match ty.normalize() {
                 Type::TypeLit(..) => true,
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUnknownKeyword,
                     ..
                 }) => true,
@@ -434,7 +434,7 @@ impl Fold<Type> for Simplifier<'_> {
                 span,
                 readonly,
                 obj_type: box Type::Union(obj),
-                index_type: box Type::Lit(RTsLitType {
+                index_type: box Type::Lit(LitType {
                     lit: RTsLit::Str(s), ..
                 }),
                 ..
@@ -472,7 +472,7 @@ impl Fold<Type> for Simplifier<'_> {
                 span,
                 obj_type: box Type::Tuple(tuple),
                 index_type:
-                    box Type::Lit(RTsLitType {
+                    box Type::Lit(LitType {
                         lit:
                             RTsLit::Str(RStr {
                                 value: js_word!("length"),
@@ -483,7 +483,7 @@ impl Fold<Type> for Simplifier<'_> {
                 ..
             }) => {
                 let span = span.apply_mark(self.prevent_generalize_mark);
-                return Type::Lit(RTsLitType {
+                return Type::Lit(LitType {
                     node_id: NodeId::invalid(),
                     span,
                     lit: RTsLit::Number(RNumber {
@@ -497,7 +497,7 @@ impl Fold<Type> for Simplifier<'_> {
                 span,
                 obj_type: box Type::Array(..),
                 index_type:
-                    box Type::Lit(RTsLitType {
+                    box Type::Lit(LitType {
                         lit:
                             RTsLit::Str(RStr {
                                 value: js_word!("length"),
@@ -507,7 +507,7 @@ impl Fold<Type> for Simplifier<'_> {
                     }),
                 ..
             }) => {
-                return Type::Keyword(RTsKeywordType {
+                return Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                 });
@@ -517,7 +517,7 @@ impl Fold<Type> for Simplifier<'_> {
                 span,
                 obj_type: box Type::Tuple(tuple),
                 index_type:
-                    box Type::Lit(RTsLitType {
+                    box Type::Lit(LitType {
                         lit: RTsLit::Str(RStr { value, .. }),
                         ..
                     }),
@@ -580,7 +580,7 @@ impl Fold<Type> for Simplifier<'_> {
                 for member in &members {
                     for key in constraint.iter_union() {
                         let key = match key {
-                            Type::Lit(RTsLitType {
+                            Type::Lit(LitType {
                                 lit: RTsLit::Str(v), ..
                             }) => v.clone(),
                             _ => unreachable!(),
@@ -617,14 +617,14 @@ impl Fold<Type> for Simplifier<'_> {
                         constraint: Some(box Type::TypeLit(TypeLit { members, .. })),
                         ..
                     }),
-                index_type: box Type::Lit(RTsLitType {
+                index_type: box Type::Lit(LitType {
                     lit: RTsLit::Str(v), ..
                 }),
                 ..
             })
             | Type::IndexedAccessType(IndexedAccessType {
                 obj_type: box Type::TypeLit(TypeLit { members, .. }),
-                index_type: box Type::Lit(RTsLitType {
+                index_type: box Type::Lit(LitType {
                     lit: RTsLit::Str(v), ..
                 }),
                 ..
@@ -667,7 +667,7 @@ impl Fold<Type> for Simplifier<'_> {
                         def: box ClassDef { body, .. },
                         ..
                     }),
-                index_type: box Type::Lit(RTsLitType {
+                index_type: box Type::Lit(LitType {
                     lit: RTsLit::Str(s), ..
                 }),
                 ..
@@ -715,7 +715,7 @@ impl Fold<Type> for Simplifier<'_> {
                     .types
                     .into_iter()
                     .map(|key| match key.foldable() {
-                        Type::Lit(RTsLitType {
+                        Type::Lit(LitType {
                             lit: RTsLit::Str(s), ..
                         }) => s,
                         _ => unreachable!(),

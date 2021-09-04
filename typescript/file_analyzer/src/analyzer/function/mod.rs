@@ -9,7 +9,7 @@ use crate::{
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith};
 use stc_ts_ast_rnode::{
-    RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName, RTsKeywordType,
+    KeywordType, RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName,
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_type_ops::Fix;
@@ -189,15 +189,15 @@ impl Analyzer<'_, '_> {
                         let declared = child.normalize(Some(span), Cow::Borrowed(&declared), Default::default())?;
 
                         match declared.normalize() {
-                            Type::Keyword(RTsKeywordType {
+                            Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
                             })
-                            | Type::Keyword(RTsKeywordType {
+                            | Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                                 ..
                             })
-                            | Type::Keyword(RTsKeywordType {
+                            | Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsNeverKeyword,
                                 ..
                             }) => {}
@@ -209,14 +209,14 @@ impl Analyzer<'_, '_> {
                     if f.return_type.is_none() {
                         if let Some(m) = &mut child.mutations {
                             if m.for_fns.entry(f.node_id).or_default().ret_ty.is_none() {
-                                m.for_fns.entry(f.node_id).or_default().ret_ty = Some(Type::Keyword(RTsKeywordType {
+                                m.for_fns.entry(f.node_id).or_default().ret_ty = Some(Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsVoidKeyword,
                                 }));
                             }
                         }
                     }
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsVoidKeyword,
                     })
@@ -388,11 +388,11 @@ impl Analyzer<'_, '_> {
                                 let span = element.span();
 
                                 match element.ty.normalize() {
-                                    Type::Keyword(RTsKeywordType {
+                                    Type::Keyword(KeywordType {
                                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                         ..
                                     })
-                                    | Type::Keyword(RTsKeywordType {
+                                    | Type::Keyword(KeywordType {
                                         kind: TsKeywordTypeKind::TsNullKeyword,
                                         ..
                                     }) => {}
