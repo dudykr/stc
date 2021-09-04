@@ -578,6 +578,7 @@ pub struct EnumMember {
 pub struct Class {
     pub span: Span,
     pub def: Box<ClassDef>,
+    pub metadata: ClassMetadata,
 }
 
 assert_eq_size!(Class, [u8; 24]);
@@ -591,6 +592,7 @@ pub struct ClassDef {
     pub body: Vec<ClassMember>,
     pub type_params: Option<TypeParamDecl>,
     pub implements: Box<Vec<TsExpr>>,
+    pub metadata: ClassDefMetadata,
 }
 
 assert_eq_size!(ClassDef, [u8; 112]);
@@ -658,6 +660,7 @@ pub struct Mapped {
     pub name_type: Option<Box<Type>>,
     pub type_param: TypeParam,
     pub ty: Option<Box<Type>>,
+    pub metadata: MappedMetadata,
 }
 
 assert_eq_size!(Mapped, [u8; 80]);

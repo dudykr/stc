@@ -253,6 +253,27 @@ pub struct OperatorMetadata {
 impl_traits!(OperatorMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct MappedMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(MappedMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ClassMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ClassMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ClassDefMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ClassDefMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {
     pub common: CommonTypeMetadata,
 
