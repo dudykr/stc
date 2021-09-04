@@ -677,7 +677,7 @@ impl Analyzer<'_, '_> {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None));
                     let lhs_ty = match lhs_ty {
                         Ok(v) => v,
-                        _ => Type::any(lhs.span()),
+                        _ => Type::any(lhs.span(), Default::default()),
                     };
 
                     if op == op!("=") {
@@ -886,7 +886,7 @@ impl Analyzer<'_, '_> {
                     .get_iterator(span, Cow::Borrowed(&ty), Default::default())
                     .context("tried to convert a type to an iterator to assign with an array pattern")
                     .report(&mut self.storage)
-                    .unwrap_or_else(|| Cow::Owned(Type::any(span)));
+                    .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default())));
                 //
                 for (i, elem) in arr.elems.iter().enumerate() {
                     if let Some(elem) = elem {
@@ -948,7 +948,7 @@ impl Analyzer<'_, '_> {
                                         ..Default::default()
                                     },
                                 )
-                                .unwrap_or_else(|_| Type::any(span));
+                                .unwrap_or_else(|_| Type::any(span, Default::default()));
 
                             self.try_assign_pat_with_opts(span, &kv.value, &prop_ty, opts)
                                 .report(&mut self.storage);
@@ -971,7 +971,7 @@ impl Analyzer<'_, '_> {
                                         ..Default::default()
                                     },
                                 )
-                                .unwrap_or_else(|_| Type::any(span));
+                                .unwrap_or_else(|_| Type::any(span, Default::default()));
 
                             self.try_assign_pat_with_opts(
                                 span,
@@ -988,7 +988,8 @@ impl Analyzer<'_, '_> {
                         RObjectPatProp::Rest(r) => {
                             if r.type_ann.is_none() {
                                 if let Some(m) = &mut self.mutations {
-                                    m.for_pats.entry(r.node_id).or_default().ty = Some(Type::any(span));
+                                    m.for_pats.entry(r.node_id).or_default().ty =
+                                        Some(Type::any(span, Default::default()));
                                 }
                             }
 
@@ -1142,6 +1143,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Union(Union {
                     span: ty.span(),
                     types: new_types,
+                    metadata: ty.metadata,
                 }));
             }
             _ => {}
@@ -1176,13 +1178,13 @@ impl Analyzer<'_, '_> {
                     // }
 
                     if prop_ty.is_never() {
-                        return Ok(Type::never(src.span()));
+                        return Ok(Type::never(src.span(), Default::default()));
                     }
                 }
             }
             Err(err) => match err.actual() {
                 Error::NoSuchProperty { .. } | Error::NoSuchPropertyInClass { .. } => {
-                    return Ok(Type::never(src.span()))
+                    return Ok(Type::never(src.span(), Default::default()));
                 }
                 _ => {}
             },
@@ -1281,14 +1283,14 @@ impl Analyzer<'_, '_> {
                 .validate_with_args(child, (mode, None, type_ann))
                 .report(&mut child.storage);
 
-            Ok(ty.unwrap_or_else(|| Type::any(cons.span())))
+            Ok(ty.unwrap_or_else(|| Type::any(cons.span(), Default::default())))
         })?;
         let alt = self.with_child(ScopeKind::Flow, false_facts, |child: &mut Analyzer| {
             let ty = alt
                 .validate_with_args(child, (mode, None, type_ann))
                 .report(&mut child.storage);
 
-            Ok(ty.unwrap_or_else(|| Type::any(alt.span())))
+            Ok(ty.unwrap_or_else(|| Type::any(alt.span(), Default::default())))
         })?;
 
         if cons.type_eq(&alt) {

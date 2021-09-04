@@ -193,7 +193,7 @@ impl Analyzer<'_, '_> {
                         }) if !child.is_builtin => {
                             let span = *span;
                             child.storage.report(Error::IntrinsicIsBuiltinOnly { span });
-                            Type::any(span.with_ctxt(SyntaxContext::empty()))
+                            Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
                         }
 
                         RTsType::TsKeywordType(RTsKeywordType {
@@ -449,6 +449,7 @@ impl Analyzer<'_, '_> {
                                 ty = Type::Symbol(Symbol {
                                     span: DUMMY_SP,
                                     id: SymbolId::known(&key),
+                                    metadata: Default::default(),
                                 });
                             }
                         }
@@ -457,10 +458,10 @@ impl Analyzer<'_, '_> {
                     }
                     Err(e) => {
                         self.storage.report(e);
-                        Some(box Type::any(d.span))
+                        Some(box Type::any(d.span, Default::default()))
                     }
                 },
-                None => Some(box Type::any(d.span)),
+                None => Some(box Type::any(d.span, Default::default())),
             }
         };
 
@@ -516,6 +517,7 @@ impl Analyzer<'_, '_> {
         Ok(Tuple {
             span,
             elems: t.elem_types.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -594,7 +596,11 @@ impl Analyzer<'_, '_> {
 
         types.dedup_type();
 
-        Ok(Union { span: u.span, types })
+        Ok(Union {
+            span: u.span,
+            types,
+            metadata: Default::default(),
+        })
     }
 }
 
@@ -604,6 +610,7 @@ impl Analyzer<'_, '_> {
         Ok(Intersection {
             span: u.span,
             types: u.types.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -942,7 +949,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 name: Id::word("intrinsic".into()),
                             });
-                            return Ok(Type::any(span.with_ctxt(SyntaxContext::empty())));
+                            return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                         }
                     }
                     Type::Keyword(ty.clone())

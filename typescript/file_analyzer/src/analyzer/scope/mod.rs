@@ -959,8 +959,8 @@ impl Analyzer<'_, '_> {
     #[inline(never)]
     pub(super) fn find_var(&self, name: &Id) -> Option<&VarInfo> {
         static ANY_VAR: Lazy<VarInfo> = Lazy::new(|| VarInfo {
-            ty: Some(Type::any(DUMMY_SP)),
-            actual_ty: Some(Type::any(DUMMY_SP)),
+            ty: Some(Type::any(DUMMY_SP, Default::default())),
+            actual_ty: Some(Type::any(DUMMY_SP, Default::default())),
             kind: VarKind::Error,
             initialized: true,
             copied: false,
