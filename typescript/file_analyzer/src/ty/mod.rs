@@ -96,12 +96,12 @@ impl Fold<Type> for LitGeneralizer {
         ty = ty.fold_children_with(self);
 
         match ty {
-            Type::Lit(RTsLitType { span, ref lit, .. }) => {
+            Type::Lit(LitType { span, ref lit, .. }) => {
                 if self.marks.prevent_generalization_mark.is_marked(span) {
                     return ty;
                 }
 
-                return Type::Keyword(RTsKeywordType {
+                return Type::Keyword(KeywordType {
                     span,
                     kind: match *lit {
                         RTsLit::Bool(RBool { .. }) => TsKeywordTypeKind::TsBooleanKeyword,
@@ -161,7 +161,7 @@ struct LitChecker {
 impl Visit<Type> for LitChecker {
     fn visit(&mut self, ty: &Type) {
         match ty {
-            Type::Lit(RTsLitType { span, ref lit, .. }) => {
+            Type::Lit(LitType { span, ref lit, .. }) => {
                 if self.marks.prevent_generalization_mark.is_marked(span) {
                     return;
                 }

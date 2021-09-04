@@ -5,7 +5,7 @@ use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RBlockStmt, RBool, RIdent, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType,
 };
-use stc_ts_types::{Id, InferType, Ref, TypeParam};
+use stc_ts_types::{Id, InferType, KeywordType, LitType, Ref, TypeParam};
 use swc_common::{Mark, Span, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
 use tracing::instrument;
@@ -163,13 +163,13 @@ pub(crate) trait RemoveTypes {
 impl RemoveTypes for Type {
     fn remove_falsy(self) -> Type {
         match self {
-            Type::Keyword(RTsKeywordType { kind, span }) => match kind {
+            Type::Keyword(KeywordType { kind, span }) => match kind {
                 TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword => {
                     return Type::never(span);
                 }
                 _ => {}
             },
-            Type::Lit(RTsLitType {
+            Type::Lit(LitType {
                 lit: RTsLit::Bool(RBool { value: false, span, .. }),
                 ..
             }) => return Type::never(span),
@@ -184,7 +184,7 @@ impl RemoveTypes for Type {
 
     fn remove_truthy(self) -> Type {
         match self {
-            Type::Lit(RTsLitType {
+            Type::Lit(LitType {
                 lit: RTsLit::Bool(RBool { value: true, span, .. }),
                 ..
             }) => return Type::never(span),

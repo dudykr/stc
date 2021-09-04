@@ -1,11 +1,11 @@
 use crate::{analyzer::Analyzer, type_facts::TypeFacts};
 use rnode::{Fold, FoldWith, NodeId};
-use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RRestPat, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RRestPat, RTsLit, RTsLitType};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType, Intersection, Mapped, Type,
-    TypeElement, TypeLit, Union,
+    ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType, Intersection, KeywordType,
+    Mapped, Type, TypeElement, TypeLit, Union,
 };
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
@@ -180,14 +180,14 @@ impl Fold<Conditional> for TypeFactsHandler<'_, '_, '_> {
     }
 }
 
-impl Fold<RTsKeywordType> for TypeFactsHandler<'_, '_, '_> {
-    fn fold(&mut self, ty: RTsKeywordType) -> RTsKeywordType {
+impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
+    fn fold(&mut self, ty: KeywordType) -> KeywordType {
         if self.facts.contains(TypeFacts::Truthy) {
             match ty.kind {
                 TsKeywordTypeKind::TsVoidKeyword
                 | TsKeywordTypeKind::TsUndefinedKeyword
                 | TsKeywordTypeKind::TsNullKeyword => {
-                    return RTsKeywordType {
+                    return KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
                     }
@@ -197,14 +197,14 @@ impl Fold<RTsKeywordType> for TypeFactsHandler<'_, '_, '_> {
         }
 
         if ty.kind == TsKeywordTypeKind::TsNullKeyword && self.facts.contains(TypeFacts::NENull) {
-            return RTsKeywordType {
+            return KeywordType {
                 kind: TsKeywordTypeKind::TsNeverKeyword,
                 ..ty
             };
         }
 
         if ty.kind == TsKeywordTypeKind::TsUndefinedKeyword && self.facts.contains(TypeFacts::NEUndefined) {
-            return RTsKeywordType {
+            return KeywordType {
                 kind: TsKeywordTypeKind::TsNeverKeyword,
                 ..ty
             };
@@ -221,7 +221,7 @@ impl Fold<RTsKeywordType> for TypeFactsHandler<'_, '_, '_> {
         if ty.kind != TsKeywordTypeKind::TsAnyKeyword {
             for (neq, kwd) in keyword_types {
                 if self.facts.contains(*neq) && *kwd == ty.kind {
-                    return RTsKeywordType {
+                    return KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
                     };
@@ -248,7 +248,7 @@ impl Fold<RTsKeywordType> for TypeFactsHandler<'_, '_, '_> {
                     .collect::<Vec<_>>();
 
                 if !allowed_keywords.contains(&ty.kind) {
-                    return RTsKeywordType {
+                    return KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
                     };
@@ -272,21 +272,21 @@ impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
         let has_bool = has_keyword(TsKeywordTypeKind::TsBooleanKeyword);
 
         if !has_str && self.facts.contains(TypeFacts::TypeofEQString) {
-            ty.types.push(Type::Keyword(RTsKeywordType {
+            ty.types.push(Type::Keyword(KeywordType {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsStringKeyword,
             }));
         }
 
         if !has_num && self.facts.contains(TypeFacts::TypeofEQNumber) {
-            ty.types.push(Type::Keyword(RTsKeywordType {
+            ty.types.push(Type::Keyword(KeywordType {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsNumberKeyword,
             }));
         }
 
         if !has_bool && self.facts.contains(TypeFacts::TypeofEQBoolean) {
-            ty.types.push(Type::Keyword(RTsKeywordType {
+            ty.types.push(Type::Keyword(KeywordType {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
             }));
@@ -318,7 +318,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
                     Type::Lit(RTsLitType {
                         lit: RTsLit::Str(..), ..
                     })
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
                     }) if !self.facts.contains(TypeFacts::TypeofEQString) => false,
@@ -326,7 +326,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
                     Type::Lit(RTsLitType {
                         lit: RTsLit::Bool(..), ..
                     })
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsBooleanKeyword,
                         ..
                     }) if !self.facts.contains(TypeFacts::TypeofEQBoolean) => false,
@@ -335,7 +335,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
                         lit: RTsLit::Number(..),
                         ..
                     })
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) if !self.facts.contains(TypeFacts::TypeofEQNumber) => false,
@@ -442,21 +442,21 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
 fn facts_to_union(span: Span, facts: TypeFacts) -> Type {
     let mut types = vec![];
     if facts.contains(TypeFacts::TypeofEQString) {
-        types.push(Type::Keyword(RTsKeywordType {
+        types.push(Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsStringKeyword,
         }));
     }
 
     if facts.contains(TypeFacts::TypeofEQNumber) {
-        types.push(Type::Keyword(RTsKeywordType {
+        types.push(Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsNumberKeyword,
         }));
     }
 
     if facts.contains(TypeFacts::TypeofEQBoolean) {
-        types.push(Type::Keyword(RTsKeywordType {
+        types.push(Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsBooleanKeyword,
         }));
