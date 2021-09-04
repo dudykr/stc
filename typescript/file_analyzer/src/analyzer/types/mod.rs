@@ -1293,7 +1293,6 @@ impl Analyzer<'_, '_> {
                     };
 
                     return Ok(Type::Lit(LitType {
-                        node_id: NodeId::invalid(),
                         span: arg.params[0].span(),
                         lit: RTsLit::Str(RStr {
                             span: arg.params[0].span(),

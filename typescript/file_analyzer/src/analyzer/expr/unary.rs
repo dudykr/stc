@@ -124,7 +124,6 @@ impl Analyzer<'_, '_> {
                             let span = *span;
 
                             return Ok(Type::Lit(LitType {
-                                node_id: NodeId::invalid(),
                                 span,
                                 lit: RTsLit::Number(RNumber {
                                     span,

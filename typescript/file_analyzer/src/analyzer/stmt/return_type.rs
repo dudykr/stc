@@ -609,7 +609,6 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                         match key {
                                             Key::Normal { span: i_span, sym: key } => {
                                                 let ty = Type::Lit(LitType {
-                                                    node_id: NodeId::invalid(),
                                                     span: i_span,
                                                     lit: RTsLit::Str(RStr {
                                                         span: i_span,

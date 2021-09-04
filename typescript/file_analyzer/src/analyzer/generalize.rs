@@ -484,7 +484,6 @@ impl Fold<Type> for Simplifier<'_> {
             }) => {
                 let span = span.apply_mark(self.prevent_generalize_mark);
                 return Type::Lit(LitType {
-                    node_id: NodeId::invalid(),
                     span,
                     lit: RTsLit::Number(RNumber {
                         span,

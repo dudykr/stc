@@ -686,17 +686,14 @@ impl Analyzer<'_, '_> {
                         .iter()
                         .filter_map(|key| match key {
                             Key::BigInt(v) => Some(Type::Lit(LitType {
-                                node_id: NodeId::invalid(),
                                 span: v.span,
                                 lit: RTsLit::BigInt(v.clone()),
                             })),
                             Key::Num(v) => Some(Type::Lit(LitType {
-                                node_id: NodeId::invalid(),
                                 span: v.span,
                                 lit: RTsLit::Number(v.clone()),
                             })),
                             Key::Normal { span, sym } => Some(Type::Lit(LitType {
-                                node_id: NodeId::invalid(),
                                 span: *span,
                                 lit: RTsLit::Str(RStr {
                                     span: *span,

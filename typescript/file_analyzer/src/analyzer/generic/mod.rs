@@ -1516,7 +1516,6 @@ impl Analyzer<'_, '_> {
                             if let Some(key) = arg_member.key() {
                                 match key {
                                     Key::Normal { span: i_span, sym } => key_types.push(Type::Lit(LitType {
-                                        node_id: NodeId::invalid(),
                                         span: param.span,
                                         lit: RTsLit::Str(RStr {
                                             span: *i_span,
@@ -1527,7 +1526,6 @@ impl Analyzer<'_, '_> {
                                     })),
                                     Key::Num(n) => {
                                         key_types.push(Type::Lit(LitType {
-                                            node_id: NodeId::invalid(),
                                             span: param.span,
                                             lit: RTsLit::Number(n.clone()),
                                         }));
@@ -1739,7 +1737,6 @@ impl Analyzer<'_, '_> {
                                             span: i_span,
                                             sym: i_sym,
                                         } => Some(Type::Lit(LitType {
-                                            node_id: NodeId::invalid(),
                                             span: param.span,
                                             lit: RTsLit::Str(RStr {
                                                 span: *i_span,
@@ -2322,7 +2319,6 @@ impl VisitMut<Type> for TypeParamInliner<'_> {
         match ty {
             Type::Param(p) if p.name == *self.param => {
                 *ty = Type::Lit(LitType {
-                    node_id: NodeId::invalid(),
                     span: p.span,
                     lit: RTsLit::Str(self.value.clone()),
                 });
