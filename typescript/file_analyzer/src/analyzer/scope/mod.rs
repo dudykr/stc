@@ -26,7 +26,11 @@ use stc_ts_errors::{
 };
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection, Key, KeywordType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement, TypeParam, TypeParamInstantiation, name::Name};
+use stc_ts_types::{
+    name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection,
+    Key, KeywordType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement, TypeParam,
+    TypeParamInstantiation,
+};
 use stc_utils::{error::context, stack};
 use std::{
     borrow::Cow,
@@ -429,7 +433,12 @@ impl Scope<'_> {
                                 if types.len() == 1 {
                                     types.into_iter().next().unwrap().fixed()
                                 } else {
-                                    Type::Union(Union { span: DUMMY_SP, types }).fixed()
+                                    Type::Union(Union {
+                                        span: DUMMY_SP,
+                                        types,
+                                        metadata: Default::default(),
+                                    })
+                                    .fixed()
                                 }
                             } else {
                                 actual_ty
@@ -585,10 +594,11 @@ impl Scope<'_> {
                     }
                     prev.make_cheap();
                 } else {
-                    let prev_ty = replace(prev, Type::any(DUMMY_SP));
+                    let prev_ty = replace(prev, Type::any(DUMMY_SP, Default::default()));
                     *prev = Type::Intersection(Intersection {
                         span: DUMMY_SP,
                         types: vec![prev_ty, ty],
+                        metadata: Default::default(),
                     })
                     .cheap();
                 }
@@ -956,8 +966,8 @@ impl Analyzer<'_, '_> {
     #[inline(never)]
     pub(super) fn find_var(&self, name: &Id) -> Option<&VarInfo> {
         static ANY_VAR: Lazy<VarInfo> = Lazy::new(|| VarInfo {
-            ty: Some(Type::any(DUMMY_SP)),
-            actual_ty: Some(Type::any(DUMMY_SP)),
+            ty: Some(Type::any(DUMMY_SP, Default::default())),
+            actual_ty: Some(Type::any(DUMMY_SP, Default::default())),
             kind: VarKind::Error,
             initialized: true,
             copied: false,
@@ -1111,6 +1121,7 @@ impl Analyzer<'_, '_> {
         static ANY: Type = Type::Keyword(KeywordType {
             span: DUMMY_SP,
             kind: TsKeywordTypeKind::TsAnyKeyword,
+            metadata: Default::default(),
         });
         #[allow(dead_code)]
         static STATIC_THIS: Type = Type::StaticThis(StaticThis { span: DUMMY_SP });

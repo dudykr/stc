@@ -502,7 +502,10 @@ impl Analyzer<'_, '_> {
                                         span,
                                         type_params: a.type_params.clone(),
                                         params: a.params.clone(),
-                                        ret_ty: a.ret_ty.clone().unwrap_or_else(|| box Type::any(span)),
+                                        ret_ty: a
+                                            .ret_ty
+                                            .clone()
+                                            .unwrap_or_else(|| box Type::any(span, Default::default())),
                                     }),
                                     opts,
                                 )?;
@@ -523,7 +526,10 @@ impl Analyzer<'_, '_> {
                                         span,
                                         type_params: p.type_params.clone(),
                                         params: p.params.clone(),
-                                        ret_ty: p.ret_ty.clone().unwrap_or_else(|| box Type::any(span)),
+                                        ret_ty: p
+                                            .ret_ty
+                                            .clone()
+                                            .unwrap_or_else(|| box Type::any(span, Default::default())),
                                     }),
                                     &at,
                                     opts,
