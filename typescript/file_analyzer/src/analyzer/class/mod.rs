@@ -25,8 +25,8 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
-    Accessor, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, ConstructorSignature, FnParam, Id,
-    Intersection, Key, KeywordType, Method, Operator, QueryExpr, QueryType, Ref, TsExpr, Type,
+    Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
+    Id, Intersection, Key, KeywordType, Method, Operator, QueryExpr, QueryType, QueryTypeMetdata, Ref, TsExpr, Type,
 };
 use stc_utils::{AHashSet, TryOpt};
 use std::{
@@ -1298,7 +1298,7 @@ impl Analyzer<'_, '_> {
 
                 errors.push(err);
 
-                Type::any(span)
+                Type::any(span, Default::default())
             }
         };
 
@@ -1344,6 +1344,10 @@ impl Analyzer<'_, '_> {
         let class_ty = Type::Class(Class {
             span: class.span,
             def: box class.clone(),
+            metadata: ClassMetadata {
+                common: class.metadata.common,
+                ..Default::default()
+            },
         });
 
         for parent in &*class.implements {
@@ -1657,6 +1661,10 @@ impl Analyzer<'_, '_> {
                                                                     expr: box QueryExpr::TsEntityName(
                                                                         id.clone().into(),
                                                                     ),
+                                                                    metadata: QueryTypeMetdata {
+                                                                        common: c.metadata.common,
+                                                                        ..Default::default()
+                                                                    },
                                                                 })
                                                             })
                                                             .expect("Super class should be named");
@@ -1717,6 +1725,7 @@ impl Analyzer<'_, '_> {
                                         type_name: RTsEntityName::Ident(new_ty),
                                         // TODO: Handle type parameters
                                         type_args: None,
+                                        metadata: Default::default(),
                                     }))
                                 }
                                 _ => Some(box super_ty),
@@ -2035,6 +2044,7 @@ impl Analyzer<'_, '_> {
                     type_params,
                     body,
                     implements,
+                    metadata: Default::default(),
                 };
 
                 child
@@ -2065,7 +2075,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
-                Type::any(c.span())
+                Type::any(c.span(), Default::default())
             }
         };
 
@@ -2349,7 +2359,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
-                Type::any(c.span())
+                Type::any(c.span(), Default::default())
             }
         };
         let ty = ty.cheap();
