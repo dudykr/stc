@@ -11,7 +11,8 @@ use stc_ts_errors::{
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, FnParam, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key,
-    KeywordType, LitType, Mapped, Operator, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeParam,
+    KeywordType, KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, Ref, ThisType, Tuple, Type,
+    TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::stack;
 use std::{borrow::Cow, collections::HashMap, time::Instant};
@@ -432,6 +433,7 @@ impl Analyzer<'_, '_> {
                 span,
                 type_name: RTsEntityName::Ident(type_name),
                 type_args: None,
+                metadata,
                 ..
             }) => {
                 // TODO: Check if ref points global.
@@ -442,6 +444,10 @@ impl Analyzer<'_, '_> {
                         js_word!("Number") => TsKeywordTypeKind::TsNumberKeyword,
                         js_word!("String") => TsKeywordTypeKind::TsStringKeyword,
                         _ => return Ok(Cow::Borrowed(ty)),
+                    },
+                    metadata: KeywordTypeMetadata {
+                        common: metadata.common,
+                        ..Default::default()
                     },
                 })));
             }
@@ -1721,7 +1727,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            Type::This(RTsThisType { span }) => return Err(Error::CannotAssingToThis { span: *span }),
+            Type::This(ThisType { span, .. }) => return Err(Error::CannotAssingToThis { span: *span }),
 
             Type::Interface(Interface {
                 ref body, ref extends, ..
