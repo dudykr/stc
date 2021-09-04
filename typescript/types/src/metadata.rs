@@ -302,6 +302,34 @@ pub struct AliasMetadata {
 impl_traits!(AliasMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct EnumMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(EnumMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct IntrinsicMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(IntrinsicMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct RestTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(RestTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct OptionalTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(OptionalTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {
     pub common: CommonTypeMetadata,
 

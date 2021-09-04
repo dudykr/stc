@@ -459,6 +459,7 @@ assert_eq_size!(Symbol, [u8; 32]);
 pub struct RestType {
     pub span: Span,
     pub ty: Box<Type>,
+    pub metadata: RestTypeMetadata,
 }
 
 assert_eq_size!(RestType, [u8; 24]);
@@ -467,6 +468,7 @@ assert_eq_size!(RestType, [u8; 24]);
 pub struct OptionalType {
     pub span: Span,
     pub ty: Box<Type>,
+    pub metadata: OptionalTypeMetadata,
 }
 
 assert_eq_size!(OptionalType, [u8; 24]);
@@ -561,6 +563,8 @@ pub struct Enum {
     pub members: Vec<EnumMember>,
     pub has_num: bool,
     pub has_str: bool,
+
+    pub metadata: EnumMetadata,
 }
 
 assert_eq_size!(Enum, [u8; 72]);
@@ -2096,6 +2100,8 @@ pub struct TplType {
     #[use_eq_ignore_span]
     pub quasis: Vec<RTplElement>,
     pub types: Vec<Type>,
+
+    pub metadata: TplTypeMetadata,
 }
 
 assert_eq_size!(TplType, [u8; 64]);
