@@ -96,7 +96,12 @@ impl Fold<Type> for LitGeneralizer {
         ty = ty.fold_children_with(self);
 
         match ty {
-            Type::Lit(LitType { span, ref lit, .. }) => {
+            Type::Lit(LitType {
+                span,
+                ref lit,
+                metadata,
+                ..
+            }) => {
                 if self.marks.prevent_generalization_mark.is_marked(span) {
                     return ty;
                 }
@@ -109,6 +114,10 @@ impl Fold<Type> for LitGeneralizer {
                         RTsLit::Str(RStr { .. }) => TsKeywordTypeKind::TsStringKeyword,
                         RTsLit::Tpl(..) => TsKeywordTypeKind::TsStringKeyword,
                         RTsLit::BigInt(..) => TsKeywordTypeKind::TsBigIntKeyword,
+                    },
+                    metadata: KeywordTypeMetadata {
+                        common: metadata.common,
+                        ..Default::default()
                     },
                 });
             }

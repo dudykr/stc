@@ -10,8 +10,8 @@ use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    Class, Enum, EnumVariant, Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple,
-    TypeElement, Union,
+    Class, ClassMetadata, Enum, EnumVariant, Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref,
+    RefMetadata, Tuple, TypeElement, Union,
 };
 use std::iter::once;
 use swc_common::{Span, Spanned};
@@ -161,7 +161,11 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
     let span = ty.span();
 
     match ty.normalize() {
-        Type::Tuple(Tuple { ref elems, span }) => Type::Tuple(Tuple {
+        Type::Tuple(Tuple {
+            ref elems,
+            span,
+            metadata,
+        }) => Type::Tuple(Tuple {
             span: *span,
             elems: elems
                 .iter()
@@ -172,10 +176,15 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
                     element
                 })
                 .collect(),
+            metadata: *metadata,
         }),
         Type::ClassDef(ref def) => Type::Class(Class {
             span,
             def: box def.clone(),
+            metadata: ClassMetadata {
+                common: def.metadata.common,
+                ..Default::default()
+            },
         }),
 
         Type::Intersection(ref i) => {
@@ -188,14 +197,20 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
             Type::Intersection(Intersection { span: i.span, types })
         }
 
+        // FIXME: This seems wrong
         Type::Query(QueryType {
             span,
             expr: box QueryExpr::TsEntityName(ref type_name),
+            metadata,
         }) => Type::Ref(Ref {
             span: *span,
             ctxt: module_id,
             type_name: type_name.clone(),
             type_args: Default::default(),
+            metadata: RefMetadata {
+                common: metadata.common,
+                ..Default::default()
+            },
         }),
 
         Type::Enum(Enum { id, .. }) => Type::EnumVariant(EnumVariant {
