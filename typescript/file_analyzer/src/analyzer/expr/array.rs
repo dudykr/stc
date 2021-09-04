@@ -20,8 +20,8 @@ use stc_ts_ast_rnode::{RArrayLit, RExpr, RExprOrSpread, RInvalid, RNumber, RTsLi
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    type_id::SymbolId, Array, ComputedKey, Intersection, Key, KeywordType, LitType, Symbol, Tuple, TupleElement, Type,
-    TypeParamInstantiation, Union,
+    type_id::SymbolId, Array, CommonTypeMetadata, ComputedKey, Intersection, Key, KeywordType, KeywordTypeMetadata,
+    LitType, Symbol, Tuple, TupleElement, Type, TypeParamInstantiation, Union,
 };
 use std::{borrow::Cow, time::Instant};
 use swc_atoms::js_word;
@@ -136,7 +136,7 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
                 None => {
-                    let ty = Type::undefined(span);
+                    let ty = Type::undefined(span, Default::default());
                     ty
                 }
             };
@@ -150,7 +150,7 @@ impl Analyzer<'_, '_> {
         if self.ctx.in_export_default_expr && elements.is_empty() {
             return Ok(Type::Array(Array {
                 span,
-                elem_type: box Type::any(span),
+                elem_type: box Type::any(span, Default::default()),
             }));
         }
 
@@ -176,16 +176,21 @@ impl Analyzer<'_, '_> {
             types.dedup_type();
             if types.is_empty() {
                 types.push(if self.ctx.use_undefined_for_empty_tuple && is_empty {
-                    Type::undefined(span)
+                    Type::undefined(span, Default::default())
                 } else {
                     let span = span.with_ctxt(SyntaxContext::empty());
-                    let span = if !elems.is_empty() {
-                        marks.implicit_type_mark.apply_to_span(span)
-                    } else {
-                        span
-                    };
+                    let implicit = !elems.is_empty();
 
-                    Type::any(span)
+                    Type::any(
+                        span,
+                        KeywordTypeMetadata {
+                            common: CommonTypeMetadata {
+                                implicit,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
+                    )
                 });
             }
 
@@ -208,12 +213,24 @@ impl Analyzer<'_, '_> {
         if should_be_any && !self.ctx.prefer_tuple {
             elements.iter_mut().for_each(|el| {
                 let span = el.ty.span().with_ctxt(SyntaxContext::empty());
-                let span = marks.implicit_type_mark.apply_to_span(span);
-                el.ty = box Type::any(span);
+                el.ty = box Type::any(
+                    span,
+                    KeywordTypeMetadata {
+                        common: CommonTypeMetadata {
+                            implicit: true,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
+                );
             });
         }
 
-        return Ok(Type::Tuple(Tuple { span, elems: elements }));
+        return Ok(Type::Tuple(Tuple {
+            span,
+            elems: elements,
+            metadata: Default::default(),
+        }));
     }
 }
 
