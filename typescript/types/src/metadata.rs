@@ -274,6 +274,34 @@ pub struct ClassDefMetadata {
 impl_traits!(ClassDefMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TypeParamMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(TypeParamMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct EnumVariantMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(EnumVariantMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct InterfaceMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(InterfaceMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct AliasMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(AliasMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {
     pub common: CommonTypeMetadata,
 

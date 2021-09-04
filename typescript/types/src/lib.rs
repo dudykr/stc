@@ -711,6 +711,7 @@ pub struct Alias {
     pub span: Span,
     pub type_params: Option<TypeParamDecl>,
     pub ty: Box<Type>,
+    pub metadata: AliasMetadata,
 }
 
 assert_eq_size!(Alias, [u8; 64]);
@@ -722,6 +723,7 @@ pub struct Interface {
     pub type_params: Option<TypeParamDecl>,
     pub extends: Vec<TsExpr>,
     pub body: Vec<TypeElement>,
+    pub metadata: InterfaceMetadata,
 }
 
 assert_eq_size!(Interface, [u8; 120]);
@@ -954,6 +956,7 @@ pub struct TypeParam {
     pub name: Id,
     pub constraint: Option<Box<Type>>,
     pub default: Option<Box<Type>>,
+    pub metadata: TypeParamMetadata,
 }
 
 /// FooEnum.A
@@ -964,6 +967,7 @@ pub struct EnumVariant {
     pub enum_name: Id,
     /// [None] if for the general instance type of an enum.
     pub name: Option<JsWord>,
+    pub metadata: EnumVariantMetadata,
 }
 
 assert_eq_size!(EnumVariant, [u8; 40]);
