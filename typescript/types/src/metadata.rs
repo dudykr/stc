@@ -74,6 +74,9 @@ macro_rules! impl_traits {
 /// Common metadata shared among [crate::Type]s.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct CommonTypeMetadata {
+    /// TODO(kdy1): Add a fast-path to `Fixer` using this field.
+    pub valid: bool,
+
     pub implicit: bool,
 
     /// This can be ignored based on the context.
