@@ -35,8 +35,8 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, KeywordType, Method,
-    ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType, StaticThis,
+    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, Method, ModuleId, Operator,
+    OptionalType, PropertySignature, QueryExpr, QueryType, StaticThis,
 };
 use stc_utils::{error::context, stack, try_cache};
 use std::{
@@ -177,7 +177,7 @@ impl Analyzer<'_, '_> {
 
                 RExpr::Ident(ref i) => {
                     if i.sym == js_word!("undefined") {
-                        return Ok(Type::Keyword(KeywordType {
+                        return Ok(Type::Keyword(RTsKeywordType {
                             span: i.span.with_ctxt(SyntaxContext::empty()),
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         }));

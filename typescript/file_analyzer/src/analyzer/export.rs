@@ -112,7 +112,7 @@ impl Analyzer<'_, '_> {
                         .report(&mut a.storage)
                         .map(Type::from)
                         .map(|ty| ty.cheap());
-                    let ty = ty.unwrap_or_else(|| Type::any(span, Default::default()));
+                    let ty = ty.unwrap_or_else(|| Type::any(span));
                     a.register_type(e.id.clone().into(), ty);
 
                     a.storage.export_type(span, a.ctx.module_id, e.id.clone().into());

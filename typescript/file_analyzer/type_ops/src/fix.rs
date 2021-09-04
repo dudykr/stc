@@ -1,7 +1,5 @@
 use rnode::{VisitMut, VisitMutWith};
-use stc_ts_types::{
-    Array, Conditional, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam, Union,
-};
+use stc_ts_types::{Array, Conditional, FnParam, Intersection, Type, TypeOrSpread, TypeParam, Union};
 use swc_common::TypeEq;
 use tracing::instrument;
 
@@ -139,12 +137,7 @@ impl Fixer {
         match ty {
             Type::Union(u) => match u.types.len() {
                 0 => {
-                    *ty = Type::never(
-                        u.span,
-                        KeywordTypeMetadata {
-                            common: u.metadata.common,
-                        },
-                    );
+                    *ty = Type::never(u.span);
                     return;
                 }
                 1 => {
@@ -158,12 +151,7 @@ impl Fixer {
 
             Type::Intersection(i) => match i.types.len() {
                 0 => {
-                    *ty = Type::any(
-                        i.span,
-                        KeywordTypeMetadata {
-                            common: i.metadata.common,
-                        },
-                    );
+                    *ty = Type::any(i.span);
                     return;
                 }
                 1 => {

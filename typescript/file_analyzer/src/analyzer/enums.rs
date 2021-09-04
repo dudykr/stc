@@ -7,13 +7,10 @@ use fxhash::FxHashMap;
 use rnode::{NodeId, Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl, RTsEnumMember, RTsEnumMemberId,
-    RTsLit,
+    RTsKeywordType, RTsLit, RTsLitType,
 };
 use stc_ts_errors::{Error, Errors};
-use stc_ts_types::{
-    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, PropertySignature, TypeElement,
-    TypeLit,
-};
+use stc_ts_types::{Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, PropertySignature, TypeElement, TypeLit};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -134,7 +131,7 @@ impl Analyzer<'_, '_> {
             .map(Type::Enum)
             .map(Type::cheap)
             .report(&mut self.storage)
-            .unwrap_or_else(|| Type::any(span, Default::default()));
+            .unwrap_or_else(|| Type::any(span));
 
         self.register_type(name.clone(), stored_ty.clone());
 
@@ -412,20 +409,18 @@ impl Analyzer<'_, '_> {
                     type_ann: None,
                 }),
                 required: true,
-                ty: box Type::Keyword(KeywordType {
+                ty: box Type::Keyword(RTsKeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
-                    metadata: Default::default(),
                 }),
             };
             members.push(TypeElement::Index(IndexSignature {
                 span: e.span,
                 readonly: false,
                 params: vec![param],
-                type_ann: Some(box Type::Keyword(KeywordType {
+                type_ann: Some(box Type::Keyword(RTsKeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
-                    metadata: Default::default(),
                 })),
                 is_static: false,
             }));
@@ -439,20 +434,18 @@ impl Analyzer<'_, '_> {
                     type_ann: None,
                 }),
                 required: true,
-                ty: box Type::Keyword(KeywordType {
+                ty: box Type::Keyword(RTsKeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
-                    metadata: Default::default(),
                 }),
             };
             members.push(TypeElement::Index(IndexSignature {
                 span: e.span,
                 readonly: false,
                 params: vec![param],
-                type_ann: Some(box Type::Keyword(KeywordType {
+                type_ann: Some(box Type::Keyword(RTsKeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
-                    metadata: Default::default(),
                 })),
                 is_static: false,
             }));
@@ -472,7 +465,7 @@ impl Analyzer<'_, '_> {
             Type::Enum(ref e) if e.is_const => {
                 self.storage.report(Error::InvalidUseOfConstEnum { span });
             }
-            Type::Keyword(KeywordType {
+            Type::Keyword(RTsKeywordType {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
             }) => {
@@ -553,15 +546,15 @@ impl Analyzer<'_, '_> {
 
         for m in &e.members {
             match &*m.val {
-                RExpr::Lit(RLit::Str(lit)) => values.push(Type::Lit(LitType {
+                RExpr::Lit(RLit::Str(lit)) => values.push(Type::Lit(RTsLitType {
+                    node_id: NodeId::invalid(),
                     span: m.span,
                     lit: RTsLit::Str(lit.clone()),
-                    metadata: Default::default(),
                 })),
-                RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(LitType {
+                RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(RTsLitType {
+                    node_id: NodeId::invalid(),
                     span: m.span,
                     lit: RTsLit::Number(lit.clone()),
-                    metadata: Default::default(),
                 })),
                 _ => {
                     unimplemented!("Handle enum with value other than string literal or numeric literals")
@@ -588,14 +581,14 @@ impl Analyzer<'_, '_> {
                                 }) {
                                     match *v.val {
                                         RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => {
-                                            return Ok(Type::Lit(LitType {
+                                            return Ok(Type::Lit(RTsLitType {
+                                                node_id: NodeId::invalid(),
                                                 span: v.span,
                                                 lit: match *v.val.clone() {
                                                     RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
                                                     RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
                                                     _ => unreachable!(),
                                                 },
-                                                metadata: Default::default(),
                                             }));
                                         }
                                         _ => {}

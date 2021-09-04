@@ -136,7 +136,7 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
                 None => {
-                    let ty = Type::undefined(span, Default::default());
+                    let ty = Type::undefined(span);
                     ty
                 }
             };

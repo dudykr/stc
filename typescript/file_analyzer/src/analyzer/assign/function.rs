@@ -203,13 +203,13 @@ impl Analyzer<'_, '_> {
                     span,
                     type_params: None,
                     params: l_params.to_vec(),
-                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
                 });
                 let rf = Type::Function(Function {
                     span,
                     type_params: None,
                     params: r_params.to_vec(),
-                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
                 });
 
                 let map =
@@ -241,13 +241,13 @@ impl Analyzer<'_, '_> {
                     span,
                     type_params: None,
                     params: l_params.to_vec(),
-                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
                 });
                 let rf = Type::Function(Function {
                     span,
                     type_params: None,
                     params: r_params.to_vec(),
-                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
                 });
 
                 let map = self.infer_type_with_types(

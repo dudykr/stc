@@ -19,7 +19,7 @@ use fxhash::{FxHashMap, FxHashSet};
 use iter::once;
 use once_cell::sync::Lazy;
 use rnode::{Fold, FoldWith, Visit, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
+use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsKeywordType, RTsQualifiedName};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
     DebugExt, Error,
@@ -28,8 +28,7 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection,
-    Key, KeywordType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement, TypeParam,
-    TypeParamInstantiation,
+    Key, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement, TypeParam, TypeParamInstantiation,
 };
 use stc_utils::{error::context, stack};
 use std::{
@@ -960,8 +959,8 @@ impl Analyzer<'_, '_> {
     #[inline(never)]
     pub(super) fn find_var(&self, name: &Id) -> Option<&VarInfo> {
         static ANY_VAR: Lazy<VarInfo> = Lazy::new(|| VarInfo {
-            ty: Some(Type::any(DUMMY_SP, Default::default())),
-            actual_ty: Some(Type::any(DUMMY_SP, Default::default())),
+            ty: Some(Type::any(DUMMY_SP)),
+            actual_ty: Some(Type::any(DUMMY_SP)),
             kind: VarKind::Error,
             initialized: true,
             copied: false,
@@ -1112,10 +1111,9 @@ impl Analyzer<'_, '_> {
     #[instrument(skip(self, name))]
     fn find_local_type(&self, name: &Id) -> Option<ItemRef<Type>> {
         #[allow(dead_code)]
-        static ANY: Type = Type::Keyword(KeywordType {
+        static ANY: Type = Type::Keyword(RTsKeywordType {
             span: DUMMY_SP,
             kind: TsKeywordTypeKind::TsAnyKeyword,
-            metadata: Default::default(),
         });
         #[allow(dead_code)]
         static STATIC_THIS: Type = Type::StaticThis(StaticThis { span: DUMMY_SP });
