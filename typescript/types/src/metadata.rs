@@ -330,6 +330,13 @@ pub struct OptionalTypeMetadata {
 impl_traits!(OptionalTypeMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ModuleTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ModuleTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {
     pub common: CommonTypeMetadata,
 

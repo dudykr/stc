@@ -549,6 +549,7 @@ pub struct Module {
     #[use_eq_ignore_span]
     pub name: RTsModuleName,
     pub exports: Box<ModuleTypeData>,
+    pub metadata: ModuleTypeMetadata,
 }
 
 assert_eq_size!(Module, [u8; 64]);
@@ -1326,7 +1327,7 @@ impl Type {
             Type::Enum(ty) => ty.metadata.common,
             Type::Mapped(ty) => ty.metadata.common,
             Type::Alias(ty) => ty.metadata.common,
-            Type::Namespace(ty) => ty.metadata.common,
+            Type::Namespace(_ty) => todo!("Type::Namespace -> metadata()"),
             Type::Module(ty) => ty.metadata.common,
             Type::Class(ty) => ty.metadata.common,
             Type::ClassDef(ty) => ty.metadata.common,
