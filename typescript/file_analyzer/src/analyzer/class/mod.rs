@@ -26,7 +26,8 @@ use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
     Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
-    Id, Intersection, Key, KeywordType, Method, Operator, QueryExpr, QueryType, QueryTypeMetdata, Ref, TsExpr, Type,
+    Id, Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetdata,
+    Ref, TsExpr, Type,
 };
 use stc_utils::{AHashSet, TryOpt};
 use std::{
@@ -127,7 +128,7 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                     metadata: Default::default(),
                 }),
-                metadata: ty.metadata(),
+                metadata: OperatorMetadata { common: ty.metadata() },
             }),
             _ => ty,
         }))
