@@ -18,7 +18,7 @@ use fxhash::FxHashMap;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase,
-    RSwitchStmt, RTsKeywordType,
+    RSwitchStmt,
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_type_ops::Fix;
