@@ -22,7 +22,8 @@ use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    name::Name, Class, IdCtx, Intersection, Key, KeywordType, LitType, ModuleId, Ref, TypeElement, Union,
+    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, TypeElement,
+    Union, UnionMetadata,
 };
 use std::{
     borrow::Cow,
@@ -1056,7 +1057,7 @@ impl Analyzer<'_, '_> {
             || orig_ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword)
         {
             if ty.normalize().is_interface() {
-                return Ok(Type::never(span));
+                return Ok(Type::never(span, Default::default()));
             }
         }
 
@@ -1067,6 +1068,7 @@ impl Analyzer<'_, '_> {
                     Cow::Owned(Type::Class(Class {
                         span,
                         def: box ty.clone(),
+                        metadata: Default::default(),
                     })),
                     orig_ty,
                 )
@@ -1089,6 +1091,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::Class(Class {
                             span,
                             def: box def.clone(),
+                            metadata: Default::default(),
                         }))
                     }
                     _ => {}
@@ -1113,7 +1116,7 @@ impl Analyzer<'_, '_> {
                     )
                     .context("tried to check if overlap exists to calculate the type created by instanceof")?
                 {
-                    return Ok(Type::never(span));
+                    return Ok(Type::never(span, Default::default()));
                 }
             }
         }
@@ -1123,6 +1126,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Class(Class {
                     span,
                     def: box def.clone(),
+                    metadata: Default::default(),
                 }))
             }
             _ => {}
@@ -1410,7 +1414,11 @@ impl Analyzer<'_, '_> {
                     .map(|ty| self.validate_rhs_of_instanceof(span, type_for_error, ty.clone()))
                     .collect();
 
-                return Type::Union(Union { span: u.span, types });
+                return Type::Union(Union {
+                    span: u.span,
+                    types,
+                    metadata: u.metadata,
+                });
             }
 
             // Ok
@@ -1431,6 +1439,7 @@ impl Analyzer<'_, '_> {
                             span.with_ctxt(SyntaxContext::empty()),
                         )),
                         type_args: None,
+                        metadata: Default::default(),
                     }),
                     &ty,
                 ) {
@@ -1556,7 +1565,15 @@ impl Analyzer<'_, '_> {
                     types.push(new_ty);
                 }
 
-                return Ok(Type::Union(Union { span, types }).fixed());
+                return Ok(Type::Union(Union {
+                    span,
+                    types,
+                    metadata: UnionMetadata {
+                        common: equals_to.metadata(),
+                        ..Default::default()
+                    },
+                })
+                .fixed());
             }
             _ => {}
         }
@@ -1564,7 +1581,13 @@ impl Analyzer<'_, '_> {
         // At here two variants are different from each other because we checked with
         // type_eq above.
         if orig_ty.is_enum_variant() && equals_to.is_enum_variant() {
-            return Ok(Type::never(span));
+            return Ok(Type::never(
+                span,
+                KeywordTypeMetadata {
+                    common: equals_to.metadata(),
+                    ..Default::default()
+                },
+            ));
         }
 
         // Defaults to new type.
