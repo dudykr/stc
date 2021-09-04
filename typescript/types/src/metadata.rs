@@ -169,6 +169,20 @@ pub struct StaticThisMetadata {
 impl_traits!(StaticThisMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TplTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(TplTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ArrayMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ArrayMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {
     pub common: CommonTypeMetadata,
 

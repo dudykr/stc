@@ -844,6 +844,7 @@ pub struct IndexSignature {
 pub struct Array {
     pub span: Span,
     pub elem_type: Box<Type>,
+    pub metadata: ArrayMetadata,
 }
 
 assert_eq_size!(Array, [u8; 24]);
