@@ -163,9 +163,9 @@ pub(crate) trait RemoveTypes {
 impl RemoveTypes for Type {
     fn remove_falsy(self) -> Type {
         match self {
-            Type::Keyword(KeywordType { kind, span }) => match kind {
+            Type::Keyword(KeywordType { kind, span, metadata }) => match kind {
                 TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword => {
-                    return Type::never(span);
+                    return Type::never(span, metadata);
                 }
                 _ => {}
             },
@@ -208,7 +208,12 @@ impl RemoveTypes for Intersection {
             return types.into_iter().next().unwrap();
         }
 
-        Intersection { span: self.span, types }.into()
+        Intersection {
+            span: self.span,
+            types,
+            metadata: self.metadata,
+        }
+        .into()
     }
 
     fn remove_truthy(self) -> Type {
@@ -221,7 +226,12 @@ impl RemoveTypes for Intersection {
             return types.into_iter().next().unwrap();
         }
 
-        Intersection { span: self.span, types }.into()
+        Intersection {
+            span: self.span,
+            types,
+            metadata: self.metadata,
+        }
+        .into()
     }
 }
 
