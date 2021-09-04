@@ -15,10 +15,10 @@ use stc_ts_ast_rnode::{
     RPat, RTsArrayType, RTsCallSignatureDecl, RTsConditionalType, RTsConstructSignatureDecl, RTsConstructorType,
     RTsEntityName, RTsExprWithTypeArgs, RTsFnOrConstructorType, RTsFnParam, RTsFnType, RTsImportType,
     RTsIndexSignature, RTsIndexedAccessType, RTsInferType, RTsInterfaceBody, RTsInterfaceDecl, RTsIntersectionType,
-    RTsLit, RTsMappedType, RTsMethodSignature, RTsOptionalType, RTsParenthesizedType, RTsPropertySignature,
-    RTsRestType, RTsTplLitType, RTsTupleElement, RTsTupleType, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RTsTypeElement,
-    RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation, RTsTypePredicate,
-    RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
+    RTsKeywordType, RTsLit, RTsMappedType, RTsMethodSignature, RTsOptionalType, RTsParenthesizedType,
+    RTsPropertySignature, RTsRestType, RTsTplLitType, RTsTupleElement, RTsTupleType, RTsType, RTsTypeAliasDecl,
+    RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation,
+    RTsTypePredicate, RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -187,7 +187,7 @@ impl Analyzer<'_, '_> {
                     let type_params = try_opt!(d.type_params.validate_with(child));
 
                     let mut ty = match &*d.type_ann {
-                        RTsType::TsKeywordType(KeywordType {
+                        RTsType::TsKeywordType(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsIntrinsicKeyword,
                         }) if !child.is_builtin => {
@@ -196,7 +196,7 @@ impl Analyzer<'_, '_> {
                             Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
                         }
 
-                        RTsType::TsKeywordType(KeywordType {
+                        RTsType::TsKeywordType(RTsKeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsIntrinsicKeyword,
                         }) => Type::Intrinsic(Intrinsic {
@@ -449,6 +449,7 @@ impl Analyzer<'_, '_> {
                                 ty = Type::Symbol(Symbol {
                                     span: DUMMY_SP,
                                     id: SymbolId::known(&key),
+                                    metadata: Default::default(),
                                 });
                             }
                         }
@@ -457,10 +458,10 @@ impl Analyzer<'_, '_> {
                     }
                     Err(e) => {
                         self.storage.report(e);
-                        Some(box Type::any(d.span))
+                        Some(box Type::any(d.span, Default::default()))
                     }
                 },
-                None => Some(box Type::any(d.span)),
+                None => Some(box Type::any(d.span, Default::default())),
             }
         };
 
@@ -516,6 +517,7 @@ impl Analyzer<'_, '_> {
         Ok(Tuple {
             span,
             elems: t.elem_types.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -594,7 +596,11 @@ impl Analyzer<'_, '_> {
 
         types.dedup_type();
 
-        Ok(Union { span: u.span, types })
+        Ok(Union {
+            span: u.span,
+            types,
+            metadata: Default::default(),
+        })
     }
 }
 
@@ -604,6 +610,7 @@ impl Analyzer<'_, '_> {
         Ok(Intersection {
             span: u.span,
             types: u.types.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
