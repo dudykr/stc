@@ -54,10 +54,10 @@ impl Fold<Function> for TypeParamRenamer {
         let ret_ty = f.ret_ty.fold_with(self);
 
         Function {
-            span: f.span,
             type_params,
             params,
             ret_ty,
+            ..f
         }
     }
 }
