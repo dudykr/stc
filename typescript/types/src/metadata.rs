@@ -92,6 +92,15 @@ pub struct CommonTypeMetadata {
     ///
     /// Used to distinguish object literal with a reference to object literal.
     pub resolved_from_var: bool,
+
+    /// TODO: Move this to [LitTypeMetadata]
+    ///
+    /// If the mark is applied, it means that the literal should not be
+    /// generalized.
+    pub prevent_generalization: bool,
+
+    /// TODO: Move this to [TupleMetadata]
+    pub prevent_tuple_to_array: bool,
 }
 
 impl_basic_traits!(CommonTypeMetadata);
@@ -120,10 +129,6 @@ impl_traits!(KeywordTypeMetadata);
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct LitTypeMetadata {
     pub common: CommonTypeMetadata,
-
-    /// If the mark is applied, it means that the literal should not be
-    /// generalized.
-    pub prevent_generalization: bool,
 }
 
 impl_traits!(LitTypeMetadata);
@@ -131,8 +136,6 @@ impl_traits!(LitTypeMetadata);
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TupleMetadata {
     pub common: CommonTypeMetadata,
-
-    pub prevent_tuple_to_array: bool,
 }
 
 impl_traits!(TupleMetadata);

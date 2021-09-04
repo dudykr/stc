@@ -443,7 +443,7 @@ pub struct KeywordType {
     pub metadata: KeywordTypeMetadata,
 }
 
-assert_eq_size!(KeywordType, [u8; 20]);
+assert_eq_size!(KeywordType, [u8; 24]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Symbol {
