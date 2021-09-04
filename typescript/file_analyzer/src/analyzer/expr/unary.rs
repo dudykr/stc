@@ -94,7 +94,6 @@ impl Analyzer<'_, '_> {
                         .iter()
                         .cloned()
                         .map(|value| LitType {
-                            node_id: NodeId::invalid(),
                             span,
                             lit: RTsLit::Str(RStr {
                                 span,

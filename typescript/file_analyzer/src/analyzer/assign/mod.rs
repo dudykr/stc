@@ -2187,7 +2187,6 @@ impl Analyzer<'_, '_> {
                             ..
                         }) => {
                             keys.push(Type::Lit(LitType {
-                                node_id: NodeId::invalid(),
                                 span: *span,
                                 lit: RTsLit::Str(RStr {
                                     span: *span,

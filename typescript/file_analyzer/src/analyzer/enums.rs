@@ -585,7 +585,6 @@ impl Analyzer<'_, '_> {
                                     match *v.val {
                                         RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => {
                                             return Ok(Type::Lit(LitType {
-                                                node_id: NodeId::invalid(),
                                                 span: v.span,
                                                 lit: match *v.val.clone() {
                                                     RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),

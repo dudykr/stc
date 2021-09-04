@@ -1512,7 +1512,6 @@ impl Analyzer<'_, '_> {
                                 _ => false,
                             } {
                                 let new_obj_ty = Type::Lit(LitType {
-                                    node_id: NodeId::invalid(),
                                     span,
                                     lit: match *v.val.clone() {
                                         RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
@@ -1568,7 +1567,6 @@ impl Analyzer<'_, '_> {
                                         _ => false,
                                     } {
                                         let new_obj_ty = Type::Lit(LitType {
-                                            node_id: NodeId::invalid(),
                                             span: *span,
                                             lit: match *v.val.clone() {
                                                 RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
@@ -1737,7 +1735,6 @@ impl Analyzer<'_, '_> {
                 let mut prop_ty = match prop {
                     Key::Computed(key) => key.ty.clone(),
                     Key::Normal { span, sym } => box Type::Lit(LitType {
-                        node_id: NodeId::invalid(),
                         span: *span,
                         lit: RTsLit::Str(RStr {
                             span: *span,
@@ -1747,12 +1744,10 @@ impl Analyzer<'_, '_> {
                         }),
                     }),
                     Key::Num(n) => box Type::Lit(LitType {
-                        node_id: NodeId::invalid(),
                         span: n.span,
                         lit: RTsLit::Number(n.clone()),
                     }),
                     Key::BigInt(n) => box Type::Lit(LitType {
-                        node_id: NodeId::invalid(),
                         span: n.span,
                         lit: RTsLit::BigInt(n.clone()),
                     }),
@@ -2196,7 +2191,6 @@ impl Analyzer<'_, '_> {
                         }
 
                         return Ok(Type::Lit(LitType {
-                            node_id: NodeId::invalid(),
                             span,
                             lit: RTsLit::Number(RNumber {
                                 span,
@@ -3712,15 +3706,16 @@ impl Analyzer<'_, '_> {
 
         if e.exprs.is_empty() {
             return Ok(Type::Lit(LitType {
-                node_id: NodeId::invalid(),
                 span: e.span,
                 lit: RTsLit::Str(e.quasis[0].cooked.clone().unwrap_or_else(|| e.quasis[0].raw.clone())),
+                metadata: Default::default(),
             }));
         }
 
         Ok(Type::Keyword(KeywordType {
             span: e.span,
             kind: TsKeywordTypeKind::TsStringKeyword,
+            metadata: Default::default(),
         }))
     }
 }
