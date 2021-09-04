@@ -477,6 +477,7 @@ pub struct IndexedAccessType {
     pub readonly: bool,
     pub obj_type: Box<Type>,
     pub index_type: Box<Type>,
+    pub metadata: IndexedAccessTypeMetadata,
 }
 
 assert_eq_size!(IndexedAccessType, [u8; 32]);
@@ -489,6 +490,7 @@ pub struct Ref {
     #[use_eq_ignore_span]
     pub type_name: RTsEntityName,
     pub type_args: Option<Box<TypeParamInstantiation>>,
+    pub metadata: RefMetadata,
 }
 
 assert_eq_size!(Ref, [u8; 64]);
@@ -667,6 +669,7 @@ pub struct Conditional {
     pub extends_type: Box<Type>,
     pub true_type: Box<Type>,
     pub false_type: Box<Type>,
+    pub metadata: ConditionalMetadata,
 }
 
 assert_eq_size!(Conditional, [u8; 48]);

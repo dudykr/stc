@@ -211,6 +211,27 @@ pub struct PredicateMetadata {
 impl_traits!(PredicateMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct IndexedAccessTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(IndexedAccessTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct RefMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(RefMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ConditionalMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ConditionalMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {
     pub common: CommonTypeMetadata,
 
