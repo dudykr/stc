@@ -4,8 +4,9 @@ use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RRestPat, RTsLit, RTsLitType
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType, Intersection, KeywordType,
-    KeywordTypeMetadata, LitType, Mapped, Type, TypeElement, TypeLit, Union,
+    ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType, Intersection,
+    IntersectionMetadata, KeywordType, KeywordTypeMetadata, LitType, Mapped, Type, TypeElement, TypeLit, Union,
+    UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
@@ -34,6 +35,10 @@ impl Analyzer<'_, '_> {
                     ty = Type::Intersection(Intersection {
                         span: ty.span(),
                         types: vec![ty],
+                        metadata: IntersectionMetadata {
+                            common: ty.metadata(),
+                            ..Default::default()
+                        },
                     });
                 }
                 _ => {}
@@ -58,7 +63,13 @@ impl Analyzer<'_, '_> {
             0
         };
         if cnt >= 2 {
-            return Type::never(ty.span());
+            return Type::never(
+                ty.span(),
+                KeywordTypeMetadata {
+                    common: ty.metadata(),
+                    ..Default::default()
+                },
+            );
         }
 
         let before = dump_type_as_string(&self.cm, &ty);
@@ -79,14 +90,15 @@ impl Analyzer<'_, '_> {
                     }),
                     type_ann: None,
                 }),
-                ty: box Type::any(DUMMY_SP),
+                ty: box Type::any(DUMMY_SP, Default::default()),
                 required: false,
             };
             let fn_type = Type::Function(Function {
                 span: DUMMY_SP,
                 type_params: None,
                 params: vec![param],
-                ret_ty: box Type::any(DUMMY_SP),
+                ret_ty: box Type::any(DUMMY_SP, Default::default()),
+                metadata: Default::default(),
             });
 
             // TODO: PERF
@@ -105,6 +117,7 @@ impl Analyzer<'_, '_> {
                     *ty = Type::Union(Union {
                         span: ty.span(),
                         types: vec![ty.take(), fn_type],
+                        metadata: UnionMetadata { common: ty.metadata() },
                     })
                 }
             }
