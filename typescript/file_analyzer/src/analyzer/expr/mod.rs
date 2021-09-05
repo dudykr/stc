@@ -3501,7 +3501,7 @@ impl Analyzer<'_, '_> {
                     v.clone()
                 } else {
                     self.storage.report(Error::SuperInClassWithoutSuper { span });
-                    Type::any(span)
+                    Type::any(span, Default::default())
                 }
             }
         };
@@ -3577,7 +3577,7 @@ impl Analyzer<'_, '_> {
         };
 
         if should_be_optional {
-            Ok(Type::union(vec![Type::undefined(span), ty]))
+            Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
         } else {
             Ok(ty)
         }
