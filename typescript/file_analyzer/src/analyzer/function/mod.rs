@@ -12,7 +12,8 @@ use stc_ts_ast_rnode::{RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RPara
 use stc_ts_errors::{Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Interface, KeywordType, Ref, TypeElement, TypeLit,
+    Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Interface, KeywordType, KeywordTypeMetadata, Ref,
+    TypeElement, TypeLit,
 };
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
@@ -418,7 +419,13 @@ impl Analyzer<'_, '_> {
                                 //    });
                                 //}
 
-                                element.ty = box Type::any(span);
+                                element.ty = box Type::any(
+                                    span,
+                                    KeywordTypeMetadata {
+                                        common: element.ty.metadata(),
+                                        ..Default::default()
+                                    },
+                                );
                             }
                         }
 

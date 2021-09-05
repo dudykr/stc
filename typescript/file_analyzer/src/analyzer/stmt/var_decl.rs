@@ -585,7 +585,13 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
                                     // Widen tuple types
-                                    element.ty = box Type::any(span);
+                                    element.ty = box Type::any(
+                                        span,
+                                        KeywordTypeMetadata {
+                                            common: element.ty.metadata(),
+                                            ..Default::default()
+                                        },
+                                    );
 
                                     if self.rule().no_implicit_any {
                                         match v.name {
