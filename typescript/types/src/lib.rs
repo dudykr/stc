@@ -1332,6 +1332,16 @@ impl Visit<TypeElement> for AssertValid {
     }
 }
 
+impl Visit<EnumMember> for AssertValid {
+    fn visit(&mut self, el: &EnumMember) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+        el.visit_children_with(self);
+        debug_assert_eq!(el.span().ctxt, SyntaxContext::empty());
+    }
+}
+
 impl Visit<ClassMember> for AssertValid {
     fn visit(&mut self, el: &ClassMember) {
         if !cfg!(debug_assertions) {
