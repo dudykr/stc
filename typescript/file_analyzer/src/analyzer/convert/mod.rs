@@ -279,7 +279,7 @@ impl Analyzer<'_, '_> {
                 let mut ty = Interface {
                     span: d.span,
                     name: d.id.clone().into(),
-                    type_params: try_opt!(d.type_params.validate_with(&mut *child).map(Box::new)),
+                    type_params: try_opt!(d.type_params.validate_with(&mut *child).map(|v| v.map(Box::new))),
                     extends: d.extends.validate_with(child)?,
                     body: d.body.validate_with(child)?,
                     metadata: Default::default(),

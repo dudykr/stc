@@ -9,7 +9,7 @@ use itertools::Itertools;
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsLit,
-    RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
+    RTsModuleDecl, RTsModuleName, RTsTypeAliasDecl,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
@@ -17,7 +17,8 @@ use stc_ts_types::{
     name::Name, Accessor, Array, ArrayMetadata, Class, ClassDef, ClassMember, ComputedKey, Conditional,
     ConstructorSignature, Id, IdCtx, Instance, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType,
     KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr,
-    Ref, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    Ref, ThisType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation,
+    Union,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
@@ -590,7 +591,7 @@ impl Analyzer<'_, '_> {
                 def: box def,
             }),
 
-            Type::StaticThis(ty) => Type::This(RTsThisType { span: actual_span }),
+            Type::StaticThis(ty) => Type::This(ThisType { span: actual_span }),
 
             Type::Intersection(ty) => {
                 let types = ty
