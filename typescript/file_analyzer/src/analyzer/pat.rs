@@ -19,13 +19,13 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{
-    Array, ArrayMetadata, Instance, Key, KeywordType, PropertySignature, Tuple, TupleElement, TypeElMetadata,
-    TypeElement, TypeLit,
+    Array, ArrayMetadata, CommonTypeMetadata, Instance, Key, KeywordType, PropertySignature, Tuple, TupleElement,
+    TypeElMetadata, TypeElement, TypeLit, TypeLitMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
 use swc_atoms::js_word;
-use swc_common::{Mark, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
+use swc_common::{Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::instrument;
 
@@ -41,37 +41,15 @@ pub(super) enum PatMode {
 impl Analyzer<'_, '_> {
     #[instrument(skip(self, ty))]
     pub(crate) fn mark_as_implicitly_typed(&mut self, ty: &mut Type) {
-        let span = ty.span();
-        let span = span.apply_mark(self.marks().implicit_type_mark);
-        ty.respan(span);
+        ty.metadata_mut().implicit = true;
     }
 
     pub(crate) fn is_implicitly_typed(&self, ty: &Type) -> bool {
-        self.is_implicitly_typed_span(ty.span())
-    }
-
-    #[instrument(skip(self, span))]
-    pub(crate) fn is_implicitly_typed_span(&self, span: Span) -> bool {
-        let mut ctxt: SyntaxContext = span.ctxt;
-        loop {
-            let mark = ctxt.remove_mark();
-
-            if mark == Mark::root() {
-                break;
-            }
-
-            if mark == self.marks().implicit_type_mark {
-                return true;
-            }
-        }
-
-        false
+        ty.metadata().implicit
     }
 
     #[instrument(skip(self, pat))]
     pub(crate) fn default_type_for_pat(&mut self, pat: &RPat) -> ValidationResult<Type> {
-        let implicit_type_mark = self.marks().implicit_type_mark;
-
         let span = pat.span();
         match pat {
             RPat::Array(arr) => {
@@ -151,9 +129,15 @@ impl Analyzer<'_, '_> {
                 }
 
                 return Ok(Type::TypeLit(TypeLit {
-                    span: DUMMY_SP.apply_mark(implicit_type_mark),
+                    span: DUMMY_SP,
                     members,
-                    metadata: Default::default(),
+                    metadata: TypeLitMetadata {
+                        common: CommonTypeMetadata {
+                            implicit: true,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
                 }));
             }
             RPat::Assign(pat) => return self.default_type_for_pat(&pat.left),
