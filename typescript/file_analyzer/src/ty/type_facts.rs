@@ -5,7 +5,7 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType, Intersection, KeywordType,
-    LitType, Mapped, Type, TypeElement, TypeLit, Union,
+    KeywordTypeMetadata, LitType, Mapped, Type, TypeElement, TypeLit, Union,
 };
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
@@ -375,14 +375,27 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             Type::Lit(LitType {
                 span,
                 lit: RTsLit::Bool(v),
+                metadata,
                 ..
             }) => {
                 if self.facts.contains(TypeFacts::Truthy) && !v.value {
-                    return Type::never(*span);
+                    return Type::never(
+                        *span,
+                        KeywordTypeMetadata {
+                            common: metadata.common,
+                            ..Default::default()
+                        },
+                    );
                 }
 
                 if self.facts.contains(TypeFacts::Falsy) && v.value {
-                    return Type::never(*span);
+                    return Type::never(
+                        *span,
+                        KeywordTypeMetadata {
+                            common: metadata.common,
+                            ..Default::default()
+                        },
+                    );
                 }
             }
             _ => {}
