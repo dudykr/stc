@@ -507,9 +507,13 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     // We failed to infer type of the type parameter.
-                                    Type::Param(TypeParam { span, .. }) => Type::Keyword(KeywordType {
+                                    Type::Param(TypeParam { span, metadata, .. }) => Type::Keyword(KeywordType {
                                         span: *span,
                                         kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                        metadata: KeywordTypeMetadata {
+                                            common: metadata.common,
+                                            ..Default::default()
+                                        },
                                     }),
 
                                     _ => ty,
@@ -524,6 +528,7 @@ impl Analyzer<'_, '_> {
                                         m.for_pats.entry(i.node_id).or_default().ty = Some(Type::Query(QueryType {
                                             span,
                                             expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(alias.clone())),
+                                            metadata: Default::default(),
                                         }));
                                     }
                                 }
@@ -661,6 +666,7 @@ impl Analyzer<'_, '_> {
                             Type::Instance(Instance {
                                 span: i.id.span,
                                 ty: box ty,
+                                metadata: Default::default(),
                             })
                         });
                         match ty {
