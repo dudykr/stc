@@ -3248,6 +3248,7 @@ impl Analyzer<'_, '_> {
         n: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult {
+        let span = span.with_ctxt(SyntaxContext::empty());
         {
             let res = self.report_error_for_unresolve_type(span, &n, type_args);
             match res {
