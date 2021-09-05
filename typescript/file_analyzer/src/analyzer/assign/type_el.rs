@@ -14,6 +14,7 @@ use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, ModuleId, Operator,
     PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union,
+    UnionMetadata,
 };
 use stc_utils::ext::SpanExt;
 use std::borrow::Cow;
@@ -243,6 +244,10 @@ impl Analyzer<'_, '_> {
                                 let r_elem_type = Type::Union(Union {
                                     span: r_tuple.span,
                                     types: r_tuple.elems.iter().map(|el| *el.ty.clone()).collect(),
+                                    metadata: UnionMetadata {
+                                        common: r_tuple.metadata.common,
+                                        ..Default::default()
+                                    },
                                 })
                                 .fixed();
 

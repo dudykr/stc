@@ -2407,7 +2407,9 @@ impl Analyzer<'_, '_> {
                             Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
-                            }) if self.is_implicitly_typed_span(*span) => {
+                                metadata,
+                                ..
+                            }) if metadata.common.implicit => {
                                 // let new_ty = RTsType::from(actual.ty.clone()).validate_with(self)?;
                                 // if let Some(node_id) = pat.node_id() {
                                 //     if let Some(m) = &mut self.mutations {

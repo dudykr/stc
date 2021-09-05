@@ -35,8 +35,9 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, KeywordType, LitType, Method,
-    ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType, StaticThis,
+    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, KeywordType,
+    KeywordTypeMetadata, LitType, Method, ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
+    StaticThis,
 };
 use stc_utils::{error::context, stack, try_cache};
 use std::{
@@ -1238,6 +1239,7 @@ impl Analyzer<'_, '_> {
                                         type_params: member.type_params.clone(),
                                         params: member.params.clone(),
                                         ret_ty: member.ret_ty.clone(),
+                                        metadata: Default::default(),
                                     }));
                                 }
 
@@ -1334,7 +1336,7 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                Type::StaticThis(StaticThis { span }) => {
+                Type::StaticThis(StaticThis { span, metadata }) => {
                     // Handle static access to class itself while *declaring* the class.
                     for (_, member) in self.scope.class_members() {
                         match member {
@@ -1345,13 +1347,22 @@ impl Analyzer<'_, '_> {
                                         type_params: member.type_params.clone(),
                                         params: member.params.clone(),
                                         ret_ty: member.ret_ty.clone(),
+                                        metadata: Default::default(),
                                     }));
                                 }
                             }
 
                             stc_ts_types::ClassMember::Property(property @ ClassProperty { is_static: true, .. }) => {
                                 if property.key.type_eq(prop) {
-                                    return Ok(*property.value.clone().unwrap_or_else(|| box Type::any(span.clone())));
+                                    return Ok(*property.value.clone().unwrap_or_else(|| {
+                                        box Type::any(
+                                            span.clone(),
+                                            KeywordTypeMetadata {
+                                                common: metadata.common,
+                                                ..Default::default()
+                                            },
+                                        )
+                                    }));
                                 }
                             }
 
