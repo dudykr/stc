@@ -1665,26 +1665,14 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn is_expansion_prevented(&self, ty: &Type) -> bool {
-        let mut found_no_expand = false;
-        let mut ctxt: SyntaxContext = ty.span().ctxt();
-        loop {
-            let mark = ctxt.remove_mark();
-
-            if mark == Mark::root() {
-                break;
-            }
-
-            if mark == self.marks().no_expand_mark {
-                found_no_expand = true;
-                continue;
-            }
-
-            if mark == self.marks().ignore_no_expand_mark {
-                return false;
-            }
+        if ty.metadata().ignore_no_expand {
+            return false;
+        }
+        if ty.metadata().no_expand {
+            return true;
         }
 
-        found_no_expand
+        false
     }
 }
 
