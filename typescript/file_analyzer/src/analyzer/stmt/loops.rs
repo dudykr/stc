@@ -260,10 +260,18 @@ impl Analyzer<'_, '_> {
         let s = Type::Keyword(KeywordType {
             span: rhs.span(),
             kind: TsKeywordTypeKind::TsStringKeyword,
+            metadata: KeywordTypeMetadata {
+                common: rhs.metadata(),
+                ..Default::default()
+            },
         });
         let n = Type::Keyword(KeywordType {
             span: rhs.span(),
             kind: TsKeywordTypeKind::TsNumberKeyword,
+            metadata: KeywordTypeMetadata {
+                common: rhs.metadata(),
+                ..Default::default()
+            },
         });
         Ok(Type::union(vec![s, n]))
     }
@@ -323,7 +331,9 @@ impl Analyzer<'_, '_> {
                 let rty = rhs
                     .validate_with_default(&mut *child.with_ctx(rhs_ctx))
                     .context("tried to validate rhs of a for in/of loop");
-                let rty = rty.report(&mut child.storage).unwrap_or_else(|| Type::any(span));
+                let rty = rty
+                    .report(&mut child.storage)
+                    .unwrap_or_else(|| Type::any(span, Default::default()));
 
                 match kind {
                     ForHeadKind::Of { is_awaited: false } => {
@@ -357,20 +367,20 @@ impl Analyzer<'_, '_> {
                         })
                         .context("tried to get the element type of an iterator to calculate type for a for-of loop")
                         .report(&mut child.storage)
-                        .unwrap_or_else(|| Cow::Owned(Type::any(span))),
+                        .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),
 
                     ForHeadKind::Of { is_awaited: true } => child
                         .get_async_iterator_elem_type(rhs.span(), Cow::Owned(rty))
                         .context("tried to get element type of an async iteratror")
                         .report(&mut child.storage)
-                        .unwrap_or_else(|| Cow::Owned(Type::any(span))),
+                        .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),
 
                     ForHeadKind::In => Cow::Owned(
                         child
                             .get_element_type_of_for_in(&rty)
                             .context("tried to calculate the element type for a for-in loop")
                             .report(&mut child.storage)
-                            .unwrap_or_else(|| Type::any(span)),
+                            .unwrap_or_else(|| Type::any(span, Default::default())),
                     ),
                 };
 
