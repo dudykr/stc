@@ -42,7 +42,7 @@ use std::{
     time::Instant,
 };
 use swc_atoms::js_word;
-use swc_common::{util::move_map::MoveMap, Mark, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
+use swc_common::{util::move_map::MoveMap, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::{debug, error, info, instrument};
 
@@ -1612,20 +1612,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_infer_type_container(&self, ty: &Type) -> bool {
-        let mut ctxt: SyntaxContext = ty.span().ctxt();
-        loop {
-            let mark = ctxt.remove_mark();
-
-            if mark == Mark::root() {
-                break;
-            }
-
-            if mark == self.marks().contains_infer_type_mark {
-                return true;
-            }
-        }
-
-        false
+        ty.metadata().contains_infer_type
     }
 
     pub(crate) fn mark_type_as_infer_type_container(&self, ty: &mut Type) {
@@ -1644,9 +1631,7 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        ty.visit_mut_with(&mut ExpansionPreventer {
-            mark: self.marks().no_expand_mark,
-        });
+        ty.visit_mut_with(&mut ExpansionPreventer { is_for_ignoring: false });
     }
 
     /// Mark `ty` as expandable. This has higher precedence than
@@ -1659,9 +1644,7 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        ty.visit_mut_with(&mut ExpansionPreventer {
-            mark: self.marks().ignore_no_expand_mark,
-        });
+        ty.visit_mut_with(&mut ExpansionPreventer { is_for_ignoring: true });
     }
 
     pub(super) fn is_expansion_prevented(&self, ty: &Type) -> bool {
@@ -2714,12 +2697,18 @@ impl Visit<Union> for UnionFinder {
 }
 
 pub(crate) struct ExpansionPreventer {
-    mark: Mark,
+    is_for_ignoring: bool,
 }
 
 impl VisitMut<Ref> for ExpansionPreventer {
     fn visit_mut(&mut self, ty: &mut Ref) {
-        ty.span = ty.span.apply_mark(self.mark);
+        ty.visit_mut_children_with(self);
+
+        if self.is_for_ignoring {
+            ty.metadata.common.ignore_no_expand = true;
+        } else {
+            ty.metadata.common.no_expand = true;
+        }
     }
 }
 
