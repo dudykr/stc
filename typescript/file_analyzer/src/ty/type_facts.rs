@@ -10,7 +10,7 @@ use stc_ts_types::{
 };
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
-use swc_common::{Span, Spanned, DUMMY_SP};
+use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, instrument};
 
@@ -494,11 +494,14 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
 }
 
 fn facts_to_union(span: Span, facts: TypeFacts) -> Type {
+    let span = span.with_ctxt(SyntaxContext::empty());
+
     let mut types = vec![];
     if facts.contains(TypeFacts::TypeofEQString) {
         types.push(Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsStringKeyword,
+            metadata: Default::default(),
         }));
     }
 
@@ -506,6 +509,7 @@ fn facts_to_union(span: Span, facts: TypeFacts) -> Type {
         types.push(Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsNumberKeyword,
+            metadata: Default::default(),
         }));
     }
 
@@ -513,6 +517,7 @@ fn facts_to_union(span: Span, facts: TypeFacts) -> Type {
         types.push(Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsBooleanKeyword,
+            metadata: Default::default(),
         }));
     }
 

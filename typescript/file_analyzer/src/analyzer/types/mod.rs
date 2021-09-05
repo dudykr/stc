@@ -538,7 +538,7 @@ impl Analyzer<'_, '_> {
                 });
 
                 if !can_match {
-                    return Ok(Some(Type::never(span)));
+                    return Ok(Some(Type::never(span, Default::default())));
                 }
             }
             _ => {

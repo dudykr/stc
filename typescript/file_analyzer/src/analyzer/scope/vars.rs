@@ -695,21 +695,24 @@ impl Analyzer<'_, '_> {
                         .iter()
                         .filter_map(|key| match key {
                             Key::BigInt(v) => Some(Type::Lit(LitType {
-                                span: v.span,
+                                span: v.span.with_ctxt(SyntaxContext::empty()),
                                 lit: RTsLit::BigInt(v.clone()),
+                                metadata: Default::default(),
                             })),
                             Key::Num(v) => Some(Type::Lit(LitType {
-                                span: v.span,
+                                span: v.span.with_ctxt(SyntaxContext::empty()),
                                 lit: RTsLit::Number(v.clone()),
+                                metadata: Default::default(),
                             })),
                             Key::Normal { span, sym } => Some(Type::Lit(LitType {
-                                span: *span,
+                                span: span.with_ctxt(SyntaxContext::empty()),
                                 lit: RTsLit::Str(RStr {
                                     span: *span,
                                     value: sym.clone(),
                                     has_escape: false,
                                     kind: Default::default(),
                                 }),
+                                metadata: Default::default(),
                             })),
 
                             // TODO
