@@ -1675,6 +1675,7 @@ impl Analyzer<'_, '_> {
                                     type_params: mtd.type_params.clone(),
                                     params: mtd.params.clone(),
                                     ret_ty: mtd.ret_ty.clone(),
+                                    metadata: Default::default(),
                                 }));
                             }
                         }
@@ -1750,7 +1751,7 @@ impl Analyzer<'_, '_> {
                     };
 
                 if has_better_default {
-                    return Ok(Type::any(span));
+                    return Ok(Type::any(span, Default::default()));
                 }
 
                 return Err(Error::NoSuchPropertyInClass {
@@ -1974,7 +1975,7 @@ impl Analyzer<'_, '_> {
                             })
                             | Type::Lit(LitType {
                                 lit: RTsLit::Str(..), ..
-                            }) => Ok(Type::any(span)),
+                            }) => Ok(Type::any(span, Default::default())),
                             _ => Err(err),
                         }
                     });
@@ -2060,7 +2061,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if type_mode == TypeOfMode::LValue {
-                    return Ok(Type::any(span));
+                    return Ok(Type::any(span, Default::default()));
                 }
 
                 if members.iter().any(|e| e.is_call()) {
@@ -2150,6 +2151,7 @@ impl Analyzer<'_, '_> {
                             tys.push(Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                metadata: Default::default(),
                             }));
                             tys.dedup_type();
                             let ty = Type::union(tys);
@@ -2218,6 +2220,7 @@ impl Analyzer<'_, '_> {
                                 return Ok(Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    metadata: Default::default(),
                                 }));
                             }
 
@@ -2249,6 +2252,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 value: elems.len() as _,
                             }),
+                            metadata: Default::default(),
                         }));
                     }
 
@@ -2260,6 +2264,7 @@ impl Analyzer<'_, '_> {
                 let obj = Type::Array(Array {
                     span,
                     elem_type: box Type::union(types),
+                    metadata: Default::default(),
                 });
 
                 return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
@@ -2302,6 +2307,7 @@ impl Analyzer<'_, '_> {
                                     type_params: m.type_params.clone(),
                                     params: m.params.clone(),
                                     ret_ty: m.ret_ty.clone(),
+                                    metadata: Default::default(),
                                 }));
                             }
                         }
@@ -2347,7 +2353,11 @@ impl Analyzer<'_, '_> {
                                 if types.len() == 1 {
                                     return Ok(types.into_iter().next().unwrap());
                                 }
-                                return Ok(Type::Intersection(Intersection { span, types }));
+                                return Ok(Type::Intersection(Intersection {
+                                    span,
+                                    types,
+                                    metadata: Default::default(),
+                                }));
                             }
                         }
                     }
@@ -2385,7 +2395,7 @@ impl Analyzer<'_, '_> {
                         self.storage
                             .report(Error::CannotReferenceThisInComputedPropName { span });
                         // Return any to prevent other errors
-                        return Ok(Type::any(span));
+                        return Ok(Type::any(span, Default::default()));
                     }
 
                     if this.normalize().is_this() {
@@ -2404,7 +2414,7 @@ impl Analyzer<'_, '_> {
                     return self.access_property(span, &this, prop, type_mode, id_ctx, opts);
                 } else if self.ctx.in_argument {
                     // We will adjust `this` using information from callee.
-                    return Ok(Type::any(span));
+                    return Ok(Type::any(span, Default::default()));
                 }
 
                 let scope = if self.ctx.in_computed_prop_name {
@@ -2419,11 +2429,11 @@ impl Analyzer<'_, '_> {
                 match scope.map(|scope| scope.kind()) {
                     Some(ScopeKind::Fn) => {
                         // TODO
-                        return Ok(Type::any(span));
+                        return Ok(Type::any(span, Default::default()));
                     }
                     None => {
                         // Global this
-                        return Ok(Type::any(span));
+                        return Ok(Type::any(span, Default::default()));
                     }
                     kind => {
                         unimplemented!("access property of this to {:?}", kind)
@@ -2488,13 +2498,17 @@ impl Analyzer<'_, '_> {
                         // };
                         if let Ok(()) = self.assign(span, &mut Default::default(), &index, &prop.ty()) {
                             // We handle `Partial<string>` at here.
-                            let ty = m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span));
+                            let ty =
+                                m.ty.clone()
+                                    .map(|v| *v)
+                                    .unwrap_or_else(|| Type::any(span, Default::default()));
 
                             let ty = match m.optional {
                                 Some(TruePlusMinus::Plus) | Some(TruePlusMinus::True) => {
                                     let undefined = Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                        metadata: Default::default(),
                                     });
                                     let mut types = vec![undefined, ty];
                                     types.dedup_type();
