@@ -66,15 +66,6 @@ impl Marks {
     }
 }
 
-impl Marks {
-    pub fn metadata<T>(self, span: Span) -> T
-    where
-        T: FromMarks,
-    {
-        T::from_marks(self, span)
-    }
-}
-
 pub(crate) trait MarkExt: Copy + Into<Mark> {
     fn as_ctxt(self) -> SyntaxContext {
         let ctxt = SyntaxContext::empty();
