@@ -497,6 +497,8 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         obj_type.assert_valid();
 
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         let old_this = self.scope.this.take();
         self.scope.this = Some(this.clone());
 
