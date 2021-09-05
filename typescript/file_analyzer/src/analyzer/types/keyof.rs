@@ -134,14 +134,17 @@ impl Analyzer<'_, '_> {
                                 Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsStringKeyword,
+                                    metadata: Default::default(),
                                 }),
                                 Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    metadata: Default::default(),
                                 }),
                                 Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                    metadata: Default::default(),
                                 }),
                             ],
                             metadata: Default::default(),

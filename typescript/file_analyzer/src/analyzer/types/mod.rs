@@ -993,6 +993,7 @@ impl Analyzer<'_, '_> {
                             ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(name, span)),
                             type_args: None,
+                            metadata: Default::default(),
                         }),
                     )?
                     .map(Cow::into_owned)
@@ -1510,7 +1511,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 self.exclude_type(span, constraint, &excluded);
                 if constraint.is_never() {
-                    *ty = Type::never(span);
+                    *ty = Type::never(span, Default::default());
                     return;
                 }
             }
