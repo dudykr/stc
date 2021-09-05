@@ -22,7 +22,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{name::Name, Array, Id, Key, KeywordType, Union};
+use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
 use stc_ts_utils::MapWithMut;
 use stc_utils::ext::SpanExt;
 use std::{
@@ -33,7 +33,7 @@ use std::{
     ops::{AddAssign, BitOr, Not},
 };
 use swc_atoms::JsWord;
-use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::info;
 
@@ -684,7 +684,7 @@ impl Analyzer<'_, '_> {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None));
                     let lhs_ty = match lhs_ty {
                         Ok(v) => v,
-                        _ => Type::any(lhs.span()),
+                        _ => Type::any(lhs.span(), Default::default()),
                     };
 
                     if op == op!("=") {
@@ -1149,6 +1149,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Union(Union {
                     span: ty.span(),
                     types: new_types,
+                    metadata: ty.metadata,
                 }));
             }
             _ => {}
@@ -1183,13 +1184,25 @@ impl Analyzer<'_, '_> {
                     // }
 
                     if prop_ty.is_never() {
-                        return Ok(Type::never(src.span()));
+                        return Ok(Type::never(
+                            src.span(),
+                            KeywordTypeMetadata {
+                                common: src.metadata(),
+                                ..Default::default()
+                            },
+                        ));
                     }
                 }
             }
             Err(err) => match err.actual() {
                 Error::NoSuchProperty { .. } | Error::NoSuchPropertyInClass { .. } => {
-                    return Ok(Type::never(src.span()))
+                    return Ok(Type::never(
+                        src.span(),
+                        KeywordTypeMetadata {
+                            common: src.metadata(),
+                            ..Default::default()
+                        },
+                    ))
                 }
                 _ => {}
             },
