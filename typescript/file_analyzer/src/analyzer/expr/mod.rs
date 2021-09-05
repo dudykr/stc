@@ -1236,7 +1236,7 @@ impl Analyzer<'_, '_> {
                     if let Some(mut v) =
                         self.access_property_of_type_elements(span, &obj, prop, type_mode, &members, opts)?
                     {
-                        self.marks().infected_by_this_in_object_literal.apply_to_type(&mut v);
+                        v.metadata_mut().infected_by_this_in_object_literal = true;
                         return Ok(v);
                     }
 

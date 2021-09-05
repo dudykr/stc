@@ -1262,8 +1262,6 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        let implicit_type_mark = self.marks().implicit_type_mark;
-
         let mut members = Vec::with_capacity(obj.props.len());
 
         for props in &obj.props {
@@ -1324,9 +1322,14 @@ impl Analyzer<'_, '_> {
         if let Some(m) = &mut self.mutations {
             m.for_pats.entry(obj.node_id).or_default().ty.fill_with(|| {
                 Type::TypeLit(TypeLit {
-                    span: DUMMY_SP.apply_mark(implicit_type_mark),
+                    span: DUMMY_SP,
                     members,
-                    metadata: Default::default(),
+                    metadata: TypeLitMetadata {
+                        common: CommonTypeMetadata {
+                            implicit: true,
+                            ..Default::default()
+                        },
+                    },
                 })
             });
         }
