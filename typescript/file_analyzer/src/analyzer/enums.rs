@@ -123,6 +123,7 @@ impl Analyzer<'_, '_> {
                 is_const: e.is_const,
                 id: e.id.clone(),
                 members,
+                metadata: Default::default(),
             }
         };
 
@@ -134,7 +135,7 @@ impl Analyzer<'_, '_> {
             .map(Type::Enum)
             .map(Type::cheap)
             .report(&mut self.storage)
-            .unwrap_or_else(|| Type::any(span));
+            .unwrap_or_else(|| Type::any(span, Default::default()));
 
         self.register_type(name.clone(), stored_ty.clone());
 
@@ -442,6 +443,7 @@ impl Analyzer<'_, '_> {
                 ty: box Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
+                    metadata: Default::default(),
                 }),
             };
             members.push(TypeElement::Index(IndexSignature {
@@ -451,6 +453,7 @@ impl Analyzer<'_, '_> {
                 type_ann: Some(box Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
+                    metadata: Default::default(),
                 })),
                 is_static: false,
             }));
