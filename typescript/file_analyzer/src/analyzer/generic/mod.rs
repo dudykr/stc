@@ -17,8 +17,9 @@ use stc_ts_generics::type_param::{finder::TypeParamUsageFinder, remover::TypePar
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType,
-    LitType, Mapped, ModuleId, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, Type, TypeElement,
-    TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+    KeywordTypeMetadata, LitType, Mapped, ModuleId, Operator, OptionalType, PropertySignature, Ref, Tuple,
+    TupleElement, Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+    UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error::context, stack};
@@ -1588,7 +1589,7 @@ impl Analyzer<'_, '_> {
                                         // inferred.type_elements.remove(&name)
                                         None
                                     } else {
-                                        Some(box Type::any(i.span))
+                                        Some(box Type::any(i.span, Default::default()))
                                     };
                                     new_members.push(TypeElement::Index(IndexSignature { type_ann, ..i.clone() }));
                                 }
@@ -1601,7 +1602,8 @@ impl Analyzer<'_, '_> {
                                         ret_ty: arg_method
                                             .ret_ty
                                             .clone()
-                                            .unwrap_or_else(|| box Type::any(arg_method.span)),
+                                            .unwrap_or_else(|| box Type::any(arg_method.span, Default::default())),
+                                        metadata: Default::default(),
                                     });
                                     let type_ann = if let Some(param_ty) = param.ty.as_ref() {
                                         let old = take(&mut self.mapped_type_param_name);
@@ -1619,8 +1621,9 @@ impl Analyzer<'_, '_> {
                                     } else {
                                         None
                                     };
-                                    let type_ann =
-                                        type_ann.map(Box::new).or_else(|| Some(box Type::any(arg_method.span)));
+                                    let type_ann = type_ann
+                                        .map(Box::new)
+                                        .or_else(|| Some(box Type::any(arg_method.span, Default::default())));
 
                                     new_members.push(TypeElement::Property(PropertySignature {
                                         span: arg_method.span,
@@ -1661,6 +1664,10 @@ impl Analyzer<'_, '_> {
                         let mut keys = Type::Union(Union {
                             span: param.span,
                             types: key_types,
+                            metadata: UnionMetadata {
+                                common: param.metadata.common,
+                                ..Default::default()
+                            },
                         });
                         self.prevent_generalize(&mut keys);
 
@@ -1699,7 +1706,15 @@ impl Analyzer<'_, '_> {
                             name.clone(),
                             Cow::Owned(Type::Array(Array {
                                 span: arg.span,
-                                elem_type: box new_ty.unwrap_or_else(|| Type::any(arg.span)),
+                                elem_type: box new_ty.unwrap_or_else(|| {
+                                    Type::any(
+                                        arg.span,
+                                        KeywordTypeMetadata {
+                                            common: arg.metadata.common,
+                                            ..Default::default()
+                                        },
+                                    )
+                                }),
                                 metadata: arg.metadata,
                             })),
                             opts,
