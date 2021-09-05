@@ -698,7 +698,10 @@ impl Fold<Type> for Simplifier<'_> {
                     }
                     TypeElement::Property(p) => {
                         let span = p.span;
-                        return p.type_ann.map(|v| *v).unwrap_or_else(|| Type::any(span));
+                        return p
+                            .type_ann
+                            .map(|v| *v)
+                            .unwrap_or_else(|| Type::any(span, Default::default()));
                     }
                     TypeElement::Method(_) => {
                         unimplemented!("Generic mapped type inference involving `Method` element")
@@ -743,7 +746,7 @@ impl Fold<Type> for Simplifier<'_> {
                             return *value;
                         }
 
-                        return Type::any(p.span);
+                        return Type::any(p.span, Default::default());
                     }
                     ClassMember::Constructor(_) => unreachable!(),
                     ClassMember::IndexSignature(_) => unreachable!(),
@@ -786,7 +789,7 @@ impl Fold<Type> for Simplifier<'_> {
                                     return *value.clone();
                                 }
 
-                                return Type::any(p.span);
+                                return Type::any(p.span, Default::default());
                             }
                             ClassMember::Constructor(_) => unreachable!(),
                             ClassMember::IndexSignature(_) => unreachable!(),
