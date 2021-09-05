@@ -170,8 +170,13 @@ struct LitChecker {
 impl Visit<Type> for LitChecker {
     fn visit(&mut self, ty: &Type) {
         match ty {
-            Type::Lit(LitType { span, ref lit, .. }) => {
-                if self.marks.prevent_generalization_mark.is_marked(span) {
+            Type::Lit(LitType {
+                span,
+                ref lit,
+                metadata,
+                ..
+            }) => {
+                if metadata.common.prevent_generalization {
                     return;
                 }
 

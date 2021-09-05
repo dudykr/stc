@@ -3,7 +3,6 @@ pub(crate) use self::{array::GetIteratorOpts, call_new::CallOpts};
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        marks::MarkExt,
         pat::PatMode,
         scope::{ExpandOpts, ScopeKind, VarKind},
         util::ResultExt,

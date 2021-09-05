@@ -1,7 +1,6 @@
 use crate::{
     analyzer::{
         expr::{IdCtx, TypeOfMode},
-        marks::MarkExt,
         pat::PatMode,
         scope::ScopeKind,
         util::ResultExt,
@@ -551,11 +550,7 @@ impl Analyzer<'_, '_> {
 
                             // Preserve return type if `this` is not involved in return type.
                             if p.function.return_type.is_none() {
-                                inferred_ret_ty = if child
-                                    .marks()
-                                    .infected_by_this_in_object_literal
-                                    .is_marked(&inferred_ret_ty)
-                                {
+                                inferred_ret_ty = if inferred_ret_ty.metadata().infected_by_this_in_object_literal {
                                     Type::any(span, Default::default())
                                 } else {
                                     inferred_ret_ty

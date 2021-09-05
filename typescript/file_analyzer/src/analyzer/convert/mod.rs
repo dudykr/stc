@@ -1,8 +1,5 @@
 use crate::{
-    analyzer::{
-        expr::TypeOfMode, marks::MarkExt, props::ComputedPropMode, scope::VarKind, util::ResultExt, Analyzer, Ctx,
-        ScopeKind,
-    },
+    analyzer::{expr::TypeOfMode, props::ComputedPropMode, scope::VarKind, util::ResultExt, Analyzer, Ctx, ScopeKind},
     util::{contains_infer_type, type_ext::TypeVecExt},
     validator,
     validator::ValidateWith,

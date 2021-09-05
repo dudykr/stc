@@ -1,5 +1,5 @@
 use crate::{
-    analyzer::{expr::TypeOfMode, generic::ExtendsOpts, marks::MarkExt, Analyzer, Ctx},
+    analyzer::{expr::TypeOfMode, generic::ExtendsOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
     util::{type_ext::TypeVecExt, unwrap_ref_with_single_arg},
     Marks, ValidationResult,
@@ -1675,7 +1675,7 @@ impl VisitMut<Type> for TupleNormalizer {
 
         match ty.normalize() {
             Type::Tuple(tuple) => {
-                if self.marks.prevent_tuple_to_array.is_marked(tuple.span) {
+                if tuple.metadata.common.prevent_tuple_to_array {
                     return;
                 }
 

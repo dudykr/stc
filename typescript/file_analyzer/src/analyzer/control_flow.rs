@@ -2,7 +2,6 @@ use crate::{
     analyzer::{
         assign::AssignOpts,
         expr::{AccessPropertyOpts, IdCtx, TypeOfMode},
-        marks::MarkExt,
         scope::{ScopeKind, VarInfo},
         util::ResultExt,
         Analyzer, Ctx,
