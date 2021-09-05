@@ -512,7 +512,7 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                     ..
                 }) => {
-                    return Ok(Type::any(span));
+                    return Ok(Type::any(span, Default::default()));
                 }
 
                 Type::This(..) => {
@@ -520,7 +520,7 @@ impl Analyzer<'_, '_> {
                         self.storage
                             .report(Error::CannotReferenceThisInComputedPropName { span });
                         // Return any to prevent other errors
-                        return Ok(Type::any(span));
+                        return Ok(Type::any(span, Default::default()));
                     }
                 }
 
@@ -536,6 +536,7 @@ impl Analyzer<'_, '_> {
                             span,
                             params: vec![*obj.elem_type.clone()],
                         }),
+                        metadata: Default::default(),
                     });
                     return self.call_property(
                         span,
@@ -1084,7 +1085,7 @@ impl Analyzer<'_, '_> {
                         }) => candidates.push(CallCandidate {
                             // TODO: Maybe we need Option<Vec<T>>.
                             params: Default::default(),
-                            ret_ty: Type::any(span),
+                            ret_ty: Type::any(span, Default::default()),
                             type_params: Default::default(),
                         }),
 
@@ -2132,6 +2133,7 @@ impl Analyzer<'_, '_> {
                             &Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
+                                metadata: Default::default(),
                             }),
                         )
                         .is_ok()
@@ -2987,6 +2989,7 @@ impl Analyzer<'_, '_> {
             return Ok(Type::Intersection(Intersection {
                 span,
                 types: vec![orig_ty.into_owned(), new_ty.into_owned()],
+                metadata: Default::default(),
             }));
         }
 
@@ -3004,6 +3007,7 @@ impl Analyzer<'_, '_> {
                                         return Ok(Type::Class(Class {
                                             span,
                                             def: box def.clone(),
+                                            metadata: Default::default(),
                                         }))
                                     }
                                     _ => {}
@@ -3052,6 +3056,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Class(Class {
                     span,
                     def: box def.clone(),
+                    metadata: Default::default(),
                 }))
             }
             _ => {}
