@@ -2199,6 +2199,7 @@ impl Analyzer<'_, '_> {
                                     kind: Default::default(),
                                     value: key.clone(),
                                 }),
+                                metadata: Default::default(),
                             }));
                         }
                         _ => {}
