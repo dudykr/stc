@@ -2891,8 +2891,10 @@ impl Analyzer<'_, '_> {
             // We will expand this type query to proper type while calculating returns types
             // of a function.
             return Ok(Type::Query(QueryType {
-                span,
+                // TODO: This is a regession.
+                span: span.with_ctxt(SyntaxContext::empty()),
                 expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(id.into())),
+                metadata: Default::default(),
             }));
         }
 
