@@ -131,6 +131,7 @@ impl Analyzer<'_, '_> {
                                     span,
                                     value: if *op == op!(unary, "-") { -(*value) } else { *value },
                                 }),
+                                metadata: Default::default(),
                             }));
                         }
                         _ => {}
