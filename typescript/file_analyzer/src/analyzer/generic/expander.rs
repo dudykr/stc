@@ -10,8 +10,8 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::{type_param::finder::TypeParamUsageFinder, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    ComputedKey, Function, Id, IdCtx, Interface, Key, KeywordType, LitType, TypeParam, TypeParamDecl,
-    TypeParamInstantiation,
+    ArrayMetadata, ComputedKey, Function, Id, IdCtx, Interface, Key, KeywordType, KeywordTypeMetadata, LitType,
+    TypeParam, TypeParamDecl, TypeParamInstantiation,
 };
 use stc_utils::{error::context, ext::SpanExt, stack};
 use std::time::{Duration, Instant};
@@ -433,6 +433,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                 span,
                 type_name: RTsEntityName::Ident(ref i),
                 ref type_args,
+                metadata,
                 ..
             }) => {
                 if i.sym == js_word!("Array") {
@@ -441,7 +442,19 @@ impl GenericExpander<'_, '_, '_, '_> {
                         elem_type: box type_args
                             .as_ref()
                             .and_then(|args| args.params.iter().next().cloned())
-                            .unwrap_or_else(|| Type::any(span)),
+                            .unwrap_or_else(|| {
+                                Type::any(
+                                    span,
+                                    KeywordTypeMetadata {
+                                        common: metadata.common,
+                                        ..Default::default()
+                                    },
+                                )
+                            }),
+                        metadata: ArrayMetadata {
+                            common: metadata.common,
+                            ..Default::default()
+                        },
                     });
                 }
 
@@ -586,10 +599,9 @@ impl GenericExpander<'_, '_, '_, '_> {
                                                             analyzer: self.analyzer,
                                                             key: &p.key,
                                                             param_name: &param.name,
-                                                            prop_ty: &*p
-                                                                .type_ann
-                                                                .clone()
-                                                                .unwrap_or_else(|| box Type::any(p.span)),
+                                                            prop_ty: &*p.type_ann.clone().unwrap_or_else(|| {
+                                                                box Type::any(p.span, Default::default())
+                                                            }),
                                                         }),
                                                         ..p.clone()
                                                     }))
@@ -701,6 +713,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                         readonly,
                         obj_type,
                         index_type,
+                        metadata,
                     })) => {
                         let obj_type = box obj_type.foldable();
                         // TODO: PERF
@@ -742,6 +755,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                                 readonly,
                                 obj_type,
                                 index_type,
+                                metadata,
                             })),
                         }
                     }
@@ -754,6 +768,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                             span,
                             op: TsTypeOperatorOp::KeyOf,
                             ty,
+                            ..
                         }) => match ty.normalize() {
                             Type::Keyword(..) if m.optional == None && m.readonly == None => return *ty.clone(),
                             Type::TypeLit(TypeLit {
