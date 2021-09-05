@@ -2928,6 +2928,8 @@ impl Analyzer<'_, '_> {
     }
 
     fn narrow_type_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> ValidationResult {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         let orig_ty = self
             .normalize(Some(span), Cow::Borrowed(orig_ty), Default::default())
             .context("tried to normalize original type")?;
