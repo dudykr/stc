@@ -1028,6 +1028,8 @@ impl Analyzer<'_, '_> {
         prop: &Key,
         opts: CallOpts,
     ) {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
                 if opts.disallow_optional_object_property && m.optional {
@@ -1109,6 +1111,8 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> ValidationResult {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         // Candidates of the method call.
         //
         // 4 is just an unscientific guess
