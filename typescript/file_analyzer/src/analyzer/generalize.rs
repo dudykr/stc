@@ -9,8 +9,9 @@ use stc_ts_ast_rnode::{RNumber, RStr, RTsLit};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped,
-    Operator, PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam, Union,
+    Array, Class, ClassDef, ClassMember, IndexedAccessType, IndexedAccessTypeMetadata, Key, KeywordType,
+    KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, TypeElement, TypeLit, TypeLitMetadata,
+    TypeParam, Union,
 };
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Mark, Span, Spanned};
@@ -219,13 +220,41 @@ impl Fold<Type> for Simplifier<'_> {
                     .get_global_type(
                         span,
                         &match k.kind {
-                            TsKeywordTypeKind::TsAnyKeyword => return Type::any(span),
-                            TsKeywordTypeKind::TsUnknownKeyword => return Type::unknown(span),
-                            TsKeywordTypeKind::TsNeverKeyword => return Type::never(span),
+                            TsKeywordTypeKind::TsAnyKeyword => {
+                                return Type::any(
+                                    span,
+                                    KeywordTypeMetadata {
+                                        common: metadata.common,
+                                        ..Default::default()
+                                    },
+                                )
+                            }
+                            TsKeywordTypeKind::TsUnknownKeyword => {
+                                return Type::unknown(
+                                    span,
+                                    KeywordTypeMetadata {
+                                        common: metadata.common,
+                                        ..Default::default()
+                                    },
+                                )
+                            }
+                            TsKeywordTypeKind::TsNeverKeyword => {
+                                return Type::never(
+                                    span,
+                                    KeywordTypeMetadata {
+                                        common: metadata.common,
+                                        ..Default::default()
+                                    },
+                                )
+                            }
                             TsKeywordTypeKind::TsIntrinsicKeyword => {
                                 return Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsIntrinsicKeyword,
+                                    metadata: KeywordTypeMetadata {
+                                        common: metadata.common,
+                                        ..Default::default()
+                                    },
                                 })
                             }
                             TsKeywordTypeKind::TsNumberKeyword => js_word!("Number"),
@@ -242,6 +271,10 @@ impl Fold<Type> for Simplifier<'_> {
                                     readonly,
                                     obj_type: box Type::Keyword(k),
                                     index_type,
+                                    metadata: IndexedAccessTypeMetadata {
+                                        common: metadata.common,
+                                        ..Default::default()
+                                    },
                                 })
                             }
                         },
