@@ -227,6 +227,7 @@ impl Analyzer<'_, '_> {
                                         &extends_type,
                                         &c.true_type,
                                         &c.false_type,
+                                        c.metadata,
                                     )
                                     .context("tried to reduce conditional type")?;
 

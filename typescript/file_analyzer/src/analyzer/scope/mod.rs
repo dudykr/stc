@@ -1960,7 +1960,7 @@ impl Expander<'_, '_, '_> {
                     }
                 }
                 if i.sym == js_word!("void") {
-                    return Ok(Some(Type::any(span)));
+                    return Ok(Some(Type::any(span, Default::default())));
                 }
 
                 info!("Info: {}{:?}", i.sym, i.span.ctxt);
@@ -2132,7 +2132,7 @@ impl Expander<'_, '_, '_> {
                 }
 
                 if i.sym == *"undefined" || i.sym == *"null" {
-                    return Ok(Some(Type::any(span)));
+                    return Ok(Some(Type::any(span, Default::default())));
                 }
 
                 error!(
@@ -2166,7 +2166,7 @@ impl Expander<'_, '_, '_> {
                         )
                         .context("tried to access property as a part of type expansion")
                         .report(&mut self.analyzer.storage)
-                        .unwrap_or_else(|| Type::any(span));
+                        .unwrap_or_else(|| Type::any(span, Default::default()));
                     return Ok(Some(ty));
                 }
             }
@@ -2174,7 +2174,7 @@ impl Expander<'_, '_, '_> {
 
         print_backtrace();
 
-        Ok(Some(Type::any(span)))
+        Ok(Some(Type::any(span, Default::default())))
     }
 
     #[instrument(name = "Expander.expand_ref", skip(self, r, was_top_level))]
