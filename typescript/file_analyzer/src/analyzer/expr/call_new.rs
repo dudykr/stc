@@ -35,7 +35,8 @@ use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
     type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Id, IdCtx, IndexedAccessType,
-    Instance, Interface, Intersection, Key, KeywordType, LitType, ModuleId, Ref, Symbol, ThisType, Union,
+    Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, Symbol, ThisType,
+    Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
@@ -1852,7 +1853,11 @@ impl Analyzer<'_, '_> {
                             candidates.push(CallCandidate {
                                 type_params: m.type_params.clone().map(|v| v.params),
                                 params: m.params.clone(),
-                                ret_ty: m.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(m.span)),
+                                ret_ty: m
+                                    .ret_ty
+                                    .clone()
+                                    .map(|v| *v)
+                                    .unwrap_or_else(|| Type::any(m.span, Default::default())),
                             });
                         }
 
@@ -1860,7 +1865,11 @@ impl Analyzer<'_, '_> {
                             candidates.push(CallCandidate {
                                 type_params: m.type_params.clone().map(|v| v.params),
                                 params: m.params.clone(),
-                                ret_ty: m.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(m.span)),
+                                ret_ty: m
+                                    .ret_ty
+                                    .clone()
+                                    .map(|v| *v)
+                                    .unwrap_or_else(|| Type::any(m.span, Default::default())),
                             });
                         }
                         _ => {}
@@ -2550,6 +2559,10 @@ impl Analyzer<'_, '_> {
                             Type::Keyword(KeywordType {
                                 span: tp.span,
                                 kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                metadata: KeywordTypeMetadata {
+                                    common: tp.metadata.common,
+                                    ..Default::default()
+                                },
                             }),
                         );
                     }
@@ -3188,7 +3201,7 @@ impl Analyzer<'_, '_> {
                         .unwrap_or_else(|| TypeOrSpread {
                             span: arg.span(),
                             spread: arg.spread,
-                            ty: box Type::any(arg.expr.span()),
+                            ty: box Type::any(arg.expr.span(), Default::default()),
                         })
                 })
                 .collect();
@@ -3263,6 +3276,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 span,
                 obj_type: ref obj_ty @ box Type::Ref(..),
                 index_type,
+                metadata,
                 ..
             }) if is_str_lit_or_union(&index_type) => {
                 let mut types: Vec<Type> = vec![];
@@ -3317,7 +3331,15 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                     }
                 }
 
-                *ty = Type::Union(Union { span: *span, types }).fixed();
+                *ty = Type::Union(Union {
+                    span: *span,
+                    types,
+                    metadata: UnionMetadata {
+                        common: metadata.common,
+                        ..Default::default()
+                    },
+                })
+                .fixed();
                 return;
             }
 
@@ -3333,6 +3355,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 ctxt,
                 type_name: RTsEntityName::Ident(i),
                 type_args: Some(type_args),
+                metadata,
             }) if type_args.params.len() == 1
                 && type_args.params.iter().any(|ty| match ty.normalize() {
                     Type::Union(..) => true,
@@ -3357,6 +3380,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                                     span: type_args.span,
                                                     params: vec![ty.clone()],
                                                 }),
+                                                metadata: *metadata,
                                             }))
                                         }
                                     }
