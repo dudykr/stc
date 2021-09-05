@@ -836,7 +836,7 @@ impl Analyzer<'_, '_> {
 
                             if let Some(ref type_ann) = p.type_ann {
                                 if p.optional {
-                                    let mut types = vec![Type::undefined(span), *type_ann.clone()];
+                                    let mut types = vec![Type::undefined(span, Default::default()), *type_ann.clone()];
                                     types.dedup_type();
                                     matching_elements.push(Type::union(types));
                                 } else {
@@ -888,13 +888,13 @@ impl Analyzer<'_, '_> {
                         //
                         //
                         if *prop_sym == js_word!("Infinity") {
-                            return Ok(Some(Type::any(span)));
+                            return Ok(Some(Type::any(span, Default::default())));
                         } else if prop_sym.starts_with("0b") || prop_sym.starts_with("0B") {
                             let prop_num = lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 2);
 
                             if let Ok(prop_num) = prop_num {
                                 if key.value == prop_num {
-                                    return Ok(Some(Type::any(span)));
+                                    return Ok(Some(Type::any(span, Default::default())));
                                 }
                             }
                         } else if prop_sym.starts_with("0o") || prop_sym.starts_with("0O") {
@@ -1204,7 +1204,7 @@ impl Analyzer<'_, '_> {
             {
                 if let Some(declaring) = &self.scope.declaring_prop() {
                     if prop == declaring.sym() {
-                        return Ok(Type::any(span));
+                        return Ok(Type::any(span, Default::default()));
                     }
                 }
             }
@@ -1215,7 +1215,7 @@ impl Analyzer<'_, '_> {
                         //
                         match &*prop.expr {
                             RExpr::Cond(..) => {
-                                return Ok(Type::any(span));
+                                return Ok(Type::any(span, Default::default()));
                             }
                             _ => {}
                         }
@@ -1256,7 +1256,10 @@ impl Analyzer<'_, '_> {
 
                                 ClassMember::Property(member @ ClassProperty { is_static: false, .. }) => {
                                     if member.key.type_eq(prop) {
-                                        let ty = *member.value.clone().unwrap_or_else(|| box Type::any(span));
+                                        let ty = *member
+                                            .value
+                                            .clone()
+                                            .unwrap_or_else(|| box Type::any(span, Default::default()));
                                         let ty = match self.expand_top_ref(span, Cow::Borrowed(&ty), Default::default())
                                         {
                                             Ok(new_ty) => {
@@ -1266,7 +1269,7 @@ impl Analyzer<'_, '_> {
                                                     ty
                                                 }
                                             }
-                                            Err(..) => Type::any(span),
+                                            Err(..) => Type::any(span, Default::default()),
                                         };
 
                                         return Ok(ty);
@@ -1344,6 +1347,7 @@ impl Analyzer<'_, '_> {
                         readonly: false,
                         obj_type: box Type::This(this.clone()),
                         index_type: prop_ty,
+                        metadata: Default::default(),
                     }));
                 }
 

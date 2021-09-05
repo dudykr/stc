@@ -85,7 +85,7 @@ impl Analyzer<'_, '_> {
             ty.assert_valid();
         }
 
-        let span = pat.span();
+        let span = pat.span().with_ctxt(SyntaxContext::empty());
 
         if match pat {
             RPat::Ident(..) => false,
@@ -153,7 +153,7 @@ impl Analyzer<'_, '_> {
                     .right
                     .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref().or(ty.as_ref())))
                     .report(&mut self.storage)
-                    .unwrap_or_else(|| Type::any(span));
+                    .unwrap_or_else(|| Type::any(span, Default::default()));
 
                 if let Some(left) = &type_ann {
                     self.assign_with_opts(
@@ -208,7 +208,7 @@ impl Analyzer<'_, '_> {
                         .context("tried to convert a type to an iterator to assign with an array pattern.")
                         .unwrap_or_else(|err| {
                             self.storage.report(err);
-                            Cow::Owned(Type::any(span))
+                            Cow::Owned(Type::any(span, Default::default()))
                         })
                     });
 
@@ -226,7 +226,7 @@ impl Analyzer<'_, '_> {
                         )
                         .unwrap_or_else(|err| {
                             self.storage.report(err);
-                            Cow::Owned(Type::any(span))
+                            Cow::Owned(Type::any(span, Default::default()))
                         })
                     });
 
@@ -587,6 +587,7 @@ impl Analyzer<'_, '_> {
                     Type::Array(Array {
                         span,
                         elem_type: box ty,
+                        metadata: Default::default(),
                     })
                 });
                 return self.add_vars(
@@ -596,12 +597,14 @@ impl Analyzer<'_, '_> {
                         Type::Array(Array {
                             span,
                             elem_type: box ty,
+                            metadata: Default::default(),
                         })
                     }),
                     default.map(|ty| {
                         Type::Array(Array {
                             span,
                             elem_type: box ty,
+                            metadata: Default::default(),
                         })
                     }),
                     opts,
