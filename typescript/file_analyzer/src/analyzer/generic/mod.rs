@@ -17,9 +17,9 @@ use stc_ts_generics::type_param::{finder::TypeParamUsageFinder, remover::TypePar
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType,
-    KeywordTypeMetadata, LitType, Mapped, ModuleId, Operator, OptionalType, PropertySignature, Ref, Tuple,
-    TupleElement, Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
-    UnionMetadata,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, ModuleId, Operator, OptionalType, PropertySignature, Ref,
+    Tuple, TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl,
+    TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error::context, stack};
@@ -221,6 +221,10 @@ impl Analyzer<'_, '_> {
                                         ty,
                                     })
                                     .collect(),
+                                metadata: TupleMetadata {
+                                    common: p.ty.metadata(),
+                                    ..Default::default()
+                                },
                             }),
                             opts,
                         )?;
@@ -753,6 +757,10 @@ impl Analyzer<'_, '_> {
                                 name: name.clone(),
                                 constraint: None,
                                 default: None,
+                                metadata: TypeParamMetadata {
+                                    common: arg.metadata(),
+                                    ..Default::default()
+                                },
                             }));
                         }
                     }
@@ -1529,6 +1537,10 @@ impl Analyzer<'_, '_> {
                                         key_types.push(Type::Lit(LitType {
                                             span: param.span,
                                             lit: RTsLit::Number(n.clone()),
+                                            metadata: LitTypeMetadata {
+                                                common: param.metadata.common,
+                                                ..Default::default()
+                                            },
                                         }));
                                     }
                                     _ => {
@@ -1560,8 +1572,9 @@ impl Analyzer<'_, '_> {
                                     } else {
                                         None
                                     };
-                                    let type_ann =
-                                        type_ann.map(Box::new).or_else(|| Some(box Type::any(arg_prop.span)));
+                                    let type_ann = type_ann
+                                        .map(Box::new)
+                                        .or_else(|| Some(box Type::any(arg_prop.span, Default::default())));
 
                                     new_members.push(TypeElement::Property(PropertySignature {
                                         optional: calc_true_plus_minus_in_param(optional, arg_prop.optional),
