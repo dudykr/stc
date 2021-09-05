@@ -1299,6 +1299,7 @@ impl Analyzer<'_, '_> {
                     self.scope.this = Some(Type::Class(Class {
                         span,
                         def: box cls.clone(),
+                        metadata: Default::default(),
                     }));
 
                     if cls.is_abstract {
@@ -1317,6 +1318,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::Class(Class {
                             span,
                             def: box cls.clone(),
+                            metadata: Default::default(),
                         }));
                     }
 
@@ -1367,6 +1369,7 @@ impl Analyzer<'_, '_> {
                                 Type::Class(Class {
                                     span,
                                     def: box cls.clone(),
+                                    metadata: Default::default(),
                                 }),
                                 type_args,
                                 args,
@@ -1422,6 +1425,7 @@ impl Analyzer<'_, '_> {
                             Type::Class(Class {
                                 span,
                                 def: box cls.clone(),
+                                metadata: Default::default(),
                             }),
                             type_args,
                             args,
@@ -1451,7 +1455,11 @@ impl Analyzer<'_, '_> {
                 Type::This(..) => {
                     return Ok(Type::Instance(Instance {
                         span,
-                        ty: box Type::This(ThisType { span }),
+                        ty: box Type::This(ThisType {
+                            span,
+                            metadata: Default::default(),
+                        }),
+                        metadata: Default::default(),
                     }))
                 }
 
@@ -1489,7 +1497,7 @@ impl Analyzer<'_, '_> {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
-            }) => return Ok(Type::any(span)),
+            }) => return Ok(Type::any(span, Default::default())),
 
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
@@ -1520,7 +1528,7 @@ impl Analyzer<'_, '_> {
                 expr,
                 f.type_params.as_ref().map(|v| &*v.params),
                 &f.params,
-                Type::any(span),
+                Type::any(span, Default::default()),
                 type_args,
                 args,
                 arg_types,
