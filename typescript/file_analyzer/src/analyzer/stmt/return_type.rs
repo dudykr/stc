@@ -380,8 +380,9 @@ impl Analyzer<'_, '_> {
                             type_name: RTsEntityName::Ident(RIdent::new(name.into(), node.span)),
                             type_args: Some(box TypeParamInstantiation {
                                 span: node.span,
-                                params: vec![Type::any(DUMMY_SP), ty.clone()],
+                                params: vec![Type::any(DUMMY_SP, Default::default()), ty.clone()],
                             }),
+                            metadata: Default::default(),
                         }),
                     )
                     .report(&mut self.storage);
@@ -446,7 +447,7 @@ impl Analyzer<'_, '_> {
                             Ok(()) => {}
                             Err(err) => {
                                 self.storage.report(err);
-                                return Ok(Type::any(span));
+                                return Ok(Type::any(span, Default::default()));
                             }
                         }
                     }
@@ -455,7 +456,7 @@ impl Analyzer<'_, '_> {
                             span,
                             cause: Some(box err),
                         });
-                        return Ok(Type::any(span));
+                        return Ok(Type::any(span, Default::default()));
                     }
                 }
             }
@@ -465,10 +466,11 @@ impl Analyzer<'_, '_> {
             self.scope.return_values.yield_types.push(Type::Keyword(KeywordType {
                 span: e.span,
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                metadata: Default::default(),
             }));
         }
 
-        Ok(Type::any(e.span))
+        Ok(Type::any(e.span, Default::default()))
     }
 }
 
