@@ -109,7 +109,7 @@ impl BuiltIn {
                                             super_class: None,
                                             // implements: vec![],
                                             type_params: c.class.type_params.validate_with(analyzer).map(|opt| {
-                                                opt.expect("builtin: failed to parse type parmas of a class")
+                                                box opt.expect("builtin: failed to parse type parmas of a class")
                                             }),
                                             implements: c
                                                 .class

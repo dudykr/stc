@@ -187,7 +187,7 @@ impl Analyzer<'_, '_> {
                 ScopeKind::Flow,
                 Default::default(),
                 |child: &mut Analyzer| -> ValidationResult<_> {
-                    let type_params = try_opt!(d.type_params.validate_with(child));
+                    let type_params = try_opt!(d.type_params.validate_with(child)).map(Box::new);
 
                     let mut ty = match &*d.type_ann {
                         RTsType::TsKeywordType(RTsKeywordType {

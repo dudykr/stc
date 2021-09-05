@@ -1603,7 +1603,7 @@ impl Analyzer<'_, '_> {
                 child.scope.this_class_name = name.clone();
 
                 // We handle type parameters first.
-                let type_params = try_opt!(c.type_params.validate_with(child));
+                let type_params = try_opt!(c.type_params.validate_with(child)).map(Box::new);
                 child.resolve_parent_interfaces(&c.implements);
 
                 let super_class = {

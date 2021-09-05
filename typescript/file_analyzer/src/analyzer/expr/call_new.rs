@@ -1355,7 +1355,7 @@ impl Analyzer<'_, '_> {
                         let type_params = constructor
                             .type_params
                             .as_ref()
-                            .or_else(|| cls.type_params.as_ref())
+                            .or_else(|| cls.type_params.as_deref())
                             .map(|v| &*v.params);
                         // TODO: Constructor's return type.
 
