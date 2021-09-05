@@ -15,8 +15,8 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, Function, Id, Interface, Operator, Ref, Type, TypeElement, TypeLit, TypeParam,
-    Union,
+    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordTypeMetadata, Operator, Ref,
+    Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use std::{
     borrow::Cow,
@@ -183,6 +183,10 @@ impl Analyzer<'_, '_> {
                         name: name.clone(),
                         constraint: None,
                         default: None,
+                        metadata: TypeParamMetadata {
+                            common: ty.metadata(),
+                            ..Default::default()
+                        },
                     }));
                 }
             }
@@ -307,6 +311,10 @@ impl Analyzer<'_, '_> {
                 &Type::Array(Array {
                     span: param.span(),
                     elem_type: box elem_type.clone(),
+                    metadata: ArrayMetadata {
+                        common: param.metadata(),
+                        ..Default::default()
+                    },
                 }),
                 arg,
                 InferTypeOpts {
@@ -506,6 +514,7 @@ impl Analyzer<'_, '_> {
                                             .ret_ty
                                             .clone()
                                             .unwrap_or_else(|| box Type::any(span, Default::default())),
+                                        metadata: Default::default(),
                                     }),
                                     opts,
                                 )?;
@@ -530,6 +539,7 @@ impl Analyzer<'_, '_> {
                                             .ret_ty
                                             .clone()
                                             .unwrap_or_else(|| box Type::any(span, Default::default())),
+                                        metadata: Default::default(),
                                     }),
                                     &at,
                                     opts,
@@ -733,12 +743,24 @@ impl Analyzer<'_, '_> {
     /// TODO: Handle union
     fn replace_null_or_undefined_while_defaulting_to_any(&self, ty: &mut Type) {
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
-            *ty = Type::any(ty.span());
+            *ty = Type::any(
+                ty.span(),
+                KeywordTypeMetadata {
+                    common: ty.metadata(),
+                    ..Default::default()
+                },
+            );
             return;
         }
 
         if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
-            *ty = Type::any(ty.span());
+            *ty = Type::any(
+                ty.span(),
+                KeywordTypeMetadata {
+                    common: ty.metadata(),
+                    ..Default::default()
+                },
+            );
             return;
         }
 
