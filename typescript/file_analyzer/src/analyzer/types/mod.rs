@@ -492,6 +492,7 @@ impl Analyzer<'_, '_> {
                         &c.extends_type,
                         &c.true_type,
                         &c.false_type,
+                        c.metadata,
                     )? {
                         worked = true;
                         true_type = Cow::Owned(ty)
@@ -515,6 +516,7 @@ impl Analyzer<'_, '_> {
                         &c.extends_type,
                         &c.true_type,
                         &c.false_type,
+                        c.metadata,
                     )? {
                         worked = true;
                         false_type = Cow::Owned(ty)
