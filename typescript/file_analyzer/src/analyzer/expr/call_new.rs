@@ -35,7 +35,7 @@ use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
     type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Id, IdCtx, IndexedAccessType,
-    Instance, Interface, Intersection, Key, KeywordType, LitType, ModuleId, Ref, Symbol, Union,
+    Instance, Interface, Intersection, Key, KeywordType, LitType, ModuleId, Ref, Symbol, ThisType, Union,
 };
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
@@ -387,6 +387,7 @@ impl Analyzer<'_, '_> {
                         ctxt: analyzer.ctx.module_id,
                         type_name: RTsEntityName::Ident(i.clone()),
                         type_args: Default::default(),
+                        metadata: Default::default(),
                     });
                     // It's specified by user
                     analyzer.prevent_expansion(&mut ty);
@@ -1431,7 +1432,7 @@ impl Analyzer<'_, '_> {
                 Type::This(..) => {
                     return Ok(Type::Instance(Instance {
                         span,
-                        ty: box Type::This(RTsThisType { span }),
+                        ty: box Type::This(ThisType { span }),
                     }))
                 }
 
