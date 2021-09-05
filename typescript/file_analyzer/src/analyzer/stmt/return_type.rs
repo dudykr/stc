@@ -523,7 +523,9 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                         span: op_span,
                         op: TsTypeOperatorOp::KeyOf,
                         ty: ref index_type,
+                        metadata: op_metadata,
                     }),
+                metadata,
             }) => {
                 let ctx = Ctx {
                     preserve_ref: false,
@@ -648,6 +650,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                 readonly,
                                 obj_type: obj_type.clone(),
                                 index_type: box Type::union(types),
+                                metadata,
                             });
                         }
                         _ => {}
