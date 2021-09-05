@@ -9,8 +9,8 @@ use stc_ts_ast_rnode::{RNumber, RStr, RTsLit};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator,
-    PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam, Union,
+    Array, Class, ClassDef, ClassMember, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped,
+    Operator, PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam, Union,
 };
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Mark, Span, Spanned};
@@ -211,6 +211,7 @@ impl Fold<Type> for Simplifier<'_> {
                 readonly,
                 obj_type: box Type::Keyword(k),
                 index_type,
+                metadata,
                 ..
             }) => {
                 let obj_type = self
@@ -288,7 +289,13 @@ impl Fold<Type> for Simplifier<'_> {
             }
 
             Type::Union(u) if u.types.is_empty() => {
-                return Type::never(u.span);
+                return Type::never(
+                    u.span,
+                    KeywordTypeMetadata {
+                        common: u.metadata.common,
+                        ..Default::default()
+                    },
+                );
             }
 
             Type::Mapped(Mapped {
