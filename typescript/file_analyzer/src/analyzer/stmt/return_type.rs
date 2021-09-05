@@ -626,6 +626,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
 
                                         match key {
                                             Key::Normal { span: i_span, sym: key } => {
+                                                debug_assert_eq!(i_span.ctxt, SyntaxContext::empty());
                                                 let ty = Type::Lit(LitType {
                                                     span: i_span,
                                                     lit: RTsLit::Str(RStr {
@@ -634,6 +635,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                                         has_escape: false,
                                                         kind: Default::default(),
                                                     }),
+                                                    metadata: Default::default(),
                                                 });
 
                                                 if types.iter().all(|previous| !previous.type_eq(&ty)) {
