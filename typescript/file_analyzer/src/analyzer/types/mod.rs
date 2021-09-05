@@ -262,8 +262,9 @@ impl Analyzer<'_, '_> {
 
                                 if all {
                                     let new = Type::Union(Union {
-                                        span: actual_span,
+                                        span: actual_span.with_ctxt(SyntaxContext::empty()),
                                         types,
+                                        metadata: Default::default(),
                                     })
                                     .fixed();
 
@@ -319,8 +320,9 @@ impl Analyzer<'_, '_> {
                                         if all {
                                             types.dedup_type();
                                             let new = Type::Union(Union {
-                                                span: actual_span,
+                                                span: actual_span.with_ctxt(SyntaxContext::empty()),
                                                 types,
+                                                metadata: Default::default(),
                                             });
 
                                             *check_type_constraint = box new;
@@ -477,6 +479,7 @@ impl Analyzer<'_, '_> {
         if !check_type.normalize().is_type_param() {
             return Ok(None);
         }
+        let span = span.with_ctxt(SyntaxContext::empty());
         let mut worked = false;
 
         let mut true_type = self.normalize(Some(span), Cow::Borrowed(true_type), Default::default())?;
