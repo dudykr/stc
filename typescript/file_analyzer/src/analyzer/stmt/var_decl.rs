@@ -117,8 +117,8 @@ impl Analyzer<'_, '_> {
                     match self.declare_complex_vars(
                         VarKind::Var(kind),
                         &v.name,
-                        Type::any(v_span),
-                        Some(Type::any(v_span)),
+                        Type::any(v_span, Default::default()),
+                        Some(Type::any(v_span, Default::default())),
                         None,
                     ) {
                         Ok(()) => {}
