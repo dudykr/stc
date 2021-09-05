@@ -2569,6 +2569,7 @@ impl Expander<'_, '_, '_> {
                 mut extends_type,
                 mut true_type,
                 mut false_type,
+                metadata,
                 ..
             }) => {
                 // We need to handle infer type.
@@ -2606,6 +2607,7 @@ impl Expander<'_, '_, '_> {
                     extends_type,
                     true_type,
                     false_type,
+                    metadata,
                 });
             }
             _ => {}
