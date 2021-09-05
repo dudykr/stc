@@ -9,9 +9,9 @@ use stc_ts_ast_rnode::{RNumber, RStr, RTsLit};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, IndexedAccessType, IndexedAccessTypeMetadata, Key, KeywordType,
-    KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, TypeElement, TypeLit, TypeLitMetadata,
-    TypeParam, Union,
+    Array, Class, ClassDef, ClassMember, CommonTypeMetadata, IndexedAccessType, IndexedAccessTypeMetadata, Key,
+    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, PropertySignature, TypeElement,
+    TypeLit, TypeLitMetadata, TypeParam, Union,
 };
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Mark, Span, Spanned};
@@ -500,9 +500,11 @@ impl Fold<Type> for Simplifier<'_> {
                         let span = element.span();
 
                         match element {
-                            TypeElement::Property(p) if p.key == s.value => {
-                                Some(p.type_ann.map(|v| *v).unwrap_or_else(|| Type::any(span)))
-                            }
+                            TypeElement::Property(p) if p.key == s.value => Some(
+                                p.type_ann
+                                    .map(|v| *v)
+                                    .unwrap_or_else(|| Type::any(span, Default::default())),
+                            ),
                             _ => None,
                         }
                     })
@@ -525,15 +527,22 @@ impl Fold<Type> for Simplifier<'_> {
                             }),
                         ..
                     }),
+                metadata,
                 ..
             }) => {
-                let span = span.apply_mark(self.prevent_generalize_mark);
                 return Type::Lit(LitType {
                     span,
                     lit: RTsLit::Number(RNumber {
                         span,
                         value: tuple.elems.len() as _,
                     }),
+                    metadata: LitTypeMetadata {
+                        common: CommonTypeMetadata {
+                            prevent_generalization: true,
+                            ..metadata.common
+                        },
+                        ..Default::default()
+                    },
                 });
             }
 
@@ -549,11 +558,16 @@ impl Fold<Type> for Simplifier<'_> {
                             }),
                         ..
                     }),
+                metadata,
                 ..
             }) => {
                 return Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
+                    metadata: KeywordTypeMetadata {
+                        common: metadata.common,
+                        ..Default::default()
+                    },
                 });
             }
 
