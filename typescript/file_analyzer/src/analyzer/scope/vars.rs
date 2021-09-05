@@ -20,7 +20,7 @@ use stc_ts_types::{Array, Key, ModuleId, Ref, Type, TypeLit, TypeParamInstantiat
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
-use swc_common::{Span, Spanned, DUMMY_SP};
+use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
 use tracing::{debug, instrument};
 
@@ -618,6 +618,8 @@ impl Analyzer<'_, '_> {
 
     #[instrument(skip(self, span, ty, keys))]
     pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         let ty = (|| -> ValidationResult<_> {
             let ty = self.normalize(
                 None,
