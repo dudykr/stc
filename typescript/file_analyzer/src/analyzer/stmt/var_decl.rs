@@ -473,8 +473,10 @@ impl Analyzer<'_, '_> {
                                             box Type::Param(TypeParam {
                                                 span: elem_span,
                                                 constraint,
+                                                metadata: elem_metadata,
                                                 ..
                                             }),
+                                        metadata,
                                         ..
                                     }) => {
                                         Type::Array(Array {
@@ -485,13 +487,22 @@ impl Analyzer<'_, '_> {
                                                     box Type::Keyword(KeywordType {
                                                         span: *elem_span,
                                                         kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                        metadata: KeywordTypeMetadata {
+                                                            common: elem_metadata.common,
+                                                            ..Default::default()
+                                                        },
                                                     })
                                                 }
                                                 None => box Type::Keyword(KeywordType {
                                                     span: *elem_span,
                                                     kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                    metadata: KeywordTypeMetadata {
+                                                        common: elem_metadata.common,
+                                                        ..Default::default()
+                                                    },
                                                 }),
                                             },
+                                            metadata: *metadata,
                                         })
                                     }
 
