@@ -1041,7 +1041,11 @@ impl Analyzer<'_, '_> {
                     candidates.push(CallCandidate {
                         type_params: m.type_params.as_ref().map(|v| v.params.clone()),
                         params: m.params.clone(),
-                        ret_ty: m.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(m.span)),
+                        ret_ty: m
+                            .ret_ty
+                            .clone()
+                            .map(|v| *v)
+                            .unwrap_or_else(|| Type::any(m.span, Default::default())),
                     });
                 }
             }
