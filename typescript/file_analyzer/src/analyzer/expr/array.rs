@@ -4,7 +4,6 @@ use crate::{
             call_new::{ExtractKind, ReevalMode},
             AccessPropertyOpts, CallOpts, IdCtx, TypeOfMode,
         },
-        marks::MarkExt,
         types::NormalizeTypeOpts,
         Analyzer,
     },

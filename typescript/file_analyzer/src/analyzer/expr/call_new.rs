@@ -3231,12 +3231,14 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                     box Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsAnyKeyword,
+                        metadata,
                     }),
                 ..
             }) => {
                 *ty = Type::Keyword(KeywordType {
                     span: *span,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
+                    metadata: *metadata,
                 });
                 return;
             }
