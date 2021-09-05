@@ -79,9 +79,9 @@ pub struct CommonTypeMetadata {
 
     pub implicit: bool,
 
-    pub(super) infected_by_this_in_object_literal: bool,
+    pub infected_by_this_in_object_literal: bool,
 
-    pub(super) prevent_converting_to_children: bool,
+    pub prevent_converting_to_children: bool,
 
     /// This can be ignored based on the context.
     pub no_expand: bool,
