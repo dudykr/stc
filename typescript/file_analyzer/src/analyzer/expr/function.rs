@@ -7,7 +7,7 @@ use crate::{
 };
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr};
-use stc_ts_types::{Class, Function, KeywordType, Type};
+use stc_ts_types::{Class, ClassMetadata, Function, KeywordType, Type};
 use stc_ts_utils::{OptionExt, PatExt};
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -73,7 +73,14 @@ impl Analyzer<'_, '_> {
                 Some(ty) => {
                     let span = ty.span();
                     Some(match ty {
-                        Type::ClassDef(def) => Type::Class(Class { span, def: box def }),
+                        Type::ClassDef(def) => Type::Class(Class {
+                            span,
+                            metadata: ClassMetadata {
+                                common: def.metadata.common,
+                                ..Default::default()
+                            },
+                            def: box def,
+                        }),
                         _ => ty,
                     })
                 }
@@ -131,6 +138,7 @@ impl Analyzer<'_, '_> {
                 type_params,
                 ret_ty: box declared_ret_ty
                     .unwrap_or_else(|| inferred_return_type.unwrap_or_else(|| Type::void(f.span, Default::default()))),
+                metadata: Default::default(),
             })
         })
     }

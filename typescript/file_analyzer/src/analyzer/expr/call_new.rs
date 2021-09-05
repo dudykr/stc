@@ -746,6 +746,7 @@ impl Analyzer<'_, '_> {
                             )),
                             ctxt: ModuleId::builtin(),
                             type_args: None,
+                            metadata: Default::default(),
                         }),
                         prop,
                         type_args,
