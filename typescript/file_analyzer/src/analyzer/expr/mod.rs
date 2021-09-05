@@ -1583,8 +1583,9 @@ impl Analyzer<'_, '_> {
                         //
                         // Reverse mapping of enum returns string name of property
                         return Ok(Type::Keyword(KeywordType {
-                            span: prop.span(),
+                            span: prop.span().with_ctxt(SyntaxContext::empty()),
                             kind: TsKeywordTypeKind::TsStringKeyword,
+                            metadata: Default::default(),
                         }));
                     }
                 }
@@ -1892,7 +1893,7 @@ impl Analyzer<'_, '_> {
                     Err(err) => err,
                 };
                 if *kind == TsKeywordTypeKind::TsObjectKeyword && !self.ctx.diallow_unknown_object_property {
-                    return Ok(Type::any(span));
+                    return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                 }
 
                 return Err(err);
@@ -2302,7 +2303,10 @@ impl Analyzer<'_, '_> {
                                     return Ok(*ty.clone());
                                 }
 
-                                return Ok(Type::any(p.key.span()));
+                                return Ok(Type::any(
+                                    p.key.span().with_ctxt(SyntaxContext::empty()),
+                                    Default::default(),
+                                ));
                             }
                         }
 
@@ -2768,6 +2772,8 @@ impl Analyzer<'_, '_> {
             return ty;
         }
 
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         match ty.normalize() {
             Type::Union(ref union_ty) => {
                 let is_all_fn = union_ty.types.iter().all(|v| match v.normalize() {
@@ -2779,6 +2785,7 @@ impl Analyzer<'_, '_> {
                     return Type::Query(QueryType {
                         span,
                         expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
+                        metadata: Default::default(),
                     });
                 }
                 return ty;
@@ -3018,12 +3025,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let span = i.span();
+        let span = i.span().with_ctxt(SyntaxContext::empty());
 
         if let Some(ref cls_name) = self.scope.this_class_name {
             if *cls_name == i {
                 warn!("Creating ref because we are currently defining a class: {}", i.sym);
-                return Ok(Type::StaticThis(StaticThis { span }));
+                return Ok(Type::StaticThis(StaticThis {
+                    span,
+                    metadata: Default::default(),
+                }));
             }
         }
 
@@ -3066,11 +3076,11 @@ impl Analyzer<'_, '_> {
                         self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span })
                     } else if arguments_point_to_arrow && !is_argument_defined_in_current_scope {
                         self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span });
-                        return Ok(Type::any(span));
+                        return Ok(Type::any(span, Default::default()));
                     } else if arguments_points_async_fn && !is_argument_defined_in_current_scope {
                         self.storage
                             .report(Error::ArgumentsCannotBeUsedInAsyncFnInEs3OrEs5 { span });
-                        return Ok(Type::any(span));
+                        return Ok(Type::any(span, Default::default()));
                     }
                 }
                 _ => {}
@@ -3083,9 +3093,9 @@ impl Analyzer<'_, '_> {
                     TypeOfMode::LValue => self.storage.report(Error::NotVariable { span, left: span }),
                     TypeOfMode::RValue => {}
                 }
-                return Ok(Type::undefined(span));
+                return Ok(Type::undefined(span, Default::default()));
             }
-            js_word!("void") => return Ok(Type::any(span)),
+            js_word!("void") => return Ok(Type::any(span, Default::default())),
             js_word!("eval") => match type_mode {
                 TypeOfMode::LValue => return Err(Error::CannotAssignToNonVariable { span }),
                 _ => {}
@@ -3175,7 +3185,7 @@ impl Analyzer<'_, '_> {
                     self.storage.report(Error::ImplicitAnyBecauseOfSelfRef { span });
                 }
 
-                return Ok(Type::any(span));
+                return Ok(Type::any(span, Default::default()));
             } else {
                 return Err(Error::ReferencedInInit { span });
             }
@@ -3206,7 +3216,7 @@ impl Analyzer<'_, '_> {
             //
             // let id: (x: Foo) => Foo = x => x;
             //
-            return Ok(Type::any(span));
+            return Ok(Type::any(span, Default::default()));
         }
 
         if !self.is_builtin {
@@ -3246,7 +3256,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Ok(Type::any(span));
+                return Ok(Type::any(span, Default::default()));
             }
             _ => {}
         }
