@@ -45,19 +45,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let mut ctxt = ty.span().ctxt().clone();
-        loop {
-            let m = ctxt.remove_mark();
-            if m == Mark::root() {
-                break;
-            }
-
-            if m == self.marks().prevent_generalization_mark {
-                return false;
-            }
-        }
-
-        true
+        !ty.metadata().prevent_generalization
     }
 
     /// TODO(kdy1): Optimize by visiting only tuple types.

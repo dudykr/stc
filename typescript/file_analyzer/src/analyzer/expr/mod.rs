@@ -2995,9 +2995,7 @@ impl Analyzer<'_, '_> {
         ty.reposition(i.span);
 
         {
-            let span = ty.span();
-            let span = span.apply_mark(self.marks().resolved_from_var);
-            ty.respan(span);
+            ty.metadata_mut().resolved_from_var = true;
         }
 
         Ok(ty)
@@ -3202,10 +3200,10 @@ impl Analyzer<'_, '_> {
             let mut ty = ty.into_owned();
             if self.scope.kind().allows_respanning() {
                 if self.is_implicitly_typed(&ty) {
-                    span.ctxt = span.ctxt.apply_mark(self.marks().implicit_type_mark);
+                    ty.metadata_mut().implicit = true;
                 }
                 if !self.may_generalize(&ty) {
-                    span = self.prevent_generalize_span(span);
+                    ty.metadata_mut().prevent_generalization = true;
                 }
                 ty.respan(span);
             }

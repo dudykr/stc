@@ -1329,6 +1329,7 @@ impl Analyzer<'_, '_> {
                             implicit: true,
                             ..Default::default()
                         },
+                        ..Default::default()
                     },
                 })
             });
