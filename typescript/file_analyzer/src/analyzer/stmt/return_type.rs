@@ -14,7 +14,7 @@ use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt,
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{
     CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, ModuleId,
-    Operator, PropertySignature, Ref, TypeElement, TypeParamInstantiation,
+    Operator, PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
 };
 use stc_utils::ext::SpanExt;
 use std::{borrow::Cow, mem::take, ops::AddAssign};
@@ -195,8 +195,13 @@ impl Analyzer<'_, '_> {
                     self.simplify(Type::union(actual))
                 };
 
+                let mut metadata = yield_ty.metadata();
+
                 return Ok(Some(Type::Ref(Ref {
-                    span: yield_ty.span().or_else(|| ret_ty.span()),
+                    span: yield_ty.span().or_else(|| {
+                        metadata = ret_ty.metadata();
+                        ret_ty.span()
+                    }),
                     ctxt: ModuleId::builtin(),
                     type_name: if is_async {
                         RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), DUMMY_SP))
@@ -221,6 +226,10 @@ impl Analyzer<'_, '_> {
                             }),
                         ],
                     }),
+                    metadata: RefMetadata {
+                        common: metadata,
+                        ..Default::default()
+                    },
                 })));
             }
 
