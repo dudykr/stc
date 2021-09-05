@@ -190,6 +190,7 @@ impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
                     return KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
+                        metadata: ty.metadata,
                     }
                 }
                 _ => {}
@@ -224,6 +225,7 @@ impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
                     return KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
+                        metadata: ty.metadata,
                     };
                 }
             }
@@ -251,6 +253,7 @@ impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
                     return KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
+                        metadata: ty.metadata,
                     };
                 }
             }
@@ -275,6 +278,7 @@ impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
             ty.types.push(Type::Keyword(KeywordType {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsStringKeyword,
+                metadata: Default::default(),
             }));
         }
 
@@ -282,6 +286,7 @@ impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
             ty.types.push(Type::Keyword(KeywordType {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsNumberKeyword,
+                metadata: Default::default(),
             }));
         }
 
@@ -289,6 +294,7 @@ impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
             ty.types.push(Type::Keyword(KeywordType {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
+                metadata: Default::default(),
             }));
         }
 
