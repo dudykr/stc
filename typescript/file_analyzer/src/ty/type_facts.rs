@@ -1,6 +1,6 @@
 use crate::{analyzer::Analyzer, type_facts::TypeFacts};
 use rnode::{Fold, FoldWith, NodeId};
-use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RRestPat, RTsLit, RTsLitType};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RRestPat, RTsLit};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{

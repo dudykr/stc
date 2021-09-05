@@ -2350,6 +2350,10 @@ impl VisitMut<Type> for TypeParamInliner<'_> {
                 *ty = Type::Lit(LitType {
                     span: p.span,
                     lit: RTsLit::Str(self.value.clone()),
+                    metadata: LitTypeMetadata {
+                        common: p.metadata.common,
+                        ..Default::default()
+                    },
                 });
                 return;
             }
