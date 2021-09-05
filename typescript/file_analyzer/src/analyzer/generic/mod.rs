@@ -1249,6 +1249,8 @@ impl Analyzer<'_, '_> {
             Type::Mapped(..) => {}
 
             Type::Array(arr) => {
+                debug_assert_eq!(span.ctxt, SyntaxContext::empty());
+
                 let mut params = vec![];
                 params.push(*arr.elem_type.clone());
                 return self.infer_type(
@@ -1260,6 +1262,7 @@ impl Analyzer<'_, '_> {
                         ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
                         type_args: Some(box TypeParamInstantiation { span, params }),
+                        metadata: Default::default(),
                     }),
                     opts,
                 );

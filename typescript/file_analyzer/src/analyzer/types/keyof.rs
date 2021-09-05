@@ -67,18 +67,22 @@ impl Analyzer<'_, '_> {
                         let string = Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
+                            metadata: Default::default(),
                         });
                         let number = Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsNumberKeyword,
+                            metadata: Default::default(),
                         });
                         let symbol = Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsSymbolKeyword,
+                            metadata: Default::default(),
                         });
                         return Ok(Type::Union(Union {
                             span,
                             types: vec![string, number, symbol],
+                            metadata: Default::default(),
                         }));
                     }
                     TsKeywordTypeKind::TsVoidKeyword
@@ -114,6 +118,7 @@ impl Analyzer<'_, '_> {
                                     ctxt: ModuleId::builtin(),
                                     type_name: RTsEntityName::Ident(RIdent::new(name, DUMMY_SP)),
                                     type_args: None,
+                                    metadata: Default::default(),
                                 }),
                             )
                             .context("tried to get keys of builitin interface types");
@@ -138,6 +143,7 @@ impl Analyzer<'_, '_> {
                                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                                 }),
                             ],
+                            metadata: Default::default(),
                         }))
                     }
                     TsKeywordTypeKind::TsIntrinsicKeyword => {}
@@ -166,10 +172,14 @@ impl Analyzer<'_, '_> {
                     }
 
                     if types.is_empty() {
-                        return Ok(Type::never(span));
+                        return Ok(Type::never(span, Default::default()));
                     }
 
-                    return Ok(Type::Union(Union { span, types }));
+                    return Ok(Type::Union(Union {
+                        span,
+                        types,
+                        metadata: Default::default(),
+                    }));
                 }
 
                 Type::Class(Class { def, .. }) => {
@@ -200,10 +210,15 @@ impl Analyzer<'_, '_> {
                     }
 
                     if key_types.is_empty() {
-                        return Ok(Type::never(span));
+                        return Ok(Type::never(span, Default::default()));
                     }
 
-                    return Ok(Type::Union(Union { span, types: key_types }));
+                    return Ok(Type::Union(Union {
+                        span,
+                        types: key_types,
+
+                        metadata: Default::default(),
+                    }));
                 }
 
                 Type::Array(arr) => {
@@ -215,6 +230,7 @@ impl Analyzer<'_, '_> {
                                 ctxt: ModuleId::builtin(),
                                 type_name: RTsEntityName::Ident(RIdent::new(js_word!("Array"), DUMMY_SP)),
                                 type_args: None,
+                                metadata: Default::default(),
                             }),
                         )
                         .context("tried to get keys of Array (builtin)");
@@ -244,7 +260,11 @@ impl Analyzer<'_, '_> {
                         })
                         .collect::<Result<_, _>>()?;
 
-                    return Ok(Type::Union(Union { span, types }));
+                    return Ok(Type::Union(Union {
+                        span,
+                        types,
+                        metadata: Default::default(),
+                    }));
                 }
 
                 Type::Union(u) => {
@@ -289,6 +309,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::Union(Union {
                             span,
                             types: actual_keys,
+                            metadata: Default::default(),
                         }));
                     }
 
@@ -299,6 +320,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
+                        metadata: Default::default(),
                     }))
                 }
 

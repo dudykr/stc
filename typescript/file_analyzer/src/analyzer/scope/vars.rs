@@ -716,7 +716,11 @@ impl Analyzer<'_, '_> {
                     if key_types.is_empty() {
                         return Ok(ty.into_owned());
                     }
-                    let keys = Type::Union(Union { span, types: key_types });
+                    let keys = Type::Union(Union {
+                        span,
+                        types: key_types,
+                        metadata: Default::default(),
+                    });
 
                     return Ok(Type::Ref(Ref {
                         span,
@@ -726,6 +730,7 @@ impl Analyzer<'_, '_> {
                             span,
                             params: vec![ty.clone().into_owned(), keys],
                         }),
+                        metadata: Default::default(),
                     }));
                 }
                 _ => {}
