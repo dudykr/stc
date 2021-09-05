@@ -5,7 +5,7 @@ use crate::{
 };
 use stc_ts_errors::DebugExt;
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{KeywordTypeMetadata, Type, Union};
+use stc_ts_types::{KeywordTypeMetadata, Type, Union, UnionMetadata};
 use std::borrow::Cow;
 use swc_common::{Span, Spanned};
 
@@ -84,7 +84,10 @@ impl Analyzer<'_, '_> {
                 Ok(Type::Union(Union {
                     span: actual.span(),
                     types: new_types,
-                    metadata: actual.metadata(),
+                    metadata: UnionMetadata {
+                        common: actual.metadata(),
+                        ..Default::default()
+                    },
                 })
                 .fixed())
             }
