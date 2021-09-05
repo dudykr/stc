@@ -2186,7 +2186,10 @@ impl Analyzer<'_, '_> {
                 match &*param.ty {
                     Type::Param(param) => {
                         // TOOD: Union
-                        inferred.defaults.insert(param.name.clone(), Type::unknown(param.span));
+                        inferred.defaults.insert(
+                            param.name.clone(),
+                            Type::unknown(param.span.with_ctxt(SyntaxContext::empty()), Default::default()),
+                        );
                     }
                     _ => {
                         // TOOD: Complex inference logic for types like (b:
