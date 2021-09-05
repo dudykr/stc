@@ -14,7 +14,7 @@ use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
 use std::borrow::Cow;
 use swc_atoms::js_word;
-use swc_common::{Spanned, TypeEq};
+use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 
@@ -41,7 +41,7 @@ impl Analyzer<'_, '_> {
         r_params: &[FnParam],
         r_ret_ty: Option<&Type>,
     ) -> ValidationResult<()> {
-        let span = opts.span;
+        let span = opts.span.with_ctxt(SyntaxContext::empty());
 
         if let Some(r_ret_ty) = r_ret_ty {
             // Fast path for

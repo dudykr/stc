@@ -42,7 +42,7 @@ impl Analyzer<'_, '_> {
         rhs: &Type,
         lhs_metadata: TypeLitMetadata,
     ) -> ValidationResult<()> {
-        let span = opts.span;
+        let span = opts.span.with_ctxt(SyntaxContext::empty());
         // debug_assert!(!span.is_dummy());
 
         let mut errors = vec![];
