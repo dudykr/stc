@@ -13,12 +13,12 @@ use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RYieldExpr};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{
-    IndexedAccessType, Key, KeywordType, LitType, MethodSignature, ModuleId, Operator, PropertySignature, Ref,
-    TypeElement, TypeParamInstantiation,
+    CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, ModuleId,
+    Operator, PropertySignature, Ref, TypeElement, TypeParamInstantiation,
 };
 use stc_utils::ext::SpanExt;
 use std::{borrow::Cow, mem::take, ops::AddAssign};
-use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::{debug, instrument};
 
@@ -56,6 +56,7 @@ impl Analyzer<'_, '_> {
     ) -> Result<Option<Type>, Error> {
         let marks = self.marks();
 
+        debug_assert_eq!(span.ctxt, SyntaxContext::empty());
         debug!("visit_stmts_for_return()");
         debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
@@ -174,13 +175,22 @@ impl Analyzer<'_, '_> {
                 }
 
                 let yield_ty = if types.is_empty() {
-                    Type::any(DUMMY_SP.apply_mark(marks.implicit_type_mark))
+                    Type::any(
+                        DUMMY_SP,
+                        KeywordTypeMetadata {
+                            common: CommonTypeMetadata {
+                                implicit: true,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
+                    )
                 } else {
                     Type::union(types)
                 };
 
                 let ret_ty = if actual.is_empty() {
-                    Type::void(span)
+                    Type::void(span, Default::default())
                 } else {
                     self.simplify(Type::union(actual))
                 };
@@ -207,6 +217,7 @@ impl Analyzer<'_, '_> {
                             Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                metadata: Default::default(),
                             }),
                         ],
                     }),
@@ -215,7 +226,7 @@ impl Analyzer<'_, '_> {
 
             if is_async {
                 let ret_ty = if actual.is_empty() {
-                    Type::void(span)
+                    Type::void(span, Default::default())
                 } else {
                     self.simplify(Type::union(actual))
                 };
@@ -228,6 +239,7 @@ impl Analyzer<'_, '_> {
                         span,
                         params: vec![ret_ty],
                     }),
+                    metadata: Default::default(),
                 })));
             }
 
@@ -296,6 +308,7 @@ impl Analyzer<'_, '_> {
             Type::Keyword(KeywordType {
                 span: node.span,
                 kind: TsKeywordTypeKind::TsVoidKeyword,
+                metadata: Default::default(),
             })
         };
         debug_assert_ne!(ty.span(), DUMMY_SP, "{:?}", ty);
@@ -318,8 +331,9 @@ impl Analyzer<'_, '_> {
                             type_name: RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), node.span)),
                             type_args: Some(box TypeParamInstantiation {
                                 span: node.span,
-                                params: vec![Type::any(DUMMY_SP), ty.clone()],
+                                params: vec![Type::any(DUMMY_SP, Default::default()), ty.clone()],
                             }),
+                            metadata: Default::default(),
                         }),
                     )
                     .report(&mut self.storage);
