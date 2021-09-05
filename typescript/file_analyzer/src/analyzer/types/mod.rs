@@ -16,8 +16,8 @@ use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ComputedKey, Conditional, ConstructorSignature, Id,
     IdCtx, Instance, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType,
-    MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref, Tuple, TupleElement, Type, TypeElement,
-    TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    LitTypeMetadata, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref, Tuple, TupleElement, Type,
+    TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
@@ -1315,6 +1315,10 @@ impl Analyzer<'_, '_> {
                             has_escape: false,
                             kind: Default::default(),
                         }),
+                        metadata: LitTypeMetadata {
+                            common: arg.params[0].metadata(),
+                            ..Default::default()
+                        },
                     }));
                 }
 
@@ -1443,7 +1447,13 @@ impl Analyzer<'_, '_> {
     /// ```
     fn exclude_type(&mut self, span: Span, ty: &mut Type, excluded: &Type) {
         if ty.type_eq(excluded) {
-            *ty = Type::never(ty.span());
+            *ty = Type::never(
+                ty.span(),
+                KeywordTypeMetadata {
+                    common: ty.metadata(),
+                    ..Default::default()
+                },
+            );
             return;
         }
 
@@ -1506,7 +1516,13 @@ impl Analyzer<'_, '_> {
                     if let Ok(mut super_instance) = self.instantiate_class(cls.span, &super_def) {
                         self.exclude_type(span, &mut super_instance, &excluded);
                         if super_instance.is_never() {
-                            *ty = Type::never(cls.span);
+                            *ty = Type::never(
+                                cls.span,
+                                KeywordTypeMetadata {
+                                    common: cls.metadata.common,
+                                    ..Default::default()
+                                },
+                            );
                             return;
                         }
                     }
