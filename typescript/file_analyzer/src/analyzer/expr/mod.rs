@@ -1449,6 +1449,10 @@ impl Analyzer<'_, '_> {
                                     unreachable!()
                                 }
                             },
+                            metadata: KeywordTypeMetadata {
+                                common: obj.metadata.common,
+                                ..Default::default()
+                            },
                         }),
                         prop,
                         type_mode,
@@ -2905,8 +2909,9 @@ impl Analyzer<'_, '_> {
         if !modules.is_empty() {
             modules.push(ty);
             ty = Type::Intersection(Intersection {
-                span: i.span,
+                span: i.span.with_ctxt(SyntaxContext::empty()),
                 types: modules,
+                metadata: Default::default(),
             });
             ty.fix();
             ty.make_cheap();
