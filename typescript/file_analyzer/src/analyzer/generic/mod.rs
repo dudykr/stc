@@ -1700,6 +1700,7 @@ impl Analyzer<'_, '_> {
                             Cow::Owned(Type::Array(Array {
                                 span: arg.span,
                                 elem_type: box new_ty.unwrap_or_else(|| Type::any(arg.span)),
+                                metadata: arg.metadata,
                             })),
                             opts,
                         )?;

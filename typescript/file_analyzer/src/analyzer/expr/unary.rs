@@ -7,7 +7,7 @@ use crate::{
 };
 use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, RStr, RTsLit, RUnaryExpr};
 use stc_ts_errors::{Error, Errors};
-use stc_ts_types::{KeywordType, LitType, Union};
+use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
@@ -114,7 +114,7 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
-            op!("void") => return Ok(Type::undefined(span)),
+            op!("void") => return Ok(Type::undefined(span, Default::default())),
 
             op!(unary, "-") | op!(unary, "+") => {
                 if let Some(arg) = &arg {
@@ -315,6 +315,10 @@ fn negate(ty: Type) -> Type {
     KeywordType {
         span: ty.span(),
         kind: TsKeywordTypeKind::TsBooleanKeyword,
+        metadata: KeywordTypeMetadata {
+            common: ty.metadata(),
+            ..Default::default()
+        },
     }
     .into()
 }
