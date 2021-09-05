@@ -20,7 +20,10 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{Array, EnumVariant, Id, Instance, KeywordType, Operator, QueryExpr, QueryType, Symbol};
+use stc_ts_types::{
+    Array, EnumVariant, Id, Instance, KeywordType, KeywordTypeMetadata, Operator, OperatorMetadata, QueryExpr,
+    QueryType, Symbol, SymbolMetadata,
+};
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use std::borrow::Cow;
 use swc_atoms::js_word;
@@ -410,11 +413,13 @@ impl Analyzer<'_, '_> {
                                     Type::Predicate(..) => Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                        metadata: Default::default(),
                                     }),
 
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                        metadata: KeywordTypeMetadata { common, .. },
                                     })
                                     | Type::Operator(Operator {
                                         span,
@@ -424,8 +429,14 @@ impl Analyzer<'_, '_> {
                                                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                                                 ..
                                             }),
+                                        metadata: OperatorMetadata { common, .. },
+                                        ..
                                     })
-                                    | Type::Symbol(Symbol { span, .. }) => {
+                                    | Type::Symbol(Symbol {
+                                        span,
+                                        metadata: SymbolMetadata { common, .. },
+                                        ..
+                                    }) => {
                                         match self.ctx.var_kind {
                                             // It's `uniqute symbol` only if it's `Symbol()`
                                             VarDeclKind::Const if is_symbol_call => Type::Operator(Operator {
@@ -434,12 +445,24 @@ impl Analyzer<'_, '_> {
                                                 ty: box Type::Keyword(KeywordType {
                                                     span: *span,
                                                     kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                                    metadata: KeywordTypeMetadata {
+                                                        common: *common,
+                                                        ..Default::default()
+                                                    },
                                                 }),
+                                                metadata: OperatorMetadata {
+                                                    common: *common,
+                                                    ..Default::default()
+                                                },
                                             }),
 
                                             _ => Type::Keyword(KeywordType {
                                                 span: *span,
                                                 kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                                metadata: KeywordTypeMetadata {
+                                                    common: *common,
+                                                    ..Default::default()
+                                                },
                                             }),
                                         }
                                     }
