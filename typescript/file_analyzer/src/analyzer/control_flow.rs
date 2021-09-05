@@ -33,7 +33,7 @@ use std::{
     ops::{AddAssign, BitOr, Not},
 };
 use swc_atoms::JsWord;
-use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::info;
 
@@ -735,6 +735,8 @@ impl Analyzer<'_, '_> {
         opts: PatAssignOpts,
     ) -> ValidationResult<()> {
         ty.assert_valid();
+
+        let span = span.with_ctxt(SyntaxContext::empty());
 
         let is_in_loop = self.scope.is_in_loop_body();
         let ty = self
