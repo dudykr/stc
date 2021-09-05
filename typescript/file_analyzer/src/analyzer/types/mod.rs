@@ -15,9 +15,9 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ComputedKey, Conditional, ConstructorSignature, Id,
-    IdCtx, Instance, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, LitType, MethodSignature, ModuleId,
-    Operator, PropertySignature, QueryExpr, Ref, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata,
-    TypeParam, TypeParamInstantiation, Union,
+    IdCtx, Instance, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType,
+    MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref, Tuple, TupleElement, Type, TypeElement,
+    TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
@@ -182,6 +182,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Cow::Owned(Type::Array(Array {
                             span: arr.span,
                             elem_type,
+                            metadata: arr.metadata,
                         })));
                     }
 
@@ -740,7 +741,7 @@ impl Analyzer<'_, '_> {
         let mut members = vec![];
 
         let type_params = def.type_params.as_ref().map(|decl| {
-            let ty = Type::any(decl.span);
+            let ty = Type::any(decl.span, Default::default());
 
             decl.params
                 .iter()
@@ -954,7 +955,17 @@ impl Analyzer<'_, '_> {
                 };
 
                 let ty = self
-                    .convert_type_to_type_lit(span, &Type::Keyword(KeywordType { span: ty.span, kind }))
+                    .convert_type_to_type_lit(
+                        span,
+                        &Type::Keyword(KeywordType {
+                            span: ty.span,
+                            kind,
+                            metadata: KeywordTypeMetadata {
+                                common: ty.metadata.common,
+                                ..Default::default()
+                            },
+                        }),
+                    )
                     .context("tried to convert a literal to type literal")?
                     .map(Cow::into_owned);
                 return Ok(ty.map(Cow::Owned));
@@ -1145,6 +1156,10 @@ impl Analyzer<'_, '_> {
                     type_ann: Some(box Type::Keyword(KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
+                        metadata: KeywordTypeMetadata {
+                            common: ty.metadata.common,
+                            ..Default::default()
+                        },
                     })),
                     type_params: Default::default(),
                     metadata: Default::default(),
