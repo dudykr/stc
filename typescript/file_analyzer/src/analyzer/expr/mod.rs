@@ -846,7 +846,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             // TODO: no implicit any?
-                            matching_elements.push(Type::any(span));
+                            matching_elements.push(Type::any(span, Default::default()));
                             continue;
                         }
 
@@ -856,11 +856,15 @@ impl Analyzer<'_, '_> {
                                 span,
                                 type_params: m.type_params.clone(),
                                 params: m.params.clone(),
-                                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(span)),
+                                ret_ty: m
+                                    .ret_ty
+                                    .clone()
+                                    .unwrap_or_else(|| box Type::any(span, Default::default())),
+                                metadata: Default::default(),
                             });
 
                             if m.optional {
-                                let mut types = vec![Type::undefined(span), prop_ty.clone()];
+                                let mut types = vec![Type::undefined(span, Default::default()), prop_ty.clone()];
                                 types.dedup_type();
                                 matching_elements.push(Type::union(types));
                             } else {
@@ -902,7 +906,7 @@ impl Analyzer<'_, '_> {
 
                             if let Ok(prop_num) = prop_num {
                                 if key.value == prop_num {
-                                    return Ok(Some(Type::any(span)));
+                                    return Ok(Some(Type::any(span, Default::default())));
                                 }
                             }
                         } else {
@@ -910,7 +914,7 @@ impl Analyzer<'_, '_> {
 
                             if let Ok(prop_num) = prop_num {
                                 if key.value == prop_num {
-                                    return Ok(Some(Type::any(span)));
+                                    return Ok(Some(Type::any(span, Default::default())));
                                 }
                             }
                         }
@@ -973,11 +977,16 @@ impl Analyzer<'_, '_> {
                             return Ok(Some(ty.into_owned()));
                         }
 
-                        return Ok(Some(Type::any(span)));
+                        return Ok(Some(Type::any(span, Default::default())));
                     }
 
                     if (&**index_ty).type_eq(&*prop_ty) {
-                        return Ok(Some(type_ann.clone().map(|v| *v).unwrap_or_else(|| Type::any(span))));
+                        return Ok(Some(
+                            type_ann
+                                .clone()
+                                .map(|v| *v)
+                                .unwrap_or_else(|| Type::any(span, Default::default())),
+                        ));
                     }
 
                     match prop_ty.normalize() {
@@ -1003,6 +1012,7 @@ impl Analyzer<'_, '_> {
                     obj_type: box obj.clone(),
                     index_type: box prop.ty().into_owned(),
                     readonly: false,
+                    metadata: Default::default(),
                 });
 
                 return Ok(Some(ty));
@@ -1230,7 +1240,7 @@ impl Analyzer<'_, '_> {
                         return Ok(v);
                     }
 
-                    return Ok(Type::any(span));
+                    return Ok(Type::any(span, Default::default()));
                 }
 
                 Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_class() => {
