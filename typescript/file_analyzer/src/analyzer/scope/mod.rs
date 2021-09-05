@@ -1220,6 +1220,7 @@ impl Analyzer<'_, '_> {
         is_override: bool,
     ) -> ValidationResult<()> {
         let marks = self.marks();
+        let span = span.with_ctxt(SyntaxContext::empty());
 
         if let Some(ty) = &ty {
             ty.assert_valid();
@@ -1367,7 +1368,7 @@ impl Analyzer<'_, '_> {
             self.storage.store_private_var(
                 self.ctx.module_id,
                 name.clone(),
-                ty.clone().unwrap_or_else(|| Type::any(span)),
+                ty.clone().unwrap_or_else(|| Type::any(span, Default::default())),
             )
         }
 
@@ -2063,6 +2064,7 @@ impl Expander<'_, '_, '_> {
                                             ty = Type::Class(Class {
                                                 span: self.span,
                                                 def: box def,
+                                                metadata: Default::default(),
                                             });
                                         }
                                         _ => {}
@@ -2105,6 +2107,7 @@ impl Expander<'_, '_, '_> {
                                         ty = Type::Class(Class {
                                             span: self.span,
                                             def: box def,
+                                            metadata: Default::default(),
                                         });
                                     }
                                     _ => {}
