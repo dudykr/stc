@@ -37,7 +37,7 @@ pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, KeywordType,
     KeywordTypeMetadata, LitType, Method, ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
-    StaticThis,
+    StaticThis, ThisType,
 };
 use stc_utils::{error::context, stack, try_cache};
 use std::{
@@ -174,7 +174,10 @@ impl Analyzer<'_, '_> {
                             return Ok(ty.into_owned());
                         }
                     }
-                    return Ok(Type::from(RTsThisType { span }));
+                    return Ok(Type::from(ThisType {
+                        span,
+                        metadata: Default::default(),
+                    }));
                 }
 
                 RExpr::Ident(ref i) => {
@@ -201,18 +204,21 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::Lit(LitType {
                         span: v.span,
                         lit: RTsLit::Bool(v.clone()),
+                        metadata: Default::default(),
                     }));
                 }
                 RExpr::Lit(RLit::Str(ref v)) => {
                     return Ok(Type::Lit(LitType {
                         span: v.span,
                         lit: RTsLit::Str(v.clone()),
+                        metadata: Default::default(),
                     }));
                 }
                 RExpr::Lit(RLit::Num(v)) => {
                     return Ok(Type::Lit(LitType {
                         span: v.span,
                         lit: RTsLit::Number(v.clone()),
+                        metadata: Default::default(),
                     }));
                 }
                 RExpr::Lit(RLit::Null(RNull { span })) => {
@@ -221,12 +227,14 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::Keyword(KeywordType {
                             span: *span,
                             kind: TsKeywordTypeKind::TsAnyKeyword,
+                            metadata: Default::default(),
                         }));
                     }
 
                     return Ok(Type::Keyword(KeywordType {
                         span: *span,
                         kind: TsKeywordTypeKind::TsNullKeyword,
+                        metadata: Default::default(),
                     }));
                 }
                 RExpr::Lit(RLit::Regex(..)) => {
@@ -240,6 +248,7 @@ impl Analyzer<'_, '_> {
                             optional: false,
                         }),
                         type_args: None,
+                        metadata: Default::default(),
                     }));
                 }
 
@@ -264,7 +273,7 @@ impl Analyzer<'_, '_> {
                 // https://github.com/Microsoft/TypeScript/issues/26959
                 RExpr::Yield(..) => {
                     e.visit_children_with(self);
-                    return Ok(Type::any(span));
+                    return Ok(Type::any(span, Default::default()));
                 }
 
                 RExpr::Await(e) => e.validate_with_args(self, type_ann),
@@ -296,7 +305,7 @@ impl Analyzer<'_, '_> {
 
                 RExpr::MetaProp(e) => return e.validate_with(self),
 
-                RExpr::Invalid(ref i) => return Ok(Type::any(i.span())),
+                RExpr::Invalid(ref i) => return Ok(Type::any(i.span(), Default::default())),
 
                 RExpr::OptChain(expr) => expr.validate_with_args(self, type_ann),
 
@@ -359,7 +368,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RExprOrSuper) -> ValidationResult {
         match e {
             RExprOrSuper::Expr(e) => e.validate_with_default(self),
-            RExprOrSuper::Super(s) => Ok(Type::any(s.span)),
+            RExprOrSuper::Super(s) => Ok(Type::any(s.span, Default::default())),
         }
     }
 }
