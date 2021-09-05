@@ -1287,7 +1287,7 @@ impl Analyzer<'_, '_> {
 
         match kind {
             ExtractKind::Call => match ty.normalize() {
-                Type::Interface(i) if i.name == "Function" => return Ok(Type::any(span)),
+                Type::Interface(i) if i.name == "Function" => return Ok(Type::any(span, Default::default())),
                 _ => {}
             },
             _ => {}
@@ -1587,6 +1587,7 @@ impl Analyzer<'_, '_> {
                             return Ok(Type::Array(Array {
                                 span,
                                 elem_type: box type_args.params.iter().cloned().next().unwrap(),
+                                metadata: Default::default(),
                             }));
                         }
                     }
@@ -1654,6 +1655,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Class {
                     span,
                     def: box def.clone(),
+                    metadata: Default::default(),
                 }
                 .into());
             }
@@ -1935,6 +1937,7 @@ impl Analyzer<'_, '_> {
                         ret_ty: Type::Class(Class {
                             span,
                             def: box cls.clone(),
+                            metadata: Default::default(),
                         }),
                     });
                 }
