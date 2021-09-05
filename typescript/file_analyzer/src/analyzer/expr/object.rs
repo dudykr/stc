@@ -584,6 +584,7 @@ impl Analyzer<'_, '_> {
         match to {
             Type::TypeLit(ref mut lit) => {
                 lit.metadata.inexact = true;
+                let common_metadata = lit.metadata.common;
 
                 match rhs {
                     Type::TypeLit(rhs) => {
@@ -599,7 +600,7 @@ impl Analyzer<'_, '_> {
                                 .map(|rhs| self.append_type(to.clone(), rhs))
                                 .collect::<Result<_, _>>()?,
                             metadata: UnionMetadata {
-                                common: lit.metadata.common,
+                                common: common_metadata,
                                 ..Default::default()
                             },
                         })

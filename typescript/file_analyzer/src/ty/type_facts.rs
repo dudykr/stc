@@ -32,11 +32,12 @@ impl Analyzer<'_, '_> {
         {
             match ty {
                 Type::Param(..) | Type::IndexedAccessType(..) => {
+                    let common_metadata = ty.metadata();
                     ty = Type::Intersection(Intersection {
                         span: ty.span(),
                         types: vec![ty],
                         metadata: IntersectionMetadata {
-                            common: ty.metadata(),
+                            common: common_metadata,
                             ..Default::default()
                         },
                     });

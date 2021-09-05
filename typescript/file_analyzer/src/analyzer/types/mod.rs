@@ -1679,6 +1679,8 @@ impl VisitMut<Type> for TupleNormalizer {
                     return;
                 }
 
+                let common_metadata = tuple.metadata.common;
+
                 if tuple.elems.is_empty() {
                     return;
                 }
@@ -1704,7 +1706,7 @@ impl VisitMut<Type> for TupleNormalizer {
                     span,
                     elem_type: box Type::union(types),
                     metadata: ArrayMetadata {
-                        common: tuple.metadata.common,
+                        common: common_metadata,
                         ..Default::default()
                     },
                 });

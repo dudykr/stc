@@ -1119,15 +1119,19 @@ impl Analyzer<'_, '_> {
     #[instrument(skip(self, name))]
     fn find_local_type(&self, name: &Id) -> Option<ItemRef<Type>> {
         #[allow(dead_code)]
-        static ANY: Type = Type::Keyword(KeywordType {
-            span: DUMMY_SP,
-            kind: TsKeywordTypeKind::TsAnyKeyword,
-            metadata: Default::default(),
+        static ANY: Lazy<Type> = Lazy::new(|| {
+            Type::Keyword(KeywordType {
+                span: DUMMY_SP,
+                kind: TsKeywordTypeKind::TsAnyKeyword,
+                metadata: Default::default(),
+            })
         });
         #[allow(dead_code)]
-        static STATIC_THIS: Type = Type::StaticThis(StaticThis {
-            span: DUMMY_SP,
-            metadata: Default::default(),
+        static STATIC_THIS: Lazy<Type> = Lazy::new(|| {
+            Type::StaticThis(StaticThis {
+                span: DUMMY_SP,
+                metadata: Default::default(),
+            })
         });
 
         if let Some(class) = &self.scope.get_this_class_name() {

@@ -125,12 +125,13 @@ impl Analyzer<'_, '_> {
 
             if let Some(ret_ty) = declared_ret_ty {
                 let span = ret_ty.span();
+                let metadata = ret_ty.metadata();
                 declared_ret_ty = Some(match ret_ty {
                     Type::ClassDef(def) => Type::Class(Class {
                         span,
                         def: box def,
                         metadata: ClassMetadata {
-                            common: ret_ty.metadata(),
+                            common: metadata,
                             ..Default::default()
                         },
                     }),
