@@ -1,11 +1,9 @@
 use crate::ty::{Intersection, Type, Union};
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{
-    RBlockStmt, RBool, RIdent, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType,
-};
+use stc_ts_ast_rnode::{RBlockStmt, RBool, RIdent, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
 use stc_ts_types::{Id, InferType, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeParam};
 use std::fmt::Debug;
-use swc_common::{Mark, Span, Spanned, SyntaxContext};
+use swc_common::{Mark, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
 use tracing::instrument;
 
