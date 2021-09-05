@@ -1322,15 +1322,6 @@ impl Type {
 
 struct AssertValid;
 
-impl Visit<RTsLit> for AssertValid {
-    fn visit(&mut self, value: &RTsLit) {
-        if !cfg!(debug_assertions) {
-            return;
-        }
-        debug_assert_eq!(value.span().ctxt, SyntaxContext::empty());
-    }
-}
-
 impl Visit<TypeElement> for AssertValid {
     fn visit(&mut self, el: &TypeElement) {
         if !cfg!(debug_assertions) {
