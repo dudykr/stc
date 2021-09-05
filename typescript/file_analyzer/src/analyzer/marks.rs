@@ -115,30 +115,3 @@ pub(crate) trait MarkExt: Copy + Into<Mark> {
 }
 
 impl MarkExt for Mark {}
-
-/// Used for migration of metadata system.
-
-pub trait FromMarks {
-    fn from_marks(marks: Marks, span: Span) -> Self;
-}
-
-impl FromMarks for CommonTypeMetadata {
-    fn from_marks(marks: Marks, span: Span) -> Self {
-        CommonTypeMetadata {
-            implicit: span.has_mark(marks.implicit_type_mark),
-            prevent_expansion: span.has_mark(marks.no_expand_mark) && !span.has_mark(marks.ignore_no_expand_mark),
-            contains_infer_type: span.has_mark(marks.contains_infer_type_mark),
-            prevent_complex_simplification: span.has_mark(marks.prevent_complex_simplification_mark),
-            resolved_from_var: span.has_mark(marks.resolved_from_var),
-            ..Default::default()
-        }
-    }
-}
-
-impl FromMarks for KeywordTypeMetadata {
-    fn from_marks(marks: Marks, span: Span) -> Self {
-        KeywordTypeMetadata {
-            common: marks.metadata(span),
-        }
-    }
-}
