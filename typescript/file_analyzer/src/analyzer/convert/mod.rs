@@ -28,8 +28,8 @@ use stc_ts_types::{
     Conditional, ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType,
     InferTypeMetadata, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
     LitType, LitTypeMetadata, Mapped, MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr,
-    QueryType, Ref, RefMetadata, RestType, Symbol, ThisType, TplType, TsExpr, Tuple, TupleElement, Type, TypeElement,
-    TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+    QueryType, Ref, RefMetadata, RestType, Symbol, ThisType, TplType, TsExpr, Tuple, TupleElement, TupleMetadata, Type,
+    TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
 use stc_utils::{error, AHashSet};
@@ -526,12 +526,17 @@ impl Analyzer<'_, '_> {
         let marks = self.marks();
 
         let span = t.span;
-        let span = marks.prevent_tuple_to_array.apply_to_span(span);
 
         Ok(Tuple {
             span,
             elems: t.elem_types.validate_with(self)?,
-            metadata: Default::default(),
+            metadata: TupleMetadata {
+                common: CommonTypeMetadata {
+                    prevent_tuple_to_array: true,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
         })
     }
 }

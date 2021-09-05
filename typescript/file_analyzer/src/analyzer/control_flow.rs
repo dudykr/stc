@@ -451,7 +451,7 @@ impl Analyzer<'_, '_> {
             .iter()
             .flat_map(|ty| ty.iter_union())
             .flat_map(|ty| ty.iter_union())
-            .any(|ty| self.env.shared().marks().prevent_converting_to_children.is_marked(&ty));
+            .any(|ty| ty.metadata().prevent_converting_to_children);
 
         if should_preserve {
             return self.remove_child_types(span, types);
