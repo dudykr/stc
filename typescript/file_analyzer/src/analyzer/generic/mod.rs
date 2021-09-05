@@ -1532,6 +1532,10 @@ impl Analyzer<'_, '_> {
                                             has_escape: false,
                                             kind: Default::default(),
                                         }),
+                                        metadata: LitTypeMetadata {
+                                            common: param.metadata.common,
+                                            ..Default::default()
+                                        },
                                     })),
                                     Key::Num(n) => {
                                         key_types.push(Type::Lit(LitType {
@@ -1773,6 +1777,10 @@ impl Analyzer<'_, '_> {
                                                 has_escape: false,
                                                 kind: Default::default(),
                                             }),
+                                            metadata: LitTypeMetadata {
+                                                common: param.metadata.common,
+                                                ..Default::default()
+                                            },
                                         })),
                                         _ => None,
                                     }, // TODO: Handle method element
@@ -2574,7 +2582,11 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
             Type::Optional(ty) => {}
             _ => {
                 let ty = box element_ty.take();
-                *element_ty = Type::Optional(OptionalType { span: DUMMY_SP, ty })
+                *element_ty = Type::Optional(OptionalType {
+                    span: DUMMY_SP,
+                    ty,
+                    metadata: Default::default(),
+                });
             }
         },
         TruePlusMinus::Minus => {}
