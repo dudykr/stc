@@ -2017,6 +2017,7 @@ impl Analyzer<'_, '_> {
                             ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                             type_args: None,
+                            metadata: Default::default(),
                         }),
                         prop,
                         type_mode,
@@ -2028,7 +2029,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if prop.is_computed() {
-                    return Ok(Type::any(span));
+                    return Ok(Type::any(span, Default::default()));
                 }
 
                 return Err(Error::NoSuchProperty {
@@ -2052,6 +2053,7 @@ impl Analyzer<'_, '_> {
                             ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                             type_args: None,
+                            metadata: Default::default(),
                         }),
                         prop,
                         type_mode,
@@ -2207,6 +2209,7 @@ impl Analyzer<'_, '_> {
                                 return Ok(Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    metadata: Default::default(),
                                 }));
                             }
 
