@@ -218,7 +218,7 @@ impl Clone for Type {
     }
 }
 
-assert_eq_size!(Type, [u8; 128]);
+assert_eq_size!(Type, [u8; 104]);
 
 impl TypeEq for Type {
     fn type_eq(&self, other: &Self) -> bool {
@@ -595,12 +595,12 @@ pub struct ClassDef {
     pub name: Option<Id>,
     pub super_class: Option<Box<Type>>,
     pub body: Vec<ClassMember>,
-    pub type_params: Option<TypeParamDecl>,
+    pub type_params: Option<Box<TypeParamDecl>>,
     pub implements: Box<Vec<TsExpr>>,
     pub metadata: ClassDefMetadata,
 }
 
-assert_eq_size!(ClassDef, [u8; 120]);
+assert_eq_size!(ClassDef, [u8; 88]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is)]
 pub enum ClassMember {
@@ -714,12 +714,12 @@ pub struct TupleElement {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Alias {
     pub span: Span,
-    pub type_params: Option<TypeParamDecl>,
+    pub type_params: Option<Box<TypeParamDecl>>,
     pub ty: Box<Type>,
     pub metadata: AliasMetadata,
 }
 
-assert_eq_size!(Alias, [u8; 72]);
+assert_eq_size!(Alias, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Interface {
