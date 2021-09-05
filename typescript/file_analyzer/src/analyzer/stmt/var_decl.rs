@@ -21,8 +21,8 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Array, EnumVariant, Id, Instance, KeywordType, KeywordTypeMetadata, Operator, OperatorMetadata, QueryExpr,
-    QueryType, Symbol, SymbolMetadata,
+    Array, EnumVariant, Id, Instance, InstanceMetadata, KeywordType, KeywordTypeMetadata, Operator, OperatorMetadata,
+    QueryExpr, QueryType, Symbol, SymbolMetadata,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use std::borrow::Cow;
@@ -245,6 +245,7 @@ impl Analyzer<'_, '_> {
 
                             Type::Instance(Instance {
                                 span: ty.span(),
+                                metadata: InstanceMetadata { common: ty.metadata() },
                                 ty: box ty,
                             })
                         })();

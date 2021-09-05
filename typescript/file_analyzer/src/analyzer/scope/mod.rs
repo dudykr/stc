@@ -1318,7 +1318,7 @@ impl Analyzer<'_, '_> {
                     Err(..) => Some(Type::any(
                         ty.span(),
                         KeywordTypeMetadata {
-                            common: ty.metadata(),
+                            common: ty.as_ref().map(|ty| ty.metadata()).unwrap_or_default(),
                             ..Default::default()
                         },
                     )),
