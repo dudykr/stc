@@ -1606,11 +1606,6 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    /// Apply metadata `infer_type_container` to `span`.
-    pub(crate) fn mark_as_infer_type_container(&self, span: Span) -> Span {
-        span.apply_mark(self.marks().contains_infer_type_mark)
-    }
-
     fn is_infer_type_container(&self, ty: &Type) -> bool {
         ty.metadata().contains_infer_type
     }

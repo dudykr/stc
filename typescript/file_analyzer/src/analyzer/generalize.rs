@@ -14,7 +14,7 @@ use stc_ts_types::{
     TypeLit, TypeLitMetadata, TypeParam, Union,
 };
 use swc_atoms::js_word;
-use swc_common::{EqIgnoreSpan, Mark, Span, Spanned};
+use swc_common::{EqIgnoreSpan, Span, Spanned};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{info, instrument, trace};
 
@@ -78,36 +78,18 @@ impl Analyzer<'_, '_> {
     #[instrument(skip(self, ty))]
     pub(super) fn simplify(&self, ty: Type) -> Type {
         info!("Simplifying {}", dump_type_as_string(&self.cm, &ty));
-        ty.fold_with(&mut Simplifier {
-            env: &self.env,
-            prevent_generalize_mark: self.marks().prevent_generalization_mark,
-            prevent_inference_mark: self.marks().prevent_complex_simplification_mark,
-        })
+        ty.fold_with(&mut Simplifier { env: &self.env })
     }
 }
 
 /// Simplifies the type.
 struct Simplifier<'a> {
     env: &'a Env,
-    prevent_generalize_mark: Mark,
-    prevent_inference_mark: Mark,
 }
 
 impl Simplifier<'_> {
-    fn should_skip_inference(&mut self, span: Span) -> bool {
-        let mut ctxt = span.ctxt;
-        loop {
-            let m = ctxt.remove_mark();
-            if m == Mark::root() {
-                break;
-            }
-
-            if m == self.prevent_inference_mark {
-                return true;
-            }
-        }
-
-        false
+    fn should_skip_inference(&mut self, ty: &Type) -> bool {
+        ty.metadata().prevent_complex_simplification
     }
 }
 
@@ -177,7 +159,7 @@ impl Fold<Type> for Simplifier<'_> {
             _ => {}
         }
 
-        if self.should_skip_inference(ty.span()) {
+        if self.should_skip_inference(&ty) {
             match ty.normalize() {
                 Type::IndexedAccessType(IndexedAccessType {
                     obj_type:
