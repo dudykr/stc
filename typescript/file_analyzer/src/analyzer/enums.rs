@@ -11,8 +11,8 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{
-    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, PropertySignature, TypeElement,
-    TypeLit,
+    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata, PropertySignature,
+    TypeElement, TypeLit,
 };
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
@@ -554,10 +554,12 @@ impl Analyzer<'_, '_> {
                 RExpr::Lit(RLit::Str(lit)) => values.push(Type::Lit(LitType {
                     span: m.span,
                     lit: RTsLit::Str(lit.clone()),
+                    metadata: Default::default(),
                 })),
                 RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(LitType {
                     span: m.span,
                     lit: RTsLit::Number(lit.clone()),
+                    metadata: Default::default(),
                 })),
                 _ => {
                     unimplemented!("Handle enum with value other than string literal or numeric literals")
@@ -573,9 +575,9 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn expand_enum_variant(&self, ty: Type) -> ValidationResult {
         match ty.normalize() {
-            Type::EnumVariant(ref v) => {
-                if let Some(variant_name) = &v.name {
-                    if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {
+            Type::EnumVariant(ref ev) => {
+                if let Some(variant_name) = &ev.name {
+                    if let Some(types) = self.find_type(ev.ctxt, &ev.enum_name)? {
                         for ty in types {
                             if let Type::Enum(Enum { members, .. }) = ty.normalize() {
                                 if let Some(v) = members.iter().find(|m| match m.id {
@@ -590,6 +592,10 @@ impl Analyzer<'_, '_> {
                                                     RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
                                                     RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
                                                     _ => unreachable!(),
+                                                },
+                                                metadata: LitTypeMetadata {
+                                                    common: ev.metadata.common,
+                                                    ..Default::default()
                                                 },
                                             }));
                                         }
