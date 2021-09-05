@@ -14,10 +14,10 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    name::Name, Accessor, Array, Class, ClassDef, ClassMember, ComputedKey, Conditional, ConstructorSignature, Id,
-    IdCtx, Instance, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType,
-    LitTypeMetadata, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref, Tuple, TupleElement, Type,
-    TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    name::Name, Accessor, Array, ArrayMetadata, Class, ClassDef, ClassMember, ComputedKey, Conditional,
+    ConstructorSignature, Id, IdCtx, Instance, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr,
+    Ref, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
@@ -1673,6 +1673,10 @@ impl VisitMut<Type> for TupleNormalizer {
                 *ty = Type::Array(Array {
                     span,
                     elem_type: box Type::union(types),
+                    metadata: ArrayMetadata {
+                        common: tuple.metadata.common,
+                        ..Default::default()
+                    },
                 });
             }
             _ => {}
