@@ -610,10 +610,10 @@ impl GenericExpander<'_, '_, '_, '_> {
                                                                 span: method.span,
                                                                 type_params: method.type_params.clone(),
                                                                 params: method.params.clone(),
-                                                                ret_ty: method
-                                                                    .ret_ty
-                                                                    .clone()
-                                                                    .unwrap_or_else(|| box Type::any(method.span)),
+                                                                ret_ty: method.ret_ty.clone().unwrap_or_else(|| {
+                                                                    box Type::any(method.span, Default::default())
+                                                                }),
+                                                                metadata: Default::default(),
                                                             }),
                                                         }),
                                                         type_params: Default::default(),
