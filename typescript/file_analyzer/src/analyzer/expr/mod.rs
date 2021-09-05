@@ -159,6 +159,7 @@ impl Analyzer<'_, '_> {
                                 "globalThis".into(),
                                 span.with_ctxt(SyntaxContext::empty()),
                             ))),
+                            metadata: Default::default(),
                         }));
                     }
 
@@ -497,14 +498,14 @@ impl Analyzer<'_, '_> {
 
             let mut rhs_ty = match rhs_ty {
                 Ok(v) => v,
-                Err(()) => Type::any(span),
+                Err(()) => Type::any(span, Default::default()),
             };
 
             analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
             rhs_ty.respan(e.right.span());
 
             if let Some(span) = any_span {
-                return Ok(Type::any(span));
+                return Ok(Type::any(span, Default::default()));
             }
 
             Ok(rhs_ty)
@@ -592,7 +593,7 @@ impl Analyzer<'_, '_> {
             }
         }
         if is_any {
-            return Ok(Type::any(span));
+            return Ok(Type::any(span, Default::default()));
         }
 
         return exprs.last().unwrap().validate_with_args(self, (mode, None, type_ann));
