@@ -395,6 +395,7 @@ impl Analyzer<'_, '_> {
                     ctxt: self.ctx.module_id,
                     enum_name: e.id.clone().into(),
                     name: Some(key.sym),
+                    metadata: Default::default(),
                 })),
                 type_params: Default::default(),
                 metadata: Default::default(),

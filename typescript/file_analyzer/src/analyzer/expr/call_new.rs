@@ -1686,7 +1686,10 @@ impl Analyzer<'_, '_> {
                         .clone()
                         .map(|v| v.params)
                         .or_else(|| type_params_of_type.map(|v| v.to_vec())),
-                    ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span)),
+                    ret_ty: ret_ty
+                        .clone()
+                        .map(|v| *v)
+                        .unwrap_or_else(|| Type::any(*span, Default::default())),
                 }),
                 TypeElement::Constructor(ConstructorSignature {
                     span,
@@ -1700,7 +1703,10 @@ impl Analyzer<'_, '_> {
                         .clone()
                         .map(|v| v.params)
                         .or_else(|| type_params_of_type.clone().map(|v| v.to_vec())),
-                    ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span)),
+                    ret_ty: ret_ty
+                        .clone()
+                        .map(|v| *v)
+                        .unwrap_or_else(|| Type::any(*span, Default::default())),
                 }),
                 _ => None,
             })
