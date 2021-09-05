@@ -1011,6 +1011,7 @@ impl Analyzer<'_, '_> {
                         name: decl.id.clone(),
                         span,
                         exports: box exports,
+                        metadata: Default::default(),
                     };
                     let ty = Type::Module(ty).cheap();
                     return Ok(Some(ty));

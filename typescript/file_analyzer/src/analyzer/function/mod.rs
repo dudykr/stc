@@ -12,7 +12,7 @@ use stc_ts_ast_rnode::{RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RPara
 use stc_ts_errors::{Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Alias, CallSignature, Class, ClassDef, Function, Interface, KeywordType, Ref, TypeElement, TypeLit,
+    Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Interface, KeywordType, Ref, TypeElement, TypeLit,
 };
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
@@ -125,7 +125,14 @@ impl Analyzer<'_, '_> {
             if let Some(ret_ty) = declared_ret_ty {
                 let span = ret_ty.span();
                 declared_ret_ty = Some(match ret_ty {
-                    Type::ClassDef(def) => Type::Class(Class { span, def: box def }),
+                    Type::ClassDef(def) => Type::Class(Class {
+                        span,
+                        def: box def,
+                        metadata: ClassMetadata {
+                            common: ret_ty.metadata(),
+                            ..Default::default()
+                        },
+                    }),
 
                     _ => ret_ty,
                 });
@@ -241,6 +248,7 @@ impl Analyzer<'_, '_> {
                 params,
                 type_params,
                 ret_ty: box declared_ret_ty.unwrap_or_else(|| inferred_return_type),
+                metadata: Default::default(),
             }
             .into())
         })
