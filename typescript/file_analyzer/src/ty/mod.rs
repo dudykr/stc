@@ -1,5 +1,5 @@
 use self::generalize::TupleToArray;
-use crate::{analyzer::marks::MarkExt, util::type_ext::TypeVecExt, Marks};
+use crate::{util::type_ext::TypeVecExt, Marks};
 use retain_mut::RetainMut;
 use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RBool, RNumber, RStr, RTsLit};
@@ -102,7 +102,7 @@ impl Fold<Type> for LitGeneralizer {
                 metadata,
                 ..
             }) => {
-                if self.marks.prevent_generalization_mark.is_marked(span) {
+                if metadata.common.prevent_generalization {
                     return ty;
                 }
 
