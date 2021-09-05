@@ -218,7 +218,7 @@ impl Clone for Type {
     }
 }
 
-assert_eq_size!(Type, [u8; 104]);
+assert_eq_size!(Type, [u8; 112]);
 
 impl TypeEq for Type {
     fn type_eq(&self, other: &Self) -> bool {
@@ -495,7 +495,7 @@ pub struct Ref {
     pub metadata: RefMetadata,
 }
 
-assert_eq_size!(Ref, [u8; 72]);
+assert_eq_size!(Ref, [u8; 80]);
 
 impl Debug for Ref {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
@@ -568,7 +568,7 @@ pub struct Enum {
     pub metadata: EnumMetadata,
 }
 
-assert_eq_size!(Enum, [u8; 80]);
+assert_eq_size!(Enum, [u8; 88]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct EnumMember {
@@ -668,7 +668,7 @@ pub struct Mapped {
     pub metadata: MappedMetadata,
 }
 
-assert_eq_size!(Mapped, [u8; 96]);
+assert_eq_size!(Mapped, [u8; 104]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Conditional {
@@ -740,7 +740,7 @@ pub struct TypeLit {
     pub metadata: TypeLitMetadata,
 }
 
-assert_eq_size!(TypeLit, [u8; 48]);
+assert_eq_size!(TypeLit, [u8; 56]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeParamDecl {
@@ -975,7 +975,7 @@ pub struct EnumVariant {
     pub metadata: EnumVariantMetadata,
 }
 
-assert_eq_size!(EnumVariant, [u8; 48]);
+assert_eq_size!(EnumVariant, [u8; 56]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Function {
@@ -2114,7 +2114,7 @@ pub struct StaticThis {
     pub metadata: StaticThisMetadata,
 }
 
-assert_eq_size!(StaticThis, [u8; 20]);
+assert_eq_size!(StaticThis, [u8; 24]);
 
 #[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ThisType {
@@ -2122,7 +2122,7 @@ pub struct ThisType {
     pub metadata: ThisTypeMetadata,
 }
 
-assert_eq_size!(ThisType, [u8; 20]);
+assert_eq_size!(ThisType, [u8; 24]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TplType {
