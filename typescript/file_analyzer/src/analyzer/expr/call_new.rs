@@ -2878,7 +2878,7 @@ impl Analyzer<'_, '_> {
                             self.storage.report(err)
                         }
                     } else {
-                        let mut allow_unknown_rhs = marks.resolved_from_var.is_marked(arg.ty.span())
+                        let mut allow_unknown_rhs = arg.ty.metadata().resolved_from_var
                             || match arg.ty.normalize() {
                                 Type::TypeLit(..) => false,
                                 _ => true,
@@ -3058,11 +3058,7 @@ impl Analyzer<'_, '_> {
                 new_types.dedup_type();
                 let mut new_ty = Type::union(new_types);
                 if upcasted {
-                    self.env
-                        .shared()
-                        .marks()
-                        .prevent_converting_to_children
-                        .apply_to_type(&mut new_ty);
+                    new_ty.metadata_mut().prevent_converting_to_children = true;
                 }
                 return Ok(new_ty);
             }

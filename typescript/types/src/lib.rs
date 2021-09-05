@@ -1341,6 +1341,48 @@ impl Type {
         }
     }
 
+    pub fn metadata_mut(&mut self) -> &mut CommonTypeMetadata {
+        match self.normalize_mut() {
+            Type::Instance(ty) => &mut ty.metadata.common,
+            Type::StaticThis(ty) => &mut ty.metadata.common,
+            Type::This(ty) => &mut ty.metadata.common,
+            Type::Lit(ty) => &mut ty.metadata.common,
+            Type::Query(ty) => &mut ty.metadata.common,
+            Type::Infer(ty) => &mut ty.metadata.common,
+            Type::Import(ty) => &mut ty.metadata.common,
+            Type::Predicate(ty) => &mut ty.metadata.common,
+            Type::IndexedAccessType(ty) => &mut ty.metadata.common,
+            Type::Ref(ty) => &mut ty.metadata.common,
+            Type::TypeLit(ty) => &mut ty.metadata.common,
+            Type::Keyword(ty) => &mut ty.metadata.common,
+            Type::Conditional(ty) => &mut ty.metadata.common,
+            Type::Tuple(ty) => &mut ty.metadata.common,
+            Type::Array(ty) => &mut ty.metadata.common,
+            Type::Union(ty) => &mut ty.metadata.common,
+            Type::Intersection(ty) => &mut ty.metadata.common,
+            Type::Function(ty) => &mut ty.metadata.common,
+            Type::Constructor(ty) => &mut ty.metadata.common,
+            Type::Operator(ty) => &mut ty.metadata.common,
+            Type::Param(ty) => &mut ty.metadata.common,
+            Type::EnumVariant(ty) => &mut ty.metadata.common,
+            Type::Interface(ty) => &mut ty.metadata.common,
+            Type::Enum(ty) => &mut ty.metadata.common,
+            Type::Mapped(ty) => &mut ty.metadata.common,
+            Type::Alias(ty) => &mut ty.metadata.common,
+            Type::Namespace(_ty) => todo!("Type::Namespace -> metadata()"),
+            Type::Module(ty) => &mut ty.metadata.common,
+            Type::Class(ty) => &mut ty.metadata.common,
+            Type::ClassDef(ty) => &mut ty.metadata.common,
+            Type::Rest(ty) => &mut ty.metadata.common,
+            Type::Optional(ty) => &mut ty.metadata.common,
+            Type::Symbol(ty) => &mut ty.metadata.common,
+            Type::Tpl(ty) => &mut ty.metadata.common,
+            Type::Intrinsic(ty) => &mut ty.metadata.common,
+
+            Type::Arc(_) => unreachable!(),
+        }
+    }
+
     /// Respan but preserve SyntaxContext
     pub fn reposition(&mut self, from: Span) {
         let ctxt = self.span().ctxt;
