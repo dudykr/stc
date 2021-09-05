@@ -3335,7 +3335,7 @@ impl Analyzer<'_, '_> {
                 Ok(()) => {}
                 Err(err) => {
                     self.storage.report(err);
-                    return Ok(Type::any(span));
+                    return Ok(Type::any(span, Default::default()));
                 }
             }
         }
@@ -3349,6 +3349,7 @@ impl Analyzer<'_, '_> {
                             span,
                             // TODO: Check length (After implementing error recovery for the parser)
                             elem_type: box type_args.clone().params.into_iter().next().unwrap(),
+                            metadata: Default::default(),
                         }));
                     }
                 }
@@ -3462,6 +3463,7 @@ impl Analyzer<'_, '_> {
                     ctxt: self.ctx.module_id,
                     type_name: RTsEntityName::Ident(i.clone()),
                     type_args: type_args.cloned().map(Box::new),
+                    metadata: Default::default(),
                 }))
             }
             RTsEntityName::TsQualifiedName(ref qname) => {
