@@ -659,7 +659,11 @@ impl Analyzer<'_, '_> {
                         .map(|ty| self.exclude_props(span, ty, keys))
                         .collect::<Result<_, _>>()?;
 
-                    return Ok(Type::Union(Union { span: u.span, types }));
+                    return Ok(Type::Union(Union {
+                        span: u.span,
+                        types,
+                        metadata: u.metadata,
+                    }));
                 }
 
                 Type::Intersection(..) | Type::Class(..) | Type::Interface(..) | Type::ClassDef(..) => {
