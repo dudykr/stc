@@ -687,6 +687,7 @@ impl Analyzer<'_, '_> {
                 ty
             );
         }
+        let span = span.with_ctxt(SyntaxContext::empty());
 
         ty.assert_valid();
 
