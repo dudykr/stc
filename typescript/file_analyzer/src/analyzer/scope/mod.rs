@@ -28,8 +28,8 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection,
-    Key, KeywordType, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement, TypeParam,
-    TypeParamInstantiation,
+    Key, KeywordType, KeywordTypeMetadata, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement,
+    TypeParam, TypeParamInstantiation,
 };
 use stc_utils::{error::context, stack};
 use std::{
@@ -1124,7 +1124,10 @@ impl Analyzer<'_, '_> {
             metadata: Default::default(),
         });
         #[allow(dead_code)]
-        static STATIC_THIS: Type = Type::StaticThis(StaticThis { span: DUMMY_SP });
+        static STATIC_THIS: Type = Type::StaticThis(StaticThis {
+            span: DUMMY_SP,
+            metadata: Default::default(),
+        });
 
         if let Some(class) = &self.scope.get_this_class_name() {
             if *class == *name {
@@ -1312,7 +1315,13 @@ impl Analyzer<'_, '_> {
                             ty
                         }
                     }
-                    Err(..) => Some(Type::any(ty.span())),
+                    Err(..) => Some(Type::any(
+                        ty.span(),
+                        KeywordTypeMetadata {
+                            common: ty.metadata(),
+                            ..Default::default()
+                        },
+                    )),
                 }
             }
             None => None,
@@ -2512,8 +2521,8 @@ impl Expander<'_, '_, '_> {
                     return ty;
                 }
 
-                Type::Union(Union { span, types }) => {
-                    return Type::Union(Union { span, types });
+                Type::Union(Union { span, types, metadata }) => {
+                    return Type::Union(Union { span, types, metadata });
                 }
 
                 Type::Function(ty::Function {
@@ -2521,6 +2530,7 @@ impl Expander<'_, '_, '_> {
                     type_params,
                     params,
                     ret_ty,
+                    metadata,
                 }) => {
                     let ret_ty = self.analyzer.rename_type_params(span, *ret_ty, None)?;
                     // TODO: PERF
@@ -2531,6 +2541,7 @@ impl Expander<'_, '_, '_> {
                         type_params,
                         params,
                         ret_ty,
+                        metadata,
                     });
                 }
 
