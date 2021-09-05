@@ -1542,6 +1542,7 @@ impl Analyzer<'_, '_> {
                             ctxt: self.ctx.module_id,
                             enum_name: e.id.clone().into(),
                             name: Some(sym.clone()),
+                            metadata: Default::default(),
                         }));
                     }
                     Key::Num(RNumber { value, .. }) => {
@@ -1789,21 +1790,24 @@ impl Analyzer<'_, '_> {
                 let mut prop_ty = match prop {
                     Key::Computed(key) => key.ty.clone(),
                     Key::Normal { span, sym } => box Type::Lit(LitType {
-                        span: *span,
+                        span: span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::Str(RStr {
                             span: *span,
                             value: sym.clone(),
                             has_escape: false,
                             kind: Default::default(),
                         }),
+                        metadata: Default::default(),
                     }),
                     Key::Num(n) => box Type::Lit(LitType {
-                        span: n.span,
+                        span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::Number(n.clone()),
+                        metadata: Default::default(),
                     }),
                     Key::BigInt(n) => box Type::Lit(LitType {
-                        span: n.span,
+                        span: n.span.with_ctxt(SyntaxContext::empty()),
                         lit: RTsLit::BigInt(n.clone()),
+                        metadata: Default::default(),
                     }),
                     Key::Private(..) => {
                         unreachable!()
