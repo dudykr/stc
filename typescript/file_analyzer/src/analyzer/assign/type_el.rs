@@ -218,6 +218,7 @@ impl Analyzer<'_, '_> {
                                     span: DUMMY_SP,
                                     params: vec![*r_arr.elem_type.clone()],
                                 }),
+                                metadata: Default::default(),
                             });
 
                             let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;
@@ -260,6 +261,7 @@ impl Analyzer<'_, '_> {
                                         span: DUMMY_SP,
                                         params: vec![r_elem_type],
                                     }),
+                                    metadata: Default::default(),
                                 });
 
                                 let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;
@@ -494,6 +496,7 @@ impl Analyzer<'_, '_> {
                             optional: false,
                         }),
                         type_args: None,
+                        metadata: Default::default(),
                     });
 
                     let rhs = self.normalize(None, Cow::Owned(rhs), Default::default())?;
@@ -563,6 +566,7 @@ impl Analyzer<'_, '_> {
                                         unreachable!()
                                     }
                                 },
+                                metadata: Default::default(),
                             }),
                             lhs_metadata,
                         )
@@ -1167,8 +1171,12 @@ impl Analyzer<'_, '_> {
                                                 type_params: rm.type_params.clone(),
                                                 params: rm.params.clone(),
                                                 ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
-                                                    box Type::any(rm.span.with_ctxt(SyntaxContext::empty()))
+                                                    box Type::any(
+                                                        rm.span.with_ctxt(SyntaxContext::empty()),
+                                                        Default::default(),
+                                                    )
                                                 }),
+                                                metadata: Default::default(),
                                             }),
                                         )
                                         .context("tried to assign a method to an index signature")?;
