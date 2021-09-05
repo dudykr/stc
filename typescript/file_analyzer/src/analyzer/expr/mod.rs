@@ -36,8 +36,8 @@ use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, KeywordType,
-    KeywordTypeMetadata, LitType, Method, ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
-    StaticThis, ThisType,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, Method, ModuleId, Operator, OptionalType, PropertySignature,
+    QueryExpr, QueryType, StaticThis, ThisType,
 };
 use stc_utils::{error::context, stack, try_cache};
 use std::{
@@ -1559,6 +1559,7 @@ impl Analyzer<'_, '_> {
                                         RExpr::Lit(RLit::Num(v)) => RTsLit::Number(v),
                                         _ => unreachable!(),
                                     },
+                                    metadata: Default::default(),
                                 });
                                 return self.access_property(span, &new_obj_ty, prop, type_mode, id_ctx, opts);
                             }
@@ -1566,6 +1567,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
+                            metadata: Default::default(),
                         }));
                     }
 
@@ -1595,6 +1597,7 @@ impl Analyzer<'_, '_> {
                 ref enum_name,
                 ref name,
                 span,
+                metadata,
                 ..
             }) => match self.find_type(*ctxt, enum_name)? {
                 Some(types) => {
@@ -1613,6 +1616,10 @@ impl Analyzer<'_, '_> {
                                                 RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
                                                 RExpr::Lit(RLit::Num(v)) => RTsLit::Number(v),
                                                 _ => unreachable!(),
+                                            },
+                                            metadata: LitTypeMetadata {
+                                                common: metadata.common,
+                                                ..Default::default()
                                             },
                                         });
                                         return self.access_property(*span, &new_obj_ty, prop, type_mode, id_ctx, opts);
@@ -1633,7 +1640,7 @@ impl Analyzer<'_, '_> {
                             if class_prop.key.is_private() {
                                 self.storage
                                     .report(Error::CannotAccessPrivatePropertyFromOutside { span });
-                                return Ok(Type::any(span));
+                                return Ok(Type::any(span, Default::default()));
                             }
 
                             if let Some(declaring) = self.scope.declaring_prop.as_ref() {
@@ -1646,7 +1653,7 @@ impl Analyzer<'_, '_> {
                             if self.key_matches(span, &class_prop.key, &prop, false) {
                                 return Ok(match class_prop.value {
                                     Some(ref ty) => *ty.clone(),
-                                    None => Type::any(span),
+                                    None => Type::any(span, Default::default()),
                                 });
                             }
                         }
@@ -1654,13 +1661,13 @@ impl Analyzer<'_, '_> {
                             if mtd.key.is_private() {
                                 self.storage
                                     .report(Error::CannotAccessPrivatePropertyFromOutside { span });
-                                return Ok(Type::any(span));
+                                return Ok(Type::any(span, Default::default()));
                             }
 
                             if self.key_matches(span, &mtd.key, prop, false) {
                                 if mtd.is_abstract {
                                     self.storage.report(Error::CannotAccessAbstractMemeber { span });
-                                    return Ok(Type::any(span));
+                                    return Ok(Type::any(span, Default::default()));
                                 }
 
                                 return Ok(Type::Function(stc_ts_types::Function {
@@ -1680,6 +1687,7 @@ impl Analyzer<'_, '_> {
                                     params: cons.params.clone(),
                                     type_ann: cons.ret_ty.clone().unwrap_or_else(|| box obj.clone()),
                                     is_abstract: false,
+                                    metadata: Default::default(),
                                 }));
                             }
                         }
@@ -1696,7 +1704,11 @@ impl Analyzer<'_, '_> {
                                     || self.assign(span, &mut Default::default(), &index_ty, &prop_ty).is_ok();
 
                                 if indexed {
-                                    return Ok(index.type_ann.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)));
+                                    return Ok(index
+                                        .type_ann
+                                        .clone()
+                                        .map(|v| *v)
+                                        .unwrap_or_else(|| Type::any(span, Default::default())));
                                 }
                             }
                         }
@@ -1843,7 +1855,7 @@ impl Analyzer<'_, '_> {
                                 self.storage.report(Error::ImplicitAnyBecauseIndexTypeIsWrong { span });
                             }
 
-                            return Ok(Type::any(span));
+                            return Ok(Type::any(span, Default::default()));
                         }
                         _ => {}
                     },
