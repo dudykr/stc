@@ -93,6 +93,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsNeverKeyword,
+                            metadata: Default::default(),
                         }));
                     }
                     TsKeywordTypeKind::TsNumberKeyword
