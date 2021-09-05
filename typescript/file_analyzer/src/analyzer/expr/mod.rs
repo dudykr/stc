@@ -1821,6 +1821,7 @@ impl Analyzer<'_, '_> {
                     readonly: false,
                     obj_type: box obj,
                     index_type: prop_ty,
+                    metadata: Default::default(),
                 }));
             }
 
@@ -1831,6 +1832,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
+                    metadata: Default::default(),
                 }));
             }
 

@@ -14,11 +14,11 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    name::Name, Accessor, Array, ArrayMetadata, Class, ClassDef, ClassMember, ComputedKey, Conditional,
-    ConstructorSignature, Id, IdCtx, Instance, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType,
-    KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr,
-    Ref, ThisType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation,
-    Union,
+    name::Name, Accessor, Array, ArrayMetadata, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional,
+    ConditionalMetadata, ConstructorSignature, Id, IdCtx, Instance, InstanceMetadata, Intersection, Intrinsic,
+    IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId,
+    Operator, PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type, TypeElement,
+    TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
@@ -471,6 +471,7 @@ impl Analyzer<'_, '_> {
         extends_type: &Type,
         true_type: &Type,
         false_type: &Type,
+        metadata: ConditionalMetadata,
     ) -> ValidationResult<Option<Type>> {
         if !check_type.normalize().is_type_param() {
             return Ok(None);
@@ -558,6 +559,7 @@ impl Analyzer<'_, '_> {
                 extends_type: box extends_type.clone(),
                 true_type: box true_type.into_owned(),
                 false_type: box false_type.into_owned(),
+                metadata,
             })))
         } else {
             Ok(None)
@@ -574,6 +576,7 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         )?;
+        let metadata = ty.metadata();
         let actual_span = ty.span();
 
         // TODO: PERF
@@ -584,14 +587,28 @@ impl Analyzer<'_, '_> {
             Type::Ref(..) => Type::Instance(Instance {
                 span: actual_span,
                 ty: box ty,
+                metadata: InstanceMetadata {
+                    common: metadata,
+                    ..Default::default()
+                },
             }),
 
             Type::ClassDef(def) => Type::Class(Class {
                 span: actual_span,
                 def: box def,
+                metadata: ClassMetadata {
+                    common: metadata,
+                    ..Default::default()
+                },
             }),
 
-            Type::StaticThis(ty) => Type::This(ThisType { span: actual_span }),
+            Type::StaticThis(ty) => Type::This(ThisType {
+                span: actual_span,
+                metadata: ThisTypeMetadata {
+                    common: metadata,
+                    ..Default::default()
+                },
+            }),
 
             Type::Intersection(ty) => {
                 let types = ty
