@@ -421,7 +421,13 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             Type::Class(..) | Type::ClassDef(..) | Type::TypeLit(..)
                 if self.facts.contains(TypeFacts::TypeofNEObject) =>
             {
-                return Type::never(span);
+                return Type::never(
+                    span,
+                    KeywordTypeMetadata {
+                        common: ty.metadata(),
+                        ..Default::default()
+                    },
+                );
             }
             _ => {}
         }
@@ -432,9 +438,25 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
         ty = ty.fold_children_with(self);
 
         match ty {
-            Type::Union(ref u) if u.types.is_empty() => return Type::never(u.span),
+            Type::Union(ref u) if u.types.is_empty() => {
+                return Type::never(
+                    u.span,
+                    KeywordTypeMetadata {
+                        common: u.metadata.common,
+                        ..Default::default()
+                    },
+                )
+            }
             Type::Union(u) if u.types.len() == 1 => return u.types.into_iter().next().unwrap(),
-            Type::Intersection(ref i) if i.types.iter().any(|ty| ty.is_never()) => return Type::never(i.span),
+            Type::Intersection(ref i) if i.types.iter().any(|ty| ty.is_never()) => {
+                return Type::never(
+                    i.span,
+                    KeywordTypeMetadata {
+                        common: i.metadata.common,
+                        ..Default::default()
+                    },
+                )
+            }
 
             Type::Keyword(..) => {}
 
