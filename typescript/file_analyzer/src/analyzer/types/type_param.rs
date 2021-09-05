@@ -30,6 +30,7 @@ impl Analyzer<'_, '_> {
                 name,
                 constraint: None,
                 default: None,
+                metadata: Default::default(),
             })
             .collect_vec();
         match ty {
