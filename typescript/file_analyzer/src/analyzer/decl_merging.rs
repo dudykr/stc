@@ -61,6 +61,7 @@ impl Analyzer<'_, '_> {
                                     name: a_tp.params[idx].name.clone(),
                                     constraint: None,
                                     default: None,
+                                    metadata: Default::default(),
                                 }),
                             );
                         }
@@ -98,6 +99,7 @@ impl Analyzer<'_, '_> {
                                     name: a_tp.params[idx].name.clone(),
                                     constraint: None,
                                     default: None,
+                                    metadata: Default::default(),
                                 }),
                             );
                         }
