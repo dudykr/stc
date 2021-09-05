@@ -16,7 +16,7 @@ use stc_ts_types::{
 };
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
-use swc_common::{Span, Spanned};
+use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
 
@@ -321,7 +321,8 @@ impl Analyzer<'_, '_> {
                 } else {
                     self.storage
                         .report(Error::ImplicitAny { span }.context("qualify_ref_type_args"));
-                    args.params.push(Type::any(span));
+                    args.params
+                        .push(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                 }
             }
         }

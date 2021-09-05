@@ -1950,6 +1950,8 @@ impl Expander<'_, '_, '_> {
             }};
         }
 
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         match type_name {
             RTsEntityName::Ident(ref i) => {
                 if let Some(class) = &self.analyzer.scope.get_this_class_name() {
@@ -2210,6 +2212,7 @@ impl Expander<'_, '_, '_> {
                     ctxt,
                     enum_name: e.id.clone().into(),
                     name: None,
+                    metadata: Default::default(),
                 })));
             }
         }
