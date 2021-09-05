@@ -14,7 +14,7 @@ use stc_ts_types::{
     QueryExpr, QueryType, Ref, RefMetadata, Tuple, TypeElement, Union,
 };
 use std::iter::once;
-use swc_common::{Span, Spanned};
+use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 use ty::TypeExt;
@@ -87,6 +87,8 @@ impl Analyzer<'_, '_> {
     pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> ValidationResult {
         let ty = ty.normalize();
 
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         if ty.is_any() {
             return Ok(ty.clone());
         }
@@ -144,6 +146,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Class(Class {
                     span,
                     def: box def.clone(),
+                    metadata: Default::default(),
                 }))
             }
 
