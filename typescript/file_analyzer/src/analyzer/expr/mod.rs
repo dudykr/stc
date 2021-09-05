@@ -2552,7 +2552,11 @@ impl Analyzer<'_, '_> {
                                 &index_type,
                                 &prop.ty(),
                             ) {
-                                return Ok(m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)));
+                                return Ok(m
+                                    .ty
+                                    .clone()
+                                    .map(|v| *v)
+                                    .unwrap_or_else(|| Type::any(span, Default::default())));
                             }
                         }
                     }
@@ -2566,6 +2570,7 @@ impl Analyzer<'_, '_> {
                     readonly: false,
                     obj_type: box obj,
                     index_type: box prop.ty().into_owned(),
+                    metadata: Default::default(),
                 }));
             }
 
@@ -2583,6 +2588,7 @@ impl Analyzer<'_, '_> {
                                 readonly: false,
                                 obj_type: box obj,
                                 index_type,
+                                metadata: Default::default(),
                             }));
                         }
                         _ => {}
@@ -2595,7 +2601,10 @@ impl Analyzer<'_, '_> {
                                 if class == *i {
                                     return self.access_property(
                                         span,
-                                        &Type::StaticThis(StaticThis { span }),
+                                        &Type::StaticThis(StaticThis {
+                                            span,
+                                            metadata: Default::default(),
+                                        }),
                                         prop,
                                         type_mode,
                                         id_ctx,
@@ -2635,6 +2644,7 @@ impl Analyzer<'_, '_> {
                     obj_type: box obj,
                     readonly: false,
                     index_type,
+                    metadata: Default::default(),
                 });
                 return Ok(ty);
             }
@@ -2655,7 +2665,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Constructor(c) => match prop {
-                Key::Num(_) | Key::BigInt(_) => return Ok(Type::any(span)),
+                Key::Num(_) | Key::BigInt(_) => return Ok(Type::any(span, Default::default())),
                 _ => {
                     return self
                         .access_property(span, &c.type_ann, prop, type_mode, id_ctx, opts)
@@ -2694,6 +2704,7 @@ impl Analyzer<'_, '_> {
                         ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                         type_args: None,
+                        metadata: Default::default(),
                     }),
                     prop,
                     type_mode,
@@ -2705,7 +2716,7 @@ impl Analyzer<'_, '_> {
 
                 // Function does not have information about types of properties.
                 match type_mode {
-                    TypeOfMode::LValue => return Ok(Type::any(span)),
+                    TypeOfMode::LValue => return Ok(Type::any(span, Default::default())),
                     TypeOfMode::RValue => {}
                 }
             }
