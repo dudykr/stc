@@ -23,8 +23,8 @@ use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RBindingIdent, RCallExpr, RExpr, RExprOrSpread, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr,
-    RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisType, RTsThisTypeOrIdent,
-    RTsType, RTsTypeParamInstantiation, RTsTypeRef,
+    RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType,
+    RTsTypeParamInstantiation, RTsTypeRef,
 };
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace, print_type},
@@ -1260,6 +1260,8 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             ty.assert_valid();
         }
+
+        let span = span.with_ctxt(SyntaxContext::empty());
 
         match ty.normalize() {
             Type::Ref(..) | Type::Query(..) => {

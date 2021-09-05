@@ -2420,6 +2420,7 @@ impl Expander<'_, '_, '_> {
                                     ..
                                 })),
                             default: None,
+                            ..
                         },
                     readonly,
                     optional,
@@ -2436,6 +2437,7 @@ impl Expander<'_, '_, '_> {
                             ref extends_type,
                             ref true_type,
                             ref false_type,
+                            ..
                         })),
                     ..
                 }) if constraint.type_eq(&obj_type) && *name == index_type.name => {
@@ -2554,7 +2556,7 @@ impl Expander<'_, '_, '_> {
             Ok(ty) => ty,
             Err(err) => {
                 self.analyzer.storage.report(err);
-                return Type::any(span);
+                return Type::any(span, Default::default());
             }
         };
 

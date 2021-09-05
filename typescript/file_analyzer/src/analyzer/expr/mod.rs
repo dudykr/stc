@@ -25,7 +25,7 @@ use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RAssignExpr, RBindingIdent, RClassExpr, RExpr, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr, RNull, RNumber,
     RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit,
-    RTsNonNullExpr, RTsThisType, RUnaryExpr,
+    RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},

@@ -62,7 +62,7 @@ impl Analyzer<'_, '_> {
             .next();
 
         if let Some(numeric_keyed_ty) = numeric_keyed_ty {
-            let any = box Type::any(span);
+            let any = box Type::any(span, Default::default());
             let numeric_keyed_ty = numeric_keyed_ty.unwrap_or(&any);
 
             match *rhs.normalize() {
@@ -931,7 +931,7 @@ impl Analyzer<'_, '_> {
         lhs_metadata: TypeLitMetadata,
         rhs_members: &[TypeElement],
     ) -> ValidationResult<()> {
-        let span = opts.span;
+        let span = opts.span.with_ctxt(SyntaxContext::empty());
         // We need this to show error if not all of rhs_member is matched
 
         let mut errors = vec![];
@@ -978,8 +978,8 @@ impl Analyzer<'_, '_> {
 
                                         self.assign_inner(
                                             data,
-                                            lp.type_ann.as_deref().unwrap_or(&Type::any(span)),
-                                            rp.type_ann.as_deref().unwrap_or(&Type::any(span)),
+                                            lp.type_ann.as_deref().unwrap_or(&Type::any(span, Default::default())),
+                                            rp.type_ann.as_deref().unwrap_or(&Type::any(span, Default::default())),
                                             opts,
                                         )
                                     })()?;
@@ -1016,8 +1016,12 @@ impl Analyzer<'_, '_> {
                                                     type_params: rm.type_params.clone(),
                                                     params: rm.params.clone(),
                                                     ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
-                                                        box Type::any(span.with_ctxt(SyntaxContext::empty()))
+                                                        box Type::any(
+                                                            span.with_ctxt(SyntaxContext::empty()),
+                                                            Default::default(),
+                                                        )
                                                     }),
+                                                    metadata: Default::default(),
                                                 }),
                                             )
                                             .context(
