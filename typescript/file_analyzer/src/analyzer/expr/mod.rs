@@ -3474,7 +3474,7 @@ impl Analyzer<'_, '_> {
                         // Recover error if possible.
                         if computed {
                             errors.push(err);
-                            Type::any(span)
+                            Type::any(span, Default::default())
                         } else {
                             return Err(err);
                         }
@@ -3516,7 +3516,7 @@ impl Analyzer<'_, '_> {
                 Key::Computed(ComputedKey {
                     span,
                     expr: box RExpr::Invalid(RInvalid { span }),
-                    ty: box Type::any(span),
+                    ty: box Type::any(span, Default::default()),
                 })
             });
 
