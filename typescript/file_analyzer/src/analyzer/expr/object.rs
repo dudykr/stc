@@ -19,7 +19,7 @@ use stc_ts_types::{
 };
 use std::{borrow::Cow, iter::repeat, time::Instant};
 use swc_atoms::JsWord;
-use swc_common::{Spanned, TypeEq, DUMMY_SP};
+use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, instrument};
 
@@ -27,6 +27,7 @@ use tracing::{debug, instrument};
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RObjectLit, type_ann: Option<&Type>) -> ValidationResult {
         let type_ann = self.expand_type_ann(type_ann)?;
+        debug_assert_eq!(node.span.ctxt, SyntaxContext::empty());
 
         self.with_child(ScopeKind::ObjectLit, Default::default(), |a: &mut Analyzer| {
             let mut ret = Type::TypeLit(TypeLit {
