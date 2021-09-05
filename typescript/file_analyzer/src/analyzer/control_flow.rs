@@ -1301,14 +1301,14 @@ impl Analyzer<'_, '_> {
                 .validate_with_args(child, (mode, None, type_ann))
                 .report(&mut child.storage);
 
-            Ok(ty.unwrap_or_else(|| Type::any(cons.span())))
+            Ok(ty.unwrap_or_else(|| Type::any(cons.span(), Default::default())))
         })?;
         let alt = self.with_child(ScopeKind::Flow, false_facts, |child: &mut Analyzer| {
             let ty = alt
                 .validate_with_args(child, (mode, None, type_ann))
                 .report(&mut child.storage);
 
-            Ok(ty.unwrap_or_else(|| Type::any(alt.span())))
+            Ok(ty.unwrap_or_else(|| Type::any(alt.span(), Default::default())))
         })?;
 
         if cons.type_eq(&alt) {
