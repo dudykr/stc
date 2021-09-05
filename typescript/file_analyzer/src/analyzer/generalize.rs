@@ -291,6 +291,7 @@ impl Fold<Type> for Simplifier<'_> {
                             readonly,
                             obj_type: box Type::Keyword(k),
                             index_type,
+                            metadata,
                         })
                     }
                 };
@@ -318,6 +319,7 @@ impl Fold<Type> for Simplifier<'_> {
                     readonly,
                     obj_type: box obj_type,
                     index_type,
+                    metadata,
                 });
             }
 
@@ -408,6 +410,7 @@ impl Fold<Type> for Simplifier<'_> {
                     @ box Type::Lit(LitType {
                         lit: RTsLit::Str(..), ..
                     }),
+                metadata,
                 ..
             }) if obj.types.iter().all(|ty| match ty.normalize() {
                 Type::TypeLit(..) => true,
@@ -467,6 +470,7 @@ impl Fold<Type> for Simplifier<'_> {
                         },
                     }),
                     index_type,
+                    metadata,
                 })
                 .fold_with(self);
             }
@@ -561,15 +565,19 @@ impl Fold<Type> for Simplifier<'_> {
                         lit: RTsLit::Str(RStr { value, .. }),
                         ..
                     }),
+                metadata,
                 ..
             }) if value.parse::<usize>().is_ok() => {
                 let idx = value.parse::<usize>().unwrap();
-                return tuple
-                    .elems
-                    .into_iter()
-                    .map(|el| *el.ty)
-                    .nth(idx)
-                    .unwrap_or_else(|| Type::never(span));
+                return tuple.elems.into_iter().map(|el| *el.ty).nth(idx).unwrap_or_else(|| {
+                    Type::never(
+                        span,
+                        KeywordTypeMetadata {
+                            common: metadata.common,
+                            ..Default::default()
+                        },
+                    )
+                });
             }
             Type::Union(ty) if ty.types.len() == 1 => return ty.types.into_iter().next().unwrap(),
 
