@@ -895,7 +895,7 @@ impl Analyzer<'_, '_> {
                     .get_iterator(span, Cow::Borrowed(&ty), Default::default())
                     .context("tried to convert a type to an iterator to assign with an array pattern")
                     .report(&mut self.storage)
-                    .unwrap_or_else(|| Cow::Owned(Type::any(span)));
+                    .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default())));
                 //
                 for (i, elem) in arr.elems.iter().enumerate() {
                     if let Some(elem) = elem {
@@ -957,7 +957,7 @@ impl Analyzer<'_, '_> {
                                         ..Default::default()
                                     },
                                 )
-                                .unwrap_or_else(|_| Type::any(span));
+                                .unwrap_or_else(|_| Type::any(span, Default::default()));
 
                             self.try_assign_pat_with_opts(span, &kv.value, &prop_ty, opts)
                                 .report(&mut self.storage);
@@ -980,7 +980,7 @@ impl Analyzer<'_, '_> {
                                         ..Default::default()
                                     },
                                 )
-                                .unwrap_or_else(|_| Type::any(span));
+                                .unwrap_or_else(|_| Type::any(span, Default::default()));
 
                             self.try_assign_pat_with_opts(
                                 span,
@@ -997,7 +997,8 @@ impl Analyzer<'_, '_> {
                         RObjectPatProp::Rest(r) => {
                             if r.type_ann.is_none() {
                                 if let Some(m) = &mut self.mutations {
-                                    m.for_pats.entry(r.node_id).or_default().ty = Some(Type::any(span));
+                                    m.for_pats.entry(r.node_id).or_default().ty =
+                                        Some(Type::any(span, Default::default()));
                                 }
                             }
 
@@ -1044,6 +1045,7 @@ impl Analyzer<'_, '_> {
                 let ty = Type::Array(Array {
                     span,
                     elem_type: box ty.clone(),
+                    metadata: Default::default(),
                 });
                 return self.try_assign_pat_with_opts(span, &rest.arg, &ty, opts);
             }

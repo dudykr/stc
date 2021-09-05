@@ -1779,7 +1779,10 @@ impl Analyzer<'_, '_> {
             expr,
             c.type_params.as_ref().map(|v| &*v.params),
             &c.params,
-            c.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)),
+            c.ret_ty
+                .clone()
+                .map(|v| *v)
+                .unwrap_or_else(|| Type::any(span, Default::default())),
             type_args,
             args,
             arg_types,
@@ -1916,6 +1919,7 @@ impl Analyzer<'_, '_> {
                                     Type::Class(Class {
                                         span,
                                         def: box cls.clone(),
+                                        metadata: Default::default(),
                                     })
                                 }),
                             });
