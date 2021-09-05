@@ -38,7 +38,7 @@ use std::{
     sync::Arc,
 };
 use swc_atoms::{js_word, JsWord};
-use swc_common::{EqIgnoreSpan, FromVariant, Span, Spanned, TypeEq, DUMMY_SP};
+use swc_common::{EqIgnoreSpan, FromVariant, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{Accessibility, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use swc_ecma_utils::{
     Value,
@@ -1321,6 +1321,36 @@ impl Type {
 }
 
 struct AssertValid;
+
+impl Visit<TypeElement> for AssertValid {
+    fn visit(&mut self, el: &TypeElement) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+        el.visit_children_with(self);
+        debug_assert_eq!(el.span().ctxt, SyntaxContext::empty());
+    }
+}
+
+impl Visit<EnumMember> for AssertValid {
+    fn visit(&mut self, el: &EnumMember) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+        el.visit_children_with(self);
+        debug_assert_eq!(el.span().ctxt, SyntaxContext::empty());
+    }
+}
+
+impl Visit<ClassMember> for AssertValid {
+    fn visit(&mut self, el: &ClassMember) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+        el.visit_children_with(self);
+        debug_assert_eq!(el.span().ctxt, SyntaxContext::empty());
+    }
+}
 
 impl Visit<Union> for AssertValid {
     fn visit(&mut self, ty: &Union) {
