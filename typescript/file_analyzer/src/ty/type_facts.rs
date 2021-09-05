@@ -5,7 +5,7 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType, Intersection, KeywordType,
-    Mapped, Type, TypeElement, TypeLit, Union,
+    LitType, Mapped, Type, TypeElement, TypeLit, Union,
 };
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
@@ -315,7 +315,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
                 || self.facts.contains(TypeFacts::TypeofEQNumber)
             {
                 u.types.retain(|ty| match ty.normalize() {
-                    Type::Lit(RTsLitType {
+                    Type::Lit(LitType {
                         lit: RTsLit::Str(..), ..
                     })
                     | Type::Keyword(KeywordType {
@@ -323,7 +323,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
                         ..
                     }) if !self.facts.contains(TypeFacts::TypeofEQString) => false,
 
-                    Type::Lit(RTsLitType {
+                    Type::Lit(LitType {
                         lit: RTsLit::Bool(..), ..
                     })
                     | Type::Keyword(KeywordType {
@@ -331,7 +331,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
                         ..
                     }) if !self.facts.contains(TypeFacts::TypeofEQBoolean) => false,
 
-                    Type::Lit(RTsLitType {
+                    Type::Lit(LitType {
                         lit: RTsLit::Number(..),
                         ..
                     })
@@ -372,7 +372,7 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
         // TODO: Don't do anything if type fact is none.
 
         match ty.normalize() {
-            Type::Lit(RTsLitType {
+            Type::Lit(LitType {
                 span,
                 lit: RTsLit::Bool(v),
                 ..
