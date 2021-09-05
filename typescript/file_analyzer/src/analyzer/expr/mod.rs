@@ -1032,6 +1032,8 @@ impl Analyzer<'_, '_> {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
         }
 
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         let start = Instant::now();
         obj.assert_valid();
 
@@ -3264,6 +3266,7 @@ impl Analyzer<'_, '_> {
         n: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult {
+        let span = span.with_ctxt(SyntaxContext::empty());
         {
             let res = self.report_error_for_unresolve_type(span, &n, type_args);
             match res {

@@ -1,9 +1,10 @@
-use std::fmt::Debug;
-
 use crate::ty::{Intersection, Type, Union};
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RBlockStmt, RBool, RIdent, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{
+    RBlockStmt, RBool, RIdent, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType,
+};
 use stc_ts_types::{Id, InferType, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeParam};
+use std::fmt::Debug;
 use swc_common::{Mark, Span, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
 use tracing::instrument;
@@ -116,23 +117,22 @@ pub(crate) struct Marker {
     pub mark: Mark,
 }
 
-impl VisitMut<Span> for Marker {
-    fn visit_mut(&mut self, span: &mut Span) {
+impl VisitMut<Type> for Marker {
+    fn visit_mut(&mut self, ty: &mut Type) {
+        // TODO: PERF
+        ty.normalize_mut();
+
+        let mut span = ty.span();
         span.ctxt = span.ctxt.apply_mark(self.mark);
+        ty.respan(span);
+
+        ty.visit_mut_children_with(self);
     }
 }
 
 /// Prevent interop with hygiene.
 impl VisitMut<RIdent> for Marker {
     fn visit_mut(&mut self, _: &mut RIdent) {}
-}
-
-impl VisitMut<Type> for Marker {
-    fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO: PERF
-        ty.normalize_mut();
-        ty.visit_mut_children_with(self);
-    }
 }
 
 pub(crate) fn is_str_or_union(t: &Type) -> bool {

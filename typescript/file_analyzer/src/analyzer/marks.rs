@@ -1,6 +1,7 @@
 use crate::util::contains_mark;
 use stc_ts_types::{CommonTypeMetadata, KeywordTypeMetadata, Type};
 use swc_common::{Globals, Mark, Span, Spanned, SyntaxContext};
+use tracing::info;
 
 /// Currently this should be shared between multiple runes, because of builtin
 /// types.
@@ -43,22 +44,24 @@ impl Marks {
     }
 
     pub fn new(globals: &Globals) -> Self {
-        fn m() -> Mark {
-            Mark::fresh(Mark::root())
+        fn m(name: &str) -> Mark {
+            let m = Mark::fresh(Mark::root());
+            info!("Mark ({}): {:?}", name, SyntaxContext::empty().apply_mark(m));
+            m
         }
 
         swc_common::GLOBALS.set(globals, || Self {
-            top_level_mark: m(),
-            prevent_generalization_mark: m(),
-            prevent_tuple_to_array: m(),
-            prevent_complex_simplification_mark: m(),
-            implicit_type_mark: m(),
-            no_expand_mark: m(),
-            contains_infer_type_mark: m(),
-            ignore_no_expand_mark: m(),
-            infected_by_this_in_object_literal: m(),
-            prevent_converting_to_children: m(),
-            resolved_from_var: m(),
+            top_level_mark: m("top level"),
+            prevent_generalization_mark: m("no generalization"),
+            prevent_tuple_to_array: m("no tuple-to-array"),
+            prevent_complex_simplification_mark: m("no complex simplification"),
+            implicit_type_mark: m("implicit"),
+            no_expand_mark: m("no expand"),
+            contains_infer_type_mark: m("infer type container"),
+            ignore_no_expand_mark: m("ignore no-expand"),
+            infected_by_this_in_object_literal: m("infected by this"),
+            prevent_converting_to_children: m("prevent conversion to children"),
+            resolved_from_var: m("resolved from var"),
         })
     }
 }

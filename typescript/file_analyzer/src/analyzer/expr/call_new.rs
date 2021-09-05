@@ -501,6 +501,8 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         obj_type.assert_valid();
 
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         let old_this = self.scope.this.take();
         self.scope.this = Some(this.clone());
 
@@ -1031,6 +1033,8 @@ impl Analyzer<'_, '_> {
         prop: &Key,
         opts: CallOpts,
     ) {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         match m {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
                 if opts.disallow_optional_object_property && m.optional {
@@ -1120,6 +1124,8 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
         opts: CallOpts,
     ) -> ValidationResult {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         // Candidates of the method call.
         //
         // 4 is just an unscientific guess
@@ -1775,6 +1781,8 @@ impl Analyzer<'_, '_> {
         kind: ExtractKind,
         callee: &Type,
     ) -> ValidationResult<Vec<CallCandidate>> {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         let callee = self
             .normalize(Some(span), Cow::Borrowed(callee), Default::default())
             .context("tried to normalize to extract callee")?;
@@ -1941,6 +1949,8 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> ValidationResult {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         let has_spread = arg_types.len() != spread_arg_types.len();
 
         // TODO: Calculate return type only if selected
@@ -2067,6 +2077,8 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         let min_param: usize = params.iter().map(|v| &v.pat).map(count_required_pat).sum();
 
         let mut max_param = Some(params.len());
@@ -2181,6 +2193,8 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> ValidationResult<Option<Type>> {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         let mut callable = candidates
             .iter()
             .map(|c| {
@@ -2309,6 +2323,8 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
     ) -> ValidationResult {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         // TODO: Optimize by skipping clone if `this type` is not used.
         let params = params
             .iter()
@@ -2945,6 +2961,8 @@ impl Analyzer<'_, '_> {
     }
 
     fn narrow_type_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> ValidationResult {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         let orig_ty = self
             .normalize(Some(span), Cow::Borrowed(orig_ty), Default::default())
             .context("tried to normalize original type")?;

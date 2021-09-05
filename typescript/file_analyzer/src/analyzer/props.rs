@@ -24,7 +24,7 @@ use stc_ts_types::{Accessor, ComputedKey, Key, KeywordType, PrivateName, TypePar
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
-use swc_common::{Span, Spanned};
+use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
 use tracing::instrument;
 
@@ -392,7 +392,7 @@ impl Analyzer<'_, '_> {
                     sym: i.sym.clone(),
                 };
                 PropertySignature {
-                    span: prop.span(),
+                    span: prop.span().with_ctxt(SyntaxContext::empty()),
                     accessibility: None,
                     readonly: false,
                     key,
