@@ -939,6 +939,8 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: &'a Type,
     ) -> ValidationResult<Option<Cow<'a, TypeLit>>> {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         let _ctx = context(format!("type_to_type_lit: {:?}", ty));
 
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
@@ -1447,6 +1449,8 @@ impl Analyzer<'_, '_> {
     /// }
     /// ```
     fn exclude_type(&mut self, span: Span, ty: &mut Type, excluded: &Type) {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         if ty.type_eq(excluded) {
             *ty = Type::never(
                 ty.span(),
