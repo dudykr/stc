@@ -9,6 +9,7 @@ use stc_ts_ast_rnode::RTsLit;
 use stc_ts_types::{LitType, Type, Union};
 
 mod fix;
+mod generalization;
 pub mod metadata;
 
 pub fn is_str_lit_or_union(t: &Type) -> bool {
