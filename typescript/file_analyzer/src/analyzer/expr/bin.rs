@@ -698,11 +698,11 @@ impl Analyzer<'_, '_> {
                     };
 
                 if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&lt)) {
-                    lt = lt.generalize_lit(marks);
+                    lt = lt.generalize_lit();
                     lt = lt.force_generalize_top_level_literals();
                 }
                 if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&rt)) {
-                    rt = rt.generalize_lit(marks);
+                    rt = rt.generalize_lit();
                     rt = rt.force_generalize_top_level_literals();
                 }
 
@@ -768,10 +768,10 @@ impl Analyzer<'_, '_> {
                 let mut lt = lt.remove_falsy();
                 let mut rt = rt;
                 if may_generalize_lt {
-                    lt = lt.generalize_lit(marks);
+                    lt = lt.generalize_lit();
                 }
                 if self.may_generalize(&rt) {
-                    rt = rt.generalize_lit(marks);
+                    rt = rt.generalize_lit();
                 }
                 //
                 if lt.type_eq(&rt) {
@@ -1189,8 +1189,8 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let l = l.clone().generalize_lit(marks);
-        let r = r.clone().generalize_lit(marks);
+        let l = l.clone().generalize_lit();
+        let r = r.clone().generalize_lit();
         if self.can_compare_relatively(span, &l, &r)? {
             return;
         }

@@ -331,7 +331,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Handle member expression
-                let obj_type = obj.validate_with_default(self)?.generalize_lit(marks);
+                let obj_type = obj.validate_with_default(self)?.generalize_lit();
 
                 let mut obj_type = match *obj_type.normalize() {
                     Type::Keyword(KeywordType {
@@ -3273,7 +3273,7 @@ impl Fold<Type> for ReturnTypeGeneralizer<'_, '_, '_> {
 
         ty = ty.fold_children_with(self);
 
-        ty.generalize_lit(self.analyzer.marks())
+        ty.generalize_lit()
     }
 }
 

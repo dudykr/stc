@@ -1427,7 +1427,7 @@ impl Analyzer<'_, '_> {
                                 unreachable!("module is not a variable")
                             }
                             _ => {
-                                let generalized_var_ty = var_ty.clone().generalize_lit(marks);
+                                let generalized_var_ty = var_ty.clone().generalize_lit();
 
                                 match var_ty.normalize() {
                                     // Allow overriding query type.

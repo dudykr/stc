@@ -146,7 +146,7 @@ impl Analyzer<'_, '_> {
             for mut ty in values.return_types {
                 ty = ty.fold_with(&mut KeyInliner { analyzer: self });
                 if values.should_generalize {
-                    ty = ty.generalize_lit(marks);
+                    ty = ty.generalize_lit();
                 }
 
                 actual.push(ty);

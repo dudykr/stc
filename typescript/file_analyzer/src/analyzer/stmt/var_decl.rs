@@ -342,9 +342,9 @@ impl Analyzer<'_, '_> {
                             if self.may_generalize(&ty) {
                                 // Vars behave differently based on the context.
                                 if self.ctx.can_generalize_literals() {
-                                    ty = ty.generalize_lit(marks);
+                                    ty = ty.generalize_lit();
                                 } else {
-                                    ty = ty.fold_with(&mut Generalizer { force: false, marks });
+                                    ty = ty.fold_with(&mut Generalizer { force: false });
                                 }
                             }
                         }
@@ -366,7 +366,7 @@ impl Analyzer<'_, '_> {
                             ty.assert_valid();
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
-                                    let ret_ty = box f.ret_ty.clone().generalize_lit(marks);
+                                    let ret_ty = box f.ret_ty.clone().generalize_lit();
                                     Type::Function(stc_ts_types::Function { ret_ty, ..f.clone() })
                                 }
 

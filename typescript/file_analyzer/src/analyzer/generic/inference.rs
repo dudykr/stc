@@ -233,17 +233,17 @@ impl Analyzer<'_, '_> {
                                 )
                                 .is_ok()
                             {
-                                *prev = ty.into_owned().generalize_lit(marks);
+                                *prev = ty.into_owned().generalize_lit();
                                 return Ok(());
                             }
                         }
 
-                        e.push(ty.into_owned().generalize_lit(marks));
+                        e.push(ty.into_owned().generalize_lit());
                     }
                 }
             }
             Entry::Vacant(e) => {
-                e.insert(InferredType::Other(vec![ty.into_owned().generalize_lit(marks)]));
+                e.insert(InferredType::Other(vec![ty.into_owned().generalize_lit()]));
             }
         }
 

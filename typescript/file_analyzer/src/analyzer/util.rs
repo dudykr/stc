@@ -2,7 +2,7 @@ use crate::{
     analyzer::{generic::is_literals, scope::ExpandOpts, Analyzer, Ctx},
     ty,
     ty::Type,
-    Marks, ValidationResult,
+    ValidationResult,
 };
 use rnode::{Fold, FoldWith, Visit};
 use stc_ts_ast_rnode::{RExpr, RIdent, RPropName, RStr, RTsEntityName, RTsType};
@@ -238,7 +238,6 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
 #[derive(Debug)]
 pub(super) struct Generalizer {
     pub force: bool,
-    pub marks: Marks,
 }
 
 impl Fold<stc_ts_types::Function> for Generalizer {
@@ -272,7 +271,7 @@ impl Fold<Type> for Generalizer {
         ty = ty.fold_children_with(self);
         self.force = old;
 
-        ty.generalize_lit(self.marks)
+        ty.generalize_lit()
     }
 }
 

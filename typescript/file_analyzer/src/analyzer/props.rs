@@ -283,7 +283,7 @@ impl Analyzer<'_, '_> {
     fn is_type_valid_for_computed_key(&mut self, span: Span, ty: &Type) -> bool {
         let marks = self.marks();
 
-        let ty = ty.clone().generalize_lit(marks);
+        let ty = ty.clone().generalize_lit();
 
         match ty.normalize() {
             Type::Function(..) => return false,

@@ -184,7 +184,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if child.may_generalize(&inferred_return_type) {
-                            inferred_return_type = inferred_return_type.generalize_lit(marks);
+                            inferred_return_type = inferred_return_type.generalize_lit();
                         }
                     }
 

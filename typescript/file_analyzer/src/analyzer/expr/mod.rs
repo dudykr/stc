@@ -1443,7 +1443,7 @@ impl Analyzer<'_, '_> {
         let obj = self
             .with_ctx(ctx)
             .expand(span, obj.into_owned(), Default::default())?
-            .generalize_lit(marks);
+            .generalize_lit();
 
         match obj.normalize() {
             Type::Lit(obj) => {

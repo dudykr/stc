@@ -175,7 +175,7 @@ impl Analyzer<'_, '_> {
                 if p.type_ann.is_none() {
                     if let Some(m) = &mut self.mutations {
                         m.for_class_props.entry(p.node_id).or_default().ty =
-                            value.clone().map(|ty| ty.generalize_lit(marks));
+                            value.clone().map(|ty| ty.generalize_lit());
                     }
                 }
             }
@@ -719,7 +719,7 @@ impl Analyzer<'_, '_> {
         }
 
         let ret_ty = box declared_ret_ty.unwrap_or_else(|| {
-            inferred_ret_ty.map(|ty| ty.generalize_lit(marks)).unwrap_or_else(|| {
+            inferred_ret_ty.map(|ty| ty.generalize_lit()).unwrap_or_else(|| {
                 Type::Keyword(KeywordType {
                     span: c_span,
                     kind: if c.function.body.is_some() {
@@ -736,7 +736,7 @@ impl Analyzer<'_, '_> {
             let node_id = c.function.node_id;
 
             let ret_ty = if self.may_generalize(&ret_ty) {
-                ret_ty.clone().generalize_lit(marks)
+                ret_ty.clone().generalize_lit()
             } else {
                 *ret_ty.clone()
             };
@@ -1840,7 +1840,7 @@ impl Analyzer<'_, '_> {
                                         declared_static_keys.push(key.into_owned());
                                     }
 
-                                    let member = member.fold_with(&mut LitGeneralizer { marks });
+                                    let member = member.fold_with(&mut LitGeneralizer {});
                                     child.scope.this_class_members.push((index, member));
                                 }
                             }
@@ -1908,7 +1908,7 @@ impl Analyzer<'_, '_> {
                                             let mut ty = type_ann.clone().or_else(|| i.type_ann.clone());
                                             let mut ty = try_opt!(ty.validate_with(child));
                                             if ty.is_none() {
-                                                ty = Some(right.validate_with_default(child)?.generalize_lit(marks));
+                                                ty = Some(right.validate_with_default(child)?.generalize_lit());
                                             }
                                             (i, ty)
                                         }
@@ -1965,7 +1965,7 @@ impl Analyzer<'_, '_> {
                                         declared_instance_keys.push(key.into_owned());
                                     }
 
-                                    let member = member.fold_with(&mut LitGeneralizer { marks });
+                                    let member = member.fold_with(&mut LitGeneralizer);
                                     child.scope.this_class_members.push((index, member));
                                 }
                             }

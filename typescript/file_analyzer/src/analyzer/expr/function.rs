@@ -96,7 +96,7 @@ impl Analyzer<'_, '_> {
                             && type_ann.is_none()
                             && child.may_generalize(&ty)
                         {
-                            ty.generalize_lit(marks)
+                            ty.generalize_lit()
                         } else {
                             ty
                         }

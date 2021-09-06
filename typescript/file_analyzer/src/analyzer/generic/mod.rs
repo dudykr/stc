@@ -811,13 +811,13 @@ impl Analyzer<'_, '_> {
                                         )
                                         .is_ok()
                                     {
-                                        *prev = arg.clone().generalize_lit(marks);
+                                        *prev = arg.clone().generalize_lit();
                                         return Ok(());
                                     }
                                 }
 
                                 let param_ty = Type::union(e.clone()).cheap();
-                                e.push(arg.clone().generalize_lit(marks));
+                                e.push(arg.clone().generalize_lit());
 
                                 match param_ty.normalize() {
                                     Type::Param(param) => {
@@ -848,7 +848,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     Entry::Vacant(e) => {
-                        let arg = arg.clone().generalize_lit(marks);
+                        let arg = arg.clone().generalize_lit();
 
                         e.insert(InferredType::Other(vec![arg]));
                     }

@@ -343,7 +343,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     let ty = ty.unwrap_or_else(|| {
-                        let mut ty = default_value_ty.generalize_lit(marks).foldable();
+                        let mut ty = default_value_ty.generalize_lit().foldable();
 
                         if matches!(ty.normalize(), Type::Tuple(..)) {
                             match ty {
@@ -387,7 +387,7 @@ impl Analyzer<'_, '_> {
             Some(v) => Some(v),
             None => match p {
                 RPat::Assign(p) => match self.ctx.pat_mode {
-                    PatMode::Decl => Some(p.right.validate_with_default(self)?.generalize_lit(marks)),
+                    PatMode::Decl => Some(p.right.validate_with_default(self)?.generalize_lit()),
                     PatMode::Assign => Some(default_value_ty.unwrap_or_else(|| Type::any(p.span, Default::default()))),
                 },
                 _ => None,

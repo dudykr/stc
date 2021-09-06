@@ -1,5 +1,5 @@
 use self::generalize::TupleToArray;
-use crate::{util::type_ext::TypeVecExt, Marks};
+use crate::util::type_ext::TypeVecExt;
 use retain_mut::RetainMut;
 use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RBool, RNumber, RStr, RTsLit};
@@ -11,9 +11,7 @@ use tracing::instrument;
 mod generalize;
 pub mod type_facts;
 
-pub(crate) struct LitGeneralizer {
-    pub marks: Marks,
-}
+pub(crate) struct LitGeneralizer;
 
 impl Fold<Ref> for LitGeneralizer {
     fn fold(&mut self, mut r: Ref) -> Ref {
@@ -73,10 +71,7 @@ impl Fold<Tuple> for LitGeneralizer {
 impl Fold<Type> for LitGeneralizer {
     fn fold(&mut self, mut ty: Type) -> Type {
         {
-            let mut checker = LitChecker {
-                marks: self.marks,
-                found: false,
-            };
+            let mut checker = LitChecker { found: false };
             ty.visit_with(&mut checker);
 
             if !checker.found {
@@ -163,7 +158,6 @@ impl Fold<TypeLit> for LitGeneralizer {
 }
 
 struct LitChecker {
-    marks: Marks,
     found: bool,
 }
 
@@ -191,9 +185,9 @@ impl Visit<Type> for LitChecker {
 }
 
 pub trait TypeExt: Into<Type> {
-    #[instrument(skip(self, marks))]
-    fn generalize_lit(self, marks: Marks) -> Type {
-        self.into().fold_with(&mut LitGeneralizer { marks }).fixed()
+    #[instrument(skip(self,))]
+    fn generalize_lit(self) -> Type {
+        self.into().fold_with(&mut LitGeneralizer).fixed()
     }
 
     #[instrument(skip(self))]
