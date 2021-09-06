@@ -74,9 +74,6 @@ macro_rules! impl_traits {
 /// Common metadata shared among [crate::Type]s.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct CommonTypeMetadata {
-    /// Used for optimization.
-    pub valid: bool,
-
     pub implicit: bool,
 
     pub infected_by_this_in_object_literal: bool,

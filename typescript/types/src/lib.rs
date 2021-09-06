@@ -218,7 +218,7 @@ impl Clone for Type {
     }
 }
 
-assert_eq_size!(Type, [u8; 112]);
+assert_eq_size!(Type, [u8; 104]);
 
 impl TypeEq for Type {
     fn type_eq(&self, other: &Self) -> bool {
@@ -668,7 +668,7 @@ pub struct Mapped {
     pub metadata: MappedMetadata,
 }
 
-assert_eq_size!(Mapped, [u8; 104]);
+assert_eq_size!(Mapped, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Conditional {
