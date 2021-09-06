@@ -19,7 +19,7 @@ impl Analyzer<'_, '_> {
 
         let marks = self.marks();
 
-        let type_ann = self.expand_type_ann(type_ann)?;
+        let type_ann = self.expand_type_ann(f.span, type_ann)?;
 
         self.with_child(ScopeKind::ArrowFn, Default::default(), |child: &mut Analyzer| {
             let type_params = try_opt!(f.type_params.validate_with(child));

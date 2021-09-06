@@ -26,7 +26,7 @@ use tracing::{debug, instrument};
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RObjectLit, type_ann: Option<&Type>) -> ValidationResult {
-        let type_ann = self.expand_type_ann(type_ann)?;
+        let type_ann = self.expand_type_ann(node.span, type_ann)?;
         debug_assert_eq!(node.span.ctxt, SyntaxContext::empty());
 
         self.with_child(ScopeKind::ObjectLit, Default::default(), |a: &mut Analyzer| {

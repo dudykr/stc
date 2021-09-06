@@ -48,7 +48,7 @@ impl Analyzer<'_, '_> {
         let span = arr.span;
         let elems = &arr.elems;
 
-        let type_ann = self.expand_type_ann(type_ann)?;
+        let type_ann = self.expand_type_ann(span, type_ann)?;
 
         let iterator = type_ann
             .as_deref()

@@ -749,14 +749,19 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    #[instrument(skip(self, ty))]
-    pub(crate) fn expand_type_ann<'a>(&mut self, ty: Option<&'a Type>) -> ValidationResult<Option<Cow<'a, Type>>> {
+    #[instrument(skip(self, span, ty))]
+    pub(crate) fn expand_type_ann<'a>(
+        &mut self,
+        span: Span,
+        ty: Option<&'a Type>,
+    ) -> ValidationResult<Option<Cow<'a, Type>>> {
         let ty = match ty {
             Some(v) => v,
             None => return Ok(None),
         };
+        let span = span.with_ctxt(SyntaxContext::empty());
 
-        let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
+        let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
 
         Ok(Some(ty))
     }
