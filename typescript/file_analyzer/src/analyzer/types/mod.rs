@@ -328,7 +328,7 @@ impl Analyzer<'_, '_> {
                                             *check_type_constraint = box new;
 
                                             let mut params = HashMap::default();
-                                            params.insert(name.clone(), check_type.clone().cheap());
+                                            params.insert(name.clone(), check_type.clone().fixed().cheap());
                                             let c = self.expand_type_params(&params, c.clone(), Default::default())?;
                                             let c = Type::Conditional(c);
                                             c.assert_valid();
