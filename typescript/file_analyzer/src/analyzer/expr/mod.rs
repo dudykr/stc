@@ -3523,9 +3523,11 @@ impl Analyzer<'_, '_> {
 
         let name: Option<Name> = expr.try_into().ok();
 
-        if let Some(name) = &name {
-            if let Some(ty) = self.scope.get_type_from_name(name) {
-                return Ok(ty);
+        if let TypeOfMode::RValue = type_mode {
+            if let Some(name) = &name {
+                if let Some(ty) = self.scope.get_type_from_name(name) {
+                    return Ok(ty);
+                }
             }
         }
 
