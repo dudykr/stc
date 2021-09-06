@@ -2183,7 +2183,7 @@ assert_eq_size!(TplType, [u8; 72]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq)]
 pub struct Freezed {
     #[span]
-    pub ty: Arc<Type>,
+    ty: Arc<Type>,
 }
 
 assert_eq_size!(Freezed, [u8; 8]);
