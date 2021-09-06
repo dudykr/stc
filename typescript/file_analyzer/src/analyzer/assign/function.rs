@@ -14,7 +14,7 @@ use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
 use std::borrow::Cow;
 use swc_atoms::js_word;
-use swc_common::{Spanned, TypeEq};
+use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 
@@ -41,7 +41,7 @@ impl Analyzer<'_, '_> {
         r_params: &[FnParam],
         r_ret_ty: Option<&Type>,
     ) -> ValidationResult<()> {
-        let span = opts.span;
+        let span = opts.span.with_ctxt(SyntaxContext::empty());
 
         if let Some(r_ret_ty) = r_ret_ty {
             // Fast path for
@@ -203,13 +203,15 @@ impl Analyzer<'_, '_> {
                     span,
                     type_params: None,
                     params: l_params.to_vec(),
-                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
+                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    metadata: Default::default(),
                 });
                 let rf = Type::Function(Function {
                     span,
                     type_params: None,
                     params: r_params.to_vec(),
-                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
+                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    metadata: Default::default(),
                 });
 
                 let map =
@@ -241,13 +243,15 @@ impl Analyzer<'_, '_> {
                     span,
                     type_params: None,
                     params: l_params.to_vec(),
-                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
+                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    metadata: Default::default(),
                 });
                 let rf = Type::Function(Function {
                     span,
                     type_params: None,
                     params: r_params.to_vec(),
-                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span)),
+                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    metadata: Default::default(),
                 });
 
                 let map = self.infer_type_with_types(

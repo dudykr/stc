@@ -16,12 +16,15 @@ use crate::{
 };
 use stc_ts_ast_rnode::{
     RBinExpr, RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
-    RTsEntityName, RTsKeywordType, RTsLit, RTsLitType, RUnaryExpr,
+    RTsEntityName, RTsLit, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
-use stc_ts_types::{name::Name, Class, IdCtx, Intersection, Key, ModuleId, Ref, TypeElement, Union};
+use stc_ts_types::{
+    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, TypeElement,
+    Union, UnionMetadata,
+};
 use std::{
     borrow::Cow,
     collections::hash_map::Entry,
@@ -190,12 +193,18 @@ impl Analyzer<'_, '_> {
         self.report_errors_for_bin_expr(
             span,
             op,
-            &lt.as_ref()
-                .map(Cow::Borrowed)
-                .unwrap_or_else(|| Cow::Owned(Type::any(left.span().with_ctxt(SyntaxContext::empty())))),
-            &rt.as_ref()
-                .map(Cow::Borrowed)
-                .unwrap_or_else(|| Cow::Owned(Type::any(left.span().with_ctxt(SyntaxContext::empty())))),
+            &lt.as_ref().map(Cow::Borrowed).unwrap_or_else(|| {
+                Cow::Owned(Type::any(
+                    left.span().with_ctxt(SyntaxContext::empty()),
+                    Default::default(),
+                ))
+            }),
+            &rt.as_ref().map(Cow::Borrowed).unwrap_or_else(|| {
+                Cow::Owned(Type::any(
+                    left.span().with_ctxt(SyntaxContext::empty()),
+                    Default::default(),
+                ))
+            }),
         );
 
         if add_type_facts {
@@ -235,6 +244,12 @@ impl Analyzer<'_, '_> {
             _ => return Err(Error::Errors { span, errors }),
         };
 
+        if !self.is_builtin {
+            debug_assert!(!lt.span().is_dummy());
+
+            debug_assert!(!rt.span().is_dummy());
+        }
+
         // Handle control-flow based typing
         match op {
             op!("===") | op!("!==") | op!("==") | op!("!=") => {
@@ -268,7 +283,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 match c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match *l_ty {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
                     }) => {
@@ -381,6 +396,7 @@ impl Analyzer<'_, '_> {
                                     Type::Intersection(Intersection {
                                         span,
                                         types: vec![orig_ty, narrowed_ty],
+                                        metadata: Default::default(),
                                     })
                                     .fixed()
                                     .cheap(),
@@ -415,7 +431,7 @@ impl Analyzer<'_, '_> {
             }};
             ($ty:expr) => {{
                 match &$ty {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
                     }) => {
@@ -437,7 +453,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 if let Some(()) = c.take_if_any_matches(|(_, lt), (_, _)| match lt {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
                     }) => Some(()),
@@ -449,26 +465,28 @@ impl Analyzer<'_, '_> {
                 }
 
                 if lt.is_num() && rt.is_num() {
-                    return Ok(Type::Keyword(RTsKeywordType {
+                    return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
+                        metadata: Default::default(),
                     }));
                 }
 
                 if let Some(()) = c.take_if_any_matches(|(_, lt), (_, _)| match *lt {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
                     })
-                    | Type::Lit(RTsLitType {
+                    | Type::Lit(LitType {
                         lit: RTsLit::Str(..), ..
                     }) => Some(()),
 
                     _ => None,
                 }) {
-                    return Ok(Type::Keyword(RTsKeywordType {
+                    return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
+                        metadata: Default::default(),
                     }));
                 }
 
@@ -485,7 +503,11 @@ impl Analyzer<'_, '_> {
 
                     None
                 }) {
-                    return Ok(Type::Keyword(RTsKeywordType { span, kind }));
+                    return Ok(Type::Keyword(KeywordType {
+                        span,
+                        kind,
+                        metadata: Default::default(),
+                    }));
                 }
 
                 if c.any(|(_, ty)| {
@@ -498,11 +520,11 @@ impl Analyzer<'_, '_> {
                 //  - null is invalid operand
                 //  - undefined is invalid operand
                 if c.both(|(_, ty)| match *ty {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         ..
                     })
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
                     }) => true,
@@ -513,9 +535,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 if is_str_or_union(&lt) || is_str_or_union(&rt) {
-                    return Ok(Type::Keyword(RTsKeywordType {
+                    return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
+                        metadata: Default::default(),
                     }));
                 }
                 // At this point rhs cannot be string.
@@ -525,9 +548,10 @@ impl Analyzer<'_, '_> {
                 if self.can_be_casted_to_number_in_rhs(lt.span(), &lt)
                     && self.can_be_casted_to_number_in_rhs(rt.span(), &rt)
                 {
-                    return Ok(Type::Keyword(RTsKeywordType {
+                    return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
+                        metadata: Default::default(),
                     }));
                 }
 
@@ -536,9 +560,10 @@ impl Analyzer<'_, '_> {
             op!("*") | op!("/") => {
                 no_unknown!();
 
-                return Ok(Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
+                    metadata: Default::default(),
                 }));
             }
 
@@ -586,16 +611,18 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Ok(Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     span,
+                    metadata: Default::default(),
                 }));
             }
 
             op!("===") | op!("!==") | op!("!=") | op!("==") => {
-                return Ok(Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    metadata: Default::default(),
                 }));
             }
 
@@ -607,9 +634,10 @@ impl Analyzer<'_, '_> {
                     })
                 }
 
-                return Ok(Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    metadata: Default::default(),
                 }));
             }
 
@@ -628,9 +656,10 @@ impl Analyzer<'_, '_> {
 
                 self.validate_relative_comparison_operands(span, op, &lt, &rt);
 
-                return Ok(Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    metadata: Default::default(),
                 }));
             }
 
@@ -652,9 +681,10 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Ok(Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    metadata: Default::default(),
                 }));
             }
 
@@ -674,11 +704,11 @@ impl Analyzer<'_, '_> {
                     };
 
                 if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&lt)) {
-                    lt = lt.generalize_lit(marks);
+                    lt = lt.generalize_lit();
                     lt = lt.force_generalize_top_level_literals();
                 }
                 if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&rt)) {
-                    rt = rt.generalize_lit(marks);
+                    rt = rt.generalize_lit();
                     rt = rt.force_generalize_top_level_literals();
                 }
 
@@ -687,10 +717,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 match lt.normalize() {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
-                    }) => return Ok(Type::any(span)),
+                    }) => return Ok(Type::any(span, Default::default())),
 
                     _ => {}
                 }
@@ -744,10 +774,10 @@ impl Analyzer<'_, '_> {
                 let mut lt = lt.remove_falsy();
                 let mut rt = rt;
                 if may_generalize_lt {
-                    lt = lt.generalize_lit(marks);
+                    lt = lt.generalize_lit();
                 }
                 if self.may_generalize(&rt) {
-                    rt = rt.generalize_lit(marks);
+                    rt = rt.generalize_lit();
                 }
                 //
                 if lt.type_eq(&rt) {
@@ -1020,6 +1050,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Union(Union {
                     span: orig.span,
                     types: new_types,
+                    metadata: orig.metadata,
                 })
                 .fixed());
             }
@@ -1032,7 +1063,7 @@ impl Analyzer<'_, '_> {
             || orig_ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword)
         {
             if ty.normalize().is_interface() {
-                return Ok(Type::never(span));
+                return Ok(Type::never(span, Default::default()));
             }
         }
 
@@ -1043,6 +1074,7 @@ impl Analyzer<'_, '_> {
                     Cow::Owned(Type::Class(Class {
                         span,
                         def: box ty.clone(),
+                        metadata: Default::default(),
                     })),
                     orig_ty,
                 )
@@ -1065,6 +1097,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::Class(Class {
                             span,
                             def: box def.clone(),
+                            metadata: Default::default(),
                         }))
                     }
                     _ => {}
@@ -1089,7 +1122,7 @@ impl Analyzer<'_, '_> {
                     )
                     .context("tried to check if overlap exists to calculate the type created by instanceof")?
                 {
-                    return Ok(Type::never(span));
+                    return Ok(Type::never(span, Default::default()));
                 }
             }
         }
@@ -1099,6 +1132,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Class(Class {
                     span,
                     def: box def.clone(),
+                    metadata: Default::default(),
                 }))
             }
             _ => {}
@@ -1161,8 +1195,8 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let l = l.clone().generalize_lit(marks);
-        let r = r.clone().generalize_lit(marks);
+        let l = l.clone().generalize_lit();
+        let r = r.clone().generalize_lit();
         if self.can_compare_relatively(span, &l, &r)? {
             return;
         }
@@ -1339,19 +1373,19 @@ impl Analyzer<'_, '_> {
         // TODO: We should assign this to builtin interface `Function`.
         match ty.normalize() {
             // Error
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNumberKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
             })
@@ -1386,7 +1420,11 @@ impl Analyzer<'_, '_> {
                     .map(|ty| self.validate_rhs_of_instanceof(span, type_for_error, ty.clone()))
                     .collect();
 
-                return Type::Union(Union { span: u.span, types });
+                return Type::Union(Union {
+                    span: u.span,
+                    types,
+                    metadata: u.metadata,
+                });
             }
 
             // Ok
@@ -1407,6 +1445,7 @@ impl Analyzer<'_, '_> {
                             span.with_ctxt(SyntaxContext::empty()),
                         )),
                         type_args: None,
+                        metadata: Default::default(),
                     }),
                     &ty,
                 ) {
@@ -1532,7 +1571,15 @@ impl Analyzer<'_, '_> {
                     types.push(new_ty);
                 }
 
-                return Ok(Type::Union(Union { span, types }).fixed());
+                return Ok(Type::Union(Union {
+                    span,
+                    types,
+                    metadata: UnionMetadata {
+                        common: equals_to.metadata(),
+                        ..Default::default()
+                    },
+                })
+                .fixed());
             }
             _ => {}
         }
@@ -1540,7 +1587,13 @@ impl Analyzer<'_, '_> {
         // At here two variants are different from each other because we checked with
         // type_eq above.
         if orig_ty.is_enum_variant() && equals_to.is_enum_variant() {
-            return Ok(Type::never(span));
+            return Ok(Type::never(
+                span,
+                KeywordTypeMetadata {
+                    common: equals_to.metadata(),
+                    ..Default::default()
+                },
+            ));
         }
 
         // Defaults to new type.
@@ -1563,7 +1616,7 @@ impl Analyzer<'_, '_> {
                 // expression.
             }
             op!("||") | op!("&&") => match lt.normalize() {
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
                 }) => errors.push(Error::TS1345 { span }),
@@ -1589,16 +1642,18 @@ impl Analyzer<'_, '_> {
                     }
 
                     match ty.normalize() {
-                        Type::Keyword(RTsKeywordType {
+                        Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            ..
                         }) => {
                             self.storage.report(Error::ObjectIsPossiblyUndefined { span: *span });
                         }
 
-                        Type::Keyword(RTsKeywordType {
+                        Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsNullKeyword,
+                            ..
                         }) => {
                             self.storage.report(Error::ObjectIsPossiblyNull { span: *span });
                         }
@@ -1613,21 +1668,21 @@ impl Analyzer<'_, '_> {
 
                 if (op == op!("&") || op == op!("^") || op == op!("|"))
                     && match lt.normalize() {
-                        Type::Keyword(RTsKeywordType {
+                        Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsBooleanKeyword,
                             ..
                         })
-                        | Type::Lit(RTsLitType {
+                        | Type::Lit(LitType {
                             lit: RTsLit::Bool(..), ..
                         }) => true,
                         _ => false,
                     }
                     && match rt.normalize() {
-                        Type::Keyword(RTsKeywordType {
+                        Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsBooleanKeyword,
                             ..
                         })
-                        | Type::Lit(RTsLitType {
+                        | Type::Lit(LitType {
                             lit: RTsLit::Bool(..), ..
                         }) => true,
                         _ => false,
@@ -1642,14 +1697,14 @@ impl Analyzer<'_, '_> {
 
             op!("in") => {
                 match lt.normalize() {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
                     }) => {
                         self.storage.report(Error::ObjectIsPossiblyNull { span });
                     }
 
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         ..
                     }) => {
@@ -1664,14 +1719,14 @@ impl Analyzer<'_, '_> {
                 }
 
                 match rt.normalize() {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
                     }) => {
                         self.storage.report(Error::ObjectIsPossiblyNull { span });
                     }
 
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         ..
                     }) => {
@@ -1704,31 +1759,31 @@ impl Analyzer<'_, '_> {
                 true
             }
 
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNumberKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsBigIntKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                 ..
             })
-            | Type::Lit(RTsLitType {
+            | Type::Lit(LitType {
                 lit: RTsLit::Number(..),
                 ..
             })
-            | Type::Lit(RTsLitType {
+            | Type::Lit(LitType {
                 lit: RTsLit::Str(..), ..
             })
             | Type::Enum(..)
@@ -1767,7 +1822,7 @@ impl Analyzer<'_, '_> {
             | Type::Tuple(..)
             | Type::IndexedAccessType(..)
             | Type::Interface(..)
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsObjectKeyword,
                 ..
             }) => true,

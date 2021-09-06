@@ -15,8 +15,8 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, Function, Id, Interface, Operator, Ref, Type, TypeElement, TypeLit, TypeParam,
-    Union,
+    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordTypeMetadata, Operator, Ref,
+    Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use std::{
     borrow::Cow,
@@ -183,6 +183,10 @@ impl Analyzer<'_, '_> {
                         name: name.clone(),
                         constraint: None,
                         default: None,
+                        metadata: TypeParamMetadata {
+                            common: ty.metadata(),
+                            ..Default::default()
+                        },
                     }));
                 }
             }
@@ -229,17 +233,17 @@ impl Analyzer<'_, '_> {
                                 )
                                 .is_ok()
                             {
-                                *prev = ty.into_owned().generalize_lit(marks);
+                                *prev = ty.into_owned().generalize_lit();
                                 return Ok(());
                             }
                         }
 
-                        e.push(ty.into_owned().generalize_lit(marks));
+                        e.push(ty.into_owned().generalize_lit());
                     }
                 }
             }
             Entry::Vacant(e) => {
-                e.insert(InferredType::Other(vec![ty.into_owned().generalize_lit(marks)]));
+                e.insert(InferredType::Other(vec![ty.into_owned().generalize_lit()]));
             }
         }
 
@@ -307,6 +311,10 @@ impl Analyzer<'_, '_> {
                 &Type::Array(Array {
                     span: param.span(),
                     elem_type: box elem_type.clone(),
+                    metadata: ArrayMetadata {
+                        common: param.metadata(),
+                        ..Default::default()
+                    },
                 }),
                 arg,
                 InferTypeOpts {
@@ -502,7 +510,11 @@ impl Analyzer<'_, '_> {
                                         span,
                                         type_params: a.type_params.clone(),
                                         params: a.params.clone(),
-                                        ret_ty: a.ret_ty.clone().unwrap_or_else(|| box Type::any(span)),
+                                        ret_ty: a
+                                            .ret_ty
+                                            .clone()
+                                            .unwrap_or_else(|| box Type::any(span, Default::default())),
+                                        metadata: Default::default(),
                                     }),
                                     opts,
                                 )?;
@@ -523,7 +535,11 @@ impl Analyzer<'_, '_> {
                                         span,
                                         type_params: p.type_params.clone(),
                                         params: p.params.clone(),
-                                        ret_ty: p.ret_ty.clone().unwrap_or_else(|| box Type::any(span)),
+                                        ret_ty: p
+                                            .ret_ty
+                                            .clone()
+                                            .unwrap_or_else(|| box Type::any(span, Default::default())),
+                                        metadata: Default::default(),
                                     }),
                                     &at,
                                     opts,
@@ -727,12 +743,24 @@ impl Analyzer<'_, '_> {
     /// TODO: Handle union
     fn replace_null_or_undefined_while_defaulting_to_any(&self, ty: &mut Type) {
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
-            *ty = Type::any(ty.span());
+            *ty = Type::any(
+                ty.span(),
+                KeywordTypeMetadata {
+                    common: ty.metadata(),
+                    ..Default::default()
+                },
+            );
             return;
         }
 
         if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
-            *ty = Type::any(ty.span());
+            *ty = Type::any(
+                ty.span(),
+                KeywordTypeMetadata {
+                    common: ty.metadata(),
+                    ..Default::default()
+                },
+            );
             return;
         }
 

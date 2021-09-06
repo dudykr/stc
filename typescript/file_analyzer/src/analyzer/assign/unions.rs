@@ -50,6 +50,7 @@ impl Analyzer<'_, '_> {
                 let mut tuple = Type::Tuple(Tuple {
                     span: ty.span,
                     elems: Default::default(),
+                    metadata: ty.metadata,
                 });
 
                 for el in &ty.elems {
@@ -84,6 +85,7 @@ impl Analyzer<'_, '_> {
                 *to = Type::Union(Union {
                     span: el_ty.span,
                     types: to_types,
+                    metadata: el_ty.metadata,
                 });
 
                 return Ok(());

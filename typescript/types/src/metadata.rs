@@ -7,7 +7,11 @@ use rnode::{FoldWith, VisitMutWith, VisitWith};
 use stc_visit::Visitable;
 use swc_common::{EqIgnoreSpan, TypeEq};
 
-macro_rules! impl_traits {
+pub trait TypeMetadata {
+    fn common(&self) -> CommonTypeMetadata;
+}
+
+macro_rules! impl_basic_traits {
     ($T:ty) => {
         /// # Note
         ///
@@ -55,8 +59,290 @@ macro_rules! impl_traits {
     };
 }
 
+macro_rules! impl_traits {
+    ($T:ty) => {
+        impl_basic_traits!($T);
+
+        impl TypeMetadata for $T {
+            fn common(&self) -> CommonTypeMetadata {
+                self.common
+            }
+        }
+    };
+}
+
+/// Common metadata shared among [crate::Type]s.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct CommonTypeMetadata {
+    pub implicit: bool,
+
+    pub infected_by_this_in_object_literal: bool,
+
+    pub prevent_converting_to_children: bool,
+
+    /// This can be ignored based on the context.
+    pub no_expand: bool,
+    /// This can be ignored based on the context.
+    pub ignore_no_expand: bool,
+
+    pub contains_infer_type: bool,
+
+    /// If this mark is applied, type will not be inferred (based on constraint)
+    /// while simplifying.
+    pub prevent_complex_simplification: bool,
+
+    /// This mark is applied to types resolved from variables.
+    ///
+    /// Used to distinguish object literal with a reference to object literal.
+    pub resolved_from_var: bool,
+
+    /// TODO: Move this to [LitTypeMetadata]
+    ///
+    /// If the mark is applied, it means that the literal should not be
+    /// generalized.
+    pub prevent_generalization: bool,
+
+    /// TODO: Move this to [TupleMetadata]
+    pub prevent_tuple_to_array: bool,
+}
+
+impl_basic_traits!(CommonTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct UnionMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(UnionMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct IntersectionMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(IntersectionMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct KeywordTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(KeywordTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct LitTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(LitTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TupleMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(TupleMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct SymbolMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(SymbolMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct InstanceMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(InstanceMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ThisTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ThisTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct StaticThisMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(StaticThisMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TplTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(TplTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ArrayMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ArrayMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct QueryTypeMetdata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(QueryTypeMetdata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct InferTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(InferTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ImportTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ImportTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct PredicateMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(PredicateMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct IndexedAccessTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(IndexedAccessTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct RefMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(RefMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ConditionalMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ConditionalMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct FunctionMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(FunctionMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ConstructorMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ConstructorMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct OperatorMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(OperatorMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct MappedMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(MappedMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ClassMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ClassMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ClassDefMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ClassDefMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TypeParamMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(TypeParamMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct EnumVariantMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(EnumVariantMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct InterfaceMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(InterfaceMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct AliasMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(AliasMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct EnumMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(EnumMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct IntrinsicMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(IntrinsicMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct RestTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(RestTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct OptionalTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(OptionalTypeMetadata);
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ModuleTypeMetadata {
+    pub common: CommonTypeMetadata,
+}
+
+impl_traits!(ModuleTypeMetadata);
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeLitMetadata {
+    pub common: CommonTypeMetadata,
+
     /// `true` if a spread element is used while initializing.
     pub inexact: bool,
     /// `true` if a type literal is modified by object union normalizer.
@@ -96,6 +382,8 @@ pub struct TypeLitMetadata {
     pub specified: bool,
 }
 
+impl_traits!(TypeLitMetadata);
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TypeElMetadata {
     /// If `true`, it means the element has a default value.
@@ -105,5 +393,4 @@ pub struct TypeElMetadata {
     pub has_default: bool,
 }
 
-impl_traits!(TypeLitMetadata);
-impl_traits!(TypeElMetadata);
+impl_basic_traits!(TypeElMetadata);

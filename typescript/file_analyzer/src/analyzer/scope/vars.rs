@@ -11,12 +11,10 @@ use crate::{
 };
 use itertools::Itertools;
 use rnode::NodeId;
-use stc_ts_ast_rnode::{
-    RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit, RTsLitType,
-};
+use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{Array, Key, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
+use stc_ts_types::{Array, Key, LitType, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
 use std::borrow::Cow;
@@ -87,7 +85,7 @@ impl Analyzer<'_, '_> {
             ty.assert_valid();
         }
 
-        let span = pat.span();
+        let span = pat.span().with_ctxt(SyntaxContext::empty());
 
         if match pat {
             RPat::Ident(..) => false,
@@ -155,7 +153,7 @@ impl Analyzer<'_, '_> {
                     .right
                     .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref().or(ty.as_ref())))
                     .report(&mut self.storage)
-                    .unwrap_or_else(|| Type::any(span));
+                    .unwrap_or_else(|| Type::any(span, Default::default()));
 
                 if let Some(left) = &type_ann {
                     self.assign_with_opts(
@@ -210,7 +208,7 @@ impl Analyzer<'_, '_> {
                         .context("tried to convert a type to an iterator to assign with an array pattern.")
                         .unwrap_or_else(|err| {
                             self.storage.report(err);
-                            Cow::Owned(Type::any(span))
+                            Cow::Owned(Type::any(span, Default::default()))
                         })
                     });
 
@@ -228,7 +226,7 @@ impl Analyzer<'_, '_> {
                         )
                         .unwrap_or_else(|err| {
                             self.storage.report(err);
-                            Cow::Owned(Type::any(span))
+                            Cow::Owned(Type::any(span, Default::default()))
                         })
                     });
 
@@ -589,6 +587,7 @@ impl Analyzer<'_, '_> {
                     Type::Array(Array {
                         span,
                         elem_type: box ty,
+                        metadata: Default::default(),
                     })
                 });
                 return self.add_vars(
@@ -598,12 +597,14 @@ impl Analyzer<'_, '_> {
                         Type::Array(Array {
                             span,
                             elem_type: box ty,
+                            metadata: Default::default(),
                         })
                     }),
                     default.map(|ty| {
                         Type::Array(Array {
                             span,
                             elem_type: box ty,
+                            metadata: Default::default(),
                         })
                     }),
                     opts,
@@ -663,7 +664,11 @@ impl Analyzer<'_, '_> {
                         .map(|ty| self.exclude_props(span, ty, keys))
                         .collect::<Result<_, _>>()?;
 
-                    return Ok(Type::Union(Union { span: u.span, types }));
+                    return Ok(Type::Union(Union {
+                        span: u.span,
+                        types,
+                        metadata: u.metadata,
+                    }));
                 }
 
                 Type::Intersection(..) | Type::Class(..) | Type::Interface(..) | Type::ClassDef(..) => {
@@ -689,25 +694,25 @@ impl Analyzer<'_, '_> {
                     let mut key_types = keys
                         .iter()
                         .filter_map(|key| match key {
-                            Key::BigInt(v) => Some(Type::Lit(RTsLitType {
-                                node_id: NodeId::invalid(),
-                                span: v.span,
+                            Key::BigInt(v) => Some(Type::Lit(LitType {
+                                span: v.span.with_ctxt(SyntaxContext::empty()),
                                 lit: RTsLit::BigInt(v.clone()),
+                                metadata: Default::default(),
                             })),
-                            Key::Num(v) => Some(Type::Lit(RTsLitType {
-                                node_id: NodeId::invalid(),
-                                span: v.span,
+                            Key::Num(v) => Some(Type::Lit(LitType {
+                                span: v.span.with_ctxt(SyntaxContext::empty()),
                                 lit: RTsLit::Number(v.clone()),
+                                metadata: Default::default(),
                             })),
-                            Key::Normal { span, sym } => Some(Type::Lit(RTsLitType {
-                                node_id: NodeId::invalid(),
-                                span: *span,
+                            Key::Normal { span, sym } => Some(Type::Lit(LitType {
+                                span: span.with_ctxt(SyntaxContext::empty()),
                                 lit: RTsLit::Str(RStr {
                                     span: *span,
                                     value: sym.clone(),
                                     has_escape: false,
                                     kind: Default::default(),
                                 }),
+                                metadata: Default::default(),
                             })),
 
                             // TODO
@@ -717,7 +722,11 @@ impl Analyzer<'_, '_> {
                     if key_types.is_empty() {
                         return Ok(ty.into_owned());
                     }
-                    let keys = Type::Union(Union { span, types: key_types });
+                    let keys = Type::Union(Union {
+                        span,
+                        types: key_types,
+                        metadata: Default::default(),
+                    });
 
                     return Ok(Type::Ref(Ref {
                         span,
@@ -727,6 +736,7 @@ impl Analyzer<'_, '_> {
                             span,
                             params: vec![ty.clone().into_owned(), keys],
                         }),
+                        metadata: Default::default(),
                     }));
                 }
                 _ => {}

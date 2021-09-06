@@ -15,16 +15,17 @@ use crate::{
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{
     RArrayPat, RAssignPat, RAssignPatProp, RBindingIdent, RExpr, RIdent, RKeyValuePatProp, RKeyValueProp, RObjectPat,
-    RObjectPatProp, RParam, RPat, RProp, RPropOrSpread, RRestPat, RTsKeywordType,
+    RObjectPatProp, RParam, RPat, RProp, RPropOrSpread, RRestPat,
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{
-    Array, Instance, Key, PropertySignature, Tuple, TupleElement, TypeElMetadata, TypeElement, TypeLit,
+    Array, ArrayMetadata, CommonTypeMetadata, Instance, Key, KeywordType, PropertySignature, Tuple, TupleElement,
+    TypeElMetadata, TypeElement, TypeLit, TypeLitMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::TryOpt;
 use swc_atoms::js_word;
-use swc_common::{Mark, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
+use swc_common::{Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::instrument;
 
@@ -40,37 +41,15 @@ pub(super) enum PatMode {
 impl Analyzer<'_, '_> {
     #[instrument(skip(self, ty))]
     pub(crate) fn mark_as_implicitly_typed(&mut self, ty: &mut Type) {
-        let span = ty.span();
-        let span = span.apply_mark(self.marks().implicit_type_mark);
-        ty.respan(span);
+        ty.metadata_mut().implicit = true;
     }
 
     pub(crate) fn is_implicitly_typed(&self, ty: &Type) -> bool {
-        self.is_implicitly_typed_span(ty.span())
-    }
-
-    #[instrument(skip(self, span))]
-    pub(crate) fn is_implicitly_typed_span(&self, span: Span) -> bool {
-        let mut ctxt: SyntaxContext = span.ctxt;
-        loop {
-            let mark = ctxt.remove_mark();
-
-            if mark == Mark::root() {
-                break;
-            }
-
-            if mark == self.marks().implicit_type_mark {
-                return true;
-            }
-        }
-
-        false
+        ty.metadata().implicit
     }
 
     #[instrument(skip(self, pat))]
     pub(crate) fn default_type_for_pat(&mut self, pat: &RPat) -> ValidationResult<Type> {
-        let implicit_type_mark = self.marks().implicit_type_mark;
-
         let span = pat.span();
         match pat {
             RPat::Array(arr) => {
@@ -84,7 +63,7 @@ impl Analyzer<'_, '_> {
                             // any
                             let ty = match elem {
                                 Some(v) => self.default_type_for_pat(v)?,
-                                None => Type::any(span),
+                                None => Type::any(span, Default::default()),
                             };
 
                             Ok(TupleElement {
@@ -95,6 +74,7 @@ impl Analyzer<'_, '_> {
                             })
                         })
                         .collect::<ValidationResult<_>>()?,
+                    metadata: Default::default(),
                 }));
             }
             RPat::Rest(r) => match &*r.arg {
@@ -149,9 +129,15 @@ impl Analyzer<'_, '_> {
                 }
 
                 return Ok(Type::TypeLit(TypeLit {
-                    span: DUMMY_SP.apply_mark(implicit_type_mark),
+                    span: DUMMY_SP,
                     members,
-                    metadata: Default::default(),
+                    metadata: TypeLitMetadata {
+                        common: CommonTypeMetadata {
+                            implicit: true,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
                 }));
             }
             RPat::Assign(pat) => return self.default_type_for_pat(&pat.left),
@@ -159,9 +145,9 @@ impl Analyzer<'_, '_> {
         }
 
         if self.ctx.in_argument {
-            Ok(Type::unknown(pat.span()))
+            Ok(Type::unknown(pat.span(), Default::default()))
         } else {
-            Ok(Type::any(pat.span()))
+            Ok(Type::any(pat.span(), Default::default()))
         }
     }
 }
@@ -236,7 +222,11 @@ impl Analyzer<'_, '_> {
                             if !should_instantiate_type_ann(&ty) {
                                 return ty;
                             }
-                            Type::Instance(Instance { span, ty: box ty })
+                            Type::Instance(Instance {
+                                span,
+                                ty: box ty,
+                                metadata: Default::default(),
+                            })
                         })
                     }),
                 }
@@ -353,7 +343,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     let ty = ty.unwrap_or_else(|| {
-                        let mut ty = default_value_ty.generalize_lit(marks).foldable();
+                        let mut ty = default_value_ty.generalize_lit().foldable();
 
                         if matches!(ty.normalize(), Type::Tuple(..)) {
                             match ty {
@@ -366,6 +356,10 @@ impl Analyzer<'_, '_> {
                                     ty = Type::Array(Array {
                                         span: tuple.span,
                                         elem_type: box Type::union(types),
+                                        metadata: ArrayMetadata {
+                                            common: tuple.metadata.common,
+                                            ..Default::default()
+                                        },
                                     });
                                 }
                                 _ => {}
@@ -393,8 +387,8 @@ impl Analyzer<'_, '_> {
             Some(v) => Some(v),
             None => match p {
                 RPat::Assign(p) => match self.ctx.pat_mode {
-                    PatMode::Decl => Some(p.right.validate_with_default(self)?.generalize_lit(marks)),
-                    PatMode::Assign => Some(default_value_ty.unwrap_or_else(|| Type::any(p.span))),
+                    PatMode::Decl => Some(p.right.validate_with_default(self)?.generalize_lit()),
+                    PatMode::Assign => Some(default_value_ty.unwrap_or_else(|| Type::any(p.span, Default::default()))),
                 },
                 _ => None,
             },
@@ -451,7 +445,7 @@ impl Analyzer<'_, '_> {
 
                 match value_ty.normalize() {
                     Type::Array(..)
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
                     }) => {}
@@ -465,7 +459,7 @@ impl Analyzer<'_, '_> {
 
                 match *ty.normalize() {
                     Type::Array(..)
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
                     }) => {}

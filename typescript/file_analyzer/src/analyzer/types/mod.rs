@@ -1,23 +1,24 @@
 use crate::{
-    analyzer::{expr::TypeOfMode, generic::ExtendsOpts, marks::MarkExt, Analyzer, Ctx},
+    analyzer::{expr::TypeOfMode, generic::ExtendsOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
     util::{type_ext::TypeVecExt, unwrap_ref_with_single_arg},
     Marks, ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
-use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
+use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsKeywordType,
-    RTsLit, RTsLitType, RTsModuleDecl, RTsModuleName, RTsThisType, RTsTypeAliasDecl,
+    RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsLit,
+    RTsModuleDecl, RTsModuleName, RTsTypeAliasDecl,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    name::Name, Accessor, Array, Class, ClassDef, ClassMember, ComputedKey, Conditional, ConstructorSignature, Id,
-    IdCtx, Instance, Intersection, Intrinsic, IntrinsicKind, Key, MethodSignature, ModuleId, Operator,
-    PropertySignature, QueryExpr, Ref, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam,
-    TypeParamInstantiation, Union,
+    name::Name, Accessor, Array, ArrayMetadata, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional,
+    ConditionalMetadata, ConstructorSignature, Id, IdCtx, Instance, InstanceMetadata, Intersection, Intrinsic,
+    IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId,
+    Operator, PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type, TypeElement,
+    TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
@@ -182,6 +183,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Cow::Owned(Type::Array(Array {
                             span: arr.span,
                             elem_type,
+                            metadata: arr.metadata,
                         })));
                     }
 
@@ -225,6 +227,7 @@ impl Analyzer<'_, '_> {
                                         &extends_type,
                                         &c.true_type,
                                         &c.false_type,
+                                        c.metadata,
                                     )
                                     .context("tried to reduce conditional type")?;
 
@@ -259,8 +262,9 @@ impl Analyzer<'_, '_> {
 
                                 if all {
                                     let new = Type::Union(Union {
-                                        span: actual_span,
+                                        span: actual_span.with_ctxt(SyntaxContext::empty()),
                                         types,
+                                        metadata: Default::default(),
                                     })
                                     .fixed();
 
@@ -316,8 +320,9 @@ impl Analyzer<'_, '_> {
                                         if all {
                                             types.dedup_type();
                                             let new = Type::Union(Union {
-                                                span: actual_span,
+                                                span: actual_span.with_ctxt(SyntaxContext::empty()),
                                                 types,
+                                                metadata: Default::default(),
                                             });
 
                                             *check_type_constraint = box new;
@@ -349,6 +354,7 @@ impl Analyzer<'_, '_> {
                                     if ty.type_eq(&expanded_ty) {
                                         return Ok(Cow::Owned(Type::any(
                                             actual_span.with_ctxt(SyntaxContext::empty()),
+                                            Default::default(),
                                         )));
                                     }
 
@@ -468,10 +474,12 @@ impl Analyzer<'_, '_> {
         extends_type: &Type,
         true_type: &Type,
         false_type: &Type,
+        metadata: ConditionalMetadata,
     ) -> ValidationResult<Option<Type>> {
         if !check_type.normalize().is_type_param() {
             return Ok(None);
         }
+        let span = span.with_ctxt(SyntaxContext::empty());
         let mut worked = false;
 
         let mut true_type = self.normalize(Some(span), Cow::Borrowed(true_type), Default::default())?;
@@ -487,6 +495,7 @@ impl Analyzer<'_, '_> {
                         &c.extends_type,
                         &c.true_type,
                         &c.false_type,
+                        c.metadata,
                     )? {
                         worked = true;
                         true_type = Cow::Owned(ty)
@@ -510,6 +519,7 @@ impl Analyzer<'_, '_> {
                         &c.extends_type,
                         &c.true_type,
                         &c.false_type,
+                        c.metadata,
                     )? {
                         worked = true;
                         false_type = Cow::Owned(ty)
@@ -528,7 +538,7 @@ impl Analyzer<'_, '_> {
                 });
 
                 if !can_match {
-                    return Ok(Some(Type::never(span)));
+                    return Ok(Some(Type::never(span, Default::default())));
                 }
             }
             _ => {
@@ -555,6 +565,7 @@ impl Analyzer<'_, '_> {
                 extends_type: box extends_type.clone(),
                 true_type: box true_type.into_owned(),
                 false_type: box false_type.into_owned(),
+                metadata,
             })))
         } else {
             Ok(None)
@@ -571,6 +582,7 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         )?;
+        let metadata = ty.metadata();
         let actual_span = ty.span();
 
         // TODO: PERF
@@ -581,14 +593,28 @@ impl Analyzer<'_, '_> {
             Type::Ref(..) => Type::Instance(Instance {
                 span: actual_span,
                 ty: box ty,
+                metadata: InstanceMetadata {
+                    common: metadata,
+                    ..Default::default()
+                },
             }),
 
             Type::ClassDef(def) => Type::Class(Class {
                 span: actual_span,
                 def: box def,
+                metadata: ClassMetadata {
+                    common: metadata,
+                    ..Default::default()
+                },
             }),
 
-            Type::StaticThis(ty) => Type::This(RTsThisType { span: actual_span }),
+            Type::StaticThis(ty) => Type::This(ThisType {
+                span: actual_span,
+                metadata: ThisTypeMetadata {
+                    common: metadata,
+                    ..Default::default()
+                },
+            }),
 
             Type::Intersection(ty) => {
                 let types = ty
@@ -723,14 +749,19 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    #[instrument(skip(self, ty))]
-    pub(crate) fn expand_type_ann<'a>(&mut self, ty: Option<&'a Type>) -> ValidationResult<Option<Cow<'a, Type>>> {
+    #[instrument(skip(self, span, ty))]
+    pub(crate) fn expand_type_ann<'a>(
+        &mut self,
+        span: Span,
+        ty: Option<&'a Type>,
+    ) -> ValidationResult<Option<Cow<'a, Type>>> {
         let ty = match ty {
             Some(v) => v,
             None => return Ok(None),
         };
+        let span = span.with_ctxt(SyntaxContext::empty());
 
-        let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
+        let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
 
         Ok(Some(ty))
     }
@@ -740,7 +771,7 @@ impl Analyzer<'_, '_> {
         let mut members = vec![];
 
         let type_params = def.type_params.as_ref().map(|decl| {
-            let ty = Type::any(decl.span);
+            let ty = Type::any(decl.span, Default::default());
 
             decl.params
                 .iter()
@@ -937,6 +968,8 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: &'a Type,
     ) -> ValidationResult<Option<Cow<'a, TypeLit>>> {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         let _ctx = context(format!("type_to_type_lit: {:?}", ty));
 
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
@@ -954,7 +987,17 @@ impl Analyzer<'_, '_> {
                 };
 
                 let ty = self
-                    .convert_type_to_type_lit(span, &Type::Keyword(RTsKeywordType { span: ty.span, kind }))
+                    .convert_type_to_type_lit(
+                        span,
+                        &Type::Keyword(KeywordType {
+                            span: ty.span,
+                            kind,
+                            metadata: KeywordTypeMetadata {
+                                common: ty.metadata.common,
+                                ..Default::default()
+                            },
+                        }),
+                    )
                     .context("tried to convert a literal to type literal")?
                     .map(Cow::into_owned);
                 return Ok(ty.map(Cow::Owned));
@@ -979,6 +1022,7 @@ impl Analyzer<'_, '_> {
                             ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(name, span)),
                             type_args: None,
+                            metadata: Default::default(),
                         }),
                     )?
                     .map(Cow::into_owned)
@@ -1142,9 +1186,13 @@ impl Analyzer<'_, '_> {
                     },
                     optional: false,
                     params: Default::default(),
-                    type_ann: Some(box Type::Keyword(RTsKeywordType {
+                    type_ann: Some(box Type::Keyword(KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
+                        metadata: KeywordTypeMetadata {
+                            common: ty.metadata.common,
+                            ..Default::default()
+                        },
                     })),
                     type_params: Default::default(),
                     metadata: Default::default(),
@@ -1258,7 +1306,7 @@ impl Analyzer<'_, '_> {
             | IntrinsicKind::Lowercase
             | IntrinsicKind::Capitalize
             | IntrinsicKind::Uncapitalize => match arg.params[0].normalize() {
-                Type::Lit(RTsLitType {
+                Type::Lit(LitType {
                     lit: RTsLit::Str(s), ..
                 }) => {
                     let new_val = match ty.kind {
@@ -1292,8 +1340,7 @@ impl Analyzer<'_, '_> {
                         }
                     };
 
-                    return Ok(Type::Lit(RTsLitType {
-                        node_id: NodeId::invalid(),
+                    return Ok(Type::Lit(LitType {
                         span: arg.params[0].span(),
                         lit: RTsLit::Str(RStr {
                             span: arg.params[0].span(),
@@ -1301,6 +1348,10 @@ impl Analyzer<'_, '_> {
                             has_escape: false,
                             kind: Default::default(),
                         }),
+                        metadata: LitTypeMetadata {
+                            common: arg.params[0].metadata(),
+                            ..Default::default()
+                        },
                     }));
                 }
 
@@ -1428,8 +1479,16 @@ impl Analyzer<'_, '_> {
     /// }
     /// ```
     fn exclude_type(&mut self, span: Span, ty: &mut Type, excluded: &Type) {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         if ty.type_eq(excluded) {
-            *ty = Type::never(ty.span());
+            *ty = Type::never(
+                ty.span(),
+                KeywordTypeMetadata {
+                    common: ty.metadata(),
+                    ..Default::default()
+                },
+            );
             return;
         }
 
@@ -1481,7 +1540,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 self.exclude_type(span, constraint, &excluded);
                 if constraint.is_never() {
-                    *ty = Type::never(span);
+                    *ty = Type::never(span, Default::default());
                     return;
                 }
             }
@@ -1492,7 +1551,13 @@ impl Analyzer<'_, '_> {
                     if let Ok(mut super_instance) = self.instantiate_class(cls.span, &super_def) {
                         self.exclude_type(span, &mut super_instance, &excluded);
                         if super_instance.is_never() {
-                            *ty = Type::never(cls.span);
+                            *ty = Type::never(
+                                cls.span,
+                                KeywordTypeMetadata {
+                                    common: cls.metadata.common,
+                                    ..Default::default()
+                                },
+                            );
                             return;
                         }
                     }
@@ -1615,9 +1680,11 @@ impl VisitMut<Type> for TupleNormalizer {
 
         match ty.normalize() {
             Type::Tuple(tuple) => {
-                if self.marks.prevent_tuple_to_array.is_marked(tuple.span) {
+                if tuple.metadata.common.prevent_tuple_to_array {
                     return;
                 }
+
+                let common_metadata = tuple.metadata.common;
 
                 if tuple.elems.is_empty() {
                     return;
@@ -1643,6 +1710,10 @@ impl VisitMut<Type> for TupleNormalizer {
                 *ty = Type::Array(Array {
                     span,
                     elem_type: box Type::union(types),
+                    metadata: ArrayMetadata {
+                        common: common_metadata,
+                        ..Default::default()
+                    },
                 });
             }
             _ => {}

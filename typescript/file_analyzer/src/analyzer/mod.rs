@@ -353,6 +353,7 @@ fn make_module_ty(span: Span, name: RTsModuleName, exports: ModuleTypeData) -> t
         span,
         name,
         exports: box exports,
+        metadata: Default::default(),
     }
 }
 
@@ -891,7 +892,7 @@ impl Analyzer<'_, '_> {
                         .type_of_ts_entity_name(node.span, analyzer.ctx.module_id, e, None)
                         .unwrap_or_else(|err| {
                             analyzer.storage.report(err);
-                            Type::any(node.span)
+                            Type::any(node.span, Default::default())
                         })
                         .cheap();
                     ty.assert_valid();
@@ -1011,6 +1012,7 @@ impl Analyzer<'_, '_> {
                         name: decl.id.clone(),
                         span,
                         exports: box exports,
+                        metadata: Default::default(),
                     };
                     let ty = Type::Module(ty).cheap();
                     return Ok(Some(ty));

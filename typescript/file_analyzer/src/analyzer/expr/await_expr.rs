@@ -51,6 +51,7 @@ impl Analyzer<'_, '_> {
                         span,
                         params: vec![item.clone()],
                     }),
+                    metadata: Default::default(),
                 })
             });
 

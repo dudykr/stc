@@ -12,18 +12,18 @@ pub use self::{
     convert::rprop_name_to_expr,
     id::Id,
     intrinsic::{Intrinsic, IntrinsicKind},
-    metadata::{TypeElMetadata, TypeLitMetadata},
+    metadata::*,
     module_id::ModuleId,
 };
 use fxhash::FxHashMap;
 use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
-use rnode::{FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
+use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use static_assertions::assert_eq_size;
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
-    RTsKeywordType, RTsLit, RTsLitType, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
+    RTsKeywordType, RTsLit, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
 use stc_utils::{cache::Freeze, error::context};
 use stc_visit::{Visit, Visitable};
@@ -115,8 +115,8 @@ impl AddAssign for ModuleTypeData {
 pub enum Type {
     Instance(Instance),
     StaticThis(StaticThis),
-    This(RTsThisType),
-    Lit(RTsLitType),
+    This(ThisType),
+    Lit(LitType),
     Query(QueryType),
     Infer(InferType),
     Import(ImportType),
@@ -126,7 +126,7 @@ pub enum Type {
     #[is(name = "ref_type")]
     Ref(Ref),
     TypeLit(TypeLit),
-    Keyword(RTsKeywordType),
+    Keyword(KeywordType),
     Conditional(Conditional),
     Tuple(Tuple),
     Array(Array),
@@ -218,7 +218,7 @@ impl Clone for Type {
     }
 }
 
-assert_eq_size!(Type, [u8; 128]);
+assert_eq_size!(Type, [u8; 104]);
 
 impl TypeEq for Type {
     fn type_eq(&self, other: &Self) -> bool {
@@ -347,8 +347,7 @@ impl Key {
     pub fn ty(&self) -> Cow<Type> {
         match self {
             Key::Computed(prop) => Cow::Borrowed(&*prop.ty),
-            Key::Normal { span, sym } => Cow::Owned(Type::Lit(RTsLitType {
-                node_id: NodeId::invalid(),
+            Key::Normal { span, sym } => Cow::Owned(Type::Lit(LitType {
                 span: *span,
                 lit: RTsLit::Str(RStr {
                     span: *span,
@@ -356,16 +355,17 @@ impl Key {
                     has_escape: false,
                     kind: Default::default(),
                 }),
+                metadata: Default::default(),
             })),
-            Key::Num(n) => Cow::Owned(Type::Lit(RTsLitType {
-                node_id: NodeId::invalid(),
+            Key::Num(n) => Cow::Owned(Type::Lit(LitType {
                 span: n.span,
                 lit: RTsLit::Number(n.clone()),
+                metadata: Default::default(),
             })),
-            Key::BigInt(n) => Cow::Owned(Type::Lit(RTsLitType {
-                node_id: NodeId::invalid(),
+            Key::BigInt(n) => Cow::Owned(Type::Lit(LitType {
                 span: n.span,
                 lit: RTsLit::BigInt(n.clone()),
+                metadata: Default::default(),
             })),
             Key::Private(..) => unimplemented!("access to type elements using private name"),
         }
@@ -419,33 +419,59 @@ assert_eq_size!(ComputedKey, [u8; 32]);
 pub struct Instance {
     pub span: Span,
     pub ty: Box<Type>,
+    pub metadata: InstanceMetadata,
 }
 
-assert_eq_size!(Instance, [u8; 24]);
+assert_eq_size!(Instance, [u8; 32]);
+
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct LitType {
+    pub span: Span,
+
+    #[use_eq_ignore_span]
+    pub lit: RTsLit,
+    pub metadata: LitTypeMetadata,
+}
+
+assert_eq_size!(LitType, [u8; 96]);
+
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct KeywordType {
+    pub span: Span,
+
+    #[use_eq_ignore_span]
+    pub kind: TsKeywordTypeKind,
+    pub metadata: KeywordTypeMetadata,
+}
+
+assert_eq_size!(KeywordType, [u8; 24]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Symbol {
     pub span: Span,
     pub id: SymbolId,
+    pub metadata: SymbolMetadata,
 }
 
-assert_eq_size!(Symbol, [u8; 24]);
+assert_eq_size!(Symbol, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct RestType {
     pub span: Span,
     pub ty: Box<Type>,
+    pub metadata: RestTypeMetadata,
 }
 
-assert_eq_size!(RestType, [u8; 24]);
+assert_eq_size!(RestType, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct OptionalType {
     pub span: Span,
     pub ty: Box<Type>,
+    pub metadata: OptionalTypeMetadata,
 }
 
-assert_eq_size!(OptionalType, [u8; 24]);
+assert_eq_size!(OptionalType, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct IndexedAccessType {
@@ -453,9 +479,10 @@ pub struct IndexedAccessType {
     pub readonly: bool,
     pub obj_type: Box<Type>,
     pub index_type: Box<Type>,
+    pub metadata: IndexedAccessTypeMetadata,
 }
 
-assert_eq_size!(IndexedAccessType, [u8; 32]);
+assert_eq_size!(IndexedAccessType, [u8; 40]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Ref {
@@ -465,9 +492,10 @@ pub struct Ref {
     #[use_eq_ignore_span]
     pub type_name: RTsEntityName,
     pub type_args: Option<Box<TypeParamInstantiation>>,
+    pub metadata: RefMetadata,
 }
 
-assert_eq_size!(Ref, [u8; 64]);
+assert_eq_size!(Ref, [u8; 80]);
 
 impl Debug for Ref {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
@@ -483,17 +511,19 @@ impl Debug for Ref {
 pub struct InferType {
     pub span: Span,
     pub type_param: TypeParam,
+    pub metadata: InferTypeMetadata,
 }
 
-assert_eq_size!(InferType, [u8; 64]);
+assert_eq_size!(InferType, [u8; 80]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct QueryType {
     pub span: Span,
     pub expr: Box<QueryExpr>,
+    pub metadata: QueryTypeMetdata,
 }
 
-assert_eq_size!(QueryType, [u8; 24]);
+assert_eq_size!(QueryType, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
 pub enum QueryExpr {
@@ -508,9 +538,10 @@ pub struct ImportType {
     #[use_eq_ignore_span]
     pub qualifier: Option<RTsEntityName>,
     pub type_params: Option<Box<TypeParamInstantiation>>,
+    pub metadata: ImportTypeMetadata,
 }
 
-assert_eq_size!(ImportType, [u8; 88]);
+assert_eq_size!(ImportType, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Module {
@@ -518,9 +549,10 @@ pub struct Module {
     #[use_eq_ignore_span]
     pub name: RTsModuleName,
     pub exports: Box<ModuleTypeData>,
+    pub metadata: ModuleTypeMetadata,
 }
 
-assert_eq_size!(Module, [u8; 64]);
+assert_eq_size!(Module, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Enum {
@@ -532,9 +564,11 @@ pub struct Enum {
     pub members: Vec<EnumMember>,
     pub has_num: bool,
     pub has_str: bool,
+
+    pub metadata: EnumMetadata,
 }
 
-assert_eq_size!(Enum, [u8; 72]);
+assert_eq_size!(Enum, [u8; 88]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct EnumMember {
@@ -549,9 +583,10 @@ pub struct EnumMember {
 pub struct Class {
     pub span: Span,
     pub def: Box<ClassDef>,
+    pub metadata: ClassMetadata,
 }
 
-assert_eq_size!(Class, [u8; 24]);
+assert_eq_size!(Class, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ClassDef {
@@ -560,11 +595,12 @@ pub struct ClassDef {
     pub name: Option<Id>,
     pub super_class: Option<Box<Type>>,
     pub body: Vec<ClassMember>,
-    pub type_params: Option<TypeParamDecl>,
+    pub type_params: Option<Box<TypeParamDecl>>,
     pub implements: Box<Vec<TsExpr>>,
+    pub metadata: ClassDefMetadata,
 }
 
-assert_eq_size!(ClassDef, [u8; 112]);
+assert_eq_size!(ClassDef, [u8; 88]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is)]
 pub enum ClassMember {
@@ -629,9 +665,10 @@ pub struct Mapped {
     pub name_type: Option<Box<Type>>,
     pub type_param: TypeParam,
     pub ty: Option<Box<Type>>,
+    pub metadata: MappedMetadata,
 }
 
-assert_eq_size!(Mapped, [u8; 80]);
+assert_eq_size!(Mapped, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Conditional {
@@ -640,9 +677,10 @@ pub struct Conditional {
     pub extends_type: Box<Type>,
     pub true_type: Box<Type>,
     pub false_type: Box<Type>,
+    pub metadata: ConditionalMetadata,
 }
 
-assert_eq_size!(Conditional, [u8; 48]);
+assert_eq_size!(Conditional, [u8; 56]);
 
 /// TODO: Remove this and create `keyof`, `unique` and `readonly` types.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -651,17 +689,19 @@ pub struct Operator {
     #[use_eq]
     pub op: TsTypeOperatorOp,
     pub ty: Box<Type>,
+    pub metadata: OperatorMetadata,
 }
 
-assert_eq_size!(Operator, [u8; 24]);
+assert_eq_size!(Operator, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Tuple {
     pub span: Span,
     pub elems: Vec<TupleElement>,
+    pub metadata: TupleMetadata,
 }
 
-assert_eq_size!(Tuple, [u8; 40]);
+assert_eq_size!(Tuple, [u8; 48]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TupleElement {
@@ -674,22 +714,24 @@ pub struct TupleElement {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Alias {
     pub span: Span,
-    pub type_params: Option<TypeParamDecl>,
+    pub type_params: Option<Box<TypeParamDecl>>,
     pub ty: Box<Type>,
+    pub metadata: AliasMetadata,
 }
 
-assert_eq_size!(Alias, [u8; 64]);
+assert_eq_size!(Alias, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Interface {
     pub span: Span,
     pub name: Id,
-    pub type_params: Option<TypeParamDecl>,
+    pub type_params: Option<Box<TypeParamDecl>>,
     pub extends: Vec<TsExpr>,
     pub body: Vec<TypeElement>,
+    pub metadata: InterfaceMetadata,
 }
 
-assert_eq_size!(Interface, [u8; 120]);
+assert_eq_size!(Interface, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeLit {
@@ -698,7 +740,7 @@ pub struct TypeLit {
     pub metadata: TypeLitMetadata,
 }
 
-assert_eq_size!(TypeLit, [u8; 40]);
+assert_eq_size!(TypeLit, [u8; 56]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeParamDecl {
@@ -819,18 +861,20 @@ pub struct IndexSignature {
 pub struct Array {
     pub span: Span,
     pub elem_type: Box<Type>,
+    pub metadata: ArrayMetadata,
 }
 
-assert_eq_size!(Array, [u8; 24]);
+assert_eq_size!(Array, [u8; 32]);
 
 /// a | b
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Union {
     pub span: Span,
     pub types: Vec<Type>,
+    pub metadata: UnionMetadata,
 }
 
-assert_eq_size!(Union, [u8; 40]);
+assert_eq_size!(Union, [u8; 48]);
 
 impl Union {
     pub fn assert_valid(&self) {
@@ -874,9 +918,10 @@ pub struct FnParam {
 pub struct Intersection {
     pub span: Span,
     pub types: Vec<Type>,
+    pub metadata: IntersectionMetadata,
 }
 
-assert_eq_size!(Intersection, [u8; 40]);
+assert_eq_size!(Intersection, [u8; 48]);
 
 impl Intersection {
     pub fn assert_valid(&self) {
@@ -916,6 +961,7 @@ pub struct TypeParam {
     pub name: Id,
     pub constraint: Option<Box<Type>>,
     pub default: Option<Box<Type>>,
+    pub metadata: TypeParamMetadata,
 }
 
 /// FooEnum.A
@@ -926,9 +972,10 @@ pub struct EnumVariant {
     pub enum_name: Id,
     /// [None] if for the general instance type of an enum.
     pub name: Option<JsWord>,
+    pub metadata: EnumVariantMetadata,
 }
 
-assert_eq_size!(EnumVariant, [u8; 40]);
+assert_eq_size!(EnumVariant, [u8; 56]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Function {
@@ -936,9 +983,10 @@ pub struct Function {
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
     pub ret_ty: Box<Type>,
+    pub metadata: FunctionMetadata,
 }
 
-assert_eq_size!(Function, [u8; 88]);
+assert_eq_size!(Function, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Constructor {
@@ -948,9 +996,10 @@ pub struct Constructor {
     /// The return type.
     pub type_ann: Box<Type>,
     pub is_abstract: bool,
+    pub metadata: ConstructorMetadata,
 }
 
-assert_eq_size!(Constructor, [u8; 88]);
+assert_eq_size!(Constructor, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Predicate {
@@ -959,9 +1008,10 @@ pub struct Predicate {
     pub param_name: RTsThisTypeOrIdent,
     pub asserts: bool,
     pub ty: Option<Box<Type>>,
+    pub metadata: PredicateMetadata,
 }
 
-assert_eq_size!(Predicate, [u8; 64]);
+assert_eq_size!(Predicate, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeOrSpread {
@@ -1004,17 +1054,21 @@ impl Type {
         let has_num = tys.iter().any(|ty| ty.is_num());
 
         if (has_str && has_bool) || (has_bool && has_num) || (has_num && has_str) {
-            return Type::never(span);
+            return Type::never(span, Default::default());
         }
 
         if tys.iter().any(|ty| ty.is_never()) {
-            return Type::never(span);
+            return Type::never(span, Default::default());
         }
 
         match tys.len() {
-            0 => Type::never(span),
+            0 => Type::never(span, Default::default()),
             1 => tys.into_iter().next().unwrap(),
-            _ => Type::Intersection(Intersection { span, types: tys }),
+            _ => Type::Intersection(Intersection {
+                span,
+                types: tys,
+                metadata: Default::default(),
+            }),
         }
     }
 
@@ -1059,9 +1113,13 @@ impl Type {
         elements.retain(|ty| !ty.is_never());
 
         let ty = match elements.len() {
-            0 => Type::never(span),
+            0 => Type::never(span, Default::default()),
             1 => elements.into_iter().next().unwrap(),
-            _ => Type::Union(Union { span, types: elements }),
+            _ => Type::Union(Union {
+                span,
+                types: elements,
+                metadata: Default::default(),
+            }),
         };
         ty.assert_valid();
         ty
@@ -1070,7 +1128,7 @@ impl Type {
     /// If `self` is [Type::Lit], convert it to [Type::Keyword].
     pub fn force_generalize_top_level_literals(self) -> Self {
         match self {
-            Type::Lit(lit) => Type::Keyword(RTsKeywordType {
+            Type::Lit(lit) => Type::Keyword(KeywordType {
                 span: lit.span,
                 kind: match lit.lit {
                     RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
@@ -1081,6 +1139,10 @@ impl Type {
                         unreachable!()
                     }
                 },
+                metadata: KeywordTypeMetadata {
+                    common: lit.metadata.common,
+                    ..Default::default()
+                },
             }),
             _ => self,
         }
@@ -1090,7 +1152,7 @@ impl Type {
         match self.normalize() {
             Type::Instance(ty) => ty.ty.contains_void(),
 
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
             }) => true,
@@ -1103,7 +1165,7 @@ impl Type {
 
     pub fn is_any(&self) -> bool {
         match self.normalize() {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => true,
@@ -1118,7 +1180,7 @@ impl Type {
 
     pub fn is_unknown(&self) -> bool {
         match *self.normalize() {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => true,
@@ -1131,7 +1193,7 @@ impl Type {
 
     pub fn contains_undefined(&self) -> bool {
         match *self.normalize() {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
             }) => true,
@@ -1175,7 +1237,7 @@ impl Type {
     pub fn is_kwd(&self, k: TsKeywordTypeKind) -> bool {
         match self.normalize() {
             Type::Instance(ty) => ty.ty.is_kwd(k),
-            Type::Keyword(RTsKeywordType { kind, .. }) if *kind == k => true,
+            Type::Keyword(KeywordType { kind, .. }) if *kind == k => true,
             _ => false,
         }
     }
@@ -1195,43 +1257,132 @@ impl Type {
         self.is_kwd(TsKeywordTypeKind::TsNeverKeyword)
     }
 
-    pub fn never<'any>(span: Span) -> Self {
-        Type::Keyword(RTsKeywordType {
+    pub fn never<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+        Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsNeverKeyword,
+            metadata,
         })
     }
 
-    pub fn undefined<'any>(span: Span) -> Self {
-        Type::Keyword(RTsKeywordType {
+    pub fn undefined<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+        Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsUndefinedKeyword,
+            metadata,
         })
     }
 
-    pub fn any<'any>(span: Span) -> Self {
-        Type::Keyword(RTsKeywordType {
+    pub fn any<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+        Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsAnyKeyword,
+            metadata,
         })
     }
 
-    pub fn void<'any>(span: Span) -> Self {
-        Type::Keyword(RTsKeywordType {
+    pub fn void<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+        Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsVoidKeyword,
+            metadata,
         })
     }
 
-    pub fn unknown<'any>(span: Span) -> Self {
-        Type::Keyword(RTsKeywordType {
+    pub fn unknown<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+        Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsUnknownKeyword,
+            metadata,
         })
     }
 }
 
 impl Type {
+    pub fn metadata(&self) -> CommonTypeMetadata {
+        match self.normalize() {
+            Type::Instance(ty) => ty.metadata.common,
+            Type::StaticThis(ty) => ty.metadata.common,
+            Type::This(ty) => ty.metadata.common,
+            Type::Lit(ty) => ty.metadata.common,
+            Type::Query(ty) => ty.metadata.common,
+            Type::Infer(ty) => ty.metadata.common,
+            Type::Import(ty) => ty.metadata.common,
+            Type::Predicate(ty) => ty.metadata.common,
+            Type::IndexedAccessType(ty) => ty.metadata.common,
+            Type::Ref(ty) => ty.metadata.common,
+            Type::TypeLit(ty) => ty.metadata.common,
+            Type::Keyword(ty) => ty.metadata.common,
+            Type::Conditional(ty) => ty.metadata.common,
+            Type::Tuple(ty) => ty.metadata.common,
+            Type::Array(ty) => ty.metadata.common,
+            Type::Union(ty) => ty.metadata.common,
+            Type::Intersection(ty) => ty.metadata.common,
+            Type::Function(ty) => ty.metadata.common,
+            Type::Constructor(ty) => ty.metadata.common,
+            Type::Operator(ty) => ty.metadata.common,
+            Type::Param(ty) => ty.metadata.common,
+            Type::EnumVariant(ty) => ty.metadata.common,
+            Type::Interface(ty) => ty.metadata.common,
+            Type::Enum(ty) => ty.metadata.common,
+            Type::Mapped(ty) => ty.metadata.common,
+            Type::Alias(ty) => ty.metadata.common,
+            Type::Namespace(_ty) => todo!("Type::Namespace -> metadata()"),
+            Type::Module(ty) => ty.metadata.common,
+            Type::Class(ty) => ty.metadata.common,
+            Type::ClassDef(ty) => ty.metadata.common,
+            Type::Rest(ty) => ty.metadata.common,
+            Type::Optional(ty) => ty.metadata.common,
+            Type::Symbol(ty) => ty.metadata.common,
+            Type::Tpl(ty) => ty.metadata.common,
+            Type::Intrinsic(ty) => ty.metadata.common,
+
+            Type::Arc(_) => unreachable!(),
+        }
+    }
+
+    pub fn metadata_mut(&mut self) -> &mut CommonTypeMetadata {
+        match self.normalize_mut() {
+            Type::Instance(ty) => &mut ty.metadata.common,
+            Type::StaticThis(ty) => &mut ty.metadata.common,
+            Type::This(ty) => &mut ty.metadata.common,
+            Type::Lit(ty) => &mut ty.metadata.common,
+            Type::Query(ty) => &mut ty.metadata.common,
+            Type::Infer(ty) => &mut ty.metadata.common,
+            Type::Import(ty) => &mut ty.metadata.common,
+            Type::Predicate(ty) => &mut ty.metadata.common,
+            Type::IndexedAccessType(ty) => &mut ty.metadata.common,
+            Type::Ref(ty) => &mut ty.metadata.common,
+            Type::TypeLit(ty) => &mut ty.metadata.common,
+            Type::Keyword(ty) => &mut ty.metadata.common,
+            Type::Conditional(ty) => &mut ty.metadata.common,
+            Type::Tuple(ty) => &mut ty.metadata.common,
+            Type::Array(ty) => &mut ty.metadata.common,
+            Type::Union(ty) => &mut ty.metadata.common,
+            Type::Intersection(ty) => &mut ty.metadata.common,
+            Type::Function(ty) => &mut ty.metadata.common,
+            Type::Constructor(ty) => &mut ty.metadata.common,
+            Type::Operator(ty) => &mut ty.metadata.common,
+            Type::Param(ty) => &mut ty.metadata.common,
+            Type::EnumVariant(ty) => &mut ty.metadata.common,
+            Type::Interface(ty) => &mut ty.metadata.common,
+            Type::Enum(ty) => &mut ty.metadata.common,
+            Type::Mapped(ty) => &mut ty.metadata.common,
+            Type::Alias(ty) => &mut ty.metadata.common,
+            Type::Namespace(_ty) => todo!("Type::Namespace -> metadata()"),
+            Type::Module(ty) => &mut ty.metadata.common,
+            Type::Class(ty) => &mut ty.metadata.common,
+            Type::ClassDef(ty) => &mut ty.metadata.common,
+            Type::Rest(ty) => &mut ty.metadata.common,
+            Type::Optional(ty) => &mut ty.metadata.common,
+            Type::Symbol(ty) => &mut ty.metadata.common,
+            Type::Tpl(ty) => &mut ty.metadata.common,
+            Type::Intrinsic(ty) => &mut ty.metadata.common,
+
+            Type::Arc(_) => unreachable!(),
+        }
+    }
+
     /// Respan but preserve SyntaxContext
     pub fn reposition(&mut self, from: Span) {
         let ctxt = self.span().ctxt;
@@ -1244,7 +1395,7 @@ impl Type {
             return;
         }
 
-        match self {
+        match self.normalize_mut() {
             Type::Operator(ty) => ty.span = span,
 
             Type::Mapped(ty) => ty.span = span,
@@ -1289,8 +1440,6 @@ impl Type {
 
             Type::Tuple(ty) => ty.span = span,
 
-            Type::Arc(ty) => ty.span = span,
-
             Type::Ref(ty) => ty.span = span,
 
             Type::Query(ty) => ty.span = span,
@@ -1316,6 +1465,10 @@ impl Type {
             Type::Tpl(ty) => ty.span = span,
 
             Type::Intrinsic(ty) => ty.span = span,
+
+            Type::Arc(..) => {
+                unreachable!()
+            }
         }
     }
 }
@@ -1533,10 +1686,9 @@ impl Type {
     #[instrument(skip(self))]
     pub fn normalize_mut(&mut self) -> &mut Type {
         match self {
-            Type::Arc(Freezed { ty, span }) => {
+            Type::Arc(Freezed { ty }) => {
                 let ty = Arc::make_mut(ty);
-                ty.respan(*span);
-                *self = replace(ty, Type::any(DUMMY_SP));
+                *self = replace(ty, Type::any(DUMMY_SP, Default::default()));
             }
             _ => {}
         }
@@ -1583,11 +1735,11 @@ impl Type {
     /// Returns true if `self` is a `string` or a string literal.
     pub fn is_str(&self) -> bool {
         match self.normalize() {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
             })
-            | Type::Lit(RTsLitType {
+            | Type::Lit(LitType {
                 lit: RTsLit::Str(..), ..
             }) => true,
             _ => false,
@@ -1596,7 +1748,7 @@ impl Type {
 
     pub fn is_str_lit(&self) -> bool {
         match self.normalize() {
-            Type::Lit(RTsLitType {
+            Type::Lit(LitType {
                 lit: RTsLit::Str(..), ..
             }) => true,
             _ => false,
@@ -1605,11 +1757,11 @@ impl Type {
 
     pub fn is_num(&self) -> bool {
         match self.normalize() {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNumberKeyword,
                 ..
             })
-            | Type::Lit(RTsLitType {
+            | Type::Lit(LitType {
                 lit: RTsLit::Number(..),
                 ..
             }) => true,
@@ -1619,7 +1771,7 @@ impl Type {
 
     pub fn is_num_lit(&self) -> bool {
         match self.normalize() {
-            Type::Lit(RTsLitType {
+            Type::Lit(LitType {
                 lit: RTsLit::Number(..),
                 ..
             }) => true,
@@ -1630,11 +1782,11 @@ impl Type {
     /// Returns true if `self` is a `boolean` or a boolean literal.
     pub fn is_bool(&self) -> bool {
         match self.normalize() {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                 ..
             })
-            | Type::Lit(RTsLitType {
+            | Type::Lit(LitType {
                 lit: RTsLit::Bool(..), ..
             }) => true,
             _ => false,
@@ -1931,20 +2083,21 @@ impl VisitMut<Type> for CheapClone {
             return;
         }
 
+        // TODO: PERF
+        // TODO: Assert valid && Skip normalize from `fix`.
+
         ty.visit_mut_children_with(self);
 
         let new_ty = replace(
             ty,
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsAnyKeyword,
+                metadata: Default::default(),
             }),
         );
 
-        *ty = Type::Arc(Freezed {
-            span: new_ty.span(),
-            ty: Arc::new(new_ty),
-        })
+        *ty = Type::Arc(Freezed { ty: Arc::new(new_ty) })
     }
 }
 
@@ -1976,7 +2129,7 @@ impl Type {
                 RTsLit::Bool(v) => v.value,
                 RTsLit::BigInt(v) => v.value != BigInt::zero(),
             }),
-            Type::Keyword(RTsKeywordType { kind, .. }) => Known(match kind {
+            Type::Keyword(KeywordType { kind, .. }) => Known(match kind {
                 TsKeywordTypeKind::TsNeverKeyword
                 | TsKeywordTypeKind::TsStringKeyword
                 | TsKeywordTypeKind::TsNumberKeyword
@@ -2001,9 +2154,18 @@ impl Type {
 #[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct StaticThis {
     pub span: Span,
+    pub metadata: StaticThisMetadata,
 }
 
-assert_eq_size!(StaticThis, [u8; 12]);
+assert_eq_size!(StaticThis, [u8; 24]);
+
+#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct ThisType {
+    pub span: Span,
+    pub metadata: ThisTypeMetadata,
+}
+
+assert_eq_size!(ThisType, [u8; 24]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TplType {
@@ -2012,17 +2174,19 @@ pub struct TplType {
     #[use_eq_ignore_span]
     pub quasis: Vec<RTplElement>,
     pub types: Vec<Type>,
+
+    pub metadata: TplTypeMetadata,
 }
 
-assert_eq_size!(TplType, [u8; 64]);
+assert_eq_size!(TplType, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq)]
 pub struct Freezed {
-    pub span: Span,
+    #[span]
     pub ty: Arc<Type>,
 }
 
-assert_eq_size!(Freezed, [u8; 24]);
+assert_eq_size!(Freezed, [u8; 8]);
 
 impl Visitable for Freezed {}
 
@@ -2030,8 +2194,8 @@ impl<V> VisitWith<V> for Freezed
 where
     V: ?Sized,
 {
+    #[inline]
     fn visit_children_with(&self, visitor: &mut V) {
-        self.span.visit_with(visitor);
         self.ty.visit_with(visitor);
     }
 }
@@ -2040,17 +2204,16 @@ impl<V> VisitMutWith<V> for Freezed
 where
     V: ?Sized,
 {
-    fn visit_mut_children_with(&mut self, v: &mut V) {
-        self.span.visit_mut_with(v);
-    }
+    #[inline]
+    fn visit_mut_children_with(&mut self, _v: &mut V) {}
 }
 
 impl<V> FoldWith<V> for Freezed
 where
     V: ?Sized,
 {
-    fn fold_children_with(mut self, v: &mut V) -> Self {
-        self.span = self.span.fold_with(v);
+    #[inline]
+    fn fold_children_with(self, _v: &mut V) -> Self {
         self
     }
 }

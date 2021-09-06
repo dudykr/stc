@@ -12,14 +12,14 @@ use crate::{
     loader::ModuleInfo,
     ty::{self, Alias, Interface, PropertySignature, Ref, Tuple, Type, TypeExt, TypeLit, Union},
     type_facts::TypeFacts,
-    util::{contains_infer_type, contains_mark, MarkFinder},
+    util::contains_infer_type,
     ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
 use iter::once;
 use once_cell::sync::Lazy;
 use rnode::{Fold, FoldWith, Visit, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsKeywordType, RTsQualifiedName};
+use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
     DebugExt, Error,
@@ -28,7 +28,8 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection,
-    Key, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement, TypeParam, TypeParamInstantiation,
+    Key, KeywordType, KeywordTypeMetadata, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement,
+    TypeParam, TypeParamInstantiation,
 };
 use stc_utils::{error::context, stack};
 use std::{
@@ -41,7 +42,7 @@ use std::{
     time::Instant,
 };
 use swc_atoms::js_word;
-use swc_common::{util::move_map::MoveMap, Mark, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
+use swc_common::{util::move_map::MoveMap, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::{debug, error, info, instrument};
 
@@ -432,7 +433,12 @@ impl Scope<'_> {
                                 if types.len() == 1 {
                                     types.into_iter().next().unwrap().fixed()
                                 } else {
-                                    Type::Union(Union { span: DUMMY_SP, types }).fixed()
+                                    Type::Union(Union {
+                                        span: DUMMY_SP,
+                                        types,
+                                        metadata: Default::default(),
+                                    })
+                                    .fixed()
                                 }
                             } else {
                                 actual_ty
@@ -588,10 +594,11 @@ impl Scope<'_> {
                     }
                     prev.make_cheap();
                 } else {
-                    let prev_ty = replace(prev, Type::any(DUMMY_SP));
+                    let prev_ty = replace(prev, Type::any(DUMMY_SP, Default::default()));
                     *prev = Type::Intersection(Intersection {
                         span: DUMMY_SP,
                         types: vec![prev_ty, ty],
+                        metadata: Default::default(),
                     })
                     .cheap();
                 }
@@ -914,11 +921,11 @@ impl Analyzer<'_, '_> {
         let mut ty = match name {
             RTsEntityName::Ident(i) => {
                 if i.sym == js_word!("undefined") {
-                    return Ok(Type::any(span));
+                    return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                 }
                 let mut i = i.clone();
                 if i.span.is_dummy() {
-                    i.span = span;
+                    i.span = span.with_ctxt(i.span.ctxt);
                 }
 
                 let ctx = Ctx {
@@ -960,8 +967,8 @@ impl Analyzer<'_, '_> {
     #[inline(never)]
     pub(super) fn find_var(&self, name: &Id) -> Option<&VarInfo> {
         static ANY_VAR: Lazy<VarInfo> = Lazy::new(|| VarInfo {
-            ty: Some(Type::any(DUMMY_SP)),
-            actual_ty: Some(Type::any(DUMMY_SP)),
+            ty: Some(Type::any(DUMMY_SP, Default::default())),
+            actual_ty: Some(Type::any(DUMMY_SP, Default::default())),
             kind: VarKind::Error,
             initialized: true,
             copied: false,
@@ -1049,7 +1056,7 @@ impl Analyzer<'_, '_> {
                                 let span = (*ty).span();
                                 for excluded_ty in excludes.iter() {
                                     if ty.type_eq(excluded_ty) {
-                                        *ty = Type::never(span)
+                                        *ty = Type::never(span, KeywordTypeMetadata { common: ty.metadata() })
                                     }
                                 }
                             }
@@ -1112,12 +1119,20 @@ impl Analyzer<'_, '_> {
     #[instrument(skip(self, name))]
     fn find_local_type(&self, name: &Id) -> Option<ItemRef<Type>> {
         #[allow(dead_code)]
-        static ANY: Type = Type::Keyword(RTsKeywordType {
-            span: DUMMY_SP,
-            kind: TsKeywordTypeKind::TsAnyKeyword,
+        static ANY: Lazy<Type> = Lazy::new(|| {
+            Type::Keyword(KeywordType {
+                span: DUMMY_SP,
+                kind: TsKeywordTypeKind::TsAnyKeyword,
+                metadata: Default::default(),
+            })
         });
         #[allow(dead_code)]
-        static STATIC_THIS: Type = Type::StaticThis(StaticThis { span: DUMMY_SP });
+        static STATIC_THIS: Lazy<Type> = Lazy::new(|| {
+            Type::StaticThis(StaticThis {
+                span: DUMMY_SP,
+                metadata: Default::default(),
+            })
+        });
 
         if let Some(class) = &self.scope.get_this_class_name() {
             if *class == *name {
@@ -1209,6 +1224,7 @@ impl Analyzer<'_, '_> {
         is_override: bool,
     ) -> ValidationResult<()> {
         let marks = self.marks();
+        let span = span.with_ctxt(SyntaxContext::empty());
 
         if let Some(ty) = &ty {
             ty.assert_valid();
@@ -1305,7 +1321,13 @@ impl Analyzer<'_, '_> {
                             ty
                         }
                     }
-                    Err(..) => Some(Type::any(ty.span())),
+                    Err(..) => Some(Type::any(
+                        ty.span(),
+                        KeywordTypeMetadata {
+                            common: ty.as_ref().map(|ty| ty.metadata()).unwrap_or_default(),
+                            ..Default::default()
+                        },
+                    )),
                 }
             }
             None => None,
@@ -1350,7 +1372,7 @@ impl Analyzer<'_, '_> {
             self.storage.store_private_var(
                 self.ctx.module_id,
                 name.clone(),
-                ty.clone().unwrap_or_else(|| Type::any(span)),
+                ty.clone().unwrap_or_else(|| Type::any(span, Default::default())),
             )
         }
 
@@ -1405,7 +1427,7 @@ impl Analyzer<'_, '_> {
                                 unreachable!("module is not a variable")
                             }
                             _ => {
-                                let generalized_var_ty = var_ty.clone().generalize_lit(marks);
+                                let generalized_var_ty = var_ty.clone().generalize_lit();
 
                                 match var_ty.normalize() {
                                     // Allow overriding query type.
@@ -1571,45 +1593,12 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    /// Check if `ty` stores infer type in it. **Note**: This mehods only checks
-    /// for [Mark], and this method should be used with
-    /// [crate::util::contains_infer_type] in most case.
-    #[instrument(name = "Analyzer::contains_infer_type", skip(self, ty))]
-    pub(crate) fn contains_infer_type<T>(&self, ty: &T) -> bool
-    where
-        T: VisitWith<MarkFinder>,
-    {
-        swc_common::GLOBALS.set(self.env.shared().swc_globals(), || {
-            contains_mark(ty, self.marks().contains_infer_type_mark)
-        })
-    }
-
-    /// Apply metadata `infer_type_container` to `span`.
-    pub(crate) fn mark_as_infer_type_container(&self, span: Span) -> Span {
-        span.apply_mark(self.marks().contains_infer_type_mark)
-    }
-
     fn is_infer_type_container(&self, ty: &Type) -> bool {
-        let mut ctxt: SyntaxContext = ty.span().ctxt();
-        loop {
-            let mark = ctxt.remove_mark();
-
-            if mark == Mark::root() {
-                break;
-            }
-
-            if mark == self.marks().contains_infer_type_mark {
-                return true;
-            }
-        }
-
-        false
+        ty.metadata().contains_infer_type
     }
 
     pub(crate) fn mark_type_as_infer_type_container(&self, ty: &mut Type) {
-        let span = ty.span();
-        let span = self.mark_as_infer_type_container(span);
-        ty.respan(span);
+        ty.metadata_mut().contains_infer_type = true;
     }
 
     /// Mark `ty` as not expanded by default.
@@ -1622,9 +1611,7 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        ty.visit_mut_with(&mut ExpansionPreventer {
-            mark: self.marks().no_expand_mark,
-        });
+        ty.visit_mut_with(&mut ExpansionPreventer { is_for_ignoring: false });
     }
 
     /// Mark `ty` as expandable. This has higher precedence than
@@ -1637,32 +1624,18 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        ty.visit_mut_with(&mut ExpansionPreventer {
-            mark: self.marks().ignore_no_expand_mark,
-        });
+        ty.visit_mut_with(&mut ExpansionPreventer { is_for_ignoring: true });
     }
 
     pub(super) fn is_expansion_prevented(&self, ty: &Type) -> bool {
-        let mut found_no_expand = false;
-        let mut ctxt: SyntaxContext = ty.span().ctxt();
-        loop {
-            let mark = ctxt.remove_mark();
-
-            if mark == Mark::root() {
-                break;
-            }
-
-            if mark == self.marks().no_expand_mark {
-                found_no_expand = true;
-                continue;
-            }
-
-            if mark == self.marks().ignore_no_expand_mark {
-                return false;
-            }
+        if ty.metadata().ignore_no_expand {
+            return false;
+        }
+        if ty.metadata().no_expand {
+            return true;
         }
 
-        found_no_expand
+        false
     }
 }
 
@@ -1790,7 +1763,9 @@ impl<'a> Scope<'a> {
 
     /// This method does **not** handle imported types.
     fn find_type(&self, name: &Id) -> Option<ItemRef<Type>> {
-        debug!("Analyzer.find_type('{}')", name);
+        if cfg!(debug_assertions) {
+            debug!("Analyzer.find_type('{}')", name);
+        }
 
         if let Some(ty) = self.facts.types.get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
@@ -1932,6 +1907,8 @@ impl Expander<'_, '_, '_> {
             }};
         }
 
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         match type_name {
             RTsEntityName::Ident(ref i) => {
                 if let Some(class) = &self.analyzer.scope.get_this_class_name() {
@@ -1940,7 +1917,7 @@ impl Expander<'_, '_, '_> {
                     }
                 }
                 if i.sym == js_word!("void") {
-                    return Ok(Some(Type::any(span)));
+                    return Ok(Some(Type::any(span, Default::default())));
                 }
 
                 info!("Info: {}{:?}", i.sym, i.span.ctxt);
@@ -2046,6 +2023,7 @@ impl Expander<'_, '_, '_> {
                                             ty = Type::Class(Class {
                                                 span: self.span,
                                                 def: box def,
+                                                metadata: Default::default(),
                                             });
                                         }
                                         _ => {}
@@ -2088,6 +2066,7 @@ impl Expander<'_, '_, '_> {
                                         ty = Type::Class(Class {
                                             span: self.span,
                                             def: box def,
+                                            metadata: Default::default(),
                                         });
                                     }
                                     _ => {}
@@ -2110,7 +2089,7 @@ impl Expander<'_, '_, '_> {
                 }
 
                 if i.sym == *"undefined" || i.sym == *"null" {
-                    return Ok(Some(Type::any(span)));
+                    return Ok(Some(Type::any(span, Default::default())));
                 }
 
                 error!(
@@ -2144,7 +2123,7 @@ impl Expander<'_, '_, '_> {
                         )
                         .context("tried to access property as a part of type expansion")
                         .report(&mut self.analyzer.storage)
-                        .unwrap_or_else(|| Type::any(span));
+                        .unwrap_or_else(|| Type::any(span, Default::default()));
                     return Ok(Some(ty));
                 }
             }
@@ -2152,7 +2131,7 @@ impl Expander<'_, '_, '_> {
 
         print_backtrace();
 
-        Ok(Some(Type::any(span)))
+        Ok(Some(Type::any(span, Default::default())))
     }
 
     #[instrument(name = "Expander.expand_ref", skip(self, r, was_top_level))]
@@ -2190,6 +2169,7 @@ impl Expander<'_, '_, '_> {
                     ctxt,
                     enum_name: e.id.clone().into(),
                     name: None,
+                    metadata: Default::default(),
                 })));
             }
         }
@@ -2246,7 +2226,7 @@ impl Expander<'_, '_, '_> {
                 match ty.normalize() {
                     Type::Ref(r) => {
                         // Expand type arguments if it should be expanded
-                        if self.analyzer.contains_infer_type(&r.type_args) {
+                        if contains_infer_type(&r.type_args) {
                             return Type::Ref(r.clone().fold_children_with(self));
                         }
                     }
@@ -2276,7 +2256,7 @@ impl Expander<'_, '_, '_> {
 
         // Start handling type expansion.
         let res: ValidationResult<()> = try {
-            if self.analyzer.contains_infer_type(&ty) || contains_infer_type(&ty) {
+            if contains_infer_type(&ty) {
                 // TODO: PERF
                 match ty.normalize_mut() {
                     Type::Conditional(cond_ty) => {
@@ -2403,6 +2383,7 @@ impl Expander<'_, '_, '_> {
                                     ..
                                 })),
                             default: None,
+                            ..
                         },
                     readonly,
                     optional,
@@ -2419,6 +2400,7 @@ impl Expander<'_, '_, '_> {
                             ref extends_type,
                             ref true_type,
                             ref false_type,
+                            ..
                         })),
                     ..
                 }) if constraint.type_eq(&obj_type) && *name == index_type.name => {
@@ -2505,8 +2487,8 @@ impl Expander<'_, '_, '_> {
                     return ty;
                 }
 
-                Type::Union(Union { span, types }) => {
-                    return Type::Union(Union { span, types });
+                Type::Union(Union { span, types, metadata }) => {
+                    return Type::Union(Union { span, types, metadata });
                 }
 
                 Type::Function(ty::Function {
@@ -2514,6 +2496,7 @@ impl Expander<'_, '_, '_> {
                     type_params,
                     params,
                     ret_ty,
+                    metadata,
                 }) => {
                     let ret_ty = self.analyzer.rename_type_params(span, *ret_ty, None)?;
                     // TODO: PERF
@@ -2524,6 +2507,7 @@ impl Expander<'_, '_, '_> {
                         type_params,
                         params,
                         ret_ty,
+                        metadata,
                     });
                 }
 
@@ -2535,7 +2519,7 @@ impl Expander<'_, '_, '_> {
             Ok(ty) => ty,
             Err(err) => {
                 self.analyzer.storage.report(err);
-                return Type::any(span);
+                return Type::any(span, Default::default());
             }
         };
 
@@ -2551,6 +2535,7 @@ impl Expander<'_, '_, '_> {
                 mut extends_type,
                 mut true_type,
                 mut false_type,
+                metadata,
                 ..
             }) => {
                 // We need to handle infer type.
@@ -2588,6 +2573,7 @@ impl Expander<'_, '_, '_> {
                     extends_type,
                     true_type,
                     false_type,
+                    metadata,
                 });
             }
             _ => {}
@@ -2693,12 +2679,18 @@ impl Visit<Union> for UnionFinder {
 }
 
 pub(crate) struct ExpansionPreventer {
-    mark: Mark,
+    is_for_ignoring: bool,
 }
 
 impl VisitMut<Ref> for ExpansionPreventer {
     fn visit_mut(&mut self, ty: &mut Ref) {
-        ty.span = ty.span.apply_mark(self.mark);
+        ty.visit_mut_children_with(self);
+
+        if self.is_for_ignoring {
+            ty.metadata.common.ignore_no_expand = true;
+        } else {
+            ty.metadata.common.no_expand = true;
+        }
     }
 }
 

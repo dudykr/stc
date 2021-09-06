@@ -1,9 +1,8 @@
 use crate::ty::{Intersection, Type, Union};
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{
-    RBlockStmt, RBool, RIdent, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType,
-};
-use stc_ts_types::{Id, InferType, Ref, TypeParam};
+use stc_ts_ast_rnode::{RBlockStmt, RBool, RIdent, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
+use stc_ts_type_ops::metadata::TypeFinder;
+use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeParam};
 use std::fmt::Debug;
 use swc_common::{Mark, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
@@ -95,21 +94,17 @@ where
     v.found
 }
 
-struct InferTypeFinder {
-    found: bool,
-}
-
-impl Visit<InferType> for InferTypeFinder {
-    fn visit(&mut self, _: &InferType) {
-        self.found = true;
-    }
-}
-
+/// Check if `ty` stores infer type in it.
 #[instrument(skip(n))]
-pub(crate) fn contains_infer_type(n: &Type) -> bool {
-    let mut v = InferTypeFinder { found: false };
-    n.visit_with(&mut v);
-    v.found
+pub(crate) fn contains_infer_type<T>(n: &T) -> bool
+where
+    T: VisitWith<TypeFinder>,
+{
+    fn check(ty: &Type) -> bool {
+        ty.normalize().is_infer() || ty.metadata().contains_infer_type
+    }
+
+    TypeFinder::find(n, check)
 }
 
 /// Applies `mark` to **all** types.
@@ -137,10 +132,10 @@ impl VisitMut<RIdent> for Marker {
 
 pub(crate) fn is_str_or_union(t: &Type) -> bool {
     match t.normalize() {
-        Type::Lit(RTsLitType {
+        Type::Lit(LitType {
             lit: RTsLit::Str(..), ..
         }) => true,
-        Type::Keyword(RTsKeywordType {
+        Type::Keyword(KeywordType {
             kind: TsKeywordTypeKind::TsStringKeyword,
             ..
         }) => true,
@@ -161,16 +156,24 @@ pub(crate) trait RemoveTypes {
 impl RemoveTypes for Type {
     fn remove_falsy(self) -> Type {
         match self {
-            Type::Keyword(RTsKeywordType { kind, span }) => match kind {
+            Type::Keyword(KeywordType { kind, span, metadata }) => match kind {
                 TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword => {
-                    return Type::never(span);
+                    return Type::never(span, metadata);
                 }
                 _ => {}
             },
-            Type::Lit(RTsLitType {
+            Type::Lit(LitType {
                 lit: RTsLit::Bool(RBool { value: false, span, .. }),
                 ..
-            }) => return Type::never(span),
+            }) => {
+                return Type::never(
+                    span,
+                    KeywordTypeMetadata {
+                        common: self.metadata(),
+                        ..Default::default()
+                    },
+                )
+            }
 
             Type::Union(u) => return u.remove_falsy(),
             Type::Intersection(i) => return i.remove_falsy(),
@@ -182,10 +185,18 @@ impl RemoveTypes for Type {
 
     fn remove_truthy(self) -> Type {
         match self {
-            Type::Lit(RTsLitType {
+            Type::Lit(LitType {
                 lit: RTsLit::Bool(RBool { value: true, span, .. }),
                 ..
-            }) => return Type::never(span),
+            }) => {
+                return Type::never(
+                    span,
+                    KeywordTypeMetadata {
+                        common: self.metadata(),
+                        ..Default::default()
+                    },
+                )
+            }
 
             Type::Union(u) => u.remove_truthy(),
             Type::Intersection(i) => i.remove_truthy(),
@@ -199,27 +210,49 @@ impl RemoveTypes for Intersection {
         let types = self.types.into_iter().map(|ty| ty.remove_falsy()).collect::<Vec<_>>();
 
         if types.iter().any(|ty| ty.is_never()) {
-            return Type::never(self.span);
+            return Type::never(
+                self.span,
+                KeywordTypeMetadata {
+                    common: self.metadata.common,
+                    ..Default::default()
+                },
+            );
         }
 
         if types.len() == 1 {
             return types.into_iter().next().unwrap();
         }
 
-        Intersection { span: self.span, types }.into()
+        Intersection {
+            span: self.span,
+            types,
+            metadata: self.metadata,
+        }
+        .into()
     }
 
     fn remove_truthy(self) -> Type {
         let types = self.types.into_iter().map(|ty| ty.remove_truthy()).collect::<Vec<_>>();
         if types.iter().any(|ty| ty.is_never()) {
-            return Type::never(self.span);
+            return Type::never(
+                self.span,
+                KeywordTypeMetadata {
+                    common: self.metadata.common,
+                    ..Default::default()
+                },
+            );
         }
 
         if types.len() == 1 {
             return types.into_iter().next().unwrap();
         }
 
-        Intersection { span: self.span, types }.into()
+        Intersection {
+            span: self.span,
+            types,
+            metadata: self.metadata,
+        }
+        .into()
     }
 }
 
@@ -233,14 +266,25 @@ impl RemoveTypes for Union {
             .collect();
 
         if types.is_empty() {
-            return Type::never(self.span);
+            return Type::never(
+                self.span,
+                KeywordTypeMetadata {
+                    common: self.metadata.common,
+                    ..Default::default()
+                },
+            );
         }
 
         if types.len() == 1 {
             return types.into_iter().next().unwrap();
         }
 
-        Union { span: self.span, types }.into()
+        Union {
+            span: self.span,
+            types,
+            metadata: self.metadata,
+        }
+        .into()
     }
 
     fn remove_truthy(self) -> Type {
@@ -252,14 +296,25 @@ impl RemoveTypes for Union {
             .collect();
 
         if types.is_empty() {
-            return Type::never(self.span);
+            return Type::never(
+                self.span,
+                KeywordTypeMetadata {
+                    common: self.metadata.common,
+                    ..Default::default()
+                },
+            );
         }
 
         if types.len() == 1 {
             return types.into_iter().next().unwrap();
         }
 
-        Union { span: self.span, types }.into()
+        Union {
+            span: self.span,
+            types,
+            metadata: self.metadata,
+        }
+        .into()
     }
 }
 

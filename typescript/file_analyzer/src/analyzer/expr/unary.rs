@@ -5,12 +5,9 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use rnode::NodeId;
-use stc_ts_ast_rnode::{
-    RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, RStr, RTsKeywordType, RTsLit, RTsLitType, RUnaryExpr,
-};
+use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, RStr, RTsLit, RUnaryExpr};
 use stc_ts_errors::{Error, Errors};
-use stc_ts_types::Union;
+use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};
 use swc_ecma_ast::*;
@@ -95,8 +92,7 @@ impl Analyzer<'_, '_> {
                         ]
                         .iter()
                         .cloned()
-                        .map(|value| RTsLitType {
-                            node_id: NodeId::invalid(),
+                        .map(|value| LitType {
                             span,
                             lit: RTsLit::Str(RStr {
                                 span,
@@ -104,58 +100,63 @@ impl Analyzer<'_, '_> {
                                 has_escape: false,
                                 kind: Default::default(),
                             }),
+                            metadata: Default::default(),
                         })
                         .map(Type::Lit)
                         .collect(),
+                        metadata: Default::default(),
                     }));
                 }
-                return Ok(Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsStringKeyword,
+                    metadata: Default::default(),
                 }));
             }
 
-            op!("void") => return Ok(Type::undefined(span)),
+            op!("void") => return Ok(Type::undefined(span, Default::default())),
 
             op!(unary, "-") | op!(unary, "+") => {
                 if let Some(arg) = &arg {
                     match arg.normalize() {
-                        Type::Lit(RTsLitType {
+                        Type::Lit(LitType {
                             lit: RTsLit::Number(RNumber { span, value }),
                             ..
                         }) => {
                             let span = *span;
 
-                            return Ok(Type::Lit(RTsLitType {
-                                node_id: NodeId::invalid(),
+                            return Ok(Type::Lit(LitType {
                                 span,
                                 lit: RTsLit::Number(RNumber {
                                     span,
                                     value: if *op == op!(unary, "-") { -(*value) } else { *value },
                                 }),
+                                metadata: Default::default(),
                             }));
                         }
                         _ => {}
                     }
                 }
 
-                return Ok(Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
+                    metadata: Default::default(),
                 }));
             }
 
             op!("~") => {
-                return Ok(Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
+                    metadata: Default::default(),
                 }));
             }
             _ => {}
         }
 
         match arg {
-            Some(Type::Keyword(RTsKeywordType {
+            Some(Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             })) => {
@@ -178,9 +179,10 @@ impl Analyzer<'_, '_> {
         // This is a worst case. We only return the type without good error reporting.
         match op {
             op!("!") | op!("delete") => {
-                return Ok(Type::Keyword(RTsKeywordType {
+                return Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    metadata: Default::default(),
                 }))
             }
 
@@ -222,17 +224,17 @@ impl Analyzer<'_, '_> {
             },
 
             op!("~") | op!(unary, "-") | op!(unary, "+") => match arg.normalize() {
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 }) => {}
 
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) => errors.push(Error::TS2531 { span: arg.span() }),
 
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 }) => errors.push(Error::ObjectIsPossiblyUndefined { span: arg.span() }),
@@ -251,55 +253,59 @@ impl Analyzer<'_, '_> {
 
 fn negate(ty: Type) -> Type {
     match ty {
-        Type::Lit(RTsLitType { ref lit, span, node_id }) => match *lit {
+        Type::Lit(LitType {
+            ref lit,
+            span,
+            metadata,
+        }) => match *lit {
             RTsLit::Bool(ref v) => {
-                return Type::Lit(RTsLitType {
-                    node_id,
+                return Type::Lit(LitType {
                     lit: RTsLit::Bool(RBool {
                         value: !v.value,
                         ..v.clone()
                     }),
                     span,
+                    metadata,
                 });
             }
             RTsLit::Number(ref v) => {
-                return Type::Lit(RTsLitType {
-                    node_id: NodeId::invalid(),
+                return Type::Lit(LitType {
                     lit: RTsLit::Bool(RBool {
                         value: v.value != 0.0,
                         span: v.span,
                     }),
                     span,
+                    metadata,
                 });
             }
             RTsLit::Str(ref v) => {
-                return Type::Lit(RTsLitType {
-                    node_id: NodeId::invalid(),
+                return Type::Lit(LitType {
                     lit: RTsLit::Bool(RBool {
                         value: v.value != js_word!(""),
                         span: v.span,
                     }),
                     span,
+                    metadata,
                 });
             }
             RTsLit::Tpl(ref v) => {
-                return Type::Lit(RTsLitType {
-                    node_id: NodeId::invalid(),
+                return Type::Lit(LitType {
                     lit: RTsLit::Bool(RBool {
                         value: v.quasis.iter().next().as_ref().unwrap().raw.value != js_word!(""),
                         span: v.span,
                     }),
                     span,
+                    metadata,
                 });
             }
             RTsLit::BigInt(ref v) => {
-                return Type::Lit(RTsLitType {
-                    node_id: NodeId::invalid(),
+                return Type::Lit(LitType {
                     lit: RTsLit::BigInt(RBigInt {
                         value: -v.value.clone(),
                         span: v.span,
                     }),
                     span,
+                    metadata,
                 });
             }
         },
@@ -307,9 +313,13 @@ fn negate(ty: Type) -> Type {
         _ => {}
     }
 
-    RTsKeywordType {
+    KeywordType {
         span: ty.span(),
         kind: TsKeywordTypeKind::TsBooleanKeyword,
+        metadata: KeywordTypeMetadata {
+            common: ty.metadata(),
+            ..Default::default()
+        },
     }
     .into()
 }

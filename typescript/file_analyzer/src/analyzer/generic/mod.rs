@@ -7,8 +7,8 @@ use crate::{
 };
 use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
-use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RIdent, RPat, RStr, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType};
+use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
+use stc_ts_ast_rnode::{RIdent, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace, print_type},
     DebugExt,
@@ -16,9 +16,10 @@ use stc_ts_errors::{
 use stc_ts_generics::type_param::{finder::TypeParamUsageFinder, remover::TypeParamRemover, renamer::TypeParamRenamer};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, Mapped, ModuleId,
-    Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeOrSpread,
-    TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+    Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, ModuleId, Operator, OptionalType, PropertySignature, Ref,
+    Tuple, TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl,
+    TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{error::context, stack};
@@ -220,6 +221,10 @@ impl Analyzer<'_, '_> {
                                         ty,
                                     })
                                     .collect(),
+                                metadata: TupleMetadata {
+                                    common: p.ty.metadata(),
+                                    ..Default::default()
+                                },
                             }),
                             opts,
                         )?;
@@ -754,6 +759,10 @@ impl Analyzer<'_, '_> {
                                 name: name.clone(),
                                 constraint: None,
                                 default: None,
+                                metadata: TypeParamMetadata {
+                                    common: arg.metadata(),
+                                    ..Default::default()
+                                },
                             }));
                         }
                     }
@@ -802,13 +811,13 @@ impl Analyzer<'_, '_> {
                                         )
                                         .is_ok()
                                     {
-                                        *prev = arg.clone().generalize_lit(marks);
+                                        *prev = arg.clone().generalize_lit();
                                         return Ok(());
                                     }
                                 }
 
                                 let param_ty = Type::union(e.clone()).cheap();
-                                e.push(arg.clone().generalize_lit(marks));
+                                e.push(arg.clone().generalize_lit());
 
                                 match param_ty.normalize() {
                                     Type::Param(param) => {
@@ -839,7 +848,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     Entry::Vacant(e) => {
-                        let arg = arg.clone().generalize_lit(marks);
+                        let arg = arg.clone().generalize_lit();
 
                         e.insert(InferredType::Other(vec![arg]));
                     }
@@ -1240,6 +1249,8 @@ impl Analyzer<'_, '_> {
             Type::Mapped(..) => {}
 
             Type::Array(arr) => {
+                debug_assert_eq!(span.ctxt, SyntaxContext::empty());
+
                 let mut params = vec![];
                 params.push(*arr.elem_type.clone());
                 return self.infer_type(
@@ -1251,12 +1262,13 @@ impl Analyzer<'_, '_> {
                         ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
                         type_args: Some(box TypeParamInstantiation { span, params }),
+                        metadata: Default::default(),
                     }),
                     opts,
                 );
             }
 
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             }) => return Ok(()),
@@ -1310,15 +1322,15 @@ impl Analyzer<'_, '_> {
         }
 
         match arg {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNullKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
             }) => {
@@ -1517,8 +1529,7 @@ impl Analyzer<'_, '_> {
                         for arg_member in &arg.members {
                             if let Some(key) = arg_member.key() {
                                 match key {
-                                    Key::Normal { span: i_span, sym } => key_types.push(Type::Lit(RTsLitType {
-                                        node_id: NodeId::invalid(),
+                                    Key::Normal { span: i_span, sym } => key_types.push(Type::Lit(LitType {
                                         span: param.span,
                                         lit: RTsLit::Str(RStr {
                                             span: *i_span,
@@ -1526,12 +1537,19 @@ impl Analyzer<'_, '_> {
                                             has_escape: false,
                                             kind: Default::default(),
                                         }),
+                                        metadata: LitTypeMetadata {
+                                            common: param.metadata.common,
+                                            ..Default::default()
+                                        },
                                     })),
                                     Key::Num(n) => {
-                                        key_types.push(Type::Lit(RTsLitType {
-                                            node_id: NodeId::invalid(),
+                                        key_types.push(Type::Lit(LitType {
                                             span: param.span,
                                             lit: RTsLit::Number(n.clone()),
+                                            metadata: LitTypeMetadata {
+                                                common: param.metadata.common,
+                                                ..Default::default()
+                                            },
                                         }));
                                     }
                                     _ => {
@@ -1563,8 +1581,9 @@ impl Analyzer<'_, '_> {
                                     } else {
                                         None
                                     };
-                                    let type_ann =
-                                        type_ann.map(Box::new).or_else(|| Some(box Type::any(arg_prop.span)));
+                                    let type_ann = type_ann
+                                        .map(Box::new)
+                                        .or_else(|| Some(box Type::any(arg_prop.span, Default::default())));
 
                                     new_members.push(TypeElement::Property(PropertySignature {
                                         optional: calc_true_plus_minus_in_param(optional, arg_prop.optional),
@@ -1592,7 +1611,7 @@ impl Analyzer<'_, '_> {
                                         // inferred.type_elements.remove(&name)
                                         None
                                     } else {
-                                        Some(box Type::any(i.span))
+                                        Some(box Type::any(i.span, Default::default()))
                                     };
                                     new_members.push(TypeElement::Index(IndexSignature { type_ann, ..i.clone() }));
                                 }
@@ -1605,7 +1624,8 @@ impl Analyzer<'_, '_> {
                                         ret_ty: arg_method
                                             .ret_ty
                                             .clone()
-                                            .unwrap_or_else(|| box Type::any(arg_method.span)),
+                                            .unwrap_or_else(|| box Type::any(arg_method.span, Default::default())),
+                                        metadata: Default::default(),
                                     });
                                     let type_ann = if let Some(param_ty) = param.ty.as_ref() {
                                         let old = take(&mut self.mapped_type_param_name);
@@ -1623,8 +1643,9 @@ impl Analyzer<'_, '_> {
                                     } else {
                                         None
                                     };
-                                    let type_ann =
-                                        type_ann.map(Box::new).or_else(|| Some(box Type::any(arg_method.span)));
+                                    let type_ann = type_ann
+                                        .map(Box::new)
+                                        .or_else(|| Some(box Type::any(arg_method.span, Default::default())));
 
                                     new_members.push(TypeElement::Property(PropertySignature {
                                         span: arg_method.span,
@@ -1665,6 +1686,10 @@ impl Analyzer<'_, '_> {
                         let mut keys = Type::Union(Union {
                             span: param.span,
                             types: key_types,
+                            metadata: UnionMetadata {
+                                common: param.metadata.common,
+                                ..Default::default()
+                            },
                         });
                         self.prevent_generalize(&mut keys);
 
@@ -1703,7 +1728,16 @@ impl Analyzer<'_, '_> {
                             name.clone(),
                             Cow::Owned(Type::Array(Array {
                                 span: arg.span,
-                                elem_type: box new_ty.unwrap_or_else(|| Type::any(arg.span)),
+                                elem_type: box new_ty.unwrap_or_else(|| {
+                                    Type::any(
+                                        arg.span,
+                                        KeywordTypeMetadata {
+                                            common: arg.metadata.common,
+                                            ..Default::default()
+                                        },
+                                    )
+                                }),
+                                metadata: arg.metadata,
                             })),
                             opts,
                         )?;
@@ -1740,8 +1774,7 @@ impl Analyzer<'_, '_> {
                                         Key::Normal {
                                             span: i_span,
                                             sym: i_sym,
-                                        } => Some(Type::Lit(RTsLitType {
-                                            node_id: NodeId::invalid(),
+                                        } => Some(Type::Lit(LitType {
                                             span: param.span,
                                             lit: RTsLit::Str(RStr {
                                                 span: *i_span,
@@ -1749,6 +1782,10 @@ impl Analyzer<'_, '_> {
                                                 has_escape: false,
                                                 kind: Default::default(),
                                             }),
+                                            metadata: LitTypeMetadata {
+                                                common: param.metadata.common,
+                                                ..Default::default()
+                                            },
                                         })),
                                         _ => None,
                                     }, // TODO: Handle method element
@@ -2149,7 +2186,10 @@ impl Analyzer<'_, '_> {
                 match &*param.ty {
                     Type::Param(param) => {
                         // TOOD: Union
-                        inferred.defaults.insert(param.name.clone(), Type::unknown(param.span));
+                        inferred.defaults.insert(
+                            param.name.clone(),
+                            Type::unknown(param.span.with_ctxt(SyntaxContext::empty()), Default::default()),
+                        );
                     }
                     _ => {
                         // TOOD: Complex inference logic for types like (b:
@@ -2323,10 +2363,13 @@ impl VisitMut<Type> for TypeParamInliner<'_> {
 
         match ty {
             Type::Param(p) if p.name == *self.param => {
-                *ty = Type::Lit(RTsLitType {
-                    node_id: NodeId::invalid(),
+                *ty = Type::Lit(LitType {
                     span: p.span,
                     lit: RTsLit::Str(self.value.clone()),
+                    metadata: LitTypeMetadata {
+                        common: p.metadata.common,
+                        ..Default::default()
+                    },
                 });
                 return;
             }
@@ -2547,7 +2590,11 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
             Type::Optional(ty) => {}
             _ => {
                 let ty = box element_ty.take();
-                *element_ty = Type::Optional(OptionalType { span: DUMMY_SP, ty })
+                *element_ty = Type::Optional(OptionalType {
+                    span: DUMMY_SP,
+                    ty,
+                    metadata: Default::default(),
+                });
             }
         },
         TruePlusMinus::Minus => {}

@@ -31,7 +31,10 @@ impl Analyzer<'_, '_> {
                 is_optional: m.optional,
                 type_params: m.type_params.clone(),
                 params: m.params.clone(),
-                ret_ty: m.ret_ty.clone().unwrap_or_else(|| box Type::any(m.span)),
+                ret_ty: m
+                    .ret_ty
+                    .clone()
+                    .unwrap_or_else(|| box Type::any(m.span, Default::default())),
             }))),
             TypeElement::Index(i) => Ok(Some(ClassMember::IndexSignature(i.clone()))),
         }
@@ -61,6 +64,7 @@ impl Analyzer<'_, '_> {
                                     name: a_tp.params[idx].name.clone(),
                                     constraint: None,
                                     default: None,
+                                    metadata: Default::default(),
                                 }),
                             );
                         }
@@ -98,6 +102,7 @@ impl Analyzer<'_, '_> {
                                     name: a_tp.params[idx].name.clone(),
                                     constraint: None,
                                     default: None,
+                                    metadata: Default::default(),
                                 }),
                             );
                         }

@@ -1,5 +1,7 @@
 use rnode::{VisitMut, VisitMutWith};
-use stc_ts_types::{Array, Conditional, FnParam, Intersection, Type, TypeOrSpread, TypeParam, Union};
+use stc_ts_types::{
+    Array, Conditional, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam, Union, Valid,
+};
 use swc_common::TypeEq;
 use tracing::instrument;
 
@@ -131,13 +133,23 @@ impl Fixer {
             return;
         }
 
+        if ty.is_valid() {
+            return;
+        }
+
         ty.normalize_mut();
         ty.visit_mut_children_with(self);
 
         match ty {
             Type::Union(u) => match u.types.len() {
                 0 => {
-                    *ty = Type::never(u.span);
+                    *ty = Type::never(
+                        u.span,
+                        KeywordTypeMetadata {
+                            common: u.metadata.common,
+                            ..Default::default()
+                        },
+                    );
                     return;
                 }
                 1 => {
@@ -151,7 +163,13 @@ impl Fixer {
 
             Type::Intersection(i) => match i.types.len() {
                 0 => {
-                    *ty = Type::any(i.span);
+                    *ty = Type::any(
+                        i.span,
+                        KeywordTypeMetadata {
+                            common: i.metadata.common,
+                            ..Default::default()
+                        },
+                    );
                     return;
                 }
                 1 => {

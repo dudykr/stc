@@ -9,19 +9,16 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use rnode::{Fold, FoldWith, NodeId, Visit, VisitWith};
-use stc_ts_ast_rnode::{
-    RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType,
-    RYieldExpr,
-};
+use rnode::{Fold, FoldWith, Visit, VisitWith};
+use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RYieldExpr};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{
-    IndexedAccessType, Key, MethodSignature, ModuleId, Operator, PropertySignature, Ref, TypeElement,
-    TypeParamInstantiation,
+    CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, ModuleId,
+    Operator, PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
 };
 use stc_utils::ext::SpanExt;
 use std::{borrow::Cow, mem::take, ops::AddAssign};
-use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::{debug, instrument};
 
@@ -59,6 +56,7 @@ impl Analyzer<'_, '_> {
     ) -> Result<Option<Type>, Error> {
         let marks = self.marks();
 
+        debug_assert_eq!(span.ctxt, SyntaxContext::empty());
         debug!("visit_stmts_for_return()");
         debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
 
@@ -148,7 +146,7 @@ impl Analyzer<'_, '_> {
             for mut ty in values.return_types {
                 ty = ty.fold_with(&mut KeyInliner { analyzer: self });
                 if values.should_generalize {
-                    ty = ty.generalize_lit(marks);
+                    ty = ty.generalize_lit();
                 }
 
                 actual.push(ty);
@@ -177,19 +175,33 @@ impl Analyzer<'_, '_> {
                 }
 
                 let yield_ty = if types.is_empty() {
-                    Type::any(DUMMY_SP.apply_mark(marks.implicit_type_mark))
+                    Type::any(
+                        DUMMY_SP,
+                        KeywordTypeMetadata {
+                            common: CommonTypeMetadata {
+                                implicit: true,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
+                    )
                 } else {
                     Type::union(types)
                 };
 
                 let ret_ty = if actual.is_empty() {
-                    Type::void(span)
+                    Type::void(span, Default::default())
                 } else {
                     self.simplify(Type::union(actual))
                 };
 
+                let mut metadata = yield_ty.metadata();
+
                 return Ok(Some(Type::Ref(Ref {
-                    span: yield_ty.span().or_else(|| ret_ty.span()),
+                    span: yield_ty.span().or_else(|| {
+                        metadata = ret_ty.metadata();
+                        ret_ty.span()
+                    }),
                     ctxt: ModuleId::builtin(),
                     type_name: if is_async {
                         RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), DUMMY_SP))
@@ -207,18 +219,23 @@ impl Analyzer<'_, '_> {
                         params: vec![
                             yield_ty,
                             ret_ty,
-                            Type::Keyword(RTsKeywordType {
+                            Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                metadata: Default::default(),
                             }),
                         ],
                     }),
+                    metadata: RefMetadata {
+                        common: metadata,
+                        ..Default::default()
+                    },
                 })));
             }
 
             if is_async {
                 let ret_ty = if actual.is_empty() {
-                    Type::void(span)
+                    Type::void(span, Default::default())
                 } else {
                     self.simplify(Type::union(actual))
                 };
@@ -231,6 +248,7 @@ impl Analyzer<'_, '_> {
                         span,
                         params: vec![ret_ty],
                     }),
+                    metadata: Default::default(),
                 })));
             }
 
@@ -296,9 +314,10 @@ impl Analyzer<'_, '_> {
         } {
             res?
         } else {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 span: node.span,
                 kind: TsKeywordTypeKind::TsVoidKeyword,
+                metadata: Default::default(),
             })
         };
         debug_assert_ne!(ty.span(), DUMMY_SP, "{:?}", ty);
@@ -321,8 +340,9 @@ impl Analyzer<'_, '_> {
                             type_name: RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), node.span)),
                             type_args: Some(box TypeParamInstantiation {
                                 span: node.span,
-                                params: vec![Type::any(DUMMY_SP), ty.clone()],
+                                params: vec![Type::any(DUMMY_SP, Default::default()), ty.clone()],
                             }),
+                            metadata: Default::default(),
                         }),
                     )
                     .report(&mut self.storage);
@@ -369,8 +389,9 @@ impl Analyzer<'_, '_> {
                             type_name: RTsEntityName::Ident(RIdent::new(name.into(), node.span)),
                             type_args: Some(box TypeParamInstantiation {
                                 span: node.span,
-                                params: vec![Type::any(DUMMY_SP), ty.clone()],
+                                params: vec![Type::any(DUMMY_SP, Default::default()), ty.clone()],
                             }),
+                            metadata: Default::default(),
                         }),
                     )
                     .report(&mut self.storage);
@@ -435,7 +456,7 @@ impl Analyzer<'_, '_> {
                             Ok(()) => {}
                             Err(err) => {
                                 self.storage.report(err);
-                                return Ok(Type::any(span));
+                                return Ok(Type::any(span, Default::default()));
                             }
                         }
                     }
@@ -444,20 +465,21 @@ impl Analyzer<'_, '_> {
                             span,
                             cause: Some(box err),
                         });
-                        return Ok(Type::any(span));
+                        return Ok(Type::any(span, Default::default()));
                     }
                 }
             }
 
             self.scope.return_values.yield_types.push(item_ty);
         } else {
-            self.scope.return_values.yield_types.push(Type::Keyword(RTsKeywordType {
+            self.scope.return_values.yield_types.push(Type::Keyword(KeywordType {
                 span: e.span,
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                metadata: Default::default(),
             }));
         }
 
-        Ok(Type::any(e.span))
+        Ok(Type::any(e.span, Default::default()))
     }
 }
 
@@ -510,7 +532,9 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                         span: op_span,
                         op: TsTypeOperatorOp::KeyOf,
                         ty: ref index_type,
+                        metadata: op_metadata,
                     }),
+                metadata,
             }) => {
                 let ctx = Ctx {
                     preserve_ref: false,
@@ -611,8 +635,8 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
 
                                         match key {
                                             Key::Normal { span: i_span, sym: key } => {
-                                                let ty = Type::Lit(RTsLitType {
-                                                    node_id: NodeId::invalid(),
+                                                debug_assert_eq!(i_span.ctxt, SyntaxContext::empty());
+                                                let ty = Type::Lit(LitType {
                                                     span: i_span,
                                                     lit: RTsLit::Str(RStr {
                                                         span: i_span,
@@ -620,6 +644,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                                         has_escape: false,
                                                         kind: Default::default(),
                                                     }),
+                                                    metadata: Default::default(),
                                                 });
 
                                                 if types.iter().all(|previous| !previous.type_eq(&ty)) {
@@ -636,6 +661,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                 readonly,
                                 obj_type: obj_type.clone(),
                                 index_type: box Type::union(types),
+                                metadata,
                             });
                         }
                         _ => {}

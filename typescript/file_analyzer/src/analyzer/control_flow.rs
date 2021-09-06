@@ -2,7 +2,6 @@ use crate::{
     analyzer::{
         assign::AssignOpts,
         expr::{AccessPropertyOpts, IdCtx, TypeOfMode},
-        marks::MarkExt,
         scope::{ScopeKind, VarInfo},
         util::ResultExt,
         Analyzer, Ctx,
@@ -18,11 +17,11 @@ use fxhash::FxHashMap;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase,
-    RSwitchStmt, RTsKeywordType,
+    RSwitchStmt,
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{name::Name, Array, Id, Key, Union};
+use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
 use stc_ts_utils::MapWithMut;
 use stc_utils::ext::SpanExt;
 use std::{
@@ -259,7 +258,7 @@ impl Merge for Type {
     fn or(&mut self, r: Self) {
         let l_span = self.span();
 
-        let l = replace(self, Type::never(l_span));
+        let l = replace(self, Type::never(l_span, Default::default()));
 
         *self = Type::union(vec![l, r]);
     }
@@ -434,7 +433,14 @@ impl Analyzer<'_, '_> {
                     let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
                     elem_types.dedup_type();
                     let elem_type = box Type::union(elem_types);
-                    *ty = Type::Array(Array { span, elem_type });
+                    *ty = Type::Array(Array {
+                        span,
+                        elem_type,
+                        metadata: ArrayMetadata {
+                            common: tuple.metadata.common,
+                            ..Default::default()
+                        },
+                    });
                 }
                 _ => {}
             }
@@ -444,7 +450,7 @@ impl Analyzer<'_, '_> {
             .iter()
             .flat_map(|ty| ty.iter_union())
             .flat_map(|ty| ty.iter_union())
-            .any(|ty| self.env.shared().marks().prevent_converting_to_children.is_marked(&ty));
+            .any(|ty| ty.metadata().prevent_converting_to_children);
 
         if should_preserve {
             return self.remove_child_types(span, types);
@@ -457,7 +463,7 @@ impl Analyzer<'_, '_> {
         fn need_work(ty: &Type) -> bool {
             match ty.normalize() {
                 Type::Lit(..)
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) => false,
@@ -677,7 +683,7 @@ impl Analyzer<'_, '_> {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None));
                     let lhs_ty = match lhs_ty {
                         Ok(v) => v,
-                        _ => Type::any(lhs.span()),
+                        _ => Type::any(lhs.span(), Default::default()),
                     };
 
                     if op == op!("=") {
@@ -888,7 +894,7 @@ impl Analyzer<'_, '_> {
                     .get_iterator(span, Cow::Borrowed(&ty), Default::default())
                     .context("tried to convert a type to an iterator to assign with an array pattern")
                     .report(&mut self.storage)
-                    .unwrap_or_else(|| Cow::Owned(Type::any(span)));
+                    .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default())));
                 //
                 for (i, elem) in arr.elems.iter().enumerate() {
                     if let Some(elem) = elem {
@@ -950,7 +956,7 @@ impl Analyzer<'_, '_> {
                                         ..Default::default()
                                     },
                                 )
-                                .unwrap_or_else(|_| Type::any(span));
+                                .unwrap_or_else(|_| Type::any(span, Default::default()));
 
                             self.try_assign_pat_with_opts(span, &kv.value, &prop_ty, opts)
                                 .report(&mut self.storage);
@@ -973,7 +979,7 @@ impl Analyzer<'_, '_> {
                                         ..Default::default()
                                     },
                                 )
-                                .unwrap_or_else(|_| Type::any(span));
+                                .unwrap_or_else(|_| Type::any(span, Default::default()));
 
                             self.try_assign_pat_with_opts(
                                 span,
@@ -990,7 +996,8 @@ impl Analyzer<'_, '_> {
                         RObjectPatProp::Rest(r) => {
                             if r.type_ann.is_none() {
                                 if let Some(m) = &mut self.mutations {
-                                    m.for_pats.entry(r.node_id).or_default().ty = Some(Type::any(span));
+                                    m.for_pats.entry(r.node_id).or_default().ty =
+                                        Some(Type::any(span, Default::default()));
                                 }
                             }
 
@@ -1037,6 +1044,7 @@ impl Analyzer<'_, '_> {
                 let ty = Type::Array(Array {
                     span,
                     elem_type: box ty.clone(),
+                    metadata: Default::default(),
                 });
                 return self.try_assign_pat_with_opts(span, &rest.arg, &ty, opts);
             }
@@ -1144,6 +1152,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Union(Union {
                     span: ty.span(),
                     types: new_types,
+                    metadata: ty.metadata,
                 }));
             }
             _ => {}
@@ -1178,13 +1187,25 @@ impl Analyzer<'_, '_> {
                     // }
 
                     if prop_ty.is_never() {
-                        return Ok(Type::never(src.span()));
+                        return Ok(Type::never(
+                            src.span(),
+                            KeywordTypeMetadata {
+                                common: src.metadata(),
+                                ..Default::default()
+                            },
+                        ));
                     }
                 }
             }
             Err(err) => match err.actual() {
                 Error::NoSuchProperty { .. } | Error::NoSuchPropertyInClass { .. } => {
-                    return Ok(Type::never(src.span()))
+                    return Ok(Type::never(
+                        src.span(),
+                        KeywordTypeMetadata {
+                            common: src.metadata(),
+                            ..Default::default()
+                        },
+                    ))
                 }
                 _ => {}
             },
@@ -1283,14 +1304,14 @@ impl Analyzer<'_, '_> {
                 .validate_with_args(child, (mode, None, type_ann))
                 .report(&mut child.storage);
 
-            Ok(ty.unwrap_or_else(|| Type::any(cons.span())))
+            Ok(ty.unwrap_or_else(|| Type::any(cons.span(), Default::default())))
         })?;
         let alt = self.with_child(ScopeKind::Flow, false_facts, |child: &mut Analyzer| {
             let ty = alt
                 .validate_with_args(child, (mode, None, type_ann))
                 .report(&mut child.storage);
 
-            Ok(ty.unwrap_or_else(|| Type::any(alt.span())))
+            Ok(ty.unwrap_or_else(|| Type::any(alt.span(), Default::default())))
         })?;
 
         if cons.type_eq(&alt) {

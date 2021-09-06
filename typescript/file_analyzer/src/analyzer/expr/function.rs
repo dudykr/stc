@@ -6,8 +6,8 @@ use crate::{
     ValidationResult,
 };
 use itertools::{EitherOrBoth, Itertools};
-use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr, RTsKeywordType};
-use stc_ts_types::{Class, Function, Type};
+use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr};
+use stc_ts_types::{Class, ClassMetadata, Function, KeywordType, Type};
 use stc_ts_utils::{OptionExt, PatExt};
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -19,7 +19,7 @@ impl Analyzer<'_, '_> {
 
         let marks = self.marks();
 
-        let type_ann = self.expand_type_ann(type_ann)?;
+        let type_ann = self.expand_type_ann(f.span, type_ann)?;
 
         self.with_child(ScopeKind::ArrowFn, Default::default(), |child: &mut Analyzer| {
             let type_params = try_opt!(f.type_params.validate_with(child));
@@ -65,7 +65,7 @@ impl Analyzer<'_, '_> {
                 Some(Ok(ty)) => Some(ty),
                 Some(Err(err)) => {
                     child.storage.report(err);
-                    Some(Type::any(f.span))
+                    Some(Type::any(f.span, Default::default()))
                 }
                 None => None,
             };
@@ -73,7 +73,14 @@ impl Analyzer<'_, '_> {
                 Some(ty) => {
                     let span = ty.span();
                     Some(match ty {
-                        Type::ClassDef(def) => Type::Class(Class { span, def: box def }),
+                        Type::ClassDef(def) => Type::Class(Class {
+                            span,
+                            metadata: ClassMetadata {
+                                common: def.metadata.common,
+                                ..Default::default()
+                            },
+                            def: box def,
+                        }),
                         _ => ty,
                     })
                 }
@@ -89,7 +96,7 @@ impl Analyzer<'_, '_> {
                             && type_ann.is_none()
                             && child.may_generalize(&ty)
                         {
-                            ty.generalize_lit(marks)
+                            ty.generalize_lit()
                         } else {
                             ty
                         }
@@ -105,7 +112,7 @@ impl Analyzer<'_, '_> {
                 match &mut ty {
                     Type::Union(ty) => {
                         ty.types.retain(|ty| match ty.normalize() {
-                            Type::Keyword(RTsKeywordType {
+                            Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                                 ..
                             }) => false,
@@ -130,7 +137,8 @@ impl Analyzer<'_, '_> {
                 params,
                 type_params,
                 ret_ty: box declared_ret_ty
-                    .unwrap_or_else(|| inferred_return_type.unwrap_or_else(|| Type::void(f.span))),
+                    .unwrap_or_else(|| inferred_return_type.unwrap_or_else(|| Type::void(f.span, Default::default()))),
+                metadata: Default::default(),
             })
         })
     }

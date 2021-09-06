@@ -1,8 +1,8 @@
 use self::generalize::TupleToArray;
-use crate::{analyzer::marks::MarkExt, util::type_ext::TypeVecExt, Marks};
+use crate::util::type_ext::TypeVecExt;
 use retain_mut::RetainMut;
 use rnode::{Fold, FoldWith, Visit, VisitWith};
-use stc_ts_ast_rnode::{RBool, RNumber, RStr, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_ast_rnode::{RBool, RNumber, RStr, RTsLit};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 pub(crate) use stc_ts_types::*;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -11,9 +11,7 @@ use tracing::instrument;
 mod generalize;
 pub mod type_facts;
 
-pub(crate) struct LitGeneralizer {
-    pub marks: Marks,
-}
+pub(crate) struct LitGeneralizer;
 
 impl Fold<Ref> for LitGeneralizer {
     fn fold(&mut self, mut r: Ref) -> Ref {
@@ -73,10 +71,7 @@ impl Fold<Tuple> for LitGeneralizer {
 impl Fold<Type> for LitGeneralizer {
     fn fold(&mut self, mut ty: Type) -> Type {
         {
-            let mut checker = LitChecker {
-                marks: self.marks,
-                found: false,
-            };
+            let mut checker = LitChecker { found: false };
             ty.visit_with(&mut checker);
 
             if !checker.found {
@@ -96,12 +91,17 @@ impl Fold<Type> for LitGeneralizer {
         ty = ty.fold_children_with(self);
 
         match ty {
-            Type::Lit(RTsLitType { span, ref lit, .. }) => {
-                if self.marks.prevent_generalization_mark.is_marked(span) {
+            Type::Lit(LitType {
+                span,
+                ref lit,
+                metadata,
+                ..
+            }) => {
+                if metadata.common.prevent_generalization {
                     return ty;
                 }
 
-                return Type::Keyword(RTsKeywordType {
+                return Type::Keyword(KeywordType {
                     span,
                     kind: match *lit {
                         RTsLit::Bool(RBool { .. }) => TsKeywordTypeKind::TsBooleanKeyword,
@@ -109,6 +109,10 @@ impl Fold<Type> for LitGeneralizer {
                         RTsLit::Str(RStr { .. }) => TsKeywordTypeKind::TsStringKeyword,
                         RTsLit::Tpl(..) => TsKeywordTypeKind::TsStringKeyword,
                         RTsLit::BigInt(..) => TsKeywordTypeKind::TsBigIntKeyword,
+                    },
+                    metadata: KeywordTypeMetadata {
+                        common: metadata.common,
+                        ..Default::default()
                     },
                 });
             }
@@ -154,15 +158,19 @@ impl Fold<TypeLit> for LitGeneralizer {
 }
 
 struct LitChecker {
-    marks: Marks,
     found: bool,
 }
 
 impl Visit<Type> for LitChecker {
     fn visit(&mut self, ty: &Type) {
         match ty {
-            Type::Lit(RTsLitType { span, ref lit, .. }) => {
-                if self.marks.prevent_generalization_mark.is_marked(span) {
+            Type::Lit(LitType {
+                span,
+                ref lit,
+                metadata,
+                ..
+            }) => {
+                if metadata.common.prevent_generalization {
                     return;
                 }
 
@@ -177,9 +185,9 @@ impl Visit<Type> for LitChecker {
 }
 
 pub trait TypeExt: Into<Type> {
-    #[instrument(skip(self, marks))]
-    fn generalize_lit(self, marks: Marks) -> Type {
-        self.into().fold_with(&mut LitGeneralizer { marks }).fixed()
+    #[instrument(skip(self,))]
+    fn generalize_lit(self) -> Type {
+        self.into().fold_with(&mut LitGeneralizer).fixed()
     }
 
     #[instrument(skip(self))]

@@ -23,14 +23,6 @@ warning: Type
   = note: PromiseConstructor
 
 warning: Type
- --> $DIR/tests/pass/exprs/new/promise/finally/1.ts:1:35
-  |
-1 | export let promise1 = new Promise(function (resolve, reject) { })
-  |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (resolve: (value: (T | PromiseLike<T>)) => void, reject: (reason?: any) => void) => void
-
-warning: Type
  --> $DIR/tests/pass/exprs/new/promise/finally/1.ts:1:23
   |
 1 | export let promise1 = new Promise(function (resolve, reject) { })

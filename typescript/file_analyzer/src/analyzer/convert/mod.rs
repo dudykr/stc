@@ -1,8 +1,5 @@
 use crate::{
-    analyzer::{
-        expr::TypeOfMode, marks::MarkExt, props::ComputedPropMode, scope::VarKind, util::ResultExt, Analyzer, Ctx,
-        ScopeKind,
-    },
+    analyzer::{expr::TypeOfMode, props::ComputedPropMode, scope::VarKind, util::ResultExt, Analyzer, Ctx, ScopeKind},
     util::{contains_infer_type, type_ext::TypeVecExt},
     validator,
     validator::ValidateWith,
@@ -24,11 +21,12 @@ use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    type_id::SymbolId, Accessor, Alias, Array, CallSignature, ComputedKey, Conditional, ConstructorSignature, FnParam,
-    Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, Interface, Intersection, Intrinsic,
-    IntrinsicKind, Key, Mapped, MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr,
-    QueryType, Ref, RestType, Symbol, TplType, TsExpr, Tuple, TupleElement, Type, TypeElement, TypeLit,
-    TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
+    type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey,
+    Conditional, ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType,
+    InferTypeMetadata, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
+    LitType, LitTypeMetadata, Mapped, MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr,
+    QueryType, Ref, RefMetadata, RestType, Symbol, ThisType, TplType, TsExpr, Tuple, TupleElement, TupleMetadata, Type,
+    TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
 use stc_utils::{error, AHashSet};
@@ -81,6 +79,7 @@ impl Analyzer<'_, '_> {
                         name,
                         constraint: None,
                         default: None,
+                        metadata: Default::default(),
                     })
                     .cheap(),
                 );
@@ -134,6 +133,7 @@ impl Analyzer<'_, '_> {
             name: p.name.clone().into(),
             constraint,
             default,
+            metadata: Default::default(),
         };
         self.register_type(param.name.clone().into(), param.clone().into());
 
@@ -177,14 +177,14 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, d: &RTsTypeAliasDecl) -> ValidationResult<Alias> {
         self.record(d);
-        let mut span = d.span;
+        let span = d.span;
 
         let alias = {
             self.with_child(
                 ScopeKind::Flow,
                 Default::default(),
                 |child: &mut Analyzer| -> ValidationResult<_> {
-                    let type_params = try_opt!(d.type_params.validate_with(child));
+                    let type_params = try_opt!(d.type_params.validate_with(child)).map(Box::new);
 
                     let mut ty = match &*d.type_ann {
                         RTsType::TsKeywordType(RTsKeywordType {
@@ -193,7 +193,7 @@ impl Analyzer<'_, '_> {
                         }) if !child.is_builtin => {
                             let span = *span;
                             child.storage.report(Error::IntrinsicIsBuiltinOnly { span });
-                            Type::any(span.with_ctxt(SyntaxContext::empty()))
+                            Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
                         }
 
                         RTsType::TsKeywordType(RTsKeywordType {
@@ -215,27 +215,37 @@ impl Analyzer<'_, '_> {
                                             name: v.name,
                                             constraint: Default::default(),
                                             default: Default::default(),
+                                            metadata: Default::default(),
                                         })
                                     })
                                     .collect(),
                             },
+                            metadata: Default::default(),
                         }),
 
                         _ => d.type_ann.validate_with(child)?,
                     };
 
+                    let contains_infer_type = contains_infer_type(&ty);
+
                     // If infer type exists, it should be expanded to remove infer type.
-                    if contains_infer_type(&ty) || child.contains_infer_type(&ty) {
-                        span = child.mark_as_infer_type_container(span);
+                    if contains_infer_type {
                         child.mark_type_as_infer_type_container(&mut ty);
                     } else {
                         child.prevent_expansion(&mut ty);
                     }
                     ty.make_cheap();
                     let alias = Alias {
-                        span,
+                        span: span.with_ctxt(SyntaxContext::empty()),
                         ty: box ty,
                         type_params,
+                        metadata: AliasMetadata {
+                            common: CommonTypeMetadata {
+                                contains_infer_type,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
                     };
                     Ok(alias)
                 },
@@ -266,9 +276,10 @@ impl Analyzer<'_, '_> {
                 let mut ty = Interface {
                     span: d.span,
                     name: d.id.clone().into(),
-                    type_params: try_opt!(d.type_params.validate_with(&mut *child)),
+                    type_params: try_opt!(d.type_params.validate_with(&mut *child).map(|v| v.map(Box::new))),
                     extends: d.extends.validate_with(child)?,
                     body: d.body.validate_with(child)?,
+                    metadata: Default::default(),
                 };
                 child.prevent_expansion(&mut ty.body);
 
@@ -449,6 +460,7 @@ impl Analyzer<'_, '_> {
                                 ty = Type::Symbol(Symbol {
                                     span: DUMMY_SP,
                                     id: SymbolId::known(&key),
+                                    metadata: Default::default(),
                                 });
                             }
                         }
@@ -457,10 +469,10 @@ impl Analyzer<'_, '_> {
                     }
                     Err(e) => {
                         self.storage.report(e);
-                        Some(box Type::any(d.span))
+                        Some(box Type::any(d.span, Default::default()))
                     }
                 },
-                None => Some(box Type::any(d.span)),
+                None => Some(box Type::any(d.span, Default::default())),
             }
         };
 
@@ -511,11 +523,17 @@ impl Analyzer<'_, '_> {
         let marks = self.marks();
 
         let span = t.span;
-        let span = marks.prevent_tuple_to_array.apply_to_span(span);
 
         Ok(Tuple {
             span,
             elems: t.elem_types.validate_with(self)?,
+            metadata: TupleMetadata {
+                common: CommonTypeMetadata {
+                    prevent_tuple_to_array: true,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
         })
     }
 }
@@ -546,6 +564,7 @@ impl Analyzer<'_, '_> {
             extends_type,
             true_type,
             false_type,
+            metadata: Default::default(),
         })
     }
 }
@@ -562,6 +581,7 @@ impl Analyzer<'_, '_> {
             name_type: try_opt!(ty.name_type.validate_with(self)).map(Box::new),
             type_param,
             ty: try_opt!(ty.type_ann.validate_with(self)).map(Box::new),
+            metadata: Default::default(),
         })
     }
 }
@@ -573,6 +593,7 @@ impl Analyzer<'_, '_> {
             span: ty.span,
             op: ty.op,
             ty: box ty.type_ann.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -583,6 +604,7 @@ impl Analyzer<'_, '_> {
         Ok(Array {
             span: node.span,
             elem_type: box node.elem_type.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -594,7 +616,11 @@ impl Analyzer<'_, '_> {
 
         types.dedup_type();
 
-        Ok(Union { span: u.span, types })
+        Ok(Union {
+            span: u.span,
+            types,
+            metadata: Default::default(),
+        })
     }
 }
 
@@ -604,6 +630,7 @@ impl Analyzer<'_, '_> {
         Ok(Intersection {
             span: u.span,
             types: u.types.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -641,6 +668,7 @@ impl Analyzer<'_, '_> {
                 type_params,
                 params,
                 ret_ty,
+                metadata: Default::default(),
             })
         })
     }
@@ -661,6 +689,7 @@ impl Analyzer<'_, '_> {
             params: t.params.validate_with(self)?,
             type_ann: t.type_ann.validate_with(self).map(Box::new)?,
             is_abstract: t.is_abstract,
+            metadata: Default::default(),
         })
     }
 }
@@ -689,6 +718,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::Array(Array {
                         span: t.span,
                         elem_type: box type_args.unwrap().params.into_iter().next().unwrap(),
+                        metadata: Default::default(),
                     }));
                 }
             }
@@ -701,7 +731,7 @@ impl Analyzer<'_, '_> {
                     for ty in types {
                         found = true;
 
-                        if contains_infer_type(&ty) || self.contains_infer_type(&*ty) {
+                        if contains_infer_type(&*ty) {
                             contains_infer = true;
                         }
                         // We use type param instead of reference type if possible.
@@ -742,16 +772,19 @@ impl Analyzer<'_, '_> {
                     .report(&mut self.storage);
             }
         }
-        let mut span = t.span;
-        if contains_infer {
-            span = self.mark_as_infer_type_container(span);
-        }
 
         Ok(Type::Ref(Ref {
-            span,
+            span: t.span.with_ctxt(SyntaxContext::empty()),
             ctxt: self.ctx.module_id,
             type_name: t.type_name.clone(),
             type_args,
+            metadata: RefMetadata {
+                common: CommonTypeMetadata {
+                    contains_infer_type: contains_infer,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
         }))
     }
 }
@@ -764,6 +797,13 @@ impl Analyzer<'_, '_> {
         Ok(InferType {
             span: t.span,
             type_param: t.type_param.validate_with(self)?,
+            metadata: InferTypeMetadata {
+                common: CommonTypeMetadata {
+                    contains_infer_type: true,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
         })
     }
 }
@@ -778,6 +818,7 @@ impl Analyzer<'_, '_> {
             arg: t.arg.clone(),
             qualifier: t.qualifier.clone(),
             type_params: try_opt!(t.type_args.validate_with(self)).map(Box::new),
+            metadata: Default::default(),
         })
     }
 }
@@ -804,6 +845,7 @@ impl Analyzer<'_, '_> {
         Ok(RestType {
             span: t.span,
             ty: box t.type_ann.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -816,6 +858,7 @@ impl Analyzer<'_, '_> {
         Ok(OptionalType {
             span: t.span,
             ty: box t.type_ann.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -828,6 +871,7 @@ impl Analyzer<'_, '_> {
         Ok(QueryType {
             span: t.span,
             expr: box t.expr_name.validate_with(self)?,
+            metadata: Default::default(),
         })
     }
 }
@@ -849,6 +893,7 @@ impl Analyzer<'_, '_> {
             param_name: t.param_name.clone(),
             asserts: t.asserts,
             ty,
+            metadata: Default::default(),
         })
     }
 }
@@ -888,6 +933,7 @@ impl Analyzer<'_, '_> {
             readonly: t.readonly,
             obj_type,
             index_type,
+            metadata: Default::default(),
         }))
     }
 }
@@ -905,6 +951,7 @@ impl Analyzer<'_, '_> {
             span: t.span,
             quasis: t.quasis.clone(),
             types,
+            metadata: Default::default(),
         })
     }
 }
@@ -923,14 +970,26 @@ impl Analyzer<'_, '_> {
         };
         let ty = self.with_ctx(ctx).with(|a| {
             let ty = match ty {
-                RTsType::TsThisType(this) => Type::This(this.clone()),
+                RTsType::TsThisType(this) => Type::This(ThisType {
+                    span: this.span,
+                    metadata: Default::default(),
+                }),
                 RTsType::TsLitType(ty) => {
                     match &ty.lit {
                         RTsLit::Tpl(t) => return Ok(t.validate_with(a)?.into()),
                         _ => {}
                     }
-                    let mut ty = Type::Lit(ty.clone());
-                    a.prevent_generalize(&mut ty);
+                    let ty = Type::Lit(LitType {
+                        span: ty.span,
+                        lit: ty.lit.clone(),
+                        metadata: LitTypeMetadata {
+                            common: CommonTypeMetadata {
+                                prevent_generalization: true,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
+                    });
                     ty
                 }
                 RTsType::TsKeywordType(ty) => {
@@ -942,10 +1001,14 @@ impl Analyzer<'_, '_> {
                                 span,
                                 name: Id::word("intrinsic".into()),
                             });
-                            return Ok(Type::any(span.with_ctxt(SyntaxContext::empty())));
+                            return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                         }
                     }
-                    Type::Keyword(ty.clone())
+                    Type::Keyword(KeywordType {
+                        span: ty.span,
+                        kind: ty.kind,
+                        metadata: Default::default(),
+                    })
                 }
                 RTsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(a)?),
                 RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => {
@@ -1120,14 +1183,20 @@ impl Analyzer<'_, '_> {
                     .report(Error::ImplicitAny { span: i.id.span }.context("default type"));
             }
         }
-        let implicit_type_mark = self.marks().implicit_type_mark;
 
         if let Some(m) = &mut self.mutations {
-            m.for_pats
-                .entry(i.node_id)
-                .or_default()
-                .ty
-                .fill_with(|| Type::any(DUMMY_SP.apply_mark(implicit_type_mark)));
+            m.for_pats.entry(i.node_id).or_default().ty.fill_with(|| {
+                Type::any(
+                    DUMMY_SP,
+                    KeywordTypeMetadata {
+                        common: CommonTypeMetadata {
+                            implicit: true,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
+                )
+            });
         }
     }
 
@@ -1165,7 +1234,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        _ => Type::any(DUMMY_SP),
+                        _ => Type::any(DUMMY_SP, Default::default()),
                     };
 
                     TupleElement {
@@ -1176,6 +1245,7 @@ impl Analyzer<'_, '_> {
                     }
                 })
                 .collect(),
+            metadata: Default::default(),
         });
         if let Some(m) = &mut self.mutations {
             m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert_with(|| ty);
@@ -1188,8 +1258,6 @@ impl Analyzer<'_, '_> {
         if obj.type_ann.is_some() {
             return;
         }
-
-        let implicit_type_mark = self.marks().implicit_type_mark;
 
         let mut members = Vec::with_capacity(obj.props.len());
 
@@ -1251,9 +1319,15 @@ impl Analyzer<'_, '_> {
         if let Some(m) = &mut self.mutations {
             m.for_pats.entry(obj.node_id).or_default().ty.fill_with(|| {
                 Type::TypeLit(TypeLit {
-                    span: DUMMY_SP.apply_mark(implicit_type_mark),
+                    span: DUMMY_SP,
                     members,
-                    metadata: Default::default(),
+                    metadata: TypeLitMetadata {
+                        common: CommonTypeMetadata {
+                            implicit: true,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
                 })
             });
         }

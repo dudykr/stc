@@ -1,15 +1,16 @@
 use crate::{analyzer::Analyzer, type_facts::TypeFacts};
 use rnode::{Fold, FoldWith, NodeId};
-use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RRestPat, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RRestPat, RTsLit};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType, Intersection, Mapped, Type,
-    TypeElement, TypeLit, Union,
+    ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType, Intersection,
+    IntersectionMetadata, KeywordType, KeywordTypeMetadata, LitType, Mapped, Type, TypeElement, TypeLit, Union,
+    UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use std::borrow::Cow;
-use swc_common::{Span, Spanned, DUMMY_SP};
+use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, instrument};
 
@@ -31,9 +32,14 @@ impl Analyzer<'_, '_> {
         {
             match ty {
                 Type::Param(..) | Type::IndexedAccessType(..) => {
+                    let common_metadata = ty.metadata();
                     ty = Type::Intersection(Intersection {
                         span: ty.span(),
                         types: vec![ty],
+                        metadata: IntersectionMetadata {
+                            common: common_metadata,
+                            ..Default::default()
+                        },
                     });
                 }
                 _ => {}
@@ -58,7 +64,13 @@ impl Analyzer<'_, '_> {
             0
         };
         if cnt >= 2 {
-            return Type::never(ty.span());
+            return Type::never(
+                ty.span(),
+                KeywordTypeMetadata {
+                    common: ty.metadata(),
+                    ..Default::default()
+                },
+            );
         }
 
         let before = dump_type_as_string(&self.cm, &ty);
@@ -79,14 +91,15 @@ impl Analyzer<'_, '_> {
                     }),
                     type_ann: None,
                 }),
-                ty: box Type::any(DUMMY_SP),
+                ty: box Type::any(DUMMY_SP, Default::default()),
                 required: false,
             };
             let fn_type = Type::Function(Function {
                 span: DUMMY_SP,
                 type_params: None,
                 params: vec![param],
-                ret_ty: box Type::any(DUMMY_SP),
+                ret_ty: box Type::any(DUMMY_SP, Default::default()),
+                metadata: Default::default(),
             });
 
             // TODO: PERF
@@ -105,6 +118,7 @@ impl Analyzer<'_, '_> {
                     *ty = Type::Union(Union {
                         span: ty.span(),
                         types: vec![ty.take(), fn_type],
+                        metadata: UnionMetadata { common: ty.metadata() },
                     })
                 }
             }
@@ -180,16 +194,17 @@ impl Fold<Conditional> for TypeFactsHandler<'_, '_, '_> {
     }
 }
 
-impl Fold<RTsKeywordType> for TypeFactsHandler<'_, '_, '_> {
-    fn fold(&mut self, ty: RTsKeywordType) -> RTsKeywordType {
+impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
+    fn fold(&mut self, ty: KeywordType) -> KeywordType {
         if self.facts.contains(TypeFacts::Truthy) {
             match ty.kind {
                 TsKeywordTypeKind::TsVoidKeyword
                 | TsKeywordTypeKind::TsUndefinedKeyword
                 | TsKeywordTypeKind::TsNullKeyword => {
-                    return RTsKeywordType {
+                    return KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
+                        metadata: ty.metadata,
                     }
                 }
                 _ => {}
@@ -197,14 +212,14 @@ impl Fold<RTsKeywordType> for TypeFactsHandler<'_, '_, '_> {
         }
 
         if ty.kind == TsKeywordTypeKind::TsNullKeyword && self.facts.contains(TypeFacts::NENull) {
-            return RTsKeywordType {
+            return KeywordType {
                 kind: TsKeywordTypeKind::TsNeverKeyword,
                 ..ty
             };
         }
 
         if ty.kind == TsKeywordTypeKind::TsUndefinedKeyword && self.facts.contains(TypeFacts::NEUndefined) {
-            return RTsKeywordType {
+            return KeywordType {
                 kind: TsKeywordTypeKind::TsNeverKeyword,
                 ..ty
             };
@@ -221,9 +236,10 @@ impl Fold<RTsKeywordType> for TypeFactsHandler<'_, '_, '_> {
         if ty.kind != TsKeywordTypeKind::TsAnyKeyword {
             for (neq, kwd) in keyword_types {
                 if self.facts.contains(*neq) && *kwd == ty.kind {
-                    return RTsKeywordType {
+                    return KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
+                        metadata: ty.metadata,
                     };
                 }
             }
@@ -248,9 +264,10 @@ impl Fold<RTsKeywordType> for TypeFactsHandler<'_, '_, '_> {
                     .collect::<Vec<_>>();
 
                 if !allowed_keywords.contains(&ty.kind) {
-                    return RTsKeywordType {
+                    return KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,
+                        metadata: ty.metadata,
                     };
                 }
             }
@@ -272,23 +289,26 @@ impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
         let has_bool = has_keyword(TsKeywordTypeKind::TsBooleanKeyword);
 
         if !has_str && self.facts.contains(TypeFacts::TypeofEQString) {
-            ty.types.push(Type::Keyword(RTsKeywordType {
+            ty.types.push(Type::Keyword(KeywordType {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsStringKeyword,
+                metadata: Default::default(),
             }));
         }
 
         if !has_num && self.facts.contains(TypeFacts::TypeofEQNumber) {
-            ty.types.push(Type::Keyword(RTsKeywordType {
+            ty.types.push(Type::Keyword(KeywordType {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsNumberKeyword,
+                metadata: Default::default(),
             }));
         }
 
         if !has_bool && self.facts.contains(TypeFacts::TypeofEQBoolean) {
-            ty.types.push(Type::Keyword(RTsKeywordType {
+            ty.types.push(Type::Keyword(KeywordType {
                 span: DUMMY_SP,
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
+                metadata: Default::default(),
             }));
         }
 
@@ -315,27 +335,27 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
                 || self.facts.contains(TypeFacts::TypeofEQNumber)
             {
                 u.types.retain(|ty| match ty.normalize() {
-                    Type::Lit(RTsLitType {
+                    Type::Lit(LitType {
                         lit: RTsLit::Str(..), ..
                     })
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
                     }) if !self.facts.contains(TypeFacts::TypeofEQString) => false,
 
-                    Type::Lit(RTsLitType {
+                    Type::Lit(LitType {
                         lit: RTsLit::Bool(..), ..
                     })
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsBooleanKeyword,
                         ..
                     }) if !self.facts.contains(TypeFacts::TypeofEQBoolean) => false,
 
-                    Type::Lit(RTsLitType {
+                    Type::Lit(LitType {
                         lit: RTsLit::Number(..),
                         ..
                     })
-                    | Type::Keyword(RTsKeywordType {
+                    | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) if !self.facts.contains(TypeFacts::TypeofEQNumber) => false,
@@ -372,17 +392,30 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
         // TODO: Don't do anything if type fact is none.
 
         match ty.normalize() {
-            Type::Lit(RTsLitType {
+            Type::Lit(LitType {
                 span,
                 lit: RTsLit::Bool(v),
+                metadata,
                 ..
             }) => {
                 if self.facts.contains(TypeFacts::Truthy) && !v.value {
-                    return Type::never(*span);
+                    return Type::never(
+                        *span,
+                        KeywordTypeMetadata {
+                            common: metadata.common,
+                            ..Default::default()
+                        },
+                    );
                 }
 
                 if self.facts.contains(TypeFacts::Falsy) && v.value {
-                    return Type::never(*span);
+                    return Type::never(
+                        *span,
+                        KeywordTypeMetadata {
+                            common: metadata.common,
+                            ..Default::default()
+                        },
+                    );
                 }
             }
             _ => {}
@@ -408,7 +441,13 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             Type::Class(..) | Type::ClassDef(..) | Type::TypeLit(..)
                 if self.facts.contains(TypeFacts::TypeofNEObject) =>
             {
-                return Type::never(span);
+                return Type::never(
+                    span,
+                    KeywordTypeMetadata {
+                        common: ty.metadata(),
+                        ..Default::default()
+                    },
+                );
             }
             _ => {}
         }
@@ -419,9 +458,25 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
         ty = ty.fold_children_with(self);
 
         match ty {
-            Type::Union(ref u) if u.types.is_empty() => return Type::never(u.span),
+            Type::Union(ref u) if u.types.is_empty() => {
+                return Type::never(
+                    u.span,
+                    KeywordTypeMetadata {
+                        common: u.metadata.common,
+                        ..Default::default()
+                    },
+                )
+            }
             Type::Union(u) if u.types.len() == 1 => return u.types.into_iter().next().unwrap(),
-            Type::Intersection(ref i) if i.types.iter().any(|ty| ty.is_never()) => return Type::never(i.span),
+            Type::Intersection(ref i) if i.types.iter().any(|ty| ty.is_never()) => {
+                return Type::never(
+                    i.span,
+                    KeywordTypeMetadata {
+                        common: i.metadata.common,
+                        ..Default::default()
+                    },
+                )
+            }
 
             Type::Keyword(..) => {}
 
@@ -440,25 +495,30 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
 }
 
 fn facts_to_union(span: Span, facts: TypeFacts) -> Type {
+    let span = span.with_ctxt(SyntaxContext::empty());
+
     let mut types = vec![];
     if facts.contains(TypeFacts::TypeofEQString) {
-        types.push(Type::Keyword(RTsKeywordType {
+        types.push(Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsStringKeyword,
+            metadata: Default::default(),
         }));
     }
 
     if facts.contains(TypeFacts::TypeofEQNumber) {
-        types.push(Type::Keyword(RTsKeywordType {
+        types.push(Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsNumberKeyword,
+            metadata: Default::default(),
         }));
     }
 
     if facts.contains(TypeFacts::TypeofEQBoolean) {
-        types.push(Type::Keyword(RTsKeywordType {
+        types.push(Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsBooleanKeyword,
+            metadata: Default::default(),
         }));
     }
 
