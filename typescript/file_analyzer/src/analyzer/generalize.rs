@@ -1,20 +1,18 @@
-use crate::{
-    analyzer::Analyzer,
-    env::Env,
-    ty::Type,
-    util::{type_ext::TypeVecExt, Marker},
-};
+use crate::{analyzer::Analyzer, env::Env, ty::Type, util::type_ext::TypeVecExt};
 use rnode::{Fold, FoldWith, VisitMutWith};
 use stc_ts_ast_rnode::{RNumber, RStr, RTsLit};
 use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_type_ops::is_str_lit_or_union;
+use stc_ts_type_ops::{
+    is_str_lit_or_union,
+    metadata::{PreventComplexSimplification, PreventGeneralization, PreventTupleToArray},
+};
 use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, CommonTypeMetadata, IndexedAccessType, IndexedAccessTypeMetadata, Key,
     KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, PropertySignature, TypeElement,
     TypeLit, TypeLitMetadata, TypeParam, Union,
 };
 use swc_atoms::js_word;
-use swc_common::{EqIgnoreSpan, Span, Spanned};
+use swc_common::{EqIgnoreSpan, Spanned};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{info, instrument, trace};
 
@@ -48,31 +46,20 @@ impl Analyzer<'_, '_> {
         !ty.metadata().prevent_generalization
     }
 
-    /// TODO(kdy1): Optimize by visiting only tuple types.
     #[instrument(skip(self, ty))]
     pub(super) fn prevent_generalize(&self, ty: &mut Type) {
-        ty.visit_mut_with(&mut Marker {
-            mark: self.marks().prevent_generalization_mark,
-        });
+        ty.visit_mut_with(&mut PreventGeneralization);
     }
 
     /// TODO(kdy1): Optimize by visiting only tuple types.
     #[instrument(skip(self, ty))]
     pub(super) fn prevent_tuple_to_array(&self, ty: &mut Type) {
-        ty.visit_mut_with(&mut Marker {
-            mark: self.marks().prevent_tuple_to_array,
-        });
+        ty.visit_mut_with(&mut PreventTupleToArray);
     }
 
     #[instrument(skip(self, ty))]
     pub(super) fn prevent_inference_while_simplifying(&self, ty: &mut Type) {
-        ty.visit_mut_with(&mut Marker {
-            mark: self.marks().prevent_complex_simplification_mark,
-        });
-    }
-
-    pub(super) fn prevent_generalize_span(&self, span: Span) -> Span {
-        span.apply_mark(self.marks().prevent_generalization_mark)
+        ty.visit_mut_with(&mut PreventComplexSimplification);
     }
 
     #[instrument(skip(self, ty))]

@@ -12,7 +12,7 @@ use crate::{
     loader::ModuleInfo,
     ty::{self, Alias, Interface, PropertySignature, Ref, Tuple, Type, TypeExt, TypeLit, Union},
     type_facts::TypeFacts,
-    util::{contains_infer_type, contains_mark, MarkFinder},
+    util::contains_infer_type,
     ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
@@ -25,7 +25,7 @@ use stc_ts_errors::{
     DebugExt, Error,
 };
 use stc_ts_generics::ExpandGenericOpts;
-use stc_ts_type_ops::Fix;
+use stc_ts_type_ops::{metadata::TypeFinder, Fix};
 use stc_ts_types::{
     name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection,
     Key, KeywordType, KeywordTypeMetadata, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement,
@@ -1599,11 +1599,13 @@ impl Analyzer<'_, '_> {
     #[instrument(name = "Analyzer::contains_infer_type", skip(self, ty))]
     pub(crate) fn contains_infer_type<T>(&self, ty: &T) -> bool
     where
-        T: VisitWith<MarkFinder>,
+        T: VisitWith<TypeFinder>,
     {
-        swc_common::GLOBALS.set(self.env.shared().swc_globals(), || {
-            contains_mark(ty, self.marks().contains_infer_type_mark)
-        })
+        fn check(ty: &Type) -> bool {
+            ty.metadata().contains_infer_type
+        }
+
+        TypeFinder::find(ty, check)
     }
 
     fn is_infer_type_container(&self, ty: &Type) -> bool {
@@ -1611,9 +1613,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn mark_type_as_infer_type_container(&self, ty: &mut Type) {
-        let span = ty.span();
-        let span = self.mark_as_infer_type_container(span);
-        ty.respan(span);
+        ty.metadata_mut().contains_infer_type = true;
     }
 
     /// Mark `ty` as not expanded by default.
