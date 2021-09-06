@@ -1165,7 +1165,7 @@ impl Analyzer<'_, '_> {
             }
             src.extend(ty.into_iter().map(Cow::into_owned));
             return Some(ItemRef::Owned(
-                vec![Type::intersection(DUMMY_SP, src).cheap()].into_iter(),
+                vec![Type::intersection(DUMMY_SP, src).fixed().cheap()].into_iter(),
             ));
         }
 
