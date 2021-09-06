@@ -592,6 +592,7 @@ impl Scope<'_> {
                             unreachable!()
                         }
                     }
+                    prev.fix();
                     prev.make_cheap();
                 } else {
                     let prev_ty = replace(prev, Type::any(DUMMY_SP, Default::default()));
@@ -600,6 +601,7 @@ impl Scope<'_> {
                         types: vec![prev_ty, ty],
                         metadata: Default::default(),
                     })
+                    .fixed()
                     .cheap();
                 }
             }
