@@ -244,6 +244,14 @@ impl Analyzer<'_, '_> {
             _ => return Err(Error::Errors { span, errors }),
         };
 
+        if !self.is_builtin {
+            debug_assert!(!lt.span().is_dummy());
+            debug_assert!(!lt.normalize().span().is_dummy());
+
+            debug_assert!(!rt.span().is_dummy());
+            debug_assert!(!rt.normalize().span().is_dummy());
+        }
+
         // Handle control-flow based typing
         match op {
             op!("===") | op!("!==") | op!("==") | op!("!=") => {
