@@ -1602,7 +1602,7 @@ impl Analyzer<'_, '_> {
         T: VisitWith<TypeFinder>,
     {
         fn check(ty: &Type) -> bool {
-            ty.metadata().contains_infer_type
+            ty.normalize().is_infer() || ty.metadata().contains_infer_type
         }
 
         TypeFinder::find(ty, check)
