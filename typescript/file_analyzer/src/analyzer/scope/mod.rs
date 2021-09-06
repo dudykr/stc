@@ -25,7 +25,7 @@ use stc_ts_errors::{
     DebugExt, Error,
 };
 use stc_ts_generics::ExpandGenericOpts;
-use stc_ts_type_ops::{metadata::TypeFinder, Fix};
+use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection,
     Key, KeywordType, KeywordTypeMetadata, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement,
@@ -1593,21 +1593,6 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    /// Check if `ty` stores infer type in it. **Note**: This mehods only checks
-    /// for [Mark], and this method should be used with
-    /// [crate::util::contains_infer_type] in most case.
-    #[instrument(name = "Analyzer::contains_infer_type", skip(self, ty))]
-    pub(crate) fn contains_infer_type<T>(&self, ty: &T) -> bool
-    where
-        T: VisitWith<TypeFinder>,
-    {
-        fn check(ty: &Type) -> bool {
-            ty.normalize().is_infer() || ty.metadata().contains_infer_type
-        }
-
-        TypeFinder::find(ty, check)
-    }
-
     fn is_infer_type_container(&self, ty: &Type) -> bool {
         ty.metadata().contains_infer_type
     }
@@ -2239,7 +2224,7 @@ impl Expander<'_, '_, '_> {
                 match ty.normalize() {
                     Type::Ref(r) => {
                         // Expand type arguments if it should be expanded
-                        if self.analyzer.contains_infer_type(&r.type_args) {
+                        if contains_infer_type(&r.type_args) {
                             return Type::Ref(r.clone().fold_children_with(self));
                         }
                     }
@@ -2269,7 +2254,7 @@ impl Expander<'_, '_, '_> {
 
         // Start handling type expansion.
         let res: ValidationResult<()> = try {
-            if self.analyzer.contains_infer_type(&ty) || contains_infer_type(&ty) {
+            if contains_infer_type(&ty) {
                 // TODO: PERF
                 match ty.normalize_mut() {
                     Type::Conditional(cond_ty) => {

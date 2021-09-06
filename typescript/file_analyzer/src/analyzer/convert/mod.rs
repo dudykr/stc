@@ -226,7 +226,7 @@ impl Analyzer<'_, '_> {
                         _ => d.type_ann.validate_with(child)?,
                     };
 
-                    let contains_infer_type = contains_infer_type(&ty) || child.contains_infer_type(&ty);
+                    let contains_infer_type = contains_infer_type(&ty);
 
                     // If infer type exists, it should be expanded to remove infer type.
                     if contains_infer_type {
@@ -731,7 +731,7 @@ impl Analyzer<'_, '_> {
                     for ty in types {
                         found = true;
 
-                        if contains_infer_type(&ty) || self.contains_infer_type(&*ty) {
+                        if contains_infer_type(&*ty) {
                             contains_infer = true;
                         }
                         // We use type param instead of reference type if possible.

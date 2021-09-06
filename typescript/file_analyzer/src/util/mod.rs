@@ -1,7 +1,8 @@
 use crate::ty::{Intersection, Type, Union};
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RIdent, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
-use stc_ts_types::{Id, InferType, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeParam};
+use stc_ts_type_ops::metadata::TypeFinder;
+use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeParam};
 use std::fmt::Debug;
 use swc_common::{Mark, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
@@ -93,21 +94,17 @@ where
     v.found
 }
 
-struct InferTypeFinder {
-    found: bool,
-}
-
-impl Visit<InferType> for InferTypeFinder {
-    fn visit(&mut self, _: &InferType) {
-        self.found = true;
-    }
-}
-
+/// Check if `ty` stores infer type in it.
 #[instrument(skip(n))]
-pub(crate) fn contains_infer_type(n: &Type) -> bool {
-    let mut v = InferTypeFinder { found: false };
-    n.visit_with(&mut v);
-    v.found
+pub(crate) fn contains_infer_type<T>(n: &T) -> bool
+where
+    T: VisitWith<TypeFinder>,
+{
+    fn check(ty: &Type) -> bool {
+        ty.normalize().is_infer() || ty.metadata().contains_infer_type
+    }
+
+    TypeFinder::find(n, check)
 }
 
 /// Applies `mark` to **all** types.
