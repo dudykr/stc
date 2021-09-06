@@ -1395,7 +1395,7 @@ impl Type {
             return;
         }
 
-        match self {
+        match self.normalize_mut() {
             Type::Operator(ty) => ty.span = span,
 
             Type::Mapped(ty) => ty.span = span,
@@ -1440,8 +1440,6 @@ impl Type {
 
             Type::Tuple(ty) => ty.span = span,
 
-            Type::Arc(ty) => ty.span = span,
-
             Type::Ref(ty) => ty.span = span,
 
             Type::Query(ty) => ty.span = span,
@@ -1467,6 +1465,10 @@ impl Type {
             Type::Tpl(ty) => ty.span = span,
 
             Type::Intrinsic(ty) => ty.span = span,
+
+            Type::Arc(..) => {
+                unreachable!()
+            }
         }
     }
 }
@@ -1684,9 +1686,8 @@ impl Type {
     #[instrument(skip(self))]
     pub fn normalize_mut(&mut self) -> &mut Type {
         match self {
-            Type::Arc(Freezed { ty, span }) => {
+            Type::Arc(Freezed { ty }) => {
                 let ty = Arc::make_mut(ty);
-                ty.respan(*span);
                 *self = replace(ty, Type::any(DUMMY_SP, Default::default()));
             }
             _ => {}
@@ -2096,10 +2097,7 @@ impl VisitMut<Type> for CheapClone {
             }),
         );
 
-        *ty = Type::Arc(Freezed {
-            span: new_ty.span(),
-            ty: Arc::new(new_ty),
-        })
+        *ty = Type::Arc(Freezed { ty: Arc::new(new_ty) })
     }
 }
 
@@ -2184,11 +2182,11 @@ assert_eq_size!(TplType, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq)]
 pub struct Freezed {
-    pub span: Span,
+    #[span]
     pub ty: Arc<Type>,
 }
 
-assert_eq_size!(Freezed, [u8; 24]);
+assert_eq_size!(Freezed, [u8; 8]);
 
 impl Visitable for Freezed {}
 
@@ -2196,8 +2194,8 @@ impl<V> VisitWith<V> for Freezed
 where
     V: ?Sized,
 {
+    #[inline]
     fn visit_children_with(&self, visitor: &mut V) {
-        self.span.visit_with(visitor);
         self.ty.visit_with(visitor);
     }
 }
@@ -2206,17 +2204,16 @@ impl<V> VisitMutWith<V> for Freezed
 where
     V: ?Sized,
 {
-    fn visit_mut_children_with(&mut self, v: &mut V) {
-        self.span.visit_mut_with(v);
-    }
+    #[inline]
+    fn visit_mut_children_with(&mut self, _v: &mut V) {}
 }
 
 impl<V> FoldWith<V> for Freezed
 where
     V: ?Sized,
 {
-    fn fold_children_with(mut self, v: &mut V) -> Self {
-        self.span = self.span.fold_with(v);
+    #[inline]
+    fn fold_children_with(self, _v: &mut V) -> Self {
         self
     }
 }
