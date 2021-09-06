@@ -3403,7 +3403,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                             Type::Alias(Alias { ty: aliased_ty, .. }) => {
                                 let mut types = vec![];
 
-                                match &type_args.params[0] {
+                                match &type_args.params[0].normalize() {
                                     Type::Union(type_arg) => {
                                         for ty in &type_arg.types {
                                             types.push(Type::Ref(Ref {
