@@ -132,8 +132,12 @@ impl Fixer {
         if matches!(ty.normalize(), Type::Keyword(..) | Type::Lit(..)) {
             return;
         }
+        if ty.metadata().valid {
+            return;
+        }
 
         ty.normalize_mut();
+        ty.metadata_mut().valid = true;
         ty.visit_mut_children_with(self);
 
         match ty {
