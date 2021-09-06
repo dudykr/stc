@@ -281,7 +281,9 @@ impl Analyzer<'_, '_> {
 
     #[instrument(skip(self, span, ty))]
     fn is_type_valid_for_computed_key(&mut self, span: Span, ty: &Type) -> bool {
-        let marks = self.marks();
+        if ty.metadata().resolved_from_var && ty.normalize().is_lit() {
+            return true;
+        }
 
         let ty = ty.clone().generalize_lit();
 
