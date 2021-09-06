@@ -2082,6 +2082,9 @@ impl VisitMut<Type> for CheapClone {
             return;
         }
 
+        // TODO: PERF
+        // TODO: Assert valid && Skip normalize from `fix`.
+
         ty.visit_mut_children_with(self);
 
         let new_ty = replace(
