@@ -499,7 +499,7 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                     });
 
-                    let rhs = self.normalize(None, Cow::Owned(rhs), Default::default())?;
+                    let rhs = self.normalize(Some(span), Cow::Owned(rhs), Default::default())?;
 
                     // Try builtin assignment
                     return self
