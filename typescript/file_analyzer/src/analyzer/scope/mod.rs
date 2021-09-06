@@ -925,7 +925,7 @@ impl Analyzer<'_, '_> {
                 }
                 let mut i = i.clone();
                 if i.span.is_dummy() {
-                    i.span = span;
+                    i.span = span.with_ctxt(i.span.ctxt);
                 }
 
                 let ctx = Ctx {
