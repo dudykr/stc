@@ -133,6 +133,7 @@ impl Fixer {
             return;
         }
         if ty.metadata().valid {
+            ty.assert_valid();
             return;
         }
 
