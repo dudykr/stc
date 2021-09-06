@@ -911,7 +911,7 @@ impl GenericExpander<'_, '_, '_, '_> {
             | Type::Mapped(..)
             | Type::Tpl(..) => return ty.fold_children_with(self),
 
-            Type::Arc(a) => return (*a.ty).clone().fold_with(self),
+            Type::Arc(..) => unreachable!(),
         }
     }
 }

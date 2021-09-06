@@ -592,6 +592,7 @@ impl Scope<'_> {
                             unreachable!()
                         }
                     }
+                    prev.fix();
                     prev.make_cheap();
                 } else {
                     let prev_ty = replace(prev, Type::any(DUMMY_SP, Default::default()));
@@ -600,6 +601,7 @@ impl Scope<'_> {
                         types: vec![prev_ty, ty],
                         metadata: Default::default(),
                     })
+                    .fixed()
                     .cheap();
                 }
             }
@@ -1163,7 +1165,7 @@ impl Analyzer<'_, '_> {
             }
             src.extend(ty.into_iter().map(Cow::into_owned));
             return Some(ItemRef::Owned(
-                vec![Type::intersection(DUMMY_SP, src).cheap()].into_iter(),
+                vec![Type::intersection(DUMMY_SP, src).fixed().cheap()].into_iter(),
             ));
         }
 
