@@ -1763,7 +1763,9 @@ impl<'a> Scope<'a> {
 
     /// This method does **not** handle imported types.
     fn find_type(&self, name: &Id) -> Option<ItemRef<Type>> {
-        debug!("Analyzer.find_type('{}')", name);
+        if cfg!(debug_assertions) {
+            debug!("Analyzer.find_type('{}')", name);
+        }
 
         if let Some(ty) = self.facts.types.get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
