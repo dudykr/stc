@@ -1,6 +1,6 @@
 use rnode::{VisitMut, VisitMutWith};
 use stc_ts_types::{
-    Array, Conditional, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam, Union,
+    Array, Conditional, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam, Union, Valid,
 };
 use swc_common::TypeEq;
 use tracing::instrument;
@@ -130,6 +130,10 @@ impl VisitMut<Intersection> for Fixer {
 impl Fixer {
     fn fix_type(&mut self, ty: &mut Type) {
         if matches!(ty.normalize(), Type::Keyword(..) | Type::Lit(..)) {
+            return;
+        }
+
+        if ty.is_valid() {
             return;
         }
 
