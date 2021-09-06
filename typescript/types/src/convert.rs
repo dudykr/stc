@@ -1,8 +1,8 @@
 use crate::{
     Alias, Array, ClassDef, Conditional, Enum, EnumVariant, FnParam, Function, Id, ImportType, IndexedAccessType,
-    InferType, Interface, Intersection, Intrinsic, Key, Operator, OptionalType, Predicate, QueryExpr, QueryType, Ref,
-    RestType, StaticThis, Symbol, TplType, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam, TypeParamDecl,
-    TypeParamInstantiation, Union,
+    InferType, Interface, Intersection, Intrinsic, Key, KeywordType, LitType, Operator, OptionalType, Predicate,
+    QueryExpr, QueryType, Ref, RestType, StaticThis, Symbol, ThisType, TplType, Tuple, TupleElement, Type, TypeElement,
+    TypeLit, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
 use rnode::NodeId;
 use stc_ts_ast_rnode::{
@@ -66,6 +66,31 @@ impl From<Type> for RTsType {
             Type::Tpl(t) => t.into(),
             Type::Intrinsic(t) => t.into(),
         }
+    }
+}
+
+impl From<KeywordType> for RTsType {
+    fn from(ty: KeywordType) -> Self {
+        RTsType::TsKeywordType(RTsKeywordType {
+            span: ty.span,
+            kind: ty.kind,
+        })
+    }
+}
+
+impl From<LitType> for RTsType {
+    fn from(ty: LitType) -> Self {
+        RTsType::TsLitType(RTsLitType {
+            node_id: NodeId::invalid(),
+            span: ty.span,
+            lit: ty.lit,
+        })
+    }
+}
+
+impl From<ThisType> for RTsType {
+    fn from(ty: ThisType) -> Self {
+        RTsType::TsThisType(RTsThisType { span: ty.span })
     }
 }
 

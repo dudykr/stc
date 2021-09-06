@@ -15,12 +15,15 @@ use crate::{
 };
 use rnode::{FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RCallExpr, RExpr, RExprOrSuper, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsKeywordType,
-    RTsTypeAssertion, RVarDecl, RVarDeclarator,
+    RArrayPat, RCallExpr, RExpr, RExprOrSuper, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsTypeAssertion, RVarDecl,
+    RVarDeclarator,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{Array, EnumVariant, Id, Instance, Operator, QueryExpr, QueryType, Symbol};
+use stc_ts_types::{
+    Array, EnumVariant, Id, Instance, InstanceMetadata, KeywordType, KeywordTypeMetadata, Operator, OperatorMetadata,
+    QueryExpr, QueryType, Symbol, SymbolMetadata,
+};
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use std::borrow::Cow;
 use swc_atoms::js_word;
@@ -114,8 +117,8 @@ impl Analyzer<'_, '_> {
                     match self.declare_complex_vars(
                         VarKind::Var(kind),
                         &v.name,
-                        Type::any(v_span),
-                        Some(Type::any(v_span)),
+                        Type::any(v_span, Default::default()),
+                        Some(Type::any(v_span, Default::default())),
                         None,
                     ) {
                         Ok(()) => {}
@@ -242,6 +245,7 @@ impl Analyzer<'_, '_> {
 
                             Type::Instance(Instance {
                                 span: ty.span(),
+                                metadata: InstanceMetadata { common: ty.metadata() },
                                 ty: box ty,
                             })
                         })();
@@ -338,9 +342,9 @@ impl Analyzer<'_, '_> {
                             if self.may_generalize(&ty) {
                                 // Vars behave differently based on the context.
                                 if self.ctx.can_generalize_literals() {
-                                    ty = ty.generalize_lit(marks);
+                                    ty = ty.generalize_lit();
                                 } else {
-                                    ty = ty.fold_with(&mut Generalizer { force: false, marks });
+                                    ty = ty.fold_with(&mut Generalizer { force: false });
                                 }
                             }
                         }
@@ -362,7 +366,7 @@ impl Analyzer<'_, '_> {
                             ty.assert_valid();
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
-                                    let ret_ty = box f.ret_ty.clone().generalize_lit(marks);
+                                    let ret_ty = box f.ret_ty.clone().generalize_lit();
                                     Type::Function(stc_ts_types::Function { ret_ty, ..f.clone() })
                                 }
 
@@ -407,39 +411,59 @@ impl Analyzer<'_, '_> {
 
                                 let ty = match ty.normalize() {
                                     // `err is Error` => boolean
-                                    Type::Predicate(..) => Type::Keyword(RTsKeywordType {
+                                    Type::Predicate(..) => Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                        metadata: Default::default(),
                                     }),
 
-                                    Type::Keyword(RTsKeywordType {
+                                    Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                        metadata: KeywordTypeMetadata { common, .. },
                                     })
                                     | Type::Operator(Operator {
                                         span,
                                         op: TsTypeOperatorOp::Unique,
                                         ty:
-                                            box Type::Keyword(RTsKeywordType {
+                                            box Type::Keyword(KeywordType {
                                                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                                                 ..
                                             }),
+                                        metadata: OperatorMetadata { common, .. },
+                                        ..
                                     })
-                                    | Type::Symbol(Symbol { span, .. }) => {
+                                    | Type::Symbol(Symbol {
+                                        span,
+                                        metadata: SymbolMetadata { common, .. },
+                                        ..
+                                    }) => {
                                         match self.ctx.var_kind {
                                             // It's `uniqute symbol` only if it's `Symbol()`
                                             VarDeclKind::Const if is_symbol_call => Type::Operator(Operator {
                                                 span: *span,
                                                 op: TsTypeOperatorOp::Unique,
-                                                ty: box Type::Keyword(RTsKeywordType {
+                                                ty: box Type::Keyword(KeywordType {
                                                     span: *span,
                                                     kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                                    metadata: KeywordTypeMetadata {
+                                                        common: *common,
+                                                        ..Default::default()
+                                                    },
                                                 }),
+                                                metadata: OperatorMetadata {
+                                                    common: *common,
+                                                    ..Default::default()
+                                                },
                                             }),
 
-                                            _ => Type::Keyword(RTsKeywordType {
+                                            _ => Type::Keyword(KeywordType {
                                                 span: *span,
                                                 kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                                metadata: KeywordTypeMetadata {
+                                                    common: *common,
+                                                    ..Default::default()
+                                                },
                                             }),
                                         }
                                     }
@@ -450,8 +474,10 @@ impl Analyzer<'_, '_> {
                                             box Type::Param(TypeParam {
                                                 span: elem_span,
                                                 constraint,
+                                                metadata: elem_metadata,
                                                 ..
                                             }),
+                                        metadata,
                                         ..
                                     }) => {
                                         Type::Array(Array {
@@ -459,23 +485,36 @@ impl Analyzer<'_, '_> {
                                             elem_type: match constraint {
                                                 Some(_constraint) => {
                                                     // TODO: We need something smarter
-                                                    box Type::Keyword(RTsKeywordType {
+                                                    box Type::Keyword(KeywordType {
                                                         span: *elem_span,
                                                         kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                        metadata: KeywordTypeMetadata {
+                                                            common: elem_metadata.common,
+                                                            ..Default::default()
+                                                        },
                                                     })
                                                 }
-                                                None => box Type::Keyword(RTsKeywordType {
+                                                None => box Type::Keyword(KeywordType {
                                                     span: *elem_span,
                                                     kind: TsKeywordTypeKind::TsAnyKeyword,
+                                                    metadata: KeywordTypeMetadata {
+                                                        common: elem_metadata.common,
+                                                        ..Default::default()
+                                                    },
                                                 }),
                                             },
+                                            metadata: *metadata,
                                         })
                                     }
 
                                     // We failed to infer type of the type parameter.
-                                    Type::Param(TypeParam { span, .. }) => Type::Keyword(RTsKeywordType {
+                                    Type::Param(TypeParam { span, metadata, .. }) => Type::Keyword(KeywordType {
                                         span: *span,
                                         kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                        metadata: KeywordTypeMetadata {
+                                            common: metadata.common,
+                                            ..Default::default()
+                                        },
                                     }),
 
                                     _ => ty,
@@ -490,6 +529,7 @@ impl Analyzer<'_, '_> {
                                         m.for_pats.entry(i.node_id).or_default().ty = Some(Type::Query(QueryType {
                                             span,
                                             expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(alias.clone())),
+                                            metadata: Default::default(),
                                         }));
                                     }
                                 }
@@ -532,11 +572,11 @@ impl Analyzer<'_, '_> {
                                     let span = element.span();
 
                                     match *element.ty.normalize() {
-                                        Type::Keyword(RTsKeywordType {
+                                        Type::Keyword(KeywordType {
                                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                             ..
                                         })
-                                        | Type::Keyword(RTsKeywordType {
+                                        | Type::Keyword(KeywordType {
                                             kind: TsKeywordTypeKind::TsNullKeyword,
                                             ..
                                         }) => {}
@@ -545,7 +585,13 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
                                     // Widen tuple types
-                                    element.ty = box Type::any(span);
+                                    element.ty = box Type::any(
+                                        span,
+                                        KeywordTypeMetadata {
+                                            common: element.ty.metadata(),
+                                            ..Default::default()
+                                        },
+                                    );
 
                                     if self.rule().no_implicit_any {
                                         match v.name {
@@ -627,6 +673,7 @@ impl Analyzer<'_, '_> {
                             Type::Instance(Instance {
                                 span: i.id.span,
                                 ty: box ty,
+                                metadata: Default::default(),
                             })
                         });
                         match ty {

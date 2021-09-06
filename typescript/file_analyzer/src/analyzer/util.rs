@@ -2,7 +2,7 @@ use crate::{
     analyzer::{generic::is_literals, scope::ExpandOpts, Analyzer, Ctx},
     ty,
     ty::Type,
-    Marks, ValidationResult,
+    ValidationResult,
 };
 use rnode::{Fold, FoldWith, Visit};
 use stc_ts_ast_rnode::{RExpr, RIdent, RPropName, RStr, RTsEntityName, RTsType};
@@ -10,11 +10,11 @@ use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    Class, Enum, EnumVariant, Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref, Tuple,
-    TypeElement, Union,
+    Class, ClassMetadata, Enum, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType, Intersection, ModuleId,
+    QueryExpr, QueryType, Ref, RefMetadata, Tuple, TypeElement, Union,
 };
 use std::iter::once;
-use swc_common::{Span, Spanned};
+use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 use ty::TypeExt;
@@ -87,6 +87,8 @@ impl Analyzer<'_, '_> {
     pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> ValidationResult {
         let ty = ty.normalize();
 
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         if ty.is_any() {
             return Ok(ty.clone());
         }
@@ -144,6 +146,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Class(Class {
                     span,
                     def: box def.clone(),
+                    metadata: Default::default(),
                 }))
             }
 
@@ -161,7 +164,11 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
     let span = ty.span();
 
     match ty.normalize() {
-        Type::Tuple(Tuple { ref elems, span }) => Type::Tuple(Tuple {
+        Type::Tuple(Tuple {
+            ref elems,
+            span,
+            metadata,
+        }) => Type::Tuple(Tuple {
             span: *span,
             elems: elems
                 .iter()
@@ -172,10 +179,15 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
                     element
                 })
                 .collect(),
+            metadata: *metadata,
         }),
         Type::ClassDef(ref def) => Type::Class(Class {
             span,
             def: box def.clone(),
+            metadata: ClassMetadata {
+                common: def.metadata.common,
+                ..Default::default()
+            },
         }),
 
         Type::Intersection(ref i) => {
@@ -185,24 +197,38 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
                 .map(|ty| make_instance_type(module_id, ty.clone()))
                 .collect();
 
-            Type::Intersection(Intersection { span: i.span, types })
+            Type::Intersection(Intersection {
+                span: i.span,
+                types,
+                metadata: i.metadata,
+            })
         }
 
+        // FIXME: This seems wrong
         Type::Query(QueryType {
             span,
             expr: box QueryExpr::TsEntityName(ref type_name),
+            metadata,
         }) => Type::Ref(Ref {
             span: *span,
             ctxt: module_id,
             type_name: type_name.clone(),
             type_args: Default::default(),
+            metadata: RefMetadata {
+                common: metadata.common,
+                ..Default::default()
+            },
         }),
 
-        Type::Enum(Enum { id, .. }) => Type::EnumVariant(EnumVariant {
+        Type::Enum(Enum { id, metadata, .. }) => Type::EnumVariant(EnumVariant {
             span,
             ctxt: module_id,
             enum_name: id.into(),
             name: None,
+            metadata: EnumVariantMetadata {
+                common: metadata.common,
+                ..Default::default()
+            },
         }),
 
         _ => return ty,
@@ -212,7 +238,6 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
 #[derive(Debug)]
 pub(super) struct Generalizer {
     pub force: bool,
-    pub marks: Marks,
 }
 
 impl Fold<stc_ts_types::Function> for Generalizer {
@@ -246,7 +271,7 @@ impl Fold<Type> for Generalizer {
         ty = ty.fold_children_with(self);
         self.force = old;
 
-        ty.generalize_lit(self.marks)
+        ty.generalize_lit()
     }
 }
 
@@ -390,6 +415,7 @@ pub(crate) fn opt_union(span: Span, opt1: Option<Type>, opt2: Option<Type>) -> O
             Type::Union(Union {
                 span,
                 types: vec![t1, t2],
+                metadata: Default::default(),
             })
             .fixed(),
         ),

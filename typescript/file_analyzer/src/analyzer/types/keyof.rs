@@ -3,12 +3,12 @@ use crate::{
     ValidationResult,
 };
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsKeywordType, RTsLit};
+use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    Class, ClassMember, ClassProperty, Method, MethodSignature, ModuleId, PropertySignature, Ref, Type, TypeElement,
-    Union,
+    Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, ModuleId,
+    PropertySignature, Ref, Type, TypeElement, Union,
 };
 use stc_utils::error::context;
 use std::borrow::Cow;
@@ -46,7 +46,7 @@ impl Analyzer<'_, '_> {
                     return self
                         .keyof(
                             span,
-                            &Type::Keyword(RTsKeywordType {
+                            &Type::Keyword(KeywordType {
                                 span: ty.span,
                                 kind: match &ty.lit {
                                     RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
@@ -55,27 +55,34 @@ impl Analyzer<'_, '_> {
                                     RTsLit::Bool(_) => TsKeywordTypeKind::TsBooleanKeyword,
                                     RTsLit::Tpl(_) => unreachable!(),
                                 },
+                                metadata: KeywordTypeMetadata {
+                                    common: ty.metadata.common,
+                                },
                             }),
                         )
                         .context("tried applying `keyof` to a literal by delegating to keyword type handler")
                 }
-                Type::Keyword(RTsKeywordType { kind, .. }) => match kind {
+                Type::Keyword(KeywordType { kind, .. }) => match kind {
                     TsKeywordTypeKind::TsAnyKeyword => {
-                        let string = Type::Keyword(RTsKeywordType {
+                        let string = Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
+                            metadata: Default::default(),
                         });
-                        let number = Type::Keyword(RTsKeywordType {
+                        let number = Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsNumberKeyword,
+                            metadata: Default::default(),
                         });
-                        let symbol = Type::Keyword(RTsKeywordType {
+                        let symbol = Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsSymbolKeyword,
+                            metadata: Default::default(),
                         });
                         return Ok(Type::Union(Union {
                             span,
                             types: vec![string, number, symbol],
+                            metadata: Default::default(),
                         }));
                     }
                     TsKeywordTypeKind::TsVoidKeyword
@@ -83,9 +90,10 @@ impl Analyzer<'_, '_> {
                     | TsKeywordTypeKind::TsNullKeyword
                     | TsKeywordTypeKind::TsUnknownKeyword
                     | TsKeywordTypeKind::TsObjectKeyword => {
-                        return Ok(Type::Keyword(RTsKeywordType {
+                        return Ok(Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsNeverKeyword,
+                            metadata: Default::default(),
                         }));
                     }
                     TsKeywordTypeKind::TsNumberKeyword
@@ -111,6 +119,7 @@ impl Analyzer<'_, '_> {
                                     ctxt: ModuleId::builtin(),
                                     type_name: RTsEntityName::Ident(RIdent::new(name, DUMMY_SP)),
                                     type_args: None,
+                                    metadata: Default::default(),
                                 }),
                             )
                             .context("tried to get keys of builitin interface types");
@@ -122,19 +131,23 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::Union(Union {
                             span,
                             types: vec![
-                                Type::Keyword(RTsKeywordType {
+                                Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsStringKeyword,
+                                    metadata: Default::default(),
                                 }),
-                                Type::Keyword(RTsKeywordType {
+                                Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    metadata: Default::default(),
                                 }),
-                                Type::Keyword(RTsKeywordType {
+                                Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                    metadata: Default::default(),
                                 }),
                             ],
+                            metadata: Default::default(),
                         }))
                     }
                     TsKeywordTypeKind::TsIntrinsicKeyword => {}
@@ -163,10 +176,14 @@ impl Analyzer<'_, '_> {
                     }
 
                     if types.is_empty() {
-                        return Ok(Type::never(span));
+                        return Ok(Type::never(span, Default::default()));
                     }
 
-                    return Ok(Type::Union(Union { span, types }));
+                    return Ok(Type::Union(Union {
+                        span,
+                        types,
+                        metadata: Default::default(),
+                    }));
                 }
 
                 Type::Class(Class { def, .. }) => {
@@ -197,10 +214,15 @@ impl Analyzer<'_, '_> {
                     }
 
                     if key_types.is_empty() {
-                        return Ok(Type::never(span));
+                        return Ok(Type::never(span, Default::default()));
                     }
 
-                    return Ok(Type::Union(Union { span, types: key_types }));
+                    return Ok(Type::Union(Union {
+                        span,
+                        types: key_types,
+
+                        metadata: Default::default(),
+                    }));
                 }
 
                 Type::Array(arr) => {
@@ -212,6 +234,7 @@ impl Analyzer<'_, '_> {
                                 ctxt: ModuleId::builtin(),
                                 type_name: RTsEntityName::Ident(RIdent::new(js_word!("Array"), DUMMY_SP)),
                                 type_args: None,
+                                metadata: Default::default(),
                             }),
                         )
                         .context("tried to get keys of Array (builtin)");
@@ -241,7 +264,11 @@ impl Analyzer<'_, '_> {
                         })
                         .collect::<Result<_, _>>()?;
 
-                    return Ok(Type::Union(Union { span, types }));
+                    return Ok(Type::Union(Union {
+                        span,
+                        types,
+                        metadata: Default::default(),
+                    }));
                 }
 
                 Type::Union(u) => {
@@ -286,6 +313,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::Union(Union {
                             span,
                             types: actual_keys,
+                            metadata: Default::default(),
                         }));
                     }
 
@@ -293,9 +321,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Param(..) => {
-                    return Ok(Type::Keyword(RTsKeywordType {
+                    return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
+                        metadata: Default::default(),
                     }))
                 }
 

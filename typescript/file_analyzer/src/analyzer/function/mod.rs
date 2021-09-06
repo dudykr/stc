@@ -8,15 +8,16 @@ use crate::{
 };
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith};
-use stc_ts_ast_rnode::{
-    RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName, RTsKeywordType,
-};
+use stc_ts_ast_rnode::{RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName};
 use stc_ts_errors::{Error, Errors};
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{Alias, CallSignature, Class, ClassDef, Function, Interface, Ref, TypeElement, TypeLit};
+use stc_ts_types::{
+    Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Interface, KeywordType, KeywordTypeMetadata, Ref,
+    TypeElement, TypeLit,
+};
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
-use swc_common::{Span, Spanned};
+use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
 
@@ -124,8 +125,16 @@ impl Analyzer<'_, '_> {
 
             if let Some(ret_ty) = declared_ret_ty {
                 let span = ret_ty.span();
+                let metadata = ret_ty.metadata();
                 declared_ret_ty = Some(match ret_ty {
-                    Type::ClassDef(def) => Type::Class(Class { span, def: box def }),
+                    Type::ClassDef(def) => Type::Class(Class {
+                        span,
+                        def: box def,
+                        metadata: ClassMetadata {
+                            common: metadata,
+                            ..Default::default()
+                        },
+                    }),
 
                     _ => ret_ty,
                 });
@@ -175,7 +184,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if child.may_generalize(&inferred_return_type) {
-                            inferred_return_type = inferred_return_type.generalize_lit(marks);
+                            inferred_return_type = inferred_return_type.generalize_lit();
                         }
                     }
 
@@ -189,15 +198,15 @@ impl Analyzer<'_, '_> {
                         let declared = child.normalize(Some(span), Cow::Borrowed(&declared), Default::default())?;
 
                         match declared.normalize() {
-                            Type::Keyword(RTsKeywordType {
+                            Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
                             })
-                            | Type::Keyword(RTsKeywordType {
+                            | Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                                 ..
                             })
-                            | Type::Keyword(RTsKeywordType {
+                            | Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsNeverKeyword,
                                 ..
                             }) => {}
@@ -209,19 +218,21 @@ impl Analyzer<'_, '_> {
                     if f.return_type.is_none() {
                         if let Some(m) = &mut child.mutations {
                             if m.for_fns.entry(f.node_id).or_default().ret_ty.is_none() {
-                                m.for_fns.entry(f.node_id).or_default().ret_ty = Some(Type::Keyword(RTsKeywordType {
+                                m.for_fns.entry(f.node_id).or_default().ret_ty = Some(Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsVoidKeyword,
+                                    metadata: Default::default(),
                                 }));
                             }
                         }
                     }
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsVoidKeyword,
+                        metadata: Default::default(),
                     })
                 }
-                None => Type::any(f.span),
+                None => Type::any(f.span, Default::default()),
             };
 
             if f.return_type.is_none() {
@@ -239,6 +250,7 @@ impl Analyzer<'_, '_> {
                 params,
                 type_params,
                 ret_ty: box declared_ret_ty.unwrap_or_else(|| inferred_return_type),
+                metadata: Default::default(),
             }
             .into())
         })
@@ -311,7 +323,8 @@ impl Analyzer<'_, '_> {
                 } else {
                     self.storage
                         .report(Error::ImplicitAny { span }.context("qualify_ref_type_args"));
-                    args.params.push(Type::any(span));
+                    args.params
+                        .push(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                 }
             }
         }
@@ -388,11 +401,11 @@ impl Analyzer<'_, '_> {
                                 let span = element.span();
 
                                 match element.ty.normalize() {
-                                    Type::Keyword(RTsKeywordType {
+                                    Type::Keyword(KeywordType {
                                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                         ..
                                     })
-                                    | Type::Keyword(RTsKeywordType {
+                                    | Type::Keyword(KeywordType {
                                         kind: TsKeywordTypeKind::TsNullKeyword,
                                         ..
                                     }) => {}
@@ -407,7 +420,13 @@ impl Analyzer<'_, '_> {
                                 //    });
                                 //}
 
-                                element.ty = box Type::any(span);
+                                element.ty = box Type::any(
+                                    span,
+                                    KeywordTypeMetadata {
+                                        common: element.ty.metadata(),
+                                        ..Default::default()
+                                    },
+                                );
                             }
                         }
 
@@ -427,7 +446,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => Type::Function(ty).fixed().cheap(),
             Err(err) => {
                 self.storage.report(err);
-                Type::any(f.span)
+                Type::any(f.span, Default::default())
             }
         }
     }

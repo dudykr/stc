@@ -8,11 +8,13 @@ use crate::{
 };
 use stc_ts_ast_rnode::{RIdent, RTsEntityName};
 use stc_ts_errors::{DebugExt, Error};
-use stc_ts_types::{Array, Ref, Type, TypeElement};
+use stc_ts_types::{Array, ArrayMetadata, Ref, Type, TypeElement};
 use swc_atoms::js_word;
 use swc_common::{Spanned, TypeEq};
 
 impl Analyzer<'_, '_> {
+    /// This handles the assignment to builtin types.
+    ///
     /// - Handles assignment of `Function` types.
     /// - Handles assignment of various array types.
     /// - Handles assignment of promise types.
@@ -184,6 +186,7 @@ impl Analyzer<'_, '_> {
                     &Type::Array(Array {
                         span: r.span(),
                         elem_type: box r_elem.clone(),
+                        metadata: ArrayMetadata { common: r.metadata() },
                     }),
                 ));
             }

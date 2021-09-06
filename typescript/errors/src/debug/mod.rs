@@ -240,7 +240,7 @@ impl Fold<Type> for Visualizer {
         ty = ty.fold_children_with(self);
 
         match ty {
-            Type::Module(m) => Type::any(m.span),
+            Type::Module(m) => Type::any(m.span, Default::default()),
             _ => ty,
         }
     }

@@ -8,14 +8,14 @@ use fxhash::FxHashMap;
 use indexmap::IndexSet;
 use itertools::Itertools;
 use rnode::{FoldWith, NodeId, VisitMut, VisitMutWith};
-use stc_ts_ast_rnode::{RBindingIdent, RIdent, RObjectLit, RPat, RPropOrSpread, RSpreadElement, RTsKeywordType};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RObjectLit, RPat, RPropOrSpread, RSpreadElement};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Accessor, CallSignature, FnParam, Function, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit,
-    TypeLitMetadata, TypeParamDecl, Union,
+    Accessor, CallSignature, FnParam, Function, FunctionMetadata, Key, KeywordType, MethodSignature, PropertySignature,
+    Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamDecl, Union, UnionMetadata,
 };
 use std::{borrow::Cow, iter::repeat, time::Instant};
 use swc_atoms::JsWord;
@@ -26,7 +26,7 @@ use tracing::{debug, instrument};
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RObjectLit, type_ann: Option<&Type>) -> ValidationResult {
-        let type_ann = self.expand_type_ann(type_ann)?;
+        let type_ann = self.expand_type_ann(node.span, type_ann)?;
         debug_assert_eq!(node.span.ctxt, SyntaxContext::empty());
 
         self.with_child(ScopeKind::ObjectLit, Default::default(), |a: &mut Analyzer| {
@@ -147,6 +147,10 @@ impl UnionNormalizer<'_, '_, '_> {
                 })
                 .collect_vec(),
             ret_ty: box Type::union(return_types),
+            metadata: FunctionMetadata {
+                common: u.metadata.common,
+                ..Default::default()
+            },
         })
     }
 
@@ -362,9 +366,10 @@ impl UnionNormalizer<'_, '_, '_> {
                                     },
                                     optional: true,
                                     params: Default::default(),
-                                    type_ann: Some(box Type::Keyword(RTsKeywordType {
+                                    type_ann: Some(box Type::Keyword(KeywordType {
                                         span: DUMMY_SP,
                                         kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
+                                        metadata: Default::default(),
                                     })),
                                     type_params: Default::default(),
                                     metadata: Default::default(),
@@ -579,6 +584,7 @@ impl Analyzer<'_, '_> {
         match to {
             Type::TypeLit(ref mut lit) => {
                 lit.metadata.inexact = true;
+                let common_metadata = lit.metadata.common;
 
                 match rhs {
                     Type::TypeLit(rhs) => {
@@ -593,6 +599,10 @@ impl Analyzer<'_, '_> {
                                 .into_iter()
                                 .map(|rhs| self.append_type(to.clone(), rhs))
                                 .collect::<Result<_, _>>()?,
+                            metadata: UnionMetadata {
+                                common: common_metadata,
+                                ..Default::default()
+                            },
                         })
                         .fixed())
                     }
@@ -608,6 +618,7 @@ impl Analyzer<'_, '_> {
                         .into_iter()
                         .map(|to| self.append_type(to, rhs.clone()))
                         .collect::<Result<_, _>>()?,
+                    metadata: to.metadata,
                 })
                 .fixed())
             }
@@ -652,6 +663,7 @@ impl Analyzer<'_, '_> {
                     .into_iter()
                     .map(|to| self.append_type_element(to, rhs.clone()))
                     .collect::<Result<_, _>>()?,
+                metadata: to.metadata,
             })
             .fixed()),
             _ => {

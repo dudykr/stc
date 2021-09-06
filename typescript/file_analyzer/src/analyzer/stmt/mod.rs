@@ -4,12 +4,10 @@ use crate::{
     validator,
     validator::ValidateWith,
 };
-use rnode::{NodeId, VisitWith};
-use stc_ts_ast_rnode::{
-    RBlockStmt, RBool, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RTsLitType, RWithStmt,
-};
+use rnode::VisitWith;
+use stc_ts_ast_rnode::{RBlockStmt, RBool, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RWithStmt};
 use stc_ts_errors::Error;
-use stc_ts_types::Type;
+use stc_ts_types::{LitType, Type};
 use stc_utils::stack;
 use std::time::Instant;
 use swc_common::{Spanned, DUMMY_SP};
@@ -101,13 +99,13 @@ impl Analyzer<'_, '_> {
         node.init.visit_with(self);
 
         let test = try_opt!(node.test.validate_with_default(self));
-        let always_true = Type::Lit(RTsLitType {
-            node_id: NodeId::invalid(),
+        let always_true = Type::Lit(LitType {
             span: node.span,
             lit: RTsLit::Bool(RBool {
                 span: DUMMY_SP,
                 value: true,
             }),
+            metadata: Default::default(),
         });
         self.check_for_inifinite_loop(test.as_ref().unwrap_or(&always_true), &node.body);
 

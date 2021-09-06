@@ -23,8 +23,8 @@ use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RBindingIdent, RCallExpr, RExpr, RExprOrSpread, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr,
-    RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsKeywordType, RTsLit, RTsLitType,
-    RTsThisType, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
+    RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType,
+    RTsTypeParamInstantiation, RTsTypeRef,
 };
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace, print_type},
@@ -32,10 +32,11 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
-use stc_ts_type_ops::{is_str_lit_or_union, Fix};
+use stc_ts_type_ops::{is_str_lit_or_union, metadata::PreventGeneralization, Fix};
 use stc_ts_types::{
     type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Id, IdCtx, IndexedAccessType,
-    Instance, Interface, Intersection, Key, ModuleId, Ref, Symbol, Union,
+    Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, Symbol, ThisType,
+    Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
@@ -94,7 +95,7 @@ impl Analyzer<'_, '_> {
 
                 self.scope.mark_as_super_called();
 
-                return Ok(Type::any(span));
+                return Ok(Type::any(span, Default::default()));
             }
             RExprOrSuper::Expr(callee) => callee,
         };
@@ -299,6 +300,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Symbol(Symbol {
                     span,
                     id: SymbolId::generate(),
+                    metadata: Default::default(),
                 }));
             }
 
@@ -320,25 +322,26 @@ impl Analyzer<'_, '_> {
                     // Handle toString()
 
                     if prop == js_word!("toString") {
-                        return Ok(Type::from(RTsKeywordType {
+                        return Ok(Type::from(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsStringKeyword,
+                            metadata: Default::default(),
                         }));
                     }
                 }
 
                 // Handle member expression
-                let obj_type = obj.validate_with_default(self)?.generalize_lit(marks);
+                let obj_type = obj.validate_with_default(self)?.generalize_lit();
 
                 let mut obj_type = match *obj_type.normalize() {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
                     }) => self
                         .env
                         .get_global_type(span, &js_word!("Number"))
                         .expect("Builtin type named 'Number' should exist"),
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
                     }) => self
@@ -385,6 +388,7 @@ impl Analyzer<'_, '_> {
                         ctxt: analyzer.ctx.module_id,
                         type_name: RTsEntityName::Ident(i.clone()),
                         type_args: Default::default(),
+                        metadata: Default::default(),
                     });
                     // It's specified by user
                     analyzer.prevent_expansion(&mut ty);
@@ -399,7 +403,7 @@ impl Analyzer<'_, '_> {
             let mut callee_ty = {
                 let callee_ty = callee.validate_with_default(analyzer)?;
                 match callee_ty.normalize() {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
                     }) if type_args.is_some() => {
@@ -504,11 +508,11 @@ impl Analyzer<'_, '_> {
 
         let res = (|| {
             match obj_type.normalize() {
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                     ..
                 }) => {
-                    return Ok(Type::any(span));
+                    return Ok(Type::any(span, Default::default()));
                 }
 
                 Type::This(..) => {
@@ -516,7 +520,7 @@ impl Analyzer<'_, '_> {
                         self.storage
                             .report(Error::CannotReferenceThisInComputedPropName { span });
                         // Return any to prevent other errors
-                        return Ok(Type::any(span));
+                        return Ok(Type::any(span, Default::default()));
                     }
                 }
 
@@ -532,6 +536,7 @@ impl Analyzer<'_, '_> {
                             span,
                             params: vec![*obj.elem_type.clone()],
                         }),
+                        metadata: Default::default(),
                     });
                     return self.call_property(
                         span,
@@ -716,7 +721,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
                     ..
                 }) => {
@@ -745,6 +750,7 @@ impl Analyzer<'_, '_> {
                             )),
                             ctxt: ModuleId::builtin(),
                             type_args: None,
+                            metadata: Default::default(),
                         }),
                         prop,
                         type_args,
@@ -1041,7 +1047,11 @@ impl Analyzer<'_, '_> {
                     candidates.push(CallCandidate {
                         type_params: m.type_params.as_ref().map(|v| v.params.clone()),
                         params: m.params.clone(),
-                        ret_ty: m.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(m.span)),
+                        ret_ty: m
+                            .ret_ty
+                            .clone()
+                            .map(|v| *v)
+                            .unwrap_or_else(|| Type::any(m.span, Default::default())),
                     });
                 }
             }
@@ -1055,7 +1065,11 @@ impl Analyzer<'_, '_> {
 
                 if self.key_matches(span, &p.key, &prop, false) {
                     // TODO: Remove useless clone
-                    let ty = *p.type_ann.clone().unwrap_or(box Type::any(m.span()));
+                    let ty = *p
+                        .type_ann
+                        .clone()
+                        .unwrap_or(box Type::any(m.span(), Default::default()))
+                        .clone();
                     let ty = self
                         .normalize(Some(span), Cow::Borrowed(&ty), Default::default())
                         .map(Cow::into_owned)
@@ -1065,13 +1079,13 @@ impl Analyzer<'_, '_> {
                     // TODO: PERF
 
                     match ty {
-                        Type::Keyword(RTsKeywordType {
+                        Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
                         }) => candidates.push(CallCandidate {
                             // TODO: Maybe we need Option<Vec<T>>.
                             params: Default::default(),
-                            ret_ty: Type::any(span),
+                            ret_ty: Type::any(span, Default::default()),
                             type_params: Default::default(),
                         }),
 
@@ -1187,7 +1201,7 @@ impl Analyzer<'_, '_> {
                             }));
                         }
 
-                        Type::Keyword(RTsKeywordType {
+                        Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
@@ -1247,6 +1261,8 @@ impl Analyzer<'_, '_> {
             ty.assert_valid();
         }
 
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         match ty.normalize() {
             Type::Ref(..) | Type::Query(..) => {
                 let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
@@ -1271,7 +1287,7 @@ impl Analyzer<'_, '_> {
 
         match kind {
             ExtractKind::Call => match ty.normalize() {
-                Type::Interface(i) if i.name == "Function" => return Ok(Type::any(span)),
+                Type::Interface(i) if i.name == "Function" => return Ok(Type::any(span, Default::default())),
                 _ => {}
             },
             _ => {}
@@ -1283,6 +1299,7 @@ impl Analyzer<'_, '_> {
                     self.scope.this = Some(Type::Class(Class {
                         span,
                         def: box cls.clone(),
+                        metadata: Default::default(),
                     }));
 
                     if cls.is_abstract {
@@ -1301,6 +1318,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::Class(Class {
                             span,
                             def: box cls.clone(),
+                            metadata: Default::default(),
                         }));
                     }
 
@@ -1337,7 +1355,7 @@ impl Analyzer<'_, '_> {
                         let type_params = constructor
                             .type_params
                             .as_ref()
-                            .or_else(|| cls.type_params.as_ref())
+                            .or_else(|| cls.type_params.as_deref())
                             .map(|v| &*v.params);
                         // TODO: Constructor's return type.
 
@@ -1351,6 +1369,7 @@ impl Analyzer<'_, '_> {
                                 Type::Class(Class {
                                     span,
                                     def: box cls.clone(),
+                                    metadata: Default::default(),
                                 }),
                                 type_args,
                                 args,
@@ -1406,6 +1425,7 @@ impl Analyzer<'_, '_> {
                             Type::Class(Class {
                                 span,
                                 def: box cls.clone(),
+                                metadata: Default::default(),
                             }),
                             type_args,
                             args,
@@ -1435,7 +1455,11 @@ impl Analyzer<'_, '_> {
                 Type::This(..) => {
                     return Ok(Type::Instance(Instance {
                         span,
-                        ty: box Type::This(RTsThisType { span }),
+                        ty: box Type::This(ThisType {
+                            span,
+                            metadata: Default::default(),
+                        }),
+                        metadata: Default::default(),
                     }))
                 }
 
@@ -1470,12 +1494,12 @@ impl Analyzer<'_, '_> {
                 return Ok(make_instance_type(self.ctx.module_id, ty.clone()));
             }
 
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
-            }) => return Ok(Type::any(span)),
+            }) => return Ok(Type::any(span, Default::default())),
 
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => {
@@ -1504,7 +1528,7 @@ impl Analyzer<'_, '_> {
                 expr,
                 f.type_params.as_ref().map(|v| &*v.params),
                 &f.params,
-                Type::any(span),
+                Type::any(span, Default::default()),
                 type_args,
                 args,
                 arg_types,
@@ -1563,6 +1587,7 @@ impl Analyzer<'_, '_> {
                             return Ok(Type::Array(Array {
                                 span,
                                 elem_type: box type_args.params.iter().cloned().next().unwrap(),
+                                metadata: Default::default(),
                             }));
                         }
                     }
@@ -1630,6 +1655,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Class {
                     span,
                     def: box def.clone(),
+                    metadata: Default::default(),
                 }
                 .into());
             }
@@ -1684,7 +1710,10 @@ impl Analyzer<'_, '_> {
                         .clone()
                         .map(|v| v.params)
                         .or_else(|| type_params_of_type.map(|v| v.to_vec())),
-                    ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span)),
+                    ret_ty: ret_ty
+                        .clone()
+                        .map(|v| *v)
+                        .unwrap_or_else(|| Type::any(*span, Default::default())),
                 }),
                 TypeElement::Constructor(ConstructorSignature {
                     span,
@@ -1698,7 +1727,10 @@ impl Analyzer<'_, '_> {
                         .clone()
                         .map(|v| v.params)
                         .or_else(|| type_params_of_type.clone().map(|v| v.to_vec())),
-                    ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span)),
+                    ret_ty: ret_ty
+                        .clone()
+                        .map(|v| *v)
+                        .unwrap_or_else(|| Type::any(*span, Default::default())),
                 }),
                 _ => None,
             })
@@ -1747,7 +1779,10 @@ impl Analyzer<'_, '_> {
             expr,
             c.type_params.as_ref().map(|v| &*v.params),
             &c.params,
-            c.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span)),
+            c.ret_ty
+                .clone()
+                .map(|v| *v)
+                .unwrap_or_else(|| Type::any(span, Default::default())),
             type_args,
             args,
             arg_types,
@@ -1842,7 +1877,11 @@ impl Analyzer<'_, '_> {
                             candidates.push(CallCandidate {
                                 type_params: m.type_params.clone().map(|v| v.params),
                                 params: m.params.clone(),
-                                ret_ty: m.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(m.span)),
+                                ret_ty: m
+                                    .ret_ty
+                                    .clone()
+                                    .map(|v| *v)
+                                    .unwrap_or_else(|| Type::any(m.span, Default::default())),
                             });
                         }
 
@@ -1850,7 +1889,11 @@ impl Analyzer<'_, '_> {
                             candidates.push(CallCandidate {
                                 type_params: m.type_params.clone().map(|v| v.params),
                                 params: m.params.clone(),
-                                ret_ty: m.ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(m.span)),
+                                ret_ty: m
+                                    .ret_ty
+                                    .clone()
+                                    .map(|v| *v)
+                                    .unwrap_or_else(|| Type::any(m.span, Default::default())),
                             });
                         }
                         _ => {}
@@ -1876,6 +1919,7 @@ impl Analyzer<'_, '_> {
                                     Type::Class(Class {
                                         span,
                                         def: box cls.clone(),
+                                        metadata: Default::default(),
                                     })
                                 }),
                             });
@@ -1897,6 +1941,7 @@ impl Analyzer<'_, '_> {
                         ret_ty: Type::Class(Class {
                             span,
                             def: box cls.clone(),
+                            metadata: Default::default(),
                         }),
                     });
                 }
@@ -2102,9 +2147,10 @@ impl Analyzer<'_, '_> {
                             span,
                             &mut Default::default(),
                             &param.ty,
-                            &Type::Keyword(RTsKeywordType {
+                            &Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
+                                metadata: Default::default(),
                             }),
                         )
                         .is_ok()
@@ -2402,10 +2448,12 @@ impl Analyzer<'_, '_> {
 
                     if let Some(ty) = default_any_ty {
                         match &ty {
-                            Type::Keyword(RTsKeywordType {
+                            Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
-                            }) if self.is_implicitly_typed_span(*span) => {
+                                metadata,
+                                ..
+                            }) if metadata.common.implicit => {
                                 // let new_ty = RTsType::from(actual.ty.clone()).validate_with(self)?;
                                 // if let Some(node_id) = pat.node_id() {
                                 //     if let Some(m) = &mut self.mutations {
@@ -2543,9 +2591,13 @@ impl Analyzer<'_, '_> {
                     if !inferred.contains_key(&tp.name) {
                         inferred.insert(
                             tp.name.clone(),
-                            Type::Keyword(RTsKeywordType {
+                            Type::Keyword(KeywordType {
                                 span: tp.span,
                                 kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                metadata: KeywordTypeMetadata {
+                                    common: tp.metadata.common,
+                                    ..Default::default()
+                                },
                             }),
                         );
                     }
@@ -2826,7 +2878,7 @@ impl Analyzer<'_, '_> {
                             self.storage.report(err)
                         }
                     } else {
-                        let mut allow_unknown_rhs = marks.resolved_from_var.is_marked(arg.ty.span())
+                        let mut allow_unknown_rhs = arg.ty.metadata().resolved_from_var
                             || match arg.ty.normalize() {
                                 Type::TypeLit(..) => false,
                                 _ => true,
@@ -2954,6 +3006,7 @@ impl Analyzer<'_, '_> {
             return Ok(Type::Intersection(Intersection {
                 span,
                 types: vec![orig_ty.into_owned(), new_ty.into_owned()],
+                metadata: Default::default(),
             }));
         }
 
@@ -2971,6 +3024,7 @@ impl Analyzer<'_, '_> {
                                         return Ok(Type::Class(Class {
                                             span,
                                             def: box def.clone(),
+                                            metadata: Default::default(),
                                         }))
                                     }
                                     _ => {}
@@ -3004,11 +3058,7 @@ impl Analyzer<'_, '_> {
                 new_types.dedup_type();
                 let mut new_ty = Type::union(new_types);
                 if upcasted {
-                    self.env
-                        .shared()
-                        .marks()
-                        .prevent_converting_to_children
-                        .apply_to_type(&mut new_ty);
+                    new_ty.metadata_mut().prevent_converting_to_children = true;
                 }
                 return Ok(new_ty);
             }
@@ -3019,6 +3069,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::Class(Class {
                     span,
                     def: box def.clone(),
+                    metadata: Default::default(),
                 }))
             }
             _ => {}
@@ -3186,7 +3237,7 @@ impl Analyzer<'_, '_> {
                         .unwrap_or_else(|| TypeOrSpread {
                             span: arg.span(),
                             spread: arg.spread,
-                            ty: box Type::any(arg.expr.span()),
+                            ty: box Type::any(arg.expr.span(), Default::default()),
                         })
                 })
                 .collect();
@@ -3222,7 +3273,7 @@ impl Fold<Type> for ReturnTypeGeneralizer<'_, '_, '_> {
 
         ty = ty.fold_children_with(self);
 
-        ty.generalize_lit(self.analyzer.marks())
+        ty.generalize_lit()
     }
 }
 
@@ -3242,15 +3293,17 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
         match ty {
             Type::IndexedAccessType(IndexedAccessType {
                 obj_type:
-                    box Type::Keyword(RTsKeywordType {
+                    box Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsAnyKeyword,
+                        metadata,
                     }),
                 ..
             }) => {
-                *ty = Type::Keyword(RTsKeywordType {
+                *ty = Type::Keyword(KeywordType {
                     span: *span,
                     kind: TsKeywordTypeKind::TsAnyKeyword,
+                    metadata: *metadata,
                 });
                 return;
             }
@@ -3259,13 +3312,14 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 span,
                 obj_type: ref obj_ty @ box Type::Ref(..),
                 index_type,
+                metadata,
                 ..
             }) if is_str_lit_or_union(&index_type) => {
                 let mut types: Vec<Type> = vec![];
 
                 for index_ty in index_type.iter_union() {
                     let (lit_span, value) = match &*index_ty {
-                        Type::Lit(RTsLitType {
+                        Type::Lit(LitType {
                             span: lit_span,
                             lit: RTsLit::Str(RStr { value, .. }),
                             ..
@@ -3313,14 +3367,20 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                     }
                 }
 
-                *ty = Type::Union(Union { span: *span, types }).fixed();
+                *ty = Type::Union(Union {
+                    span: *span,
+                    types,
+                    metadata: UnionMetadata {
+                        common: metadata.common,
+                        ..Default::default()
+                    },
+                })
+                .fixed();
                 return;
             }
 
             Type::IndexedAccessType(ty) if is_str_lit_or_union(&ty.index_type) => {
-                ty.span = self.analyzer.prevent_generalize_span(ty.span);
-                self.analyzer.prevent_generalize(&mut ty.obj_type);
-                self.analyzer.prevent_generalize(&mut ty.index_type);
+                ty.visit_mut_with(&mut PreventGeneralization);
             }
 
             // Boxified<A | B | C> => Boxified<A> | Boxified<B> | Boxified<C>
@@ -3329,6 +3389,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 ctxt,
                 type_name: RTsEntityName::Ident(i),
                 type_args: Some(type_args),
+                metadata,
             }) if type_args.params.len() == 1
                 && type_args.params.iter().any(|ty| match ty.normalize() {
                     Type::Union(..) => true,
@@ -3342,7 +3403,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                             Type::Alias(Alias { ty: aliased_ty, .. }) => {
                                 let mut types = vec![];
 
-                                match &type_args.params[0] {
+                                match &type_args.params[0].normalize() {
                                     Type::Union(type_arg) => {
                                         for ty in &type_arg.types {
                                             types.push(Type::Ref(Ref {
@@ -3353,6 +3414,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                                     span: type_args.span,
                                                     params: vec![ty.clone()],
                                                 }),
+                                                metadata: *metadata,
                                             }))
                                         }
                                     }

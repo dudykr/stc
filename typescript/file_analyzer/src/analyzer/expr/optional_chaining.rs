@@ -39,7 +39,7 @@ impl Analyzer<'_, '_> {
                 //
 
                 if is_obj_optional {
-                    let mut types = vec![Type::undefined(span), ty];
+                    let mut types = vec![Type::undefined(span, Default::default()), ty];
                     types.dedup_type();
                     Ok(Type::union(types))
                 } else {
@@ -50,7 +50,7 @@ impl Analyzer<'_, '_> {
             RExpr::Call(ce) => {
                 let ty = ce.validate_with_args(self, type_ann)?;
 
-                Ok(Type::union(vec![Type::undefined(span), ty]))
+                Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
             }
 
             _ => unreachable!("Onvalid optional chaining expression found",),

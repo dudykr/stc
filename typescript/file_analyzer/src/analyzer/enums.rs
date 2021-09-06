@@ -7,10 +7,13 @@ use fxhash::FxHashMap;
 use rnode::{NodeId, Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl, RTsEnumMember, RTsEnumMemberId,
-    RTsKeywordType, RTsLit, RTsLitType,
+    RTsLit,
 };
 use stc_ts_errors::{Error, Errors};
-use stc_ts_types::{Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, PropertySignature, TypeElement, TypeLit};
+use stc_ts_types::{
+    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata, PropertySignature,
+    TypeElement, TypeLit,
+};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -120,6 +123,7 @@ impl Analyzer<'_, '_> {
                 is_const: e.is_const,
                 id: e.id.clone(),
                 members,
+                metadata: Default::default(),
             }
         };
 
@@ -131,7 +135,7 @@ impl Analyzer<'_, '_> {
             .map(Type::Enum)
             .map(Type::cheap)
             .report(&mut self.storage)
-            .unwrap_or_else(|| Type::any(span));
+            .unwrap_or_else(|| Type::any(span, Default::default()));
 
         self.register_type(name.clone(), stored_ty.clone());
 
@@ -391,6 +395,7 @@ impl Analyzer<'_, '_> {
                     ctxt: self.ctx.module_id,
                     enum_name: e.id.clone().into(),
                     name: Some(key.sym),
+                    metadata: Default::default(),
                 })),
                 type_params: Default::default(),
                 metadata: Default::default(),
@@ -409,18 +414,20 @@ impl Analyzer<'_, '_> {
                     type_ann: None,
                 }),
                 required: true,
-                ty: box Type::Keyword(RTsKeywordType {
+                ty: box Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
+                    metadata: Default::default(),
                 }),
             };
             members.push(TypeElement::Index(IndexSignature {
                 span: e.span,
                 readonly: false,
                 params: vec![param],
-                type_ann: Some(box Type::Keyword(RTsKeywordType {
+                type_ann: Some(box Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
+                    metadata: Default::default(),
                 })),
                 is_static: false,
             }));
@@ -434,18 +441,20 @@ impl Analyzer<'_, '_> {
                     type_ann: None,
                 }),
                 required: true,
-                ty: box Type::Keyword(RTsKeywordType {
+                ty: box Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
+                    metadata: Default::default(),
                 }),
             };
             members.push(TypeElement::Index(IndexSignature {
                 span: e.span,
                 readonly: false,
                 params: vec![param],
-                type_ann: Some(box Type::Keyword(RTsKeywordType {
+                type_ann: Some(box Type::Keyword(KeywordType {
                     span: DUMMY_SP,
                     kind: TsKeywordTypeKind::TsStringKeyword,
+                    metadata: Default::default(),
                 })),
                 is_static: false,
             }));
@@ -465,7 +474,7 @@ impl Analyzer<'_, '_> {
             Type::Enum(ref e) if e.is_const => {
                 self.storage.report(Error::InvalidUseOfConstEnum { span });
             }
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
                 ..
             }) => {
@@ -546,15 +555,15 @@ impl Analyzer<'_, '_> {
 
         for m in &e.members {
             match &*m.val {
-                RExpr::Lit(RLit::Str(lit)) => values.push(Type::Lit(RTsLitType {
-                    node_id: NodeId::invalid(),
+                RExpr::Lit(RLit::Str(lit)) => values.push(Type::Lit(LitType {
                     span: m.span,
                     lit: RTsLit::Str(lit.clone()),
+                    metadata: Default::default(),
                 })),
-                RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(RTsLitType {
-                    node_id: NodeId::invalid(),
+                RExpr::Lit(RLit::Num(lit)) => values.push(Type::Lit(LitType {
                     span: m.span,
                     lit: RTsLit::Number(lit.clone()),
+                    metadata: Default::default(),
                 })),
                 _ => {
                     unimplemented!("Handle enum with value other than string literal or numeric literals")
@@ -570,9 +579,9 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn expand_enum_variant(&self, ty: Type) -> ValidationResult {
         match ty.normalize() {
-            Type::EnumVariant(ref v) => {
-                if let Some(variant_name) = &v.name {
-                    if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {
+            Type::EnumVariant(ref ev) => {
+                if let Some(variant_name) = &ev.name {
+                    if let Some(types) = self.find_type(ev.ctxt, &ev.enum_name)? {
                         for ty in types {
                             if let Type::Enum(Enum { members, .. }) = ty.normalize() {
                                 if let Some(v) = members.iter().find(|m| match m.id {
@@ -581,13 +590,16 @@ impl Analyzer<'_, '_> {
                                 }) {
                                     match *v.val {
                                         RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => {
-                                            return Ok(Type::Lit(RTsLitType {
-                                                node_id: NodeId::invalid(),
+                                            return Ok(Type::Lit(LitType {
                                                 span: v.span,
                                                 lit: match *v.val.clone() {
                                                     RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
                                                     RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
                                                     _ => unreachable!(),
+                                                },
+                                                metadata: LitTypeMetadata {
+                                                    common: ev.metadata.common,
+                                                    ..Default::default()
                                                 },
                                             }));
                                         }

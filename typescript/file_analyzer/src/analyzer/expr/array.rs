@@ -4,7 +4,6 @@ use crate::{
             call_new::{ExtractKind, ReevalMode},
             AccessPropertyOpts, CallOpts, IdCtx, TypeOfMode,
         },
-        marks::MarkExt,
         types::NormalizeTypeOpts,
         Analyzer,
     },
@@ -16,12 +15,12 @@ use crate::{
     ValidationResult,
 };
 use itertools::Itertools;
-use stc_ts_ast_rnode::{RArrayLit, RExpr, RExprOrSpread, RInvalid, RNumber, RTsKeywordType, RTsLit, RTsLitType};
+use stc_ts_ast_rnode::{RArrayLit, RExpr, RExprOrSpread, RInvalid, RNumber, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    type_id::SymbolId, Array, ComputedKey, Intersection, Key, Symbol, Tuple, TupleElement, Type,
-    TypeParamInstantiation, Union,
+    type_id::SymbolId, Array, CommonTypeMetadata, ComputedKey, Intersection, Key, KeywordType, KeywordTypeMetadata,
+    LitType, Symbol, Tuple, TupleElement, Type, TypeParamInstantiation, Union, UnionMetadata,
 };
 use std::{borrow::Cow, time::Instant};
 use swc_atoms::js_word;
@@ -49,7 +48,7 @@ impl Analyzer<'_, '_> {
         let span = arr.span;
         let elems = &arr.elems;
 
-        let type_ann = self.expand_type_ann(type_ann)?;
+        let type_ann = self.expand_type_ann(span, type_ann)?;
 
         let iterator = type_ann
             .as_deref()
@@ -108,7 +107,7 @@ impl Analyzer<'_, '_> {
                             }
                             elements.extend(tuple.elems);
                         }
-                        Type::Keyword(RTsKeywordType {
+                        Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
                         }) => {
@@ -136,7 +135,7 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
                 None => {
-                    let ty = Type::undefined(span);
+                    let ty = Type::undefined(span, Default::default());
                     ty
                 }
             };
@@ -150,7 +149,8 @@ impl Analyzer<'_, '_> {
         if self.ctx.in_export_default_expr && elements.is_empty() {
             return Ok(Type::Array(Array {
                 span,
-                elem_type: box Type::any(span),
+                elem_type: box Type::any(span, Default::default()),
+                metadata: Default::default(),
             }));
         }
 
@@ -165,27 +165,26 @@ impl Analyzer<'_, '_> {
             let mut types: Vec<_> = elements
                 .into_iter()
                 .map(|element| *element.ty)
-                .map(|ty| {
-                    if type_ann.is_none() {
-                        ty.generalize_lit(marks)
-                    } else {
-                        ty
-                    }
-                })
+                .map(|ty| if type_ann.is_none() { ty.generalize_lit() } else { ty })
                 .collect();
             types.dedup_type();
             if types.is_empty() {
                 types.push(if self.ctx.use_undefined_for_empty_tuple && is_empty {
-                    Type::undefined(span)
+                    Type::undefined(span, Default::default())
                 } else {
                     let span = span.with_ctxt(SyntaxContext::empty());
-                    let span = if !elems.is_empty() {
-                        marks.implicit_type_mark.apply_to_span(span)
-                    } else {
-                        span
-                    };
+                    let implicit = !elems.is_empty();
 
-                    Type::any(span)
+                    Type::any(
+                        span,
+                        KeywordTypeMetadata {
+                            common: CommonTypeMetadata {
+                                implicit,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
+                    )
                 });
             }
 
@@ -193,6 +192,7 @@ impl Analyzer<'_, '_> {
                 Array {
                     span,
                     elem_type: box Type::union(types),
+                    metadata: Default::default(),
                 }
                 .fixed(),
             );
@@ -208,12 +208,24 @@ impl Analyzer<'_, '_> {
         if should_be_any && !self.ctx.prefer_tuple {
             elements.iter_mut().for_each(|el| {
                 let span = el.ty.span().with_ctxt(SyntaxContext::empty());
-                let span = marks.implicit_type_mark.apply_to_span(span);
-                el.ty = box Type::any(span);
+                el.ty = box Type::any(
+                    span,
+                    KeywordTypeMetadata {
+                        common: CommonTypeMetadata {
+                            implicit: true,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
+                );
             });
         }
 
-        return Ok(Type::Tuple(Tuple { span, elems: elements }));
+        return Ok(Type::Tuple(Tuple {
+            span,
+            elems: elements,
+            metadata: Default::default(),
+        }));
     }
 }
 
@@ -234,9 +246,10 @@ impl Analyzer<'_, '_> {
             return Ok(iterator);
         }
         if iterator.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
-            return Ok(Cow::Owned(Type::Keyword(RTsKeywordType {
+            return Ok(Cow::Owned(Type::Keyword(KeywordType {
                 span,
                 kind: TsKeywordTypeKind::TsStringKeyword,
+                metadata: Default::default(),
             })));
         }
 
@@ -278,9 +291,10 @@ impl Analyzer<'_, '_> {
 
                 if !errors.is_empty() {
                     if can_use_undefined && errors.len() != u.types.len() {
-                        types.push(Type::Keyword(RTsKeywordType {
+                        types.push(Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            metadata: Default::default(),
                         }));
                         types.dedup_type();
                         return Ok(Cow::Owned(Type::union(types)));
@@ -379,7 +393,13 @@ impl Analyzer<'_, '_> {
                 Type::Union(u) => {
                     u.types.retain(|ty| !ty.is_any());
                     if u.types.is_empty() {
-                        u.types = vec![Type::any(u.span)]
+                        u.types = vec![Type::any(
+                            u.span,
+                            KeywordTypeMetadata {
+                                common: u.metadata.common,
+                                ..Default::default()
+                            },
+                        )]
                     }
                 }
                 _ => {}
@@ -417,6 +437,7 @@ impl Analyzer<'_, '_> {
                     ty: box Type::Symbol(Symbol {
                         span,
                         id: SymbolId::async_iterator(),
+                        metadata: Default::default(),
                     }),
                 }),
                 None,
@@ -513,7 +534,13 @@ impl Analyzer<'_, '_> {
                 Type::Union(u) => {
                     u.types.retain(|ty| !ty.is_any());
                     if u.types.is_empty() {
-                        u.types = vec![Type::any(u.span)]
+                        u.types = vec![Type::any(
+                            u.span,
+                            KeywordTypeMetadata {
+                                common: u.metadata.common,
+                                ..Default::default()
+                            },
+                        )]
                     }
                 }
                 _ => {}
@@ -537,8 +564,8 @@ impl Analyzer<'_, '_> {
             let ty = iterator.into_owned().foldable().tuple().unwrap();
 
             return Ok(Cow::Owned(Type::Tuple(Tuple {
-                span: ty.span,
                 elems: ty.elems.into_iter().skip(start_index).collect(),
+                ..ty
             })));
         }
 
@@ -633,27 +660,27 @@ impl Analyzer<'_, '_> {
                     return self.get_iterator(span, ty, opts);
                 }
 
-                Type::Keyword(RTsKeywordType {
+                Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBigIntKeyword,
                     ..
                 })
-                | Type::Keyword(RTsKeywordType {
+                | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::Number(..),
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::BigInt(..),
                     ..
                 })
-                | Type::Lit(RTsLitType {
+                | Type::Lit(LitType {
                     lit: RTsLit::Bool(..), ..
                 }) => return Err(Error::NotArrayType { span }),
 
@@ -671,7 +698,11 @@ impl Analyzer<'_, '_> {
                             }
                             _ => err,
                         })?;
-                    let new = Type::Union(Union { span: u.span, types });
+                    let new = Type::Union(Union {
+                        span: u.span,
+                        types,
+                        metadata: u.metadata,
+                    });
                     return Ok(Cow::Owned(new));
                 }
                 Type::Intersection(i) => {
@@ -681,7 +712,11 @@ impl Analyzer<'_, '_> {
                         .map(|v| self.get_iterator(v.span(), Cow::Borrowed(v), opts))
                         .map(|res| res.map(Cow::into_owned))
                         .collect::<Result<_, _>>()?;
-                    let new = Type::Intersection(Intersection { span: i.span, types });
+                    let new = Type::Intersection(Intersection {
+                        span: i.span,
+                        types,
+                        metadata: i.metadata,
+                    });
                     return Ok(Cow::Owned(new));
                 }
                 _ => {}
@@ -699,6 +734,7 @@ impl Analyzer<'_, '_> {
                     ty: box Type::Symbol(Symbol {
                         span,
                         id: SymbolId::iterator(),
+                        metadata: Default::default(),
                     }),
                 }),
                 None,
@@ -751,9 +787,10 @@ impl Analyzer<'_, '_> {
         })?;
 
         if iterator.is_str() {
-            return Ok(Cow::Owned(Type::Keyword(RTsKeywordType {
+            return Ok(Cow::Owned(Type::Keyword(KeywordType {
                 span: iterator.span(),
                 kind: TsKeywordTypeKind::TsStringKeyword,
+                metadata: Default::default(),
             })));
         }
 
@@ -761,13 +798,21 @@ impl Analyzer<'_, '_> {
             Type::Array(arr) => return Ok(Cow::Owned(*arr.elem_type.clone())),
             Type::Tuple(tuple) => {
                 if tuple.elems.is_empty() {
-                    return Ok(Cow::Owned(Type::any(tuple.span)));
+                    return Ok(Cow::Owned(Type::any(
+                        tuple.span,
+                        KeywordTypeMetadata {
+                            common: tuple.metadata.common,
+                        },
+                    )));
                 }
                 let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect_vec();
                 return Ok(Cow::Owned(
                     Type::Union(Union {
                         span: tuple.span,
                         types,
+                        metadata: UnionMetadata {
+                            common: tuple.metadata.common,
+                        },
                     })
                     .fixed(),
                 ));
@@ -782,7 +827,14 @@ impl Analyzer<'_, '_> {
                     .map(|ty| ty.map(Cow::into_owned))
                     .collect::<Result<Vec<_>, _>>()?;
 
-                return Ok(Cow::Owned(Type::Union(Union { span: u.span, types }).fixed()));
+                return Ok(Cow::Owned(
+                    Type::Union(Union {
+                        span: u.span,
+                        types,
+                        metadata: u.metadata,
+                    })
+                    .fixed(),
+                ));
             }
 
             Type::Intersection(i) => {
@@ -796,7 +848,11 @@ impl Analyzer<'_, '_> {
                     .collect::<Result<Vec<_>, _>>()?;
                 types.dedup_type();
 
-                return Ok(Cow::Owned(Type::Intersection(Intersection { span: i.span, types })));
+                return Ok(Cow::Owned(Type::Intersection(Intersection {
+                    span: i.span,
+                    types,
+                    metadata: i.metadata,
+                })));
             }
 
             _ => {}

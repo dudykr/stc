@@ -20,14 +20,14 @@ use stc_ts_ast_rnode::{
     RArrowExpr, RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp,
     RComputedPropName, RConstructor, RDecl, RExpr, RExprOrSuper, RFunction, RIdent, RLit, RMemberExpr, RParam,
     RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RSeqExpr, RStmt, RSuper, RTsEntityName,
-    RTsFnParam, RTsKeywordType, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl,
-    RVarDeclarator,
+    RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
-    Accessor, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, ConstructorSignature, FnParam, Id,
-    Intersection, Key, Method, Operator, QueryExpr, QueryType, Ref, TsExpr, Type,
+    Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
+    Id, Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetdata,
+    Ref, TsExpr, Type,
 };
 use stc_utils::{AHashSet, TryOpt};
 use std::{
@@ -83,9 +83,10 @@ impl Analyzer<'_, '_> {
                                     ..Default::default()
                                 },
                                 &ty,
-                                &Type::Keyword(RTsKeywordType {
+                                &Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    metadata: Default::default(),
                                 }),
                             )
                             .is_err()
@@ -122,10 +123,12 @@ impl Analyzer<'_, '_> {
             Type::Symbol(..) if readonly && is_static => Type::Operator(Operator {
                 span: ty.span(),
                 op: TsTypeOperatorOp::Unique,
-                ty: box Type::Keyword(RTsKeywordType {
+                ty: box Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsSymbolKeyword,
+                    metadata: Default::default(),
                 }),
+                metadata: OperatorMetadata { common: ty.metadata() },
             }),
             _ => ty,
         }))
@@ -172,7 +175,7 @@ impl Analyzer<'_, '_> {
                 if p.type_ann.is_none() {
                     if let Some(m) = &mut self.mutations {
                         m.for_class_props.entry(p.node_id).or_default().ty =
-                            value.clone().map(|ty| ty.generalize_lit(marks));
+                            value.clone().map(|ty| ty.generalize_lit());
                     }
                 }
             }
@@ -245,7 +248,7 @@ impl Analyzer<'_, '_> {
             && self.ctx.in_class_with_super
             && c.body.is_some()
             && match super_class.map(Type::normalize) {
-                Some(Type::Keyword(RTsKeywordType {
+                Some(Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 })) => false,
@@ -387,7 +390,7 @@ impl Analyzer<'_, '_> {
                     span: p.span,
                     required: !i.id.optional,
                     pat: RPat::Ident(i.clone()),
-                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span)),
+                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span, Default::default())),
                 })
             }
             RTsParamPropParam::Assign(RAssignPat {
@@ -430,7 +433,7 @@ impl Analyzer<'_, '_> {
                     span: p.span,
                     required: !i.id.optional,
                     pat: RPat::Ident(i.clone()),
-                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span)),
+                    ty: box ty.unwrap_or_else(|| Type::any(i.id.span, Default::default())),
                 })
             }
             _ => unreachable!(),
@@ -458,7 +461,7 @@ impl Analyzer<'_, '_> {
                     None => {
                         let e: Option<_> = $e.validate_with(self).try_opt()?;
                         box e.unwrap_or_else(|| {
-                            let mut ty = Type::any(span);
+                            let mut ty = Type::any(span, Default::default());
                             self.mark_as_implicitly_typed(&mut ty);
                             ty
                         })
@@ -550,7 +553,7 @@ impl Analyzer<'_, '_> {
                     params,
                     box declared_ret_ty
                         .or_else(|| inferred_ret_ty)
-                        .unwrap_or_else(|| Type::any(key_span)),
+                        .unwrap_or_else(|| Type::any(key_span, Default::default())),
                 ))
             },
         )?;
@@ -716,14 +719,15 @@ impl Analyzer<'_, '_> {
         }
 
         let ret_ty = box declared_ret_ty.unwrap_or_else(|| {
-            inferred_ret_ty.map(|ty| ty.generalize_lit(marks)).unwrap_or_else(|| {
-                Type::Keyword(RTsKeywordType {
+            inferred_ret_ty.map(|ty| ty.generalize_lit()).unwrap_or_else(|| {
+                Type::Keyword(KeywordType {
                     span: c_span,
                     kind: if c.function.body.is_some() {
                         TsKeywordTypeKind::TsVoidKeyword
                     } else {
                         TsKeywordTypeKind::TsAnyKeyword
                     },
+                    metadata: Default::default(),
                 })
             })
         });
@@ -732,7 +736,7 @@ impl Analyzer<'_, '_> {
             let node_id = c.function.node_id;
 
             let ret_ty = if self.may_generalize(&ret_ty) {
-                ret_ty.clone().generalize_lit(marks)
+                ret_ty.clone().generalize_lit()
             } else {
                 *ret_ty.clone()
             };
@@ -1299,7 +1303,7 @@ impl Analyzer<'_, '_> {
 
                 errors.push(err);
 
-                Type::any(span)
+                Type::any(span, Default::default())
             }
         };
 
@@ -1308,7 +1312,7 @@ impl Analyzer<'_, '_> {
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::Unique,
                 ty:
-                    box Type::Keyword(RTsKeywordType {
+                    box Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
                     }),
@@ -1345,6 +1349,10 @@ impl Analyzer<'_, '_> {
         let class_ty = Type::Class(Class {
             span: class.span,
             def: box class.clone(),
+            metadata: ClassMetadata {
+                common: class.metadata.common,
+                ..Default::default()
+            },
         });
 
         for parent in &*class.implements {
@@ -1595,7 +1603,7 @@ impl Analyzer<'_, '_> {
                 child.scope.this_class_name = name.clone();
 
                 // We handle type parameters first.
-                let type_params = try_opt!(c.type_params.validate_with(child));
+                let type_params = try_opt!(c.type_params.validate_with(child)).map(Box::new);
                 child.resolve_parent_interfaces(&c.implements);
 
                 let super_class = {
@@ -1613,15 +1621,15 @@ impl Analyzer<'_, '_> {
 
                             child.validate_with(|a| match super_ty.normalize() {
                                 Type::Lit(..)
-                                | Type::Keyword(RTsKeywordType {
+                                | Type::Keyword(KeywordType {
                                     kind: TsKeywordTypeKind::TsStringKeyword,
                                     ..
                                 })
-                                | Type::Keyword(RTsKeywordType {
+                                | Type::Keyword(KeywordType {
                                     kind: TsKeywordTypeKind::TsNumberKeyword,
                                     ..
                                 })
-                                | Type::Keyword(RTsKeywordType {
+                                | Type::Keyword(KeywordType {
                                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                                     ..
                                 }) => Err(Error::InvalidSuperClass { span: super_ty.span() }),
@@ -1658,6 +1666,10 @@ impl Analyzer<'_, '_> {
                                                                     expr: box QueryExpr::TsEntityName(
                                                                         id.clone().into(),
                                                                     ),
+                                                                    metadata: QueryTypeMetdata {
+                                                                        common: c.metadata.common,
+                                                                        ..Default::default()
+                                                                    },
                                                                 })
                                                             })
                                                             .expect("Super class should be named");
@@ -1718,6 +1730,7 @@ impl Analyzer<'_, '_> {
                                         type_name: RTsEntityName::Ident(new_ty),
                                         // TODO: Handle type parameters
                                         type_args: None,
+                                        metadata: Default::default(),
                                     }))
                                 }
                                 _ => Some(box super_ty),
@@ -1827,7 +1840,7 @@ impl Analyzer<'_, '_> {
                                         declared_static_keys.push(key.into_owned());
                                     }
 
-                                    let member = member.fold_with(&mut LitGeneralizer { marks });
+                                    let member = member.fold_with(&mut LitGeneralizer {});
                                     child.scope.this_class_members.push((index, member));
                                 }
                             }
@@ -1895,7 +1908,7 @@ impl Analyzer<'_, '_> {
                                             let mut ty = type_ann.clone().or_else(|| i.type_ann.clone());
                                             let mut ty = try_opt!(ty.validate_with(child));
                                             if ty.is_none() {
-                                                ty = Some(right.validate_with_default(child)?.generalize_lit(marks));
+                                                ty = Some(right.validate_with_default(child)?.generalize_lit());
                                             }
                                             (i, ty)
                                         }
@@ -1952,7 +1965,7 @@ impl Analyzer<'_, '_> {
                                         declared_instance_keys.push(key.into_owned());
                                     }
 
-                                    let member = member.fold_with(&mut LitGeneralizer { marks });
+                                    let member = member.fold_with(&mut LitGeneralizer);
                                     child.scope.this_class_members.push((index, member));
                                 }
                             }
@@ -2036,6 +2049,7 @@ impl Analyzer<'_, '_> {
                     type_params,
                     body,
                     implements,
+                    metadata: Default::default(),
                 };
 
                 child
@@ -2066,7 +2080,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
-                Type::any(c.span())
+                Type::any(c.span(), Default::default())
             }
         };
 
@@ -2333,10 +2347,13 @@ impl Analyzer<'_, '_> {
 
     /// TODO: Instantate fully
     pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> ValidationResult {
+        let span = span.with_ctxt(SyntaxContext::empty());
+
         Ok(match ty.normalize() {
             Type::ClassDef(def) => Type::Class(Class {
                 span,
                 def: box def.clone(),
+                metadata: Default::default(),
             }),
             _ => ty.clone(),
         })
@@ -2350,7 +2367,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => ty.into(),
             Err(err) => {
                 self.storage.report(err);
-                Type::any(c.span())
+                Type::any(c.span(), Default::default())
             }
         };
         let ty = ty.cheap();

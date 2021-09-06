@@ -1,4 +1,4 @@
-use crate::TypeParamInstantiation;
+use crate::{IntrinsicMetadata, TypeParamInstantiation};
 use is_macro::Is;
 use stc_visit::Visit;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq};
@@ -8,6 +8,7 @@ pub struct Intrinsic {
     pub span: Span,
     pub kind: IntrinsicKind,
     pub type_args: TypeParamInstantiation,
+    pub metadata: IntrinsicMetadata,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Is, EqIgnoreSpan, TypeEq, Visit)]

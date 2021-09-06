@@ -8,12 +8,14 @@ use crate::{
 };
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{
-    RDoWhileStmt, RExpr, RForInStmt, RForOfStmt, RIdent, RPat, RStmt, RTsEntityName, RTsKeywordType, RVarDecl,
-    RVarDeclOrPat, RWhileStmt,
+    RDoWhileStmt, RExpr, RForInStmt, RForOfStmt, RIdent, RPat, RStmt, RTsEntityName, RVarDecl, RVarDeclOrPat,
+    RWhileStmt,
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Id, ModuleId, Operator, Ref, TypeParamInstantiation};
+use stc_ts_types::{
+    Id, KeywordType, KeywordTypeMetadata, ModuleId, Operator, Ref, RefMetadata, TypeParamInstantiation,
+};
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, DUMMY_SP};
@@ -197,9 +199,13 @@ impl Analyzer<'_, '_> {
         let rhs = rhs.normalize();
 
         if rhs.is_kwd(TsKeywordTypeKind::TsObjectKeyword) || rhs.is_array() || rhs.is_tuple() {
-            return Ok(Type::Keyword(RTsKeywordType {
+            return Ok(Type::Keyword(KeywordType {
                 span: rhs.span(),
                 kind: TsKeywordTypeKind::TsStringKeyword,
+                metadata: KeywordTypeMetadata {
+                    common: rhs.metadata(),
+                    ..Default::default()
+                },
             }));
         }
 
@@ -226,12 +232,20 @@ impl Analyzer<'_, '_> {
                             span: DUMMY_SP,
                             params: vec![
                                 contraint.clone(),
-                                Type::Keyword(RTsKeywordType {
+                                Type::Keyword(KeywordType {
                                     span: rhs.span(),
                                     kind: TsKeywordTypeKind::TsStringKeyword,
+                                    metadata: KeywordTypeMetadata {
+                                        common: rhs.metadata(),
+                                        ..Default::default()
+                                    },
                                 }),
                             ],
                         }),
+                        metadata: RefMetadata {
+                            common: m.metadata.common,
+                            ..Default::default()
+                        },
                     }));
                 }
 
@@ -243,13 +257,21 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let s = Type::Keyword(RTsKeywordType {
+        let s = Type::Keyword(KeywordType {
             span: rhs.span(),
             kind: TsKeywordTypeKind::TsStringKeyword,
+            metadata: KeywordTypeMetadata {
+                common: rhs.metadata(),
+                ..Default::default()
+            },
         });
-        let n = Type::Keyword(RTsKeywordType {
+        let n = Type::Keyword(KeywordType {
             span: rhs.span(),
             kind: TsKeywordTypeKind::TsNumberKeyword,
+            metadata: KeywordTypeMetadata {
+                common: rhs.metadata(),
+                ..Default::default()
+            },
         });
         Ok(Type::union(vec![s, n]))
     }
@@ -309,7 +331,9 @@ impl Analyzer<'_, '_> {
                 let rty = rhs
                     .validate_with_default(&mut *child.with_ctx(rhs_ctx))
                     .context("tried to validate rhs of a for in/of loop");
-                let rty = rty.report(&mut child.storage).unwrap_or_else(|| Type::any(span));
+                let rty = rty
+                    .report(&mut child.storage)
+                    .unwrap_or_else(|| Type::any(span, Default::default()));
 
                 match kind {
                     ForHeadKind::Of { is_awaited: false } => {
@@ -343,20 +367,20 @@ impl Analyzer<'_, '_> {
                         })
                         .context("tried to get the element type of an iterator to calculate type for a for-of loop")
                         .report(&mut child.storage)
-                        .unwrap_or_else(|| Cow::Owned(Type::any(span))),
+                        .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),
 
                     ForHeadKind::Of { is_awaited: true } => child
                         .get_async_iterator_elem_type(rhs.span(), Cow::Owned(rty))
                         .context("tried to get element type of an async iteratror")
                         .report(&mut child.storage)
-                        .unwrap_or_else(|| Cow::Owned(Type::any(span))),
+                        .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),
 
                     ForHeadKind::In => Cow::Owned(
                         child
                             .get_element_type_of_for_in(&rty)
                             .context("tried to calculate the element type for a for-in loop")
                             .report(&mut child.storage)
-                            .unwrap_or_else(|| Type::any(span)),
+                            .unwrap_or_else(|| Type::any(span, Default::default())),
                     ),
                 };
 

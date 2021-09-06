@@ -1,7 +1,6 @@
 use crate::{
     analyzer::{
         expr::{IdCtx, TypeOfMode},
-        marks::MarkExt,
         pat::PatMode,
         scope::ScopeKind,
         util::ResultExt,
@@ -16,11 +15,11 @@ use itertools::{EitherOrBoth, Itertools};
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RAssignProp, RComputedPropName, RExpr, RExprOrSuper, RGetterProp, RIdent, RKeyValueProp, RLit, RMemberExpr,
-    RMethodProp, RNumber, RPrivateName, RProp, RPropName, RSetterProp, RStr, RTsKeywordType,
+    RMethodProp, RNumber, RPrivateName, RProp, RPropName, RSetterProp, RStr,
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Accessor, ComputedKey, Key, PrivateName, TypeParam};
+use stc_ts_types::{Accessor, ComputedKey, Key, KeywordType, PrivateName, TypeParam};
 use stc_ts_utils::PatExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
@@ -111,7 +110,7 @@ impl Analyzer<'_, '_> {
 
                     errors.push(err);
                     // TODO: Change this to something else (maybe any)
-                    Type::unknown(span)
+                    Type::unknown(span, Default::default())
                 }
             };
 
@@ -166,7 +165,7 @@ impl Analyzer<'_, '_> {
 
             if check_for_validity && check_for_symbol_form && is_symbol_access {
                 match ty.normalize() {
-                    Type::Keyword(RTsKeywordType {
+                    Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
                     })
@@ -190,10 +189,10 @@ impl Analyzer<'_, '_> {
             }
 
             // match *ty {
-            //     Type::Lit(RTsLitType {
+            //     Type::Lit(LitType {
             //         lit: RTsLit::Number(n), ..
             //     }) => return Ok(Key::Num(n)),
-            //     Type::Lit(RTsLitType {
+            //     Type::Lit(LitType {
             //         lit: RTsLit::Str(s), ..
             //     }) => {
             //         return Ok(Key::Normal {
@@ -282,9 +281,11 @@ impl Analyzer<'_, '_> {
 
     #[instrument(skip(self, span, ty))]
     fn is_type_valid_for_computed_key(&mut self, span: Span, ty: &Type) -> bool {
-        let marks = self.marks();
+        if ty.metadata().resolved_from_var && ty.normalize().is_lit() {
+            return true;
+        }
 
-        let ty = ty.clone().generalize_lit(marks);
+        let ty = ty.clone().generalize_lit();
 
         match ty.normalize() {
             Type::Function(..) => return false,
@@ -299,27 +300,28 @@ impl Analyzer<'_, '_> {
                 return true;
             }
         };
+
         match ty.normalize() {
-            Type::Keyword(RTsKeywordType {
+            Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNumberKeyword,
                 ..
             })
-            | Type::Keyword(RTsKeywordType {
+            | Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                 ..
             })
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::Unique,
                 ty:
-                    box Type::Keyword(RTsKeywordType {
+                    box Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
                     }),
@@ -462,7 +464,7 @@ impl Analyzer<'_, '_> {
                             key,
                             optional: false,
                             params: vec![param],
-                            type_ann: Some(box Type::any(param_span)),
+                            type_ann: Some(box Type::any(param_span, Default::default())),
                             type_params: Default::default(),
                             metadata: Default::default(),
                             accessor: Accessor {
@@ -542,20 +544,17 @@ impl Analyzer<'_, '_> {
                                     &body.stmts,
                                 )?
                                 .unwrap_or_else(|| {
-                                    Type::Keyword(RTsKeywordType {
+                                    Type::Keyword(KeywordType {
                                         span: body.span,
                                         kind: TsKeywordTypeKind::TsVoidKeyword,
+                                        metadata: Default::default(),
                                     })
                                 });
 
                             // Preserve return type if `this` is not involved in return type.
                             if p.function.return_type.is_none() {
-                                inferred_ret_ty = if child
-                                    .marks()
-                                    .infected_by_this_in_object_literal
-                                    .is_marked(&inferred_ret_ty)
-                                {
-                                    Type::any(span)
+                                inferred_ret_ty = if inferred_ret_ty.metadata().infected_by_this_in_object_literal {
+                                    Type::any(span, Default::default())
                                 } else {
                                     inferred_ret_ty
                                 };
@@ -630,7 +629,7 @@ impl Analyzer<'_, '_> {
             type_ann: if computed {
                 type_ann.map(Box::new)
             } else {
-                Some(box Type::any(n.span))
+                Some(box Type::any(n.span, Default::default()))
             },
             type_params: Default::default(),
             metadata: Default::default(),

@@ -5,7 +5,7 @@ use crate::{
 };
 use stc_ts_errors::DebugExt;
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{Type, Union};
+use stc_ts_types::{KeywordTypeMetadata, Type, Union, UnionMetadata};
 use std::borrow::Cow;
 use swc_common::{Span, Spanned};
 
@@ -38,12 +38,19 @@ impl Analyzer<'_, '_> {
 
                 new_types.retain(|ty| !ty.is_never());
                 if new_types.is_empty() {
-                    return Ok(Type::never(actual.span));
+                    return Ok(Type::never(
+                        actual.span,
+                        KeywordTypeMetadata {
+                            common: actual.metadata.common,
+                            ..Default::default()
+                        },
+                    ));
                 }
 
                 return Ok(Type::Union(Union {
                     span: actual.span,
                     types: new_types,
+                    metadata: actual.metadata,
                 })
                 .fixed());
             }
@@ -65,12 +72,22 @@ impl Analyzer<'_, '_> {
 
                 new_types.retain(|ty| !ty.is_never());
                 if new_types.is_empty() {
-                    return Ok(Type::never(actual.span()));
+                    return Ok(Type::never(
+                        actual.span(),
+                        KeywordTypeMetadata {
+                            common: actual.metadata(),
+                            ..Default::default()
+                        },
+                    ));
                 }
 
                 Ok(Type::Union(Union {
                     span: actual.span(),
                     types: new_types,
+                    metadata: UnionMetadata {
+                        common: actual.metadata(),
+                        ..Default::default()
+                    },
                 })
                 .fixed())
             }
@@ -88,7 +105,13 @@ impl Analyzer<'_, '_> {
                     return Ok(declared);
                 }
 
-                Ok(Type::never(actual.span()))
+                Ok(Type::never(
+                    actual.span(),
+                    KeywordTypeMetadata {
+                        common: actual.metadata(),
+                        ..Default::default()
+                    },
+                ))
             }
         }
     }

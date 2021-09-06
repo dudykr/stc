@@ -8,34 +8,6 @@ use tracing::info;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Marks {
     pub(crate) top_level_mark: Mark,
-    /// If the mark is applied, it means that the literal should not be
-    /// generalized.
-    pub(crate) prevent_generalization_mark: Mark,
-
-    pub(crate) prevent_tuple_to_array: Mark,
-
-    /// If this mark is applied, type will not be inferred (based on constraint)
-    /// while simplifying.
-    pub(super) prevent_complex_simplification_mark: Mark,
-
-    pub(super) implicit_type_mark: Mark,
-
-    ///  WHen applied to a type, it prevents expansion of the type.
-    pub(super) no_expand_mark: Mark,
-
-    /// Has a precedence over `no_expand_mark`.
-    pub(super) ignore_no_expand_mark: Mark,
-
-    pub(super) contains_infer_type_mark: Mark,
-
-    pub(super) infected_by_this_in_object_literal: Mark,
-
-    pub(super) prevent_converting_to_children: Mark,
-
-    /// This mark is applied to types resolved from variables.
-    ///
-    /// Used to distinguish object literal with a reference to object literal.
-    pub(crate) resolved_from_var: Mark,
 }
 
 impl Marks {
@@ -52,16 +24,6 @@ impl Marks {
 
         swc_common::GLOBALS.set(globals, || Self {
             top_level_mark: m("top level"),
-            prevent_generalization_mark: m("no generalization"),
-            prevent_tuple_to_array: m("no tuple-to-array"),
-            prevent_complex_simplification_mark: m("no complex simplification"),
-            implicit_type_mark: m("implicit"),
-            no_expand_mark: m("no expand"),
-            contains_infer_type_mark: m("infer type container"),
-            ignore_no_expand_mark: m("ignore no-expand"),
-            infected_by_this_in_object_literal: m("infected by this"),
-            prevent_converting_to_children: m("prevent conversion to children"),
-            resolved_from_var: m("resolved from var"),
         })
     }
 }
