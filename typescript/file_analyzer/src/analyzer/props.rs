@@ -298,9 +298,7 @@ impl Analyzer<'_, '_> {
                 return true;
             }
         };
-        if ty.is_str() || ty.is_num() || ty.is_bool() {
-            return true;
-        }
+
         match ty.normalize() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
