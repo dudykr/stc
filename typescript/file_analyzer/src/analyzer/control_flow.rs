@@ -23,7 +23,7 @@ use stc_ts_errors::{DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
 use stc_ts_utils::MapWithMut;
-use stc_utils::ext::SpanExt;
+use stc_utils::{cache::Freeze, ext::SpanExt, panic_context};
 use std::{
     borrow::{Borrow, Cow},
     collections::hash_map::Entry,
@@ -745,9 +745,13 @@ impl Analyzer<'_, '_> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let is_in_loop = self.scope.is_in_loop_body();
-        let ty = self
+        let mut ty = self
             .normalize(Some(ty.span().or_else(|| span)), Cow::Borrowed(ty), Default::default())
-            .context("tried to normalize a type to assign it to a pattern")?;
+            .context("tried to normalize a type to assign it to a pattern")?
+            .into_owned();
+        ty.make_clone_cheap();
+        let _panic_ctx = panic_context::enter(format!("ty = {:?}", ty));
+
         let ty = ty.normalize();
 
         ty.assert_valid();
@@ -779,7 +783,11 @@ impl Analyzer<'_, '_> {
             RPat::Ident(i) => {
                 // Verify using immutable references.
                 if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
-                    if let Some(var_ty) = var_info.ty.clone() {
+                    if let Some(mut var_ty) = var_info.ty.clone() {
+                        let _panic_ctx = panic_context::enter(format!("var_ty = {:?}", var_ty));
+
+                        var_ty.make_clone_cheap();
+
                         self.assign_with_opts(
                             &mut Default::default(),
                             AssignOpts {
