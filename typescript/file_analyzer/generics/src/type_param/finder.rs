@@ -1,6 +1,7 @@
 use fxhash::FxHashSet;
 use rnode::{Visit, VisitWith};
 use stc_ts_types::{Id, TypeParam, TypeParamDecl};
+use stc_utils::cache::ALLOW_DEEP_CLONE;
 
 #[derive(Debug, Default)]
 pub struct TypeParamDeclFinder {
@@ -37,6 +38,6 @@ impl Visit<TypeParam> for TypeParamUsageFinder {
 
         // info!( "Found type parameter({})", node.name);
 
-        self.params.push(node.clone());
+        self.params.push(ALLOW_DEEP_CLONE.set(&(), || node.clone()));
     }
 }
