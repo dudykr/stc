@@ -1055,6 +1055,16 @@ pub struct TypeOrSpread {
 
 pub trait TypeIterExt {}
 
+struct AssertCloneCheap;
+
+impl Visit<Type> for AssertCloneCheap {
+    fn visit(&mut self, ty: &Type) {
+        assert!(ty.is_clone_cheap());
+
+        ty.visit_children_with(self);
+    }
+}
+
 impl Type {
     #[cfg_attr(not(debug_assertions), inline(always))]
     pub fn assert_clone_cheap(&self) {
@@ -1062,7 +1072,7 @@ impl Type {
             return;
         }
 
-        assert!(self.is_clone_cheap());
+        self.visit_with(&mut AssertCloneCheap);
     }
 
     pub fn intersection<I>(span: Span, iter: I) -> Self
