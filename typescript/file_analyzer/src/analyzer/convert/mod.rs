@@ -29,7 +29,7 @@ use stc_ts_types::{
     TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
-use stc_utils::{error, AHashSet};
+use stc_utils::{cache::Freeze, error, AHashSet};
 use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -650,6 +650,7 @@ impl Analyzer<'_, '_> {
             }
 
             let mut params: Vec<_> = t.params.validate_with(child)?;
+            params.make_clone_cheap();
 
             let mut ret_ty = box t.type_ann.validate_with(child)?;
 
