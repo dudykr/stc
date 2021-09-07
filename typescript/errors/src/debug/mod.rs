@@ -33,9 +33,7 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
                 span: DUMMY_SP,
                 expr: box Expr::Ident(Ident::new("TYPE".into(), DUMMY_SP)),
                 type_ann: box RTsType::from(
-                    ALLOW_DEEP_CLONE
-                        .set(&(), || t.clone())
-                        .fold_with(&mut Visualizer::default()),
+                    ALLOW_DEEP_CLONE.set(&(), || t.clone().fold_with(&mut Visualizer::default())),
                 )
                 .into_orig(),
             }),
