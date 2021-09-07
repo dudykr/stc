@@ -261,6 +261,7 @@ impl Analyzer<'_, '_> {
                         value_ty.assert_valid();
                         value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
                         value_ty.assert_valid();
+                        value_ty.make_clone_cheap();
 
                         let opts = AssignOpts {
                             span: v_span,
