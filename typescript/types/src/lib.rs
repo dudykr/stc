@@ -229,7 +229,7 @@ impl Clone for Type {
                     }};
                 }
 
-                if cfg!(debug_assertions) && !self.is_clone_cheap() {
+                if cfg!(debug_assertions) && self.span() != DUMMY_SP && !self.is_clone_cheap() {
                     let _panic_ctx = panic_context::enter(format!("{:?}", self));
 
                     if DEEP.is_set() {
