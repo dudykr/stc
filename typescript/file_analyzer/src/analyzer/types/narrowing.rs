@@ -6,6 +6,7 @@ use crate::{
 use stc_ts_errors::DebugExt;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{KeywordTypeMetadata, Type, Union, UnionMetadata};
+use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_common::{Span, Spanned};
 
@@ -19,12 +20,15 @@ impl Analyzer<'_, '_> {
         declared.assert_valid();
         actual.assert_valid();
 
-        let declared = self
+        let mut declared = self
             .normalize(Some(span), Cow::Owned(declared), Default::default())
             .context("tried to normalize decalred type")?;
-        let actual = self
+        declared.make_clone_cheap();
+
+        let mut actual = self
             .normalize(Some(span), Cow::Borrowed(&actual), Default::default())
             .context("tried to normalize decalred type")?;
+        actual.make_clone_cheap();
 
         match actual.normalize() {
             Type::Union(actual) => {
