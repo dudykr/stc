@@ -69,7 +69,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn normalize<'a>(
         &mut self,
         span: Option<Span>,
-        ty: Cow<'a, Type>,
+        mut ty: Cow<'a, Type>,
         mut opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
         let res = (|| {
@@ -108,6 +108,10 @@ impl Analyzer<'_, '_> {
                 | Type::Module(_)
                 | Type::Tpl(..) => return Ok(ty),
                 _ => {}
+            }
+
+            if ty.normalize().is_conditional() {
+                ty.make_clone_cheap();
             }
 
             {
@@ -338,7 +342,10 @@ impl Analyzer<'_, '_> {
                                             *check_type_constraint = box new;
 
                                             let mut params = HashMap::default();
-                                            params.insert(name.clone(), check_type.clone().fixed().cheap());
+                                            params.insert(
+                                                name.clone(),
+                                                ALLOW_DEEP_CLONE.set(&(), || check_type.clone().fixed().cheap()),
+                                            );
                                             let c = self.expand_type_params(&params, c.clone(), Default::default())?;
                                             let c = Type::Conditional(c);
                                             c.assert_valid();
