@@ -371,6 +371,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Handles `infer U`.
+    #[instrument(skip(self, span, base, concrete, opts))]
     pub(super) fn infer_ts_infer_types(
         &mut self,
         span: Span,

@@ -2551,6 +2551,9 @@ impl Expander<'_, '_, '_> {
                 metadata,
                 ..
             }) => {
+                extends_type.make_clone_cheap();
+                check_type.make_clone_cheap();
+
                 // We need to handle infer type.
                 let type_params = self
                     .analyzer
