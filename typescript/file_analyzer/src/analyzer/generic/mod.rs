@@ -22,7 +22,11 @@ use stc_ts_types::{
     TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
-use stc_utils::{cache::Freeze, error::context, stack};
+use stc_utils::{
+    cache::{Freeze, ALLOW_DEEP_CLONE},
+    error::context,
+    stack,
+};
 use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -1631,7 +1635,11 @@ impl Analyzer<'_, '_> {
                                         metadata: Default::default(),
                                     });
                                     arg_prop_ty.make_clone_cheap();
-                                    let type_ann = if let Some(param_ty) = param.ty.as_ref() {
+                                    let type_ann = if let Some(param_ty) = ALLOW_DEEP_CLONE.set(&(), || {
+                                        let mut ty = param.ty.clone();
+                                        ty.make_clone_cheap();
+                                        ty
+                                    }) {
                                         let old = take(&mut self.mapped_type_param_name);
                                         self.mapped_type_param_name = vec![name.clone()];
 
