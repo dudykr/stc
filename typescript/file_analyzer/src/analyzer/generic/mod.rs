@@ -1568,7 +1568,11 @@ impl Analyzer<'_, '_> {
                             match arg_member {
                                 TypeElement::Property(arg_prop) => {
                                     let type_ann: Option<_> = if let Some(arg_prop_ty) = &arg_prop.type_ann {
-                                        if let Some(param_ty) = &param.ty {
+                                        if let Some(param_ty) = ALLOW_DEEP_CLONE.set(&(), || {
+                                            let mut ty = param.ty.clone();
+                                            ty.make_clone_cheap();
+                                            ty
+                                        }) {
                                             let old = take(&mut self.mapped_type_param_name);
                                             self.mapped_type_param_name = vec![name.clone()];
 
