@@ -1,5 +1,8 @@
+use scoped_tls::scoped_thread_local;
 use std::borrow::Cow;
 use swc_common::TypeEq;
+
+scoped_thread_local!(pub static ALLOW_DEEP_CLONE: ());
 
 #[derive(Debug)]
 pub struct CacheMap<K, V>
@@ -107,7 +110,7 @@ where
         match self {
             Cow::Borrowed(v) => {
                 if !v.is_clone_cheap() {
-                    let mut v = v.clone();
+                    let mut v = ALLOW_DEEP_CLONE.set(&(), || v.clone());
                     v.make_clone_cheap();
                     *self = Cow::Owned(v);
                 }

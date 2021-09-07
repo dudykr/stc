@@ -26,7 +26,11 @@ use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
     RTsKeywordType, RTsLit, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
-use stc_utils::{cache::Freeze, error::context, panic_context};
+use stc_utils::{
+    cache::{Freeze, ALLOW_DEEP_CLONE},
+    error::context,
+    panic_context,
+};
 use stc_visit::{Visit, Visitable};
 use std::{
     self,
@@ -55,8 +59,6 @@ mod metadata;
 pub mod module_id;
 pub mod name;
 pub mod type_id;
-
-scoped_thread_local!(pub static ALLOW_DEEP_CLONE: ());
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum IdCtx {
