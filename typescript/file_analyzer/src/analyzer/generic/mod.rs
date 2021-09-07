@@ -1620,7 +1620,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 TypeElement::Method(arg_method) => {
-                                    let arg_prop_ty = Type::Function(Function {
+                                    let mut arg_prop_ty = Type::Function(Function {
                                         span: arg_method.span,
                                         type_params: arg_method.type_params.clone(),
                                         params: arg_method.params.clone(),
@@ -1630,6 +1630,7 @@ impl Analyzer<'_, '_> {
                                             .unwrap_or_else(|| box Type::any(arg_method.span, Default::default())),
                                         metadata: Default::default(),
                                     });
+                                    arg_prop_ty.make_clone_cheap();
                                     let type_ann = if let Some(param_ty) = param.ty.as_ref() {
                                         let old = take(&mut self.mapped_type_param_name);
                                         self.mapped_type_param_name = vec![name.clone()];
