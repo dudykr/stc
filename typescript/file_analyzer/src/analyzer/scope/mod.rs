@@ -31,7 +31,7 @@ use stc_ts_types::{
     Key, KeywordType, KeywordTypeMetadata, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement,
     TypeParam, TypeParamInstantiation,
 };
-use stc_utils::{error::context, stack};
+use stc_utils::{cache::Freeze, error::context, stack};
 use std::{
     borrow::Cow,
     collections::hash_map::Entry,
@@ -1986,12 +1986,16 @@ impl Expander<'_, '_, '_> {
                             })
                             | Type::ClassDef(ClassDef { type_params, .. }) => {
                                 let ty = t.clone().into_owned();
-                                let type_params = type_params.clone();
+                                let mut type_params = type_params.clone();
+                                type_params.make_clone_cheap();
 
                                 if let Some(type_params) = type_params {
-                                    let type_args: Option<_> = type_args.cloned().fold_with(self);
+                                    let mut type_args: Option<_> = type_args.cloned().fold_with(self);
+                                    type_args.make_clone_cheap();
 
-                                    info!("expand: expanding type parameters");
+                                    if cfg!(debug_assertions) {
+                                        info!("expand: expanding type parameters");
+                                    }
                                     let mut inferred = self.analyzer.infer_arg_types(
                                         self.span,
                                         type_args.as_ref(),
