@@ -25,6 +25,7 @@ use stc_ts_types::{
     QueryExpr, QueryType, Symbol, SymbolMetadata,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
+use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Spanned;
@@ -682,6 +683,8 @@ impl Analyzer<'_, '_> {
                             }
                             _ => {}
                         }
+
+                        ty.make_clone_cheap();
 
                         if !self.is_builtin {
                             // Report error if type is not found.
