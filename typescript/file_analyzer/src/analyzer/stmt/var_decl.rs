@@ -239,7 +239,7 @@ impl Analyzer<'_, '_> {
                         };
                         let ty = self.expand(span, ty, Default::default())?;
                         ty.assert_valid();
-                        let ty = (|| {
+                        let mut ty = (|| {
                             if !should_instantiate_type_ann(&ty) {
                                 return ty;
                             }
@@ -251,6 +251,7 @@ impl Analyzer<'_, '_> {
                             })
                         })();
                         ty.assert_valid();
+                        ty.make_clone_cheap();
                         self.report_error_for_invalid_rvalue(span, &v.name, &ty);
 
                         self.scope.this = Some(ty.clone().remove_falsy());
