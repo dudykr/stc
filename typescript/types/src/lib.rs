@@ -28,8 +28,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    error::context,
-    panic_context,
+    debug_ctx, panic_ctx,
 };
 use stc_visit::{Visit, Visitable};
 use std::{
@@ -238,7 +237,7 @@ impl Clone for Type {
                     && !self.is_clone_cheap()
                     && !ALLOW_DEEP_CLONE.is_set()
                 {
-                    let _panic_ctx = panic_context::enter(format!("{:?}", self));
+                    let _panic_ctx = panic_ctx!(format!("{:?}", self));
 
                     if DEEP.is_set() {
                         panic!("Deep clone of type is not allowed")
@@ -1123,7 +1122,7 @@ impl Type {
     ///
     ///  - never types are excluded.
     pub fn union<I: IntoIterator<Item = Self> + Debug>(iter: I) -> Self {
-        let _ctx = context(format!("Iterator: {:?}", iter));
+        let _ctx = debug_ctx!(format!("Iterator: {:?}", iter));
 
         let mut span = DUMMY_SP;
 
@@ -1598,7 +1597,7 @@ impl Type {
             return;
         }
 
-        let _ctx = context(format!("{:?}", self));
+        let _ctx = debug_ctx!(format!("{:?}", self));
 
         self.visit_with(&mut AssertValid);
     }
