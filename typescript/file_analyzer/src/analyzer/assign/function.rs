@@ -12,6 +12,7 @@ use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
+use stc_utils::{cache::Freeze, panic_context};
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
@@ -274,12 +275,18 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )?;
-                let new_r_params = self
+                let mut new_r_params = self
                     .expand_type_params(&map, r_params.to_vec(), Default::default())
                     .context("tried to expand type parameters of rhs as a step of function assignemnt")?;
-                let new_r_ret_ty = self
+                let mut new_r_ret_ty = self
                     .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
                     .context("tried to expand return type of rhs as a step of function assignemnt")?;
+
+                new_r_params.make_clone_cheap();
+                new_r_ret_ty.make_clone_cheap();
+
+                let _panic_ctx = panic_context::enter(format!("new_r_params = {:?}", new_r_params));
+                let _panic_ctx = panic_context::enter(format!("new_r_ret_ty = {:?}", new_r_ret_ty));
 
                 return self
                     .assign_to_fn_like(
