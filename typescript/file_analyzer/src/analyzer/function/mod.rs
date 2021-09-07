@@ -16,6 +16,7 @@ use stc_ts_types::{
     TypeElement, TypeLit,
 };
 use stc_ts_utils::PatExt;
+use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -160,7 +161,7 @@ impl Analyzer<'_, '_> {
                 &body.stmts
             )));
 
-            let inferred_return_type = match inferred_return_type {
+            let mut inferred_return_type = match inferred_return_type {
                 Some(Some(inferred_return_type)) => {
                     let mut inferred_return_type = match inferred_return_type {
                         Type::Ref(ty) => Type::Ref(child.qualify_ref_type_args(ty.span, ty)?),
@@ -234,6 +235,8 @@ impl Analyzer<'_, '_> {
                 }
                 None => Type::any(f.span, Default::default()),
             };
+
+            inferred_return_type.make_clone_cheap();
 
             if f.return_type.is_none() {
                 if let Some(m) = &mut child.mutations {
