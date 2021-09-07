@@ -2272,12 +2272,6 @@ impl TypeEq for Accessor {
     }
 }
 
-impl Freeze for Type {
-    fn make_clone_cheap(&mut self) {
-        self.make_cheap();
-    }
-}
-
 pub trait Valid: Sized + VisitWith<ValidityChecker> {
     #[instrument(skip(self))]
     fn is_valid(&self) -> bool {
@@ -2363,3 +2357,16 @@ impl Visit<Intersection> for ValidityChecker {
         ty.visit_children_with(self);
     }
 }
+
+macro_rules! impl_freeze {
+    ($T:ty) => {
+        impl Freeze for $T {
+            fn make_clone_cheap(&mut self) {
+                self.visit_mut_with(&mut CheapClone);
+            }
+        }
+    };
+}
+
+impl_freeze!(Type);
+impl_freeze!(FnParam);
