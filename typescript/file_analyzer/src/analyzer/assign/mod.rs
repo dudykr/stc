@@ -14,7 +14,7 @@ use stc_ts_types::{
     KeywordType, KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, Ref, ThisType, Tuple, Type,
     TypeElement, TypeLit, TypeParam,
 };
-use stc_utils::stack;
+use stc_utils::{cache::Freeze, stack};
 use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
@@ -755,6 +755,7 @@ impl Analyzer<'_, '_> {
                 let mut new_lhs = self
                     .expand_top_ref(span, Cow::Borrowed(to), Default::default())?
                     .into_owned();
+                new_lhs.make_clone_cheap();
                 // self.replace(&mut new_lhs, &[(to, &Type::any(span))]);
 
                 return self
