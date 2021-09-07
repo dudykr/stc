@@ -21,7 +21,7 @@ use stc_ts_types::{
     TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::MapWithMut;
-use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
+use stc_utils::{cache::ALLOW_DEEP_CLONE, error, error::context, ext::SpanExt, stack, TryOpt};
 use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
@@ -1592,7 +1592,7 @@ impl Analyzer<'_, '_> {
             self.exclude_type(span, mapped_ty.to_mut(), &excluded);
         }
 
-        *ty = mapped_ty.into_owned();
+        *ty = ALLOW_DEEP_CLONE.set(&(), || mapped_ty.into_owned());
         ty.fix();
     }
 

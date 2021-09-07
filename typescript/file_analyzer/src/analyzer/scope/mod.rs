@@ -31,7 +31,11 @@ use stc_ts_types::{
     Key, KeywordType, KeywordTypeMetadata, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement,
     TypeParam, TypeParamInstantiation,
 };
-use stc_utils::{cache::Freeze, error::context, stack};
+use stc_utils::{
+    cache::{Freeze, ALLOW_DEEP_CLONE},
+    error::context,
+    stack,
+};
 use std::{
     borrow::Cow,
     collections::hash_map::Entry,
@@ -752,10 +756,11 @@ impl Analyzer<'_, '_> {
             preserve_ret_ty: true,
             ..self.ctx
         };
+        let ty = ALLOW_DEEP_CLONE.set(&(), || ty.into_owned());
         self.with_ctx(ctx)
             .expand(
                 span,
-                ty.into_owned(),
+                ty,
                 ExpandOpts {
                     full: true,
                     expand_union: true,
