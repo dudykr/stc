@@ -5,6 +5,9 @@ name = "stc_ts_types"
 publish = false
 version = "0.0.0"
 
+[features]
+profile = []
+
 [lib]
 
 [dependencies]
