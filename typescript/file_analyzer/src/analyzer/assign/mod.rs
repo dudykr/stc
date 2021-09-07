@@ -14,7 +14,7 @@ use stc_ts_types::{
     KeywordType, KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, Ref, ThisType, Tuple, Type,
     TypeElement, TypeLit, TypeParam,
 };
-use stc_utils::{cache::Freeze, stack};
+use stc_utils::{cache::Freeze, panic_context, stack};
 use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
@@ -487,12 +487,17 @@ impl Analyzer<'_, '_> {
         let l = dump_type_as_string(&self.cm, &left);
         let r = dump_type_as_string(&self.cm, &right);
 
+        let _panic_ctx = panic_context::enter(format!("left = {}", l));
+        let _panic_ctx = panic_context::enter(format!("right = {}", r));
+
         if data
             .dejavu
             .iter()
             .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(&right))
         {
-            info!("[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
+            if cfg!(debug_assertions) {
+                info!("[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
+            }
             return Ok(());
         }
         let _stack = stack::track(opts.span)?;
