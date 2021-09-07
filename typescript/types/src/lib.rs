@@ -2374,9 +2374,30 @@ impl Visit<Intersection> for ValidityChecker {
     }
 }
 
+struct CheckCheapClone {
+    cheap: bool,
+}
+
+impl Visit<Type> for CheckCheapClone {
+    fn visit(&mut self, ty: &Type) {
+        if !ty.is_clone_cheap() {
+            self.cheap = false;
+            return;
+        }
+
+        ty.visit_children_with(self);
+    }
+}
+
 macro_rules! impl_freeze {
     ($T:ty) => {
         impl Freeze for $T {
+            fn is_clone_cheap(&self) -> bool {
+                let mut v = CheckCheapClone { cheap: true };
+                self.visit_with(&mut v);
+                v.cheap
+            }
+
             fn make_clone_cheap(&mut self) {
                 self.visit_mut_with(&mut CheapClone);
             }
