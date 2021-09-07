@@ -509,9 +509,10 @@ impl Analyzer<'_, '_> {
                 Ok(v) => v,
                 Err(()) => Type::any(span, Default::default()),
             };
+            rhs_ty.respan(e.right.span());
+            rhs_ty.make_cheap();
 
             analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
-            rhs_ty.respan(e.right.span());
 
             if let Some(span) = any_span {
                 return Ok(Type::any(span, Default::default()));
