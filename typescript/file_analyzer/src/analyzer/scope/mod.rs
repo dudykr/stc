@@ -1100,10 +1100,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Ok(ty) = self.env.get_global_type(DUMMY_SP, &name.sym()) {
-            return Ok(Some(ItemRef::Owned(vec![ty].into_iter())));
-        }
-
         if let Some(data) = self.imports.get(&(self.ctx.module_id, target)) {
             if let Some(types) = data.types.get(name.sym()) {
                 let types = types.clone();
