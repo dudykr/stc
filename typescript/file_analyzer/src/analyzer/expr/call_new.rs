@@ -2103,6 +2103,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        // Assertion about deep clone
+        if cfg!(debug_assertions) {
+            for p in params {
+                let _ = p.clone();
+            }
+        }
+
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let min_param: usize = params.iter().map(|v| &v.pat).map(count_required_pat).sum();
