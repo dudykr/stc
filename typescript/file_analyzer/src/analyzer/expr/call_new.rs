@@ -39,6 +39,7 @@ use stc_ts_types::{
     Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
+use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -446,6 +447,8 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )?;
+
+            callee_ty.make_clone_cheap();
 
             let expanded_ty = analyzer.extract(
                 span,
