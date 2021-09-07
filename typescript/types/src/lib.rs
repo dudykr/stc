@@ -26,7 +26,7 @@ use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
     RTsKeywordType, RTsLit, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
-use stc_utils::{cache::Freeze, error::context};
+use stc_utils::{cache::Freeze, error::context, panic_context};
 use stc_visit::{Visit, Visitable};
 use std::{
     self,
@@ -230,6 +230,8 @@ impl Clone for Type {
                 }
 
                 if cfg!(debug_assertions) && !self.is_clone_cheap() {
+                    let _panic_ctx = panic_context::enter(format!("{:?}", self));
+
                     if DEEP.is_set() {
                         panic!("Deep clone of type is not allowed")
                     }
