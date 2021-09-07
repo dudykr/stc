@@ -367,6 +367,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                             ty.assert_valid();
+                            ty.make_clone_cheap();
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
                                     let ret_ty = box f.ret_ty.clone().generalize_lit();
