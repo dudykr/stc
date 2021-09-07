@@ -2295,6 +2295,17 @@ pub struct ValidityChecker {
     valid: bool,
 }
 
+impl Visit<Type> for ValidityChecker {
+    fn visit(&mut self, ty: &Type) {
+        // Freezed types are valid.
+        if ty.is_arc() {
+            return;
+        }
+
+        ty.visit_children_with(self);
+    }
+}
+
 impl Visit<Union> for ValidityChecker {
     fn visit(&mut self, ty: &Union) {
         for (i, t1) in ty.types.iter().enumerate() {
