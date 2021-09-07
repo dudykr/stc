@@ -110,7 +110,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            if ty.normalize().is_conditional() {
+            if matches!(ty.normalize(), Type::Conditional(..) | Type::Array(..)) {
                 ty.make_clone_cheap();
             }
 
