@@ -229,7 +229,7 @@ impl Clone for Type {
                     }};
                 }
 
-                if cfg!(debug_assertions) {
+                if cfg!(debug_assertions) && !self.is_clone_cheap() {
                     if DEEP.is_set() {
                         panic!("Deep clone of type is not allowed")
                     }
