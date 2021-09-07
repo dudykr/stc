@@ -643,9 +643,10 @@ impl Analyzer<'_, '_> {
         debug!("[exprs/array] get_iterator({})", ty_str);
         ty.assert_valid();
 
-        let ty = self
+        let mut ty = self
             .normalize(Some(span), ty, Default::default())
             .context("tried to normalize type to get iterator")?;
+        ty.make_clone_cheap();
 
         let res: ValidationResult<_> = (|| {
             if ty.is_str() {

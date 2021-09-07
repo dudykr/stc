@@ -1596,7 +1596,7 @@ impl Analyzer<'_, '_> {
         };
 
         for excluded in excludes {
-            self.exclude_type(span, mapped_ty.to_mut(), &excluded);
+            self.exclude_type(span, ALLOW_DEEP_CLONE.set(&(), || mapped_ty.to_mut()), &excluded);
         }
 
         *ty = ALLOW_DEEP_CLONE.set(&(), || mapped_ty.into_owned());
