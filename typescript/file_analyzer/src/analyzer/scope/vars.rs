@@ -16,7 +16,7 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Array, Key, LitType, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::PatExt;
-use stc_utils::TryOpt;
+use stc_utils::{cache::Freeze, TryOpt};
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
@@ -93,10 +93,12 @@ impl Analyzer<'_, '_> {
         } {
             match ty.as_ref().map(Type::normalize) {
                 Some(ty @ Type::Ref(..)) => {
-                    let ty = self
+                    let mut ty = self
                         .expand_top_ref(ty.span(), Cow::Borrowed(&ty), Default::default())
                         .context("tried to expand reference to declare a complex variable")?
                         .into_owned();
+
+                    ty.make_clone_cheap();
 
                     return self.add_vars(pat, Some(ty), actual, default, opts);
                 }
