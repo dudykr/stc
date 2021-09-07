@@ -2597,10 +2597,19 @@ impl Analyzer<'_, '_> {
 
             for item in &expanded_param_types {
                 item.ty.assert_valid();
+
+                // Assertion for deep clones
+                if cfg!(debug_assertions) {
+                    let _ = item.ty.clone();
+                }
             }
 
             for item in spread_arg_types {
                 item.ty.assert_valid();
+
+                if cfg!(debug_assertions) {
+                    let _ = item.ty.clone();
+                }
             }
 
             self.validate_arg_types(&expanded_param_types, &spread_arg_types);
