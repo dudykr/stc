@@ -230,6 +230,7 @@ impl Analyzer<'_, '_> {
             Some(v) => {
                 let mut type_args = v.validate_with(self)?;
                 self.prevent_expansion(&mut type_args);
+                type_args.make_clone_cheap();
                 Some(type_args)
             }
             None => None,
@@ -243,7 +244,9 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let arg_types = self.validate_args(args)?;
+        let mut arg_types = self.validate_args(args)?;
+        arg_types.make_clone_cheap();
+
         let spread_arg_types = self
             .spread_args(&arg_types)
             .context("tried to handle spreads in arguments")?;
@@ -1240,6 +1243,8 @@ impl Analyzer<'_, '_> {
                     new_arg_types.push(arg.clone());
                 }
             }
+
+            new_arg_types.make_clone_cheap();
 
             return Ok(Cow::Owned(new_arg_types));
         } else {
