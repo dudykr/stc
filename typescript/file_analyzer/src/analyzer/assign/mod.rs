@@ -2276,13 +2276,14 @@ impl Analyzer<'_, '_> {
         r: &Type,
     ) -> ValidationResult<()> {
         let span = opts.span;
-        let r = self
+        let mut r = self
             .normalize(
                 Some(span),
                 Cow::Borrowed(&r),
                 NormalizeTypeOpts { ..Default::default() },
             )
             .context("tried to normalize rhs of assignment (to a mapped type)")?;
+        r.make_clone_cheap();
 
         let res: ValidationResult<_> = try {
             // Validate keys
