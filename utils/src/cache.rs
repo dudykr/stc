@@ -62,6 +62,24 @@ where
     }
 }
 
+impl<T> Freeze for Vec<T>
+where
+    T: Freeze,
+{
+    fn make_clone_cheap(&mut self) {
+        self.iter_mut().for_each(|v| v.make_clone_cheap())
+    }
+}
+
+impl<T> Freeze for Box<T>
+where
+    T: Freeze,
+{
+    fn make_clone_cheap(&mut self) {
+        (**self).make_clone_cheap()
+    }
+}
+
 #[macro_export]
 macro_rules! try_cache {
     ($cache:expr, $key:expr, $default_op:expr) => {{
