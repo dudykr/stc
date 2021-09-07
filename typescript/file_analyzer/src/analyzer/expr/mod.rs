@@ -38,7 +38,7 @@ use stc_ts_types::{
     KeywordTypeMetadata, LitType, LitTypeMetadata, Method, ModuleId, Operator, OptionalType, PropertySignature,
     QueryExpr, QueryType, StaticThis, ThisType,
 };
-use stc_utils::{error::context, stack, try_cache};
+use stc_utils::{cache::Freeze, error::context, stack, try_cache};
 use std::{
     borrow::Cow,
     collections::HashMap,
@@ -1435,16 +1435,22 @@ impl Analyzer<'_, '_> {
             preserve_params: true,
             ..self.ctx
         };
-        let obj = match obj.normalize() {
+        let mut obj = match obj.normalize() {
             Type::Conditional(..) | Type::Instance(..) => {
                 self.normalize(None, Cow::Borrowed(obj), Default::default())?
             }
             _ => Cow::Borrowed(obj),
         };
-        let obj = self
+        if !self.is_builtin {
+            obj.make_clone_cheap();
+        }
+        let mut obj = self
             .with_ctx(ctx)
             .expand(span, obj.into_owned(), Default::default())?
             .generalize_lit();
+        if !self.is_builtin {
+            obj.make_clone_cheap();
+        }
 
         match obj.normalize() {
             Type::Lit(obj) => {
