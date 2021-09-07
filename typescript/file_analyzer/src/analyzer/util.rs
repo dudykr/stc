@@ -11,7 +11,7 @@ use stc_ts_storage::Storage;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
     Class, ClassMetadata, Enum, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType, Intersection, ModuleId,
-    QueryExpr, QueryType, Ref, RefMetadata, Tuple, TypeElement, Union,
+    QueryExpr, QueryType, Ref, RefMetadata, Tuple, TypeElement, Union, ALLOW_DEEP_CLONE,
 };
 use std::iter::once;
 use swc_common::{Span, Spanned, SyntaxContext};
@@ -27,7 +27,9 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(debugger) = &self.debugger {
-            debugger.dump_type(span, &ty);
+            ALLOW_DEEP_CLONE.set(&(), || {
+                debugger.dump_type(span, &ty);
+            });
         }
     }
 
