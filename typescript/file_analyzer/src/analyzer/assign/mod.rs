@@ -1190,6 +1190,12 @@ impl Analyzer<'_, '_> {
                     r.types
                         .iter()
                         .map(|rhs| {
+                            if cfg!(debug_assertions) {
+                                // Assertion for deep clones.
+                                let _ = to.clone();
+                                let _ = rhs.clone();
+                            }
+
                             self.assign_with_opts(
                                 data,
                                 AssignOpts {
