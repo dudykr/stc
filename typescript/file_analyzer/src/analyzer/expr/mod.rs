@@ -31,7 +31,7 @@ use stc_ts_errors::{
     DebugExt, Error, Errors,
 };
 use stc_ts_generics::ExpandGenericOpts;
-use stc_ts_type_ops::{is_str_lit_or_union, Fix};
+use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, KeywordType,
@@ -1815,7 +1815,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 if is_str_lit_or_union(&prop_ty) {
-                    self.prevent_generalize(&mut prop_ty);
+                    prevent_generalize(&mut prop_ty);
                 }
 
                 warn!("Creating an indexed access type with type parameter as the object");
@@ -2647,7 +2647,7 @@ impl Analyzer<'_, '_> {
                     Key::Computed(c) => c.ty.clone(),
                     _ => {
                         let mut prop_ty = box prop.ty().into_owned();
-                        self.prevent_generalize(&mut prop_ty);
+                        prevent_generalize(&mut prop_ty);
 
                         prop_ty
                     }

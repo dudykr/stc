@@ -20,7 +20,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_type_ops::{is_str_lit_or_union, Fix};
+use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
     name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, TypeElement,
     Union, UnionMetadata,
@@ -321,7 +321,7 @@ impl Analyzer<'_, '_> {
                     Some((l, r_ty)) => {
                         if self.ctx.in_cond {
                             let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
-                            self.prevent_generalize(&mut r);
+                            prevent_generalize(&mut r);
                             r.make_cheap();
 
                             if op == op!("===") {
@@ -786,7 +786,7 @@ impl Analyzer<'_, '_> {
 
                 let mut ty = Type::union(vec![lt, rt]);
                 if !may_generalize_lt {
-                    self.prevent_generalize(&mut ty);
+                    prevent_generalize(&mut ty);
                 }
 
                 Ok(ty)

@@ -19,7 +19,7 @@ use stc_ts_ast_rnode::{
     RVarDeclarator,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
-use stc_ts_type_ops::Fix;
+use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     Array, EnumVariant, Id, Instance, InstanceMetadata, KeywordType, KeywordTypeMetadata, Operator, OperatorMetadata,
     QueryExpr, QueryType, Symbol, SymbolMetadata,
@@ -279,7 +279,7 @@ impl Analyzer<'_, '_> {
                         {
                             Ok(()) => {
                                 let mut ty = ty.cheap();
-                                self.prevent_generalize(&mut ty);
+                                prevent_generalize(&mut ty);
 
                                 let actual_ty = self.narrowed_type_of_assignment(span, ty.clone(), &value_ty)?;
 

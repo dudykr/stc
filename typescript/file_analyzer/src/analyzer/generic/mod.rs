@@ -14,7 +14,7 @@ use stc_ts_errors::{
     DebugExt,
 };
 use stc_ts_generics::type_param::{finder::TypeParamUsageFinder, remover::TypeParamRemover, renamer::TypeParamRenamer};
-use stc_ts_type_ops::Fix;
+use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType,
     KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, ModuleId, Operator, OptionalType, PropertySignature, Ref,
@@ -886,7 +886,7 @@ impl Analyzer<'_, '_> {
                             ..
                         }) => {
                             let mut arg = arg.clone();
-                            self.prevent_generalize(&mut arg);
+                            prevent_generalize(&mut arg);
                             return self.infer_type(span, inferred, &arr.elem_type, &arg, opts);
                         }
                         _ => {}
@@ -1691,7 +1691,7 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         });
-                        self.prevent_generalize(&mut keys);
+                        prevent_generalize(&mut keys);
 
                         self.insert_inferred(span, inferred, key_name.clone(), Cow::Owned(keys), opts)?;
 
@@ -1792,7 +1792,7 @@ impl Analyzer<'_, '_> {
                                     _ => None,
                                 });
                                 let mut key_ty = Type::union(key_ty);
-                                self.prevent_generalize(&mut key_ty);
+                                prevent_generalize(&mut key_ty);
                                 self.insert_inferred(
                                     span,
                                     inferred,

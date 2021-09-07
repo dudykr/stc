@@ -32,7 +32,7 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
-use stc_ts_type_ops::{is_str_lit_or_union, metadata::PreventGeneralization, Fix};
+use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
     type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Id, IdCtx, IndexedAccessType,
     Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, Symbol, ThisType,
@@ -3380,7 +3380,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
             }
 
             Type::IndexedAccessType(ty) if is_str_lit_or_union(&ty.index_type) => {
-                ty.visit_mut_with(&mut PreventGeneralization);
+                prevent_generalize(ty);
             }
 
             // Boxified<A | B | C> => Boxified<A> | Boxified<B> | Boxified<C>

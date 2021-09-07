@@ -13,7 +13,7 @@ use itertools::Itertools;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
-use stc_ts_type_ops::is_str_lit_or_union;
+use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union};
 use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordTypeMetadata, Operator, Ref,
     Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
@@ -798,11 +798,11 @@ impl Analyzer<'_, '_> {
             if let Some(ty) = inferred.type_params.get_mut(&type_param.name) {
                 match ty {
                     InferredType::Union(ty) => {
-                        self.prevent_generalize(ty);
+                        prevent_generalize(ty);
                     }
                     InferredType::Other(types) => {
                         for ty in types {
-                            self.prevent_generalize(ty);
+                            prevent_generalize(ty);
                         }
                     }
                 }
