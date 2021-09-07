@@ -106,7 +106,7 @@ where
     fn make_clone_cheap(&mut self) {
         match self {
             Cow::Borrowed(v) => {
-                if v.is_clone_cheap() {
+                if !v.is_clone_cheap() {
                     let mut v = v.clone();
                     v.make_clone_cheap();
                     *self = Cow::Owned(v);
