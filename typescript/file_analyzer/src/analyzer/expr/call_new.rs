@@ -2391,7 +2391,7 @@ impl Analyzer<'_, '_> {
                 None => None,
             };
 
-            let expanded_params;
+            let mut expanded_params;
             let params = if let Some(map) = &inferred_from_return_type {
                 expanded_params = params
                     .into_iter()
@@ -2401,6 +2401,7 @@ impl Analyzer<'_, '_> {
                         Ok(FnParam { ty, ..v })
                     })
                     .collect::<Result<Vec<_>, _>>()?;
+                expanded_params.make_clone_cheap();
                 expanded_params
             } else {
                 params
