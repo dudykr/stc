@@ -2380,12 +2380,11 @@ struct CheckCheapClone {
 
 impl Visit<Type> for CheckCheapClone {
     fn visit(&mut self, ty: &Type) {
-        if !ty.is_clone_cheap() {
-            self.cheap = false;
+        if ty.is_clone_cheap() {
             return;
         }
 
-        ty.visit_children_with(self);
+        self.cheap = false;
     }
 }
 
