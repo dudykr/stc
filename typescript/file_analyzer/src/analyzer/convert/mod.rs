@@ -281,6 +281,7 @@ impl Analyzer<'_, '_> {
                     body: d.body.validate_with(child)?,
                     metadata: Default::default(),
                 };
+                ty.make_clone_cheap();
                 child.prevent_expansion(&mut ty.body);
 
                 child.resolve_parent_interfaces(&d.extends);
