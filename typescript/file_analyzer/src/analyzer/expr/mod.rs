@@ -38,7 +38,7 @@ use stc_ts_types::{
     KeywordTypeMetadata, LitType, LitTypeMetadata, Method, ModuleId, Operator, OptionalType, PropertySignature,
     QueryExpr, QueryType, StaticThis, ThisType,
 };
-use stc_utils::{cache::Freeze, error::context, stack, try_cache};
+use stc_utils::{cache::Freeze, debug_ctx, stack, try_cache};
 use std::{
     borrow::Cow,
     collections::HashMap,
@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
         self.record(e);
 
         let _stack = stack::start(64);
-        let _ctx = context(format!("validate\nExpr: {:?}", e));
+        let _ctx = debug_ctx!(format!("validate\nExpr: {:?}", e));
 
         let span = e.span();
         let need_type_param_handling = match e {

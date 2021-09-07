@@ -29,7 +29,7 @@ use stc_ts_types::{
     TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
-use stc_utils::{cache::Freeze, error, AHashSet};
+use stc_utils::{cache::Freeze, debug_ctx, AHashSet};
 use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -964,7 +964,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsType) -> ValidationResult {
         self.record(ty);
 
-        let _ctx = error::context(format!("validate\nTsType: {:?}", ty));
+        let _ctx = debug_ctx!(format!("validate\nTsType: {:?}", ty));
 
         let is_topmost_type = !self.ctx.is_not_topmost_type;
         let ctx = Ctx {

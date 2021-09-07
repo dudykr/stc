@@ -24,8 +24,7 @@ use stc_ts_types::{
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    error::context,
-    stack,
+    debug_ctx, stack,
 };
 use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -519,7 +518,7 @@ impl Analyzer<'_, '_> {
             Err(_) => return Ok(()),
         };
 
-        let _ctx = context(format!(
+        let _ctx = debug_ctx!(format!(
             "infer_type()\nParam: {}\nArg: {}",
             dump_type_as_string(&self.cm, &param),
             dump_type_as_string(&self.cm, &arg)

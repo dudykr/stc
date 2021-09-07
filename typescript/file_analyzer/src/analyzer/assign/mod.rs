@@ -14,7 +14,7 @@ use stc_ts_types::{
     KeywordType, KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, Ref, ThisType, Tuple, Type,
     TypeElement, TypeLit, TypeParam,
 };
-use stc_utils::{cache::Freeze, panic_context, stack};
+use stc_utils::{cache::Freeze, debug_ctx, stack};
 use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
@@ -487,8 +487,8 @@ impl Analyzer<'_, '_> {
         let l = dump_type_as_string(&self.cm, &left);
         let r = dump_type_as_string(&self.cm, &right);
 
-        let _panic_ctx = panic_context::enter(format!("left = {}", l));
-        let _panic_ctx = panic_context::enter(format!("right = {}", r));
+        let _panic_ctx = debug_ctx!(format!("left = {}", l));
+        let _panic_ctx = debug_ctx!(format!("right = {}", r));
 
         if data
             .dejavu

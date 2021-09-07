@@ -23,8 +23,7 @@ use stc_ts_types::{
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    error,
-    error::context,
+    debug_ctx,
     ext::SpanExt,
     stack, TryOpt,
 };
@@ -86,7 +85,7 @@ impl Analyzer<'_, '_> {
             }
 
             let _stack = stack::track(actual_span)?;
-            let _context = error::context(format!("Normalize: {}", dump_type_as_string(&self.cm, &ty)));
+            let _context = debug_ctx!(format!("Normalize: {}", dump_type_as_string(&self.cm, &ty)));
 
             if ty.is_arc() {
                 let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
@@ -424,7 +423,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             let _context =
-                                error::context(format!("Property type: {}", dump_type_as_string(&self.cm, &prop_ty)));
+                                debug_ctx!(format!("Property type: {}", dump_type_as_string(&self.cm, &prop_ty)));
 
                             match prop_ty.normalize() {
                                 Type::IndexedAccessType(prop_ty) => match prop_ty.index_type.normalize() {
@@ -977,7 +976,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<Option<Cow<'a, TypeLit>>> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let _ctx = context(format!("type_to_type_lit: {:?}", ty));
+        let _ctx = debug_ctx!(format!("type_to_type_lit: {:?}", ty));
 
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
 

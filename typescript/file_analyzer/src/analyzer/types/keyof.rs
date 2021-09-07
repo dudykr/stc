@@ -10,7 +10,7 @@ use stc_ts_types::{
     Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, ModuleId,
     PropertySignature, Ref, Type, TypeElement, Union,
 };
-use stc_utils::error::context;
+use stc_utils::debug_ctx;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, SyntaxContext, TypeEq, DUMMY_SP};
@@ -26,7 +26,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> ValidationResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let _ctx = context(format!("keyof: {}", dump_type_as_string(&self.cm, ty)));
+        let _ctx = debug_ctx!(format!("keyof: {}", dump_type_as_string(&self.cm, ty)));
 
         if !self.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot perform `keyof` operation with dummy span");

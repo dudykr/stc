@@ -33,8 +33,7 @@ use stc_ts_types::{
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    error::context,
-    stack,
+    debug_ctx, stack,
 };
 use std::{
     borrow::Cow,
@@ -704,7 +703,7 @@ impl Analyzer<'_, '_> {
 
         ty.assert_valid();
 
-        let _ctx = context(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
+        let _ctx = debug_ctx!(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
         let orig = dump_type_as_string(&self.cm, &ty);
 
         let mut v = Expander {
@@ -2535,7 +2534,7 @@ impl Expander<'_, '_, '_> {
             }
         };
 
-        let _ctx = context(format!(
+        let _ctx = debug_ctx!(format!(
             "Expander.expand_type: {}",
             dump_type_as_string(&self.analyzer.cm, &ty)
         ));

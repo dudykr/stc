@@ -13,7 +13,7 @@ use stc_ts_types::{
     ArrayMetadata, ComputedKey, Function, Id, IdCtx, Interface, Key, KeywordType, KeywordTypeMetadata, LitType,
     TypeParam, TypeParamDecl, TypeParamInstantiation,
 };
-use stc_utils::{error::context, ext::SpanExt, stack};
+use stc_utils::{debug_ctx, ext::SpanExt, stack};
 use std::time::{Duration, Instant};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
@@ -928,7 +928,7 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
                 return ty;
             }
         };
-        let _context = context(format!(
+        let _context = debug_ctx!(format!(
             "Expanding generics of {}",
             dump_type_as_string(&self.analyzer.cm, &ty)
         ));

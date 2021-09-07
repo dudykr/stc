@@ -12,7 +12,7 @@ use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
-use stc_utils::{cache::Freeze, panic_context};
+use stc_utils::{cache::Freeze, debug_ctx};
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
@@ -285,8 +285,8 @@ impl Analyzer<'_, '_> {
                 new_r_params.make_clone_cheap();
                 new_r_ret_ty.make_clone_cheap();
 
-                let _panic_ctx = panic_context::enter(format!("new_r_params = {:?}", new_r_params));
-                let _panic_ctx = panic_context::enter(format!("new_r_ret_ty = {:?}", new_r_ret_ty));
+                let _panic_ctx = debug_ctx!(format!("new_r_params = {:?}", new_r_params));
+                let _panic_ctx = debug_ctx!(format!("new_r_ret_ty = {:?}", new_r_ret_ty));
 
                 return self
                     .assign_to_fn_like(
@@ -569,8 +569,8 @@ impl Analyzer<'_, '_> {
             "Cannot assign function parameters with dummy span"
         );
 
-        let _panic = panic_context::enter(format!("left = {}\n{:?}", dump_type_as_string(&self.cm, &l.ty), &l.ty));
-        let _panic = panic_context::enter(format!("right = {}\n{:?}", dump_type_as_string(&self.cm, &r.ty), &r.ty));
+        let _panic = debug_ctx!(format!("left = {}\n{:?}", dump_type_as_string(&self.cm, &l.ty), &l.ty));
+        let _panic = debug_ctx!(format!("right = {}\n{:?}", dump_type_as_string(&self.cm, &r.ty), &r.ty));
 
         match l.pat {
             RPat::Rest(..) => {
