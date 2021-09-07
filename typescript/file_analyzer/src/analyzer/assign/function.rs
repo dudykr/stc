@@ -10,7 +10,7 @@ use crate::{
 use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, panic_context};
 use std::borrow::Cow;
@@ -568,6 +568,9 @@ impl Analyzer<'_, '_> {
             !opts.span.is_dummy(),
             "Cannot assign function parameters with dummy span"
         );
+
+        let _panic = panic_context::enter(format!("left = {}", dump_type_as_string(&self.cm, &l.ty)));
+        let _panic = panic_context::enter(format!("right = {}", dump_type_as_string(&self.cm, &r.ty)));
 
         match l.pat {
             RPat::Rest(..) => {
