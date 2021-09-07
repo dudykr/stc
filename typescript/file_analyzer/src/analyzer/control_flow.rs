@@ -19,7 +19,7 @@ use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase,
     RSwitchStmt,
 };
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
 use stc_ts_utils::MapWithMut;
@@ -750,7 +750,7 @@ impl Analyzer<'_, '_> {
             .context("tried to normalize a type to assign it to a pattern")?
             .into_owned();
         ty.make_clone_cheap();
-        let _panic_ctx = panic_context::enter(format!("ty = {:?}", ty));
+        let _panic_ctx = panic_context::enter(format!("ty = {}", dump_type_as_string(&self.cm, &ty)));
 
         let ty = ty.normalize();
 
@@ -784,7 +784,8 @@ impl Analyzer<'_, '_> {
                 // Verify using immutable references.
                 if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
                     if let Some(mut var_ty) = var_info.ty.clone() {
-                        let _panic_ctx = panic_context::enter(format!("var_ty = {:?}", var_ty));
+                        let _panic_ctx =
+                            panic_context::enter(format!("var_ty = {}", dump_type_as_string(&self.cm, &ty)));
 
                         var_ty.make_clone_cheap();
 
