@@ -2358,6 +2358,7 @@ impl Analyzer<'_, '_> {
             .map(|param| {
                 let mut ty = param.ty.clone();
                 self.expand_this_in_type(&mut ty);
+                ty.make_clone_cheap();
                 FnParam { ty, ..param.clone() }
             })
             .collect_vec();
