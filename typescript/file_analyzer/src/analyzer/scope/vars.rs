@@ -149,13 +149,15 @@ impl Analyzer<'_, '_> {
                     None => None,
                 };
                 let is_typed = type_ann.is_some();
-                let type_ann = type_ann.or(default);
+                let mut type_ann = type_ann.or(default);
+                type_ann.make_clone_cheap();
 
-                let right = p
+                let mut right = p
                     .right
                     .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref().or(ty.as_ref())))
                     .report(&mut self.storage)
                     .unwrap_or_else(|| Type::any(span, Default::default()));
+                right.make_clone_cheap();
 
                 if let Some(left) = &type_ann {
                     self.assign_with_opts(
