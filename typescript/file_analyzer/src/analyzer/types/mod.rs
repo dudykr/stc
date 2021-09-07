@@ -93,7 +93,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Cow::Owned(ty));
             }
 
-            match &*ty {
+            match ty.normalize() {
                 Type::Lit(..)
                 | Type::TypeLit(..)
                 | Type::Interface(..)
