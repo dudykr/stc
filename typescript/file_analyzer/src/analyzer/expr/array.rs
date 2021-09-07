@@ -782,12 +782,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let iterator = self.get_iterator(span, ty, Default::default()).with_context(|| {
+        let mut iterator = self.get_iterator(span, ty, Default::default()).with_context(|| {
             format!(
                 "tried to get a type of an iterator to get the element type of it ({})",
                 ty_str
             )
         })?;
+        iterator.make_clone_cheap();
 
         if iterator.is_str() {
             return Ok(Cow::Owned(Type::Keyword(KeywordType {
