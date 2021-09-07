@@ -111,7 +111,7 @@ impl Analyzer<'_, '_> {
             }
 
             {
-                match &*ty {
+                match ty.normalize() {
                     Type::Ref(_) => {
                         let new_ty = self
                             .expand_top_ref(actual_span, Cow::Borrowed(&ty), Default::default())
