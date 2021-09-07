@@ -512,8 +512,11 @@ struct TypeParamHandler<'a> {
 }
 
 impl Fold<Type> for TypeParamHandler<'_> {
-    fn fold(&mut self, ty: Type) -> Type {
+    fn fold(&mut self, mut ty: Type) -> Type {
         if let Some(params) = self.params {
+            // TODO: PERF
+            ty.normalize_mut();
+
             let ty: Type = ty.fold_children_with(self);
 
             match ty {

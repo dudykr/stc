@@ -968,7 +968,7 @@ struct GenericChecker<'a> {
 
 impl Visit<Type> for GenericChecker<'_> {
     fn visit(&mut self, ty: &Type) {
-        match ty {
+        match ty.normalize() {
             Type::Param(p) => {
                 if self.params.contains_key(&p.name) {
                     self.found = true;
@@ -1027,7 +1027,7 @@ impl Fold<Type> for MappedHandler<'_, '_, '_, '_> {
         }
 
         // TODO: PERF
-        ty = ty.foldable();
+        ty.normalize_mut();
         ty = ty.fold_children_with(self);
 
         ty

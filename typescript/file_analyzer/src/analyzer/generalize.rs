@@ -116,7 +116,7 @@ impl Fold<Union> for Simplifier<'_> {
 impl Fold<Type> for Simplifier<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
         // TODO: PERF
-        ty = ty.foldable();
+        ty.normalize_mut();
 
         match ty {
             Type::Array(Array {

@@ -1676,6 +1676,8 @@ struct TupleNormalizer {
 
 impl VisitMut<Type> for TupleNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
+        // TODO: PERF
+        ty.normalize_mut();
         ty.visit_mut_children_with(self);
 
         match ty.normalize() {

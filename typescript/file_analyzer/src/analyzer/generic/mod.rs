@@ -2216,7 +2216,11 @@ impl Analyzer<'_, '_> {
                     Type::Param(p) if self.fixed.contains_key(&p.name) => {
                         *node = (*self.fixed.get(&p.name).unwrap()).clone();
                     }
-                    _ => node.visit_mut_children_with(self),
+                    _ => {
+                        // TODO: PERF
+                        node.normalize_mut();
+                        node.visit_mut_children_with(self)
+                    }
                 }
             }
         }
@@ -2346,6 +2350,9 @@ struct SingleTypeParamReplacer<'a> {
 
 impl Fold<Type> for SingleTypeParamReplacer<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty = ty.fold_children_with(self);
 
         match &ty {
@@ -2365,9 +2372,12 @@ struct TypeParamInliner<'a> {
 
 impl VisitMut<Type> for TypeParamInliner<'_> {
     fn visit_mut(&mut self, ty: &mut Type) {
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty.visit_mut_children_with(self);
 
-        match ty {
+        match ty.normalize() {
             Type::Param(p) if p.name == *self.param => {
                 *ty = Type::Lit(LitType {
                     span: p.span,
@@ -2416,11 +2426,15 @@ struct MappedKeyReplacer<'a> {
 
 impl VisitMut<Type> for MappedKeyReplacer<'_> {
     fn visit_mut(&mut self, ty: &mut Type) {
-        match ty {
+        match ty.normalize() {
             Type::Param(param) if *self.from == param.name => {
                 *ty = self.to.clone();
             }
-            _ => ty.visit_mut_children_with(self),
+            _ => {
+                // TODO: PERF
+                ty.normalize_mut();
+                ty.visit_mut_children_with(self)
+            }
         }
     }
 }
@@ -2435,6 +2449,9 @@ struct MappedIndexTypeReplacer<'a> {
 
 impl VisitMut<Type> for MappedIndexTypeReplacer<'_> {
     fn visit_mut(&mut self, ty: &mut Type) {
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty.visit_mut_children_with(self);
 
         match &*ty {
@@ -2485,6 +2502,9 @@ struct MappedReverser {
 
 impl Fold<Type> for MappedReverser {
     fn fold(&mut self, mut ty: Type) -> Type {
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty = ty.fold_children_with(self);
 
         match ty {
@@ -2539,6 +2559,9 @@ struct MappedIndexedSimplifier;
 
 impl Fold<Type> for MappedIndexedSimplifier {
     fn fold(&mut self, mut ty: Type) -> Type {
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty = ty.fold_children_with(self);
 
         match ty {

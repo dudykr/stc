@@ -264,14 +264,14 @@ impl Fold<Type> for Generalizer {
             }
         }
 
-        let force = match ty {
+        let force = match ty.normalize() {
             Type::TypeLit(..) => true,
             _ => false,
         };
 
         let old = self.force;
         self.force = force;
-        ty = ty.fold_children_with(self);
+        ty = ty.foldable().fold_children_with(self);
         self.force = old;
 
         ty.generalize_lit()

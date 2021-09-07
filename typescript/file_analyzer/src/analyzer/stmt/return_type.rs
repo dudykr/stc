@@ -520,6 +520,9 @@ struct KeyInliner<'a, 'b, 'c> {
 
 impl Fold<Type> for KeyInliner<'_, '_, '_> {
     fn fold(&mut self, mut ty: Type) -> Type {
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty = ty.fold_children_with(self);
 
         match ty {
