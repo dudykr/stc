@@ -681,10 +681,11 @@ impl Analyzer<'_, '_> {
             match *lhs {
                 RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None));
-                    let lhs_ty = match lhs_ty {
+                    let mut lhs_ty = match lhs_ty {
                         Ok(v) => v,
                         _ => Type::any(lhs.span(), Default::default()),
                     };
+                    lhs_ty.make_clone_cheap();
 
                     if op == op!("=") {
                         self.assign(span, &mut Default::default(), &lhs_ty, &ty)?;
