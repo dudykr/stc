@@ -20,6 +20,7 @@ use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
 use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
+use scoped_tls::scoped_thread_local;
 use static_assertions::assert_eq_size;
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
@@ -183,37 +184,61 @@ impl Clone for Type {
             Type::StaticThis(ty) => ty.clone().into(),
             Type::This(ty) => ty.clone().into(),
             Type::Symbol(ty) => ty.clone().into(),
-            Type::Intrinsic(ty) => ty.clone().into(),
-            Type::Instance(ty) => ty.clone().into(),
-            Type::Lit(ty) => ty.clone().into(),
-            Type::Query(ty) => ty.clone().into(),
-            Type::Infer(ty) => ty.clone().into(),
-            Type::Import(ty) => ty.clone().into(),
-            Type::Predicate(ty) => ty.clone().into(),
-            Type::IndexedAccessType(ty) => ty.clone().into(),
-            Type::Ref(ty) => ty.clone().into(),
-            Type::TypeLit(ty) => ty.clone().into(),
-            Type::Conditional(ty) => ty.clone().into(),
-            Type::Tuple(ty) => ty.clone().into(),
-            Type::Array(ty) => ty.clone().into(),
-            Type::Union(ty) => ty.clone().into(),
-            Type::Intersection(ty) => ty.clone().into(),
-            Type::Function(ty) => ty.clone().into(),
-            Type::Constructor(ty) => ty.clone().into(),
-            Type::Operator(ty) => ty.clone().into(),
-            Type::Param(ty) => ty.clone().into(),
-            Type::EnumVariant(ty) => ty.clone().into(),
-            Type::Interface(ty) => ty.clone().into(),
-            Type::Enum(ty) => ty.clone().into(),
-            Type::Mapped(ty) => ty.clone().into(),
-            Type::Alias(ty) => ty.clone().into(),
-            Type::Namespace(ty) => ty.clone().into(),
-            Type::Module(ty) => ty.clone().into(),
-            Type::Class(ty) => ty.clone().into(),
-            Type::ClassDef(ty) => ty.clone().into(),
-            Type::Rest(ty) => ty.clone().into(),
-            Type::Optional(ty) => ty.clone().into(),
-            Type::Tpl(ty) => ty.clone().into(),
+
+            _ => {
+                scoped_thread_local!(static DEEP: ());
+
+                macro_rules! work {
+                    () => {{
+                        match self {
+                            Type::Intrinsic(ty) => ty.clone().into(),
+                            Type::Instance(ty) => ty.clone().into(),
+                            Type::Lit(ty) => ty.clone().into(),
+                            Type::Query(ty) => ty.clone().into(),
+                            Type::Infer(ty) => ty.clone().into(),
+                            Type::Import(ty) => ty.clone().into(),
+                            Type::Predicate(ty) => ty.clone().into(),
+                            Type::IndexedAccessType(ty) => ty.clone().into(),
+                            Type::Ref(ty) => ty.clone().into(),
+                            Type::TypeLit(ty) => ty.clone().into(),
+                            Type::Conditional(ty) => ty.clone().into(),
+                            Type::Tuple(ty) => ty.clone().into(),
+                            Type::Array(ty) => ty.clone().into(),
+                            Type::Union(ty) => ty.clone().into(),
+                            Type::Intersection(ty) => ty.clone().into(),
+                            Type::Function(ty) => ty.clone().into(),
+                            Type::Constructor(ty) => ty.clone().into(),
+                            Type::Operator(ty) => ty.clone().into(),
+                            Type::Param(ty) => ty.clone().into(),
+                            Type::EnumVariant(ty) => ty.clone().into(),
+                            Type::Interface(ty) => ty.clone().into(),
+                            Type::Enum(ty) => ty.clone().into(),
+                            Type::Mapped(ty) => ty.clone().into(),
+                            Type::Alias(ty) => ty.clone().into(),
+                            Type::Namespace(ty) => ty.clone().into(),
+                            Type::Module(ty) => ty.clone().into(),
+                            Type::Class(ty) => ty.clone().into(),
+                            Type::ClassDef(ty) => ty.clone().into(),
+                            Type::Rest(ty) => ty.clone().into(),
+                            Type::Optional(ty) => ty.clone().into(),
+                            Type::Tpl(ty) => ty.clone().into(),
+                            _ => {
+                                unreachable!()
+                            }
+                        }
+                    }};
+                }
+
+                if cfg!(debug_assertions) {
+                    if DEEP.is_set() {
+                        panic!("Deep clone of type is not allowed")
+                    }
+
+                    DEEP.set(&(), || work!())
+                } else {
+                    work!()
+                }
+            }
         }
     }
 }
