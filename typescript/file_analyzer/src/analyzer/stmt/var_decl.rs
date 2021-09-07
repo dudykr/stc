@@ -397,6 +397,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         ty.assert_valid();
+                        ty.make_clone_cheap();
 
                         if self.scope.is_root() {
                             let ty = Some(forced_type_ann.unwrap_or_else(|| {
