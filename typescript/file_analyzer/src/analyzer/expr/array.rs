@@ -22,6 +22,7 @@ use stc_ts_types::{
     type_id::SymbolId, Array, CommonTypeMetadata, ComputedKey, Intersection, Key, KeywordType, KeywordTypeMetadata,
     LitType, Symbol, Tuple, TupleElement, Type, TypeParamInstantiation, Union, UnionMetadata,
 };
+use stc_utils::cache::Freeze;
 use std::{borrow::Cow, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext};
@@ -50,9 +51,10 @@ impl Analyzer<'_, '_> {
 
         let type_ann = self.expand_type_ann(span, type_ann)?;
 
-        let iterator = type_ann
+        let mut iterator = type_ann
             .as_deref()
             .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty), Default::default()).ok());
+        iterator.make_clone_cheap();
 
         let prefer_tuple = self.ctx.prefer_tuple || self.prefer_tuple(type_ann.as_deref());
         let is_empty = elems.is_empty();
