@@ -113,7 +113,7 @@ impl Analyzer<'_, '_> {
             {
                 match ty.normalize() {
                     Type::Ref(_) => {
-                        let new_ty = self
+                        let mut new_ty = self
                             .expand_top_ref(actual_span, Cow::Borrowed(&ty), Default::default())
                             .context("tried to expand a ref type as a part of normalization")?;
 
@@ -123,6 +123,8 @@ impl Analyzer<'_, '_> {
                         }
 
                         new_ty.assert_valid();
+
+                        new_ty.make_clone_cheap();
 
                         return Ok(Cow::Owned(self.normalize(span, new_ty, opts)?.into_owned()));
                     }
