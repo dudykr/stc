@@ -25,6 +25,7 @@ use stc_ts_types::{
     name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, TypeElement,
     Union, UnionMetadata,
 };
+use stc_utils::cache::Freeze;
 use std::{
     borrow::Cow,
     collections::hash_map::Entry,
@@ -239,10 +240,12 @@ impl Analyzer<'_, '_> {
             self.cur_facts = prev_facts;
         }
 
-        let (lt, rt): (Type, Type) = match (lt, rt) {
+        let (mut lt, mut rt): (Type, Type) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
             _ => return Err(Error::Errors { span, errors }),
         };
+        lt.make_clone_cheap();
+        rt.make_clone_cheap();
 
         if !self.is_builtin {
             debug_assert!(!lt.span().is_dummy());
