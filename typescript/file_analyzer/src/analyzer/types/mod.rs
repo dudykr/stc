@@ -203,10 +203,13 @@ impl Analyzer<'_, '_> {
                             .normalize(span, Cow::Borrowed(&c.check_type), Default::default())
                             .context("tried to normalize the `check` type of a conditional type")?
                             .into_owned();
+                        check_type.make_clone_cheap();
 
-                        let extends_type = self
+                        let mut extends_type = self
                             .normalize(span, Cow::Borrowed(&c.extends_type), Default::default())
                             .context("tried to normalize the `extends` type of a conditional type")?;
+
+                        extends_type.make_clone_cheap();
 
                         if let Some(v) = self.extends(ty.span(), Default::default(), &check_type, &extends_type) {
                             let ty = if v { &c.true_type } else { &c.false_type };
