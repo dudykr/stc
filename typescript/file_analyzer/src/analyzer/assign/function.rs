@@ -44,6 +44,13 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let span = opts.span.with_ctxt(SyntaxContext::empty());
 
+        // Verify that we will not clone recursively.
+        if cfg!(debug_assertions) {
+            for p in l_params {
+                let _ = p.clone();
+            }
+        }
+
         if let Some(r_ret_ty) = r_ret_ty {
             // Fast path for
             //
