@@ -56,6 +56,8 @@ pub mod module_id;
 pub mod name;
 pub mod type_id;
 
+scoped_thread_local!(pub static ALLOW_DEEP_CLONE: ());
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum IdCtx {
     Var,
@@ -229,7 +231,11 @@ impl Clone for Type {
                     }};
                 }
 
-                if cfg!(debug_assertions) && self.span() != DUMMY_SP && !self.is_clone_cheap() {
+                if cfg!(debug_assertions)
+                    && self.span() != DUMMY_SP
+                    && !self.is_clone_cheap()
+                    && !ALLOW_DEEP_CLONE.is_set()
+                {
                     let _panic_ctx = panic_context::enter(format!("{:?}", self));
 
                     if DEEP.is_set() {

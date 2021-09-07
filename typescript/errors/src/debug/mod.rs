@@ -2,7 +2,7 @@
 use backtrace::Backtrace;
 use rnode::{Fold, FoldWith, RNode, Visit, VisitWith};
 use stc_ts_ast_rnode::RTsType;
-use stc_ts_types::{Id, IndexedAccessType, Ref, Type, TypeLit, TypeParam};
+use stc_ts_types::{Id, IndexedAccessType, Ref, Type, TypeLit, TypeParam, ALLOW_DEEP_CLONE};
 use std::{collections::HashSet, fmt::Write};
 use swc_common::{sync::Lrc, SourceMap, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -32,7 +32,12 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
             expr: box Expr::TsAs(TsAsExpr {
                 span: DUMMY_SP,
                 expr: box Expr::Ident(Ident::new("TYPE".into(), DUMMY_SP)),
-                type_ann: box RTsType::from(t.clone().fold_with(&mut Visualizer::default())).into_orig(),
+                type_ann: box RTsType::from(
+                    ALLOW_DEEP_CLONE
+                        .set(&(), || t.clone())
+                        .fold_with(&mut Visualizer::default()),
+                )
+                .into_orig(),
             }),
         })));
 
