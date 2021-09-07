@@ -2385,4 +2385,5 @@ macro_rules! impl_freeze {
 }
 
 impl_freeze!(Type);
+impl_freeze!(TypeOrSpread);
 impl_freeze!(FnParam);

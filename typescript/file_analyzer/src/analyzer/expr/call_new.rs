@@ -2564,10 +2564,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 new_arg_types.fix();
+                new_arg_types.make_clone_cheap();
 
                 &*new_arg_types
             } else {
                 new_args.fix();
+                new_args.make_clone_cheap();
 
                 &*new_args
             };
