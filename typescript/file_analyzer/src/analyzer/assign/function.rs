@@ -44,13 +44,6 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let span = opts.span.with_ctxt(SyntaxContext::empty());
 
-        // Verify that we will not clone recursively.
-        if cfg!(debug_assertions) {
-            for p in l_params {
-                let _ = p.clone();
-            }
-        }
-
         if let Some(r_ret_ty) = r_ret_ty {
             // Fast path for
             //
@@ -576,8 +569,8 @@ impl Analyzer<'_, '_> {
             "Cannot assign function parameters with dummy span"
         );
 
-        let _panic = panic_context::enter(format!("left = {}", dump_type_as_string(&self.cm, &l.ty)));
-        let _panic = panic_context::enter(format!("right = {}", dump_type_as_string(&self.cm, &r.ty)));
+        let _panic = panic_context::enter(format!("left = {}\n{:?}", dump_type_as_string(&self.cm, &l.ty), &l.ty));
+        let _panic = panic_context::enter(format!("right = {}\n{:?}", dump_type_as_string(&self.cm, &r.ty), &r.ty));
 
         match l.pat {
             RPat::Rest(..) => {
@@ -599,8 +592,11 @@ impl Analyzer<'_, '_> {
 
         // TODO: Change this to extends call.
 
-        let l_ty = self.normalize(Some(opts.span), Cow::Borrowed(&l.ty), Default::default())?;
-        let r_ty = self.normalize(Some(opts.span), Cow::Borrowed(&r.ty), Default::default())?;
+        let mut l_ty = self.normalize(Some(opts.span), Cow::Borrowed(&l.ty), Default::default())?;
+        let mut r_ty = self.normalize(Some(opts.span), Cow::Borrowed(&r.ty), Default::default())?;
+
+        l_ty.make_clone_cheap();
+        r_ty.make_clone_cheap();
 
         l_ty.assert_valid();
         r_ty.assert_valid();

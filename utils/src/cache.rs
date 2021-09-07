@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use swc_common::TypeEq;
 
 #[derive(Debug)]
@@ -77,6 +78,21 @@ where
 {
     fn make_clone_cheap(&mut self) {
         (**self).make_clone_cheap()
+    }
+}
+
+/// TODO(kdy1): This can be confusing.
+impl<T> Freeze for Cow<'_, T>
+where
+    T: Clone + Freeze,
+{
+    fn make_clone_cheap(&mut self) {
+        match self {
+            Cow::Borrowed(_) => {}
+            Cow::Owned(v) => {
+                v.make_clone_cheap();
+            }
+        }
     }
 }
 
