@@ -2316,6 +2316,7 @@ dependencies = [
  "jemallocator",
  "mimalloc",
  "once_cell",
+ "scoped-tls",
  "swc_common",
  "tracing",
 ]
