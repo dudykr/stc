@@ -2108,6 +2108,14 @@ impl Analyzer<'_, '_> {
             for p in params {
                 let _ = p.clone();
             }
+
+            for p in arg_types {
+                let _ = p.clone();
+            }
+
+            for p in spread_arg_types {
+                let _ = p.clone();
+            }
         }
 
         let span = span.with_ctxt(SyntaxContext::empty());
