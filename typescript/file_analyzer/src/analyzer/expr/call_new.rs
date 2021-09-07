@@ -2105,17 +2105,9 @@ impl Analyzer<'_, '_> {
 
         // Assertion about deep clone
         if cfg!(debug_assertions) {
-            for p in params {
-                let _ = p.clone();
-            }
-
-            for p in arg_types {
-                let _ = p.clone();
-            }
-
-            for p in spread_arg_types {
-                let _ = p.clone();
-            }
+            let _p = params.clone();
+            let _a = arg_types.clone();
+            let _s = spread_arg_types.clone();
         }
 
         let span = span.with_ctxt(SyntaxContext::empty());
