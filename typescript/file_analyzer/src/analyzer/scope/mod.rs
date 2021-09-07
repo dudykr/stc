@@ -1456,7 +1456,7 @@ impl Analyzer<'_, '_> {
                                                 ..Default::default()
                                             },
                                         )?;
-                                        let var_ty = self.expand(
+                                        let mut var_ty = self.expand(
                                             span,
                                             generalized_var_ty,
                                             ExpandOpts {
@@ -1465,6 +1465,7 @@ impl Analyzer<'_, '_> {
                                                 ..Default::default()
                                             },
                                         )?;
+                                        var_ty.make_clone_cheap();
 
                                         let res = self
                                             .assign_with_opts(
