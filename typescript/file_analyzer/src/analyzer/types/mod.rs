@@ -21,7 +21,13 @@ use stc_ts_types::{
     TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::MapWithMut;
-use stc_utils::{cache::ALLOW_DEEP_CLONE, error, error::context, ext::SpanExt, stack, TryOpt};
+use stc_utils::{
+    cache::{Freeze, ALLOW_DEEP_CLONE},
+    error,
+    error::context,
+    ext::SpanExt,
+    stack, TryOpt,
+};
 use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
@@ -574,7 +580,7 @@ impl Analyzer<'_, '_> {
 
     // This is part of normalization.
     fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type) -> ValidationResult<Type> {
-        let ty = self.normalize(
+        let mut ty = self.normalize(
             span,
             Cow::Borrowed(ty),
             NormalizeTypeOpts {
@@ -582,6 +588,7 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         )?;
+        ty.make_clone_cheap();
         let metadata = ty.metadata();
         let actual_span = ty.span();
 
