@@ -2418,7 +2418,7 @@ impl Analyzer<'_, '_> {
             debug!("Inferring arg types for a call");
             let mut inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
-            let expanded_param_types = params
+            let mut expanded_param_types = params
                 .into_iter()
                 .map(|v| -> ValidationResult<_> {
                     let mut ty = box self.expand_type_params(&inferred, *v.ty, Default::default())?;
@@ -2426,6 +2426,7 @@ impl Analyzer<'_, '_> {
                     Ok(FnParam { ty, ..v })
                 })
                 .collect::<Result<Vec<_>, _>>()?;
+            expanded_param_types.make_clone_cheap();
 
             let ctx = Ctx {
                 in_argument: true,
