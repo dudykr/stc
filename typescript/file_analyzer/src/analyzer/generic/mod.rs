@@ -1104,8 +1104,10 @@ impl Analyzer<'_, '_> {
                         ignore_expand_prevention_for_all: false,
                         ..self.ctx
                     };
-                    debug!("infer_type: expanding param");
-                    let param = self.with_ctx(ctx).expand(
+                    if cfg!(debug_assertions) {
+                        debug!("infer_type: expanding param");
+                    }
+                    let mut param = self.with_ctx(ctx).expand(
                         span,
                         Type::Ref(param.clone()),
                         ExpandOpts {
@@ -1114,6 +1116,7 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )?;
+                    param.make_clone_cheap();
                     match param.normalize() {
                         Type::Ref(..) => {
                             dbg!();
