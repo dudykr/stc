@@ -183,12 +183,15 @@ impl Analyzer<'_, '_> {
                     .zip(rt.params.iter())
                     .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
                     .collect::<FxHashMap<_, _>>();
-                let new_r_params = self
+                let mut new_r_params = self
                     .expand_type_params(&map, r_params.to_vec(), Default::default())
                     .context("tried to expand type parameters as a step of function assignemnt")?;
-                let new_r_ret_ty = self
+                let mut new_r_ret_ty = self
                     .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
                     .context("tried to expand return type of rhs as a step of function assignemnt")?;
+
+                new_r_params.make_clone_cheap();
+                new_r_ret_ty.make_clone_cheap();
 
                 return self
                     .assign_to_fn_like(
@@ -227,12 +230,15 @@ impl Analyzer<'_, '_> {
 
                 let map =
                     self.infer_type_with_types(span, &*lt.params, &lf, &rf, InferTypeOpts { ..Default::default() })?;
-                let new_l_params = self
+                let mut new_l_params = self
                     .expand_type_params(&map, l_params.to_vec(), Default::default())
                     .context("tried to expand type parameters of lhs as a step of function assignemnt")?;
-                let new_l_ret_ty = self
+                let mut new_l_ret_ty = self
                     .expand_type_params(&map, l_ret_ty.cloned(), Default::default())
                     .context("tried to expand return type of lhs as a step of function assignemnt")?;
+
+                new_l_params.make_clone_cheap();
+                new_l_ret_ty.make_clone_cheap();
 
                 return self
                     .assign_to_fn_like(
