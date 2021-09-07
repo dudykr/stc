@@ -2406,6 +2406,14 @@ impl Analyzer<'_, '_> {
                 params
             };
 
+            // Assert deep clone
+            if cfg!(debug_assertions) {
+                let _ = type_args.clone();
+                let _ = type_params.clone();
+                let _ = params.clone();
+                let _ = spread_arg_types.clone();
+            }
+
             debug!("Inferring arg types for a call");
             let mut inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
