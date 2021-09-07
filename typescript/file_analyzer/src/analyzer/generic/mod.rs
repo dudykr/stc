@@ -22,7 +22,7 @@ use stc_ts_types::{
     TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
-use stc_utils::{error::context, stack};
+use stc_utils::{cache::Freeze, error::context, stack};
 use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -2253,6 +2253,9 @@ impl Analyzer<'_, '_> {
         if self.is_builtin {
             return Ok(ty);
         }
+
+        ty.make_clone_cheap();
+
         debug!(
             "rename_type_params(has_ann = {:?}, ty = {})",
             type_ann.is_some(),
