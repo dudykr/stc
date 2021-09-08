@@ -81,7 +81,7 @@ impl Analyzer<'_, '_> {
             },
         );
 
-        let lt = {
+        let mut lt = {
             let mut a = self.with_ctx(ctx);
             left.validate_with_args(&mut *a, child_ctxt)
         }
@@ -108,6 +108,7 @@ impl Analyzer<'_, '_> {
             Ok(ty)
         })
         .store(&mut errors);
+        lt.make_clone_cheap();
 
         let true_facts_for_rhs = if op == op!("&&") {
             // We need a new virtual scope.
