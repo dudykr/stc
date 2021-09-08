@@ -30,7 +30,7 @@ use stc_ts_types::{
     Id, Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetdata,
     Ref, TsExpr, Type,
 };
-use stc_utils::{AHashSet, TryOpt};
+use stc_utils::{cache::Freeze, AHashSet, TryOpt};
 use std::{
     borrow::Cow,
     cell::RefCell,
@@ -1607,7 +1607,7 @@ impl Analyzer<'_, '_> {
                 let type_params = try_opt!(c.type_params.validate_with(child)).map(Box::new);
                 child.resolve_parent_interfaces(&c.implements);
 
-                let super_class = {
+                let mut super_class = {
                     // Then, we can expand super class
 
                     let super_type_params = try_opt!(c.super_type_params.validate_with(child));
@@ -1741,6 +1741,7 @@ impl Analyzer<'_, '_> {
                         _ => None,
                     }
                 };
+                super_class.make_clone_cheap();
 
                 let implements = c.implements.validate_with(child).map(Box::new)?;
 
