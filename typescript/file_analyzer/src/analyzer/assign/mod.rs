@@ -1115,9 +1115,8 @@ impl Analyzer<'_, '_> {
 
         match rhs {
             Type::Ref(..) => {
-                let mut new_rhs = self
-                    .expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?
-                    .into_owned();
+                let mut new_rhs = self.expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?;
+                new_rhs.make_clone_cheap();
                 // self.replace(&mut new_rhs, &[(rhs, &Type::any(span))]);
                 return self
                     .assign_inner(data, to, &new_rhs, opts)
