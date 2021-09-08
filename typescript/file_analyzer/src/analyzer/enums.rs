@@ -469,7 +469,7 @@ impl Analyzer<'_, '_> {
 
     // Check for rvalue of assignments.
     pub(super) fn report_error_for_invalid_rvalue(&mut self, span: Span, lhs: &RPat, rhs_ty: &Type) {
-        match *rhs_ty.normalize() {
+        match rhs_ty.normalize() {
             // Report an error for `a = G` where G is name of the const enum itself.
             Type::Enum(ref e) if e.is_const => {
                 self.storage.report(Error::InvalidUseOfConstEnum { span });

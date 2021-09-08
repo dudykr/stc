@@ -118,7 +118,7 @@ impl Fold<Type> for Simplifier<'_> {
         // TODO: PERF
         ty.normalize_mut();
 
-        match ty {
+        match ty.normalize() {
             Type::Array(Array {
                 elem_type:
                     box Type::IndexedAccessType(IndexedAccessType {
@@ -233,7 +233,7 @@ impl Fold<Type> for Simplifier<'_> {
                     )
                     .unwrap();
 
-                let s = match &*index_type {
+                let s = match index_type.normalize() {
                     Type::Lit(LitType {
                         lit: RTsLit::Str(s), ..
                     }) => s.clone(),
@@ -298,7 +298,7 @@ impl Fold<Type> for Simplifier<'_> {
             }) if is_str_lit_or_union(&constraint) => {
                 let members = constraint
                     .iter_union()
-                    .filter_map(|ty| match ty {
+                    .filter_map(|ty| match ty.normalize() {
                         Type::Lit(LitType {
                             lit: RTsLit::Str(s), ..
                         }) => Some(s),
@@ -593,7 +593,7 @@ impl Fold<Type> for Simplifier<'_> {
 
                 for member in &members {
                     for key in constraint.iter_union() {
-                        let key = match key {
+                        let key = match key.normalize() {
                             Type::Lit(LitType {
                                 lit: RTsLit::Str(v), ..
                             }) => v.clone(),
@@ -731,10 +731,10 @@ impl Fold<Type> for Simplifier<'_> {
                 let mut new_types = keys
                     .types
                     .into_iter()
-                    .map(|key| match key.foldable() {
+                    .map(|key| match key.normalize() {
                         Type::Lit(LitType {
                             lit: RTsLit::Str(s), ..
-                        }) => s,
+                        }) => s.clone(),
                         _ => unreachable!(),
                     })
                     .map(|key| {
