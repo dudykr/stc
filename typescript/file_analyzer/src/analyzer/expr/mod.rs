@@ -3542,7 +3542,7 @@ impl Analyzer<'_, '_> {
 
         let mut is_obj_opt_chain = false;
         let mut should_be_optional = false;
-        let obj_ty = match *obj {
+        let mut obj_ty = match *obj {
             RExprOrSuper::Expr(ref obj) => {
                 is_obj_opt_chain = is_obj_opt_chaining(&obj);
 
@@ -3590,6 +3590,7 @@ impl Analyzer<'_, '_> {
                 }
             }
         };
+        obj_ty.make_clone_cheap();
 
         self.storage.report_all(errors);
 
