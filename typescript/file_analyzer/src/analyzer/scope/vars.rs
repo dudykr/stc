@@ -626,7 +626,7 @@ impl Analyzer<'_, '_> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let ty = (|| -> ValidationResult<_> {
-            let ty = self.normalize(
+            let mut ty = self.normalize(
                 None,
                 Cow::Borrowed(ty),
                 NormalizeTypeOpts {
@@ -634,6 +634,7 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )?;
+            ty.make_clone_cheap();
 
             if ty.is_any() || ty.is_unknown() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
                 return Ok(ty.into_owned());
