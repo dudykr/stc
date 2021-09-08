@@ -604,7 +604,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match (param, arg) {
+        match (param.normalize(), arg.normalize()) {
             (Type::Union(p), Type::Union(a)) => {
                 self.infer_type_using_union_and_union(
                     span,
