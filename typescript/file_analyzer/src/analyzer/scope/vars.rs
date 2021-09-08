@@ -109,13 +109,17 @@ impl Analyzer<'_, '_> {
         match pat {
             RPat::Ident(i) => {
                 if let Some(ty) = &ty {
-                    debug!(
-                        "[vars]: Declaring {} as {}",
-                        i.id.sym,
-                        dump_type_as_string(&self.cm, &ty)
-                    );
+                    if cfg!(debug_assertions) {
+                        debug!(
+                            "[vars]: Declaring {} as {}",
+                            i.id.sym,
+                            dump_type_as_string(&self.cm, &ty)
+                        );
+                    }
                 } else {
-                    debug!("[vars]: Declaring {} without type", i.id.sym);
+                    if cfg!(debug_assertions) {
+                        debug!("[vars]: Declaring {} without type", i.id.sym);
+                    }
                 }
 
                 let mut ty = opt_union(span, ty, default);
