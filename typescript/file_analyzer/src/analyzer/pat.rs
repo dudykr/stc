@@ -346,7 +346,7 @@ impl Analyzer<'_, '_> {
                         let mut ty = default_value_ty.generalize_lit().foldable();
 
                         if matches!(ty.normalize(), Type::Tuple(..)) {
-                            match ty {
+                            match ty.foldable() {
                                 Type::Tuple(tuple) => {
                                     let mut types =
                                         tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
@@ -362,7 +362,9 @@ impl Analyzer<'_, '_> {
                                         },
                                     });
                                 }
-                                _ => {}
+                                _ => {
+                                    unreachable!();
+                                }
                             }
                         }
 
