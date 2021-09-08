@@ -2345,7 +2345,7 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        Ok(ty.fold_with(&mut TypeParamRemover::new()).fixed())
+        Ok(ty.foldable().fold_with(&mut TypeParamRemover::new()).fixed())
     }
 }
 
