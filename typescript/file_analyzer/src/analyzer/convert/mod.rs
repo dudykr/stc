@@ -96,7 +96,8 @@ impl Analyzer<'_, '_> {
             }
 
             // Resolve contraints
-            let params = self.expand_type_params(&map, params, Default::default())?;
+            let mut params = self.expand_type_params(&map, params, Default::default())?;
+            params.make_clone_cheap();
 
             for param in &params {
                 self.register_type(param.name.clone(), Type::Param(param.clone()));
