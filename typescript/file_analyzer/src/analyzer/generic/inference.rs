@@ -261,6 +261,13 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> ValidationResult<FxHashMap<Id, Type>> {
+        if cfg!(debug_assertions) {
+            // Assertion for deep clone
+            let _ = type_params.clone();
+            let _ = param.clone();
+            let _ = arg.clone();
+        }
+
         let mut inferred = InferData::default();
 
         let ctx = Ctx {
