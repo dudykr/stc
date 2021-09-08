@@ -90,6 +90,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
+    #[instrument(skip(self, span, inferred, param, arg, opts))]
     pub(super) fn infer_type_using_union(
         &mut self,
         span: Span,
