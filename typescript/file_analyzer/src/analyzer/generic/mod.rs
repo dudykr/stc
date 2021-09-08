@@ -544,7 +544,8 @@ impl Analyzer<'_, '_> {
 
         match param {
             Type::Instance(..) => {
-                let param = self.normalize(Some(span), Cow::Borrowed(&param), Default::default())?;
+                let mut param = self.normalize(Some(span), Cow::Borrowed(&param), Default::default())?;
+                param.make_clone_cheap();
                 return self.infer_type(span, inferred, &param, arg, opts);
             }
             _ => {}
