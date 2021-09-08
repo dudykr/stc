@@ -2498,7 +2498,8 @@ impl Analyzer<'_, '_> {
 
             Type::Mapped(m) => {
                 //
-                let constraint = self::constraint_reducer::reduce(m);
+                let mut constraint = self::constraint_reducer::reduce(m);
+                constraint.make_clone_cheap();
                 // If type of prop is equal to the type of index signature, it's
                 // index access.
 
