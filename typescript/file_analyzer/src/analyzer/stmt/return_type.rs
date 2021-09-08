@@ -16,7 +16,7 @@ use stc_ts_types::{
     CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, ModuleId,
     Operator, PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
 };
-use stc_utils::ext::SpanExt;
+use stc_utils::{cache::Freeze, ext::SpanExt};
 use std::{borrow::Cow, mem::take, ops::AddAssign};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -70,7 +70,7 @@ impl Analyzer<'_, '_> {
 
         // let mut old_ret_tys = self.scope.return_types.take();
 
-        let ret_ty = (|| -> ValidationResult<_> {
+        let mut ret_ty = (|| -> ValidationResult<_> {
             let mut values: ReturnValues = {
                 let ctx = Ctx {
                     preserve_ref: true,
@@ -265,6 +265,7 @@ impl Analyzer<'_, '_> {
 
             Ok(Some(ty))
         })()?;
+        ret_ty.make_clone_cheap();
 
         if self.is_builtin {
             return Ok(ret_ty);
