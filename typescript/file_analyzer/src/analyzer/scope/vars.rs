@@ -118,7 +118,8 @@ impl Analyzer<'_, '_> {
                     debug!("[vars]: Declaring {} without type", i.id.sym);
                 }
 
-                let ty = opt_union(span, ty, default);
+                let mut ty = opt_union(span, ty, default);
+                ty.make_clone_cheap();
 
                 if let Some(ty) = &ty {
                     if let Some(m) = &mut self.mutations {
