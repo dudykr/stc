@@ -82,6 +82,9 @@ impl Analyzer<'_, '_> {
             ..
         } = *e;
 
+        let mut type_ann = self.expand_type_ann(span, type_ann)?;
+        type_ann.make_clone_cheap();
+
         let callee = match callee {
             RExprOrSuper::Super(..) => {
                 self.report_error_for_super_refs_without_supers(span, true);
@@ -115,7 +118,7 @@ impl Analyzer<'_, '_> {
                 ExtractKind::Call,
                 args,
                 type_args.as_ref(),
-                type_ann,
+                type_ann.as_deref(),
             )
         })
     }
@@ -134,6 +137,9 @@ impl Analyzer<'_, '_> {
             ..
         } = *e;
 
+        let mut type_ann = self.expand_type_ann(span, type_ann)?;
+        type_ann.make_clone_cheap();
+
         // TODO: e.visit_children
 
         self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
@@ -144,7 +150,7 @@ impl Analyzer<'_, '_> {
                 ExtractKind::New,
                 args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
                 type_args.as_ref(),
-                type_ann,
+                type_ann.as_deref(),
             )
         })
     }
