@@ -112,7 +112,7 @@ impl Analyzer<'_, '_> {
 
             if matches!(
                 ty.normalize(),
-                Type::Conditional(..) | Type::Array(..) | Type::IndexedAccessType(..)
+                Type::Conditional(..) | Type::Array(..) | Type::IndexedAccessType(..) | Type::Mapped(..)
             ) {
                 ty.make_clone_cheap();
             }
