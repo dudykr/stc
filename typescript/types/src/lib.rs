@@ -2248,7 +2248,9 @@ where
     V: ?Sized,
 {
     #[inline]
-    fn visit_mut_children_with(&mut self, _v: &mut V) {}
+    fn visit_mut_children_with(&mut self, _v: &mut V) {
+        unreachable!()
+    }
 }
 
 impl<V> FoldWith<V> for Freezed
@@ -2257,7 +2259,7 @@ where
 {
     #[inline]
     fn fold_children_with(self, _v: &mut V) -> Self {
-        self
+        unreachable!()
     }
 }
 
