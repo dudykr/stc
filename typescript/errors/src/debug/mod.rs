@@ -239,6 +239,8 @@ impl Fold<Type> for Visualizer {
             return ty;
         }
 
+        ty = ty.foldable();
+
         self.done_types.push(ty.clone());
 
         ty = ty.fold_children_with(self);
