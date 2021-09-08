@@ -341,7 +341,7 @@ impl Analyzer<'_, '_> {
                         ty.fix();
                         ty.assert_valid();
 
-                        if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit()) {
+                        if !(self.ctx.var_kind == VarDeclKind::Const && ty.normalize().is_lit()) {
                             if self.may_generalize(&ty) {
                                 // Vars behave differently based on the context.
                                 if self.ctx.can_generalize_literals() {
