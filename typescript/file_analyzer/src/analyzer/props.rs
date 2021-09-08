@@ -100,7 +100,7 @@ impl Analyzer<'_, '_> {
 
             let mut errors = Errors::default();
 
-            let ty = match node.expr.validate_with_default(analyzer) {
+            let mut ty = match node.expr.validate_with_default(analyzer) {
                 Ok(ty) => ty,
                 Err(err) => {
                     check_for_symbol_form = false;
@@ -114,6 +114,7 @@ impl Analyzer<'_, '_> {
                     Type::unknown(span, Default::default())
                 }
             };
+            ty.make_clone_cheap();
 
             if match mode {
                 ComputedPropMode::Class { has_body } => errors.is_empty(),
