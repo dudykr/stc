@@ -359,7 +359,8 @@ impl Analyzer<'_, '_> {
                         // typeGuardsTypeParameters.ts says
                         //
                         // Type guards involving type parameters produce intersection types
-                        let orig_ty = self.type_of_var(i, TypeOfMode::RValue, None)?;
+                        let mut orig_ty = self.type_of_var(i, TypeOfMode::RValue, None)?;
+                        orig_ty.make_clone_cheap();
 
                         //
                         let ty = self.validate_rhs_of_instanceof(span, &rt, rt.clone());
