@@ -2412,3 +2412,4 @@ impl_freeze!(TypeParamInstantiation);
 impl_freeze!(TypeOrSpread);
 impl_freeze!(FnParam);
 impl_freeze!(Interface);
+impl_freeze!(Key);

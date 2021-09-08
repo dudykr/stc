@@ -3593,7 +3593,7 @@ impl Analyzer<'_, '_> {
 
         self.storage.report_all(errors);
 
-        let prop = self
+        let mut prop = self
             .validate_key(prop, computed)
             .report(&mut self.storage)
             .unwrap_or_else(|| {
@@ -3604,6 +3604,7 @@ impl Analyzer<'_, '_> {
                     ty: box Type::any(span, Default::default()),
                 })
             });
+        prop.make_clone_cheap();
 
         let prop_access_ctx = Ctx {
             in_opt_chain: self.ctx.in_opt_chain || is_obj_opt_chain,
