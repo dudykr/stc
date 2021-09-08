@@ -24,7 +24,7 @@ use std::{
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{error, info};
+use tracing::{error, info, instrument};
 
 /// # Default
 ///
@@ -55,6 +55,7 @@ impl Analyzer<'_, '_> {
     /// `T | PromiseLike<T>` <= `void | PromiseLike<void>`
     ///
     /// should result in `T = void`, not `T = void | PromiseLike<void>`
+    #[instrument(skip(self, span, inferred, param, arg_ty, arg, opts))]
     pub(super) fn infer_type_using_union_and_union(
         &mut self,
         span: Span,
