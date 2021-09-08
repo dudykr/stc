@@ -716,7 +716,6 @@ impl Analyzer<'_, '_> {
             opts,
         };
 
-        // TODO: PERF
         let ty = ty.foldable().fold_with(&mut v).fixed();
         ty.assert_valid();
 
@@ -2028,8 +2027,11 @@ impl Expander<'_, '_, '_> {
                                         ty.foldable(),
                                         self.opts.generic,
                                     )?;
+
                                     let after = dump_type_as_string(&self.analyzer.cm, &ty);
-                                    debug!("[expand] Expanded generics: {} => {}", before, after);
+                                    if cfg!(debug_assertions) {
+                                        debug!("[expand] Expanded generics: {} => {}", before, after);
+                                    }
 
                                     match ty {
                                         Type::ClassDef(def) => {
