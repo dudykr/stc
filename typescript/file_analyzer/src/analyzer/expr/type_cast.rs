@@ -15,6 +15,7 @@ use crate::{
 use stc_ts_ast_rnode::{RTsAsExpr, RTsLit, RTsTypeAssertion};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Interface, KeywordType, LitType, TypeElement, TypeParamInstantiation};
+use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -82,7 +83,7 @@ impl Analyzer<'_, '_> {
     ///
     /// results in error.
     fn validate_type_cast(&mut self, span: Span, orig_ty: Type, casted_ty: Type) -> ValidationResult {
-        let orig_ty = self.expand(
+        let mut orig_ty = self.expand(
             span,
             orig_ty,
             ExpandOpts {
@@ -91,12 +92,14 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         )?;
+        orig_ty.make_clone_cheap();
 
         let mut casted_ty = make_instance_type(self.ctx.module_id, casted_ty);
         self.prevent_inference_while_simplifying(&mut casted_ty);
         casted_ty = self.simplify(casted_ty);
 
         self.prevent_expansion(&mut casted_ty);
+        casted_ty.make_clone_cheap();
 
         self.validate_type_cast_inner(span, &orig_ty, &casted_ty)
             .report(&mut self.storage);
