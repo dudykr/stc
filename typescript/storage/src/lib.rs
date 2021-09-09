@@ -3,6 +3,7 @@
 use fxhash::FxHashMap;
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, Type};
+use stc_utils::cache::Freeze;
 use std::{collections::hash_map::Entry, mem::take, path::PathBuf, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{iter::IdentifyLast, Span, TypeEq, DUMMY_SP};
@@ -180,7 +181,7 @@ impl TypeStore for Single<'_> {
                 self.info
                     .exports
                     .private_vars
-                    .insert(id, Type::union(vec![prev_ty, ty]));
+                    .insert(id, Type::union(vec![prev_ty, ty]).freezed());
             }
             Entry::Vacant(e) => {
                 e.insert(ty);
@@ -224,7 +225,7 @@ impl TypeStore for Single<'_> {
             .exports
             .private_types
             .get(&id)
-            .map(|types| Type::intersection(DUMMY_SP, types.iter().cloned()));
+            .map(|types| Type::intersection(DUMMY_SP, types.iter().cloned()).freezed());
 
         match ty {
             Some(ty) => return Some(ty),
