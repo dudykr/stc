@@ -281,10 +281,12 @@ impl Analyzer<'_, '_> {
                             .context("tried to assign from var decl")
                         {
                             Ok(()) => {
-                                let mut ty = ty.cheap();
+                                let mut ty = ty;
                                 prevent_generalize(&mut ty);
+                                ty.make_clone_cheap();
 
-                                let actual_ty = self.narrowed_type_of_assignment(span, ty.clone(), &value_ty)?;
+                                let actual_ty =
+                                    self.narrowed_type_of_assignment(span, ty.clone(), &value_ty)?.freezed();
 
                                 actual_ty.assert_valid();
 
