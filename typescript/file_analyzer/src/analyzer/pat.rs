@@ -23,7 +23,7 @@ use stc_ts_types::{
     TypeElMetadata, TypeElement, TypeLit, TypeLitMetadata,
 };
 use stc_ts_utils::PatExt;
-use stc_utils::TryOpt;
+use stc_utils::{cache::Freeze, TryOpt};
 use swc_atoms::js_word;
 use swc_common::{Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -232,7 +232,8 @@ impl Analyzer<'_, '_> {
                 }
             })
             .map(|res| res.map(|ty| ty.cheap()))
-            .try_opt()?;
+            .try_opt()?
+            .freezed();
 
         let prev_declaring_len = self.scope.declaring.len();
         // Declaring names
