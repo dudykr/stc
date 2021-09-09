@@ -1394,9 +1394,11 @@ impl Analyzer<'_, '_> {
 
                 if let Some(ty) = &v.ty {
                     ty.assert_valid();
+                    ty.assert_clone_cheap();
                 }
                 if let Some(ty) = &v.actual_ty {
                     ty.assert_valid();
+                    ty.assert_clone_cheap();
                 }
 
                 if !self.is_builtin && is_override {
@@ -1515,9 +1517,11 @@ impl Analyzer<'_, '_> {
                 };
                 if let Some(ty) = &actual_ty {
                     ty.assert_valid();
+                    ty.assert_clone_cheap();
                 }
                 if let Some(ty) = &v.ty {
                     ty.assert_valid();
+                    ty.assert_clone_cheap();
                 }
                 // TODO: Use better logic
                 v.actual_ty = actual_ty.or_else(|| v.ty.clone());
