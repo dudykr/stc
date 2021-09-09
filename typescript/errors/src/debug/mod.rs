@@ -41,7 +41,7 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
         })));
 
         match t.normalize() {
-            Type::Interface(t) => {
+            Type::Interface(t) => ALLOW_DEEP_CLONE.set(&(), || {
                 body.push(ModuleItem::Stmt(Stmt::Expr(ExprStmt {
                     span: DUMMY_SP,
                     expr: box Expr::TsAs(TsAsExpr {
@@ -50,7 +50,7 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
                         type_ann: box RTsType::from(
                             Type::TypeLit(TypeLit {
                                 span: DUMMY_SP,
-                                members: ALLOW_DEEP_CLONE.set(&(), || t.body.clone()),
+                                members: t.body.clone(),
                                 metadata: Default::default(),
                             })
                             .fold_with(&mut Visualizer::default()),
@@ -58,7 +58,7 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
                         .into_orig(),
                     }),
                 })));
-            }
+            }),
             _ => {}
         }
 
