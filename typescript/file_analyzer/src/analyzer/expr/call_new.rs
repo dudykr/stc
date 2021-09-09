@@ -3136,7 +3136,7 @@ impl Analyzer<'_, '_> {
                 {
                     let new_ty = self
                         .narrow_type_with_predicate(span, &previous_types, new_ty.clone())?
-                        .cheap();
+                        .freezed();
 
                     self.add_type_fact(&var_name.into(), new_ty);
                     return;
