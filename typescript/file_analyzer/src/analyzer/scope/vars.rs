@@ -513,9 +513,11 @@ impl Analyzer<'_, '_> {
                                                     ),
                                                 )
                                                 .context("tried to validate default value of an assignment pattern")
-                                                .report(&mut self.storage);
+                                                .report(&mut self.storage)
+                                                .freezed();
 
-                                            let default = opt_union(span, default_prop_ty, default_value_type);
+                                            let default =
+                                                opt_union(span, default_prop_ty, default_value_type).freezed();
 
                                             self.add_vars(
                                                 &RPat::Ident(RBindingIdent {
