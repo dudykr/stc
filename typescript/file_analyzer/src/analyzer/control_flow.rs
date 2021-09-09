@@ -50,6 +50,7 @@ impl CondFacts {
     pub(crate) fn assert_valid(&self) {
         for (_, ty) in &self.vars {
             ty.assert_valid();
+            ty.assert_clone_cheap();
         }
 
         for (_, types) in &self.excludes {
@@ -60,6 +61,7 @@ impl CondFacts {
 
         for (_, ty) in &self.types {
             ty.assert_valid();
+            ty.assert_clone_cheap();
         }
     }
 
