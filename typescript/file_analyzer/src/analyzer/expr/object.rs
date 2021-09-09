@@ -488,7 +488,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         match prop {
             RPropOrSpread::Spread(RSpreadElement { expr, .. }) => {
-                let prop_ty: Type = expr.validate_with_default(self)?;
+                let prop_ty: Type = expr.validate_with_default(self)?.freezed();
                 self.append_type(to, prop_ty)
             }
             RPropOrSpread::Prop(prop) => {
@@ -542,7 +542,7 @@ impl Analyzer<'_, '_> {
     /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
     /// number } | { a: number, c: number }`
     #[instrument(skip(self, to, rhs))]
-    fn append_type(&mut self, to: Type, rhs: Type) -> ValidationResult<Type> {
+    fn append_type(&mut self, to: Type, mut rhs: Type) -> ValidationResult<Type> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
@@ -598,6 +598,8 @@ impl Analyzer<'_, '_> {
             Type::TypeLit(ref mut lit) => {
                 lit.metadata.inexact = true;
                 let common_metadata = lit.metadata.common;
+
+                rhs = rhs.foldable();
 
                 match rhs {
                     Type::TypeLit(rhs) => {
