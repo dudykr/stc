@@ -116,7 +116,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        match orig {
+        match orig.normalize() {
             Type::Union(ref rt) => {
                 let castable = rt.types.iter().any(|v| casted.type_eq(v));
 
@@ -128,7 +128,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match casted {
+        match casted.normalize() {
             Type::Tuple(ref lt) => {
                 //
                 match *orig.normalize() {
