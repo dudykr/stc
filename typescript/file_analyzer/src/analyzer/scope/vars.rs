@@ -587,12 +587,17 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         RObjectPatProp::Rest(pat) => {
-                            let rest_ty = ty.as_ref().try_map(|ty| {
-                                self.exclude_props(pat.span(), &ty, &used_keys)
-                                    .context("tried to exclude keys for assignment with a object rest pattern")
-                            })?;
+                            let rest_ty = ty
+                                .as_ref()
+                                .try_map(|ty| {
+                                    self.exclude_props(pat.span(), &ty, &used_keys)
+                                        .context("tried to exclude keys for assignment with a object rest pattern")
+                                })?
+                                .freezed();
 
-                            let default = default.and_then(|ty| self.exclude_props(pat.span(), &ty, &used_keys).ok());
+                            let default = default
+                                .and_then(|ty| self.exclude_props(pat.span(), &ty, &used_keys).ok())
+                                .freezed();
 
                             return self
                                 .add_vars(&pat.arg, rest_ty, None, default, opts)
