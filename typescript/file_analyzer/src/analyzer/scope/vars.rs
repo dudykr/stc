@@ -415,23 +415,26 @@ impl Analyzer<'_, '_> {
                                     .context("tried to access poprerty to declare variables")
                             });
 
-                            let default_prop_ty = default.as_ref().and_then(|ty| {
-                                self.with_ctx(ctx)
-                                    .access_property(
-                                        span,
-                                        &ty,
-                                        &key,
-                                        TypeOfMode::RValue,
-                                        IdCtx::Var,
-                                        Default::default(),
-                                    )
-                                    .ok()
-                            });
+                            let default_prop_ty = default
+                                .as_ref()
+                                .and_then(|ty| {
+                                    self.with_ctx(ctx)
+                                        .access_property(
+                                            span,
+                                            &ty,
+                                            &key,
+                                            TypeOfMode::RValue,
+                                            IdCtx::Var,
+                                            Default::default(),
+                                        )
+                                        .ok()
+                                })
+                                .freezed();
 
                             match prop_ty {
                                 Ok(prop_ty) => {
                                     // TODO: actual_ty
-                                    self.add_vars(&prop.value, prop_ty, None, default_prop_ty, opts)
+                                    self.add_vars(&prop.value, prop_ty.freezed(), None, default_prop_ty, opts)
                                         .report(&mut self.storage);
                                 }
 
