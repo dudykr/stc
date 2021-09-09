@@ -405,10 +405,12 @@ impl Scope<'_> {
         for (name, var) in child.vars.drain() {
             if let Some(ty) = &var.ty {
                 ty.assert_valid();
+                ty.assert_clone_cheap();
             }
 
             if let Some(ty) = &var.actual_ty {
                 ty.assert_valid();
+                ty.assert_clone_cheap();
             }
 
             if var.copied {
