@@ -1361,6 +1361,7 @@ impl Analyzer<'_, '_> {
 impl Facts {
     fn insert_var<N: Into<Name>>(&mut self, name: N, ty: Type, negate: bool) {
         ty.assert_valid();
+        ty.assert_clone_cheap();
 
         let name = name.into();
 
