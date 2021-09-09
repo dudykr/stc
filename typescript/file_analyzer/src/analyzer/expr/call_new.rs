@@ -2669,11 +2669,12 @@ impl Analyzer<'_, '_> {
 
             print_type("Return, after adding type params", &self.cm, &ty);
 
+            ty.reposition(span);
+            ty.make_clone_cheap();
+
             if kind == ExtractKind::Call {
                 self.add_call_facts(&expanded_param_types, &args, &mut ty);
             }
-
-            ty.reposition(span);
 
             return Ok(ty);
         }
@@ -2688,6 +2689,7 @@ impl Analyzer<'_, '_> {
         print_type("Return, simplified", &self.cm, &ret_ty);
 
         self.add_required_type_params(&mut ret_ty);
+        ret_ty.make_clone_cheap();
 
         if kind == ExtractKind::Call {
             self.add_call_facts(&params, &args, &mut ret_ty);
