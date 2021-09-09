@@ -390,7 +390,7 @@ impl Analyzer<'_, '_> {
                             let narrowed_ty = self
                                 .narrow_with_instanceof(span, Cow::Borrowed(&ty), &orig_ty)
                                 .context("tried to narrow type with instanceof")?
-                                .cheap();
+                                .freezed();
 
                             narrowed_ty.assert_valid();
 
@@ -404,7 +404,7 @@ impl Analyzer<'_, '_> {
                                         metadata: Default::default(),
                                     })
                                     .fixed()
-                                    .cheap(),
+                                    .freezed(),
                                 );
                             } else {
                                 self.cur_facts
