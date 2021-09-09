@@ -1149,7 +1149,7 @@ impl Analyzer<'_, '_> {
 
             Type::Constructor(ty) => {
                 let el = TypeElement::Constructor(ConstructorSignature {
-                    span: ty.span,
+                    span: ty.span.with_ctxt(SyntaxContext::empty()),
                     accessibility: None,
                     params: ty.params.clone(),
                     ret_ty: Some(ty.type_ann.clone()),
@@ -1180,7 +1180,7 @@ impl Analyzer<'_, '_> {
 
                 for (idx, e) in ty.elems.iter().enumerate() {
                     members.push(TypeElement::Property(PropertySignature {
-                        span: e.span,
+                        span: e.span.with_ctxt(SyntaxContext::empty()),
                         accessibility: None,
                         readonly: false,
                         key: Key::Num(RNumber {
@@ -1198,7 +1198,7 @@ impl Analyzer<'_, '_> {
 
                 // length
                 members.push(TypeElement::Property(PropertySignature {
-                    span: ty.span,
+                    span: ty.span.with_ctxt(SyntaxContext::empty()),
                     accessibility: None,
                     readonly: true,
                     key: Key::Normal {

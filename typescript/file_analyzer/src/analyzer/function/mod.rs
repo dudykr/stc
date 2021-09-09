@@ -271,7 +271,7 @@ impl Analyzer<'_, '_> {
 
     pub(crate) fn fn_to_type_element(&mut self, f: &Function) -> ValidationResult<TypeElement> {
         Ok(TypeElement::Call(CallSignature {
-            span: f.span,
+            span: f.span.with_ctxt(SyntaxContext::empty()),
             params: f.params.clone(),
             type_params: f.type_params.clone(),
             ret_ty: Some(f.ret_ty.clone()),
