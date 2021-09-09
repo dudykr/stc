@@ -1449,7 +1449,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 TypeElement::Method(MethodSignature {
-                    span: m.span,
+                    span: m.span.with_ctxt(SyntaxContext::empty()),
                     accessibility: m.accessibility,
                     readonly: false,
                     key: m.key.clone(),
@@ -1466,7 +1466,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 TypeElement::Property(PropertySignature {
-                    span: p.span,
+                    span: p.span.with_ctxt(SyntaxContext::empty()),
                     accessibility: p.accessibility,
                     readonly: p.readonly,
                     key: p.key.clone(),
