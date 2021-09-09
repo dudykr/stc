@@ -613,30 +613,36 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Rest(pat) => {
-                let ty = ty.map(|ty| {
-                    Type::Array(Array {
-                        span,
-                        elem_type: box ty,
-                        metadata: Default::default(),
+                let ty = ty
+                    .map(|ty| {
+                        Type::Array(Array {
+                            span,
+                            elem_type: box ty,
+                            metadata: Default::default(),
+                        })
                     })
-                });
+                    .freezed();
                 return self.add_vars(
                     &pat.arg,
                     ty,
-                    actual.map(|ty| {
-                        Type::Array(Array {
-                            span,
-                            elem_type: box ty,
-                            metadata: Default::default(),
+                    actual
+                        .map(|ty| {
+                            Type::Array(Array {
+                                span,
+                                elem_type: box ty,
+                                metadata: Default::default(),
+                            })
                         })
-                    }),
-                    default.map(|ty| {
-                        Type::Array(Array {
-                            span,
-                            elem_type: box ty,
-                            metadata: Default::default(),
+                        .freezed(),
+                    default
+                        .map(|ty| {
+                            Type::Array(Array {
+                                span,
+                                elem_type: box ty,
+                                metadata: Default::default(),
+                            })
                         })
-                    }),
+                        .freezed(),
                     opts,
                 );
             }
