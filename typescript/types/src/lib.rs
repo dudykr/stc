@@ -1060,7 +1060,7 @@ struct AssertCloneCheap;
 
 impl Visit<Type> for AssertCloneCheap {
     fn visit(&mut self, ty: &Type) {
-        assert!(ty.is_clone_cheap());
+        debug_assert!(ty.is_clone_cheap(), "{:?} is not cheap to clone", ty);
 
         ty.visit_children_with(self);
     }
@@ -1072,6 +1072,8 @@ impl Type {
         if !cfg!(debug_assertions) {
             return;
         }
+
+        let _ctx = debug_ctx!(format!("assert_clone_cheap: {:?}", self));
 
         self.visit_with(&mut AssertCloneCheap);
     }
