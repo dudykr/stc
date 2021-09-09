@@ -421,6 +421,7 @@ impl Scope<'_> {
 
                         if let Some(actual_ty) = var.actual_ty {
                             actual_ty.assert_valid();
+                            actual_ty.assert_clone_cheap();
 
                             let new_actual_type = if is_end_of_loop && is_actual_type_modified_in_loop {
                                 let mut types = vec![];
@@ -451,7 +452,7 @@ impl Scope<'_> {
 
                             new_actual_type.assert_valid();
 
-                            e.get_mut().actual_ty = Some(new_actual_type);
+                            e.get_mut().actual_ty = Some(new_actual_type.freezed());
                         }
                     }
                     Entry::Vacant(e) => {
