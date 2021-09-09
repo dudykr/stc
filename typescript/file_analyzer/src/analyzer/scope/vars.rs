@@ -250,18 +250,21 @@ impl Analyzer<'_, '_> {
 
                     for (idx, elem) in arr.elems.iter().enumerate() {
                         if let Some(elem) = elem {
-                            let elem_ty = ty.as_ref().try_map(|ty| -> ValidationResult<_> {
-                                Ok(self
-                                    .get_element_from_iterator(span, Cow::Borrowed(&ty), idx)
-                                    .with_context(|| {
-                                        format!(
-                                            "tried to get the type of {}th element from iterator to declare vars with \
-                                             an array pattern",
-                                            idx
-                                        )
-                                    })?
-                                    .into_owned())
-                            })?;
+                            let elem_ty = ty
+                                .as_ref()
+                                .try_map(|ty| -> ValidationResult<_> {
+                                    Ok(self
+                                        .get_element_from_iterator(span, Cow::Borrowed(&ty), idx)
+                                        .with_context(|| {
+                                            format!(
+                                                "tried to get the type of {}th element from iterator to declare vars \
+                                                 with an array pattern",
+                                                idx
+                                            )
+                                        })?
+                                        .into_owned())
+                                })?
+                                .freezed();
 
                             let default_elem_ty = default
                                 .as_ref()
@@ -276,7 +279,8 @@ impl Analyzer<'_, '_> {
                                         })
                                         .ok()
                                 })
-                                .map(Cow::into_owned);
+                                .map(Cow::into_owned)
+                                .freezed();
 
                             // TODO: actual_ty
                             self.add_vars(elem, elem_ty, None, default_elem_ty, opts)?;
