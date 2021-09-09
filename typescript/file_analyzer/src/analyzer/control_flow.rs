@@ -309,15 +309,18 @@ impl AddAssign for CondFacts {
 
         for (k, v) in rhs.vars {
             match self.vars.entry(k) {
-                Entry::Occupied(mut e) => match e.get_mut().normalize_mut() {
-                    Type::Union(u) => {
-                        u.types.push(v);
-                    }
-                    prev => {
-                        let prev = prev.take();
-                        *e.get_mut() = Type::union(vec![prev, v]).cheap();
-                    }
-                },
+                Entry::Occupied(mut e) => {
+                    match e.get_mut().normalize_mut() {
+                        Type::Union(u) => {
+                            u.types.push(v);
+                        }
+                        prev => {
+                            let prev = prev.take();
+                            *e.get_mut() = Type::union(vec![prev, v]).cheap();
+                        }
+                    };
+                    e.get_mut().make_clone_cheap();
+                }
                 Entry::Vacant(e) => {
                     e.insert(v);
                 }
