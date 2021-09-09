@@ -70,7 +70,10 @@ impl UnionNormalizer<'_, '_, '_> {
     }
 
     fn normalize_fn_types(&mut self, ty: &mut Type) {
-        let u = match ty {
+        if !ty.normalize().is_union_type() {
+            return;
+        }
+        let u = match ty.normalize_mut() {
             Type::Union(u) => u,
             _ => return,
         };
