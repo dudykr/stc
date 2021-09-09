@@ -302,7 +302,7 @@ impl Analyzer<'_, '_> {
         debug_assert!(!self.is_builtin, "builtin: return statement is not supported");
         debug_assert_ne!(node.span, DUMMY_SP, "return statement should have valid span");
 
-        let ty = if let Some(res) = {
+        let mut ty = if let Some(res) = {
             let ctx = Ctx {
                 in_return_arg: true,
                 ..self.ctx
@@ -322,6 +322,7 @@ impl Analyzer<'_, '_> {
             })
         };
         debug_assert_ne!(ty.span(), DUMMY_SP, "{:?}", ty);
+        ty.make_clone_cheap();
 
         if let Some(declared) = self.scope.declared_return_type().cloned() {
             match (self.ctx.in_async, self.ctx.in_generator) {
