@@ -48,6 +48,10 @@ pub(crate) struct CondFacts {
 impl CondFacts {
     #[inline]
     pub(crate) fn assert_valid(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
         for (_, ty) in &self.vars {
             ty.assert_valid();
             ty.assert_clone_cheap();
@@ -94,6 +98,9 @@ impl CondFacts {
 
     pub fn override_vars_using(&mut self, r: &mut Self) {
         for (k, ty) in r.vars.drain() {
+            ty.assert_valid();
+            ty.assert_clone_cheap();
+
             match self.vars.entry(k) {
                 Entry::Occupied(mut e) => {
                     *e.get_mut() = ty;
@@ -156,12 +163,20 @@ pub(super) struct Facts {
 impl Facts {
     #[inline]
     pub(crate) fn assert_valid(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
         self.true_facts.assert_valid();
         self.false_facts.assert_valid();
     }
 
     #[inline]
     pub(crate) fn assert_clone_cheap(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
         self.true_facts.assert_clone_cheap();
         self.false_facts.assert_clone_cheap();
     }
