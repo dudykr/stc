@@ -1207,6 +1207,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = &ty {
             ty.assert_valid();
+            ty.assert_clone_cheap();
         }
 
         op(self.scope.vars.entry(name).or_insert_with(|| VarInfo {
@@ -1512,7 +1513,7 @@ impl Analyzer<'_, '_> {
                         if var_ty.type_eq(&ty) {
                             var_ty
                         } else {
-                            Type::union(vec![var_ty, ty])
+                            Type::union(vec![var_ty, ty]).freezed()
                         }
                     } else {
                         ty
@@ -1523,7 +1524,8 @@ impl Analyzer<'_, '_> {
                     } else {
                         None
                     }
-                };
+                }
+                ;
                 if let Some(ty) = &actual_ty {
                     ty.assert_valid();
                     if !self.is_builtin {
