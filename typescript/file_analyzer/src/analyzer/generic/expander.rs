@@ -192,7 +192,8 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )
-                    .unwrap();
+                    .unwrap()
+                    .freezed();
                 match child.normalize() {
                     Type::Ref(..) => return None,
                     _ => {}
