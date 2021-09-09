@@ -3031,10 +3031,12 @@ impl Analyzer<'_, '_> {
 
         let orig_ty = self
             .normalize(Some(span), Cow::Borrowed(orig_ty), Default::default())
-            .context("tried to normalize original type")?;
+            .context("tried to normalize original type")?
+            .freezed();
         let new_ty = self
             .normalize(Some(span), Cow::Owned(new_ty), Default::default())
-            .context("tried to normalize new type")?;
+            .context("tried to normalize new type")?
+            .freezed();
 
         let use_simple_intersection = (|| {
             match (orig_ty.normalize(), new_ty.normalize()) {
