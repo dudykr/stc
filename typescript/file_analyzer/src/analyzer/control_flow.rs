@@ -828,8 +828,9 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
 
-                        let narrowed_ty = self.narrowed_type_of_assignment(span, declared_ty, &ty)?;
+                        let mut narrowed_ty = self.narrowed_type_of_assignment(span, declared_ty, &ty)?;
                         narrowed_ty.assert_valid();
+                        narrowed_ty.make_clone_cheap();
                         actual_ty = Some(narrowed_ty);
                     }
                 } else {
@@ -849,8 +850,9 @@ impl Analyzer<'_, '_> {
                 // Update actual types.
                 if let Some(var_info) = self.scope.get_var_mut(&i.id.clone().into()) {
                     var_info.is_actual_type_modified_in_loop |= is_in_loop;
-                    let new_ty = actual_ty.unwrap_or_else(|| ty.clone());
+                    let mut new_ty = actual_ty.unwrap_or_else(|| ty.clone());
                     new_ty.assert_valid();
+                    new_ty.make_clone_cheap();
                     var_info.actual_ty = Some(new_ty);
                     return Ok(());
                 }
