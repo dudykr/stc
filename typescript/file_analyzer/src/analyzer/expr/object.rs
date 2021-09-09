@@ -161,7 +161,12 @@ impl UnionNormalizer<'_, '_, '_> {
 
     /// TODO: Add type parameters.
     fn normalize_call_signatures(&self, ty: &mut Type) {
-        let u = match ty {
+        if !ty.normalize().is_union_type() {
+            return;
+        }
+        ty.make_clone_cheap();
+
+        let u = match ty.normalize_mut() {
             Type::Union(u) => u,
             _ => return,
         };
