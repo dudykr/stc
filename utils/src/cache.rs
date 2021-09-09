@@ -54,6 +54,12 @@ pub trait Freeze: Sized + Clone {
     fn is_clone_cheap(&self) -> bool;
 
     fn make_clone_cheap(&mut self);
+
+    #[inline]
+    fn freezed(mut self) -> Self {
+        self.make_clone_cheap();
+        self
+    }
 }
 
 impl<T> Freeze for Option<T>
