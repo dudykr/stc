@@ -131,7 +131,7 @@ impl Analyzer<'_, '_> {
         match casted.normalize() {
             Type::Tuple(ref lt) => {
                 //
-                match *orig.normalize() {
+                match orig.normalize() {
                     Type::Tuple(ref rt) => {
                         //
                         if lt.elems.len() != rt.elems.len() {
@@ -170,7 +170,7 @@ impl Analyzer<'_, '_> {
 
             Type::Array(ref lt) => {
                 //
-                match orig {
+                match orig.normalize() {
                     Type::Tuple(ref rt) => {
                         if rt.elems[0].ty.type_eq(&lt.elem_type) {
                             return Ok(());
@@ -188,10 +188,10 @@ impl Analyzer<'_, '_> {
 
         // self.assign(&casted_ty, &orig_ty, span)?;
 
-        match casted {
+        match casted.normalize() {
             Type::Tuple(ref rt) => {
                 //
-                match orig {
+                match orig.normalize() {
                     Type::Tuple(ref lt) => {}
                     _ => {}
                 }
