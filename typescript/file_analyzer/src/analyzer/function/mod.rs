@@ -114,7 +114,8 @@ impl Analyzer<'_, '_> {
                     ..child.ctx
                 };
                 try_opt!(f.return_type.validate_with(&mut *child.with_ctx(ctx)))
-            };
+            }
+            .freezed();
 
             child.scope.declared_return_type = declared_ret_ty.clone();
 

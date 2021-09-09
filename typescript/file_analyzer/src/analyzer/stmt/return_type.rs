@@ -433,10 +433,10 @@ impl Analyzer<'_, '_> {
                 self.get_iterator_element_type(e.span, Cow::Owned(ty), false)
                     .context("tried to convert argument as an iterator for delegating yield")?
                     .into_owned()
-                    .cheap()
             } else {
-                ty.cheap()
-            };
+                ty
+            }
+            .freezed();
 
             if let Some(declared) = self.scope.declared_return_type().cloned() {
                 match self
