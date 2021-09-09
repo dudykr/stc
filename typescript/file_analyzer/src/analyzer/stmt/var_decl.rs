@@ -657,7 +657,8 @@ impl Analyzer<'_, '_> {
                     .as_ref()
                     .and_then(|m| m.for_pats.get(&v.node_id))
                     .and_then(|v| v.ty.as_ref())
-                    .cloned();
+                    .cloned()
+                    .freezed();
 
                 if let Some(var_ty) = var_ty {
                     self.declare_complex_vars(VarKind::Var(kind), &v.name, var_ty, None, None)
