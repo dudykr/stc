@@ -460,7 +460,8 @@ impl Analyzer<'_, '_> {
                             common: tuple.metadata.common,
                             ..Default::default()
                         },
-                    });
+                    })
+                    .freezed();
                 }
                 _ => {}
             }
