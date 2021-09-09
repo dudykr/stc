@@ -497,10 +497,12 @@ impl Scope<'_> {
 
         if let Some(v) = &v.ty {
             v.assert_valid();
+            v.assert_clone_cheap();
         }
 
         if let Some(v) = &v.actual_ty {
             v.assert_valid();
+            v.assert_clone_cheap();
         }
 
         self.vars.insert(name, v);
