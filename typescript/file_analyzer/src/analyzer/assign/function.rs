@@ -152,6 +152,8 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
+                        vec.make_clone_cheap();
+
                         for new_l_params in vec {
                             return self
                                 .assign_to_fn_like(
