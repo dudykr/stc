@@ -40,8 +40,10 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> ValidationResult {
         // We don't apply type annotation because it can corrupt type checking.
-        let casted_ty = e.type_ann.validate_with(self)?;
-        let orig_ty = e.expr.validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
+        let mut casted_ty = e.type_ann.validate_with(self)?;
+        casted_ty.make_clone_cheap();
+        let mut orig_ty = e.expr.validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
+        orig_ty.make_clone_cheap();
 
         self.validate_type_cast(e.span, orig_ty, casted_ty)
     }
