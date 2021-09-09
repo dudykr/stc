@@ -1091,9 +1091,8 @@ impl Analyzer<'_, '_> {
     pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type) {
         info!("add_type_fact({}); ty = {:?}", sym, ty);
 
-        debug_assert!(ty.is_clone_cheap());
-
         ty.assert_valid();
+        ty.assert_clone_cheap();
 
         self.cur_facts.insert_var(sym, ty, false);
     }
@@ -1101,9 +1100,8 @@ impl Analyzer<'_, '_> {
     pub(super) fn add_deep_type_fact(&mut self, span: Span, name: Name, ty: Type, is_for_true: bool) {
         debug_assert!(!self.is_builtin);
 
-        debug_assert!(ty.is_clone_cheap());
-
         ty.assert_valid();
+        ty.assert_clone_cheap();
 
         if let Some((name, mut ty)) = self
             .determine_type_fact_by_field_fact(span, &name, &ty)
