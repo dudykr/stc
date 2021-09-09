@@ -2768,7 +2768,8 @@ impl Analyzer<'_, '_> {
                                     self.storage.report(err);
                                     continue;
                                 }
-                            };
+                            }
+                            .freezed();
 
                             // Handle
                             //
