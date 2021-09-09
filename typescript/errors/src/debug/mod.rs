@@ -50,7 +50,7 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
                         type_ann: box RTsType::from(
                             Type::TypeLit(TypeLit {
                                 span: DUMMY_SP,
-                                members: t.body.clone(),
+                                members: ALLOW_DEEP_CLONE.set(&(), || t.body.clone()),
                                 metadata: Default::default(),
                             })
                             .fold_with(&mut Visualizer::default()),
