@@ -77,12 +77,21 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         if let Some(ty) = &ty {
             ty.assert_valid();
+            if !self.is_builtin {
+                ty.assert_clone_cheap();
+            }
         }
         if let Some(ty) = &actual {
             ty.assert_valid();
+            if !self.is_builtin {
+                ty.assert_clone_cheap();
+            }
         }
         if let Some(ty) = &default {
             ty.assert_valid();
+            if !self.is_builtin {
+                ty.assert_clone_cheap();
+            }
         }
 
         let span = pat.span().with_ctxt(SyntaxContext::empty());
