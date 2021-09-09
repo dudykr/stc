@@ -1061,8 +1061,6 @@ struct AssertCloneCheap;
 impl Visit<Type> for AssertCloneCheap {
     fn visit(&mut self, ty: &Type) {
         debug_assert!(ty.is_clone_cheap(), "{:?} is not cheap to clone", ty);
-
-        ty.visit_children_with(self);
     }
 }
 
