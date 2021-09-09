@@ -1187,20 +1187,22 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let prop_res = self.access_property(
-            src.span(),
-            src,
-            &Key::Normal {
-                span: DUMMY_SP,
-                sym: property.clone(),
-            },
-            TypeOfMode::RValue,
-            IdCtx::Var,
-            AccessPropertyOpts {
-                disallow_creating_indexed_type_from_ty_els: true,
-                ..Default::default()
-            },
-        );
+        let prop_res = self
+            .access_property(
+                src.span(),
+                src,
+                &Key::Normal {
+                    span: DUMMY_SP,
+                    sym: property.clone(),
+                },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+                AccessPropertyOpts {
+                    disallow_creating_indexed_type_from_ty_els: true,
+                    ..Default::default()
+                },
+            )
+            .map(Freeze::freezed);
 
         match prop_res {
             Ok(mut prop_ty) => {
