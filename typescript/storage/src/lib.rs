@@ -154,6 +154,7 @@ impl ErrorStore for Single<'_> {
 impl TypeStore for Single<'_> {
     fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool) {
         debug_assert_eq!(ctxt, self.id);
+        ty.assert_clone_cheap();
 
         if should_override {
             if self.info.exports.types.contains_key(&id.sym()) {
@@ -167,6 +168,7 @@ impl TypeStore for Single<'_> {
 
     fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
         debug_assert_eq!(ctxt, self.id);
+        ty.assert_clone_cheap();
 
         match self.info.exports.private_vars.entry(id) {
             Entry::Occupied(e) => {
@@ -246,11 +248,15 @@ impl TypeStore for Single<'_> {
 
     fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
         debug_assert_eq!(ctxt, self.id);
+        ty.assert_clone_cheap();
+
         self.info.exports.types.entry(id).or_default().push(ty);
     }
 
     fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
         debug_assert_eq!(ctxt, self.id);
+        ty.assert_clone_cheap();
+
         // TODO: error reporting for duplicate
         self.info.exports.vars.insert(id, ty);
     }
