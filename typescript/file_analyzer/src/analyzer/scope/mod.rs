@@ -1006,7 +1006,9 @@ impl Analyzer<'_, '_> {
     pub(super) fn find_var_type(&self, name: &Id, mode: TypeOfMode) -> Option<Cow<Type>> {
         let ty = (|| {
             if let Some(v) = self.cur_facts.true_facts.vars.get(&Name::from(name)) {
-                debug!("Scope.find_var_type({}): Handled with cur_facts", name);
+                if cfg!(debug_assertions) {
+                    debug!("Scope.find_var_type({}): Handled with cur_facts", name);
+                }
 
                 return Some(Cow::Borrowed(v));
             }
@@ -1015,7 +1017,9 @@ impl Analyzer<'_, '_> {
             let mut scope = Some(&self.scope);
             while let Some(s) = scope {
                 if let Some(ref v) = s.facts.vars.get(&Name::from(name)) {
-                    debug!("Scope.find_var_type({}): Handled from facts", name);
+                    if cfg!(debug_assertions) {
+                        debug!("Scope.find_var_type({}): Handled from facts", name);
+                    }
                     return Some(Cow::Borrowed(v));
                 }
 
@@ -1026,18 +1030,22 @@ impl Analyzer<'_, '_> {
                 // Improted variables
                 if let Some(info) = self.imports_by_id.get(name) {
                     if let Some(var_ty) = info.data.vars.get(name.sym()) {
-                        debug!("Scope.find_var_type({}): Handled with imports", name);
+                        if cfg!(debug_assertions) {
+                            debug!("Scope.find_var_type({}): Handled with imports", name);
+                        }
                         return Some(Cow::Borrowed(var_ty));
                     }
                 }
             }
 
             if let Some(var) = self.find_var(name) {
-                debug!(
-                    "({}) find_var_type({}): Handled from scope.find_var",
-                    self.scope.depth(),
-                    name
-                );
+                if cfg!(debug_assertions) {
+                    debug!(
+                        "({}) find_var_type({}): Handled from scope.find_var",
+                        self.scope.depth(),
+                        name
+                    );
+                }
 
                 let name = Name::from(name);
 
@@ -1077,7 +1085,9 @@ impl Analyzer<'_, '_> {
 
             {
                 if let Some(ty) = self.storage.get_local_var(self.ctx.module_id, name.clone()) {
-                    debug!("Scope.find_var_type({}): Handled with storage", name);
+                    if cfg!(debug_assertions) {
+                        debug!("Scope.find_var_type({}): Handled with storage", name);
+                    }
                     return Some(Cow::Owned(ty));
                 }
             }
