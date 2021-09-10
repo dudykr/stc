@@ -442,10 +442,9 @@ impl Analyzer<'_, '_> {
                 match self
                     .get_iterator_element_type(span, Cow::Owned(declared), true)
                     .map(Cow::into_owned)
+                    .map(Freeze::freezed)
                 {
                     Ok(declared) => {
-                        declared.assert_clone_cheap();
-
                         match self.assign_with_opts(
                             &mut Default::default(),
                             AssignOpts {
