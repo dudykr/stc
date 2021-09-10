@@ -347,7 +347,8 @@ impl Analyzer<'_, '_> {
                                         .context("tried to access property to declare variables using an array pattern")
                                         .report(&mut self.storage),
                                     None => None,
-                                };
+                                }
+                                .freezed();
 
                                 let default = match &default {
                                     Some(ty) => self
@@ -365,7 +366,8 @@ impl Analyzer<'_, '_> {
                                         .context("tried to access property to declare variables using an array pattern")
                                         .report(&mut self.storage),
                                     None => None,
-                                };
+                                }
+                                .freezed();
 
                                 // TODO: actual_ty
                                 self.add_vars(elem, elem_ty, None, default, opts)
