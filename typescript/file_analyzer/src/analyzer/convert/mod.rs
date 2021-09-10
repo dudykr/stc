@@ -711,7 +711,7 @@ impl Analyzer<'_, '_> {
         self.record(t);
 
         let span = t.span;
-        let type_args = try_opt!(t.type_params.validate_with(self)).map(Box::new);
+        let type_args = try_opt!(t.type_params.validate_with(self)).map(Box::new).freezed();
         let mut contains_infer = false;
 
         let mut reported_type_not_found = false;
