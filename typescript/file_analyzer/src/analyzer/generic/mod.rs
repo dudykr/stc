@@ -667,7 +667,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        match arg {
+        match arg.normalize() {
             Type::Param(arg) => {
                 if !param.normalize().is_type_param() {
                     self.insert_inferred(span, inferred, arg.name.clone(), Cow::Borrowed(&param), opts)?;
@@ -677,7 +677,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match param {
+        match param.normalize() {
             Type::Param(TypeParam {
                 ref name,
                 ref constraint,
