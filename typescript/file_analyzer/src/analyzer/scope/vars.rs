@@ -305,7 +305,8 @@ impl Analyzer<'_, '_> {
                                                 .map(Cow::into_owned)
                                                 .report(&mut self.storage),
                                             None => None,
-                                        };
+                                        }
+                                        .freezed();
 
                                         let default = match default {
                                             Some(ty) => self
@@ -317,7 +318,8 @@ impl Analyzer<'_, '_> {
                                                 .map(Cow::into_owned)
                                                 .report(&mut self.storage),
                                             None => None,
-                                        };
+                                        }
+                                        .freezed();
 
                                         self.add_vars(&elem.arg, type_for_rest_arg, None, default, opts)
                                             .context(
