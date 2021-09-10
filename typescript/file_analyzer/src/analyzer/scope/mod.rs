@@ -467,7 +467,10 @@ impl Scope<'_> {
 
     pub fn declared_return_type(&self) -> Option<&Type> {
         match &self.declared_return_type {
-            Some(v) => return Some(v),
+            Some(v) => {
+                v.assert_clone_cheap();
+                return Some(v);
+            }
             None => {}
         }
         match self.kind {
