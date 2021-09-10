@@ -399,10 +399,9 @@ impl Analyzer<'_, '_> {
                 right,
                 ..
             }) => {
-                let ty: Option<Type> = i.type_ann.validate_with(self).try_opt()?;
-                let ty = ty.map(|ty| ty.cheap());
+                let ty: Option<Type> = i.type_ann.validate_with(self).try_opt()?.freezed();
 
-                let right = right.validate_with_default(self).report(&mut self.storage);
+                let right = right.validate_with_default(self).report(&mut self.storage).freezed();
 
                 if let Some(ty) = &ty {
                     if let Some(right) = right {
