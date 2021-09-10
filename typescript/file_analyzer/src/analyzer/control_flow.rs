@@ -1011,7 +1011,8 @@ impl Analyzer<'_, '_> {
                                         ..Default::default()
                                     },
                                 )
-                                .unwrap_or_else(|_| Type::any(span, Default::default()));
+                                .unwrap_or_else(|_| Type::any(span, Default::default()))
+                                .freezed();
 
                             self.try_assign_pat_with_opts(
                                 span,
