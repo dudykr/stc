@@ -1253,7 +1253,12 @@ impl Type {
     /// TODO
     pub fn is_clone_cheap(&self) -> bool {
         match self {
-            Type::Arc(..) | Type::Keyword(..) | Type::This(..) | Type::StaticThis(..) | Type::Symbol(..) => true,
+            Type::Arc(..)
+            | Type::Keyword(..)
+            | Type::Lit(..)
+            | Type::This(..)
+            | Type::StaticThis(..)
+            | Type::Symbol(..) => true,
 
             Type::Param(TypeParam {
                 constraint, default, ..
