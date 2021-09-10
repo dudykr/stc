@@ -2580,6 +2580,11 @@ impl Expander<'_, '_, '_> {
             dump_type_as_string(&self.analyzer.cm, &ty)
         ));
 
+        if matches!(ty.normalize(), Type::Conditional(..)) {
+            ty.make_clone_cheap();
+            ty.normalize_mut();
+        }
+
         match ty {
             Type::Conditional(Conditional {
                 span,
