@@ -444,6 +444,8 @@ impl Analyzer<'_, '_> {
                     .map(Cow::into_owned)
                 {
                     Ok(declared) => {
+                        declared.assert_clone_cheap();
+
                         match self.assign_with_opts(
                             &mut Default::default(),
                             AssignOpts {
