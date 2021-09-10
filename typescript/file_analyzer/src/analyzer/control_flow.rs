@@ -767,14 +767,14 @@ impl Analyzer<'_, '_> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let is_in_loop = self.scope.is_in_loop_body();
-        let mut ty = self
+        let orig_ty = self
             .normalize(Some(ty.span().or_else(|| span)), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize a type to assign it to a pattern")?
-            .into_owned();
-        ty.make_clone_cheap();
-        let _panic_ctx = debug_ctx!(format!("ty = {}", dump_type_as_string(&self.cm, &ty)));
+            .into_owned()
+            .freezed();
+        let _panic_ctx = debug_ctx!(format!("ty = {}", dump_type_as_string(&self.cm, &orig_ty)));
 
-        let ty = ty.normalize();
+        let ty = orig_ty.normalize();
 
         ty.assert_valid();
 
@@ -866,6 +866,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(ty) = &actual_ty {
                     ty.assert_valid();
+                    ty.assert_clone_cheap();
                 }
 
                 // Update actual types.
@@ -879,8 +880,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 let var_info = if let Some(var_info) = self.scope.search_parent(&i.id.clone().into()) {
-                    let actual_ty = actual_ty.unwrap_or_else(|| ty.clone());
+                    let actual_ty = actual_ty.unwrap_or_else(|| orig_ty.clone());
                     actual_ty.assert_valid();
+                    actual_ty.assert_clone_cheap();
 
                     VarInfo {
                         actual_ty: Some(actual_ty),
