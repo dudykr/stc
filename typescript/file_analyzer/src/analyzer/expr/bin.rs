@@ -1155,12 +1155,12 @@ impl Analyzer<'_, '_> {
         match (l, r) {
             (Type::Ref(..), _) => {
                 if let Ok(l) = self.expand_top_ref(l.span(), Cow::Borrowed(l), Default::default()) {
-                    return self.validate_relative_comparison_operands(span, op, &l, r);
+                    return self.validate_relative_comparison_operands(span, op, &l.freezed(), r);
                 }
             }
             (l, Type::Ref(..)) => {
                 if let Ok(r) = self.expand_top_ref(r.span(), Cow::Borrowed(r), Default::default()) {
-                    return self.validate_relative_comparison_operands(span, op, l, &r);
+                    return self.validate_relative_comparison_operands(span, op, l, &r.freezed());
                 }
             }
             (Type::TypeLit(lt), Type::TypeLit(rt)) => {
