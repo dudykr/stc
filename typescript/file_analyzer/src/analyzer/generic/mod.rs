@@ -573,7 +573,11 @@ impl Analyzer<'_, '_> {
         let param = match param {
             Type::Mapped(..) => {
                 // TODO: PERF
-                p = box param.clone().foldable().fold_with(&mut MappedIndexedSimplifier);
+                p = box param
+                    .clone()
+                    .foldable()
+                    .fold_with(&mut MappedIndexedSimplifier)
+                    .freezed();
                 &p
             }
             _ => param,
