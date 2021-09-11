@@ -1,3 +1,4 @@
+#![feature(bench_black_box)]
 #![feature(box_syntax)]
 #![feature(test)]
 
