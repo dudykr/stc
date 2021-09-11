@@ -16,4 +16,7 @@ export LD_LIBRARY_PATH="$(rustc --print sysroot)/lib"
 # (cd stc-lab/ant-design-mobile && stc check src/index.ts)
 
 
-(cd stc-lab/jest/packages/jest-cli && stc check src/index.ts)
+# (cd stc-lab/jest/packages/jest-cli && stc check src/index.ts)
+
+
+cargo instruments -t time --open check ../stc-lab/jest/packages/jest-cli/src/index.ts
