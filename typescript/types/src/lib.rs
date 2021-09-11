@@ -1260,6 +1260,14 @@ impl Type {
             | Type::StaticThis(..)
             | Type::Symbol(..) => true,
 
+            // TODO: Make this false.
+            Type::Param(TypeParam {
+                constraint, default, ..
+            }) => {
+                constraint.as_ref().map(|ty| ty.is_clone_cheap()).unwrap_or(true)
+                    && default.as_ref().map(|ty| ty.is_clone_cheap()).unwrap_or(true)
+            }
+
             _ => false,
         }
     }
