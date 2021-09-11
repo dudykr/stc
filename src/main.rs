@@ -102,6 +102,7 @@ async fn main() -> Result<(), Error> {
                 let start = Instant::now();
 
                 checker.load_typings(&path, None, None);
+                checker.load_typings(&env::current_dir().unwrap(), None, None);
 
                 let end = Instant::now();
 
