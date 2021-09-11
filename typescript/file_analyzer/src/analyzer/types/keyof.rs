@@ -342,6 +342,8 @@ impl Analyzer<'_, '_> {
             unimplemented!("keyof: {}", dump_type_as_string(&self.cm, &ty));
         })()?;
 
-        Ok(ty.fixed())
+        ty.assert_valid();
+
+        Ok(ty)
     }
 }
