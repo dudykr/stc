@@ -257,6 +257,17 @@ impl Analyzer<'_, '_> {
             .spread_args(&arg_types)
             .context("tried to handle spreads in arguments")?;
 
+        // For debugging
+        if false {
+            for (i, ty) in arg_types.iter().enumerate() {
+                print_type(&format!("arg {}", i), &self.cm, &ty.ty);
+            }
+
+            for (i, ty) in spread_arg_types.iter().enumerate() {
+                print_type(&format!("spreaded arg {}", i), &self.cm, &ty.ty);
+            }
+        }
+
         match *callee {
             RExpr::Ident(ref i) if i.sym == js_word!("require") => {
                 let id = args
@@ -2575,7 +2586,7 @@ impl Analyzer<'_, '_> {
                 new_arg_types = vec![];
                 for arg in &new_args {
                     if arg.spread.is_some() {
-                        match &*arg.ty {
+                        match arg.ty.normalize() {
                             Type::Tuple(arg_ty) => {
                                 new_arg_types.extend(arg_ty.elems.iter().map(|element| &element.ty).cloned().map(
                                     |ty| TypeOrSpread {
