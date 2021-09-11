@@ -38,7 +38,7 @@ use stc_ts_types::{
     KeywordTypeMetadata, LitType, LitTypeMetadata, Method, ModuleId, Operator, OptionalType, PropertySignature,
     QueryExpr, QueryType, StaticThis, ThisType,
 };
-use stc_utils::{cache::Freeze, debug_ctx, stack, try_cache};
+use stc_utils::{cache::Freeze, debug_ctx, stack};
 use std::{
     borrow::Cow,
     collections::HashMap,
@@ -3330,11 +3330,7 @@ impl Analyzer<'_, '_> {
         n: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult {
-        Ok(try_cache!(
-            self.data.cache.ts_entity_name,
-            (ctxt, n.clone(), type_args.cloned()),
-            self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
-        ))
+        self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
     }
 
     #[instrument(skip(self, span, ctxt, n, type_args))]

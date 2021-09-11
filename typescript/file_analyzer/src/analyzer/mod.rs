@@ -19,8 +19,8 @@ use crate::{
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{
-    RDecorator, RExpr, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsEntityName, RTsImportEqualsDecl,
-    RTsModuleDecl, RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
+    RDecorator, RExpr, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsImportEqualsDecl, RTsModuleDecl,
+    RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
 };
 use stc_ts_dts_mutations::Mutations;
 use stc_ts_errors::{
@@ -28,8 +28,8 @@ use stc_ts_errors::{
     Error,
 };
 use stc_ts_storage::{Builtin, Info, Storage};
-use stc_ts_types::{Id, IdCtx, Mapped, ModuleId, ModuleTypeData, TypeParamInstantiation};
-use stc_utils::{cache::CacheMap, AHashMap, AHashSet};
+use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData};
+use stc_utils::{AHashMap, AHashSet};
 use std::{
     fmt::Debug,
     mem::take,
@@ -228,13 +228,6 @@ impl Ctx {
     }
 }
 
-#[derive(Debug, Default)]
-struct TypeCache {
-    expand_mapped: CacheMap<Mapped, Option<Type>>,
-
-    ts_entity_name: CacheMap<(ModuleId, RTsEntityName, Option<TypeParamInstantiation>), Type>,
-}
-
 /// Note: All methods named `validate_*` return [Err] iff it's not recoverable.
 pub struct Analyzer<'scope, 'b> {
     env: Env,
@@ -311,8 +304,6 @@ struct AnalyzerData {
     /// We mimic it by storing names of wrong overloads.
     /// Only first wrong overload should be added to this set.
     known_wrong_overloads: FxHashSet<Id>,
-
-    cache: TypeCache,
 }
 
 #[derive(Debug, Default)]
