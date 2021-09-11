@@ -1116,6 +1116,43 @@ impl Type {
         }
     }
 
+    pub fn new_union<I: IntoIterator<Item = Self> + Debug>(span: Span, iter: I) -> Self {
+        let _ctx = debug_ctx!(format!("Iterator: {:?}", iter));
+
+        let mut elements = vec![];
+
+        for ty in iter {
+            if ty.normalize().is_union_type() {
+                let types = ty.foldable().union_type().unwrap().types;
+                for new in types {
+                    if elements.iter().any(|prev: &Type| prev.type_eq(&new)) {
+                        continue;
+                    }
+                    elements.push(new)
+                }
+            } else {
+                if elements.iter().any(|prev: &Type| prev.type_eq(&ty)) {
+                    continue;
+                }
+                elements.push(ty)
+            }
+        }
+        // Drop `never`s.
+        elements.retain(|ty| !ty.is_never());
+
+        let ty = match elements.len() {
+            0 => Type::never(span, Default::default()),
+            1 => elements.into_iter().next().unwrap(),
+            _ => Type::Union(Union {
+                span,
+                types: elements,
+                metadata: Default::default(),
+            }),
+        };
+        ty.assert_valid();
+        ty
+    }
+
     /// Creates a new type from `iter`.
     ///
     /// Note:
