@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-cargo install --offline --path .
+# cargo install --offline --path .
 
 export RUST_LOG=debug,swc_common=off
 export LD_LIBRARY_PATH="$(rustc --print sysroot)/lib"
@@ -19,4 +19,4 @@ export LD_LIBRARY_PATH="$(rustc --print sysroot)/lib"
 # (cd stc-lab/jest/packages/jest-cli && stc check src/index.ts)
 
 
-cargo instruments -t time --open check ../stc-lab/jest/packages/jest-cli/src/index.ts
+cargo instruments --release -t time --open check ../stc-lab/jest/packages/jest-cli/src/index.ts
