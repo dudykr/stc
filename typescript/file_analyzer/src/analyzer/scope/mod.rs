@@ -1810,6 +1810,7 @@ impl<'a> Scope<'a> {
     }
 
     /// This method does **not** handle imported types.
+    #[instrument(name = "Scope::find_type", skip(self))]
     fn find_type(&self, name: &Id) -> Option<ItemRef<Type>> {
         if cfg!(debug_assertions) {
             debug!("Analyzer.find_type('{}')", name);
