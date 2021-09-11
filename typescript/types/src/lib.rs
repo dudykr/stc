@@ -2410,6 +2410,8 @@ macro_rules! impl_freeze {
                 v.cheap
             }
 
+            #[inline]
+            #[instrument(skip(self))]
             fn make_clone_cheap(&mut self) {
                 self.visit_mut_with(&mut CheapClone);
             }
