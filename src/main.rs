@@ -96,17 +96,17 @@ async fn main() -> Result<(), Error> {
                 Arc::new(NodeResolver),
             );
 
+            let path = Arc::new(PathBuf::from(cmd.file));
+
             {
                 let start = Instant::now();
 
-                checker.load_typings(None, None);
+                checker.load_typings(&path, None, None);
 
                 let end = Instant::now();
 
                 log::info!("Loading typing libraries took {:?}", end - start);
             }
-
-            let path = Arc::new(PathBuf::from(cmd.file));
 
             checker.check(path);
 

@@ -2,7 +2,6 @@ use crate::Checker;
 use rayon::prelude::*;
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use std::{
-    env,
     fs::read_dir,
     path::{Path, PathBuf},
     sync::Arc,
@@ -66,13 +65,10 @@ impl Checker {
     ///
     /// - https://www.typescriptlang.org/tsconfig#typeRoots
     /// - https://www.typescriptlang.org/tsconfig#types
-    pub fn load_typings(&self, _type_roots: Option<&[PathBuf]>, types: Option<&[String]>) {
-        let cur_dir =
-            env::current_dir().expect("failed to get current directory which is required to load typing packages");
-
+    pub fn load_typings(&self, base: &Path, _type_roots: Option<&[PathBuf]>, types: Option<&[String]>) {
         let mut dirs = vec![];
 
-        let mut cur = Some(&*cur_dir);
+        let mut cur = Some(base);
         while let Some(c) = cur {
             dirs.push(c.to_path_buf());
             cur = c.parent();
