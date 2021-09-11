@@ -21,6 +21,7 @@ use num_bigint::BigInt;
 use num_traits::Zero;
 use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
+use servo_arc::Arc;
 use static_assertions::assert_eq_size;
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
@@ -39,7 +40,6 @@ use std::{
     iter::FusedIterator,
     mem::{replace, transmute},
     ops::AddAssign,
-    sync::Arc,
 };
 use swc_atoms::{js_word, JsWord};
 use swc_common::{EqIgnoreSpan, FromVariant, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -2228,10 +2228,15 @@ pub struct TplType {
 
 assert_eq_size!(TplType, [u8; 72]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq)]
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq)]
 pub struct Freezed {
-    #[span]
     ty: Arc<Type>,
+}
+
+impl Spanned for Freezed {
+    fn span(&self) -> Span {
+        self.ty.span()
+    }
 }
 
 assert_eq_size!(Freezed, [u8; 8]);
