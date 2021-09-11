@@ -307,14 +307,14 @@ impl Analyzer<'_, '_> {
                             })
                             .cloned()
                             .map(Type::Lit)
-                            .collect_vec()
-                            .fixed();
+                            .collect_vec();
 
                         return Ok(Type::Union(Union {
                             span,
                             types: actual_keys,
                             metadata: Default::default(),
-                        }));
+                        })
+                        .fixed());
                     }
 
                     return Ok(Type::union(key_types));
