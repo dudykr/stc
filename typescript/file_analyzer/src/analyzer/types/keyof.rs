@@ -5,7 +5,7 @@ use crate::{
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
-use stc_ts_type_ops::{is_str_lit_or_union, Fix};
+use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
     Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, ModuleId,
     PropertySignature, Ref, Type, TypeElement, Union,
@@ -174,16 +174,7 @@ impl Analyzer<'_, '_> {
                             TypeElement::Call(_) | TypeElement::Constructor(_) => {}
                         }
                     }
-
-                    if types.is_empty() {
-                        return Ok(Type::never(span, Default::default()));
-                    }
-
-                    return Ok(Type::Union(Union {
-                        span,
-                        types,
-                        metadata: Default::default(),
-                    }));
+                    return Ok(Type::new_union(span, types));
                 }
 
                 Type::Class(Class { def, .. }) => {
@@ -255,7 +246,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Intersection(i) => {
                     // We return union of keys.
-                    let types = i
+                    let types: Vec<_> = i
                         .types
                         .iter()
                         .map(|ty| {
@@ -264,11 +255,7 @@ impl Analyzer<'_, '_> {
                         })
                         .collect::<Result<_, _>>()?;
 
-                    return Ok(Type::Union(Union {
-                        span,
-                        types,
-                        metadata: Default::default(),
-                    }));
+                    return Ok(Type::new_union(span, types));
                 }
 
                 Type::Union(u) => {
@@ -309,15 +296,10 @@ impl Analyzer<'_, '_> {
                             .map(Type::Lit)
                             .collect_vec();
 
-                        return Ok(Type::Union(Union {
-                            span,
-                            types: actual_keys,
-                            metadata: Default::default(),
-                        })
-                        .fixed());
+                        return Ok(Type::new_union(span, actual_keys));
                     }
 
-                    return Ok(Type::union(key_types));
+                    return Ok(Type::new_union(span, key_types));
                 }
 
                 Type::Param(..) => {
