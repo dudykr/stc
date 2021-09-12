@@ -1,5 +1,6 @@
 use crate::{
     analyzer::{types::NormalizeTypeOpts, Analyzer},
+    util::type_ext::TypeVecExt,
     ValidationResult,
 };
 use itertools::Itertools;
@@ -285,6 +286,8 @@ impl Analyzer<'_, '_> {
                             })
                             .collect_vec();
 
+                        keys[0].dedup_type();
+
                         let actual_keys = keys[0]
                             .iter()
                             .filter(|&key| {
@@ -296,7 +299,7 @@ impl Analyzer<'_, '_> {
                             .map(Type::Lit)
                             .collect_vec();
 
-                        return Ok(Type::new_union(span, actual_keys));
+                        return Ok(Type::new_union_without_dedup(span, actual_keys));
                     }
 
                     return Ok(Type::new_union(span, key_types));
