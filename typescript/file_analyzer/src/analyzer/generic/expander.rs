@@ -7,7 +7,7 @@ use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsLit};
 use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_generics::{type_param::finder::TypeParamUsageFinder, ExpandGenericOpts};
+use stc_ts_generics::{type_param::finder::TypeParamNameUsageFinder, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     ArrayMetadata, ComputedKey, Function, Id, Interface, Key, KeywordType, KeywordTypeMetadata, LitType, TypeParam,
@@ -924,9 +924,9 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
         };
 
         {
-            let mut v = TypeParamUsageFinder::default();
+            let mut v = TypeParamNameUsageFinder::default();
             ty.visit_with(&mut v);
-            let will_expand = v.params.iter().any(|param| self.params.contains_key(&param.name));
+            let will_expand = v.params.iter().any(|param| self.params.contains_key(&param));
             if !will_expand {
                 return ty;
             }
