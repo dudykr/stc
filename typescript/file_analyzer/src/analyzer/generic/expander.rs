@@ -1,5 +1,5 @@
 use crate::{
-    analyzer::{assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, Analyzer, Ctx},
+    analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer, Ctx},
     ty::{Array, IndexedAccessType, Mapped, Operator, PropertySignature, Ref, Type, TypeElement, TypeLit},
     ValidationResult,
 };
@@ -10,10 +10,10 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::{type_param::finder::TypeParamUsageFinder, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    ArrayMetadata, ComputedKey, Function, Id, IdCtx, Interface, Key, KeywordType, KeywordTypeMetadata, LitType,
-    TypeParam, TypeParamDecl, TypeParamInstantiation,
+    ArrayMetadata, ComputedKey, Function, Id, Interface, Key, KeywordType, KeywordTypeMetadata, LitType, TypeParam,
+    TypeParamDecl, TypeParamInstantiation,
 };
-use stc_utils::{cache::Freeze, debug_ctx, ext::SpanExt, stack};
+use stc_utils::{cache::Freeze, debug_ctx, stack};
 use std::time::{Duration, Instant};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, TypeEq, DUMMY_SP};
@@ -870,24 +870,6 @@ impl GenericExpander<'_, '_, '_, '_> {
                     })),
                     _ => None,
                 };
-
-                let key = match key {
-                    Some(v) => v,
-                    None => return Type::IndexedAccessType(ty),
-                };
-
-                let span = key.span().or_else(|| ty.obj_type.span()).or_else(|| ty.span());
-
-                if let Ok(prop_ty) = self.analyzer.access_property(
-                    span,
-                    &ty.obj_type,
-                    &key,
-                    TypeOfMode::RValue,
-                    IdCtx::Var,
-                    Default::default(),
-                ) {
-                    return prop_ty;
-                }
 
                 Type::IndexedAccessType(ty)
             }
