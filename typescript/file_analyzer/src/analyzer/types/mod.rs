@@ -15,10 +15,10 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Accessor, Array, ArrayMetadata, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional,
-    ConditionalMetadata, ConstructorSignature, Id, IdCtx, Instance, InstanceMetadata, Intersection, Intrinsic,
-    IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId,
-    Operator, PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type, TypeElement,
-    TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    ConditionalMetadata, ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection,
+    Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature,
+    ModuleId, Operator, PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type,
+    TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
@@ -410,10 +410,16 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::IndexedAccessType(iat) => {
+                        let obj_ty = box self
+                            .normalize(span, Cow::Borrowed(&iat.obj_type), opts)
+                            .context("tried to normalize object type")?
+                            .into_owned();
+
                         let index_ty = box self
                             .normalize(span, Cow::Borrowed(&iat.index_type), opts)
                             .context("tried to normalize index type")?
-                            .into_owned();
+                            .into_owned()
+                            .freezed();
 
                         let ctx = Ctx {
                             diallow_unknown_object_property: true,
@@ -421,11 +427,11 @@ impl Analyzer<'_, '_> {
                         };
                         let prop_ty = self.with_ctx(ctx).access_property(
                             actual_span,
-                            &iat.obj_type,
+                            &obj_ty,
                             &Key::Computed(ComputedKey {
                                 span: actual_span,
                                 expr: box RExpr::Invalid(RInvalid { span: actual_span }),
-                                ty: index_ty,
+                                ty: index_ty.clone(),
                             }),
                             TypeOfMode::RValue,
                             IdCtx::Type,
@@ -458,6 +464,14 @@ impl Analyzer<'_, '_> {
                             return Ok(Cow::Owned(ty));
                         }
                         // TODO:
+
+                        return Ok(Cow::Owned(Type::IndexedAccessType(IndexedAccessType {
+                            span: iat.span,
+                            readonly: iat.readonly,
+                            obj_type: obj_ty,
+                            index_type: index_ty,
+                            metadata: iat.metadata,
+                        })));
                     }
 
                     Type::Operator(Operator {
