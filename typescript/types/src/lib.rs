@@ -2457,11 +2457,12 @@ macro_rules! impl_freeze {
     };
 }
 
+impl_freeze!(FnParam);
+impl_freeze!(Interface);
+impl_freeze!(TsExpr);
 impl_freeze!(Type);
 impl_freeze!(TypeParam);
 impl_freeze!(TypeParamDecl);
 impl_freeze!(TypeParamInstantiation);
 impl_freeze!(TypeOrSpread);
-impl_freeze!(FnParam);
-impl_freeze!(Interface);
 impl_freeze!(Key);

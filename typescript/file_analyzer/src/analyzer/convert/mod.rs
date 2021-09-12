@@ -278,7 +278,7 @@ impl Analyzer<'_, '_> {
                     span: d.span,
                     name: d.id.clone().into(),
                     type_params: try_opt!(d.type_params.validate_with(&mut *child).map(|v| v.map(Box::new))),
-                    extends: d.extends.validate_with(child)?,
+                    extends: d.extends.validate_with(child)?.freezed(),
                     body: d.body.validate_with(child)?,
                     metadata: Default::default(),
                 };
