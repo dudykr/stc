@@ -18,6 +18,31 @@ impl Visit<TypeParamDecl> for TypeParamDeclFinder {
 }
 
 #[derive(Debug, Default)]
+pub struct TypeParamNameUsageFinder {
+    pub params: Vec<Id>,
+}
+
+/// Noop as declaration is not usage.
+impl Visit<TypeParamDecl> for TypeParamNameUsageFinder {
+    #[inline]
+    fn visit(&mut self, _: &TypeParamDecl) {}
+}
+
+impl Visit<TypeParam> for TypeParamNameUsageFinder {
+    fn visit(&mut self, node: &TypeParam) {
+        for p in &self.params {
+            if node.name == *p {
+                return;
+            }
+        }
+
+        // info!( "Found type parameter({})", node.name);
+
+        self.params.push(node.name.clone());
+    }
+}
+
+#[derive(Debug, Default)]
 pub struct TypeParamUsageFinder {
     pub params: Vec<TypeParam>,
 }
