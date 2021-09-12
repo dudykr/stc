@@ -1116,6 +1116,20 @@ impl Type {
         }
     }
 
+    pub fn new_union_without_dedup(span: Span, types: Vec<Type>) -> Self {
+        let ty = match types.len() {
+            0 => Type::never(span, Default::default()),
+            1 => types.into_iter().next().unwrap(),
+            _ => Type::Union(Union {
+                span,
+                types,
+                metadata: Default::default(),
+            }),
+        };
+        ty.assert_valid();
+        ty
+    }
+
     pub fn new_union<I: IntoIterator<Item = Self> + Debug>(span: Span, iter: I) -> Self {
         let _ctx = debug_ctx!(format!("Iterator: {:?}", iter));
 
@@ -1140,17 +1154,7 @@ impl Type {
         // Drop `never`s.
         elements.retain(|ty| !ty.is_never());
 
-        let ty = match elements.len() {
-            0 => Type::never(span, Default::default()),
-            1 => elements.into_iter().next().unwrap(),
-            _ => Type::Union(Union {
-                span,
-                types: elements,
-                metadata: Default::default(),
-            }),
-        };
-        ty.assert_valid();
-        ty
+        Self::new_union_without_dedup(span, elements)
     }
 
     /// Creates a new type from `iter`.
