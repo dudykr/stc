@@ -6,10 +6,13 @@ pub trait TypeVecExt {
     fn dedup_type(&mut self);
 }
 
-impl TypeVecExt for Vec<Type> {
+impl<T> TypeVecExt for Vec<T>
+where
+    T: TypeEq,
+{
     #[instrument(skip(self))]
     fn dedup_type(&mut self) {
-        let mut types: Vec<Type> = Vec::with_capacity(self.capacity());
+        let mut types: Vec<T> = Vec::with_capacity(self.capacity());
         for ty in self.drain(..) {
             if types.iter().any(|stored| stored.type_eq(&ty)) {
                 continue;
