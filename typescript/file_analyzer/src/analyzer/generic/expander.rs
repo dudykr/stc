@@ -922,7 +922,6 @@ impl Fold<Type> for GenericExpander<'_, '_, '_, '_> {
             Type::Mapped(..) => true,
             _ => false,
         };
-        let span = ty.span();
 
         {
             let mut v = TypeParamUsageFinder::default();
