@@ -4,6 +4,7 @@ use crate::{
 };
 use stc_ts_errors::Error;
 use stc_ts_types::TsExpr;
+use stc_utils::cache::Freeze;
 use swc_common::{Span, TypeEq};
 use tracing::instrument;
 
@@ -16,8 +17,9 @@ impl Analyzer<'_, '_> {
 
         for (i, p1) in parent.iter().enumerate() {
             let res: ValidationResult<()> = try {
-                let p1_type =
-                    self.type_of_ts_entity_name(span, self.ctx.module_id, &p1.expr, p1.type_args.as_deref())?;
+                let p1_type = self
+                    .type_of_ts_entity_name(span, self.ctx.module_id, &p1.expr, p1.type_args.as_deref())?
+                    .freezed();
 
                 for (j, p2) in parent.iter().enumerate() {
                     if i <= j {
@@ -28,8 +30,9 @@ impl Analyzer<'_, '_> {
                         continue;
                     }
 
-                    let p2 =
-                        self.type_of_ts_entity_name(span, self.ctx.module_id, &p2.expr, p2.type_args.as_deref())?;
+                    let p2 = self
+                        .type_of_ts_entity_name(span, self.ctx.module_id, &p2.expr, p2.type_args.as_deref())?
+                        .freezed();
 
                     if let Err(err) = self.assign_with_opts(
                         &mut Default::default(),
