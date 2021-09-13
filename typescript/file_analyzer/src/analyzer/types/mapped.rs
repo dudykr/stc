@@ -10,6 +10,7 @@ use stc_ts_types::{
     Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, LitType, Mapped, Operator, PropertySignature,
     Type, TypeElement, TypeLit,
 };
+use stc_utils::cache::ALLOW_DEEP_CLONE;
 use std::{borrow::Cow, collections::HashMap};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsTypeOperatorOp};
@@ -27,7 +28,7 @@ impl Analyzer<'_, '_> {
     /// TODO: Handle index signatures.
     #[instrument(name = "expand_mapped", skip(self, span, m))]
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
-        let orig = dump_type_as_string(&self.cm, &Type::Mapped(m.clone()));
+        let orig = dump_type_as_string(&self.cm, &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
 
         let ty = self.expand_mapped_inner(span, m);
 
