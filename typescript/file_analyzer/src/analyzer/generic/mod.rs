@@ -1389,15 +1389,18 @@ impl Analyzer<'_, '_> {
                     ..self.ctx
                 };
 
-                let arg = self.with_ctx(ctx).expand(
-                    arg.span,
-                    Type::Ref(arg.clone()),
-                    ExpandOpts {
-                        full: true,
-                        expand_union: true,
-                        ..Default::default()
-                    },
-                )?;
+                let arg = self
+                    .with_ctx(ctx)
+                    .expand(
+                        arg.span,
+                        Type::Ref(arg.clone()),
+                        ExpandOpts {
+                            full: true,
+                            expand_union: true,
+                            ..Default::default()
+                        },
+                    )?
+                    .freezed();
 
                 match arg.normalize() {
                     Type::Ref(..) => return Ok(false),
