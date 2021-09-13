@@ -427,10 +427,34 @@ impl GenericExpander<'_, '_, '_, '_> {
             }
         }
 
+        match ty.normalize() {
+            Type::StaticThis(..) | Type::Intrinsic(..) | Type::Symbol(..) => return ty,
+
+            Type::Param(param) => {
+                if !self.dejavu.contains(&param.name) {
+                    if let Some(ty) = self.params.get(&param.name) {
+                        info!(
+                            "generic_expand: Expanding type parameter `{}` => {}",
+                            param.name,
+                            dump_type_as_string(&self.analyzer.cm, &ty)
+                        );
+
+                        // If it's not self-referential, we fold it again.
+
+                        self.dejavu.insert(param.name.clone());
+                        let ty = ty.clone().fold_with(self);
+                        self.dejavu.remove(&param.name);
+                        return ty;
+                    }
+                }
+            }
+
+            _ => {}
+        }
+
         let ty = ty.foldable();
 
         match ty {
-            Type::StaticThis(..) | Type::Intrinsic(..) | Type::Symbol(..) => return ty,
             Type::Ref(Ref {
                 span,
                 type_name: RTsEntityName::Ident(ref i),
@@ -472,69 +496,15 @@ impl GenericExpander<'_, '_, '_, '_> {
 
             Type::Instance(..) | Type::Ref(..) => return ty.fold_children_with(self),
 
-            // Type::IndexedAccessType(IndexedAccessType {
-            //     span,
-            //     obj_type:
-            //         box Type::Param(TypeParam {
-            //             name: obj_param_name,
-            //             ..
-            //         }),
-            //     index_type:
-            //         box Type::Param(TypeParam {
-            //             name: index_param_name,
-            //             constraint:
-            //                 Some(box Type::Operator(Operator {
-            //                     op: TsTypeOperatorOp::KeyOf,
-            //                     ty: box Type::Param(constraint_param),
-            //                     ..
-            //                 })),
-            //             ..
-            //         }),
-            //     ..
-            // }) if obj_param_name == constraint_param.name
-            //     && self.params.contains_key(&obj_param_name)
-            //     && self.params.get(&obj_param_name).unwrap().is_type_lit() =>
-            // {
-            //     dbg!(&index_param_name);
-            //     if let Some(box Type::TypeLit(ref lit)) = self.params.get(&obj_param_name) {
-            //         let mut new_members = vec![];
-
-            //         for member in &lit.members {}
-
-            //         return Type::TypeLit(TypeLit {
-            //             span: lit.span,
-            //             members: new_members,
-            //         });
-            //     }
-
-            //     unreachable!()
-            // }
             Type::Param(mut param) => {
                 param = param.fold_with(self);
 
-                if self.dejavu.contains(&param.name) {
-                    return Type::Param(param);
-                }
-
-                if let Some(ty) = self.params.get(&param.name) {
-                    info!(
-                        "generic_expand: Expanding type parameter `{}` => {}",
+                if !self.dejavu.contains(&param.name) {
+                    warn!(
+                        "generic_expand: Failed to found type parameter instantiation: {}",
                         param.name,
-                        dump_type_as_string(&self.analyzer.cm, &ty)
                     );
-
-                    // If it's not self-referential, we fold it again.
-
-                    self.dejavu.insert(param.name.clone());
-                    let ty = ty.clone().fold_with(self);
-                    self.dejavu.remove(&param.name);
-                    return ty;
                 }
-
-                warn!(
-                    "generic_expand: Failed to found type parameter instantiation: {}",
-                    param.name,
-                );
 
                 return Type::Param(param);
             }
@@ -895,7 +865,7 @@ impl GenericExpander<'_, '_, '_, '_> {
             | Type::Mapped(..)
             | Type::Tpl(..) => return ty.fold_children_with(self),
 
-            Type::Arc(..) => unreachable!(),
+            _ => ty,
         }
     }
 }
