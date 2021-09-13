@@ -9,6 +9,7 @@ use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr};
 use stc_ts_types::{Class, ClassMetadata, Function, KeywordType, Type};
 use stc_ts_utils::{OptionExt, PatExt};
+use stc_utils::cache::Freeze;
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
 
@@ -85,7 +86,8 @@ impl Analyzer<'_, '_> {
                     })
                 }
                 None => None,
-            };
+            }
+            .freezed();
 
             let inferred_return_type = {
                 match f.body {
@@ -105,7 +107,8 @@ impl Analyzer<'_, '_> {
                         child.visit_stmts_for_return(f.span, f.is_async, f.is_generator, &s.stmts)?
                     }
                 }
-            };
+            }
+            .freezed();
 
             // Remove void from inferred return type.
             let inferred_return_type = inferred_return_type.map(|mut ty| {
