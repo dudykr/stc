@@ -28,6 +28,7 @@ use stc_ts_errors::{
     Error,
 };
 use stc_ts_storage::{Builtin, Info, Storage};
+use stc_ts_type_cache::TypeCache;
 use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData};
 use stc_utils::{AHashMap, AHashSet};
 use std::{
@@ -304,6 +305,8 @@ struct AnalyzerData {
     /// We mimic it by storing names of wrong overloads.
     /// Only first wrong overload should be added to this set.
     known_wrong_overloads: FxHashSet<Id>,
+
+    cache: TypeCache,
 }
 
 #[derive(Debug, Default)]
