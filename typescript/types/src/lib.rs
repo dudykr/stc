@@ -240,7 +240,7 @@ impl Clone for Type {
                     let _panic_ctx = panic_ctx!(format!("{:?}", self));
 
                     if DEEP.is_set() {
-                        panic!("Deep clone of type is not allowed")
+                        unreachable!("Deep clone of type is not allowed")
                     }
 
                     DEEP.set(&(), || work!())
@@ -924,13 +924,13 @@ impl Union {
                     continue;
                 }
                 if t1.type_eq(t2) {
-                    panic!("[INVALID_TYPE]: A union type has duplicate elements: ({:?})", t1)
+                    unreachable!("[INVALID_TYPE]: A union type has duplicate elements: ({:?})", t1)
                 }
             }
         }
 
         if self.types.len() <= 1 {
-            panic!(
+            unreachable!(
                 "[INVALID_TYPE]: A union type should have multiple items. Got {:?}",
                 self.types
             );
@@ -971,7 +971,7 @@ impl Intersection {
                     continue;
                 }
                 if t1.type_eq(t2) {
-                    panic!(
+                    unreachable!(
                         "[INVALID_TYPE]: An intersection type has duplicate elements: ({:?})",
                         t1
                     )
@@ -980,7 +980,7 @@ impl Intersection {
         }
 
         if self.types.len() <= 1 {
-            panic!(
+            unreachable!(
                 "[INVALID_TYPE]: An intersection type should have multiple items. Got {:?}",
                 self.types
             );
@@ -1608,7 +1608,7 @@ impl Visit<Union> for AssertValid {
 
         for item in ty.types.iter() {
             if item.normalize().is_union_type() {
-                panic!("[INVALID_TYPE]: A union type should not have a union item")
+                unreachable!("[INVALID_TYPE]: A union type should not have a union item")
             }
         }
     }
@@ -1626,7 +1626,7 @@ impl Visit<Intersection> for AssertValid {
 
         for item in ty.types.iter() {
             if item.normalize().is_intersection_type() {
-                panic!("[INVALID_TYPE]: An intersection type should not have an intersection item")
+                unreachable!("[INVALID_TYPE]: An intersection type should not have an intersection item")
             }
         }
     }
