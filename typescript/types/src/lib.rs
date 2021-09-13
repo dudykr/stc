@@ -2470,3 +2470,4 @@ impl_freeze!(TypeParamDecl);
 impl_freeze!(TypeParamInstantiation);
 impl_freeze!(TypeOrSpread);
 impl_freeze!(Key);
+impl_freeze!(Mapped);

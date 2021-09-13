@@ -542,6 +542,8 @@ impl GenericExpander<'_, '_, '_, '_> {
             }
 
             Type::Mapped(mut m @ Mapped { ty: Some(..), .. }) => {
+                m.make_clone_cheap();
+
                 match &m.type_param.constraint {
                     Some(constraint) => match constraint.normalize() {
                         Type::Operator(
