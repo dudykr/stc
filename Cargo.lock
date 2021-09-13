@@ -1718,6 +1718,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "410f7acf3cb3a44527c5d9546bad4bf4e6c460915d5f9f2fc524498bfe8f70ce"
 
 [[package]]
+name = "rustc-hash"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
+
+[[package]]
 name = "rustc_version"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2219,7 +2225,10 @@ dependencies = [
 name = "stc_ts_type_cache"
 version = "0.1.0"
 dependencies = [
+ "rustc-hash",
  "stc_ts_types",
+ "stc_ts_utils",
+ "stc_utils",
 ]
 
 [[package]]
