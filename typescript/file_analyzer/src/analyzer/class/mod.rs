@@ -161,7 +161,8 @@ impl Analyzer<'_, '_> {
 
         let value = self
             .validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?
-            .map(Box::new);
+            .map(Box::new)
+            .freezed();
 
         if p.is_static {
             value.visit_with(&mut StaticTypeParamValidator {
