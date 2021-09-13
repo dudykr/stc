@@ -3467,6 +3467,8 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
             {
                 // TODO: Replace .ok() with something better
                 if let Some(types) = self.analyzer.find_type(*ctxt, &(&*i).into()).ok().flatten() {
+                    type_args.make_clone_cheap();
+
                     for stored_ty in types {
                         match stored_ty.normalize() {
                             Type::Alias(Alias { ty: aliased_ty, .. }) => {
