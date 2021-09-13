@@ -2244,6 +2244,10 @@ impl Expander<'_, '_, '_> {
             _ => {}
         }
 
+        if ty.normalize().is_ref_type() {
+            ty.make_clone_cheap();
+        }
+
         let _stack = match stack::track(self.span) {
             Ok(v) => v,
             Err(..) => {
