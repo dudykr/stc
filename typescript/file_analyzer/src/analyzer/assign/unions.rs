@@ -8,6 +8,7 @@ use crate::{
 use itertools::Itertools;
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Tuple, TupleElement, Type, Union};
+use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_common::Span;
 
@@ -28,7 +29,9 @@ impl Analyzer<'_, '_> {
         let r_res = self.flatten_unions_for_assignment(opts.span, Cow::Borrowed(r));
 
         match r_res {
-            Ok(r) => {
+            Ok(mut r) => {
+                r.make_clone_cheap();
+
                 if r.normalize().is_union_type() {
                     Some(
                         self.assign_with_opts(data, opts, l, &r)
