@@ -400,7 +400,8 @@ impl Analyzer<'_, '_> {
         let ty = match ty {
             Some(v) => v,
             _ => self.default_type_for_pat(p)?,
-        };
+        }
+        .freezed();
 
         if p.get_ty().is_none() {
             if let Some(node_id) = p.node_id() {
