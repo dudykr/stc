@@ -2661,7 +2661,9 @@ impl Analyzer<'_, '_> {
             }
 
             print_type("Return", &self.cm, &ret_ty);
-            let mut ty = self.expand_type_params(&inferred, ret_ty, Default::default())?;
+            let mut ty = self
+                .expand_type_params(&inferred, ret_ty, Default::default())?
+                .freezed();
             print_type("Return, expanded", &self.cm, &ty);
 
             ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
