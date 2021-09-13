@@ -1,0 +1,9 @@
+[package]
+authors = ["강동윤 <kdy1997.dev@gmail.com>"]
+edition = "2018"
+name = "stc_ts_type_cache"
+publish = false
+version = "0.1.0"
+
+[dependencies]
+stc_ts_types = {path = "../types/"}

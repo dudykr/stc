@@ -37,6 +37,7 @@ stc_ts_file_analyzer_macros = {path = "./macros"}
 stc_ts_generics = {path = "./generics"}
 stc_ts_ordering = {path = "./ordering"}
 stc_ts_storage = {path = "../storage"}
+stc_ts_type_cache = { path = "../type_cache/" }
 stc_ts_type_form = {path = "../type_form"}
 stc_ts_type_ops = {path = "./type_ops"}
 stc_ts_types = {path = "../types"}

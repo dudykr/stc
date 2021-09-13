@@ -2073,6 +2073,7 @@ dependencies = [
  "stc_ts_ordering",
  "stc_ts_storage",
  "stc_ts_testing",
+ "stc_ts_type_cache",
  "stc_ts_type_form",
  "stc_ts_type_ops",
  "stc_ts_types",
@@ -2212,6 +2213,13 @@ dependencies = [
  "swc_ecma_parser",
  "swc_ecma_utils",
  "swc_ecma_visit",
+]
+
+[[package]]
+name = "stc_ts_type_cache"
+version = "0.1.0"
+dependencies = [
+ "stc_ts_types",
 ]
 
 [[package]]
