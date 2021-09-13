@@ -326,7 +326,6 @@ es2017/useSharedArrayBuffer5.ts
 es2017/useSharedArrayBuffer6.ts
 es2018/usePromiseFinally.ts
 es2018/useRegexpGroups.ts
-es2019/globalThisTypeIndexAccess.ts
 es2020/bigintMissingES2019.ts
 es2020/modules/exportAsNamespace_nonExistent.ts
 es6/Symbols/symbolDeclarationEmit1.ts
@@ -1445,8 +1444,6 @@ functions/parameterInitializersBackwardReferencing.ts
 functions/strictBindCallApply2.ts
 generators/generatorImplicitAny.ts
 generators/generatorReturnTypeFallback.1.ts
-generators/generatorReturnTypeFallback.2.ts
-generators/generatorReturnTypeFallback.3.ts
 generators/generatorReturnTypeFallback.4.ts
 generators/generatorReturnTypeFallback.5.ts
 generators/generatorReturnTypeIndirectReferenceToGlobalType.ts
