@@ -17,6 +17,7 @@ use stc_ts_types::{
     Id, KeywordType, KeywordTypeMetadata, ModuleId, Operator, Ref, RefMetadata, TypeParamInstantiation,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
+use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
@@ -351,7 +352,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let elem_ty = match kind {
+                let mut elem_ty = match kind {
                     ForHeadKind::Of { is_awaited: false } => child
                         .get_iterator_element_type(rhs.span(), Cow::Owned(rty), false)
                         .convert_err(|err| match err {
@@ -383,6 +384,7 @@ impl Analyzer<'_, '_> {
                             .unwrap_or_else(|| Type::any(span, Default::default())),
                     ),
                 };
+                elem_ty.make_clone_cheap();
 
                 child.scope.declaring.clear();
 

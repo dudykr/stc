@@ -17,6 +17,7 @@ use stc_ts_types::{
     Accessor, CallSignature, FnParam, Function, FunctionMetadata, Key, KeywordType, MethodSignature, PropertySignature,
     Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamDecl, Union, UnionMetadata,
 };
+use stc_utils::cache::Freeze;
 use std::{borrow::Cow, iter::repeat, time::Instant};
 use swc_atoms::JsWord;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -70,7 +71,11 @@ impl UnionNormalizer<'_, '_, '_> {
     }
 
     fn normalize_fn_types(&mut self, ty: &mut Type) {
-        let u = match ty {
+        if !ty.normalize().is_union_type() {
+            return;
+        }
+        ty.make_clone_cheap();
+        let u = match ty.normalize_mut() {
             Type::Union(u) => u,
             _ => return,
         };
@@ -156,7 +161,12 @@ impl UnionNormalizer<'_, '_, '_> {
 
     /// TODO: Add type parameters.
     fn normalize_call_signatures(&self, ty: &mut Type) {
-        let u = match ty {
+        if !ty.normalize().is_union_type() {
+            return;
+        }
+        ty.make_clone_cheap();
+
+        let u = match ty.normalize_mut() {
             Type::Union(u) => u,
             _ => return,
         };
@@ -387,6 +397,9 @@ impl UnionNormalizer<'_, '_, '_> {
 
 impl VisitMut<Type> for UnionNormalizer<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty.visit_mut_children_with(self);
 
         self.normalize_call_signatures(ty);
@@ -475,7 +488,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         match prop {
             RPropOrSpread::Spread(RSpreadElement { expr, .. }) => {
-                let prop_ty: Type = expr.validate_with_default(self)?;
+                let prop_ty: Type = expr.validate_with_default(self)?.freezed();
                 self.append_type(to, prop_ty)
             }
             RPropOrSpread::Prop(prop) => {
@@ -529,7 +542,7 @@ impl Analyzer<'_, '_> {
     /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
     /// number } | { a: number, c: number }`
     #[instrument(skip(self, to, rhs))]
-    fn append_type(&mut self, to: Type, rhs: Type) -> ValidationResult<Type> {
+    fn append_type(&mut self, to: Type, mut rhs: Type) -> ValidationResult<Type> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
@@ -585,6 +598,8 @@ impl Analyzer<'_, '_> {
             Type::TypeLit(ref mut lit) => {
                 lit.metadata.inexact = true;
                 let common_metadata = lit.metadata.common;
+
+                rhs = rhs.foldable();
 
                 match rhs {
                     Type::TypeLit(rhs) => {

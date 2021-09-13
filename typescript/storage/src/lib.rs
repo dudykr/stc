@@ -3,6 +3,7 @@
 use fxhash::FxHashMap;
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, Type};
+use stc_utils::cache::Freeze;
 use std::{collections::hash_map::Entry, mem::take, path::PathBuf, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{iter::IdentifyLast, Span, TypeEq, DUMMY_SP};
@@ -154,6 +155,7 @@ impl ErrorStore for Single<'_> {
 impl TypeStore for Single<'_> {
     fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool) {
         debug_assert_eq!(ctxt, self.id);
+        ty.assert_clone_cheap();
 
         if should_override {
             if self.info.exports.types.contains_key(&id.sym()) {
@@ -167,6 +169,7 @@ impl TypeStore for Single<'_> {
 
     fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
         debug_assert_eq!(ctxt, self.id);
+        ty.assert_clone_cheap();
 
         match self.info.exports.private_vars.entry(id) {
             Entry::Occupied(e) => {
@@ -178,7 +181,7 @@ impl TypeStore for Single<'_> {
                 self.info
                     .exports
                     .private_vars
-                    .insert(id, Type::union(vec![prev_ty, ty]));
+                    .insert(id, Type::union(vec![prev_ty, ty]).freezed());
             }
             Entry::Vacant(e) => {
                 e.insert(ty);
@@ -222,7 +225,7 @@ impl TypeStore for Single<'_> {
             .exports
             .private_types
             .get(&id)
-            .map(|types| Type::intersection(DUMMY_SP, types.iter().cloned()));
+            .map(|types| Type::intersection(DUMMY_SP, types.iter().cloned()).freezed());
 
         match ty {
             Some(ty) => return Some(ty),
@@ -246,11 +249,15 @@ impl TypeStore for Single<'_> {
 
     fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
         debug_assert_eq!(ctxt, self.id);
+        ty.assert_clone_cheap();
+
         self.info.exports.types.entry(id).or_default().push(ty);
     }
 
     fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
         debug_assert_eq!(ctxt, self.id);
+        ty.assert_clone_cheap();
+
         // TODO: error reporting for duplicate
         self.info.exports.vars.insert(id, ty);
     }

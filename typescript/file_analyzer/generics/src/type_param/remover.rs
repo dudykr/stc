@@ -1,6 +1,8 @@
 use fxhash::FxHashSet;
 use rnode::{Fold, FoldWith};
-use stc_ts_types::{CallSignature, ConstructorSignature, Function, Id, MethodSignature, TypeParam, TypeParamDecl};
+use stc_ts_types::{
+    CallSignature, ConstructorSignature, Function, Id, MethodSignature, Type, TypeParam, TypeParamDecl,
+};
 use swc_common::util::move_map::MoveMap;
 
 /// Removes conflicting type parameters from children.
@@ -86,6 +88,13 @@ impl Fold<Function> for TypeParamRemover<'_> {
         };
 
         node.fold_children_with(&mut v)
+    }
+}
+
+impl Fold<Type> for TypeParamRemover<'_> {
+    fn fold(&mut self, mut ty: Type) -> Type {
+        ty.normalize_mut();
+        ty.fold_children_with(self)
     }
 }
 

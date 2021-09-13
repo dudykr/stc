@@ -19,11 +19,11 @@ use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase,
     RSwitchStmt,
 };
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
 use stc_ts_utils::MapWithMut;
-use stc_utils::ext::SpanExt;
+use stc_utils::{cache::Freeze, debug_ctx, ext::SpanExt};
 use std::{
     borrow::{Borrow, Cow},
     collections::hash_map::Entry,
@@ -48,8 +48,13 @@ pub(crate) struct CondFacts {
 impl CondFacts {
     #[inline]
     pub(crate) fn assert_valid(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
         for (_, ty) in &self.vars {
             ty.assert_valid();
+            ty.assert_clone_cheap();
         }
 
         for (_, types) in &self.excludes {
@@ -60,6 +65,7 @@ impl CondFacts {
 
         for (_, ty) in &self.types {
             ty.assert_valid();
+            ty.assert_clone_cheap();
         }
     }
 
@@ -92,6 +98,9 @@ impl CondFacts {
 
     pub fn override_vars_using(&mut self, r: &mut Self) {
         for (k, ty) in r.vars.drain() {
+            ty.assert_valid();
+            ty.assert_clone_cheap();
+
             match self.vars.entry(k) {
                 Entry::Occupied(mut e) => {
                     *e.get_mut() = ty;
@@ -154,12 +163,20 @@ pub(super) struct Facts {
 impl Facts {
     #[inline]
     pub(crate) fn assert_valid(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
         self.true_facts.assert_valid();
         self.false_facts.assert_valid();
     }
 
     #[inline]
     pub(crate) fn assert_clone_cheap(&self) {
+        if !cfg!(debug_assertions) {
+            return;
+        }
+
         self.true_facts.assert_clone_cheap();
         self.false_facts.assert_clone_cheap();
     }
@@ -292,15 +309,18 @@ impl AddAssign for CondFacts {
 
         for (k, v) in rhs.vars {
             match self.vars.entry(k) {
-                Entry::Occupied(mut e) => match e.get_mut().normalize_mut() {
-                    Type::Union(u) => {
-                        u.types.push(v);
-                    }
-                    prev => {
-                        let prev = prev.take();
-                        *e.get_mut() = Type::union(vec![prev, v]).cheap();
-                    }
-                },
+                Entry::Occupied(mut e) => {
+                    match e.get_mut().normalize_mut() {
+                        Type::Union(u) => {
+                            u.types.push(v);
+                        }
+                        prev => {
+                            let prev = prev.take();
+                            *e.get_mut() = Type::union(vec![prev, v]).cheap();
+                        }
+                    };
+                    e.get_mut().make_clone_cheap();
+                }
                 Entry::Vacant(e) => {
                     e.insert(v);
                 }
@@ -440,7 +460,8 @@ impl Analyzer<'_, '_> {
                             common: tuple.metadata.common,
                             ..Default::default()
                         },
-                    });
+                    })
+                    .freezed();
                 }
                 _ => {}
             }
@@ -681,10 +702,11 @@ impl Analyzer<'_, '_> {
             match *lhs {
                 RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None));
-                    let lhs_ty = match lhs_ty {
+                    let mut lhs_ty = match lhs_ty {
                         Ok(v) => v,
                         _ => Type::any(lhs.span(), Default::default()),
                     };
+                    lhs_ty.make_clone_cheap();
 
                     if op == op!("=") {
                         self.assign(span, &mut Default::default(), &lhs_ty, &ty)?;
@@ -745,10 +767,14 @@ impl Analyzer<'_, '_> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let is_in_loop = self.scope.is_in_loop_body();
-        let ty = self
+        let orig_ty = self
             .normalize(Some(ty.span().or_else(|| span)), Cow::Borrowed(ty), Default::default())
-            .context("tried to normalize a type to assign it to a pattern")?;
-        let ty = ty.normalize();
+            .context("tried to normalize a type to assign it to a pattern")?
+            .into_owned()
+            .freezed();
+        let _panic_ctx = debug_ctx!(format!("ty = {}", dump_type_as_string(&self.cm, &orig_ty)));
+
+        let ty = orig_ty.normalize();
 
         ty.assert_valid();
 
@@ -779,7 +805,11 @@ impl Analyzer<'_, '_> {
             RPat::Ident(i) => {
                 // Verify using immutable references.
                 if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
-                    if let Some(var_ty) = var_info.ty.clone() {
+                    if let Some(mut var_ty) = var_info.ty.clone() {
+                        let _panic_ctx = debug_ctx!(format!("var_ty = {}", dump_type_as_string(&self.cm, &ty)));
+
+                        var_ty.make_clone_cheap();
+
                         self.assign_with_opts(
                             &mut Default::default(),
                             AssignOpts {
@@ -819,8 +849,9 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
 
-                        let narrowed_ty = self.narrowed_type_of_assignment(span, declared_ty, &ty)?;
+                        let mut narrowed_ty = self.narrowed_type_of_assignment(span, declared_ty, &ty)?;
                         narrowed_ty.assert_valid();
+                        narrowed_ty.make_clone_cheap();
                         actual_ty = Some(narrowed_ty);
                     }
                 } else {
@@ -835,20 +866,23 @@ impl Analyzer<'_, '_> {
 
                 if let Some(ty) = &actual_ty {
                     ty.assert_valid();
+                    ty.assert_clone_cheap();
                 }
 
                 // Update actual types.
                 if let Some(var_info) = self.scope.get_var_mut(&i.id.clone().into()) {
                     var_info.is_actual_type_modified_in_loop |= is_in_loop;
-                    let new_ty = actual_ty.unwrap_or_else(|| ty.clone());
+                    let mut new_ty = actual_ty.unwrap_or_else(|| ty.clone());
                     new_ty.assert_valid();
+                    new_ty.make_clone_cheap();
                     var_info.actual_ty = Some(new_ty);
                     return Ok(());
                 }
 
                 let var_info = if let Some(var_info) = self.scope.search_parent(&i.id.clone().into()) {
-                    let actual_ty = actual_ty.unwrap_or_else(|| ty.clone());
+                    let actual_ty = actual_ty.unwrap_or_else(|| orig_ty.clone());
                     actual_ty.assert_valid();
+                    actual_ty.assert_clone_cheap();
 
                     VarInfo {
                         actual_ty: Some(actual_ty),
@@ -858,7 +892,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     if let Some(types) = self.find_type(self.ctx.module_id, &i.id.clone().into())? {
                         for ty in types {
-                            match &*ty {
+                            match ty.normalize() {
                                 Type::Module(..) => {
                                     return Err(Error::NotVariable {
                                         span: i.id.span,
@@ -979,7 +1013,8 @@ impl Analyzer<'_, '_> {
                                         ..Default::default()
                                     },
                                 )
-                                .unwrap_or_else(|_| Type::any(span, Default::default()));
+                                .unwrap_or_else(|_| Type::any(span, Default::default()))
+                                .freezed();
 
                             self.try_assign_pat_with_opts(
                                 span,
@@ -1080,9 +1115,8 @@ impl Analyzer<'_, '_> {
     pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type) {
         info!("add_type_fact({}); ty = {:?}", sym, ty);
 
-        debug_assert!(ty.is_clone_cheap());
-
         ty.assert_valid();
+        ty.assert_clone_cheap();
 
         self.cur_facts.insert_var(sym, ty, false);
     }
@@ -1090,9 +1124,8 @@ impl Analyzer<'_, '_> {
     pub(super) fn add_deep_type_fact(&mut self, span: Span, name: Name, ty: Type, is_for_true: bool) {
         debug_assert!(!self.is_builtin);
 
-        debug_assert!(ty.is_clone_cheap());
-
         ty.assert_valid();
+        ty.assert_clone_cheap();
 
         if let Some((name, mut ty)) = self
             .determine_type_fact_by_field_fact(span, &name, &ty)
@@ -1158,20 +1191,22 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let prop_res = self.access_property(
-            src.span(),
-            src,
-            &Key::Normal {
-                span: DUMMY_SP,
-                sym: property.clone(),
-            },
-            TypeOfMode::RValue,
-            IdCtx::Var,
-            AccessPropertyOpts {
-                disallow_creating_indexed_type_from_ty_els: true,
-                ..Default::default()
-            },
-        );
+        let prop_res = self
+            .access_property(
+                src.span(),
+                src,
+                &Key::Normal {
+                    span: DUMMY_SP,
+                    sym: property.clone(),
+                },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+                AccessPropertyOpts {
+                    disallow_creating_indexed_type_from_ty_els: true,
+                    ..Default::default()
+                },
+            )
+            .map(Freeze::freezed);
 
         match prop_res {
             Ok(mut prop_ty) => {
@@ -1299,20 +1334,22 @@ impl Analyzer<'_, '_> {
 
         let true_facts = self.cur_facts.true_facts.take();
         let false_facts = self.cur_facts.false_facts.take();
-        let cons = self.with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
+        let mut cons = self.with_child(ScopeKind::Flow, true_facts, |child: &mut Analyzer| {
             let ty = cons
                 .validate_with_args(child, (mode, None, type_ann))
                 .report(&mut child.storage);
 
             Ok(ty.unwrap_or_else(|| Type::any(cons.span(), Default::default())))
         })?;
-        let alt = self.with_child(ScopeKind::Flow, false_facts, |child: &mut Analyzer| {
+        cons.make_clone_cheap();
+        let mut alt = self.with_child(ScopeKind::Flow, false_facts, |child: &mut Analyzer| {
             let ty = alt
                 .validate_with_args(child, (mode, None, type_ann))
                 .report(&mut child.storage);
 
             Ok(ty.unwrap_or_else(|| Type::any(alt.span(), Default::default())))
         })?;
+        alt.make_clone_cheap();
 
         if cons.type_eq(&alt) {
             return Ok(cons);
@@ -1333,6 +1370,7 @@ impl Analyzer<'_, '_> {
 impl Facts {
     fn insert_var<N: Into<Name>>(&mut self, name: N, ty: Type, negate: bool) {
         ty.assert_valid();
+        ty.assert_clone_cheap();
 
         let name = name.into();
 

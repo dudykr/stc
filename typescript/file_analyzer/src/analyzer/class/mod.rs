@@ -24,12 +24,13 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_type_ops::generalization::prevent_generalize;
 use stc_ts_types::{
     Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
     Id, Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetdata,
     Ref, TsExpr, Type,
 };
-use stc_utils::{AHashSet, TryOpt};
+use stc_utils::{cache::Freeze, AHashSet, TryOpt};
 use std::{
     borrow::Cow,
     cell::RefCell,
@@ -112,10 +113,10 @@ impl Analyzer<'_, '_> {
 
         if readonly {
             if let Some(ty) = &mut ty {
-                self.prevent_generalize(ty);
+                prevent_generalize(ty);
             }
             if let Some(ty) = &mut value_ty {
-                self.prevent_generalize(ty);
+                prevent_generalize(ty);
             }
         }
 
@@ -160,7 +161,8 @@ impl Analyzer<'_, '_> {
 
         let value = self
             .validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?
-            .map(Box::new);
+            .map(Box::new)
+            .freezed();
 
         if p.is_static {
             value.visit_with(&mut StaticTypeParamValidator {
@@ -398,10 +400,9 @@ impl Analyzer<'_, '_> {
                 right,
                 ..
             }) => {
-                let ty: Option<Type> = i.type_ann.validate_with(self).try_opt()?;
-                let ty = ty.map(|ty| ty.cheap());
+                let ty: Option<Type> = i.type_ann.validate_with(self).try_opt()?.freezed();
 
-                let right = right.validate_with_default(self).report(&mut self.storage);
+                let right = right.validate_with_default(self).report(&mut self.storage).freezed();
 
                 if let Some(ty) = &ty {
                     if let Some(right) = right {
@@ -1606,7 +1607,7 @@ impl Analyzer<'_, '_> {
                 let type_params = try_opt!(c.type_params.validate_with(child)).map(Box::new);
                 child.resolve_parent_interfaces(&c.implements);
 
-                let super_class = {
+                let mut super_class = {
                     // Then, we can expand super class
 
                     let super_type_params = try_opt!(c.super_type_params.validate_with(child));
@@ -1740,6 +1741,7 @@ impl Analyzer<'_, '_> {
                         _ => None,
                     }
                 };
+                super_class.make_clone_cheap();
 
                 let implements = c.implements.validate_with(child).map(Box::new)?;
 

@@ -61,7 +61,7 @@ impl From<&Box<Type>> for TypeForm {
 
 impl From<&Type> for TypeForm {
     fn from(ty: &Type) -> Self {
-        match ty {
+        match ty.normalize() {
             Type::Instance(ty) => Self::Instance {
                 of: box Self::from(&ty.ty),
             },

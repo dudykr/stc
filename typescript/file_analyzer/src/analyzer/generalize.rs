@@ -4,7 +4,7 @@ use stc_ts_ast_rnode::{RNumber, RStr, RTsLit};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::{
     is_str_lit_or_union,
-    metadata::{PreventComplexSimplification, PreventGeneralization, PreventTupleToArray},
+    metadata::{PreventComplexSimplification, PreventTupleToArray},
 };
 use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, CommonTypeMetadata, IndexedAccessType, IndexedAccessTypeMetadata, Key,
@@ -44,11 +44,6 @@ impl Analyzer<'_, '_> {
         }
 
         !ty.metadata().prevent_generalization
-    }
-
-    #[instrument(skip(self, ty))]
-    pub(super) fn prevent_generalize(&self, ty: &mut Type) {
-        ty.visit_mut_with(&mut PreventGeneralization);
     }
 
     /// TODO(kdy1): Optimize by visiting only tuple types.
@@ -121,9 +116,9 @@ impl Fold<Union> for Simplifier<'_> {
 impl Fold<Type> for Simplifier<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
         // TODO: PERF
-        ty = ty.foldable();
+        ty.normalize_mut();
 
-        match ty {
+        match ty.normalize() {
             Type::Array(Array {
                 elem_type:
                     box Type::IndexedAccessType(IndexedAccessType {
@@ -238,7 +233,7 @@ impl Fold<Type> for Simplifier<'_> {
                     )
                     .unwrap();
 
-                let s = match &*index_type {
+                let s = match index_type.normalize() {
                     Type::Lit(LitType {
                         lit: RTsLit::Str(s), ..
                     }) => s.clone(),
@@ -303,7 +298,7 @@ impl Fold<Type> for Simplifier<'_> {
             }) if is_str_lit_or_union(&constraint) => {
                 let members = constraint
                     .iter_union()
-                    .filter_map(|ty| match ty {
+                    .filter_map(|ty| match ty.normalize() {
                         Type::Lit(LitType {
                             lit: RTsLit::Str(s), ..
                         }) => Some(s),
@@ -598,7 +593,7 @@ impl Fold<Type> for Simplifier<'_> {
 
                 for member in &members {
                     for key in constraint.iter_union() {
-                        let key = match key {
+                        let key = match key.normalize() {
                             Type::Lit(LitType {
                                 lit: RTsLit::Str(v), ..
                             }) => v.clone(),
@@ -736,10 +731,10 @@ impl Fold<Type> for Simplifier<'_> {
                 let mut new_types = keys
                     .types
                     .into_iter()
-                    .map(|key| match key.foldable() {
+                    .map(|key| match key.normalize() {
                         Type::Lit(LitType {
                             lit: RTsLit::Str(s), ..
-                        }) => s,
+                        }) => s.clone(),
                         _ => unreachable!(),
                     })
                     .map(|key| {

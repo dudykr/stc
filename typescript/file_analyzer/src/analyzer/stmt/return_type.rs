@@ -16,7 +16,7 @@ use stc_ts_types::{
     CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, ModuleId,
     Operator, PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
 };
-use stc_utils::ext::SpanExt;
+use stc_utils::{cache::Freeze, ext::SpanExt};
 use std::{borrow::Cow, mem::take, ops::AddAssign};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -70,7 +70,7 @@ impl Analyzer<'_, '_> {
 
         // let mut old_ret_tys = self.scope.return_types.take();
 
-        let ret_ty = (|| -> ValidationResult<_> {
+        let mut ret_ty = (|| -> ValidationResult<_> {
             let mut values: ReturnValues = {
                 let ctx = Ctx {
                     preserve_ref: true,
@@ -265,6 +265,7 @@ impl Analyzer<'_, '_> {
 
             Ok(Some(ty))
         })()?;
+        ret_ty.make_clone_cheap();
 
         if self.is_builtin {
             return Ok(ret_ty);
@@ -301,7 +302,7 @@ impl Analyzer<'_, '_> {
         debug_assert!(!self.is_builtin, "builtin: return statement is not supported");
         debug_assert_ne!(node.span, DUMMY_SP, "return statement should have valid span");
 
-        let ty = if let Some(res) = {
+        let mut ty = if let Some(res) = {
             let ctx = Ctx {
                 in_return_arg: true,
                 ..self.ctx
@@ -321,6 +322,7 @@ impl Analyzer<'_, '_> {
             })
         };
         debug_assert_ne!(ty.span(), DUMMY_SP, "{:?}", ty);
+        ty.make_clone_cheap();
 
         if let Some(declared) = self.scope.declared_return_type().cloned() {
             match (self.ctx.in_async, self.ctx.in_generator) {
@@ -431,15 +433,16 @@ impl Analyzer<'_, '_> {
                 self.get_iterator_element_type(e.span, Cow::Owned(ty), false)
                     .context("tried to convert argument as an iterator for delegating yield")?
                     .into_owned()
-                    .cheap()
             } else {
-                ty.cheap()
-            };
+                ty
+            }
+            .freezed();
 
             if let Some(declared) = self.scope.declared_return_type().cloned() {
                 match self
                     .get_iterator_element_type(span, Cow::Owned(declared), true)
                     .map(Cow::into_owned)
+                    .map(Freeze::freezed)
                 {
                     Ok(declared) => {
                         match self.assign_with_opts(
@@ -520,6 +523,9 @@ struct KeyInliner<'a, 'b, 'c> {
 
 impl Fold<Type> for KeyInliner<'_, '_, '_> {
     fn fold(&mut self, mut ty: Type) -> Type {
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty = ty.fold_children_with(self);
 
         match ty {

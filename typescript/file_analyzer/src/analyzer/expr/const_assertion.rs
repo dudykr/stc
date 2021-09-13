@@ -6,6 +6,7 @@ use crate::{
 use stc_ts_ast_rnode::RTsConstAssertion;
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::validator;
+use stc_ts_type_ops::generalization::prevent_generalize;
 use stc_ts_types::{Type, TypeParamInstantiation};
 
 #[validator]
@@ -31,7 +32,7 @@ impl Analyzer<'_, '_> {
                 .validate_with_args(&mut *a, (mode, None, type_ann))
                 .context("tried to valid expression of a const assertion")?;
 
-            a.prevent_generalize(&mut ty);
+            prevent_generalize(&mut ty);
             a.prevent_tuple_to_array(&mut ty);
 
             Ok(ty)

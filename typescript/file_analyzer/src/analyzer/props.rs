@@ -21,6 +21,7 @@ use stc_ts_errors::{Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{Accessor, ComputedKey, Key, KeywordType, PrivateName, TypeParam};
 use stc_ts_utils::PatExt;
+use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext};
@@ -99,7 +100,7 @@ impl Analyzer<'_, '_> {
 
             let mut errors = Errors::default();
 
-            let ty = match node.expr.validate_with_default(analyzer) {
+            let mut ty = match node.expr.validate_with_default(analyzer) {
                 Ok(ty) => ty,
                 Err(err) => {
                     check_for_symbol_form = false;
@@ -113,6 +114,7 @@ impl Analyzer<'_, '_> {
                     Type::unknown(span, Default::default())
                 }
             };
+            ty.make_clone_cheap();
 
             if match mode {
                 ComputedPropMode::Class { has_body } => errors.is_empty(),
@@ -550,6 +552,7 @@ impl Analyzer<'_, '_> {
                                         metadata: Default::default(),
                                     })
                                 });
+                            inferred_ret_ty.make_clone_cheap();
 
                             // Preserve return type if `this` is not involved in return type.
                             if p.function.return_type.is_none() {

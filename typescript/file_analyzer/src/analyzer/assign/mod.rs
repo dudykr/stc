@@ -14,7 +14,7 @@ use stc_ts_types::{
     KeywordType, KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, Ref, ThisType, Tuple, Type,
     TypeElement, TypeLit, TypeParam,
 };
-use stc_utils::stack;
+use stc_utils::{cache::Freeze, debug_ctx, stack};
 use std::{borrow::Cow, collections::HashMap, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
@@ -487,12 +487,17 @@ impl Analyzer<'_, '_> {
         let l = dump_type_as_string(&self.cm, &left);
         let r = dump_type_as_string(&self.cm, &right);
 
+        let _panic_ctx = debug_ctx!(format!("left = {}", l));
+        let _panic_ctx = debug_ctx!(format!("right = {}", r));
+
         if data
             .dejavu
             .iter()
             .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(&right))
         {
-            info!("[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
+            if cfg!(debug_assertions) {
+                info!("[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
+            }
             return Ok(());
         }
         let _stack = stack::track(opts.span)?;
@@ -553,8 +558,10 @@ impl Analyzer<'_, '_> {
         }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
-        let to = self.normalize_for_assign(span, to).context("tried to normalize lhs")?;
-        let rhs = self.normalize_for_assign(span, rhs).context("tried to normalize rhs")?;
+        let mut to = self.normalize_for_assign(span, to).context("tried to normalize lhs")?;
+        to.make_clone_cheap();
+        let mut rhs = self.normalize_for_assign(span, rhs).context("tried to normalize rhs")?;
+        rhs.make_clone_cheap();
 
         let to = to.normalize();
         let rhs = rhs.normalize();
@@ -755,6 +762,7 @@ impl Analyzer<'_, '_> {
                 let mut new_lhs = self
                     .expand_top_ref(span, Cow::Borrowed(to), Default::default())?
                     .into_owned();
+                new_lhs.make_clone_cheap();
                 // self.replace(&mut new_lhs, &[(to, &Type::any(span))]);
 
                 return self
@@ -1107,9 +1115,8 @@ impl Analyzer<'_, '_> {
 
         match rhs {
             Type::Ref(..) => {
-                let mut new_rhs = self
-                    .expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?
-                    .into_owned();
+                let mut new_rhs = self.expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?;
+                new_rhs.make_clone_cheap();
                 // self.replace(&mut new_rhs, &[(rhs, &Type::any(span))]);
                 return self
                     .assign_inner(data, to, &new_rhs, opts)
@@ -1189,6 +1196,12 @@ impl Analyzer<'_, '_> {
                     r.types
                         .iter()
                         .map(|rhs| {
+                            if cfg!(debug_assertions) {
+                                // Assertion for deep clones.
+                                let _ = to.clone();
+                                let _ = rhs.clone();
+                            }
+
                             self.assign_with_opts(
                                 data,
                                 AssignOpts {
@@ -1750,12 +1763,9 @@ impl Analyzer<'_, '_> {
 
                 let mut errors = vec![];
                 for parent in extends {
-                    let parent = self.type_of_ts_entity_name(
-                        span,
-                        self.ctx.module_id,
-                        &parent.expr,
-                        parent.type_args.as_deref(),
-                    )?;
+                    let parent = self
+                        .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?
+                        .freezed();
 
                     // An interface can extend a class.
                     let parent = self.instantiate_class(span, &parent)?;
@@ -2240,7 +2250,8 @@ impl Analyzer<'_, '_> {
         let keys = keys.normalize();
         let rhs = rhs.normalize();
 
-        let rhs_keys = self.extract_keys(opts.span, &rhs)?;
+        let mut rhs_keys = self.extract_keys(opts.span, &rhs)?;
+        rhs_keys.make_clone_cheap();
 
         self.assign_with_opts(
             data,
@@ -2262,13 +2273,14 @@ impl Analyzer<'_, '_> {
         r: &Type,
     ) -> ValidationResult<()> {
         let span = opts.span;
-        let r = self
+        let mut r = self
             .normalize(
                 Some(span),
                 Cow::Borrowed(&r),
                 NormalizeTypeOpts { ..Default::default() },
             )
             .context("tried to normalize rhs of assignment (to a mapped type)")?;
+        r.make_clone_cheap();
 
         let res: ValidationResult<_> = try {
             // Validate keys

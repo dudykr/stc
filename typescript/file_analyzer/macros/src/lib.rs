@@ -24,7 +24,7 @@ pub fn context(arg: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
             context_arg
         },
         ({
-            let _ctx = stc_utils::error::context(context_arg);
+            let _ctx = stc_utils::debug_ctx!(context_arg.into());
             let res: Result<_, stc_ts_errors::Error> = try { body };
 
             res.context(context_arg)

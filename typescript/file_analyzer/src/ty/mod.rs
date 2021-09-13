@@ -163,7 +163,7 @@ struct LitChecker {
 
 impl Visit<Type> for LitChecker {
     fn visit(&mut self, ty: &Type) {
-        match ty {
+        match ty.normalize() {
             Type::Lit(LitType {
                 span,
                 ref lit,

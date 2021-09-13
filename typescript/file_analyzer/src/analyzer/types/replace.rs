@@ -23,6 +23,9 @@ impl VisitMut<Type> for Replacer<'_, '_, '_> {
             }
         }
 
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty.visit_mut_children_with(self);
 
         for (pred, new) in self.map {

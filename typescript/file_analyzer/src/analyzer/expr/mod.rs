@@ -31,14 +31,14 @@ use stc_ts_errors::{
     DebugExt, Error, Errors,
 };
 use stc_ts_generics::ExpandGenericOpts;
-use stc_ts_type_ops::{is_str_lit_or_union, Fix};
+use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, KeywordType,
     KeywordTypeMetadata, LitType, LitTypeMetadata, Method, ModuleId, Operator, OptionalType, PropertySignature,
     QueryExpr, QueryType, StaticThis, ThisType,
 };
-use stc_utils::{error::context, stack, try_cache};
+use stc_utils::{cache::Freeze, debug_ctx, stack};
 use std::{
     borrow::Cow,
     collections::HashMap,
@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
         self.record(e);
 
         let _stack = stack::start(64);
-        let _ctx = context(format!("validate\nExpr: {:?}", e));
+        let _ctx = debug_ctx!(format!("validate\nExpr: {:?}", e));
 
         let span = e.span();
         let need_type_param_handling = match e {
@@ -336,7 +336,9 @@ impl Analyzer<'_, '_> {
 
         if type_ann.is_none() && need_type_param_handling {
             self.replace_invalid_type_params(&mut ty);
+            ty.fix();
         }
+
         self.cur_facts.assert_clone_cheap();
 
         if !self.is_builtin {
@@ -509,9 +511,10 @@ impl Analyzer<'_, '_> {
                 Ok(v) => v,
                 Err(()) => Type::any(span, Default::default()),
             };
+            rhs_ty.respan(e.right.span());
+            rhs_ty.make_cheap();
 
             analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
-            rhs_ty.respan(e.right.span());
 
             if let Some(span) = any_span {
                 return Ok(Type::any(span, Default::default()));
@@ -1434,16 +1437,22 @@ impl Analyzer<'_, '_> {
             preserve_params: true,
             ..self.ctx
         };
-        let obj = match obj.normalize() {
+        let mut obj = match obj.normalize() {
             Type::Conditional(..) | Type::Instance(..) => {
                 self.normalize(None, Cow::Borrowed(obj), Default::default())?
             }
             _ => Cow::Borrowed(obj),
         };
-        let obj = self
+        if !self.is_builtin {
+            obj.make_clone_cheap();
+        }
+        let mut obj = self
             .with_ctx(ctx)
             .expand(span, obj.into_owned(), Default::default())?
             .generalize_lit();
+        if !self.is_builtin {
+            obj.make_clone_cheap();
+        }
 
         match obj.normalize() {
             Type::Lit(obj) => {
@@ -1815,7 +1824,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 if is_str_lit_or_union(&prop_ty) {
-                    self.prevent_generalize(&mut prop_ty);
+                    prevent_generalize(&mut prop_ty);
                 }
 
                 warn!("Creating an indexed access type with type parameter as the object");
@@ -2491,7 +2500,8 @@ impl Analyzer<'_, '_> {
 
             Type::Mapped(m) => {
                 //
-                let constraint = self::constraint_reducer::reduce(m);
+                let mut constraint = self::constraint_reducer::reduce(m);
+                constraint.make_clone_cheap();
                 // If type of prop is equal to the type of index signature, it's
                 // index access.
 
@@ -2647,7 +2657,7 @@ impl Analyzer<'_, '_> {
                     Key::Computed(c) => c.ty.clone(),
                     _ => {
                         let mut prop_ty = box prop.ty().into_owned();
-                        self.prevent_generalize(&mut prop_ty);
+                        prevent_generalize(&mut prop_ty);
 
                         prop_ty
                     }
@@ -3322,11 +3332,7 @@ impl Analyzer<'_, '_> {
         n: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
     ) -> ValidationResult {
-        Ok(try_cache!(
-            self.data.cache.ts_entity_name,
-            (ctxt, n.clone(), type_args.cloned()),
-            self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
-        ))
+        self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
     }
 
     #[instrument(skip(self, span, ctxt, n, type_args))]
@@ -3535,7 +3541,7 @@ impl Analyzer<'_, '_> {
 
         let mut is_obj_opt_chain = false;
         let mut should_be_optional = false;
-        let obj_ty = match *obj {
+        let mut obj_ty = match *obj {
             RExprOrSuper::Expr(ref obj) => {
                 is_obj_opt_chain = is_obj_opt_chaining(&obj);
 
@@ -3583,10 +3589,11 @@ impl Analyzer<'_, '_> {
                 }
             }
         };
+        obj_ty.make_clone_cheap();
 
         self.storage.report_all(errors);
 
-        let prop = self
+        let mut prop = self
             .validate_key(prop, computed)
             .report(&mut self.storage)
             .unwrap_or_else(|| {
@@ -3597,6 +3604,7 @@ impl Analyzer<'_, '_> {
                     ty: box Type::any(span, Default::default()),
                 })
             });
+        prop.make_clone_cheap();
 
         let prop_access_ctx = Ctx {
             in_opt_chain: self.ctx.in_opt_chain || is_obj_opt_chain,

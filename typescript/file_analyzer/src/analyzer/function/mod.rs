@@ -16,6 +16,7 @@ use stc_ts_types::{
     TypeElement, TypeLit,
 };
 use stc_ts_utils::PatExt;
+use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -113,7 +114,8 @@ impl Analyzer<'_, '_> {
                     ..child.ctx
                 };
                 try_opt!(f.return_type.validate_with(&mut *child.with_ctx(ctx)))
-            };
+            }
+            .freezed();
 
             child.scope.declared_return_type = declared_ret_ty.clone();
 
@@ -160,7 +162,7 @@ impl Analyzer<'_, '_> {
                 &body.stmts
             )));
 
-            let inferred_return_type = match inferred_return_type {
+            let mut inferred_return_type = match inferred_return_type {
                 Some(Some(inferred_return_type)) => {
                     let mut inferred_return_type = match inferred_return_type {
                         Type::Ref(ty) => Type::Ref(child.qualify_ref_type_args(ty.span, ty)?),
@@ -235,6 +237,8 @@ impl Analyzer<'_, '_> {
                 None => Type::any(f.span, Default::default()),
             };
 
+            inferred_return_type.make_clone_cheap();
+
             if f.return_type.is_none() {
                 if let Some(m) = &mut child.mutations {
                     if m.for_fns.entry(f.node_id).or_default().ret_ty.is_none() {
@@ -268,7 +272,7 @@ impl Analyzer<'_, '_> {
 
     pub(crate) fn fn_to_type_element(&mut self, f: &Function) -> ValidationResult<TypeElement> {
         Ok(TypeElement::Call(CallSignature {
-            span: f.span,
+            span: f.span.with_ctxt(SyntaxContext::empty()),
             params: f.params.clone(),
             type_params: f.type_params.clone(),
             ret_ty: Some(f.ret_ty.clone()),
@@ -512,8 +516,11 @@ struct TypeParamHandler<'a> {
 }
 
 impl Fold<Type> for TypeParamHandler<'_> {
-    fn fold(&mut self, ty: Type) -> Type {
+    fn fold(&mut self, mut ty: Type) -> Type {
         if let Some(params) = self.params {
+            // TODO: PERF
+            ty.normalize_mut();
+
             let ty: Type = ty.fold_children_with(self);
 
             match ty {

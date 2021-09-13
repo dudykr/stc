@@ -32,13 +32,14 @@ use stc_ts_errors::{
 };
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
-use stc_ts_type_ops::{is_str_lit_or_union, metadata::PreventGeneralization, Fix};
+use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
     type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Id, IdCtx, IndexedAccessType,
     Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, Symbol, ThisType,
     Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
+use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -81,6 +82,9 @@ impl Analyzer<'_, '_> {
             ..
         } = *e;
 
+        let mut type_ann = self.expand_type_ann(span, type_ann)?;
+        type_ann.make_clone_cheap();
+
         let callee = match callee {
             RExprOrSuper::Super(..) => {
                 self.report_error_for_super_refs_without_supers(span, true);
@@ -114,7 +118,7 @@ impl Analyzer<'_, '_> {
                 ExtractKind::Call,
                 args,
                 type_args.as_ref(),
-                type_ann,
+                type_ann.as_deref(),
             )
         })
     }
@@ -133,6 +137,9 @@ impl Analyzer<'_, '_> {
             ..
         } = *e;
 
+        let mut type_ann = self.expand_type_ann(span, type_ann)?;
+        type_ann.make_clone_cheap();
+
         // TODO: e.visit_children
 
         self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
@@ -143,7 +150,7 @@ impl Analyzer<'_, '_> {
                 ExtractKind::New,
                 args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
                 type_args.as_ref(),
-                type_ann,
+                type_ann.as_deref(),
             )
         })
     }
@@ -229,6 +236,7 @@ impl Analyzer<'_, '_> {
             Some(v) => {
                 let mut type_args = v.validate_with(self)?;
                 self.prevent_expansion(&mut type_args);
+                type_args.make_clone_cheap();
                 Some(type_args)
             }
             None => None,
@@ -242,10 +250,23 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let arg_types = self.validate_args(args)?;
+        let mut arg_types = self.validate_args(args)?;
+        arg_types.make_clone_cheap();
+
         let spread_arg_types = self
             .spread_args(&arg_types)
             .context("tried to handle spreads in arguments")?;
+
+        // For debugging
+        if false {
+            for (i, ty) in arg_types.iter().enumerate() {
+                print_type(&format!("arg {}", i), &self.cm, &ty.ty);
+            }
+
+            for (i, ty) in spread_arg_types.iter().enumerate() {
+                print_type(&format!("spreaded arg {}", i), &self.cm, &ty.ty);
+            }
+        }
 
         match *callee {
             RExpr::Ident(ref i) if i.sym == js_word!("require") => {
@@ -331,7 +352,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Handle member expression
-                let obj_type = obj.validate_with_default(self)?.generalize_lit();
+                let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
+                obj_type.make_clone_cheap();
 
                 let mut obj_type = match *obj_type.normalize() {
                     Type::Keyword(KeywordType {
@@ -446,6 +468,8 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )?;
+
+            callee_ty.make_clone_cheap();
 
             let expanded_ty = analyzer.extract(
                 span,
@@ -1237,6 +1261,8 @@ impl Analyzer<'_, '_> {
                     new_arg_types.push(arg.clone());
                 }
             }
+
+            new_arg_types.make_clone_cheap();
 
             return Ok(Cow::Owned(new_arg_types));
         } else {
@@ -2095,6 +2121,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        // Assertion about deep clone
+        if cfg!(debug_assertions) {
+            let _p = params.clone();
+            let _a = arg_types.clone();
+            let _s = spread_arg_types.clone();
+        }
+
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let min_param: usize = params.iter().map(|v| &v.pat).map(count_required_pat).sum();
@@ -2350,6 +2383,7 @@ impl Analyzer<'_, '_> {
             .map(|param| {
                 let mut ty = param.ty.clone();
                 self.expand_this_in_type(&mut ty);
+                ty.make_clone_cheap();
                 FnParam { ty, ..param.clone() }
             })
             .collect_vec();
@@ -2383,7 +2417,7 @@ impl Analyzer<'_, '_> {
                 None => None,
             };
 
-            let expanded_params;
+            let mut expanded_params;
             let params = if let Some(map) = &inferred_from_return_type {
                 expanded_params = params
                     .into_iter()
@@ -2393,10 +2427,19 @@ impl Analyzer<'_, '_> {
                         Ok(FnParam { ty, ..v })
                     })
                     .collect::<Result<Vec<_>, _>>()?;
+                expanded_params.make_clone_cheap();
                 expanded_params
             } else {
                 params
             };
+
+            // Assert deep clone
+            if cfg!(debug_assertions) {
+                let _ = type_args.clone();
+                let _ = type_params.clone();
+                let _ = params.clone();
+                let _ = spread_arg_types.clone();
+            }
 
             debug!("Inferring arg types for a call");
             let mut inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
@@ -2408,7 +2451,8 @@ impl Analyzer<'_, '_> {
 
                     Ok(FnParam { ty, ..v })
                 })
-                .collect::<Result<Vec<_>, _>>()?;
+                .collect::<Result<Vec<_>, _>>()?
+                .freezed();
 
             let ctx = Ctx {
                 in_argument: true,
@@ -2416,12 +2460,13 @@ impl Analyzer<'_, '_> {
                 ..self.ctx
             };
             let mut new_args = vec![];
+
             for (idx, (arg, param)) in args.into_iter().zip(expanded_param_types.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
                 print_type(&&format!("Expanded parameter at {}", idx), &self.cm, &param.ty);
                 print_type(&&format!("Original argument at {}", idx), &self.cm, &arg_ty.ty);
 
-                let (type_param_decl, actual_params) = match &*param.ty {
+                let (type_param_decl, actual_params) = match param.ty.normalize() {
                     Type::Function(f) => (&f.type_params, &f.params),
                     _ => {
                         new_args.push(arg_ty.clone());
@@ -2541,7 +2586,7 @@ impl Analyzer<'_, '_> {
                 new_arg_types = vec![];
                 for arg in &new_args {
                     if arg.spread.is_some() {
-                        match &*arg.ty {
+                        match arg.ty.normalize() {
                             Type::Tuple(arg_ty) => {
                                 new_arg_types.extend(arg_ty.elems.iter().map(|element| &element.ty).cloned().map(
                                     |ty| TypeOrSpread {
@@ -2561,10 +2606,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 new_arg_types.fix();
+                new_arg_types.make_clone_cheap();
 
                 &*new_arg_types
             } else {
                 new_args.fix();
+                new_args.make_clone_cheap();
 
                 &*new_args
             };
@@ -2578,10 +2625,19 @@ impl Analyzer<'_, '_> {
 
             for item in &expanded_param_types {
                 item.ty.assert_valid();
+
+                // Assertion for deep clones
+                if cfg!(debug_assertions) {
+                    let _ = item.ty.clone();
+                }
             }
 
             for item in spread_arg_types {
                 item.ty.assert_valid();
+
+                if cfg!(debug_assertions) {
+                    let _ = item.ty.clone();
+                }
             }
 
             self.validate_arg_types(&expanded_param_types, &spread_arg_types);
@@ -2605,7 +2661,9 @@ impl Analyzer<'_, '_> {
             }
 
             print_type("Return", &self.cm, &ret_ty);
-            let mut ty = self.expand_type_params(&inferred, ret_ty, Default::default())?;
+            let mut ty = self
+                .expand_type_params(&inferred, ret_ty, Default::default())?
+                .freezed();
             print_type("Return, expanded", &self.cm, &ty);
 
             ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
@@ -2624,11 +2682,12 @@ impl Analyzer<'_, '_> {
 
             print_type("Return, after adding type params", &self.cm, &ty);
 
+            ty.reposition(span);
+            ty.make_clone_cheap();
+
             if kind == ExtractKind::Call {
                 self.add_call_facts(&expanded_param_types, &args, &mut ty);
             }
-
-            ty.reposition(span);
 
             return Ok(ty);
         }
@@ -2643,6 +2702,7 @@ impl Analyzer<'_, '_> {
         print_type("Return, simplified", &self.cm, &ret_ty);
 
         self.add_required_type_params(&mut ret_ty);
+        ret_ty.make_clone_cheap();
 
         if kind == ExtractKind::Call {
             self.add_call_facts(&params, &args, &mut ret_ty);
@@ -2721,7 +2781,8 @@ impl Analyzer<'_, '_> {
                                     self.storage.report(err);
                                     continue;
                                 }
-                            };
+                            }
+                            .freezed();
 
                             // Handle
                             //
@@ -2984,10 +3045,12 @@ impl Analyzer<'_, '_> {
 
         let orig_ty = self
             .normalize(Some(span), Cow::Borrowed(orig_ty), Default::default())
-            .context("tried to normalize original type")?;
+            .context("tried to normalize original type")?
+            .freezed();
         let new_ty = self
             .normalize(Some(span), Cow::Owned(new_ty), Default::default())
-            .context("tried to normalize new type")?;
+            .context("tried to normalize new type")?
+            .freezed();
 
         let use_simple_intersection = (|| {
             match (orig_ty.normalize(), new_ty.normalize()) {
@@ -3089,7 +3152,7 @@ impl Analyzer<'_, '_> {
                 {
                     let new_ty = self
                         .narrow_type_with_predicate(span, &previous_types, new_ty.clone())?
-                        .cheap();
+                        .freezed();
 
                     self.add_type_fact(&var_name.into(), new_ty);
                     return;
@@ -3271,6 +3334,9 @@ impl Fold<Type> for ReturnTypeGeneralizer<'_, '_, '_> {
             return ty;
         }
 
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty = ty.fold_children_with(self);
 
         ty.generalize_lit()
@@ -3288,6 +3354,9 @@ struct ReturnTypeSimplifier<'a, 'b, 'c> {
 
 impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty.visit_mut_children_with(self);
 
         match ty {
@@ -3380,7 +3449,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
             }
 
             Type::IndexedAccessType(ty) if is_str_lit_or_union(&ty.index_type) => {
-                ty.visit_mut_with(&mut PreventGeneralization);
+                prevent_generalize(ty);
             }
 
             // Boxified<A | B | C> => Boxified<A> | Boxified<B> | Boxified<C>
@@ -3398,6 +3467,8 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
             {
                 // TODO: Replace .ok() with something better
                 if let Some(types) = self.analyzer.find_type(*ctxt, &(&*i).into()).ok().flatten() {
+                    type_args.make_clone_cheap();
+
                     for stored_ty in types {
                         match stored_ty.normalize() {
                             Type::Alias(Alias { ty: aliased_ty, .. }) => {

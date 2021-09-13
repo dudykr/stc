@@ -5,6 +5,7 @@ use crate::{
             AccessPropertyOpts, CallOpts, IdCtx, TypeOfMode,
         },
         types::NormalizeTypeOpts,
+        util::ResultExt,
         Analyzer,
     },
     ty::TypeExt,
@@ -22,6 +23,7 @@ use stc_ts_types::{
     type_id::SymbolId, Array, CommonTypeMetadata, ComputedKey, Intersection, Key, KeywordType, KeywordTypeMetadata,
     LitType, Symbol, Tuple, TupleElement, Type, TypeParamInstantiation, Union, UnionMetadata,
 };
+use stc_utils::cache::Freeze;
 use std::{borrow::Cow, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext};
@@ -50,9 +52,10 @@ impl Analyzer<'_, '_> {
 
         let type_ann = self.expand_type_ann(span, type_ann)?;
 
-        let iterator = type_ann
+        let mut iterator = type_ann
             .as_deref()
             .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty), Default::default()).ok());
+        iterator.make_clone_cheap();
 
         let prefer_tuple = self.ctx.prefer_tuple || self.prefer_tuple(type_ann.as_deref());
         let is_empty = elems.is_empty();
@@ -424,6 +427,13 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
+        if !self.data.checked_for_async_iterator {
+            self.data.checked_for_async_iterator = true;
+            self.env
+                .get_global_type(span, &"AsyncIterator".into())
+                .report(&mut self.storage);
+        }
+
         let async_iterator = self
             .call_property(
                 span,
@@ -641,9 +651,10 @@ impl Analyzer<'_, '_> {
         debug!("[exprs/array] get_iterator({})", ty_str);
         ty.assert_valid();
 
-        let ty = self
+        let mut ty = self
             .normalize(Some(span), ty, Default::default())
             .context("tried to normalize type to get iterator")?;
+        ty.make_clone_cheap();
 
         let res: ValidationResult<_> = (|| {
             if ty.is_str() {
@@ -779,12 +790,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let iterator = self.get_iterator(span, ty, Default::default()).with_context(|| {
+        let mut iterator = self.get_iterator(span, ty, Default::default()).with_context(|| {
             format!(
                 "tried to get a type of an iterator to get the element type of it ({})",
                 ty_str
             )
         })?;
+        iterator.make_clone_cheap();
 
         if iterator.is_str() {
             return Ok(Cow::Owned(Type::Keyword(KeywordType {

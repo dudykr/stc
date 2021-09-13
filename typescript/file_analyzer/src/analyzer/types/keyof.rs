@@ -1,16 +1,17 @@
 use crate::{
     analyzer::{types::NormalizeTypeOpts, Analyzer},
+    util::type_ext::TypeVecExt,
     ValidationResult,
 };
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
-use stc_ts_type_ops::{is_str_lit_or_union, Fix};
+use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
     Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, ModuleId,
     PropertySignature, Ref, Type, TypeElement, Union,
 };
-use stc_utils::error::context;
+use stc_utils::debug_ctx;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, SyntaxContext, TypeEq, DUMMY_SP};
@@ -26,7 +27,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> ValidationResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let _ctx = context(format!("keyof: {}", dump_type_as_string(&self.cm, ty)));
+        let _ctx = debug_ctx!(format!("keyof: {}", dump_type_as_string(&self.cm, ty)));
 
         if !self.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot perform `keyof` operation with dummy span");
@@ -174,16 +175,7 @@ impl Analyzer<'_, '_> {
                             TypeElement::Call(_) | TypeElement::Constructor(_) => {}
                         }
                     }
-
-                    if types.is_empty() {
-                        return Ok(Type::never(span, Default::default()));
-                    }
-
-                    return Ok(Type::Union(Union {
-                        span,
-                        types,
-                        metadata: Default::default(),
-                    }));
+                    return Ok(Type::new_union(span, types));
                 }
 
                 Type::Class(Class { def, .. }) => {
@@ -255,7 +247,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Intersection(i) => {
                     // We return union of keys.
-                    let types = i
+                    let types: Vec<_> = i
                         .types
                         .iter()
                         .map(|ty| {
@@ -264,11 +256,7 @@ impl Analyzer<'_, '_> {
                         })
                         .collect::<Result<_, _>>()?;
 
-                    return Ok(Type::Union(Union {
-                        span,
-                        types,
-                        metadata: Default::default(),
-                    }));
+                    return Ok(Type::new_union(span, types));
                 }
 
                 Type::Union(u) => {
@@ -298,6 +286,8 @@ impl Analyzer<'_, '_> {
                             })
                             .collect_vec();
 
+                        keys[0].dedup_type();
+
                         let actual_keys = keys[0]
                             .iter()
                             .filter(|&key| {
@@ -307,17 +297,12 @@ impl Analyzer<'_, '_> {
                             })
                             .cloned()
                             .map(Type::Lit)
-                            .collect_vec()
-                            .fixed();
+                            .collect_vec();
 
-                        return Ok(Type::Union(Union {
-                            span,
-                            types: actual_keys,
-                            metadata: Default::default(),
-                        }));
+                        return Ok(Type::new_union_without_dedup(span, actual_keys));
                     }
 
-                    return Ok(Type::union(key_types));
+                    return Ok(Type::new_union(span, key_types));
                 }
 
                 Type::Param(..) => {
@@ -342,6 +327,8 @@ impl Analyzer<'_, '_> {
             unimplemented!("keyof: {}", dump_type_as_string(&self.cm, &ty));
         })()?;
 
-        Ok(ty.fixed())
+        ty.assert_valid();
+
+        Ok(ty)
     }
 }
