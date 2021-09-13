@@ -307,6 +307,8 @@ struct AnalyzerData {
     known_wrong_overloads: FxHashSet<Id>,
 
     cache: TypeCache,
+
+    checked_for_async_iterator: bool,
 }
 
 #[derive(Debug, Default)]

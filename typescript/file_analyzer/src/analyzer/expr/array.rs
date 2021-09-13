@@ -5,6 +5,7 @@ use crate::{
             AccessPropertyOpts, CallOpts, IdCtx, TypeOfMode,
         },
         types::NormalizeTypeOpts,
+        util::ResultExt,
         Analyzer,
     },
     ty::TypeExt,
@@ -424,6 +425,13 @@ impl Analyzer<'_, '_> {
 
         if ty.is_any() {
             return Ok(ty);
+        }
+
+        if !self.data.checked_for_async_iterator {
+            self.data.checked_for_async_iterator = true;
+            self.env
+                .get_global_type(span, &"AsyncIterator".into())
+                .report(&mut self.storage);
         }
 
         let async_iterator = self
