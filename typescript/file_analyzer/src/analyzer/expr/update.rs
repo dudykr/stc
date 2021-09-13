@@ -7,6 +7,7 @@ use crate::{
 use stc_ts_ast_rnode::{RExpr, RLit, RParenExpr, RTsLit, RUpdateExpr};
 use stc_ts_errors::Error;
 use stc_ts_types::{KeywordType, LitType, Type};
+use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -21,7 +22,10 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let res = e.arg.validate_with_args(self, (TypeOfMode::LValue, None, None));
+        let res = e
+            .arg
+            .validate_with_args(self, (TypeOfMode::LValue, None, None))
+            .map(Freeze::freezed);
         let mut errored = false;
 
         let ty = res

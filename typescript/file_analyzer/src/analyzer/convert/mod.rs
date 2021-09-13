@@ -29,7 +29,7 @@ use stc_ts_types::{
     TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
-use stc_utils::{error, AHashSet};
+use stc_utils::{cache::Freeze, debug_ctx, AHashSet};
 use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -96,7 +96,8 @@ impl Analyzer<'_, '_> {
             }
 
             // Resolve contraints
-            let params = self.expand_type_params(&map, params, Default::default())?;
+            let mut params = self.expand_type_params(&map, params, Default::default())?;
+            params.make_clone_cheap();
 
             for param in &params {
                 self.register_type(param.name.clone(), Type::Param(param.clone()));
@@ -277,7 +278,7 @@ impl Analyzer<'_, '_> {
                     span: d.span,
                     name: d.id.clone().into(),
                     type_params: try_opt!(d.type_params.validate_with(&mut *child).map(|v| v.map(Box::new))),
-                    extends: d.extends.validate_with(child)?,
+                    extends: d.extends.validate_with(child)?.freezed(),
                     body: d.body.validate_with(child)?,
                     metadata: Default::default(),
                 };
@@ -285,6 +286,8 @@ impl Analyzer<'_, '_> {
 
                 child.resolve_parent_interfaces(&d.extends);
                 child.report_error_for_conflicting_parents(d.id.span, &ty.extends);
+
+                ty.make_clone_cheap();
 
                 Ok(ty)
             },
@@ -650,6 +653,7 @@ impl Analyzer<'_, '_> {
             }
 
             let mut params: Vec<_> = t.params.validate_with(child)?;
+            params.make_clone_cheap();
 
             let mut ret_ty = box t.type_ann.validate_with(child)?;
 
@@ -707,7 +711,7 @@ impl Analyzer<'_, '_> {
         self.record(t);
 
         let span = t.span;
-        let type_args = try_opt!(t.type_params.validate_with(self)).map(Box::new);
+        let type_args = try_opt!(t.type_params.validate_with(self)).map(Box::new).freezed();
         let mut contains_infer = false;
 
         let mut reported_type_not_found = false;
@@ -961,7 +965,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, ty: &RTsType) -> ValidationResult {
         self.record(ty);
 
-        let _ctx = error::context(format!("validate\nTsType: {:?}", ty));
+        let _ctx = debug_ctx!(format!("validate\nTsType: {:?}", ty));
 
         let is_topmost_type = !self.ctx.is_not_topmost_type;
         let ctx = Ctx {

@@ -15,13 +15,18 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Accessor, Array, ArrayMetadata, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional,
-    ConditionalMetadata, ConstructorSignature, Id, IdCtx, Instance, InstanceMetadata, Intersection, Intrinsic,
-    IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId,
-    Operator, PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type, TypeElement,
-    TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    ConditionalMetadata, ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection,
+    Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature,
+    ModuleId, Operator, PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type,
+    TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::MapWithMut;
-use stc_utils::{error, error::context, ext::SpanExt, stack, TryOpt};
+use stc_utils::{
+    cache::{Freeze, ALLOW_DEEP_CLONE},
+    debug_ctx,
+    ext::SpanExt,
+    stack, TryOpt,
+};
 use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
@@ -64,7 +69,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn normalize<'a>(
         &mut self,
         span: Option<Span>,
-        ty: Cow<'a, Type>,
+        mut ty: Cow<'a, Type>,
         mut opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
         let res = (|| {
@@ -80,7 +85,7 @@ impl Analyzer<'_, '_> {
             }
 
             let _stack = stack::track(actual_span)?;
-            let _context = error::context(format!("Normalize: {}", dump_type_as_string(&self.cm, &ty)));
+            let _context = debug_ctx!(format!("Normalize: {}", dump_type_as_string(&self.cm, &ty)));
 
             if ty.is_arc() {
                 let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
@@ -88,7 +93,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Cow::Owned(ty));
             }
 
-            match &*ty {
+            match ty.normalize() {
                 Type::Lit(..)
                 | Type::TypeLit(..)
                 | Type::Interface(..)
@@ -105,10 +110,17 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
+            if matches!(
+                ty.normalize(),
+                Type::Conditional(..) | Type::Array(..) | Type::IndexedAccessType(..) | Type::Mapped(..)
+            ) {
+                ty.make_clone_cheap();
+            }
+
             {
-                match &*ty {
+                match ty.normalize() {
                     Type::Ref(_) => {
-                        let new_ty = self
+                        let mut new_ty = self
                             .expand_top_ref(actual_span, Cow::Borrowed(&ty), Default::default())
                             .context("tried to expand a ref type as a part of normalization")?;
 
@@ -118,6 +130,8 @@ impl Analyzer<'_, '_> {
                         }
 
                         new_ty.assert_valid();
+
+                        new_ty.make_clone_cheap();
 
                         return Ok(Cow::Owned(self.normalize(span, new_ty, opts)?.into_owned()));
                     }
@@ -198,10 +212,13 @@ impl Analyzer<'_, '_> {
                             .normalize(span, Cow::Borrowed(&c.check_type), Default::default())
                             .context("tried to normalize the `check` type of a conditional type")?
                             .into_owned();
+                        check_type.make_clone_cheap();
 
-                        let extends_type = self
+                        let mut extends_type = self
                             .normalize(span, Cow::Borrowed(&c.extends_type), Default::default())
                             .context("tried to normalize the `extends` type of a conditional type")?;
+
+                        extends_type.make_clone_cheap();
 
                         if let Some(v) = self.extends(ty.span(), Default::default(), &check_type, &extends_type) {
                             let ty = if v { &c.true_type } else { &c.false_type };
@@ -328,7 +345,10 @@ impl Analyzer<'_, '_> {
                                             *check_type_constraint = box new;
 
                                             let mut params = HashMap::default();
-                                            params.insert(name.clone(), check_type.clone().fixed().cheap());
+                                            params.insert(
+                                                name.clone(),
+                                                ALLOW_DEEP_CLONE.set(&(), || check_type.clone().fixed().cheap()),
+                                            );
                                             let c = self.expand_type_params(&params, c.clone(), Default::default())?;
                                             let c = Type::Conditional(c);
                                             c.assert_valid();
@@ -390,10 +410,16 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::IndexedAccessType(iat) => {
+                        let obj_ty = box self
+                            .normalize(span, Cow::Borrowed(&iat.obj_type), opts)
+                            .context("tried to normalize object type")?
+                            .into_owned();
+
                         let index_ty = box self
                             .normalize(span, Cow::Borrowed(&iat.index_type), opts)
                             .context("tried to normalize index type")?
-                            .into_owned();
+                            .into_owned()
+                            .freezed();
 
                         let ctx = Ctx {
                             diallow_unknown_object_property: true,
@@ -401,11 +427,11 @@ impl Analyzer<'_, '_> {
                         };
                         let prop_ty = self.with_ctx(ctx).access_property(
                             actual_span,
-                            &iat.obj_type,
+                            &obj_ty,
                             &Key::Computed(ComputedKey {
                                 span: actual_span,
                                 expr: box RExpr::Invalid(RInvalid { span: actual_span }),
-                                ty: index_ty,
+                                ty: index_ty.clone(),
                             }),
                             TypeOfMode::RValue,
                             IdCtx::Type,
@@ -418,7 +444,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             let _context =
-                                error::context(format!("Property type: {}", dump_type_as_string(&self.cm, &prop_ty)));
+                                debug_ctx!(format!("Property type: {}", dump_type_as_string(&self.cm, &prop_ty)));
 
                             match prop_ty.normalize() {
                                 Type::IndexedAccessType(prop_ty) => match prop_ty.index_type.normalize() {
@@ -438,6 +464,14 @@ impl Analyzer<'_, '_> {
                             return Ok(Cow::Owned(ty));
                         }
                         // TODO:
+
+                        return Ok(Cow::Owned(Type::IndexedAccessType(IndexedAccessType {
+                            span: iat.span,
+                            readonly: iat.readonly,
+                            obj_type: obj_ty,
+                            index_type: index_ty,
+                            metadata: iat.metadata,
+                        })));
                     }
 
                     Type::Operator(Operator {
@@ -574,7 +608,7 @@ impl Analyzer<'_, '_> {
 
     // This is part of normalization.
     fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type) -> ValidationResult<Type> {
-        let ty = self.normalize(
+        let mut ty = self.normalize(
             span,
             Cow::Borrowed(ty),
             NormalizeTypeOpts {
@@ -582,6 +616,7 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         )?;
+        ty.make_clone_cheap();
         let metadata = ty.metadata();
         let actual_span = ty.span();
 
@@ -970,7 +1005,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<Option<Cow<'a, TypeLit>>> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let _ctx = context(format!("type_to_type_lit: {:?}", ty));
+        let _ctx = debug_ctx!(format!("type_to_type_lit: {:?}", ty));
 
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
 
@@ -1128,7 +1163,7 @@ impl Analyzer<'_, '_> {
 
             Type::Constructor(ty) => {
                 let el = TypeElement::Constructor(ConstructorSignature {
-                    span: ty.span,
+                    span: ty.span.with_ctxt(SyntaxContext::empty()),
                     accessibility: None,
                     params: ty.params.clone(),
                     ret_ty: Some(ty.type_ann.clone()),
@@ -1159,7 +1194,7 @@ impl Analyzer<'_, '_> {
 
                 for (idx, e) in ty.elems.iter().enumerate() {
                     members.push(TypeElement::Property(PropertySignature {
-                        span: e.span,
+                        span: e.span.with_ctxt(SyntaxContext::empty()),
                         accessibility: None,
                         readonly: false,
                         key: Key::Num(RNumber {
@@ -1177,7 +1212,7 @@ impl Analyzer<'_, '_> {
 
                 // length
                 members.push(TypeElement::Property(PropertySignature {
-                    span: ty.span,
+                    span: ty.span.with_ctxt(SyntaxContext::empty()),
                     accessibility: None,
                     readonly: true,
                     key: Key::Normal {
@@ -1428,7 +1463,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 TypeElement::Method(MethodSignature {
-                    span: m.span,
+                    span: m.span.with_ctxt(SyntaxContext::empty()),
                     accessibility: m.accessibility,
                     readonly: false,
                     key: m.key.clone(),
@@ -1445,7 +1480,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 TypeElement::Property(PropertySignature {
-                    span: p.span,
+                    span: p.span.with_ctxt(SyntaxContext::empty()),
                     accessibility: p.accessibility,
                     readonly: p.readonly,
                     key: p.key.clone(),
@@ -1589,10 +1624,10 @@ impl Analyzer<'_, '_> {
         };
 
         for excluded in excludes {
-            self.exclude_type(span, mapped_ty.to_mut(), &excluded);
+            self.exclude_type(span, ALLOW_DEEP_CLONE.set(&(), || mapped_ty.to_mut()), &excluded);
         }
 
-        *ty = mapped_ty.into_owned();
+        *ty = ALLOW_DEEP_CLONE.set(&(), || mapped_ty.into_owned());
         ty.fix();
     }
 
@@ -1676,6 +1711,8 @@ struct TupleNormalizer {
 
 impl VisitMut<Type> for TupleNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
+        // TODO: PERF
+        ty.normalize_mut();
         ty.visit_mut_children_with(self);
 
         match ty.normalize() {

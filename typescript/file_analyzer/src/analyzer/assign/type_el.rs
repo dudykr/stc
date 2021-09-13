@@ -16,7 +16,7 @@ use stc_ts_types::{
     PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union,
     UnionMetadata,
 };
-use stc_utils::ext::SpanExt;
+use stc_utils::{cache::Freeze, ext::SpanExt};
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -445,12 +445,13 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Function(..) | Type::Constructor(..) => {
-                    let rhs = self
+                    let mut rhs = self
                         .convert_type_to_type_lit(span, &rhs)
                         .context("tried to convert a function to a type literal for asssignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                         .unwrap();
+                    rhs.make_clone_cheap();
 
                     return self
                         .assign_to_type_elements(data, opts, lhs_span, lhs, &rhs, lhs_metadata)

@@ -15,6 +15,7 @@ use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{Id, IdCtx, ModuleId};
 use stc_ts_utils::find_ids_in_pat;
+use stc_utils::cache::Freeze;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -323,7 +324,7 @@ impl Analyzer<'_, '_> {
     fn export_expr(&mut self, name: Id, item_node_id: NodeId, e: &RExpr) -> ValidationResult<()> {
         self.report_errors_for_duplicated_exports_of_var(e.span(), name.sym().clone());
 
-        let ty = e.validate_with_default(self)?;
+        let ty = e.validate_with_default(self)?.freezed();
 
         if *name.sym() == js_word!("default") {
             match e {

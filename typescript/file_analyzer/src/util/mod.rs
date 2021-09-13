@@ -154,7 +154,11 @@ pub(crate) trait RemoveTypes {
 }
 
 impl RemoveTypes for Type {
-    fn remove_falsy(self) -> Type {
+    fn remove_falsy(mut self) -> Type {
+        if matches!(self.normalize(), Type::Union(..) | Type::Intersection(..)) {
+            self.normalize_mut();
+        }
+
         match self {
             Type::Keyword(KeywordType { kind, span, metadata }) => match kind {
                 TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword => {
@@ -183,7 +187,11 @@ impl RemoveTypes for Type {
         self
     }
 
-    fn remove_truthy(self) -> Type {
+    fn remove_truthy(mut self) -> Type {
+        if matches!(self.normalize(), Type::Union(..) | Type::Intersection(..)) {
+            self.normalize_mut();
+        }
+
         match self {
             Type::Lit(LitType {
                 lit: RTsLit::Bool(RBool { value: true, span, .. }),

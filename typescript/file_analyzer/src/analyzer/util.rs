@@ -13,6 +13,7 @@ use stc_ts_types::{
     Class, ClassMetadata, Enum, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType, Intersection, ModuleId,
     QueryExpr, QueryType, Ref, RefMetadata, Tuple, TypeElement, Union,
 };
+use stc_utils::cache::ALLOW_DEEP_CLONE;
 use std::iter::once;
 use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -27,7 +28,9 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(debugger) = &self.debugger {
-            debugger.dump_type(span, &ty);
+            ALLOW_DEEP_CLONE.set(&(), || {
+                debugger.dump_type(span, &ty);
+            });
         }
     }
 
@@ -261,14 +264,14 @@ impl Fold<Type> for Generalizer {
             }
         }
 
-        let force = match ty {
+        let force = match ty.normalize() {
             Type::TypeLit(..) => true,
             _ => false,
         };
 
         let old = self.force;
         self.force = force;
-        ty = ty.fold_children_with(self);
+        ty = ty.foldable().fold_children_with(self);
         self.force = old;
 
         ty.generalize_lit()

@@ -31,7 +31,7 @@ tracing-subscriber = "0.2.19"
 [profile.release]
 codegen-units = 1
 # lto = true
-# debug = true
+debug = true
 
 [profile.bench]
 codegen-units = 1

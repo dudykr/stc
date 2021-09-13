@@ -13,8 +13,8 @@ warning: Type
    | ^^^^^^
    |
    = note: {
-               name?: string;
-               value?: string;
+               name?: Something["name"];
+               value?: Something["value"];
            }
 
 warning: Type
@@ -32,8 +32,8 @@ warning: Type
    | ^^^^^^
    |
    = note: {
-               name?: string;
-               value?: string;
+               name?: Something["name"];
+               value?: Something["value"];
            }
 
 warning: Type
@@ -42,7 +42,7 @@ warning: Type
 17 | e2.foo.name
    | ^^^^^^^^^^^
    |
-   = note: (undefined | string)
+   = note: (undefined | Something["name"])
 
 warning: Type
   --> $DIR/tests/pass/types/mapped/4-2.ts:18:1
@@ -59,8 +59,8 @@ warning: Type
    | ^^^^^^
    |
    = note: {
-               name?: string;
-               value?: string;
+               name?: Something["name"];
+               value?: Something["value"];
            }
 
 warning: Type
@@ -69,7 +69,7 @@ warning: Type
 18 | e2.foo.value
    | ^^^^^^^^^^^^
    |
-   = note: (undefined | string)
+   = note: (undefined | Something["value"])
 
 warning: Type
   --> $DIR/tests/pass/types/mapped/4-2.ts:19:1

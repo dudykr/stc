@@ -1,11 +1,22 @@
 use std::{cell::RefCell, panic, sync::Once};
 
+#[macro_export]
+macro_rules! panic_ctx {
+    ($s:expr) => {{
+        if cfg!(debug_assertions) {
+            Some($crate::panic_context::new($s))
+        } else {
+            None
+        }
+    }};
+}
+
 #[cfg(not(debug_assertions))]
 #[inline(always)]
-pub fn enter(_: String) -> () {}
+pub fn new(_: String) -> () {}
 
 #[cfg(debug_assertions)]
-pub fn enter(context: String) -> PanicContext {
+pub fn new(context: String) -> PanicContext {
     static ONCE: Once = Once::new();
     ONCE.call_once(PanicContext::init);
 

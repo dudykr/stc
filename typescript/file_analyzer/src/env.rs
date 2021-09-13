@@ -15,7 +15,11 @@ use stc_ts_storage::Builtin;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{ClassDef, Id, ModuleTypeData, Type};
 use stc_utils::stack;
-use std::{collections::hash_map::Entry, sync::Arc, time::Instant};
+use std::{
+    collections::hash_map::Entry,
+    sync::{Arc, Mutex},
+    time::Instant,
+};
 use string_enum::StringEnum;
 use swc_atoms::JsWord;
 use swc_common::{Globals, Span, Spanned, DUMMY_SP};
@@ -254,8 +258,8 @@ pub struct Env {
     target: JscTarget,
     module: ModuleConfig,
     builtin: Arc<BuiltIn>,
-    global_types: Arc<DashMap<JsWord, Type, FxBuildHasher>>,
-    global_vars: Arc<DashMap<JsWord, Type, FxBuildHasher>>,
+    global_types: Arc<Mutex<FxHashMap<JsWord, Type>>>,
+    global_vars: Arc<Mutex<FxHashMap<JsWord, Type>>>,
 }
 
 impl Env {
@@ -326,17 +330,19 @@ impl Env {
         match self.get_global_type(ty.span(), &name) {
             Ok(prev_ty) => {
                 self.global_types
+                    .lock()
+                    .unwrap()
                     .insert(name, Type::intersection(DUMMY_SP, vec![prev_ty, ty]).fixed().cheap());
             }
             Err(_) => {
-                self.global_types.insert(name, ty);
+                self.global_types.lock().unwrap().insert(name, ty);
             }
         }
     }
 
     #[instrument(skip(self, span))]
     pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
-        if let Some(ty) = self.global_vars.get(name) {
+        if let Some(ty) = self.global_vars.lock().unwrap().get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
             return Ok((*ty).clone());
         }
@@ -355,7 +361,7 @@ impl Env {
 
     #[instrument(skip(self, span))]
     pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
-        if let Some(ty) = self.global_types.get(name) {
+        if let Some(ty) = self.global_types.lock().unwrap().get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
             return Ok((*ty).clone());
         }

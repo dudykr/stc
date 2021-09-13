@@ -1,5 +1,16 @@
 use crate::panic_context;
-use std::{cell::RefCell, fmt::Display};
+use std::cell::RefCell;
+
+#[macro_export]
+macro_rules! debug_ctx {
+    ($s:expr) => {{
+        if cfg!(debug_assertions) {
+            Some($crate::error::span($s))
+        } else {
+            None
+        }
+    }};
+}
 
 #[cfg(debug_assertions)]
 pub struct ContextGuard {
@@ -15,15 +26,15 @@ impl Drop for ContextGuard {
 
 #[cfg(not(debug_assertions))]
 #[inline(always)]
-pub fn context(_: impl Display) -> () {}
+pub fn span(_: String) -> () {}
 
 /// Add a context to created errors and configures a context for panic.
 #[cfg(debug_assertions)]
-pub fn context(msg: impl Display) -> ContextGuard {
+pub fn span(msg: String) -> ContextGuard {
     let msg = msg.to_string();
     with_ctx(|ctx| ctx.push(msg.clone()));
     ContextGuard {
-        _panic_ctxt: panic_context::enter(msg),
+        _panic_ctxt: panic_context::new(msg),
     }
 }
 

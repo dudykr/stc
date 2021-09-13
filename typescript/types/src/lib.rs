@@ -20,12 +20,17 @@ use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
 use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
+use scoped_tls::scoped_thread_local;
+use servo_arc::Arc;
 use static_assertions::assert_eq_size;
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
     RTsKeywordType, RTsLit, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
-use stc_utils::{cache::Freeze, error::context};
+use stc_utils::{
+    cache::{Freeze, ALLOW_DEEP_CLONE},
+    debug_ctx, panic_ctx,
+};
 use stc_visit::{Visit, Visitable};
 use std::{
     self,
@@ -35,7 +40,6 @@ use std::{
     iter::FusedIterator,
     mem::{replace, transmute},
     ops::AddAssign,
-    sync::Arc,
 };
 use swc_atoms::{js_word, JsWord};
 use swc_common::{EqIgnoreSpan, FromVariant, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -183,37 +187,67 @@ impl Clone for Type {
             Type::StaticThis(ty) => ty.clone().into(),
             Type::This(ty) => ty.clone().into(),
             Type::Symbol(ty) => ty.clone().into(),
-            Type::Intrinsic(ty) => ty.clone().into(),
-            Type::Instance(ty) => ty.clone().into(),
-            Type::Lit(ty) => ty.clone().into(),
-            Type::Query(ty) => ty.clone().into(),
-            Type::Infer(ty) => ty.clone().into(),
-            Type::Import(ty) => ty.clone().into(),
-            Type::Predicate(ty) => ty.clone().into(),
-            Type::IndexedAccessType(ty) => ty.clone().into(),
-            Type::Ref(ty) => ty.clone().into(),
-            Type::TypeLit(ty) => ty.clone().into(),
-            Type::Conditional(ty) => ty.clone().into(),
-            Type::Tuple(ty) => ty.clone().into(),
-            Type::Array(ty) => ty.clone().into(),
-            Type::Union(ty) => ty.clone().into(),
-            Type::Intersection(ty) => ty.clone().into(),
-            Type::Function(ty) => ty.clone().into(),
-            Type::Constructor(ty) => ty.clone().into(),
-            Type::Operator(ty) => ty.clone().into(),
-            Type::Param(ty) => ty.clone().into(),
-            Type::EnumVariant(ty) => ty.clone().into(),
-            Type::Interface(ty) => ty.clone().into(),
-            Type::Enum(ty) => ty.clone().into(),
-            Type::Mapped(ty) => ty.clone().into(),
-            Type::Alias(ty) => ty.clone().into(),
-            Type::Namespace(ty) => ty.clone().into(),
-            Type::Module(ty) => ty.clone().into(),
-            Type::Class(ty) => ty.clone().into(),
-            Type::ClassDef(ty) => ty.clone().into(),
-            Type::Rest(ty) => ty.clone().into(),
-            Type::Optional(ty) => ty.clone().into(),
-            Type::Tpl(ty) => ty.clone().into(),
+
+            _ => {
+                scoped_thread_local!(static DEEP: ());
+
+                macro_rules! work {
+                    () => {{
+                        match self {
+                            Type::Intrinsic(ty) => ty.clone().into(),
+                            Type::Instance(ty) => ty.clone().into(),
+                            Type::Lit(ty) => ty.clone().into(),
+                            Type::Query(ty) => ty.clone().into(),
+                            Type::Infer(ty) => ty.clone().into(),
+                            Type::Import(ty) => ty.clone().into(),
+                            Type::Predicate(ty) => ty.clone().into(),
+                            Type::IndexedAccessType(ty) => ty.clone().into(),
+                            Type::Ref(ty) => ty.clone().into(),
+                            Type::TypeLit(ty) => ty.clone().into(),
+                            Type::Conditional(ty) => ty.clone().into(),
+                            Type::Tuple(ty) => ty.clone().into(),
+                            Type::Array(ty) => ty.clone().into(),
+                            Type::Union(ty) => ty.clone().into(),
+                            Type::Intersection(ty) => ty.clone().into(),
+                            Type::Function(ty) => ty.clone().into(),
+                            Type::Constructor(ty) => ty.clone().into(),
+                            Type::Operator(ty) => ty.clone().into(),
+                            Type::Param(ty) => ty.clone().into(),
+                            Type::EnumVariant(ty) => ty.clone().into(),
+                            Type::Interface(ty) => ty.clone().into(),
+                            Type::Enum(ty) => ty.clone().into(),
+                            Type::Mapped(ty) => ty.clone().into(),
+                            Type::Alias(ty) => ty.clone().into(),
+                            Type::Namespace(ty) => ty.clone().into(),
+                            Type::Module(ty) => ty.clone().into(),
+                            Type::Class(ty) => ty.clone().into(),
+                            Type::ClassDef(ty) => ty.clone().into(),
+                            Type::Rest(ty) => ty.clone().into(),
+                            Type::Optional(ty) => ty.clone().into(),
+                            Type::Tpl(ty) => ty.clone().into(),
+                            _ => {
+                                unreachable!()
+                            }
+                        }
+                    }};
+                }
+
+                if cfg!(debug_assertions)
+                    && self.span() != DUMMY_SP
+                    && !self.is_clone_cheap()
+                    && !ALLOW_DEEP_CLONE.is_set()
+                {
+                    let _panic_ctx = panic_ctx!(format!("{:?}", self));
+
+                    if DEEP.is_set() {
+                        unreachable!("Deep clone of type is not allowed")
+                    }
+
+                    DEEP.set(&(), || work!())
+                } else {
+                    work!()
+                }
+            }
         }
     }
 }
@@ -890,13 +924,13 @@ impl Union {
                     continue;
                 }
                 if t1.type_eq(t2) {
-                    panic!("[INVALID_TYPE]: A union type has duplicate elements: ({:?})", t1)
+                    unreachable!("[INVALID_TYPE]: A union type has duplicate elements: ({:?})", t1)
                 }
             }
         }
 
         if self.types.len() <= 1 {
-            panic!(
+            unreachable!(
                 "[INVALID_TYPE]: A union type should have multiple items. Got {:?}",
                 self.types
             );
@@ -937,7 +971,7 @@ impl Intersection {
                     continue;
                 }
                 if t1.type_eq(t2) {
-                    panic!(
+                    unreachable!(
                         "[INVALID_TYPE]: An intersection type has duplicate elements: ({:?})",
                         t1
                     )
@@ -946,7 +980,7 @@ impl Intersection {
         }
 
         if self.types.len() <= 1 {
-            panic!(
+            unreachable!(
                 "[INVALID_TYPE]: An intersection type should have multiple items. Got {:?}",
                 self.types
             );
@@ -1022,6 +1056,14 @@ pub struct TypeOrSpread {
 
 pub trait TypeIterExt {}
 
+struct AssertCloneCheap;
+
+impl Visit<Type> for AssertCloneCheap {
+    fn visit(&mut self, ty: &Type) {
+        debug_assert!(ty.is_clone_cheap(), "{:?} is not cheap to clone", ty);
+    }
+}
+
 impl Type {
     #[cfg_attr(not(debug_assertions), inline(always))]
     pub fn assert_clone_cheap(&self) {
@@ -1029,7 +1071,9 @@ impl Type {
             return;
         }
 
-        assert!(self.is_clone_cheap());
+        let _ctx = debug_ctx!(format!("assert_clone_cheap: {:?}", self));
+
+        self.visit_with(&mut AssertCloneCheap);
     }
 
     pub fn intersection<I>(span: Span, iter: I) -> Self
@@ -1072,13 +1116,54 @@ impl Type {
         }
     }
 
+    pub fn new_union_without_dedup(span: Span, types: Vec<Type>) -> Self {
+        let ty = match types.len() {
+            0 => Type::never(span, Default::default()),
+            1 => types.into_iter().next().unwrap(),
+            _ => Type::Union(Union {
+                span,
+                types,
+                metadata: Default::default(),
+            }),
+        };
+        ty.assert_valid();
+        ty
+    }
+
+    pub fn new_union<I: IntoIterator<Item = Self> + Debug>(span: Span, iter: I) -> Self {
+        let _ctx = debug_ctx!(format!("Iterator: {:?}", iter));
+
+        let mut elements = vec![];
+
+        for ty in iter {
+            if ty.normalize().is_union_type() {
+                let types = ty.foldable().union_type().unwrap().types;
+                for new in types {
+                    if elements.iter().any(|prev: &Type| prev.type_eq(&new)) {
+                        continue;
+                    }
+                    elements.push(new)
+                }
+            } else {
+                if elements.iter().any(|prev: &Type| prev.type_eq(&ty)) {
+                    continue;
+                }
+                elements.push(ty)
+            }
+        }
+        // Drop `never`s.
+        elements.retain(|ty| !ty.is_never());
+
+        Self::new_union_without_dedup(span, elements)
+    }
+
     /// Creates a new type from `iter`.
     ///
     /// Note:
     ///
     ///  - never types are excluded.
     pub fn union<I: IntoIterator<Item = Self> + Debug>(iter: I) -> Self {
-        let _ctx = context(format!("Iterator: {:?}", iter));
+        let _ctx = debug_ctx!(format!("Iterator: {:?}", iter));
 
         let mut span = DUMMY_SP;
 
@@ -1209,8 +1294,14 @@ impl Type {
     /// TODO
     pub fn is_clone_cheap(&self) -> bool {
         match self {
-            Type::Arc(..) | Type::Keyword(..) | Type::This(..) | Type::StaticThis(..) | Type::Symbol(..) => true,
+            Type::Arc(..)
+            | Type::Keyword(..)
+            | Type::Lit(..)
+            | Type::This(..)
+            | Type::StaticThis(..)
+            | Type::Symbol(..) => true,
 
+            // TODO: Make this false.
             Type::Param(TypeParam {
                 constraint, default, ..
             }) => {
@@ -1517,7 +1608,7 @@ impl Visit<Union> for AssertValid {
 
         for item in ty.types.iter() {
             if item.normalize().is_union_type() {
-                panic!("[INVALID_TYPE]: A union type should not have a union item")
+                unreachable!("[INVALID_TYPE]: A union type should not have a union item")
             }
         }
     }
@@ -1535,7 +1626,7 @@ impl Visit<Intersection> for AssertValid {
 
         for item in ty.types.iter() {
             if item.normalize().is_intersection_type() {
-                panic!("[INVALID_TYPE]: An intersection type should not have an intersection item")
+                unreachable!("[INVALID_TYPE]: An intersection type should not have an intersection item")
             }
         }
     }
@@ -1553,7 +1644,7 @@ impl Type {
             return;
         }
 
-        let _ctx = context(format!("{:?}", self));
+        let _ctx = debug_ctx!(format!("{:?}", self));
 
         self.visit_with(&mut AssertValid);
     }
@@ -2179,10 +2270,15 @@ pub struct TplType {
 
 assert_eq_size!(TplType, [u8; 72]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq)]
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq)]
 pub struct Freezed {
-    #[span]
     ty: Arc<Type>,
+}
+
+impl Spanned for Freezed {
+    fn span(&self) -> Span {
+        self.ty.span()
+    }
 }
 
 assert_eq_size!(Freezed, [u8; 8]);
@@ -2204,7 +2300,9 @@ where
     V: ?Sized,
 {
     #[inline]
-    fn visit_mut_children_with(&mut self, _v: &mut V) {}
+    fn visit_mut_children_with(&mut self, _v: &mut V) {
+        unreachable!()
+    }
 }
 
 impl<V> FoldWith<V> for Freezed
@@ -2213,7 +2311,7 @@ where
 {
     #[inline]
     fn fold_children_with(self, _v: &mut V) -> Self {
-        self
+        unreachable!()
     }
 }
 
@@ -2245,12 +2343,6 @@ impl TypeEq for Accessor {
     }
 }
 
-impl Freeze for Type {
-    fn make_clone_cheap(&mut self) {
-        self.make_cheap();
-    }
-}
-
 pub trait Valid: Sized + VisitWith<ValidityChecker> {
     #[instrument(skip(self))]
     fn is_valid(&self) -> bool {
@@ -2268,6 +2360,17 @@ impl Valid for Union {}
 
 pub struct ValidityChecker {
     valid: bool,
+}
+
+impl Visit<Type> for ValidityChecker {
+    fn visit(&mut self, ty: &Type) {
+        // Freezed types are valid.
+        if ty.is_arc() {
+            return;
+        }
+
+        ty.visit_children_with(self);
+    }
 }
 
 impl Visit<Union> for ValidityChecker {
@@ -2325,3 +2428,46 @@ impl Visit<Intersection> for ValidityChecker {
         ty.visit_children_with(self);
     }
 }
+
+struct CheckCheapClone {
+    cheap: bool,
+}
+
+impl Visit<Type> for CheckCheapClone {
+    fn visit(&mut self, ty: &Type) {
+        if ty.is_clone_cheap() {
+            return;
+        }
+
+        self.cheap = false;
+    }
+}
+
+macro_rules! impl_freeze {
+    ($T:ty) => {
+        impl Freeze for $T {
+            fn is_clone_cheap(&self) -> bool {
+                let mut v = CheckCheapClone { cheap: true };
+                self.visit_with(&mut v);
+                v.cheap
+            }
+
+            #[inline]
+            #[instrument(skip(self))]
+            fn make_clone_cheap(&mut self) {
+                self.visit_mut_with(&mut CheapClone);
+            }
+        }
+    };
+}
+
+impl_freeze!(FnParam);
+impl_freeze!(Interface);
+impl_freeze!(TsExpr);
+impl_freeze!(Type);
+impl_freeze!(TypeParam);
+impl_freeze!(TypeParamDecl);
+impl_freeze!(TypeParamInstantiation);
+impl_freeze!(TypeOrSpread);
+impl_freeze!(Key);
+impl_freeze!(Mapped);

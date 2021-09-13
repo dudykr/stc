@@ -31,7 +31,10 @@ use stc_ts_types::{
     Key, KeywordType, KeywordTypeMetadata, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement,
     TypeParam, TypeParamInstantiation,
 };
-use stc_utils::{error::context, stack};
+use stc_utils::{
+    cache::{Freeze, ALLOW_DEEP_CLONE},
+    debug_ctx, stack,
+};
 use std::{
     borrow::Cow,
     collections::hash_map::Entry,
@@ -402,10 +405,12 @@ impl Scope<'_> {
         for (name, var) in child.vars.drain() {
             if let Some(ty) = &var.ty {
                 ty.assert_valid();
+                ty.assert_clone_cheap();
             }
 
             if let Some(ty) = &var.actual_ty {
                 ty.assert_valid();
+                ty.assert_clone_cheap();
             }
 
             if var.copied {
@@ -416,6 +421,7 @@ impl Scope<'_> {
 
                         if let Some(actual_ty) = var.actual_ty {
                             actual_ty.assert_valid();
+                            actual_ty.assert_clone_cheap();
 
                             let new_actual_type = if is_end_of_loop && is_actual_type_modified_in_loop {
                                 let mut types = vec![];
@@ -446,7 +452,7 @@ impl Scope<'_> {
 
                             new_actual_type.assert_valid();
 
-                            e.get_mut().actual_ty = Some(new_actual_type);
+                            e.get_mut().actual_ty = Some(new_actual_type.freezed());
                         }
                     }
                     Entry::Vacant(e) => {
@@ -461,7 +467,10 @@ impl Scope<'_> {
 
     pub fn declared_return_type(&self) -> Option<&Type> {
         match &self.declared_return_type {
-            Some(v) => return Some(v),
+            Some(v) => {
+                v.assert_clone_cheap();
+                return Some(v);
+            }
             None => {}
         }
         match self.kind {
@@ -491,10 +500,12 @@ impl Scope<'_> {
 
         if let Some(v) = &v.ty {
             v.assert_valid();
+            v.assert_clone_cheap();
         }
 
         if let Some(v) = &v.actual_ty {
             v.assert_valid();
+            v.assert_clone_cheap();
         }
 
         self.vars.insert(name, v);
@@ -700,7 +711,7 @@ impl Analyzer<'_, '_> {
 
         ty.assert_valid();
 
-        let _ctx = context(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
+        let _ctx = debug_ctx!(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
         let orig = dump_type_as_string(&self.cm, &ty);
 
         let mut v = Expander {
@@ -713,7 +724,6 @@ impl Analyzer<'_, '_> {
             opts,
         };
 
-        // TODO: PERF
         let ty = ty.foldable().fold_with(&mut v).fixed();
         ty.assert_valid();
 
@@ -752,10 +762,11 @@ impl Analyzer<'_, '_> {
             preserve_ret_ty: true,
             ..self.ctx
         };
+        let ty = ALLOW_DEEP_CLONE.set(&(), || ty.into_owned());
         self.with_ctx(ctx)
             .expand(
                 span,
-                ty.into_owned(),
+                ty,
                 ExpandOpts {
                     full: true,
                     expand_union: true,
@@ -996,93 +1007,112 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn find_var_type(&self, name: &Id, mode: TypeOfMode) -> Option<Cow<Type>> {
-        if let Some(v) = self.cur_facts.true_facts.vars.get(&Name::from(name)) {
-            v.assert_valid();
+        let ty = (|| {
+            if let Some(v) = self.cur_facts.true_facts.vars.get(&Name::from(name)) {
+                v.assert_clone_cheap();
 
-            debug!("Scope.find_var_type({}): Handled with cur_facts", name);
+                if cfg!(debug_assertions) {
+                    debug!("Scope.find_var_type({}): Handled with cur_facts", name);
+                }
 
-            return Some(Cow::Borrowed(v));
-        }
-
-        // println!("({}) find_var_type({})", self.scope.depth(), name);
-        let mut scope = Some(&self.scope);
-        while let Some(s) = scope {
-            if let Some(ref v) = s.facts.vars.get(&Name::from(name)) {
-                v.assert_valid();
-
-                debug!("Scope.find_var_type({}): Handled from facts", name);
                 return Some(Cow::Borrowed(v));
             }
 
-            scope = s.parent;
-        }
+            // println!("({}) find_var_type({})", self.scope.depth(), name);
+            let mut scope = Some(&self.scope);
+            while let Some(s) = scope {
+                if let Some(ref v) = s.facts.vars.get(&Name::from(name)) {
+                    v.assert_clone_cheap();
 
-        {
-            // Improted variables
-            if let Some(info) = self.imports_by_id.get(name) {
-                if let Some(var_ty) = info.data.vars.get(name.sym()) {
-                    var_ty.assert_valid();
+                    if cfg!(debug_assertions) {
+                        debug!("Scope.find_var_type({}): Handled from facts", name);
+                    }
+                    return Some(Cow::Borrowed(v));
+                }
 
-                    debug!("Scope.find_var_type({}): Handled with imports", name);
-                    return Some(Cow::Borrowed(var_ty));
+                scope = s.parent;
+            }
+
+            {
+                // Improted variables
+                if let Some(info) = self.imports_by_id.get(name) {
+                    if let Some(var_ty) = info.data.vars.get(name.sym()) {
+                        if cfg!(debug_assertions) {
+                            debug!("Scope.find_var_type({}): Handled with imports", name);
+                        }
+                        var_ty.assert_clone_cheap();
+
+                        return Some(Cow::Borrowed(var_ty));
+                    }
                 }
             }
-        }
 
-        if let Some(var) = self.find_var(name) {
-            debug!(
-                "({}) find_var_type({}): Handled from scope.find_var",
-                self.scope.depth(),
-                name
-            );
+            if let Some(var) = self.find_var(name) {
+                if cfg!(debug_assertions) {
+                    debug!(
+                        "({}) find_var_type({}): Handled from scope.find_var",
+                        self.scope.depth(),
+                        name
+                    );
+                }
 
-            let name = Name::from(name);
+                let name = Name::from(name);
 
-            let mut ty = match mode {
-                TypeOfMode::LValue => match &var.ty {
-                    Some(ty) => ty.clone(),
-                    _ => return None,
-                },
-                TypeOfMode::RValue => match &var.actual_ty {
-                    Some(ty) => ty.clone(),
-                    _ => return None,
-                },
-            };
-            ty.assert_valid();
+                let mut ty = match mode {
+                    TypeOfMode::LValue => match &var.ty {
+                        Some(ty) => ty.clone(),
+                        _ => return None,
+                    },
+                    TypeOfMode::RValue => match &var.actual_ty {
+                        Some(ty) => ty.clone(),
+                        _ => return None,
+                    },
+                };
+                ty.assert_clone_cheap();
 
-            if let Some(ref excludes) = self.scope.facts.excludes.get(&name) {
-                if ty.normalize().is_union_type() {
-                    match ty.normalize_mut() {
-                        Type::Union(ty::Union { ref mut types, .. }) => {
-                            for ty in types {
-                                let span = (*ty).span();
-                                for excluded_ty in excludes.iter() {
-                                    if ty.type_eq(excluded_ty) {
-                                        *ty = Type::never(span, KeywordTypeMetadata { common: ty.metadata() })
+                if let Some(ref excludes) = self.scope.facts.excludes.get(&name) {
+                    if ty.normalize().is_union_type() {
+                        match ty.normalize_mut() {
+                            Type::Union(ty::Union { ref mut types, .. }) => {
+                                for ty in types {
+                                    let span = (*ty).span();
+                                    for excluded_ty in excludes.iter() {
+                                        if ty.type_eq(excluded_ty) {
+                                            *ty = Type::never(span, KeywordTypeMetadata { common: ty.metadata() })
+                                        }
                                     }
                                 }
                             }
+                            _ => {}
                         }
-                        _ => {}
                     }
+
+                    ty.fix();
+                    ty.make_clone_cheap();
                 }
 
-                ty.fix();
-            }
-
-            return Some(Cow::Owned(ty));
-        }
-
-        {
-            if let Some(ty) = self.storage.get_local_var(self.ctx.module_id, name.clone()) {
-                ty.assert_valid();
-
-                debug!("Scope.find_var_type({}): Handled with storage", name);
                 return Some(Cow::Owned(ty));
             }
+
+            {
+                if let Some(ty) = self.storage.get_local_var(self.ctx.module_id, name.clone()) {
+                    ty.assert_clone_cheap();
+                    if cfg!(debug_assertions) {
+                        debug!("Scope.find_var_type({}): Handled with storage", name);
+                    }
+                    return Some(Cow::Owned(ty));
+                }
+            }
+
+            None
+        })();
+
+        if let Some(ty) = &ty {
+            ty.assert_valid();
+            ty.assert_clone_cheap();
         }
 
-        None
+        ty
     }
 
     #[instrument(skip(self))]
@@ -1199,6 +1229,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = &ty {
             ty.assert_valid();
+            ty.assert_clone_cheap();
         }
 
         op(self.scope.vars.entry(name).or_insert_with(|| VarInfo {
@@ -1391,9 +1422,15 @@ impl Analyzer<'_, '_> {
 
                 if let Some(ty) = &v.ty {
                     ty.assert_valid();
+                    if !self.is_builtin {
+                        ty.assert_clone_cheap();
+                    }
                 }
                 if let Some(ty) = &v.actual_ty {
                     ty.assert_valid();
+                    if !self.is_builtin {
+                        ty.assert_clone_cheap();
+                    }
                 }
 
                 if !self.is_builtin && is_override {
@@ -1442,7 +1479,7 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     _ => {
-                                        let ty = self.expand(
+                                        let mut ty = self.expand(
                                             span,
                                             ty.clone(),
                                             ExpandOpts {
@@ -1451,7 +1488,9 @@ impl Analyzer<'_, '_> {
                                                 ..Default::default()
                                             },
                                         )?;
-                                        let var_ty = self.expand(
+                                        ty.make_clone_cheap();
+
+                                        let mut var_ty = self.expand(
                                             span,
                                             generalized_var_ty,
                                             ExpandOpts {
@@ -1460,6 +1499,7 @@ impl Analyzer<'_, '_> {
                                                 ..Default::default()
                                             },
                                         )?;
+                                        var_ty.make_clone_cheap();
 
                                         let res = self
                                             .assign_with_opts(
@@ -1495,7 +1535,7 @@ impl Analyzer<'_, '_> {
                         if var_ty.type_eq(&ty) {
                             var_ty
                         } else {
-                            Type::union(vec![var_ty, ty])
+                            Type::union(vec![var_ty, ty]).freezed()
                         }
                     } else {
                         ty
@@ -1509,9 +1549,15 @@ impl Analyzer<'_, '_> {
                 };
                 if let Some(ty) = &actual_ty {
                     ty.assert_valid();
+                    if !self.is_builtin {
+                        ty.assert_clone_cheap();
+                    }
                 }
                 if let Some(ty) = &v.ty {
                     ty.assert_valid();
+                    if !self.is_builtin {
+                        ty.assert_clone_cheap();
+                    }
                 }
                 // TODO: Use better logic
                 v.actual_ty = actual_ty.or_else(|| v.ty.clone());
@@ -1764,6 +1810,7 @@ impl<'a> Scope<'a> {
     }
 
     /// This method does **not** handle imported types.
+    #[instrument(name = "Scope::find_type", skip(self))]
     fn find_type(&self, name: &Id) -> Option<ItemRef<Type>> {
         if cfg!(debug_assertions) {
             debug!("Analyzer.find_type('{}')", name);
@@ -1986,12 +2033,16 @@ impl Expander<'_, '_, '_> {
                             })
                             | Type::ClassDef(ClassDef { type_params, .. }) => {
                                 let ty = t.clone().into_owned();
-                                let type_params = type_params.clone();
+                                let mut type_params = type_params.clone();
+                                type_params.make_clone_cheap();
 
                                 if let Some(type_params) = type_params {
-                                    let type_args: Option<_> = type_args.cloned().fold_with(self);
+                                    let mut type_args: Option<_> = type_args.cloned().fold_with(self);
+                                    type_args.make_clone_cheap();
 
-                                    info!("expand: expanding type parameters");
+                                    if cfg!(debug_assertions) {
+                                        info!("expand: expanding type parameters");
+                                    }
                                     let mut inferred = self.analyzer.infer_arg_types(
                                         self.span,
                                         type_args.as_ref(),
@@ -2017,8 +2068,11 @@ impl Expander<'_, '_, '_> {
                                         ty.foldable(),
                                         self.opts.generic,
                                     )?;
+
                                     let after = dump_type_as_string(&self.analyzer.cm, &ty);
-                                    debug!("[expand] Expanded generics: {} => {}", before, after);
+                                    if cfg!(debug_assertions) {
+                                        debug!("[expand] Expanded generics: {} => {}", before, after);
+                                    }
 
                                     match ty {
                                         Type::ClassDef(def) => {
@@ -2188,6 +2242,10 @@ impl Expander<'_, '_, '_> {
                 return ty.foldable().fold_with(self);
             }
             _ => {}
+        }
+
+        if ty.normalize().is_ref_type() {
+            ty.make_clone_cheap();
         }
 
         let _stack = match stack::track(self.span) {
@@ -2525,7 +2583,7 @@ impl Expander<'_, '_, '_> {
             }
         };
 
-        let _ctx = context(format!(
+        let _ctx = debug_ctx!(format!(
             "Expander.expand_type: {}",
             dump_type_as_string(&self.analyzer.cm, &ty)
         ));
@@ -2540,6 +2598,9 @@ impl Expander<'_, '_, '_> {
                 metadata,
                 ..
             }) => {
+                extends_type.make_clone_cheap();
+                check_type.make_clone_cheap();
+
                 // We need to handle infer type.
                 let type_params = self
                     .analyzer

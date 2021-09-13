@@ -20,11 +20,12 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_type_ops::{is_str_lit_or_union, Fix};
+use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
     name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, TypeElement,
     Union, UnionMetadata,
 };
+use stc_utils::cache::Freeze;
 use std::{
     borrow::Cow,
     collections::hash_map::Entry,
@@ -80,7 +81,7 @@ impl Analyzer<'_, '_> {
             },
         );
 
-        let lt = {
+        let mut lt = {
             let mut a = self.with_ctx(ctx);
             left.validate_with_args(&mut *a, child_ctxt)
         }
@@ -107,6 +108,7 @@ impl Analyzer<'_, '_> {
             Ok(ty)
         })
         .store(&mut errors);
+        lt.make_clone_cheap();
 
         let true_facts_for_rhs = if op == op!("&&") {
             // We need a new virtual scope.
@@ -239,10 +241,12 @@ impl Analyzer<'_, '_> {
             self.cur_facts = prev_facts;
         }
 
-        let (lt, rt): (Type, Type) = match (lt, rt) {
+        let (mut lt, mut rt): (Type, Type) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
             _ => return Err(Error::Errors { span, errors }),
         };
+        lt.make_clone_cheap();
+        rt.make_clone_cheap();
 
         if !self.is_builtin {
             debug_assert!(!lt.span().is_dummy());
@@ -321,7 +325,7 @@ impl Analyzer<'_, '_> {
                     Some((l, r_ty)) => {
                         if self.ctx.in_cond {
                             let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
-                            self.prevent_generalize(&mut r);
+                            prevent_generalize(&mut r);
                             r.make_cheap();
 
                             if op == op!("===") {
@@ -356,7 +360,8 @@ impl Analyzer<'_, '_> {
                         // typeGuardsTypeParameters.ts says
                         //
                         // Type guards involving type parameters produce intersection types
-                        let orig_ty = self.type_of_var(i, TypeOfMode::RValue, None)?;
+                        let mut orig_ty = self.type_of_var(i, TypeOfMode::RValue, None)?;
+                        orig_ty.make_clone_cheap();
 
                         //
                         let ty = self.validate_rhs_of_instanceof(span, &rt, rt.clone());
@@ -385,7 +390,7 @@ impl Analyzer<'_, '_> {
                             let narrowed_ty = self
                                 .narrow_with_instanceof(span, Cow::Borrowed(&ty), &orig_ty)
                                 .context("tried to narrow type with instanceof")?
-                                .cheap();
+                                .freezed();
 
                             narrowed_ty.assert_valid();
 
@@ -399,7 +404,7 @@ impl Analyzer<'_, '_> {
                                         metadata: Default::default(),
                                     })
                                     .fixed()
-                                    .cheap(),
+                                    .freezed(),
                                 );
                             } else {
                                 self.cur_facts
@@ -786,7 +791,7 @@ impl Analyzer<'_, '_> {
 
                 let mut ty = Type::union(vec![lt, rt]);
                 if !may_generalize_lt {
-                    self.prevent_generalize(&mut ty);
+                    prevent_generalize(&mut ty);
                 }
 
                 Ok(ty)
@@ -1150,12 +1155,12 @@ impl Analyzer<'_, '_> {
         match (l, r) {
             (Type::Ref(..), _) => {
                 if let Ok(l) = self.expand_top_ref(l.span(), Cow::Borrowed(l), Default::default()) {
-                    return self.validate_relative_comparison_operands(span, op, &l, r);
+                    return self.validate_relative_comparison_operands(span, op, &l.freezed(), r);
                 }
             }
             (l, Type::Ref(..)) => {
                 if let Ok(r) = self.expand_top_ref(r.span(), Cow::Borrowed(r), Default::default()) {
-                    return self.validate_relative_comparison_operands(span, op, l, &r);
+                    return self.validate_relative_comparison_operands(span, op, l, &r.freezed());
                 }
             }
             (Type::TypeLit(lt), Type::TypeLit(rt)) => {

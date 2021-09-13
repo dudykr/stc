@@ -15,6 +15,7 @@ use crate::{
 use stc_ts_ast_rnode::{RTsAsExpr, RTsLit, RTsTypeAssertion};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Interface, KeywordType, LitType, TypeElement, TypeParamInstantiation};
+use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -39,8 +40,10 @@ impl Analyzer<'_, '_> {
         type_ann: Option<&Type>,
     ) -> ValidationResult {
         // We don't apply type annotation because it can corrupt type checking.
-        let casted_ty = e.type_ann.validate_with(self)?;
-        let orig_ty = e.expr.validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
+        let mut casted_ty = e.type_ann.validate_with(self)?;
+        casted_ty.make_clone_cheap();
+        let mut orig_ty = e.expr.validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
+        orig_ty.make_clone_cheap();
 
         self.validate_type_cast(e.span, orig_ty, casted_ty)
     }
@@ -82,7 +85,7 @@ impl Analyzer<'_, '_> {
     ///
     /// results in error.
     fn validate_type_cast(&mut self, span: Span, orig_ty: Type, casted_ty: Type) -> ValidationResult {
-        let orig_ty = self.expand(
+        let mut orig_ty = self.expand(
             span,
             orig_ty,
             ExpandOpts {
@@ -91,12 +94,14 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         )?;
+        orig_ty.make_clone_cheap();
 
         let mut casted_ty = make_instance_type(self.ctx.module_id, casted_ty);
         self.prevent_inference_while_simplifying(&mut casted_ty);
         casted_ty = self.simplify(casted_ty);
 
         self.prevent_expansion(&mut casted_ty);
+        casted_ty.make_clone_cheap();
 
         self.validate_type_cast_inner(span, &orig_ty, &casted_ty)
             .report(&mut self.storage);
@@ -111,7 +116,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        match orig {
+        match orig.normalize() {
             Type::Union(ref rt) => {
                 let castable = rt.types.iter().any(|v| casted.type_eq(v));
 
@@ -123,10 +128,10 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match casted {
+        match casted.normalize() {
             Type::Tuple(ref lt) => {
                 //
-                match *orig.normalize() {
+                match orig.normalize() {
                     Type::Tuple(ref rt) => {
                         //
                         if lt.elems.len() != rt.elems.len() {
@@ -165,7 +170,7 @@ impl Analyzer<'_, '_> {
 
             Type::Array(ref lt) => {
                 //
-                match orig {
+                match orig.normalize() {
                     Type::Tuple(ref rt) => {
                         if rt.elems[0].ty.type_eq(&lt.elem_type) {
                             return Ok(());
@@ -183,10 +188,10 @@ impl Analyzer<'_, '_> {
 
         // self.assign(&casted_ty, &orig_ty, span)?;
 
-        match casted {
+        match casted.normalize() {
             Type::Tuple(ref rt) => {
                 //
-                match orig {
+                match orig.normalize() {
                     Type::Tuple(ref lt) => {}
                     _ => {}
                 }
@@ -341,11 +346,15 @@ impl Analyzer<'_, '_> {
 
         match (from, to) {
             (Type::Ref(_), _) => {
-                let from = self.expand_top_ref(span, Cow::Borrowed(from), Default::default())?;
+                let from = self
+                    .expand_top_ref(span, Cow::Borrowed(from), Default::default())?
+                    .freezed();
                 return self.castable(span, &from, to, opts);
             }
             (_, Type::Ref(_)) => {
-                let to = self.expand_top_ref(span, Cow::Borrowed(to), Default::default())?;
+                let to = self
+                    .expand_top_ref(span, Cow::Borrowed(to), Default::default())?
+                    .freezed();
                 return self.castable(span, from, &to, opts);
             }
 

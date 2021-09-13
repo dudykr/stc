@@ -14,7 +14,7 @@ use stc_ts_errors::{
     DebugExt,
 };
 use stc_ts_generics::type_param::{finder::TypeParamUsageFinder, remover::TypeParamRemover, renamer::TypeParamRenamer};
-use stc_ts_type_ops::Fix;
+use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType,
     KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, ModuleId, Operator, OptionalType, PropertySignature, Ref,
@@ -22,7 +22,10 @@ use stc_ts_types::{
     TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
-use stc_utils::{error::context, stack};
+use stc_utils::{
+    cache::{Freeze, ALLOW_DEEP_CLONE},
+    debug_ctx, stack,
+};
 use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -368,6 +371,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Handles `infer U`.
+    #[instrument(skip(self, span, base, concrete, opts))]
     pub(super) fn infer_ts_infer_types(
         &mut self,
         span: Span,
@@ -515,7 +519,7 @@ impl Analyzer<'_, '_> {
             Err(_) => return Ok(()),
         };
 
-        let _ctx = context(format!(
+        let _ctx = debug_ctx!(format!(
             "infer_type()\nParam: {}\nArg: {}",
             dump_type_as_string(&self.cm, &param),
             dump_type_as_string(&self.cm, &arg)
@@ -540,7 +544,8 @@ impl Analyzer<'_, '_> {
 
         match param {
             Type::Instance(..) => {
-                let param = self.normalize(Some(span), Cow::Borrowed(&param), Default::default())?;
+                let mut param = self.normalize(Some(span), Cow::Borrowed(&param), Default::default())?;
+                param.make_clone_cheap();
                 return self.infer_type(span, inferred, &param, arg, opts);
             }
             _ => {}
@@ -548,7 +553,8 @@ impl Analyzer<'_, '_> {
 
         match arg {
             Type::Instance(..) => {
-                let arg = self.normalize(Some(span), Cow::Borrowed(&arg), Default::default())?;
+                let mut arg = self.normalize(Some(span), Cow::Borrowed(&arg), Default::default())?;
+                arg.make_clone_cheap();
 
                 return self.infer_type(span, inferred, param, &arg, opts);
             }
@@ -567,7 +573,11 @@ impl Analyzer<'_, '_> {
         let param = match param {
             Type::Mapped(..) => {
                 // TODO: PERF
-                p = box param.clone().foldable().fold_with(&mut MappedIndexedSimplifier);
+                p = box param
+                    .clone()
+                    .foldable()
+                    .fold_with(&mut MappedIndexedSimplifier)
+                    .freezed();
                 &p
             }
             _ => param,
@@ -598,7 +608,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match (param, arg) {
+        match (param.normalize(), arg.normalize()) {
             (Type::Union(p), Type::Union(a)) => {
                 self.infer_type_using_union_and_union(
                     span,
@@ -661,7 +671,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        match arg {
+        match arg.normalize() {
             Type::Param(arg) => {
                 if !param.normalize().is_type_param() {
                     self.insert_inferred(span, inferred, arg.name.clone(), Cow::Borrowed(&param), opts)?;
@@ -671,7 +681,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match param {
+        match param.normalize() {
             Type::Param(TypeParam {
                 ref name,
                 ref constraint,
@@ -886,7 +896,7 @@ impl Analyzer<'_, '_> {
                             ..
                         }) => {
                             let mut arg = arg.clone();
-                            self.prevent_generalize(&mut arg);
+                            prevent_generalize(&mut arg);
                             return self.infer_type(span, inferred, &arr.elem_type, &arg, opts);
                         }
                         _ => {}
@@ -1104,8 +1114,10 @@ impl Analyzer<'_, '_> {
                         ignore_expand_prevention_for_all: false,
                         ..self.ctx
                     };
-                    debug!("infer_type: expanding param");
-                    let param = self.with_ctx(ctx).expand(
+                    if cfg!(debug_assertions) {
+                        debug!("infer_type: expanding param");
+                    }
+                    let mut param = self.with_ctx(ctx).expand(
                         span,
                         Type::Ref(param.clone()),
                         ExpandOpts {
@@ -1114,6 +1126,7 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )?;
+                    param.make_clone_cheap();
                     match param.normalize() {
                         Type::Ref(..) => {
                             dbg!();
@@ -1376,15 +1389,18 @@ impl Analyzer<'_, '_> {
                     ..self.ctx
                 };
 
-                let arg = self.with_ctx(ctx).expand(
-                    arg.span,
-                    Type::Ref(arg.clone()),
-                    ExpandOpts {
-                        full: true,
-                        expand_union: true,
-                        ..Default::default()
-                    },
-                )?;
+                let arg = self
+                    .with_ctx(ctx)
+                    .expand(
+                        arg.span,
+                        Type::Ref(arg.clone()),
+                        ExpandOpts {
+                            full: true,
+                            expand_union: true,
+                            ..Default::default()
+                        },
+                    )?
+                    .freezed();
 
                 match arg.normalize() {
                     Type::Ref(..) => return Ok(false),
@@ -1561,7 +1577,11 @@ impl Analyzer<'_, '_> {
                             match arg_member {
                                 TypeElement::Property(arg_prop) => {
                                     let type_ann: Option<_> = if let Some(arg_prop_ty) = &arg_prop.type_ann {
-                                        if let Some(param_ty) = &param.ty {
+                                        if let Some(param_ty) = ALLOW_DEEP_CLONE.set(&(), || {
+                                            let mut ty = param.ty.clone();
+                                            ty.make_clone_cheap();
+                                            ty
+                                        }) {
                                             let old = take(&mut self.mapped_type_param_name);
                                             self.mapped_type_param_name = vec![name.clone()];
 
@@ -1617,7 +1637,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 TypeElement::Method(arg_method) => {
-                                    let arg_prop_ty = Type::Function(Function {
+                                    let mut arg_prop_ty = Type::Function(Function {
                                         span: arg_method.span,
                                         type_params: arg_method.type_params.clone(),
                                         params: arg_method.params.clone(),
@@ -1627,7 +1647,12 @@ impl Analyzer<'_, '_> {
                                             .unwrap_or_else(|| box Type::any(arg_method.span, Default::default())),
                                         metadata: Default::default(),
                                     });
-                                    let type_ann = if let Some(param_ty) = param.ty.as_ref() {
+                                    arg_prop_ty.make_clone_cheap();
+                                    let type_ann = if let Some(param_ty) = ALLOW_DEEP_CLONE.set(&(), || {
+                                        let mut ty = param.ty.clone();
+                                        ty.make_clone_cheap();
+                                        ty
+                                    }) {
                                         let old = take(&mut self.mapped_type_param_name);
                                         self.mapped_type_param_name = vec![name.clone()];
 
@@ -1691,7 +1716,7 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         });
-                        self.prevent_generalize(&mut keys);
+                        prevent_generalize(&mut keys);
 
                         self.insert_inferred(span, inferred, key_name.clone(), Cow::Owned(keys), opts)?;
 
@@ -1792,7 +1817,7 @@ impl Analyzer<'_, '_> {
                                     _ => None,
                                 });
                                 let mut key_ty = Type::union(key_ty);
-                                self.prevent_generalize(&mut key_ty);
+                                prevent_generalize(&mut key_ty);
                                 self.insert_inferred(
                                     span,
                                     inferred,
@@ -2213,7 +2238,11 @@ impl Analyzer<'_, '_> {
                     Type::Param(p) if self.fixed.contains_key(&p.name) => {
                         *node = (*self.fixed.get(&p.name).unwrap()).clone();
                     }
-                    _ => node.visit_mut_children_with(self),
+                    _ => {
+                        // TODO: PERF
+                        node.normalize_mut();
+                        node.visit_mut_children_with(self)
+                    }
                 }
             }
         }
@@ -2253,6 +2282,9 @@ impl Analyzer<'_, '_> {
         if self.is_builtin {
             return Ok(ty);
         }
+
+        ty.make_clone_cheap();
+
         debug!(
             "rename_type_params(has_ann = {:?}, ty = {})",
             type_ann.is_some(),
@@ -2320,7 +2352,7 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        Ok(ty.fold_with(&mut TypeParamRemover::new()).fixed())
+        Ok(ty.foldable().fold_with(&mut TypeParamRemover::new()).fixed())
     }
 }
 
@@ -2340,6 +2372,9 @@ struct SingleTypeParamReplacer<'a> {
 
 impl Fold<Type> for SingleTypeParamReplacer<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty = ty.fold_children_with(self);
 
         match &ty {
@@ -2359,9 +2394,12 @@ struct TypeParamInliner<'a> {
 
 impl VisitMut<Type> for TypeParamInliner<'_> {
     fn visit_mut(&mut self, ty: &mut Type) {
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty.visit_mut_children_with(self);
 
-        match ty {
+        match ty.normalize() {
             Type::Param(p) if p.name == *self.param => {
                 *ty = Type::Lit(LitType {
                     span: p.span,
@@ -2410,11 +2448,15 @@ struct MappedKeyReplacer<'a> {
 
 impl VisitMut<Type> for MappedKeyReplacer<'_> {
     fn visit_mut(&mut self, ty: &mut Type) {
-        match ty {
+        match ty.normalize() {
             Type::Param(param) if *self.from == param.name => {
                 *ty = self.to.clone();
             }
-            _ => ty.visit_mut_children_with(self),
+            _ => {
+                // TODO: PERF
+                ty.normalize_mut();
+                ty.visit_mut_children_with(self)
+            }
         }
     }
 }
@@ -2429,6 +2471,9 @@ struct MappedIndexTypeReplacer<'a> {
 
 impl VisitMut<Type> for MappedIndexTypeReplacer<'_> {
     fn visit_mut(&mut self, ty: &mut Type) {
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty.visit_mut_children_with(self);
 
         match &*ty {
@@ -2479,6 +2524,9 @@ struct MappedReverser {
 
 impl Fold<Type> for MappedReverser {
     fn fold(&mut self, mut ty: Type) -> Type {
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty = ty.fold_children_with(self);
 
         match ty {
@@ -2533,6 +2581,9 @@ struct MappedIndexedSimplifier;
 
 impl Fold<Type> for MappedIndexedSimplifier {
     fn fold(&mut self, mut ty: Type) -> Type {
+        // TODO: PERF
+        ty.normalize_mut();
+
         ty = ty.fold_children_with(self);
 
         match ty {

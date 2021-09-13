@@ -8,6 +8,7 @@ use stc_ts_ast_rnode::{RAwaitExpr, RIdent, RTsEntityName};
 use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{IdCtx, Key, ModuleId, Ref, Type, TypeParamInstantiation};
+use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, SyntaxContext};
@@ -56,10 +57,11 @@ impl Analyzer<'_, '_> {
             });
 
         self.with(|a: &mut Analyzer| -> ValidationResult<_> {
-            let arg_ty = e
+            let mut arg_ty = e
                 .arg
                 .validate_with_args(a, (TypeOfMode::RValue, None, arg_type_ann.as_ref()))
                 .context("tried to validate the argument of an await expr")?;
+            arg_ty.make_clone_cheap();
 
             if let Ok(arg) = a.get_awaited_type(span, Cow::Borrowed(&arg_ty)) {
                 return Ok(arg.into_owned());

@@ -10,8 +10,9 @@ use crate::{
 use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
+use stc_utils::{cache::Freeze, debug_ctx};
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
@@ -151,6 +152,8 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
+                        vec.make_clone_cheap();
+
                         for new_l_params in vec {
                             return self
                                 .assign_to_fn_like(
@@ -173,8 +176,6 @@ impl Analyzer<'_, '_> {
             check!(Constructor);
         }
 
-        let new_r_params;
-        let new_r_ret_ty;
         let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
             (Some(lt), Some(rt)) if lt.params.len() == rt.params.len() => {
                 //
@@ -184,13 +185,28 @@ impl Analyzer<'_, '_> {
                     .zip(rt.params.iter())
                     .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
                     .collect::<FxHashMap<_, _>>();
-                new_r_params = self
+                let mut new_r_params = self
                     .expand_type_params(&map, r_params.to_vec(), Default::default())
                     .context("tried to expand type parameters as a step of function assignemnt")?;
-                new_r_ret_ty = self
+                let mut new_r_ret_ty = self
                     .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
                     .context("tried to expand return type of rhs as a step of function assignemnt")?;
-                (&*new_r_params, new_r_ret_ty.as_ref())
+
+                new_r_params.make_clone_cheap();
+                new_r_ret_ty.make_clone_cheap();
+
+                return self
+                    .assign_to_fn_like(
+                        data,
+                        opts,
+                        l_type_params,
+                        l_params,
+                        l_ret_ty,
+                        None,
+                        &new_r_params,
+                        new_r_ret_ty.as_ref(),
+                    )
+                    .context("tried to assign to a mapped (wrong) function");
             }
 
             (Some(lt), None) if opts.infer_type_params_of_left => {
@@ -216,12 +232,15 @@ impl Analyzer<'_, '_> {
 
                 let map =
                     self.infer_type_with_types(span, &*lt.params, &lf, &rf, InferTypeOpts { ..Default::default() })?;
-                let new_l_params = self
+                let mut new_l_params = self
                     .expand_type_params(&map, l_params.to_vec(), Default::default())
                     .context("tried to expand type parameters of lhs as a step of function assignemnt")?;
-                let new_l_ret_ty = self
+                let mut new_l_ret_ty = self
                     .expand_type_params(&map, l_ret_ty.cloned(), Default::default())
                     .context("tried to expand return type of lhs as a step of function assignemnt")?;
+
+                new_l_params.make_clone_cheap();
+                new_l_ret_ty.make_clone_cheap();
 
                 return self
                     .assign_to_fn_like(
@@ -264,13 +283,31 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )?;
-                new_r_params = self
+                let mut new_r_params = self
                     .expand_type_params(&map, r_params.to_vec(), Default::default())
                     .context("tried to expand type parameters of rhs as a step of function assignemnt")?;
-                new_r_ret_ty = self
+                let mut new_r_ret_ty = self
                     .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
                     .context("tried to expand return type of rhs as a step of function assignemnt")?;
-                (&*new_r_params, new_r_ret_ty.as_ref())
+
+                new_r_params.make_clone_cheap();
+                new_r_ret_ty.make_clone_cheap();
+
+                let _panic_ctx = debug_ctx!(format!("new_r_params = {:?}", new_r_params));
+                let _panic_ctx = debug_ctx!(format!("new_r_ret_ty = {:?}", new_r_ret_ty));
+
+                return self
+                    .assign_to_fn_like(
+                        data,
+                        opts,
+                        l_type_params,
+                        l_params,
+                        l_ret_ty,
+                        None,
+                        &new_r_params,
+                        new_r_ret_ty.as_ref(),
+                    )
+                    .context("tried to assign to an expanded callable");
             }
 
             _ => (r_params, r_ret_ty),
@@ -540,6 +577,9 @@ impl Analyzer<'_, '_> {
             "Cannot assign function parameters with dummy span"
         );
 
+        let _panic = debug_ctx!(format!("left = {}\n{:?}", dump_type_as_string(&self.cm, &l.ty), &l.ty));
+        let _panic = debug_ctx!(format!("right = {}\n{:?}", dump_type_as_string(&self.cm, &r.ty), &r.ty));
+
         match l.pat {
             RPat::Rest(..) => {
                 let l_ty = self
@@ -560,8 +600,11 @@ impl Analyzer<'_, '_> {
 
         // TODO: Change this to extends call.
 
-        let l_ty = self.normalize(Some(opts.span), Cow::Borrowed(&l.ty), Default::default())?;
-        let r_ty = self.normalize(Some(opts.span), Cow::Borrowed(&r.ty), Default::default())?;
+        let mut l_ty = self.normalize(Some(opts.span), Cow::Borrowed(&l.ty), Default::default())?;
+        let mut r_ty = self.normalize(Some(opts.span), Cow::Borrowed(&r.ty), Default::default())?;
+
+        l_ty.make_clone_cheap();
+        r_ty.make_clone_cheap();
 
         l_ty.assert_valid();
         r_ty.assert_valid();

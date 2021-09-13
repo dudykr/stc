@@ -64,7 +64,7 @@ impl Visit<Type> for TypeParamUsageFinder {
     fn visit(&mut self, ty: &Type) {
         ty.visit_children_with(self);
 
-        match ty {
+        match ty.normalize() {
             Type::Param(p) => {
                 self.used.insert(p.name.clone());
             }

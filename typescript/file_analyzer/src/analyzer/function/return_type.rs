@@ -23,6 +23,9 @@ struct FnReturnTypeHandler<'a, 'b, 'c> {
 
 impl VisitMut<Type> for FnReturnTypeHandler<'_, '_, '_> {
     fn visit_mut(&mut self, ret_ty: &mut Type) {
+        // TODO: PERF
+        ret_ty.normalize_mut();
+
         ret_ty.visit_mut_children_with(self);
 
         if ret_ty.normalize().is_query() {

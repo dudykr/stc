@@ -18,10 +18,7 @@ rustflags = [
   "thinlto=no",
   "-C",
   "target-feature=+sse2,+aes",
-  "-Cprefer-dynamic",
   "-Zshare-generics=y",
-  "-C",
-  "link-arg=-fuse-ld=/usr/local/bin/zld",
 ]
 
 [net]

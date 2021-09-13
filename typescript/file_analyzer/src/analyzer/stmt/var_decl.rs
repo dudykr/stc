@@ -19,12 +19,13 @@ use stc_ts_ast_rnode::{
     RVarDeclarator,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
-use stc_ts_type_ops::Fix;
+use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     Array, EnumVariant, Id, Instance, InstanceMetadata, KeywordType, KeywordTypeMetadata, Operator, OperatorMetadata,
     QueryExpr, QueryType, Symbol, SymbolMetadata,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
+use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::Spanned;
@@ -238,7 +239,7 @@ impl Analyzer<'_, '_> {
                         };
                         let ty = self.expand(span, ty, Default::default())?;
                         ty.assert_valid();
-                        let ty = (|| {
+                        let mut ty = (|| {
                             if !should_instantiate_type_ann(&ty) {
                                 return ty;
                             }
@@ -250,6 +251,7 @@ impl Analyzer<'_, '_> {
                             })
                         })();
                         ty.assert_valid();
+                        ty.make_clone_cheap();
                         self.report_error_for_invalid_rvalue(span, &v.name, &ty);
 
                         self.scope.this = Some(ty.clone().remove_falsy());
@@ -259,6 +261,7 @@ impl Analyzer<'_, '_> {
                         value_ty.assert_valid();
                         value_ty = self.rename_type_params(span, value_ty, Some(&ty))?;
                         value_ty.assert_valid();
+                        value_ty.make_clone_cheap();
 
                         let opts = AssignOpts {
                             span: v_span,
@@ -278,10 +281,12 @@ impl Analyzer<'_, '_> {
                             .context("tried to assign from var decl")
                         {
                             Ok(()) => {
-                                let mut ty = ty.cheap();
-                                self.prevent_generalize(&mut ty);
+                                let mut ty = ty;
+                                prevent_generalize(&mut ty);
+                                ty.make_clone_cheap();
 
-                                let actual_ty = self.narrowed_type_of_assignment(span, ty.clone(), &value_ty)?;
+                                let actual_ty =
+                                    self.narrowed_type_of_assignment(span, ty.clone(), &value_ty)?.freezed();
 
                                 actual_ty.assert_valid();
 
@@ -338,7 +343,7 @@ impl Analyzer<'_, '_> {
                         ty.fix();
                         ty.assert_valid();
 
-                        if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit()) {
+                        if !(self.ctx.var_kind == VarDeclKind::Const && ty.normalize().is_lit()) {
                             if self.may_generalize(&ty) {
                                 // Vars behave differently based on the context.
                                 if self.ctx.can_generalize_literals() {
@@ -364,6 +369,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                             ty.assert_valid();
+                            ty.make_clone_cheap();
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
                                     let ret_ty = box f.ret_ty.clone().generalize_lit();
@@ -396,6 +402,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         ty.assert_valid();
+                        ty.make_clone_cheap();
 
                         if self.scope.is_root() {
                             let ty = Some(forced_type_ann.unwrap_or_else(|| {
@@ -650,7 +657,8 @@ impl Analyzer<'_, '_> {
                     .as_ref()
                     .and_then(|m| m.for_pats.get(&v.node_id))
                     .and_then(|v| v.ty.as_ref())
-                    .cloned();
+                    .cloned()
+                    .freezed();
 
                 if let Some(var_ty) = var_ty {
                     self.declare_complex_vars(VarKind::Var(kind), &v.name, var_ty, None, None)
@@ -682,6 +690,8 @@ impl Analyzer<'_, '_> {
                             }
                             _ => {}
                         }
+
+                        ty.make_clone_cheap();
 
                         if !self.is_builtin {
                             // Report error if type is not found.

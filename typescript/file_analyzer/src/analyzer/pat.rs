@@ -23,7 +23,7 @@ use stc_ts_types::{
     TypeElMetadata, TypeElement, TypeLit, TypeLitMetadata,
 };
 use stc_ts_utils::PatExt;
-use stc_utils::TryOpt;
+use stc_utils::{cache::Freeze, TryOpt};
 use swc_atoms::js_word;
 use swc_common::{Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -232,7 +232,8 @@ impl Analyzer<'_, '_> {
                 }
             })
             .map(|res| res.map(|ty| ty.cheap()))
-            .try_opt()?;
+            .try_opt()?
+            .freezed();
 
         let prev_declaring_len = self.scope.declaring.len();
         // Declaring names
@@ -346,7 +347,7 @@ impl Analyzer<'_, '_> {
                         let mut ty = default_value_ty.generalize_lit().foldable();
 
                         if matches!(ty.normalize(), Type::Tuple(..)) {
-                            match ty {
+                            match ty.foldable() {
                                 Type::Tuple(tuple) => {
                                     let mut types =
                                         tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
@@ -362,7 +363,9 @@ impl Analyzer<'_, '_> {
                                         },
                                     });
                                 }
-                                _ => {}
+                                _ => {
+                                    unreachable!();
+                                }
                             }
                         }
 
@@ -397,7 +400,8 @@ impl Analyzer<'_, '_> {
         let ty = match ty {
             Some(v) => v,
             _ => self.default_type_for_pat(p)?,
-        };
+        }
+        .freezed();
 
         if p.get_ty().is_none() {
             if let Some(node_id) = p.node_id() {

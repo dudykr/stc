@@ -22,8 +22,8 @@ warning: Type
    | ^^^^^^^^^^^
    |
    = note: {
-               email?: string;
-               password?: string;
+               email?: Fields["email"];
+               password?: Fields["password"];
            }
 
 warning: Type
@@ -32,7 +32,7 @@ warning: Type
 16 | form.values.email
    | ^^^^^^^^^^^^^^^^^
    |
-   = note: (undefined | string)
+   = note: (undefined | Fields["email"])
 
 warning: Type
   --> $DIR/tests/pass/types/mapped/5.ts:17:1
@@ -49,8 +49,8 @@ warning: Type
    | ^^^^^^^^^^^
    |
    = note: {
-               email?: string;
-               password?: string;
+               email?: Fields["email"];
+               password?: Fields["password"];
            }
 
 warning: Type
@@ -59,5 +59,5 @@ warning: Type
 17 | form.values.password
    | ^^^^^^^^^^^^^^^^^^^^
    |
-   = note: (undefined | string)
+   = note: (undefined | Fields["password"])
 
