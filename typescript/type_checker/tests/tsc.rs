@@ -75,19 +75,26 @@ fn print_matched_errors() -> bool {
     !env::var("DONT_PRINT_MATCHED").map(|s| s == "1").unwrap_or(false)
 }
 
-fn record_time(line_count: usize, time: Duration) {
-    static TOTAL: Lazy<Mutex<Duration>> = Lazy::new(|| Default::default());
+fn record_time(line_count: usize, time_of_check: Duration, full_time: Duration) {
+    static TOTAL_CHECK: Lazy<Mutex<Duration>> = Lazy::new(|| Default::default());
+    static TOTAL_FULL: Lazy<Mutex<Duration>> = Lazy::new(|| Default::default());
     static LINES: Lazy<Mutex<usize>> = Lazy::new(|| Default::default());
 
     if cfg!(debug_assertions) {
         return;
     }
 
-    let time = {
-        let mut guard = TOTAL.lock();
-        *guard += time;
+    let time_of_check = {
+        let mut guard = TOTAL_CHECK.lock();
+        *guard += time_of_check;
         *guard
     };
+    let full_time = {
+        let mut guard = TOTAL_FULL.lock();
+        *guard += full_time;
+        *guard
+    };
+
     let line_count = {
         let mut guard = LINES.lock();
         *guard += line_count;
@@ -98,14 +105,16 @@ fn record_time(line_count: usize, time: Duration) {
         "{:#?}",
         Timings {
             lines: line_count,
-            dur: time
+            check_time: time_of_check,
+            full_time
         }
     );
 
     #[derive(Debug)]
     struct Timings {
         lines: usize,
-        dur: Duration,
+        check_time: Duration,
+        full_time: Duration,
     }
 
     // If we are testing everything, update stats file.
@@ -534,7 +543,9 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         module_config,
     } in specs
     {
-        let mut time = Duration::new(0, 0);
+        let mut time_of_check = Duration::new(0, 0);
+        let mut full_time = Duration::new(0, 0);
+
         let stat_guard = RecordOnPanic {
             stats: Stats {
                 required_error: expected_errors.len(),
@@ -581,7 +592,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
                 let end = Instant::now();
 
-                time = end - start;
+                time_of_check = end - start;
 
                 let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
 
@@ -590,6 +601,10 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                         e.emit(&handler);
                     }
                 });
+
+                let end = Instant::now();
+
+                full_time = end - start;
 
                 if false {
                     return Ok(());
@@ -607,7 +622,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
                 content.lines().count()
             };
-            record_time(line_cnt, time);
+            record_time(line_cnt, time_of_check, full_time);
 
             // if time > Duration::new(0, 500_000_000) {
             //     let _ = fs::write(file_name.with_extension("timings.txt"),
