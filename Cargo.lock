@@ -2350,6 +2350,7 @@ dependencies = [
  "jemallocator",
  "mimalloc",
  "once_cell",
+ "rustc-hash",
  "scoped-tls",
  "swc_common",
  "tracing",
