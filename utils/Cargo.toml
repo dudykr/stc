@@ -15,8 +15,5 @@ scoped-tls = "1.0.0"
 swc_common = {version = "0.11.8", features = ["concurrent", "tty-emitter"]}
 tracing = "0.1.26"
 
-[target.'cfg(all(unix, not(target_env = "musl")))'.dependencies]
-jemallocator = {version = "0.3", features = ["disable_initial_exec_tls"]}
-
-[target.'cfg(windows)'.dependencies]
-mimalloc = {version = "0.1"}
+[target.'cfg(all(target_arch = "x86_64", not(target_env = "musl")))'.dependencies]
+mimalloc-rust = "=0.1.1"
