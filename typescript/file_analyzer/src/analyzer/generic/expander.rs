@@ -6,6 +6,7 @@ use crate::{
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsLit};
+use stc_ts_base_type_ops::apply_mapped_flags;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::{type_param::finder::TypeParamNameUsageFinder, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;
@@ -612,7 +613,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                                         }
 
                                         for member in &mut members {
-                                            self.analyzer.apply_mapped_flags(member, m.optional, m.readonly);
+                                            apply_mapped_flags(member, m.optional, m.readonly);
                                         }
 
                                         return Type::TypeLit(TypeLit {
@@ -659,7 +660,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                             .collect();
 
                         for member in &mut members {
-                            self.analyzer.apply_mapped_flags(member, m.optional, m.readonly);
+                            apply_mapped_flags(member, m.optional, m.readonly);
                         }
 
                         return Type::TypeLit(TypeLit {
@@ -714,7 +715,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                                 }
 
                                 for member in &mut new_members {
-                                    self.analyzer.apply_mapped_flags(member, m.optional, m.readonly);
+                                    apply_mapped_flags(member, m.optional, m.readonly);
                                 }
 
                                 return Type::TypeLit(TypeLit {
@@ -786,7 +787,7 @@ impl GenericExpander<'_, '_, '_, '_> {
                                 }
 
                                 for member in &mut new_members {
-                                    self.analyzer.apply_mapped_flags(member, m.optional, m.readonly);
+                                    apply_mapped_flags(member, m.optional, m.readonly);
                                 }
 
                                 return Type::TypeLit(TypeLit {
