@@ -1,9 +1,7 @@
 use self::generalize::TupleToArray;
-use retain_mut::RetainMut;
 use rnode::FoldWith;
 use stc_ts_type_ops::{generalization::LitGeneralizer, Fix};
 pub(crate) use stc_ts_types::*;
-use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 
 mod generalize;

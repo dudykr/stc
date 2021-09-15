@@ -3,7 +3,7 @@ use crate::{
         expr::{IdCtx, TypeOfMode},
         Analyzer, Ctx,
     },
-    util::{type_ext::TypeVecExt, RemoveTypes},
+    util::RemoveTypes,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -11,6 +11,7 @@ use crate::{
 use stc_ts_ast_rnode::{RExpr, RExprOrSuper, RMemberExpr, ROptChainExpr};
 use stc_ts_errors::DebugExt;
 use stc_ts_types::Type;
+use stc_utils::ext::TypeVecExt;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]

@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, env::Env, ty::Type, util::type_ext::TypeVecExt};
+use crate::{analyzer::Analyzer, env::Env, ty::Type};
 use rnode::{Fold, FoldWith, VisitMutWith};
 use stc_ts_ast_rnode::{RNumber, RStr, RTsLit};
 use stc_ts_errors::debug::dump_type_as_string;
@@ -11,6 +11,7 @@ use stc_ts_types::{
     KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, PropertySignature, TypeElement,
     TypeLit, TypeLitMetadata, TypeParam, Union,
 };
+use stc_utils::ext::TypeVecExt;
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Spanned};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};

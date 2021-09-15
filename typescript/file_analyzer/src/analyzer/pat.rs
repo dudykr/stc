@@ -7,7 +7,7 @@ use crate::{
     },
     ty,
     ty::{Type, TypeExt},
-    util::{should_instantiate_type_ann, type_ext::TypeVecExt},
+    util::should_instantiate_type_ann,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -23,7 +23,7 @@ use stc_ts_types::{
     TypeElMetadata, TypeElement, TypeLit, TypeLitMetadata,
 };
 use stc_ts_utils::PatExt;
-use stc_utils::{cache::Freeze, TryOpt};
+use stc_utils::{cache::Freeze, ext::TypeVecExt, TryOpt};
 use swc_atoms::js_word;
 use swc_common::{Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;

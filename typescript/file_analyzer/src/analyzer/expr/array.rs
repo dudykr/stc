@@ -10,7 +10,6 @@ use crate::{
     },
     ty::TypeExt,
     type_facts::TypeFacts,
-    util::type_ext::TypeVecExt,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -23,7 +22,7 @@ use stc_ts_types::{
     type_id::SymbolId, Array, CommonTypeMetadata, ComputedKey, Intersection, Key, KeywordType, KeywordTypeMetadata,
     LitType, Symbol, Tuple, TupleElement, Type, TypeParamInstantiation, Union, UnionMetadata,
 };
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use std::{borrow::Cow, time::Instant};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext};

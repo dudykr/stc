@@ -1,6 +1,4 @@
 use stc_ts_types::Type;
-use swc_common::TypeEq;
-use tracing::instrument;
 
 pub trait TypeExt: Into<Type> {}
 

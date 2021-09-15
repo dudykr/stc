@@ -14,7 +14,7 @@ use crate::{
         TypeLit, TypeParam, TypeParamInstantiation,
     },
     type_facts::TypeFacts,
-    util::{type_ext::TypeVecExt, RemoveTypes},
+    util::RemoveTypes,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -38,7 +38,7 @@ use stc_ts_types::{
     KeywordTypeMetadata, LitType, LitTypeMetadata, Method, ModuleId, Operator, OptionalType, PropertySignature,
     QueryExpr, QueryType, StaticThis, ThisType,
 };
-use stc_utils::{cache::Freeze, debug_ctx, stack};
+use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use std::{
     borrow::Cow,
     collections::HashMap,
