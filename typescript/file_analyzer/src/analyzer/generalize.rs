@@ -2,10 +2,7 @@ use crate::{analyzer::Analyzer, env::Env, ty::Type};
 use rnode::{Fold, FoldWith, VisitMutWith};
 use stc_ts_ast_rnode::{RNumber, RStr, RTsLit};
 use stc_ts_errors::debug::dump_type_as_string;
-use stc_ts_type_ops::{
-    is_str_lit_or_union,
-    metadata::{PreventComplexSimplification, PreventTupleToArray},
-};
+use stc_ts_type_ops::{is_str_lit_or_union, PreventComplexSimplification};
 use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, CommonTypeMetadata, IndexedAccessType, IndexedAccessTypeMetadata, Key,
     KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, PropertySignature, TypeElement,
@@ -45,12 +42,6 @@ impl Analyzer<'_, '_> {
         }
 
         !ty.metadata().prevent_generalization
-    }
-
-    /// TODO(kdy1): Optimize by visiting only tuple types.
-    #[instrument(skip(self, ty))]
-    pub(super) fn prevent_tuple_to_array(&self, ty: &mut Type) {
-        ty.visit_mut_with(&mut PreventTupleToArray);
     }
 
     #[instrument(skip(self, ty))]
