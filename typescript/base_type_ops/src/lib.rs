@@ -6,7 +6,8 @@
 #![feature(specialization)]
 #![allow(incomplete_features)]
 
-use stc_ts_types::TypeElement;
+use stc_ts_ast_rnode::RTsLit;
+use stc_ts_types::{LitType, Type, TypeElement, Union};
 use swc_ecma_ast::TruePlusMinus;
 
 pub mod fix;
@@ -72,5 +73,15 @@ pub fn apply_mapped_flags(el: &mut TypeElement, optional: Option<TruePlusMinus>,
             },
         },
         None => {}
+    }
+}
+
+pub fn is_str_lit_or_union(t: &Type) -> bool {
+    match t {
+        Type::Lit(LitType {
+            lit: RTsLit::Str(..), ..
+        }) => true,
+        Type::Union(Union { ref types, .. }) => types.iter().all(|ty| is_str_lit_or_union(&ty)),
+        _ => false,
     }
 }

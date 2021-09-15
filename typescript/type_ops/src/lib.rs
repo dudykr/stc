@@ -4,19 +4,7 @@
 #![feature(specialization)]
 #![allow(incomplete_features)]
 
-use stc_ts_ast_rnode::RTsLit;
-pub use stc_ts_base_type_ops::fix::Fix;
-use stc_ts_types::{LitType, Type, Union};
+pub use stc_ts_base_type_ops::{fix::Fix, is_str_lit_or_union};
 
 pub mod generalization;
 pub mod metadata;
-
-pub fn is_str_lit_or_union(t: &Type) -> bool {
-    match t {
-        Type::Lit(LitType {
-            lit: RTsLit::Str(..), ..
-        }) => true,
-        Type::Union(Union { ref types, .. }) => types.iter().all(|ty| is_str_lit_or_union(&ty)),
-        _ => false,
-    }
-}
