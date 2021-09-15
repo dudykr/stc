@@ -2122,6 +2122,7 @@ dependencies = [
  "stc_utils",
  "swc_atoms",
  "swc_common 0.11.8",
+ "swc_ecma_ast",
  "tracing",
 ]
 
