@@ -1,7 +1,7 @@
 pub use self::metadata::prevent_tuple_to_array;
 use rnode::{Fold, FoldWith};
 use stc_ts_types::{Array, ArrayMetadata, Type};
-use swc_common::{Spanned, TypeEq};
+use swc_common::TypeEq;
 
 mod metadata;
 
@@ -12,10 +12,11 @@ impl Fold<Type> for TupleToArray {
         // TODO: PERF
         ty.normalize_mut();
         let ty = ty.fold_children_with(self);
-        let span = ty.span();
 
         match ty {
             Type::Tuple(tuple) => {
+                let span = tuple.span;
+
                 let mut types: Vec<Type> = vec![];
 
                 for element in tuple.elems {
