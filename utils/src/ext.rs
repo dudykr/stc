@@ -1,4 +1,5 @@
-use swc_common::Span;
+use swc_common::{Span, TypeEq};
+use tracing::instrument;
 
 pub trait ValueExt: Sized {
     fn as_ok<E>(self) -> Result<Self, E> {
@@ -28,3 +29,24 @@ pub trait SpanExt: Into<Span> + Copy {
 }
 
 impl<T> SpanExt for T where T: Into<Span> + Copy {}
+
+pub trait TypeVecExt {
+    fn dedup_type(&mut self);
+}
+
+impl<T> TypeVecExt for Vec<T>
+where
+    T: TypeEq,
+{
+    #[instrument(skip(self))]
+    fn dedup_type(&mut self) {
+        let mut types: Vec<T> = Vec::with_capacity(self.capacity());
+        for ty in self.drain(..) {
+            if types.iter().any(|stored| stored.type_eq(&ty)) {
+                continue;
+            }
+            types.push(ty);
+        }
+        *self = types;
+    }
+}
