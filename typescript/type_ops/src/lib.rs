@@ -4,11 +4,10 @@
 #![feature(specialization)]
 #![allow(incomplete_features)]
 
-pub use self::fix::Fix;
 use stc_ts_ast_rnode::RTsLit;
+pub use stc_ts_base_type_ops::fix::Fix;
 use stc_ts_types::{LitType, Type, Union};
 
-mod fix;
 pub mod generalization;
 pub mod metadata;
 

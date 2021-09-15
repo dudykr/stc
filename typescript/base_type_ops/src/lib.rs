@@ -1,9 +1,15 @@
 //! Shared operations on TypeScript types.
 //!
 //! This crate is used to reduce compile time.
+#![feature(box_patterns)]
+#![feature(box_syntax)]
+#![feature(specialization)]
+#![allow(incomplete_features)]
 
 use stc_ts_types::TypeElement;
 use swc_ecma_ast::TruePlusMinus;
+
+pub mod fix;
 
 pub fn apply_mapped_flags(el: &mut TypeElement, optional: Option<TruePlusMinus>, readonly: Option<TruePlusMinus>) {
     match optional {
