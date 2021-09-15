@@ -1942,6 +1942,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "stc_ts_base_type_ops"
+version = "0.1.0"
+
+[[package]]
 name = "stc_ts_builtin_macro"
 version = "0.1.0"
 dependencies = [
@@ -2051,6 +2055,7 @@ dependencies = [
  "smallvec 1.6.1",
  "stc_testing",
  "stc_ts_ast_rnode",
+ "stc_ts_base_type_ops",
  "stc_ts_builtin_types",
  "stc_ts_dts_mutations",
  "stc_ts_env",
@@ -2100,6 +2105,7 @@ dependencies = [
  "fxhash",
  "rnode",
  "stc_ts_ast_rnode",
+ "stc_ts_base_type_ops",
  "stc_ts_types",
  "stc_ts_utils",
  "stc_utils",
@@ -2274,6 +2280,7 @@ version = "0.1.0"
 dependencies = [
  "rnode",
  "stc_ts_ast_rnode",
+ "stc_ts_base_type_ops",
  "stc_ts_types",
  "stc_ts_utils",
  "swc_common",

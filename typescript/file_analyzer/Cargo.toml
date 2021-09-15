@@ -29,6 +29,7 @@ rnode = {path = "../../rnode"}
 serde = "1.0.125"
 smallvec = "1.5.1"
 stc_ts_ast_rnode = {path = "../ast_rnode"}
+stc_ts_base_type_ops = {path = "../base_type_ops/"}
 stc_ts_builtin_types = {path = "../builtin_types"}
 stc_ts_dts_mutations = {path = "../dts_mutations"}
 stc_ts_env = {path = "../env"}
