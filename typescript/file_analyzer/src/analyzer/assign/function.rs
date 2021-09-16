@@ -488,8 +488,7 @@ impl Analyzer<'_, '_> {
                                 )
                                 .with_context(|| {
                                     format!(
-                                        "tried to assign parameters of a constructor to them of another constructor \
-                                         ({}th element)",
+                                        "tried to assign a constructor to another constructor ({}th element)",
                                         idx
                                     )
                                 })
