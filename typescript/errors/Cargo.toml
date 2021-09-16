@@ -10,6 +10,7 @@ version = "0.1.0"
 [dependencies]
 ansi_term = "0.12.1"
 backtrace = "0.3.60"
+derivative = "2.2.0"
 fxhash = "0.2.1"
 rnode = {path = "../../rnode"}
 static_assertions = "1.1.0"
