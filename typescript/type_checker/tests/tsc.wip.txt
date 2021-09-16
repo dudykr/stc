@@ -1,1 +1,1 @@
-classes/members/privateNames
+conformance/types/typeRelationships/assignmentCompatibility
