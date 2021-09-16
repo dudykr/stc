@@ -995,6 +995,8 @@ impl Analyzer<'_, '_> {
         let span = opts.span.with_ctxt(SyntaxContext::empty());
         // We need this to show error if not all of rhs_member is matched
 
+        let missing_field_start_idx = missing_fields.len();
+
         let mut errors = vec![];
         let mut done = false;
 
@@ -1308,7 +1310,10 @@ impl Analyzer<'_, '_> {
                                     );
 
                                     match res {
-                                        Ok(()) => return Ok(()),
+                                        Ok(()) => {
+                                            missing_fields.drain(missing_field_start_idx..);
+                                            return Ok(());
+                                        }
                                         Err(err) => {
                                             errors.push(err);
                                         }
@@ -1349,6 +1354,8 @@ impl Analyzer<'_, '_> {
 
                                     match res {
                                         Ok(()) => {
+                                            missing_fields.drain(missing_field_start_idx..);
+
                                             for rm in rhs_members {
                                                 match rm {
                                                     TypeElement::Constructor(..) => {
