@@ -7,6 +7,7 @@ use crate::{
     },
     ValidationResult,
 };
+use itertools::Itertools;
 use rnode::NodeId;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
@@ -877,15 +878,53 @@ impl Analyzer<'_, '_> {
             return Err(Error::Errors { span, errors });
         }
 
-        // Index signature can eat multiple rhs.
-        for m in lhs.iter().filter(|m| m.key().is_none()) {
+        let lhs_index = lhs.iter().filter(|m| matches!(m, TypeElement::Index(_))).collect_vec();
+        let lhs_call = lhs.iter().filter(|m| matches!(m, TypeElement::Call(_))).collect_vec();
+        let lhs_constructor = lhs
+            .iter()
+            .filter(|m| matches!(m, TypeElement::Constructor(_)))
+            .collect_vec();
+
+        if !lhs_index.is_empty() {
             let res = self
                 .assign_type_elements_to_type_element(
                     data,
                     opts,
                     missing_fields,
                     unhandled_rhs,
-                    &[m],
+                    &lhs_index,
+                    lhs_metadata,
+                    rhs,
+                )
+                .with_context(|| format!("tried to assign to an element (not a key-based)"));
+
+            errors.extend(res.err());
+        }
+
+        if !lhs_call.is_empty() {
+            let res = self
+                .assign_type_elements_to_type_element(
+                    data,
+                    opts,
+                    missing_fields,
+                    unhandled_rhs,
+                    &lhs_call,
+                    lhs_metadata,
+                    rhs,
+                )
+                .with_context(|| format!("tried to assign to an element (not a key-based)"));
+
+            errors.extend(res.err());
+        }
+
+        if !lhs_constructor.is_empty() {
+            let res = self
+                .assign_type_elements_to_type_element(
+                    data,
+                    opts,
+                    missing_fields,
+                    unhandled_rhs,
+                    &lhs_constructor,
                     lhs_metadata,
                     rhs,
                 )
