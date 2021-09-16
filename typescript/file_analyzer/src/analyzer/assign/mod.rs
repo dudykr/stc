@@ -1277,7 +1277,12 @@ impl Analyzer<'_, '_> {
                     },
                 }
 
-                fail!()
+                match to.normalize() {
+                    Type::Union(..) => {}
+                    _ => {
+                        fail!()
+                    }
+                }
             }
 
             Type::Predicate(..) => match rhs {
