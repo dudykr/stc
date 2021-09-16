@@ -772,7 +772,7 @@ impl Analyzer<'_, '_> {
                             ..opts
                         },
                     )
-                    .with_context(|| format!("tried to assign a method parameter to a method parameter",))?;
+                    .with_context(|| format!("tried to assign a parameter to another parameter",))?;
                 }
                 EitherOrBoth::Left(_) => {}
                 EitherOrBoth::Right(_) => {}
