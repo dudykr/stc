@@ -1287,7 +1287,7 @@ impl Analyzer<'_, '_> {
                     }
                     TypeElement::Call(lc) => {
                         //
-                        for rm in rhs_members {
+                        for (ri, rm) in rhs_members.iter().enumerate() {
                             match rm {
                                 TypeElement::Call(rc) => {
                                     if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
@@ -1295,19 +1295,23 @@ impl Analyzer<'_, '_> {
                                     }
                                     done = true;
 
-                                    let res = self.assign_to_fn_like(
-                                        data,
-                                        AssignOpts {
-                                            infer_type_params_of_left: true,
-                                            ..opts
-                                        },
-                                        lc.type_params.as_ref(),
-                                        &lc.params,
-                                        lc.ret_ty.as_deref(),
-                                        rc.type_params.as_ref(),
-                                        &rc.params,
-                                        rc.ret_ty.as_deref(),
-                                    );
+                                    let res = self
+                                        .assign_to_fn_like(
+                                            data,
+                                            AssignOpts {
+                                                infer_type_params_of_left: true,
+                                                ..opts
+                                            },
+                                            lc.type_params.as_ref(),
+                                            &lc.params,
+                                            lc.ret_ty.as_deref(),
+                                            rc.type_params.as_ref(),
+                                            &rc.params,
+                                            rc.ret_ty.as_deref(),
+                                        )
+                                        .with_context(|| {
+                                            format!("tried to assign {}th element to a call signature", ri)
+                                        });
 
                                     match res {
                                         Ok(()) => {
