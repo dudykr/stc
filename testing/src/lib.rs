@@ -33,6 +33,7 @@ pub fn logger() -> impl tracing::Subscriber {
         .without_time()
         .with_target(false)
         .with_ansi(true)
+        .with_max_level(Level::DEBUG)
         .with_test_writer()
         .pretty()
         .finish()
