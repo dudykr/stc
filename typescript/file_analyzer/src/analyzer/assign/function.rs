@@ -509,6 +509,12 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(rt) => {
+                let r_el_cnt = rt
+                    .members
+                    .iter()
+                    .filter(|m| matches!(m, TypeElement::Constructor(..)))
+                    .count();
+
                 let mut errors = vec![];
                 for (idx, rm) in rt.members.iter().enumerate() {
                     match rm {
@@ -516,7 +522,10 @@ impl Analyzer<'_, '_> {
                             if let Err(err) = self
                                 .assign_to_fn_like(
                                     data,
-                                    opts,
+                                    AssignOpts {
+                                        allow_assignment_to_param: opts.allow_assignment_to_param || r_el_cnt > 1,
+                                        ..opts
+                                    },
                                     l.type_params.as_ref(),
                                     &l.params,
                                     Some(&l.type_ann),
