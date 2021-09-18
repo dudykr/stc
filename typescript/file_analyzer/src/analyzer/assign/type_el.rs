@@ -7,6 +7,7 @@ use crate::{
     },
     ValidationResult,
 };
+use itertools::Itertools;
 use rnode::NodeId;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
@@ -855,7 +856,15 @@ impl Analyzer<'_, '_> {
 
         for (i, m) in lhs.into_iter().enumerate().filter(|(_, m)| m.key().is_some()) {
             let res = self
-                .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, m, lhs_metadata, rhs)
+                .assign_type_elements_to_type_element(
+                    data,
+                    opts,
+                    missing_fields,
+                    unhandled_rhs,
+                    &[m],
+                    lhs_metadata,
+                    rhs,
+                )
                 .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
 
             match res {
@@ -869,10 +878,56 @@ impl Analyzer<'_, '_> {
             return Err(Error::Errors { span, errors });
         }
 
-        // Index signature can eat multiple rhs.
-        for m in lhs.iter().filter(|m| m.key().is_none()) {
+        let lhs_index = lhs.iter().filter(|m| matches!(m, TypeElement::Index(_))).collect_vec();
+        let lhs_call = lhs.iter().filter(|m| matches!(m, TypeElement::Call(_))).collect_vec();
+        let lhs_constructor = lhs
+            .iter()
+            .filter(|m| matches!(m, TypeElement::Constructor(_)))
+            .collect_vec();
+
+        if !lhs_index.is_empty() {
             let res = self
-                .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, m, lhs_metadata, rhs)
+                .assign_type_elements_to_type_element(
+                    data,
+                    opts,
+                    missing_fields,
+                    unhandled_rhs,
+                    &lhs_index,
+                    lhs_metadata,
+                    rhs,
+                )
+                .with_context(|| format!("tried to assign to an element (not a key-based)"));
+
+            errors.extend(res.err());
+        }
+
+        if !lhs_call.is_empty() {
+            let res = self
+                .assign_type_elements_to_type_element(
+                    data,
+                    opts,
+                    missing_fields,
+                    unhandled_rhs,
+                    &lhs_call,
+                    lhs_metadata,
+                    rhs,
+                )
+                .with_context(|| format!("tried to assign to an element (not a key-based)"));
+
+            errors.extend(res.err());
+        }
+
+        if !lhs_constructor.is_empty() {
+            let res = self
+                .assign_type_elements_to_type_element(
+                    data,
+                    opts,
+                    missing_fields,
+                    unhandled_rhs,
+                    &lhs_constructor,
+                    lhs_metadata,
+                    rhs,
+                )
                 .with_context(|| format!("tried to assign to an element (not a key-based)"));
 
             errors.extend(res.err());
@@ -886,7 +941,10 @@ impl Analyzer<'_, '_> {
     }
 
     /// This method assigns each property to corresponding property.
-
+    ///
+    /// Because of overloads, this methods takes `&[TypeElement]` instead of
+    /// [TypeElement] for lhs.
+    ///
     ///
     ///
     ///
@@ -928,397 +986,430 @@ impl Analyzer<'_, '_> {
         opts: AssignOpts,
         missing_fields: &mut Vec<TypeElement>,
         unhandled_rhs: &mut Vec<Span>,
-        lm: &TypeElement,
+        lms: &[&TypeElement],
         lhs_metadata: TypeLitMetadata,
         rhs_members: &[TypeElement],
     ) -> ValidationResult<()> {
+        debug_assert!(!lms.is_empty());
+
         let span = opts.span.with_ctxt(SyntaxContext::empty());
         // We need this to show error if not all of rhs_member is matched
+
+        let missing_field_start_idx = missing_fields.len();
 
         let mut errors = vec![];
         let mut done = false;
 
-        if let Some(l_key) = lm.key() {
-            for rm in rhs_members {
-                if let Some(r_key) = rm.key() {
-                    let opts = AssignOpts {
-                        right_ident_span: Some(r_key.span()),
-                        ..opts
-                    };
-                    if l_key.type_eq(&*r_key) {
-                        match lm {
-                            TypeElement::Property(ref lp) => match rm {
-                                TypeElement::Property(ref rp) => {
-                                    if lp.accessibility != rp.accessibility {
-                                        if lp.accessibility == Some(Accessibility::Private)
-                                            || rp.accessibility == Some(Accessibility::Private)
-                                        {
-                                            return Err(Error::AssignFailedDueToAccessibility { span });
+        for lm in lms.iter().copied() {
+            if let Some(l_key) = lm.key() {
+                for rm in rhs_members {
+                    if let Some(r_key) = rm.key() {
+                        let opts = AssignOpts {
+                            right_ident_span: Some(r_key.span()),
+                            ..opts
+                        };
+                        if l_key.type_eq(&*r_key) {
+                            match lm {
+                                TypeElement::Property(ref lp) => match rm {
+                                    TypeElement::Property(ref rp) => {
+                                        if lp.accessibility != rp.accessibility {
+                                            if lp.accessibility == Some(Accessibility::Private)
+                                                || rp.accessibility == Some(Accessibility::Private)
+                                            {
+                                                return Err(Error::AssignFailedDueToAccessibility { span });
+                                            }
                                         }
-                                    }
 
-                                    // Allow assigning undefined to optional properties.
-                                    (|| {
-                                        if opts.for_castablity {
-                                            if lp.optional {
-                                                if let Some(r_ty) = &rp.type_ann {
-                                                    if r_ty.is_undefined() {
-                                                        return Ok(());
+                                        // Allow assigning undefined to optional properties.
+                                        (|| {
+                                            if opts.for_castablity {
+                                                if lp.optional {
+                                                    if let Some(r_ty) = &rp.type_ann {
+                                                        if r_ty.is_undefined() {
+                                                            return Ok(());
+                                                        }
+                                                    }
+                                                }
+
+                                                if rp.optional {
+                                                    if let Some(lt) = &lp.type_ann {
+                                                        if lt.is_undefined() {
+                                                            return Ok(());
+                                                        }
                                                     }
                                                 }
                                             }
 
-                                            if rp.optional {
-                                                if let Some(lt) = &lp.type_ann {
-                                                    if lt.is_undefined() {
-                                                        return Ok(());
-                                                    }
-                                                }
+                                            self.assign_inner(
+                                                data,
+                                                lp.type_ann.as_deref().unwrap_or(&Type::any(span, Default::default())),
+                                                rp.type_ann.as_deref().unwrap_or(&Type::any(span, Default::default())),
+                                                opts,
+                                            )
+                                        })()?;
+
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                            unhandled_rhs.remove(pos);
+                                        }
+                                        return Ok(());
+                                    }
+                                    TypeElement::Method(rm) => {
+                                        if let Some(lp_ty) = &lp.type_ann {
+                                            if let Type::Function(lp_ty) = lp_ty.normalize() {
+                                                self.assign_to_fn_like(
+                                                    data,
+                                                    opts,
+                                                    true,
+                                                    lp_ty.type_params.as_ref(),
+                                                    &lp_ty.params,
+                                                    Some(&lp_ty.ret_ty),
+                                                    rm.type_params.as_ref(),
+                                                    &rm.params,
+                                                    rm.ret_ty.as_deref(),
+                                                )
+                                                .context(
+                                                    "tried to assign a method signature to a property signature with \
+                                                     function type",
+                                                )?;
+                                            } else {
+                                                self.assign_with_opts(
+                                                    data,
+                                                    opts,
+                                                    &lp_ty,
+                                                    &Type::Function(Function {
+                                                        span,
+                                                        type_params: rm.type_params.clone(),
+                                                        params: rm.params.clone(),
+                                                        ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
+                                                            box Type::any(
+                                                                span.with_ctxt(SyntaxContext::empty()),
+                                                                Default::default(),
+                                                            )
+                                                        }),
+                                                        metadata: Default::default(),
+                                                    }),
+                                                )
+                                                .context(
+                                                    "failed to assign a method signature to a property signature \
+                                                     because the property was not a function",
+                                                )?;
                                             }
                                         }
 
-                                        self.assign_inner(
-                                            data,
-                                            lp.type_ann.as_deref().unwrap_or(&Type::any(span, Default::default())),
-                                            rp.type_ann.as_deref().unwrap_or(&Type::any(span, Default::default())),
-                                            opts,
-                                        )
-                                    })()?;
-
-                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                        unhandled_rhs.remove(pos);
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                            unhandled_rhs.remove(pos);
+                                        }
+                                        return Ok(());
                                     }
-                                    return Ok(());
-                                }
-                                TypeElement::Method(rm) => {
-                                    if let Some(lp_ty) = &lp.type_ann {
-                                        if let Type::Function(lp_ty) = lp_ty.normalize() {
-                                            self.assign_to_fn_like(
+                                    _ => {}
+                                },
+
+                                // `foo(a: string) is assignable to foo(a: any)`
+                                TypeElement::Method(ref lm) => match rm {
+                                    TypeElement::Method(ref rm) => {
+                                        //
+
+                                        let res = self
+                                            .assign_to_fn_like(
                                                 data,
                                                 opts,
-                                                lp_ty.type_params.as_ref(),
-                                                &lp_ty.params,
-                                                Some(&lp_ty.ret_ty),
+                                                true,
+                                                lm.type_params.as_ref(),
+                                                &lm.params,
+                                                lm.ret_ty.as_deref(),
                                                 rm.type_params.as_ref(),
                                                 &rm.params,
                                                 rm.ret_ty.as_deref(),
                                             )
-                                            .context(
-                                                "tried to assign a method signature to a property signature with \
-                                                 function type",
-                                            )?;
-                                        } else {
+                                            .context("tried to assign to callable type element");
+                                        // TODO: Return type
+
+                                        match res {
+                                            Ok(()) => {
+                                                if let Some(pos) =
+                                                    unhandled_rhs.iter().position(|span| *span == rm.span())
+                                                {
+                                                    unhandled_rhs.remove(pos);
+                                                }
+
+                                                return Ok(());
+                                            }
+                                            Err(err) => {
+                                                errors.push(err);
+                                                done = true
+                                            }
+                                        }
+                                    }
+
+                                    TypeElement::Property(rp) => {
+                                        // Allow assigning property with callable type to methods.
+                                        if let Some(rp_ty) = &rp.type_ann {
+                                            if let Type::Function(rf) = rp_ty.normalize() {
+                                                self.assign_to_fn_like(
+                                                    data,
+                                                    opts,
+                                                    true,
+                                                    lm.type_params.as_ref(),
+                                                    &lm.params,
+                                                    lm.ret_ty.as_deref(),
+                                                    rf.type_params.as_ref(),
+                                                    &rf.params,
+                                                    Some(&rf.ret_ty),
+                                                )
+                                                .context(
+                                                    "tried to assign a property with callable type to a method \
+                                                     property",
+                                                )?;
+                                            }
+                                        }
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                            unhandled_rhs.remove(pos);
+                                        }
+                                        return Ok(());
+                                    }
+                                    _ => {}
+                                },
+                                _ => {}
+                            }
+                        }
+                    }
+                }
+
+                match lm {
+                    TypeElement::Property(PropertySignature { optional: true, .. })
+                    | TypeElement::Method(MethodSignature { optional: true, .. }) => {}
+
+                    TypeElement::Method(MethodSignature {
+                        key: Key::Normal { sym, .. },
+                        ..
+                    }) if &**sym == "toString" => {}
+
+                    _ => {
+                        // No property with `key` found.
+                        missing_fields.push(lm.clone());
+                    }
+                }
+            } else {
+                match lm {
+                    // TODO: Check type of the index.
+                    TypeElement::Index(li) => {
+                        unhandled_rhs.clear();
+                        // TODO: Verify
+                        for rm in rhs_members {
+                            match rm {
+                                TypeElement::Call(_) | TypeElement::Constructor(_) => continue,
+
+                                TypeElement::Property(r_prop) => {
+                                    done = true;
+
+                                    if self
+                                        .assign(span, &mut Default::default(), &li.params[0].ty, &r_prop.key.ty())
+                                        .is_ok()
+                                        || li.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                                    {
+                                        if let Some(l_index_ret_ty) = &li.type_ann {
+                                            if let Some(r_prop_ty) = &r_prop.type_ann {
+                                                self.assign_with_opts(data, opts, &l_index_ret_ty, &&r_prop_ty)
+                                                    .context(
+                                                        "tried to assign a type of property to thr type of an index \
+                                                         signature",
+                                                    )?;
+                                            }
+                                        }
+
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                            unhandled_rhs.remove(pos);
+                                        }
+                                    }
+                                }
+
+                                TypeElement::Method(rm) => {
+                                    done = true;
+
+                                    if self
+                                        .assign(span, &mut Default::default(), &li.params[0].ty, &rm.key.ty())
+                                        .is_ok()
+                                        || li.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                                    {
+                                        if let Some(li_ret) = &li.type_ann {
                                             self.assign_with_opts(
                                                 data,
-                                                opts,
-                                                &lp_ty,
+                                                AssignOpts {
+                                                    allow_assignment_to_param: false,
+                                                    ..opts
+                                                },
+                                                &li_ret,
                                                 &Type::Function(Function {
-                                                    span,
+                                                    span: rm.span,
                                                     type_params: rm.type_params.clone(),
                                                     params: rm.params.clone(),
                                                     ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
                                                         box Type::any(
-                                                            span.with_ctxt(SyntaxContext::empty()),
+                                                            rm.span.with_ctxt(SyntaxContext::empty()),
                                                             Default::default(),
                                                         )
                                                     }),
                                                     metadata: Default::default(),
                                                 }),
                                             )
-                                            .context(
-                                                "failed to assign a method signature to a property signature because \
-                                                 the property was not a function",
-                                            )?;
+                                            .context("tried to assign a method to an index signature")?;
                                         }
                                     }
 
                                     if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                         unhandled_rhs.remove(pos);
                                     }
-                                    return Ok(());
                                 }
-                                _ => {}
-                            },
 
-                            // `foo(a: string) is assignable to foo(a: any)`
-                            TypeElement::Method(ref lm) => match rm {
-                                TypeElement::Method(ref rm) => {
-                                    //
+                                TypeElement::Index(ri) => {
+                                    done = true;
+
+                                    if li.params.type_eq(&ri.params)
+                                        || ri.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                                    {
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == ri.span()) {
+                                            unhandled_rhs.remove(pos);
+                                        }
+
+                                        if let Some(lt) = &li.type_ann {
+                                            if let Some(rt) = &ri.type_ann {
+                                                self.assign_with_opts(data, opts, &lt, &rt)?;
+                                            }
+                                        }
+
+                                        return Ok(());
+                                    }
+
+                                    errors.push(
+                                        Error::SimpleAssignFailed { span, cause: None }
+                                            .context("failed to assign to an index signature"),
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    TypeElement::Call(lc) => {
+                        //
+                        for (ri, rm) in rhs_members.iter().enumerate() {
+                            match rm {
+                                TypeElement::Call(rc) => {
+                                    for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Call(_))) {
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                            unhandled_rhs.remove(pos);
+                                            continue;
+                                        }
+                                    }
+
+                                    done = true;
 
                                     let res = self
                                         .assign_to_fn_like(
                                             data,
-                                            opts,
-                                            lm.type_params.as_ref(),
-                                            &lm.params,
-                                            lm.ret_ty.as_deref(),
-                                            rm.type_params.as_ref(),
-                                            &rm.params,
-                                            rm.ret_ty.as_deref(),
+                                            AssignOpts {
+                                                infer_type_params_of_left: true,
+                                                ..opts
+                                            },
+                                            true,
+                                            lc.type_params.as_ref(),
+                                            &lc.params,
+                                            lc.ret_ty.as_deref(),
+                                            rc.type_params.as_ref(),
+                                            &rc.params,
+                                            rc.ret_ty.as_deref(),
                                         )
-                                        .context("tried to assign to callable type element");
-                                    // TODO: Return type
+                                        .with_context(|| {
+                                            format!("tried to assign {}th element to a call signature", ri)
+                                        });
 
                                     match res {
                                         Ok(()) => {
-                                            if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span())
-                                            {
-                                                unhandled_rhs.remove(pos);
+                                            missing_fields.drain(missing_field_start_idx..);
+                                            return Ok(());
+                                        }
+                                        Err(err) => {
+                                            errors.push(err);
+                                        }
+                                    }
+
+                                    continue;
+                                }
+                                _ => {}
+                            }
+                        }
+
+                        missing_fields.push(lm.clone());
+                    }
+
+                    TypeElement::Constructor(lc) => {
+                        //
+                        for rm in rhs_members {
+                            match rm {
+                                TypeElement::Constructor(rc) => {
+                                    for rm in rhs_members
+                                        .iter()
+                                        .filter(|rm| matches!(rm, TypeElement::Constructor(_)))
+                                    {
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                            unhandled_rhs.remove(pos);
+                                            continue;
+                                        }
+                                    }
+
+                                    done = true;
+
+                                    let res = self.assign_to_fn_like(
+                                        data,
+                                        AssignOpts {
+                                            infer_type_params_of_left: true,
+                                            ..opts
+                                        },
+                                        false,
+                                        lc.type_params.as_ref(),
+                                        &lc.params,
+                                        lc.ret_ty.as_deref(),
+                                        rc.type_params.as_ref(),
+                                        &rc.params,
+                                        rc.ret_ty.as_deref(),
+                                    );
+
+                                    match res {
+                                        Ok(()) => {
+                                            missing_fields.drain(missing_field_start_idx..);
+
+                                            for rm in rhs_members {
+                                                match rm {
+                                                    TypeElement::Constructor(..) => {
+                                                        if let Some(pos) =
+                                                            unhandled_rhs.iter().position(|span| *span == rm.span())
+                                                        {
+                                                            unhandled_rhs.remove(pos);
+                                                        }
+                                                    }
+                                                    _ => {}
+                                                }
                                             }
 
                                             return Ok(());
                                         }
                                         Err(err) => {
                                             errors.push(err);
-                                            done = true
                                         }
                                     }
-                                }
 
-                                TypeElement::Property(rp) => {
-                                    // Allow assigning property with callable type to methods.
-                                    if let Some(rp_ty) = &rp.type_ann {
-                                        if let Type::Function(rf) = rp_ty.normalize() {
-                                            self.assign_to_fn_like(
-                                                data,
-                                                opts,
-                                                lm.type_params.as_ref(),
-                                                &lm.params,
-                                                lm.ret_ty.as_deref(),
-                                                rf.type_params.as_ref(),
-                                                &rf.params,
-                                                Some(&rf.ret_ty),
-                                            )
-                                            .context(
-                                                "tried to assign a property with callable type to a method property",
-                                            )?;
-                                        }
-                                    }
-                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                        unhandled_rhs.remove(pos);
-                                    }
-                                    return Ok(());
+                                    continue;
                                 }
                                 _ => {}
-                            },
-                            _ => {}
-                        }
-                    }
-                }
-            }
-
-            match lm {
-                TypeElement::Property(PropertySignature { optional: true, .. })
-                | TypeElement::Method(MethodSignature { optional: true, .. }) => {}
-
-                TypeElement::Method(MethodSignature {
-                    key: Key::Normal { sym, .. },
-                    ..
-                }) if &**sym == "toString" => {}
-
-                _ => {
-                    // No property with `key` found.
-                    missing_fields.push(lm.clone());
-                }
-            }
-        } else {
-            match lm {
-                // TODO: Check type of the index.
-                TypeElement::Index(li) => {
-                    unhandled_rhs.clear();
-                    // TODO: Verify
-                    for rm in rhs_members {
-                        match rm {
-                            TypeElement::Call(_) | TypeElement::Constructor(_) => continue,
-
-                            TypeElement::Property(r_prop) => {
-                                done = true;
-
-                                if self
-                                    .assign(span, &mut Default::default(), &li.params[0].ty, &r_prop.key.ty())
-                                    .is_ok()
-                                    || li.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
-                                {
-                                    if let Some(l_index_ret_ty) = &li.type_ann {
-                                        if let Some(r_prop_ty) = &r_prop.type_ann {
-                                            self.assign_with_opts(data, opts, &l_index_ret_ty, &&r_prop_ty)
-                                                .context(
-                                                    "tried to assign a type of property to thr type of an index \
-                                                     signature",
-                                                )?;
-                                        }
-                                    }
-
-                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                        unhandled_rhs.remove(pos);
-                                    }
-                                }
-                            }
-
-                            TypeElement::Method(rm) => {
-                                done = true;
-
-                                if self
-                                    .assign(span, &mut Default::default(), &li.params[0].ty, &rm.key.ty())
-                                    .is_ok()
-                                    || li.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
-                                {
-                                    if let Some(li_ret) = &li.type_ann {
-                                        self.assign_with_opts(
-                                            data,
-                                            AssignOpts {
-                                                allow_assignment_to_param: false,
-                                                ..opts
-                                            },
-                                            &li_ret,
-                                            &Type::Function(Function {
-                                                span: rm.span,
-                                                type_params: rm.type_params.clone(),
-                                                params: rm.params.clone(),
-                                                ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
-                                                    box Type::any(
-                                                        rm.span.with_ctxt(SyntaxContext::empty()),
-                                                        Default::default(),
-                                                    )
-                                                }),
-                                                metadata: Default::default(),
-                                            }),
-                                        )
-                                        .context("tried to assign a method to an index signature")?;
-                                    }
-                                }
-
-                                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                    unhandled_rhs.remove(pos);
-                                }
-                            }
-
-                            TypeElement::Index(ri) => {
-                                done = true;
-
-                                if li.params.type_eq(&ri.params)
-                                    || ri.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
-                                {
-                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == ri.span()) {
-                                        unhandled_rhs.remove(pos);
-                                    }
-
-                                    if let Some(lt) = &li.type_ann {
-                                        if let Some(rt) = &ri.type_ann {
-                                            self.assign_with_opts(data, opts, &lt, &rt)?;
-                                        }
-                                    }
-
-                                    return Ok(());
-                                }
-
-                                errors.push(
-                                    Error::SimpleAssignFailed { span, cause: None }
-                                        .context("failed to assign to an index signature"),
-                                );
                             }
                         }
-                    }
-                }
-                TypeElement::Call(lc) => {
-                    //
-                    for rm in rhs_members {
-                        match rm {
-                            TypeElement::Call(rc) => {
-                                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                    unhandled_rhs.remove(pos);
-                                }
-                                done = true;
 
-                                let res = self.assign_to_fn_like(
-                                    data,
-                                    AssignOpts {
-                                        infer_type_params_of_left: true,
-                                        ..opts
-                                    },
-                                    lc.type_params.as_ref(),
-                                    &lc.params,
-                                    lc.ret_ty.as_deref(),
-                                    rc.type_params.as_ref(),
-                                    &rc.params,
-                                    rc.ret_ty.as_deref(),
-                                );
-
-                                match res {
-                                    Ok(()) => return Ok(()),
-                                    Err(err) => {
-                                        errors.push(err);
-                                    }
-                                }
-
-                                continue;
-                            }
-                            _ => {}
+                        if !opts.is_assigning_to_class_members {
+                            return Err(Error::SimpleAssignFailed { span, cause: None }
+                                .context("failed to assign to a constructor"));
                         }
                     }
 
-                    missing_fields.push(lm.clone());
+                    _ => {}
                 }
-
-                TypeElement::Constructor(lc) => {
-                    //
-                    for rm in rhs_members {
-                        match rm {
-                            TypeElement::Constructor(rc) => {
-                                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                    unhandled_rhs.remove(pos);
-                                }
-                                done = true;
-
-                                let res = self.assign_to_fn_like(
-                                    data,
-                                    AssignOpts {
-                                        infer_type_params_of_left: true,
-                                        ..opts
-                                    },
-                                    lc.type_params.as_ref(),
-                                    &lc.params,
-                                    lc.ret_ty.as_deref(),
-                                    rc.type_params.as_ref(),
-                                    &rc.params,
-                                    rc.ret_ty.as_deref(),
-                                );
-
-                                match res {
-                                    Ok(()) => {
-                                        for rm in rhs_members {
-                                            match rm {
-                                                TypeElement::Constructor(..) => {
-                                                    if let Some(pos) =
-                                                        unhandled_rhs.iter().position(|span| *span == rm.span())
-                                                    {
-                                                        unhandled_rhs.remove(pos);
-                                                    }
-                                                }
-                                                _ => {}
-                                            }
-                                        }
-
-                                        return Ok(());
-                                    }
-                                    Err(err) => {
-                                        errors.push(err);
-                                    }
-                                }
-
-                                continue;
-                            }
-                            _ => {}
-                        }
-                    }
-
-                    if !opts.is_assigning_to_class_members {
-                        return Err(Error::SimpleAssignFailed { span, cause: None }
-                            .context("failed to assign to a constructor"));
-                    }
-                }
-
-                _ => {}
             }
         }
 

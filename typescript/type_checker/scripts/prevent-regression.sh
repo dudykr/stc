@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
-#
-# A script to prevent regression.
-#
-# This scripts compares the main branch and current pr and
-# adds all regressed lines to passing list. 
-#
-set -eu
+set -eux
 
-git diff --unified=0 origin/main -- tests/conformance.pass.txt \
-    | grep '^[-]' \
-    | sed 's/^.\{1\}//' \
-    | grep -v '^[-]' >> tests/conformance.pass.txt
+err_handler () {
+    ./scripts/_/notify.sh 'Test failed!'
+    exit 1
+}
+
+trap err_handler ERR
 
 ./scripts/sort.sh
+
+export RUST_BACKTRACE=1
+export RUST_LOG=debug,swc_common=off
+export RUST_MIN_STACK=$((16 * 1024 * 1024))
+
+cargo test --color always -q --test tsc
+
+./scripts/_/notify.sh 'Test finished!'

@@ -4,7 +4,6 @@ use crate::{
         util::ResultExt, Analyzer, Ctx,
     },
     ty::{Array, Type, TypeExt},
-    util::type_ext::TypeVecExt,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -16,7 +15,10 @@ use stc_ts_types::{
     CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, ModuleId,
     Operator, PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
 };
-use stc_utils::{cache::Freeze, ext::SpanExt};
+use stc_utils::{
+    cache::Freeze,
+    ext::{SpanExt, TypeVecExt},
+};
 use std::{borrow::Cow, mem::take, ops::AddAssign};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;

@@ -1,6 +1,5 @@
 use crate::{
     analyzer::{types::NormalizeTypeOpts, Analyzer},
-    util::type_ext::TypeVecExt,
     ValidationResult,
 };
 use itertools::Itertools;
@@ -11,7 +10,7 @@ use stc_ts_types::{
     Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, ModuleId,
     PropertySignature, Ref, Type, TypeElement, Union,
 };
-use stc_utils::debug_ctx;
+use stc_utils::{debug_ctx, ext::TypeVecExt};
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, SyntaxContext, TypeEq, DUMMY_SP};

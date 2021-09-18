@@ -337,6 +337,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "cty"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7313c0d620d0cb4dbd9d019e461a4beb501071ff46ec0ab933efb4daa76d73e3"
+
+[[package]]
 name = "darling"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -486,12 +492,6 @@ dependencies = [
  "swc_macros_common",
  "syn",
 ]
-
-[[package]]
-name = "fs_extra"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2022715d62ab30faffd124d40b76f4134a550a87792276512b18d63272333394"
 
 [[package]]
 name = "fuchsia-cprng"
@@ -789,27 +789,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd25036021b0de88a0aff6b850051563c6516d0bf53f8638938edbb9de732736"
 
 [[package]]
-name = "jemalloc-sys"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d3b9f3f5c9b31aa0f5ed3260385ac205db665baa41d49bb8338008ae94ede45"
-dependencies = [
- "cc",
- "fs_extra",
- "libc",
-]
-
-[[package]]
-name = "jemallocator"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43ae63fcfc45e99ab3d1b29a46782ad679e98436c3169d15a167a1108a724b69"
-dependencies = [
- "jemalloc-sys",
- "libc",
-]
-
-[[package]]
 name = "js-sys"
 version = "0.3.49"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -852,15 +831,6 @@ name = "libc"
 version = "0.2.97"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "12b8adadd720df158f4d70dfe7ccc6adb0472d7c55ca83445f6a5ab3e36f8fb6"
-
-[[package]]
-name = "libmimalloc-sys"
-version = "0.1.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2396cf99d2f58611cd69f0efeee4af3d2e2c7b61bed433515029163aa567e65c"
-dependencies = [
- "cc",
-]
 
 [[package]]
 name = "lock_api"
@@ -977,12 +947,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "mimalloc"
-version = "0.1.25"
+name = "mimalloc-rust"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e7c6b11afd1e5e689ac96b6d18b1fc763398fe3d7eed99e8773426bc2033dfb"
+checksum = "2ffcd5c93c5b59f49b89b58100fad6ea023dbec6f9344f0d0932a96d9497821a"
 dependencies = [
- "libmimalloc-sys",
+ "cty",
+ "mimalloc-rust-sys",
+]
+
+[[package]]
+name = "mimalloc-rust-sys"
+version = "1.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96f7f32dcc7aeb79781116048bbd27cc819b9db55805690b3379d536d40e9590"
+dependencies = [
+ "cc",
+ "cty",
 ]
 
 [[package]]
@@ -1961,6 +1942,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "stc_ts_base_type_ops"
+version = "0.1.0"
+dependencies = [
+ "rnode",
+ "stc_ts_ast_rnode",
+ "stc_ts_types",
+ "stc_utils",
+ "stc_visit",
+ "swc_atoms",
+ "swc_common",
+ "swc_ecma_ast",
+ "tracing",
+]
+
+[[package]]
 name = "stc_ts_builtin_macro"
 version = "0.1.0"
 dependencies = [
@@ -2036,6 +2032,7 @@ version = "0.1.0"
 dependencies = [
  "ansi_term 0.12.1",
  "backtrace",
+ "derivative",
  "fxhash",
  "rnode",
  "static_assertions",
@@ -2070,6 +2067,7 @@ dependencies = [
  "smallvec 1.6.1",
  "stc_testing",
  "stc_ts_ast_rnode",
+ "stc_ts_base_type_ops",
  "stc_ts_builtin_types",
  "stc_ts_dts_mutations",
  "stc_ts_env",
@@ -2119,11 +2117,15 @@ dependencies = [
  "fxhash",
  "rnode",
  "stc_ts_ast_rnode",
+ "stc_ts_base_type_ops",
+ "stc_ts_errors",
  "stc_ts_types",
  "stc_ts_utils",
  "stc_utils",
  "swc_atoms",
  "swc_common",
+ "swc_ecma_ast",
+ "tracing",
 ]
 
 [[package]]
@@ -2293,8 +2295,10 @@ version = "0.1.0"
 dependencies = [
  "rnode",
  "stc_ts_ast_rnode",
+ "stc_ts_base_type_ops",
  "stc_ts_types",
  "stc_ts_utils",
+ "stc_utils",
  "swc_common",
  "swc_ecma_ast",
  "tracing",
@@ -2347,9 +2351,9 @@ name = "stc_utils"
 version = "0.1.0"
 dependencies = [
  "ahash 0.7.4",
- "jemallocator",
- "mimalloc",
+ "mimalloc-rust",
  "once_cell",
+ "rustc-hash",
  "scoped-tls",
  "swc_common",
  "tracing",
@@ -2452,9 +2456,9 @@ dependencies = [
 
 [[package]]
 name = "swc_atoms"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bcdb70cb6ecee568e5acfda1a8c6e851ecf49443e5fb51f1b13613b5d04d2b0"
+checksum = "837a3ef86c2817228e733b6f173c821fd76f9eb21a0bc9001a826be48b00b4e7"
 dependencies = [
  "string_cache",
  "string_cache_codegen",
@@ -2862,9 +2866,9 @@ checksum = "360dfd1d6d30e05fda32ace2c8c70e9c0a9da713275777f5a4dbb8a1893930c6"
 
 [[package]]
 name = "tracing"
-version = "0.1.26"
+version = "0.1.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09adeb8c97449311ccd28a427f96fb563e7fd31aabf994189879d9da2394b89d"
+checksum = "c2ba9ab62b7d6497a8638dfda5e5c4fb3b2d5a7fca4118f2b96151c8ef1a437e"
 dependencies = [
  "cfg-if 1.0.0",
  "pin-project-lite",
@@ -2874,9 +2878,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-attributes"
-version = "0.1.15"
+version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c42e6fa53307c8a17e4ccd4dc81cf5ec38db9209f59b222210375b54ee40d1e2"
+checksum = "98863d0dd09fa59a1b79c6750ad80dbda6b75f4e71c437a6a1a8cb91a8bcbd77"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2885,9 +2889,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-core"
-version = "0.1.18"
+version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9ff14f98b1a4b289c6248a023c1c2fa1491062964e9fed67ab29c4e4da4a052"
+checksum = "46125608c26121c81b0c6d693eab5a420e416da7e43c426d2e8f7df8da8a3acf"
 dependencies = [
  "lazy_static",
 ]

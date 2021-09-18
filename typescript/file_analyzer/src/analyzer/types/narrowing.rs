@@ -1,12 +1,11 @@
 use crate::{
     analyzer::{assign::AssignOpts, Analyzer},
-    util::type_ext::TypeVecExt,
     ValidationResult,
 };
 use stc_ts_errors::DebugExt;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{KeywordTypeMetadata, Type, Union, UnionMetadata};
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use std::borrow::Cow;
 use swc_common::{Span, Spanned};
 

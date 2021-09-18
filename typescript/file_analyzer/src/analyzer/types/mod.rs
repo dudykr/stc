@@ -1,7 +1,7 @@
 use crate::{
     analyzer::{expr::TypeOfMode, generic::ExtendsOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
-    util::{type_ext::TypeVecExt, unwrap_ref_with_single_arg},
+    util::unwrap_ref_with_single_arg,
     Marks, ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
@@ -24,7 +24,7 @@ use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
     debug_ctx,
-    ext::SpanExt,
+    ext::{SpanExt, TypeVecExt},
     stack, TryOpt,
 };
 use std::{borrow::Cow, collections::HashMap};

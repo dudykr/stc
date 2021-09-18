@@ -1,6 +1,6 @@
 use crate::{
     analyzer::{expr::TypeOfMode, props::ComputedPropMode, scope::VarKind, util::ResultExt, Analyzer, Ctx, ScopeKind},
-    util::{contains_infer_type, type_ext::TypeVecExt},
+    util::contains_infer_type,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -29,7 +29,7 @@ use stc_ts_types::{
     TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
-use stc_utils::{cache::Freeze, debug_ctx, AHashSet};
+use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, AHashSet};
 use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};

@@ -11,7 +11,6 @@ use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use tracing::info;
 
 pub mod debugger;
-pub mod duplicate;
 
 pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
     if !cfg!(debug_assertions) {

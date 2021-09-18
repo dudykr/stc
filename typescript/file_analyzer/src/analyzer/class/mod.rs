@@ -9,7 +9,7 @@ use crate::{
         Analyzer, Ctx, ScopeKind,
     },
     env::ModuleConfig,
-    ty::{LitGeneralizer, TypeExt},
+    ty::TypeExt,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -24,7 +24,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_type_ops::generalization::prevent_generalize;
+use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
     Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
     Id, Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetdata,
@@ -2301,6 +2301,7 @@ impl Analyzer<'_, '_> {
                         for_overload: true,
                         ..Default::default()
                     },
+                    false,
                     ambient.type_params.as_ref(),
                     &ambient.params,
                     ambient.ret_ty.as_deref(),

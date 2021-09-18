@@ -11,6 +11,10 @@ pub trait DebugExt<T>: Into<Result<T, Error>> {
     #[inline]
     #[track_caller]
     fn context(self, msg: &str) -> Result<T, Error> {
+        if !cfg!(debug_assertions) {
+            return self.into();
+        }
+
         self.into().map_err(|err: Error| err.context(msg))
     }
 
@@ -20,6 +24,10 @@ pub trait DebugExt<T>: Into<Result<T, Error>> {
     where
         F: FnOnce() -> String,
     {
+        if !cfg!(debug_assertions) {
+            return self.into();
+        }
+
         self.into().map_err(|err: Error| err.context(msg()))
     }
 }
