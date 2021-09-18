@@ -31,33 +31,37 @@ struct StcError {
     code: usize,
 }
 
+fn get_env() -> Env {
+    let mut libs = vec![];
+    let ls = &[
+        "es2020.full",
+        "es2019.full",
+        "es2018.full",
+        "es2017.full",
+        "es2016.full",
+        "es2015.full",
+    ];
+    for s in ls {
+        libs.extend(Lib::load(s))
+    }
+    libs.sort();
+    libs.dedup();
+
+    Env::simple(
+        Rule { ..Default::default() },
+        EsVersion::latest(),
+        ModuleConfig::None,
+        &libs,
+    )
+}
+
 fn validate(input: &Path) -> Vec<StcError> {
     let tester = Tester::new();
     let diagnostics = tester
         .errors(|cm, handler| {
             let fm = cm.load_file(input).unwrap();
 
-            let mut libs = vec![];
-            let ls = &[
-                "es2020.full",
-                "es2019.full",
-                "es2018.full",
-                "es2017.full",
-                "es2016.full",
-                "es2015.full",
-            ];
-            for s in ls {
-                libs.extend(Lib::load(s))
-            }
-            libs.sort();
-            libs.dedup();
-
-            let env = Env::simple(
-                Rule { ..Default::default() },
-                EsVersion::Es2021,
-                ModuleConfig::None,
-                &libs,
-            );
+            let env = get_env();
 
             let generator = module_id::Generator::default();
             let path = Arc::new(input.to_path_buf());
@@ -142,27 +146,7 @@ fn pass_only(input: PathBuf) {
     testing::run_test2(false, |cm, handler| {
         let fm = cm.load_file(&input).unwrap();
 
-        let mut libs = vec![];
-        let ls = &[
-            "es2020.full",
-            "es2019.full",
-            "es2018.full",
-            "es2017.full",
-            "es2016.full",
-            "es2015.full",
-        ];
-        for s in ls {
-            libs.extend(Lib::load(s))
-        }
-        libs.sort();
-        libs.dedup();
-
-        let env = Env::simple(
-            Rule { ..Default::default() },
-            EsVersion::Es2021,
-            ModuleConfig::None,
-            &libs,
-        );
+        let env = get_env();
 
         let generator = module_id::Generator::default();
         let path = Arc::new(input.to_path_buf());
