@@ -1514,7 +1514,10 @@ impl Analyzer<'_, '_> {
                                                 &var_ty,
                                             )
                                             .context("tried to validate a varaible declared multiple times")
-                                            .convert_err(|err| Error::VarDeclNotCompatible { span: err.span() });
+                                            .convert_err(|err| Error::VarDeclNotCompatible {
+                                                span: err.span(),
+                                                cause: box err,
+                                            });
 
                                         if let Err(err) = res {
                                             self.storage.report(err);

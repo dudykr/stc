@@ -70,6 +70,8 @@ pub enum Error {
     /// TS2403
     VarDeclNotCompatible {
         span: Span,
+
+        cause: Box<Error>,
     },
 
     /// TS2795
