@@ -53,6 +53,8 @@ pub(crate) struct AssignOpts {
     ///   a = b;
     /// ```
     pub allow_unknown_type: bool,
+
+    /// Allow assignmnet to [Type::Param].
     pub allow_assignment_to_param: bool,
 
     pub for_overload: bool,
