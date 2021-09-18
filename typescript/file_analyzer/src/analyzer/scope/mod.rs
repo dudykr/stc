@@ -1490,16 +1490,17 @@ impl Analyzer<'_, '_> {
                                         )?;
                                         ty.make_clone_cheap();
 
-                                        let mut var_ty = self.expand(
-                                            span,
-                                            generalized_var_ty,
-                                            ExpandOpts {
-                                                full: true,
-                                                expand_union: true,
-                                                ..Default::default()
-                                            },
-                                        )?;
-                                        var_ty.make_clone_cheap();
+                                        let var_ty = self
+                                            .expand(
+                                                span,
+                                                generalized_var_ty,
+                                                ExpandOpts {
+                                                    full: true,
+                                                    expand_union: true,
+                                                    ..Default::default()
+                                                },
+                                            )?
+                                            .freezed();
 
                                         let res = self
                                             .assign_with_opts(
