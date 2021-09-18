@@ -16,7 +16,6 @@ var a16: {
 
 
 var b16: new <T>(x: (a: T) => T) => T[];
-a16 = b16; // error
 b16 = a16; // error
 
 
