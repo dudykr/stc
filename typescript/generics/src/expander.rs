@@ -45,21 +45,23 @@ impl GenericExpander<'_> {
             Type::StaticThis(..) | Type::Intrinsic(..) | Type::Symbol(..) => return ty,
 
             Type::Param(param) => {
-                if !self.dejavu.contains(&param.name) {
-                    if let Some(ty) = self.params.get(&param.name) {
-                        info!(
-                            "generic_expand: Expanding type parameter `{}` => {}",
-                            param.name,
-                            dump_type_as_string(&self.cm, &ty)
-                        );
+                if self.dejavu.contains(&param.name) {
+                    return ty;
+                }
 
-                        // If it's not self-referential, we fold it again.
+                if let Some(ty) = self.params.get(&param.name) {
+                    info!(
+                        "generic_expand: Expanding type parameter `{}` => {}",
+                        param.name,
+                        dump_type_as_string(&self.cm, &ty)
+                    );
 
-                        self.dejavu.insert(param.name.clone());
-                        let ty = ty.clone().fold_with(self);
-                        self.dejavu.remove(&param.name);
-                        return ty;
-                    }
+                    // If it's not self-referential, we fold it again.
+
+                    self.dejavu.insert(param.name.clone());
+                    let ty = ty.clone().fold_with(self);
+                    self.dejavu.remove(&param.name);
+                    return ty;
                 }
             }
 
