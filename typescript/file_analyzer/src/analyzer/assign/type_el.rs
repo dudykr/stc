@@ -1059,6 +1059,7 @@ impl Analyzer<'_, '_> {
                                                 self.assign_to_fn_like(
                                                     data,
                                                     opts,
+                                                    true,
                                                     lp_ty.type_params.as_ref(),
                                                     &lp_ty.params,
                                                     Some(&lp_ty.ret_ty),
@@ -1112,6 +1113,7 @@ impl Analyzer<'_, '_> {
                                             .assign_to_fn_like(
                                                 data,
                                                 opts,
+                                                true,
                                                 lm.type_params.as_ref(),
                                                 &lm.params,
                                                 lm.ret_ty.as_deref(),
@@ -1146,6 +1148,7 @@ impl Analyzer<'_, '_> {
                                                 self.assign_to_fn_like(
                                                     data,
                                                     opts,
+                                                    true,
                                                     lm.type_params.as_ref(),
                                                     &lm.params,
                                                     lm.ret_ty.as_deref(),
@@ -1306,6 +1309,7 @@ impl Analyzer<'_, '_> {
                                                 infer_type_params_of_left: true,
                                                 ..opts
                                             },
+                                            true,
                                             lc.type_params.as_ref(),
                                             &lc.params,
                                             lc.ret_ty.as_deref(),
@@ -1359,6 +1363,7 @@ impl Analyzer<'_, '_> {
                                             infer_type_params_of_left: true,
                                             ..opts
                                         },
+                                        false,
                                         lc.type_params.as_ref(),
                                         &lc.params,
                                         lc.ret_ty.as_deref(),

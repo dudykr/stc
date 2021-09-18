@@ -2301,6 +2301,7 @@ impl Analyzer<'_, '_> {
                         for_overload: true,
                         ..Default::default()
                     },
+                    false,
                     ambient.type_params.as_ref(),
                     &ambient.params,
                     ambient.ret_ty.as_deref(),

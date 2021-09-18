@@ -36,6 +36,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         data: &mut AssignData,
         opts: AssignOpts,
+        is_call: bool,
         l_type_params: Option<&TypeParamDecl>,
         l_params: &[FnParam],
         l_ret_ty: Option<&Type>,
@@ -160,6 +161,7 @@ impl Analyzer<'_, '_> {
                                 .assign_to_fn_like(
                                     data,
                                     opts,
+                                    is_call,
                                     l_type_params,
                                     &new_l_params,
                                     l_ret_ty,
@@ -200,6 +202,7 @@ impl Analyzer<'_, '_> {
                     .assign_to_fn_like(
                         data,
                         opts,
+                        is_call,
                         l_type_params,
                         l_params,
                         l_ret_ty,
@@ -247,6 +250,7 @@ impl Analyzer<'_, '_> {
                     .assign_to_fn_like(
                         data,
                         opts,
+                        is_call,
                         None,
                         &new_l_params,
                         new_l_ret_ty.as_ref(),
@@ -301,6 +305,7 @@ impl Analyzer<'_, '_> {
                     .assign_to_fn_like(
                         data,
                         opts,
+                        is_call,
                         l_type_params,
                         l_params,
                         l_ret_ty,
@@ -383,6 +388,7 @@ impl Analyzer<'_, '_> {
                 self.assign_to_fn_like(
                     data,
                     opts,
+                    true,
                     l.type_params.as_ref(),
                     &l.params,
                     Some(&l.ret_ty),
@@ -406,6 +412,7 @@ impl Analyzer<'_, '_> {
                                         infer_type_params_of_left: true,
                                         ..opts
                                     },
+                                    true,
                                     l.type_params.as_ref(),
                                     &l.params,
                                     Some(&l.ret_ty),
@@ -493,6 +500,7 @@ impl Analyzer<'_, '_> {
                 self.assign_to_fn_like(
                     data,
                     opts,
+                    false,
                     l.type_params.as_ref(),
                     &l.params,
                     Some(&l.type_ann),
@@ -526,6 +534,7 @@ impl Analyzer<'_, '_> {
                                         allow_assignment_to_param: opts.allow_assignment_to_param || r_el_cnt > 1,
                                         ..opts
                                     },
+                                    false,
                                     l.type_params.as_ref(),
                                     &l.params,
                                     Some(&l.type_ann),
