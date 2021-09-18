@@ -337,7 +337,6 @@ impl Analyzer<'_, '_> {
                         for_overload: false,
                         allow_assignment_of_void: true,
                         allow_assignment_to_void: !opts.for_overload,
-                        allow_assignment_to_param_constraint: true,
                         ..opts
                     },
                 )
@@ -504,16 +503,16 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                // `tsc` gives up.
-                if rt
-                    .members
-                    .iter()
-                    .filter(|m| matches!(m, TypeElement::Constructor(..)))
-                    .count()
-                    > 1
-                {
-                    return Ok(());
-                }
+                // // `tsc` gives up.
+                // if rt
+                //     .members
+                //     .iter()
+                //     .filter(|m| matches!(m, TypeElement::Constructor(..)))
+                //     .count()
+                //     > 1
+                // {
+                //     return Ok(());
+                // }
 
                 if !errors.is_empty() {
                     return Err(Error::SimpleAssignFailedWithCause { span, cause: errors });
