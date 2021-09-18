@@ -366,6 +366,7 @@ impl Analyzer<'_, '_> {
     /// a = b;
     /// b = a; // error
     /// ```
+    #[instrument(skip(self, data, lt, l, r, opts))]
     pub(super) fn assign_to_function(
         &mut self,
         data: &mut AssignData,
@@ -480,6 +481,7 @@ impl Analyzer<'_, '_> {
     /// a18 = b18; // ok
     /// b18 = a18; // ok
     /// ```
+    #[instrument(skip(self, data, lt, l, r, opts))]
     pub(super) fn assign_to_constructor(
         &mut self,
         data: &mut AssignData,
