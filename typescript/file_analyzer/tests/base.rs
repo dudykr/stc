@@ -142,7 +142,7 @@ fn validate(input: &Path) -> Vec<StcError> {
 
 #[fixture("tests/errors/**/*.ts")]
 fn errors(input: PathBuf) {
-    let err = testing::run_test2(false, |cm, handler| {
+    testing::run_test2(false, |cm, handler| {
         let fm = cm.load_file(&input).unwrap();
 
         let env = get_env();
@@ -201,8 +201,6 @@ fn errors(input: PathBuf) {
         return Err(());
     })
     .unwrap_err();
-
-    err.compare_to_file(&input.with_extension("ans")).unwrap();
 }
 
 #[fixture("tests/pass-only/**/*.ts")]
