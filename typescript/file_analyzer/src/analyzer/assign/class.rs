@@ -314,6 +314,7 @@ impl Analyzer<'_, '_> {
                                 self.assign_to_fn_like(
                                     data,
                                     opts,
+                                    true,
                                     lm.type_params.as_ref(),
                                     &lm.params,
                                     Some(&lm.ret_ty),

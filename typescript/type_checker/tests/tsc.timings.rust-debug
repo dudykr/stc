@@ -1,4 +1,5 @@
 Timings {
     lines: 73792,
-    dur: 3.415916081s,
+    check_time: 3.039442186s,
+    full_time: 5.119459413s,
 }

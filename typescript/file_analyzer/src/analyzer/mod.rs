@@ -23,10 +23,7 @@ use stc_ts_ast_rnode::{
     RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
 };
 use stc_ts_dts_mutations::Mutations;
-use stc_ts_errors::{
-    debug::{debugger::Debugger, duplicate::DuplicateTracker},
-    Error,
-};
+use stc_ts_errors::{debug::debugger::Debugger, Error};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
 use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData};
@@ -260,8 +257,6 @@ pub struct Analyzer<'scope, 'b> {
 
     pub(crate) is_builtin: bool,
 
-    duplicated_tracker: DuplicateTracker,
-
     cur_facts: Facts,
 
     /// Used while inferencing types.
@@ -326,9 +321,7 @@ impl Analyzer<'_, '_> {
     where
         N: Debug + Spanned,
     {
-        if cfg!(debug_assertions) && NO_DUP {
-            self.duplicated_tracker.record(node)
-        }
+        if cfg!(debug_assertions) && NO_DUP {}
     }
 }
 
@@ -548,7 +541,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             },
             loader,
             is_builtin,
-            duplicated_tracker: Default::default(),
             cur_facts: Default::default(),
             mapped_type_param_name: vec![],
             imports_by_id: Default::default(),
@@ -618,7 +610,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             imports_by_id,
             cur_facts,
             mut child_scope,
-            dup,
             prepend_stmts,
             append_stmts,
             mutations,
@@ -646,7 +637,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 child.imports_by_id,
                 child.cur_facts,
                 child.scope.remove_parent(),
-                child.duplicated_tracker,
                 child.prepend_stmts,
                 child.append_stmts,
                 child.mutations.take(),
@@ -663,7 +653,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
 
         hook(self);
 
-        self.duplicated_tracker.record_all(dup);
         self.scope.move_types_from_child(&mut child_scope);
         self.scope.move_vars_from_child(&mut child_scope);
         self.prepend_stmts.extend(prepend_stmts);

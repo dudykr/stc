@@ -1,5 +1,6 @@
 use once_cell::sync::Lazy;
 use std::{self, fs::read_to_string, path::PathBuf, process::Command};
+use tracing::Level;
 use tracing_subscriber::prelude::*;
 
 pub fn get_git_root() -> PathBuf {
@@ -32,6 +33,7 @@ pub fn logger() -> impl tracing::Subscriber {
         .without_time()
         .with_target(false)
         .with_ansi(true)
+        .with_max_level(Level::DEBUG)
         .with_test_writer()
         .pretty()
         .finish()
@@ -46,6 +48,7 @@ pub fn init_tracing(name: String) -> tracing::subscriber::DefaultGuard {
         .without_time()
         .with_target(false)
         .with_ansi(true)
+        .with_max_level(Level::DEBUG)
         .with_test_writer()
         .pretty()
         .finish();

@@ -1,6 +1,5 @@
 use crate::{
     analyzer::{Analyzer, ScopeKind},
-    util::type_ext::TypeVecExt,
     validator::ValidateWith,
     ValidationResult,
 };
@@ -17,7 +16,7 @@ use stc_ts_types::{
     Accessor, CallSignature, FnParam, Function, FunctionMetadata, Key, KeywordType, MethodSignature, PropertySignature,
     Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamDecl, Union, UnionMetadata,
 };
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use std::{borrow::Cow, iter::repeat, time::Instant};
 use swc_atoms::JsWord;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};

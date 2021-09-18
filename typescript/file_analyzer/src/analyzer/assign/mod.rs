@@ -15,7 +15,7 @@ use stc_ts_types::{
     TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, debug_ctx, stack};
-use std::{borrow::Cow, collections::HashMap, time::Instant};
+use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -53,6 +53,8 @@ pub(crate) struct AssignOpts {
     ///   a = b;
     /// ```
     pub allow_unknown_type: bool,
+
+    /// Allow assignmnet to [Type::Param].
     pub allow_assignment_to_param: bool,
 
     pub for_overload: bool,
@@ -133,6 +135,8 @@ pub(crate) struct AssignOpts {
     pub infer_type_params_of_left: bool,
 
     pub is_assigning_to_class_members: bool,
+
+    pub reverse_ret_ty: bool,
 }
 
 #[derive(Default)]
@@ -483,7 +487,6 @@ impl Analyzer<'_, '_> {
         left.assert_valid();
         right.assert_valid();
 
-        let start = Instant::now();
         let l = dump_type_as_string(&self.cm, &left);
         let r = dump_type_as_string(&self.cm, &right);
 
@@ -515,16 +518,7 @@ impl Analyzer<'_, '_> {
         let dejavu = data.dejavu.pop();
         debug_assert!(dejavu.is_some());
 
-        let end = Instant::now();
-
-        debug!(
-            "[assign ({:?}), (time = {:?})] {} = {}\n{:?} ",
-            res.is_ok(),
-            end - start,
-            l,
-            r,
-            opts
-        );
+        debug!("[assign ({:?})] {} = {}\n{:?} ", res.is_ok(), l, r, opts);
 
         res
     }
@@ -759,10 +753,9 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let mut new_lhs = self
+                let new_lhs = self
                     .expand_top_ref(span, Cow::Borrowed(to), Default::default())?
-                    .into_owned();
-                new_lhs.make_clone_cheap();
+                    .freezed();
                 // self.replace(&mut new_lhs, &[(to, &Type::any(span))]);
 
                 return self
@@ -1277,7 +1270,12 @@ impl Analyzer<'_, '_> {
                     },
                 }
 
-                fail!()
+                match to.normalize() {
+                    Type::Union(..) => {}
+                    _ => {
+                        fail!()
+                    }
+                }
             }
 
             Type::Predicate(..) => match rhs {

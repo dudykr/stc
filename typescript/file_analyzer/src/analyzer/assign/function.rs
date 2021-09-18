@@ -19,6 +19,7 @@ use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 
+/// Methods to handle assignment to function types and constructor types.
 impl Analyzer<'_, '_> {
     #[instrument(skip(
         self,
@@ -35,6 +36,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         data: &mut AssignData,
         opts: AssignOpts,
+        is_call: bool,
         l_type_params: Option<&TypeParamDecl>,
         l_params: &[FnParam],
         l_ret_ty: Option<&Type>,
@@ -159,6 +161,7 @@ impl Analyzer<'_, '_> {
                                 .assign_to_fn_like(
                                     data,
                                     opts,
+                                    is_call,
                                     l_type_params,
                                     &new_l_params,
                                     l_ret_ty,
@@ -199,6 +202,7 @@ impl Analyzer<'_, '_> {
                     .assign_to_fn_like(
                         data,
                         opts,
+                        is_call,
                         l_type_params,
                         l_params,
                         l_ret_ty,
@@ -246,6 +250,7 @@ impl Analyzer<'_, '_> {
                     .assign_to_fn_like(
                         data,
                         opts,
+                        is_call,
                         None,
                         &new_l_params,
                         new_l_ret_ty.as_ref(),
@@ -300,6 +305,7 @@ impl Analyzer<'_, '_> {
                     .assign_to_fn_like(
                         data,
                         opts,
+                        is_call,
                         l_type_params,
                         l_params,
                         l_ret_ty,
@@ -328,19 +334,41 @@ impl Analyzer<'_, '_> {
         if let Some(l_ret_ty) = l_ret_ty {
             if let Some(r_ret_ty) = r_ret_ty {
                 // TODO: Verify type parameters.
-                self.assign_inner(
-                    data,
-                    l_ret_ty,
-                    r_ret_ty,
-                    AssignOpts {
-                        allow_assignment_of_void: true,
-                        allow_assignment_to_void: !opts.for_overload,
-                        // We are done with the overload context.
-                        for_overload: false,
-                        ..opts
-                    },
-                )
-                .context("tried to assign the return type of a function to the return type of another function")?;
+
+                if is_call && opts.reverse_ret_ty {
+                    self.assign_inner(
+                        data,
+                        r_ret_ty,
+                        l_ret_ty,
+                        AssignOpts {
+                            // We are done with the overload context.
+                            for_overload: false,
+                            allow_assignment_of_void: true,
+                            allow_assignment_to_void: !opts.for_overload,
+                            reverse_ret_ty: false,
+                            ..opts
+                        },
+                    )
+                    .context(
+                        "tried to assign the return type of a function to the return type of another function \
+                         (reversed)",
+                    )?;
+                } else {
+                    self.assign_inner(
+                        data,
+                        l_ret_ty,
+                        r_ret_ty,
+                        AssignOpts {
+                            // We are done with the overload context.
+                            for_overload: false,
+                            allow_assignment_of_void: true,
+                            allow_assignment_to_void: !opts.for_overload,
+                            reverse_ret_ty: false,
+                            ..opts
+                        },
+                    )
+                    .context("tried to assign the return type of a function to the return type of another function")?;
+                }
             }
         }
 
@@ -359,6 +387,7 @@ impl Analyzer<'_, '_> {
     /// a = b;
     /// b = a; // error
     /// ```
+    #[instrument(skip(self, data, lt, l, r, opts))]
     pub(super) fn assign_to_function(
         &mut self,
         data: &mut AssignData,
@@ -381,6 +410,7 @@ impl Analyzer<'_, '_> {
                 self.assign_to_fn_like(
                     data,
                     opts,
+                    true,
                     l.type_params.as_ref(),
                     &l.params,
                     Some(&l.ret_ty),
@@ -404,6 +434,7 @@ impl Analyzer<'_, '_> {
                                         infer_type_params_of_left: true,
                                         ..opts
                                     },
+                                    true,
                                     l.type_params.as_ref(),
                                     &l.params,
                                     Some(&l.ret_ty),
@@ -435,6 +466,43 @@ impl Analyzer<'_, '_> {
         Err(Error::SimpleAssignFailed { span, cause: None })
     }
 
+    ///
+    /// # Note
+    ///
+    /// We should distinguish assign failure due to type parameter instantiation
+    /// with assign failure due to type element kind mismatch.
+    ///
+    /// ```ts
+    /// declare var a16: {
+    ///     new (x: {
+    ///         new (a: number): number;
+    ///         new (a?: number): number;
+    ///     }): number[];
+    ///     new (x: {
+    ///         new (a: boolean): boolean;
+    ///         new (a?: boolean): boolean;
+    ///     }): boolean[];
+    /// };
+    /// declare var b16: new <T>(x: (a: T) => T) => T[];
+    /// a16 = b16; // error
+    /// b16 = a16; // error
+    ///
+    ///
+    /// declare var a18: {
+    ///     new (x: {
+    ///         (a: number): number;
+    ///         (a: string): string;
+    ///     }): any[];
+    ///     new (x: {
+    ///         (a: boolean): boolean;
+    ///         (a: Date): Date;
+    ///     }): any[];
+    /// }
+    /// declare var b18: new <T>(x: (a: T) => T) => T[];
+    /// a18 = b18; // ok
+    /// b18 = a18; // ok
+    /// ```
+    #[instrument(skip(self, data, lt, l, r, opts))]
     pub(super) fn assign_to_constructor(
         &mut self,
         data: &mut AssignData,
@@ -455,6 +523,7 @@ impl Analyzer<'_, '_> {
                 self.assign_to_fn_like(
                     data,
                     opts,
+                    false,
                     l.type_params.as_ref(),
                     &l.params,
                     Some(&l.type_ann),
@@ -471,6 +540,12 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(rt) => {
+                let r_el_cnt = rt
+                    .members
+                    .iter()
+                    .filter(|m| matches!(m, TypeElement::Constructor(..)))
+                    .count();
+
                 let mut errors = vec![];
                 for (idx, rm) in rt.members.iter().enumerate() {
                     match rm {
@@ -478,7 +553,11 @@ impl Analyzer<'_, '_> {
                             if let Err(err) = self
                                 .assign_to_fn_like(
                                     data,
-                                    opts,
+                                    AssignOpts {
+                                        allow_assignment_to_param: opts.allow_assignment_to_param || r_el_cnt > 1,
+                                        ..opts
+                                    },
+                                    false,
                                     l.type_params.as_ref(),
                                     &l.params,
                                     Some(&l.type_ann),
@@ -488,8 +567,7 @@ impl Analyzer<'_, '_> {
                                 )
                                 .with_context(|| {
                                     format!(
-                                        "tried to assign parameters of a constructor to them of another constructor \
-                                         ({}th element)",
+                                        "tried to assign a constructor to another constructor ({}th element)",
                                         idx
                                     )
                                 })
@@ -503,6 +581,7 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     }
                 }
+
                 if !errors.is_empty() {
                     return Err(Error::SimpleAssignFailedWithCause { span, cause: errors });
                 }
@@ -564,6 +643,7 @@ impl Analyzer<'_, '_> {
     /// # Notes
     ///
     ///  - `string` is assignable to `...args: any[]`.
+    #[instrument(skip(self, data, l, r, opts))]
     fn assign_param(
         &mut self,
         data: &mut AssignData,
@@ -626,11 +706,27 @@ impl Analyzer<'_, '_> {
             };
 
         let res = if reverse {
-            self.assign_with_opts(data, opts, &r_ty, &l_ty)
-                .context("tried to assign the type of a parameter to another (reversed)")
+            self.assign_with_opts(
+                data,
+                AssignOpts {
+                    reverse_ret_ty: true,
+                    ..opts
+                },
+                &r_ty,
+                &l_ty,
+            )
+            .context("tried to assign the type of a parameter to another (reversed)")
         } else {
-            self.assign_with_opts(data, opts, &l_ty, &r_ty)
-                .context("tried to assign the type of a parameter to another")
+            self.assign_with_opts(
+                data,
+                AssignOpts {
+                    reverse_ret_ty: true,
+                    ..opts
+                },
+                &l_ty,
+                &r_ty,
+            )
+            .context("tried to assign the type of a parameter to another")
         };
 
         res.convert_err(|err| match &err {
@@ -674,6 +770,7 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// So, it's an error if `l.params.len() < r.params.len()`.
+    #[instrument(skip(self, data, opts, l, r))]
     pub(crate) fn assign_params(
         &mut self,
         data: &mut AssignData,
@@ -772,7 +869,7 @@ impl Analyzer<'_, '_> {
                             ..opts
                         },
                     )
-                    .with_context(|| format!("tried to assign a method parameter to a method parameter",))?;
+                    .with_context(|| format!("tried to assign a parameter to another parameter",))?;
                 }
                 EitherOrBoth::Left(_) => {}
                 EitherOrBoth::Right(_) => {}

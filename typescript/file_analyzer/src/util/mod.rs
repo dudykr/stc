@@ -1,6 +1,6 @@
 use crate::ty::{Intersection, Type, Union};
-use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RBlockStmt, RBool, RIdent, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
+use rnode::{Visit, VisitWith};
+use stc_ts_ast_rnode::{RBlockStmt, RBool, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
 use stc_ts_type_ops::metadata::TypeFinder;
 use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeParam};
 use std::fmt::Debug;
@@ -105,29 +105,6 @@ where
     }
 
     TypeFinder::find(n, check)
-}
-
-/// Applies `mark` to **all** types.
-pub(crate) struct Marker {
-    pub mark: Mark,
-}
-
-impl VisitMut<Type> for Marker {
-    fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO: PERF
-        ty.normalize_mut();
-
-        let mut span = ty.span();
-        span.ctxt = span.ctxt.apply_mark(self.mark);
-        ty.respan(span);
-
-        ty.visit_mut_children_with(self);
-    }
-}
-
-/// Prevent interop with hygiene.
-impl VisitMut<RIdent> for Marker {
-    fn visit_mut(&mut self, _: &mut RIdent) {}
 }
 
 pub(crate) fn is_str_or_union(t: &Type) -> bool {

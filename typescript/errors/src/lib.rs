@@ -5,6 +5,7 @@
 
 pub use self::result_ext::DebugExt;
 use ansi_term::Color::Yellow;
+use derivative::Derivative;
 use fmt::Formatter;
 use static_assertions::assert_eq_size;
 use stc_ts_ast_rnode::RTsModuleName;
@@ -58,7 +59,8 @@ impl Errors {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Derivative, Clone, PartialEq, Spanned)]
+#[derivative(Debug)]
 pub enum Error {
     /// TS2339
     TupleTooShort {
@@ -68,6 +70,8 @@ pub enum Error {
     /// TS2403
     VarDeclNotCompatible {
         span: Span,
+
+        cause: Box<Error>,
     },
 
     /// TS2795
@@ -886,8 +890,11 @@ pub enum Error {
     /// TS2322
     AssignFailed {
         span: Span,
+        #[derivative(Debug = "ignore")]
         left: Box<Type>,
+        #[derivative(Debug = "ignore")]
         right_ident: Option<Span>,
+        #[derivative(Debug = "ignore")]
         right: Box<Type>,
         cause: Vec<Error>,
     },

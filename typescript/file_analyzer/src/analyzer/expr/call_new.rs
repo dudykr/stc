@@ -13,7 +13,6 @@ use crate::{
         CallSignature, ConstructorSignature, FnParam, Method, MethodSignature, Type, TypeElement, TypeOrSpread,
         TypeParam, TypeParamInstantiation,
     },
-    util::type_ext::TypeVecExt,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -39,7 +38,7 @@ use stc_ts_types::{
     Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};

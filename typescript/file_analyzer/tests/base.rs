@@ -31,33 +31,37 @@ struct StcError {
     code: usize,
 }
 
+fn get_env() -> Env {
+    let mut libs = vec![];
+    let ls = &[
+        "es2020.full",
+        "es2019.full",
+        "es2018.full",
+        "es2017.full",
+        "es2016.full",
+        "es2015.full",
+    ];
+    for s in ls {
+        libs.extend(Lib::load(s))
+    }
+    libs.sort();
+    libs.dedup();
+
+    Env::simple(
+        Rule { ..Default::default() },
+        EsVersion::latest(),
+        ModuleConfig::None,
+        &libs,
+    )
+}
+
 fn validate(input: &Path) -> Vec<StcError> {
     let tester = Tester::new();
     let diagnostics = tester
         .errors(|cm, handler| {
             let fm = cm.load_file(input).unwrap();
 
-            let mut libs = vec![];
-            let ls = &[
-                "es2020.full",
-                "es2019.full",
-                "es2018.full",
-                "es2017.full",
-                "es2016.full",
-                "es2015.full",
-            ];
-            for s in ls {
-                libs.extend(Lib::load(s))
-            }
-            libs.sort();
-            libs.dedup();
-
-            let env = Env::simple(
-                Rule { ..Default::default() },
-                EsVersion::Es2021,
-                ModuleConfig::None,
-                &libs,
-            );
+            let env = get_env();
 
             let generator = module_id::Generator::default();
             let path = Arc::new(input.to_path_buf());
@@ -134,6 +138,129 @@ fn validate(input: &Path) -> Vec<StcError> {
             }
         })
         .collect()
+}
+
+#[fixture("tests/errors/**/*.ts")]
+fn errors(input: PathBuf) {
+    testing::run_test2(false, |cm, handler| {
+        let fm = cm.load_file(&input).unwrap();
+
+        let env = get_env();
+
+        let generator = module_id::Generator::default();
+        let path = Arc::new(input.to_path_buf());
+
+        let mut node_id_gen = NodeIdGenerator::default();
+        let mut module = {
+            let lexer = Lexer::new(
+                Syntax::Typescript(TsConfig { ..Default::default() }),
+                EsVersion::Es2021,
+                SourceFileInput::from(&*fm),
+                None,
+            );
+            let mut parser = Parser::new_from(lexer);
+
+            parser.parse_module().unwrap()
+        };
+        module = GLOBALS.set(env.shared().swc_globals(), || {
+            module.fold_with(&mut ts_resolver(env.shared().marks().top_level_mark()))
+        });
+        let module = RModule::from_orig(&mut node_id_gen, module);
+
+        let mut storage = Single {
+            parent: None,
+            id: generator.generate(&path).1,
+            path,
+            info: Default::default(),
+        };
+
+        {
+            // Don't print logs from builtin modules.
+            let _tracing = tracing::subscriber::set_default(logger());
+
+            let mut analyzer = Analyzer::root(env.clone(), cm.clone(), box &mut storage, &NoopLoader, None);
+            module.visit_with(&mut analyzer);
+        }
+
+        let errors = ::stc_ts_errors::Error::flatten(storage.info.errors.into_iter().collect());
+
+        if errors.is_empty() {
+            panic!("Should emit at least one error")
+        }
+
+        GLOBALS.set(env.shared().swc_globals(), || {
+            for e in errors {
+                e.emit(&handler);
+            }
+        });
+
+        if false {
+            return Ok(());
+        }
+
+        return Err(());
+    })
+    .unwrap_err();
+}
+
+#[fixture("tests/pass-only/**/*.ts")]
+fn pass_only(input: PathBuf) {
+    testing::run_test2(false, |cm, handler| {
+        let fm = cm.load_file(&input).unwrap();
+
+        let env = get_env();
+
+        let generator = module_id::Generator::default();
+        let path = Arc::new(input.to_path_buf());
+
+        let mut node_id_gen = NodeIdGenerator::default();
+        let mut module = {
+            let lexer = Lexer::new(
+                Syntax::Typescript(TsConfig { ..Default::default() }),
+                EsVersion::Es2021,
+                SourceFileInput::from(&*fm),
+                None,
+            );
+            let mut parser = Parser::new_from(lexer);
+
+            parser.parse_module().unwrap()
+        };
+        module = GLOBALS.set(env.shared().swc_globals(), || {
+            module.fold_with(&mut ts_resolver(env.shared().marks().top_level_mark()))
+        });
+        let module = RModule::from_orig(&mut node_id_gen, module);
+
+        let mut storage = Single {
+            parent: None,
+            id: generator.generate(&path).1,
+            path,
+            info: Default::default(),
+        };
+
+        {
+            // Don't print logs from builtin modules.
+            let _tracing = tracing::subscriber::set_default(logger());
+
+            let mut analyzer = Analyzer::root(env.clone(), cm.clone(), box &mut storage, &NoopLoader, None);
+            module.visit_with(&mut analyzer);
+        }
+
+        let errors = ::stc_ts_errors::Error::flatten(storage.info.errors.into_iter().collect());
+        let ok = errors.is_empty();
+
+        GLOBALS.set(env.shared().swc_globals(), || {
+            for e in errors {
+                e.emit(&handler);
+            }
+        });
+
+        if !ok {
+            return Err(());
+        }
+
+        return Ok(());
+    })
+    .unwrap();
 }
 
 /// This invokes `tsc` to get expected result.

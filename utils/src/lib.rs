@@ -18,13 +18,9 @@ pub type AHashMap<K, V> = HashMap<K, V, ahash::RandomState>;
 
 pub type AHashSet<V> = HashSet<V, ahash::RandomState>;
 
-#[cfg(all(unix, not(target_env = "musl")))]
+#[cfg(all(target_arch = "x86_64", not(target_env = "musl"), not(debug_assertions)))]
 #[global_allocator]
-static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
-
-#[cfg(windows)]
-#[global_allocator]
-static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
+static ALLOC: mimalloc_rust::GlobalMiMalloc = mimalloc_rust::GlobalMiMalloc;
 
 /// If true, errors will not be buffered.
 pub fn early_error() -> bool {

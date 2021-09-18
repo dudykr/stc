@@ -4,6 +4,7 @@ use crate::{
 };
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RTsEnumMemberId, RTsLit};
+use stc_ts_base_type_ops::apply_mapped_flags;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
@@ -59,7 +60,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(mut new) = new_type {
                             for member in &mut new.members {
-                                self.apply_mapped_flags(member, m.optional, m.readonly);
+                                apply_mapped_flags(member, m.optional, m.readonly);
                             }
 
                             return Ok(Some(Type::TypeLit(new)));
@@ -96,7 +97,7 @@ impl Analyzer<'_, '_> {
                                     };
                                     let mut el = TypeElement::Property(p);
 
-                                    self.apply_mapped_flags(&mut el, m.optional, m.readonly);
+                                    apply_mapped_flags(&mut el, m.optional, m.readonly);
                                     Ok(el)
                                 }
                                 PropertyName::IndexSignature { span, params, readonly } => {
@@ -198,7 +199,7 @@ impl Analyzer<'_, '_> {
                                     accessor: Default::default(),
                                 };
                                 let mut el = TypeElement::Property(p);
-                                self.apply_mapped_flags(&mut el, m.optional, m.readonly);
+                                apply_mapped_flags(&mut el, m.optional, m.readonly);
 
                                 Ok(el)
                             })
@@ -489,83 +490,12 @@ impl Analyzer<'_, '_> {
         let type_lit = self.convert_type_to_type_lit(span, &ty)?.map(Cow::into_owned);
         if let Some(mut type_lit) = type_lit {
             for m in &mut type_lit.members {
-                self.apply_mapped_flags(m, optional, readonly);
+                apply_mapped_flags(m, optional, readonly);
             }
 
             Ok(Type::TypeLit(type_lit))
         } else {
             Ok(ty)
-        }
-    }
-
-    /// TODO(kdy1): I don't know well about TruePlusMinus currently.
-    /// I have to search for it.
-    pub(crate) fn apply_mapped_flags(
-        &self,
-        el: &mut TypeElement,
-        optional: Option<TruePlusMinus>,
-        readonly: Option<TruePlusMinus>,
-    ) {
-        match optional {
-            Some(v) => match el {
-                TypeElement::Call(_) => {}
-                TypeElement::Constructor(_) => {}
-                TypeElement::Property(p) => match v {
-                    TruePlusMinus::True => {
-                        p.optional = true;
-                    }
-                    TruePlusMinus::Plus => {
-                        p.optional = true;
-                    }
-                    TruePlusMinus::Minus => {
-                        p.optional = false;
-                    }
-                },
-                TypeElement::Method(m) => match v {
-                    TruePlusMinus::True => {
-                        m.optional = true;
-                    }
-                    TruePlusMinus::Plus => {
-                        m.optional = true;
-                    }
-                    TruePlusMinus::Minus => {
-                        m.optional = false;
-                    }
-                },
-                TypeElement::Index(_) => {}
-            },
-            None => {}
-        }
-
-        match readonly {
-            Some(v) => match el {
-                TypeElement::Call(_) => {}
-                TypeElement::Constructor(_) => {}
-                TypeElement::Property(p) => match v {
-                    TruePlusMinus::True => {
-                        p.readonly = true;
-                    }
-                    TruePlusMinus::Plus => {
-                        p.readonly = true;
-                    }
-                    TruePlusMinus::Minus => {
-                        p.readonly = false;
-                    }
-                },
-                TypeElement::Index(_) => {}
-                TypeElement::Method(m) => match v {
-                    TruePlusMinus::True => {
-                        m.readonly = true;
-                    }
-                    TruePlusMinus::Plus => {
-                        m.readonly = true;
-                    }
-                    TruePlusMinus::Minus => {
-                        m.readonly = false;
-                    }
-                },
-            },
-            None => {}
         }
     }
 }

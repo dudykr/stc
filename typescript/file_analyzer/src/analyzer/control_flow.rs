@@ -8,7 +8,7 @@ use crate::{
     },
     ty::Type,
     type_facts::TypeFacts,
-    util::{type_ext::TypeVecExt, EndsWithRet},
+    util::EndsWithRet,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -23,7 +23,11 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
 use stc_ts_utils::MapWithMut;
-use stc_utils::{cache::Freeze, debug_ctx, ext::SpanExt};
+use stc_utils::{
+    cache::Freeze,
+    debug_ctx,
+    ext::{SpanExt, TypeVecExt},
+};
 use std::{
     borrow::{Borrow, Cow},
     collections::hash_map::Entry,

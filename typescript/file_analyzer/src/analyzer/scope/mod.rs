@@ -10,7 +10,7 @@ use crate::{
         Analyzer, Ctx, ResultExt,
     },
     loader::ModuleInfo,
-    ty::{self, Alias, Interface, PropertySignature, Ref, Tuple, Type, TypeExt, TypeLit, Union},
+    ty::{self, Alias, Interface, Ref, Tuple, Type, TypeExt, TypeLit, Union},
     type_facts::TypeFacts,
     util::contains_infer_type,
     ValidationResult,
@@ -18,14 +18,14 @@ use crate::{
 use fxhash::{FxHashMap, FxHashSet};
 use iter::once;
 use once_cell::sync::Lazy;
-use rnode::{Fold, FoldWith, Visit, VisitMut, VisitMutWith, VisitWith};
+use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
     DebugExt, Error,
 };
 use stc_ts_generics::ExpandGenericOpts;
-use stc_ts_type_ops::Fix;
+use stc_ts_type_ops::{union_finder::UnionFinder, Fix};
 use stc_ts_types::{
     name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection,
     Key, KeywordType, KeywordTypeMetadata, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement,
@@ -1490,16 +1490,17 @@ impl Analyzer<'_, '_> {
                                         )?;
                                         ty.make_clone_cheap();
 
-                                        let mut var_ty = self.expand(
-                                            span,
-                                            generalized_var_ty,
-                                            ExpandOpts {
-                                                full: true,
-                                                expand_union: true,
-                                                ..Default::default()
-                                            },
-                                        )?;
-                                        var_ty.make_clone_cheap();
+                                        let var_ty = self
+                                            .expand(
+                                                span,
+                                                generalized_var_ty,
+                                                ExpandOpts {
+                                                    full: true,
+                                                    expand_union: true,
+                                                    ..Default::default()
+                                                },
+                                            )?
+                                            .freezed();
 
                                         let res = self
                                             .assign_with_opts(
@@ -1513,7 +1514,10 @@ impl Analyzer<'_, '_> {
                                                 &var_ty,
                                             )
                                             .context("tried to validate a varaible declared multiple times")
-                                            .convert_err(|err| Error::VarDeclNotCompatible { span: err.span() });
+                                            .convert_err(|err| Error::VarDeclNotCompatible {
+                                                span: err.span(),
+                                                cause: box err,
+                                            });
 
                                         if let Err(err) = res {
                                             self.storage.report(err);
@@ -2719,25 +2723,6 @@ impl Fold<stc_ts_types::ClassMember> for Expander<'_, '_, '_> {
 impl Fold<TypeElement> for Expander<'_, '_, '_> {
     fn fold(&mut self, node: TypeElement) -> TypeElement {
         node
-    }
-}
-
-#[derive(Debug, Default)]
-struct UnionFinder {
-    found: bool,
-}
-
-impl Visit<PropertySignature> for UnionFinder {
-    fn visit(&mut self, _: &PropertySignature) {}
-}
-
-impl Visit<ty::MethodSignature> for UnionFinder {
-    fn visit(&mut self, _: &ty::MethodSignature) {}
-}
-
-impl Visit<Union> for UnionFinder {
-    fn visit(&mut self, u: &Union) {
-        self.found = true;
     }
 }
 

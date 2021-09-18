@@ -1,8 +1,13 @@
+#![feature(box_patterns)]
+#![feature(box_syntax)]
 #![feature(specialization)]
 #![allow(incomplete_features)]
+#![allow(unused_variables)]
+#![allow(dead_code)]
 
 use swc_common::TypeEq;
 
+pub mod expander;
 pub mod type_param;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, TypeEq)]
