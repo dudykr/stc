@@ -19,6 +19,7 @@ use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 
+/// Methods to handle assignment to function types and constructor types.
 impl Analyzer<'_, '_> {
     #[instrument(skip(
         self,
@@ -436,6 +437,42 @@ impl Analyzer<'_, '_> {
         Err(Error::SimpleAssignFailed { span, cause: None })
     }
 
+    ///
+    /// # Note
+    ///
+    /// We should distinguish assign failure due to type parameter instantiation
+    /// with assign failure due to type element kind mismatch.
+    ///
+    /// ```ts
+    /// declare var a16: {
+    ///     new (x: {
+    ///         new (a: number): number;
+    ///         new (a?: number): number;
+    ///     }): number[];
+    ///     new (x: {
+    ///         new (a: boolean): boolean;
+    ///         new (a?: boolean): boolean;
+    ///     }): boolean[];
+    /// };
+    /// declare var b16: new <T>(x: (a: T) => T) => T[];
+    /// a16 = b16; // error
+    /// b16 = a16; // error
+    ///
+    ///
+    /// declare var a18: {
+    ///     new (x: {
+    ///         (a: number): number;
+    ///         (a: string): string;
+    ///     }): any[];
+    ///     new (x: {
+    ///         (a: boolean): boolean;
+    ///         (a: Date): Date;
+    ///     }): any[];
+    /// }
+    /// declare var b18: new <T>(x: (a: T) => T) => T[];
+    /// a18 = b18; // ok
+    /// b18 = a18; // ok
+    /// ```
     pub(super) fn assign_to_constructor(
         &mut self,
         data: &mut AssignData,
