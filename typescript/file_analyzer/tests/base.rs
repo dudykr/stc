@@ -184,6 +184,10 @@ fn errors(input: PathBuf) {
 
         let errors = ::stc_ts_errors::Error::flatten(storage.info.errors.into_iter().collect());
 
+        if errors.is_empty() {
+            panic!("Should emit at least one error")
+        }
+
         GLOBALS.set(env.shared().swc_globals(), || {
             for e in errors {
                 e.emit(&handler);
@@ -198,7 +202,7 @@ fn errors(input: PathBuf) {
     })
     .unwrap_err();
 
-    err.compare_to_file(&input.with_extension("swc-stderr")).unwrap();
+    err.compare_to_file(&input.with_extension("ans")).unwrap();
 }
 
 #[fixture("tests/pass-only/**/*.ts")]
