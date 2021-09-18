@@ -334,20 +334,41 @@ impl Analyzer<'_, '_> {
         if let Some(l_ret_ty) = l_ret_ty {
             if let Some(r_ret_ty) = r_ret_ty {
                 // TODO: Verify type parameters.
-                self.assign_inner(
-                    data,
-                    l_ret_ty,
-                    r_ret_ty,
-                    AssignOpts {
-                        // We are done with the overload context.
-                        for_overload: false,
-                        allow_assignment_of_void: true,
-                        allow_assignment_to_void: !opts.for_overload,
-                        // allow_assignment_to_param_constraint: true,
-                        ..opts
-                    },
-                )
-                .context("tried to assign the return type of a function to the return type of another function")?;
+
+                if is_call && opts.reverse_ret_ty {
+                    self.assign_inner(
+                        data,
+                        r_ret_ty,
+                        l_ret_ty,
+                        AssignOpts {
+                            // We are done with the overload context.
+                            for_overload: false,
+                            allow_assignment_of_void: true,
+                            allow_assignment_to_void: !opts.for_overload,
+                            reverse_ret_ty: false,
+                            ..opts
+                        },
+                    )
+                    .context(
+                        "tried to assign the return type of a function to the return type of another function \
+                         (reversed)",
+                    )?;
+                } else {
+                    self.assign_inner(
+                        data,
+                        l_ret_ty,
+                        r_ret_ty,
+                        AssignOpts {
+                            // We are done with the overload context.
+                            for_overload: false,
+                            allow_assignment_of_void: true,
+                            allow_assignment_to_void: !opts.for_overload,
+                            reverse_ret_ty: false,
+                            ..opts
+                        },
+                    )
+                    .context("tried to assign the return type of a function to the return type of another function")?;
+                }
             }
         }
 
@@ -685,11 +706,27 @@ impl Analyzer<'_, '_> {
             };
 
         let res = if reverse {
-            self.assign_with_opts(data, opts, &r_ty, &l_ty)
-                .context("tried to assign the type of a parameter to another (reversed)")
+            self.assign_with_opts(
+                data,
+                AssignOpts {
+                    reverse_ret_ty: true,
+                    ..opts
+                },
+                &r_ty,
+                &l_ty,
+            )
+            .context("tried to assign the type of a parameter to another (reversed)")
         } else {
-            self.assign_with_opts(data, opts, &l_ty, &r_ty)
-                .context("tried to assign the type of a parameter to another")
+            self.assign_with_opts(
+                data,
+                AssignOpts {
+                    reverse_ret_ty: true,
+                    ..opts
+                },
+                &l_ty,
+                &r_ty,
+            )
+            .context("tried to assign the type of a parameter to another")
         };
 
         res.convert_err(|err| match &err {
