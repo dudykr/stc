@@ -759,10 +759,9 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let mut new_lhs = self
+                let new_lhs = self
                     .expand_top_ref(span, Cow::Borrowed(to), Default::default())?
-                    .into_owned();
-                new_lhs.make_clone_cheap();
+                    .freezed();
                 // self.replace(&mut new_lhs, &[(to, &Type::any(span))]);
 
                 return self
