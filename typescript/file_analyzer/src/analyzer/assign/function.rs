@@ -561,17 +561,6 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                // `tsc` gives up.
-                if rt
-                    .members
-                    .iter()
-                    .filter(|m| matches!(m, TypeElement::Constructor(..)))
-                    .count()
-                    > 1
-                {
-                    return Ok(());
-                }
-
                 if !errors.is_empty() {
                     return Err(Error::SimpleAssignFailedWithCause { span, cause: errors });
                 }
