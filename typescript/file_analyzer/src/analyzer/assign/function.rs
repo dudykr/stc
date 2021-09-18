@@ -333,10 +333,11 @@ impl Analyzer<'_, '_> {
                     l_ret_ty,
                     r_ret_ty,
                     AssignOpts {
-                        allow_assignment_of_void: true,
-                        allow_assignment_to_void: !opts.for_overload,
                         // We are done with the overload context.
                         for_overload: false,
+                        allow_assignment_of_void: true,
+                        allow_assignment_to_void: !opts.for_overload,
+                        allow_assignment_to_param_constraint: true,
                         ..opts
                     },
                 )
