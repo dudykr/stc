@@ -12,6 +12,7 @@ trap err_handler ERR
 
 export RUST_BACKTRACE=1
 export RUST_LOG=debug,swc_common=off
+export RUST_MIN_STACK=$((16 * 1024 * 1024))
 
 # We prevent regression using faster checks
 cargo test -q -p stc_ts_file_analyzer --test base
