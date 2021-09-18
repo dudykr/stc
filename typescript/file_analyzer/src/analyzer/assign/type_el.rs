@@ -1290,9 +1290,13 @@ impl Analyzer<'_, '_> {
                         for (ri, rm) in rhs_members.iter().enumerate() {
                             match rm {
                                 TypeElement::Call(rc) => {
-                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                        unhandled_rhs.remove(pos);
+                                    for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Call(_))) {
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                            unhandled_rhs.remove(pos);
+                                            continue;
+                                        }
                                     }
+
                                     done = true;
 
                                     let res = self
@@ -1337,9 +1341,16 @@ impl Analyzer<'_, '_> {
                         for rm in rhs_members {
                             match rm {
                                 TypeElement::Constructor(rc) => {
-                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                        unhandled_rhs.remove(pos);
+                                    for rm in rhs_members
+                                        .iter()
+                                        .filter(|rm| matches!(rm, TypeElement::Constructor(_)))
+                                    {
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                            unhandled_rhs.remove(pos);
+                                            continue;
+                                        }
                                     }
+
                                     done = true;
 
                                     let res = self.assign_to_fn_like(
