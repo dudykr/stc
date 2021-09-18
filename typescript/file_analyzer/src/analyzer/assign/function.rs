@@ -741,6 +741,7 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// So, it's an error if `l.params.len() < r.params.len()`.
+    #[instrument(skip(self, data, opts, l, r))]
     pub(crate) fn assign_params(
         &mut self,
         data: &mut AssignData,
