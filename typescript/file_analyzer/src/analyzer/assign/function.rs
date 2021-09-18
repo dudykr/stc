@@ -631,6 +631,7 @@ impl Analyzer<'_, '_> {
     /// # Notes
     ///
     ///  - `string` is assignable to `...args: any[]`.
+    #[instrument(skip(self, data, l, r, opts))]
     fn assign_param(
         &mut self,
         data: &mut AssignData,
