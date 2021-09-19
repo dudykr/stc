@@ -35,6 +35,7 @@ impl Analyzer<'_, '_> {
                         span,
                         allow_unknown_rhs: true,
                         allow_missing_fields: true,
+                        allow_assignment_of_param: true,
                         ..Default::default()
                     },
                     &parent,
