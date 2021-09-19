@@ -37,6 +37,9 @@ pub(crate) struct AssignOpts {
     pub span: Span,
     pub right_ident_span: Option<Span>,
     pub allow_unknown_rhs: bool,
+
+    pub allow_missing_fields: bool,
+
     /// Allow assigning `unknown` type to other types. This should be `true` for
     /// parameters because the following is valid.
     ///
