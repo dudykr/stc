@@ -61,6 +61,7 @@ pub(crate) struct AssignOpts {
     pub allow_assignment_to_param: bool,
 
     pub allow_assignment_of_param: bool,
+    pub skip_call_and_constructor_elem: bool,
 
     pub for_overload: bool,
 

@@ -1197,7 +1197,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-            } else {
+            } else if !opts.skip_call_and_constructor_elem {
                 match lm {
                     // TODO: Check type of the index.
                     TypeElement::Index(li) => {
