@@ -20,7 +20,7 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::instrument;
+use tracing::{debug, instrument};
 
 /// Methods to handle assignment to function types and constructor types.
 impl Analyzer<'_, '_> {
@@ -304,6 +304,20 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )?;
+
+                if cfg!(debug_assertions) {
+                    debug!("Callable map:\n{}", dump_type_map(&self.cm, &map));
+                }
+
+                let new_l_params = self
+                    .expand_type_params(&map, l_params.to_vec(), Default::default())
+                    .context("tried to expand type parameters of lhs as a step of function assignemnt")?
+                    .freezed();
+                let new_l_ret_ty = self
+                    .expand_type_params(&map, l_ret_ty.cloned(), Default::default())
+                    .context("tried to expand return type of lhs as a step of function assignemnt")?
+                    .freezed();
+
                 let new_r_params = self
                     .expand_type_params(&map, r_params.to_vec(), Default::default())
                     .context("tried to expand type parameters of rhs as a step of function assignemnt")?
@@ -322,8 +336,8 @@ impl Analyzer<'_, '_> {
                         opts,
                         is_call,
                         l_type_params,
-                        l_params,
-                        l_ret_ty,
+                        &new_l_params,
+                        new_l_ret_ty.as_ref(),
                         None,
                         &new_r_params,
                         new_r_ret_ty.as_ref(),
