@@ -706,9 +706,6 @@ impl Analyzer<'_, '_> {
         l_ty.make_clone_cheap();
         r_ty.make_clone_cheap();
 
-        l_ty.assert_valid();
-        r_ty.assert_valid();
-
         let reverse = !opts.for_overload
             && match (l_ty.normalize_instance(), r_ty.normalize_instance()) {
                 (Type::Union(..), Type::Union(..)) => false,
