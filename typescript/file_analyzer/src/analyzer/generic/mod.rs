@@ -460,9 +460,9 @@ impl Analyzer<'_, '_> {
         let param_str = dump_type_as_string(&self.cm, &param);
         let arg_str = dump_type_as_string(&self.cm, &arg);
 
-        let res = self.infer_type_inner(span, inferred, param, arg, opts);
-
         debug!("Infer: `{}` === `{}`", param_str, arg_str);
+
+        let res = self.infer_type_inner(span, inferred, param, arg, opts);
 
         res
     }
