@@ -510,9 +510,6 @@ impl Analyzer<'_, '_> {
         let param = param.normalize();
         let arg = arg.normalize();
 
-        print_type(&"param", &self.cm, &param);
-        print_type(&"arg", &self.cm, &arg);
-
         match param {
             Type::Instance(..) => {
                 let mut param = self.normalize(Some(span), Cow::Borrowed(&param), Default::default())?;
