@@ -60,6 +60,8 @@ pub(crate) struct AssignOpts {
     /// Allow assignmnet to [Type::Param].
     pub allow_assignment_to_param: bool,
 
+    pub allow_assignment_of_param: bool,
+
     pub for_overload: bool,
 
     pub for_castablity: bool,
@@ -694,6 +696,16 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if to.is_any() {
+            return Ok(());
+        }
+
+        if opts.allow_assignment_of_param {
+            if rhs.normalize().is_type_param() {
+                return Ok(());
+            }
+        }
+
         match rhs {
             Type::IndexedAccessType(rhs) => {
                 let err = Error::NoSuchProperty {
@@ -909,12 +921,6 @@ impl Analyzer<'_, '_> {
         }
 
         match to {
-            // let a: any = 'foo'
-            Type::Keyword(KeywordType {
-                kind: TsKeywordTypeKind::TsAnyKeyword,
-                ..
-            }) => return Ok(()),
-
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
