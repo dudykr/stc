@@ -286,6 +286,7 @@ impl Analyzer<'_, '_> {
 
                 child.resolve_parent_interfaces(&d.extends);
                 child.report_error_for_conflicting_parents(d.id.span, &ty.extends);
+                child.report_error_for_wrong_interface_inheritance(d.id.span, &ty.body, &ty.extends);
 
                 ty.make_clone_cheap();
 

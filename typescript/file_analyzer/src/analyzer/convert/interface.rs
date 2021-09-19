@@ -3,12 +3,21 @@ use crate::{
     ValidationResult,
 };
 use stc_ts_errors::Error;
-use stc_ts_types::TsExpr;
+use stc_ts_types::{TsExpr, TypeElement};
 use stc_utils::cache::Freeze;
 use swc_common::{Span, TypeEq};
 use tracing::instrument;
 
 impl Analyzer<'_, '_> {
+    #[instrument(skip(self, span, body, parent))]
+    pub(super) fn report_error_for_wrong_interface_inheritance(
+        &mut self,
+        span: Span,
+        body: &[TypeElement],
+        parent: &[TsExpr],
+    ) {
+    }
+
     #[instrument(skip(self, span, parent))]
     pub(crate) fn report_error_for_conflicting_parents(&mut self, span: Span, parent: &[TsExpr]) {
         if self.is_builtin {
