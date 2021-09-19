@@ -460,20 +460,9 @@ impl Analyzer<'_, '_> {
         let param_str = dump_type_as_string(&self.cm, &param);
         let arg_str = dump_type_as_string(&self.cm, &arg);
 
-        let start = Instant::now();
-
         let res = self.infer_type_inner(span, inferred, param, arg, opts);
 
-        let end = Instant::now();
-
-        debug!(
-            kind = "perf",
-            op = "infer_type",
-            "infer_type: `{}` === `{}`. (took {:?})",
-            param_str,
-            arg_str,
-            end - start
-        );
+        debug!("Infer: `{}` === `{}`", param_str, arg_str);
 
         res
     }
