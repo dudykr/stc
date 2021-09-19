@@ -205,7 +205,10 @@ impl Analyzer<'_, '_> {
                 return self
                     .assign_to_fn_like(
                         data,
-                        opts,
+                        AssignOpts {
+                            allow_assignment_of_void: Some(false),
+                            ..opts
+                        },
                         is_call,
                         l_type_params,
                         l_params,
@@ -347,7 +350,7 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             // We are done with the overload context.
                             for_overload: false,
-                            allow_assignment_of_void: true,
+                            allow_assignment_of_void: Some(opts.allow_assignment_of_void.unwrap_or(true)),
                             allow_assignment_to_void: !opts.for_overload,
                             reverse_ret_ty: false,
                             ..opts
@@ -365,7 +368,7 @@ impl Analyzer<'_, '_> {
                         AssignOpts {
                             // We are done with the overload context.
                             for_overload: false,
-                            allow_assignment_of_void: true,
+                            allow_assignment_of_void: Some(opts.allow_assignment_of_void.unwrap_or(true)),
                             allow_assignment_to_void: !opts.for_overload,
                             reverse_ret_ty: false,
                             ..opts

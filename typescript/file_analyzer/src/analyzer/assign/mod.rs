@@ -73,7 +73,8 @@ pub(crate) struct AssignOpts {
     pub allow_iterable_on_rhs: bool,
 
     /// If `true`, assignment will success if rhs is `void`.
-    pub allow_assignment_of_void: bool,
+    /// [None] means `false`.
+    pub allow_assignment_of_void: Option<bool>,
 
     /// If `true`, assignment will success if lhs is `void`.
     pub allow_assignment_to_void: bool,
@@ -1100,7 +1101,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if opts.allow_assignment_of_void {
+        if opts.allow_assignment_of_void.unwrap_or_default() {
             if rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
                 return Ok(());
             }
