@@ -181,7 +181,8 @@ impl Analyzer<'_, '_> {
 
         let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
             (Some(lt), Some(rt)) if lt.params.len() == rt.params.len() => {
-                //
+                // TODO: This is wrong.
+
                 let map = lt
                     .params
                     .iter()
