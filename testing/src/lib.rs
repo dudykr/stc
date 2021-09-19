@@ -48,7 +48,7 @@ pub fn init_tracing(name: String) -> tracing::subscriber::DefaultGuard {
         .without_time()
         .with_target(false)
         .with_ansi(true)
-        .with_max_level(Level::DEBUG)
+        .with_max_level(Level::INFO)
         .with_test_writer()
         .pretty()
         .finish();
