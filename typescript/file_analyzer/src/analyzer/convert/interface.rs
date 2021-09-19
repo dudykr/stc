@@ -16,6 +16,37 @@ impl Analyzer<'_, '_> {
         body: &[TypeElement],
         parent: &[TsExpr],
     ) {
+        if self.is_builtin {
+            return;
+        }
+
+        for p in parent.iter() {
+            let res: ValidationResult<()> = try {
+                let parent = self
+                    .type_of_ts_entity_name(span, self.ctx.module_id, &p.expr, p.type_args.as_deref())?
+                    .freezed();
+
+                self.assign_to_type_elements(
+                    &mut Default::default(),
+                    AssignOpts {
+                        span,
+                        allow_unknown_rhs: true,
+                        allow_missing_fields: true,
+                        ..Default::default()
+                    },
+                    span,
+                    body,
+                    &parent,
+                    Default::default(),
+                )?;
+            };
+
+            if let Err(err) = res {
+                self.storage
+                    .report(Error::InvalidInterfaceInheritance { span, cause: box err });
+                return;
+            }
+        }
     }
 
     #[instrument(skip(self, span, parent))]
