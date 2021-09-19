@@ -656,7 +656,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let constraint = constraint.as_ref().map(|ty| ty.normalize());
-                if !self.ctx.skip_identical_while_inferencing {
+                if !opts.for_fn_assignment && !self.ctx.skip_identical_while_inferencing {
                     if let Some(prev) = inferred.type_params.get(name).cloned() {
                         let ctx = Ctx {
                             skip_identical_while_inferencing: true,
