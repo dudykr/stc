@@ -185,6 +185,11 @@ impl Analyzer<'_, '_> {
                     .params
                     .iter()
                     .zip(rt.params.iter())
+                    .filter(|(l, r)| match (&l.constraint, &r.constraint) {
+                        (None, Some(..)) => return false,
+                        // TODO: Use extends()
+                        _ => true,
+                    })
                     .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
                     .collect::<FxHashMap<_, _>>();
                 let mut new_r_params = self
