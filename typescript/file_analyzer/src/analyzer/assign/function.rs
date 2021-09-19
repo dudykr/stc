@@ -179,47 +179,53 @@ impl Analyzer<'_, '_> {
             check!(Constructor);
         }
 
-        let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
+        match (&l_type_params, r_type_params) {
             (Some(lt), Some(rt)) if lt.params.len() == rt.params.len() && lt.params.len() == 1 => {
-                let map = lt
-                    .params
-                    .iter()
-                    .zip(rt.params.iter())
-                    .filter(|(l, r)| match (&l.constraint, &r.constraint) {
-                        (None, Some(..)) => return false,
-                        // TODO: Use extends()
-                        _ => true,
-                    })
-                    .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
-                    .collect::<FxHashMap<_, _>>();
-                let mut new_r_params = self
-                    .expand_type_params(&map, r_params.to_vec(), Default::default())
-                    .context("tried to expand type parameters as a step of function assignemnt")?;
-                let mut new_r_ret_ty = self
-                    .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
-                    .context("tried to expand return type of rhs as a step of function assignemnt")?;
+                if lt.params[0].constraint.is_none() || rt.params[0].constraint.is_none() {
+                    let map = lt
+                        .params
+                        .iter()
+                        .zip(rt.params.iter())
+                        .filter(|(l, r)| match (&l.constraint, &r.constraint) {
+                            (None, Some(..)) => return false,
+                            // TODO: Use extends()
+                            _ => true,
+                        })
+                        .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
+                        .collect::<FxHashMap<_, _>>();
+                    let mut new_r_params = self
+                        .expand_type_params(&map, r_params.to_vec(), Default::default())
+                        .context("tried to expand type parameters as a step of function assignemnt")?;
+                    let mut new_r_ret_ty = self
+                        .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
+                        .context("tried to expand return type of rhs as a step of function assignemnt")?;
 
-                new_r_params.make_clone_cheap();
-                new_r_ret_ty.make_clone_cheap();
+                    new_r_params.make_clone_cheap();
+                    new_r_ret_ty.make_clone_cheap();
 
-                return self
-                    .assign_to_fn_like(
-                        data,
-                        AssignOpts {
-                            allow_assignment_of_void: Some(false),
-                            ..opts
-                        },
-                        is_call,
-                        l_type_params,
-                        l_params,
-                        l_ret_ty,
-                        None,
-                        &new_r_params,
-                        new_r_ret_ty.as_ref(),
-                    )
-                    .context("tried to assign to a mapped (wrong) function");
+                    return self
+                        .assign_to_fn_like(
+                            data,
+                            AssignOpts {
+                                allow_assignment_of_void: Some(false),
+                                ..opts
+                            },
+                            is_call,
+                            l_type_params,
+                            l_params,
+                            l_ret_ty,
+                            None,
+                            &new_r_params,
+                            new_r_ret_ty.as_ref(),
+                        )
+                        .context("tried to assign to a mapped (wrong) function");
+                }
             }
 
+            _ => {}
+        }
+
+        let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
             (Some(lt), None) if opts.infer_type_params_of_left => {
                 let opts = AssignOpts {
                     infer_type_params_of_left: false,
