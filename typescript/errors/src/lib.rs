@@ -904,6 +904,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2322
+    AssignFailedDueToOptionalityDifference {
+        span: Span,
+    },
+
     ObjectAssignFailed {
         span: Span,
         errors: Vec<Error>,
