@@ -301,15 +301,14 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )?;
-                let mut new_r_params = self
+                let new_r_params = self
                     .expand_type_params(&map, r_params.to_vec(), Default::default())
-                    .context("tried to expand type parameters of rhs as a step of function assignemnt")?;
-                let mut new_r_ret_ty = self
+                    .context("tried to expand type parameters of rhs as a step of function assignemnt")?
+                    .freezed();
+                let new_r_ret_ty = self
                     .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
-                    .context("tried to expand return type of rhs as a step of function assignemnt")?;
-
-                new_r_params.make_clone_cheap();
-                new_r_ret_ty.make_clone_cheap();
+                    .context("tried to expand return type of rhs as a step of function assignemnt")?
+                    .freezed();
 
                 let _panic_ctx = debug_ctx!(format!("new_r_params = {:?}", new_r_params));
                 let _panic_ctx = debug_ctx!(format!("new_r_ret_ty = {:?}", new_r_ret_ty));
