@@ -19,6 +19,9 @@ impl Analyzer<'_, '_> {
         if self.is_builtin {
             return;
         }
+        if body.is_empty() {
+            return;
+        }
 
         for p in parent.iter() {
             let res: ValidationResult<()> = try {
