@@ -1020,6 +1020,12 @@ impl Analyzer<'_, '_> {
                                             }
                                         }
 
+                                        if !opts.for_castablity {
+                                            if !lp.optional && rp.optional {
+                                                return Err(Error::AssignFailedDueToOptionalityDifference { span });
+                                            }
+                                        }
+
                                         // Allow assigning undefined to optional properties.
                                         (|| {
                                             if opts.for_castablity {
