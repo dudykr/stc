@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::{
     analyzer::{assign::AssignOpts, Analyzer},
     ValidationResult,
@@ -25,9 +27,12 @@ impl Analyzer<'_, '_> {
 
         for p in parent.iter() {
             let res: ValidationResult<()> = try {
-                let parent = self
-                    .type_of_ts_entity_name(span, self.ctx.module_id, &p.expr, p.type_args.as_deref())?
-                    .freezed();
+                let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &p.expr, p.type_args.as_deref())?;
+                let parent = self.normalize(None, Cow::Owned(parent), Default::default())?.freezed();
+
+                if matches!(parent.normalize(), Type::Mapped(..) | Type::Tuple(..)) {
+                    continue;
+                }
 
                 self.assign_with_opts(
                     &mut Default::default(),
