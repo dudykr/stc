@@ -10,7 +10,10 @@ use crate::{
 use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, dump_type_map},
+    DebugExt, Error,
+};
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, debug_ctx};
 use std::borrow::Cow;
@@ -325,7 +328,12 @@ impl Analyzer<'_, '_> {
                         &new_r_params,
                         new_r_ret_ty.as_ref(),
                     )
-                    .context("tried to assign to an expanded callable");
+                    .with_context(|| {
+                        format!(
+                            "tried to assign to an expanded callable\nMap:\n{}",
+                            dump_type_map(&self.cm, &map)
+                        )
+                    });
             }
 
             _ => (r_params, r_ret_ty),
