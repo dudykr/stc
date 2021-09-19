@@ -28,19 +28,19 @@ pub fn load_txt(path: &str) -> Vec<String> {
         .collect()
 }
 
-pub fn logger() -> impl tracing::Subscriber {
+pub fn logger(level: Level) -> impl tracing::Subscriber {
     tracing_subscriber::FmtSubscriber::builder()
         .without_time()
         .with_target(false)
         .with_ansi(true)
-        .with_max_level(Level::DEBUG)
+        .with_max_level(level)
         .with_test_writer()
         .pretty()
         .finish()
 }
 
-pub fn init_logger() -> tracing::subscriber::DefaultGuard {
-    tracing::subscriber::set_default(logger())
+pub fn init_logger(level: Level) -> tracing::subscriber::DefaultGuard {
+    tracing::subscriber::set_default(logger(level))
 }
 
 pub fn init_tracing(name: String) -> tracing::subscriber::DefaultGuard {
