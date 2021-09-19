@@ -1861,6 +1861,7 @@ parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName4.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName40.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName41.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName6.ts
+parser/ecmascript6/Iterators/parserForOfStatement1
 parser/ecmascript6/Iterators/parserForOfStatement10.ts
 parser/ecmascript6/Iterators/parserForOfStatement11.ts
 parser/ecmascript6/Iterators/parserForOfStatement12.ts
