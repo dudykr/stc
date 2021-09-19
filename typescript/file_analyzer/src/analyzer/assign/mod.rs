@@ -1239,6 +1239,10 @@ impl Analyzer<'_, '_> {
                 //
                 match to {
                     Type::Param(TypeParam { name: ref l_name, .. }) => {
+                        if opts.allow_assignment_to_param {
+                            return Ok(());
+                        }
+
                         if name == l_name {
                             return Ok(());
                         }
