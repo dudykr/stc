@@ -30,7 +30,17 @@ impl Analyzer<'_, '_> {
                 let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &p.expr, p.type_args.as_deref())?;
                 let parent = self.normalize(None, Cow::Owned(parent), Default::default())?.freezed();
 
-                if matches!(parent.normalize(), Type::Mapped(..) | Type::Tuple(..)) {
+                if matches!(
+                    parent.normalize(),
+                    Type::Mapped(..)
+                        | Type::Tuple(..)
+                        | Type::Function(..)
+                        | Type::Constructor(..)
+                        | Type::Array(..)
+                        | Type::Enum(..)
+                        | Type::Namespace(..)
+                        | Type::Module(..)
+                ) {
                     continue;
                 }
 
