@@ -3,9 +3,9 @@ use crate::{
     ValidationResult,
 };
 use stc_ts_errors::Error;
-use stc_ts_types::{TsExpr, TypeElement};
+use stc_ts_types::{TsExpr, Type, TypeElement, TypeLit};
 use stc_utils::cache::Freeze;
-use swc_common::{Span, TypeEq};
+use swc_common::{Span, TypeEq, DUMMY_SP};
 use tracing::instrument;
 
 impl Analyzer<'_, '_> {
@@ -26,7 +26,7 @@ impl Analyzer<'_, '_> {
                     .type_of_ts_entity_name(span, self.ctx.module_id, &p.expr, p.type_args.as_deref())?
                     .freezed();
 
-                self.assign_to_type_elements(
+                self.assign_with_opts(
                     &mut Default::default(),
                     AssignOpts {
                         span,
@@ -34,10 +34,12 @@ impl Analyzer<'_, '_> {
                         allow_missing_fields: true,
                         ..Default::default()
                     },
-                    span,
-                    body,
                     &parent,
-                    Default::default(),
+                    &Type::TypeLit(TypeLit {
+                        span: DUMMY_SP,
+                        members: body.to_vec(),
+                        metadata: Default::default(),
+                    }),
                 )?;
             };
 
