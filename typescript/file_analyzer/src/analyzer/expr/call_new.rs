@@ -26,7 +26,7 @@ use stc_ts_ast_rnode::{
     RTsTypeParamInstantiation, RTsTypeRef,
 };
 use stc_ts_errors::{
-    debug::{dump_type_as_string, print_backtrace, print_type},
+    debug::{dump_type_as_string, dump_type_map, print_backtrace, print_type},
     DebugExt, Error,
 };
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -2694,6 +2694,11 @@ impl Analyzer<'_, '_> {
                         }),
                     );
                 }
+
+                debug!(
+                    "call_new: Defaulting type parameters to unknown:\n{}",
+                    dump_type_map(&self.cm, &map)
+                );
 
                 ty = self.expand_type_params(&map, ty, Default::default())?;
             }
