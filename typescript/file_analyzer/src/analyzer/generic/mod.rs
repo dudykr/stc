@@ -29,7 +29,7 @@ use stc_utils::{
 use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, error, info, instrument, trace, warn};
+use tracing::{debug, error, info, instrument, span, trace, warn, Level};
 
 mod expander;
 mod inference;
@@ -442,7 +442,6 @@ impl Analyzer<'_, '_> {
     /// arr([1, u]) // Ok
     /// arr([{}, u]) // Ok
     /// ```
-    #[instrument(name = "infer_type", skip(self, span, inferred, param, arg, opts))]
     fn infer_type(
         &mut self,
         span: Span,
@@ -460,7 +459,11 @@ impl Analyzer<'_, '_> {
         let param_str = dump_type_as_string(&self.cm, &param);
         let arg_str = dump_type_as_string(&self.cm, &arg);
 
-        debug!("Infer: `{}` === `{}`", param_str, arg_str);
+        let _tracing = if cfg!(debug_assertions) {
+            Some(span!(Level::ERROR, "infer_type", param = &*param_str, arg = &*arg_str).entered())
+        } else {
+            None
+        };
 
         let res = self.infer_type_inner(span, inferred, param, arg, opts);
 
