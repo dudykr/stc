@@ -2443,6 +2443,8 @@ impl Analyzer<'_, '_> {
             debug!("Inferring arg types for a call");
             let mut inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
 
+            debug!("call_new: Inferred types:\n{}", dump_type_map(&self.cm, &inferred));
+
             let expanded_param_types = params
                 .into_iter()
                 .map(|v| -> ValidationResult<_> {
