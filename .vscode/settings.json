@@ -30,17 +30,22 @@
     "no-such-field",
     "missing-structure-fields"
   ],
-  "rust-analyzer.cargo.loadOutDirsFromCheck": true,
   "rust-analyzer.procMacro.enable": true,
   "rust-analyzer.updates.channel": "stable",
   "rust-analyzer.diagnostics.enable": false,
   "rust-analyzer.diagnostics.enableExperimental": false,
   "rust-analyzer.lens.methodReferences": true,
-  "favorites.resources": [
-    "typescript/errors/src/lib.rs",
-    "typescript/file_analyzer/tests",
-    "typescript/type_checker/tests/tsc-stats.rust-debug",
-    "typescript/type_checker/tests/wip-stats.rust-debug"
+  "rust-analyzer.assist.importEnforceGranularity": true,
+  // Touch bar
+  "keyboard.touchbar.enabled": true,
+  "keyboard.touchbar.ignored": [
+    "workbench.action.navigateBack",
+    "workbench.action.navigateForward",
+    "workbench.action.debug.start",
+    "workbench.action.debug.run"
   ],
-  "rust-analyzer.assist.importEnforceGranularity": true
+  "touch-bar-commands.enable.cmd3": true,
+  "touch-bar-commands.command.1": "typescript/type_checker/scripts/check.sh",
+  "touch-bar-commands.command.2": "typescript/type_checker/scripts/test.sh",
+  "touch-bar-commands.command.3": "typescript/file_analyzer/scripts/base/update.sh",
 }
