@@ -34,7 +34,7 @@ impl Analyzer<'_, '_> {
     /// let b: { key: string } = foo;
     /// ```
     #[instrument(skip(self, data, opts, lhs_span, lhs, rhs, lhs_metadata))]
-    pub(super) fn assign_to_type_elements(
+    pub(crate) fn assign_to_type_elements(
         &mut self,
         data: &mut AssignData,
         opts: AssignOpts,
@@ -1020,6 +1020,12 @@ impl Analyzer<'_, '_> {
                                             }
                                         }
 
+                                        if !opts.for_castablity {
+                                            if !lp.optional && rp.optional {
+                                                return Err(Error::AssignFailedDueToOptionalityDifference { span });
+                                            }
+                                        }
+
                                         // Allow assigning undefined to optional properties.
                                         (|| {
                                             if opts.for_castablity {
@@ -1185,11 +1191,13 @@ impl Analyzer<'_, '_> {
                     }) if &**sym == "toString" => {}
 
                     _ => {
-                        // No property with `key` found.
-                        missing_fields.push(lm.clone());
+                        if !opts.allow_missing_fields {
+                            // No property with `key` found.
+                            missing_fields.push(lm.clone());
+                        }
                     }
                 }
-            } else {
+            } else if !opts.skip_call_and_constructor_elem {
                 match lm {
                     // TODO: Check type of the index.
                     TypeElement::Index(li) => {
@@ -1337,7 +1345,9 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        missing_fields.push(lm.clone());
+                        if !opts.allow_missing_fields {
+                            missing_fields.push(lm.clone());
+                        }
                     }
 
                     TypeElement::Constructor(lc) => {

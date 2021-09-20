@@ -1,5 +1,6 @@
 //! A module to validate while type checking
 use backtrace::Backtrace;
+use fxhash::FxHashMap;
 use rnode::{Fold, FoldWith, RNode, Visit, VisitWith};
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_types::{Id, IndexedAccessType, Ref, Type, TypeLit, TypeParam};
@@ -11,6 +12,17 @@ use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use tracing::info;
 
 pub mod debugger;
+
+pub fn dump_type_map(cm: &Lrc<SourceMap>, map: &FxHashMap<Id, Type>) -> String {
+    if !cfg!(debug_assertions) {
+        return String::new();
+    }
+
+    map.iter()
+        .map(|(name, ty)| format!("{:?}: {}", name, dump_type_as_string(cm, ty)))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
 
 pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
     if !cfg!(debug_assertions) {

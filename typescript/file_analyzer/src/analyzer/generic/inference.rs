@@ -128,6 +128,17 @@ impl Analyzer<'_, '_> {
         return Ok(());
     }
 
+    pub(super) fn insert_inferred(
+        &mut self,
+        span: Span,
+        inferred: &mut InferData,
+        tp: &TypeParam,
+        ty: Cow<Type>,
+        opts: InferTypeOpts,
+    ) -> ValidationResult<()> {
+        self.insert_inferred_raw(span, inferred, tp.name.clone(), ty, opts)
+    }
+
     /// # Rules
     ///
     /// ## Type literal
@@ -151,7 +162,7 @@ impl Analyzer<'_, '_> {
     /// let e4 = f({ a: 2 }, data); // Error
     /// let e5 = f(data, data2); // Error
     /// ```
-    pub(super) fn insert_inferred(
+    pub(super) fn insert_inferred_raw(
         &mut self,
         span: Span,
         inferred: &mut InferData,
@@ -173,7 +184,7 @@ impl Analyzer<'_, '_> {
         }
 
         if ty.is_any() && self.is_implicitly_typed(&ty) {
-            if inferred.type_params.contains_key(&name.clone()) {
+            if inferred.type_params.contains_key(&name) {
                 return Ok(());
             }
 

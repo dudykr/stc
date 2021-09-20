@@ -2465,6 +2465,7 @@ impl_freeze!(FnParam);
 impl_freeze!(Interface);
 impl_freeze!(TsExpr);
 impl_freeze!(Type);
+impl_freeze!(TypeElement);
 impl_freeze!(TypeParam);
 impl_freeze!(TypeParamDecl);
 impl_freeze!(TypeParamInstantiation);
