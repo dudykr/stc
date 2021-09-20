@@ -19,7 +19,7 @@ export RUST_BACKTRACE=1
 export RUST_MIN_STACK=$((16 * 1024 * 1024))
 
 # We prevent regression using faster checks
-UPDATE=1 cargo test -q -p stc_ts_file_analyzer --test base
+cargo test -q -p stc_ts_file_analyzer --test base
 GOLDEN_ONLY=1 cargo test -q -p stc_ts_file_analyzer --test visualize
 
 RUST_LOG=off TEST='' DONT_PRINT_MATCHED=1 cargo test --test tsc \
