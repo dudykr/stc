@@ -1,1 +1,1 @@
-conformance/types/typeRelationships/assignmentCompatibility
+conformance::types::typeRelationships::typeInference

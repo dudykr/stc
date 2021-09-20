@@ -3,8 +3,6 @@ use stc_ts_types::Type;
 use swc_common::{Globals, Mark, Span, Spanned, SyntaxContext};
 use tracing::info;
 
-/// Currently this should be shared between multiple runes, because of builtin
-/// types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Marks {
     pub(crate) top_level_mark: Mark,

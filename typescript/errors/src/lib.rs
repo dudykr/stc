@@ -62,6 +62,12 @@ impl Errors {
 #[derive(Derivative, Clone, PartialEq, Spanned)]
 #[derivative(Debug)]
 pub enum Error {
+    /// TS2430
+    InvalidInterfaceInheritance {
+        span: Span,
+        cause: Box<Error>,
+    },
+
     /// TS2339
     TupleTooShort {
         span: Span,
@@ -901,6 +907,11 @@ pub enum Error {
 
     /// TS2322
     AssignFailedDueToAccessibility {
+        span: Span,
+    },
+
+    /// TS2322
+    AssignFailedDueToOptionalityDifference {
         span: Span,
     },
 
@@ -1829,6 +1840,8 @@ impl Error {
             Error::IntrinsicIsBuiltinOnly { .. } => 2795,
 
             Error::VarDeclNotCompatible { .. } => 2403,
+
+            Error::InvalidInterfaceInheritance { .. } => 2430,
 
             _ => 0,
         }

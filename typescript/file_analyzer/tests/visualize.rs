@@ -29,6 +29,7 @@ use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use testing::NormalizedOutput;
+use tracing::Level;
 
 fn should_run(input: &Path) -> bool {
     static GOLDENS: Lazy<Vec<String>> = Lazy::new(|| load_txt("tests/golden.txt"));
@@ -144,7 +145,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
                         },
                     );
 
-                    let log_sub = logger();
+                    let log_sub = logger(Level::DEBUG);
 
                     let _guard = tracing::subscriber::set_default(log_sub);
 

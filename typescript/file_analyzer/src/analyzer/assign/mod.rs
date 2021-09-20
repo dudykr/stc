@@ -37,6 +37,9 @@ pub(crate) struct AssignOpts {
     pub span: Span,
     pub right_ident_span: Option<Span>,
     pub allow_unknown_rhs: bool,
+
+    pub allow_missing_fields: bool,
+
     /// Allow assigning `unknown` type to other types. This should be `true` for
     /// parameters because the following is valid.
     ///
@@ -57,6 +60,9 @@ pub(crate) struct AssignOpts {
     /// Allow assignmnet to [Type::Param].
     pub allow_assignment_to_param: bool,
 
+    pub allow_assignment_of_param: bool,
+    pub skip_call_and_constructor_elem: bool,
+
     pub for_overload: bool,
 
     pub for_castablity: bool,
@@ -73,7 +79,8 @@ pub(crate) struct AssignOpts {
     pub allow_iterable_on_rhs: bool,
 
     /// If `true`, assignment will success if rhs is `void`.
-    pub allow_assignment_of_void: bool,
+    /// [None] means `false`.
+    pub allow_assignment_of_void: Option<bool>,
 
     /// If `true`, assignment will success if lhs is `void`.
     pub allow_assignment_to_void: bool,
@@ -690,6 +697,16 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        if to.is_any() {
+            return Ok(());
+        }
+
+        if opts.allow_assignment_of_param {
+            if rhs.normalize().is_type_param() {
+                return Ok(());
+            }
+        }
+
         match rhs {
             Type::IndexedAccessType(rhs) => {
                 let err = Error::NoSuchProperty {
@@ -905,12 +922,6 @@ impl Analyzer<'_, '_> {
         }
 
         match to {
-            // let a: any = 'foo'
-            Type::Keyword(KeywordType {
-                kind: TsKeywordTypeKind::TsAnyKeyword,
-                ..
-            }) => return Ok(()),
-
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
@@ -1100,7 +1111,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if opts.allow_assignment_of_void {
+        if opts.allow_assignment_of_void.unwrap_or_default() {
             if rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
                 return Ok(());
             }
@@ -1238,6 +1249,10 @@ impl Analyzer<'_, '_> {
                 //
                 match to {
                     Type::Param(TypeParam { name: ref l_name, .. }) => {
+                        if opts.allow_assignment_to_param {
+                            return Ok(());
+                        }
+
                         if name == l_name {
                             return Ok(());
                         }

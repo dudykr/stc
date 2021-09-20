@@ -10,14 +10,17 @@ use crate::{
 use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, dump_type_map},
+    DebugExt, Error,
+};
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, debug_ctx};
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::instrument;
+use tracing::{debug, instrument};
 
 /// Methods to handle assignment to function types and constructor types.
 impl Analyzer<'_, '_> {
@@ -179,40 +182,53 @@ impl Analyzer<'_, '_> {
             check!(Constructor);
         }
 
-        let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
-            (Some(lt), Some(rt)) if lt.params.len() == rt.params.len() => {
-                //
-                let map = lt
-                    .params
-                    .iter()
-                    .zip(rt.params.iter())
-                    .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
-                    .collect::<FxHashMap<_, _>>();
-                let mut new_r_params = self
-                    .expand_type_params(&map, r_params.to_vec(), Default::default())
-                    .context("tried to expand type parameters as a step of function assignemnt")?;
-                let mut new_r_ret_ty = self
-                    .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
-                    .context("tried to expand return type of rhs as a step of function assignemnt")?;
+        match (&l_type_params, r_type_params) {
+            (Some(lt), Some(rt)) if lt.params.len() == rt.params.len() && lt.params.len() == 1 => {
+                if lt.params[0].constraint.is_none() || rt.params[0].constraint.is_none() {
+                    let map = lt
+                        .params
+                        .iter()
+                        .zip(rt.params.iter())
+                        .filter(|(l, r)| match (&l.constraint, &r.constraint) {
+                            (None, Some(..)) => return false,
+                            // TODO: Use extends()
+                            _ => true,
+                        })
+                        .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
+                        .collect::<FxHashMap<_, _>>();
+                    let mut new_r_params = self
+                        .expand_type_params(&map, r_params.to_vec(), Default::default())
+                        .context("tried to expand type parameters as a step of function assignemnt")?;
+                    let mut new_r_ret_ty = self
+                        .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
+                        .context("tried to expand return type of rhs as a step of function assignemnt")?;
 
-                new_r_params.make_clone_cheap();
-                new_r_ret_ty.make_clone_cheap();
+                    new_r_params.make_clone_cheap();
+                    new_r_ret_ty.make_clone_cheap();
 
-                return self
-                    .assign_to_fn_like(
-                        data,
-                        opts,
-                        is_call,
-                        l_type_params,
-                        l_params,
-                        l_ret_ty,
-                        None,
-                        &new_r_params,
-                        new_r_ret_ty.as_ref(),
-                    )
-                    .context("tried to assign to a mapped (wrong) function");
+                    return self
+                        .assign_to_fn_like(
+                            data,
+                            AssignOpts {
+                                allow_assignment_of_void: Some(false),
+                                ..opts
+                            },
+                            is_call,
+                            l_type_params,
+                            l_params,
+                            l_ret_ty,
+                            None,
+                            &new_r_params,
+                            new_r_ret_ty.as_ref(),
+                        )
+                        .context("tried to assign to a mapped (wrong) function");
+                }
             }
 
+            _ => {}
+        }
+
+        let (r_params, r_ret_ty) = match (&l_type_params, r_type_params) {
             (Some(lt), None) if opts.infer_type_params_of_left => {
                 let opts = AssignOpts {
                     infer_type_params_of_left: false,
@@ -288,15 +304,28 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )?;
-                let mut new_r_params = self
-                    .expand_type_params(&map, r_params.to_vec(), Default::default())
-                    .context("tried to expand type parameters of rhs as a step of function assignemnt")?;
-                let mut new_r_ret_ty = self
-                    .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
-                    .context("tried to expand return type of rhs as a step of function assignemnt")?;
 
-                new_r_params.make_clone_cheap();
-                new_r_ret_ty.make_clone_cheap();
+                if cfg!(debug_assertions) {
+                    debug!("Callable map:\n{}", dump_type_map(&self.cm, &map));
+                }
+
+                let new_l_params = self
+                    .expand_type_params(&map, l_params.to_vec(), Default::default())
+                    .context("tried to expand type parameters of lhs as a step of function assignemnt")?
+                    .freezed();
+                let new_l_ret_ty = self
+                    .expand_type_params(&map, l_ret_ty.cloned(), Default::default())
+                    .context("tried to expand return type of lhs as a step of function assignemnt")?
+                    .freezed();
+
+                let new_r_params = self
+                    .expand_type_params(&map, r_params.to_vec(), Default::default())
+                    .context("tried to expand type parameters of rhs as a step of function assignemnt")?
+                    .freezed();
+                let new_r_ret_ty = self
+                    .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
+                    .context("tried to expand return type of rhs as a step of function assignemnt")?
+                    .freezed();
 
                 let _panic_ctx = debug_ctx!(format!("new_r_params = {:?}", new_r_params));
                 let _panic_ctx = debug_ctx!(format!("new_r_ret_ty = {:?}", new_r_ret_ty));
@@ -307,13 +336,18 @@ impl Analyzer<'_, '_> {
                         opts,
                         is_call,
                         l_type_params,
-                        l_params,
-                        l_ret_ty,
+                        &new_l_params,
+                        new_l_ret_ty.as_ref(),
                         None,
                         &new_r_params,
                         new_r_ret_ty.as_ref(),
                     )
-                    .context("tried to assign to an expanded callable");
+                    .with_context(|| {
+                        format!(
+                            "tried to assign to an expanded callable\nMap:\n{}",
+                            dump_type_map(&self.cm, &map)
+                        )
+                    });
             }
 
             _ => (r_params, r_ret_ty),
@@ -335,39 +369,24 @@ impl Analyzer<'_, '_> {
             if let Some(r_ret_ty) = r_ret_ty {
                 // TODO: Verify type parameters.
 
+                let opts = AssignOpts {
+                    // We are done with the overload context.
+                    for_overload: false,
+                    allow_assignment_of_void: Some(opts.allow_assignment_of_void.unwrap_or(true)),
+                    allow_assignment_to_void: !opts.for_overload,
+                    reverse_ret_ty: false,
+                    ..opts
+                };
+
                 if is_call && opts.reverse_ret_ty {
-                    self.assign_inner(
-                        data,
-                        r_ret_ty,
-                        l_ret_ty,
-                        AssignOpts {
-                            // We are done with the overload context.
-                            for_overload: false,
-                            allow_assignment_of_void: true,
-                            allow_assignment_to_void: !opts.for_overload,
-                            reverse_ret_ty: false,
-                            ..opts
-                        },
-                    )
-                    .context(
+                    self.assign_inner(data, r_ret_ty, l_ret_ty, opts).context(
                         "tried to assign the return type of a function to the return type of another function \
                          (reversed)",
                     )?;
                 } else {
-                    self.assign_inner(
-                        data,
-                        l_ret_ty,
-                        r_ret_ty,
-                        AssignOpts {
-                            // We are done with the overload context.
-                            for_overload: false,
-                            allow_assignment_of_void: true,
-                            allow_assignment_to_void: !opts.for_overload,
-                            reverse_ret_ty: false,
-                            ..opts
-                        },
-                    )
-                    .context("tried to assign the return type of a function to the return type of another function")?;
+                    self.assign_inner(data, l_ret_ty, r_ret_ty, opts).context(
+                        "tried to assign the return type of a function to the return type of another function",
+                    )?;
                 }
             }
         }
@@ -685,9 +704,6 @@ impl Analyzer<'_, '_> {
 
         l_ty.make_clone_cheap();
         r_ty.make_clone_cheap();
-
-        l_ty.assert_valid();
-        r_ty.assert_valid();
 
         let reverse = !opts.for_overload
             && match (l_ty.normalize_instance(), r_ty.normalize_instance()) {

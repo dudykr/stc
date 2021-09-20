@@ -26,20 +26,20 @@ use stc_ts_ast_rnode::{
     RTsTypeParamInstantiation, RTsTypeRef,
 };
 use stc_ts_errors::{
-    debug::{dump_type_as_string, print_backtrace, print_type},
+    debug::{dump_type_as_string, dump_type_map, print_backtrace, print_type},
     DebugExt, Error,
 };
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Id, IdCtx, IndexedAccessType,
-    Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, Symbol, ThisType,
-    Union, UnionMetadata,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Function, Id, IdCtx,
+    IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId,
+    Ref, Symbol, ThisType, Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
-use std::borrow::Cow;
+use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -215,6 +215,7 @@ impl Analyzer<'_, '_> {
     /// Calculates the return type of a new /call expression.
     ///
     /// This method check arguments
+    #[instrument(skip(self, span, expr, callee, kind, args, type_args, type_ann))]
     fn extract_call_new_expr_member(
         &mut self,
         span: Span,
@@ -933,6 +934,22 @@ impl Analyzer<'_, '_> {
         return Ok(candidates);
     }
 
+    #[instrument(skip(
+        self,
+        span,
+        expr,
+        kind,
+        this,
+        c,
+        prop,
+        is_static_call,
+        type_args,
+        args,
+        arg_types,
+        spread_arg_types,
+        type_ann,
+        opts
+    ))]
     fn call_property_of_class(
         &mut self,
         span: Span,
@@ -1133,6 +1150,21 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[instrument(skip(
+        self,
+        kind,
+        expr,
+        span,
+        obj,
+        members,
+        prop,
+        type_args,
+        args,
+        arg_types,
+        spread_arg_types,
+        type_ann,
+        opts
+    ))]
     fn call_property_of_type_elements(
         &mut self,
         kind: ExtractKind,
@@ -2403,17 +2435,47 @@ impl Analyzer<'_, '_> {
         );
 
         if let Some(type_params) = type_params {
+            // Type parameters should default to `unknown`.
+            let mut default_unknown_map = HashMap::with_capacity_and_hasher(type_params.len(), Default::default());
+
+            if type_ann.is_none() && self.ctx.reevaluating_call_or_new {
+                for at in spread_arg_types {
+                    match at.ty.normalize() {
+                        Type::Function(Function {
+                            type_params: Some(type_params),
+                            ..
+                        }) => {
+                            for tp in type_params.params.iter() {
+                                default_unknown_map.insert(
+                                    tp.name.clone(),
+                                    Type::Keyword(KeywordType {
+                                        span: tp.span,
+                                        kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                        metadata: Default::default(),
+                                    }),
+                                );
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
             for param in type_params {
                 info!("({}) Defining {}", self.scope.depth(), param.name);
 
                 self.register_type(param.name.clone(), Type::Param(param.clone()));
             }
 
-            let inferred_from_return_type = match type_ann {
-                Some(type_ann) => self
-                    .infer_type_with_types(span, type_params, &ret_ty, type_ann, Default::default())
-                    .map(Some)?,
-                None => None,
+            let inferred_from_return_type = if self.ctx.reevaluating_call_or_new {
+                None
+            } else {
+                match type_ann {
+                    Some(type_ann) => self
+                        .infer_type_with_types(span, type_params, &ret_ty, type_ann, Default::default())
+                        .map(Some)?,
+                    None => None,
+                }
             };
 
             let mut expanded_params;
@@ -2442,6 +2504,8 @@ impl Analyzer<'_, '_> {
 
             debug!("Inferring arg types for a call");
             let mut inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
+
+            debug!("Inferred types:\n{}", dump_type_map(&self.cm, &inferred));
 
             let expanded_param_types = params
                 .into_iter()
@@ -2561,10 +2625,10 @@ impl Analyzer<'_, '_> {
                 };
                 match expr {
                     ReevalMode::Call(e) => {
-                        return e.validate_with_default(&mut *self.with_ctx(ctx));
+                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann);
                     }
                     ReevalMode::New(e) => {
-                        return e.validate_with_default(&mut *self.with_ctx(ctx));
+                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann);
                     }
                     _ => {}
                 }
@@ -2680,6 +2744,15 @@ impl Analyzer<'_, '_> {
             self.add_required_type_params(&mut ty);
 
             print_type("Return, after adding type params", &self.cm, &ty);
+
+            if type_ann.is_none() {
+                info!(
+                    "Defaulting type parameters to unknown:\n{}",
+                    dump_type_map(&self.cm, &default_unknown_map)
+                );
+
+                ty = self.expand_type_params(&default_unknown_map, ty, Default::default())?;
+            }
 
             ty.reposition(span);
             ty.make_clone_cheap();
