@@ -39,7 +39,7 @@ use stc_ts_types::{
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
-use std::borrow::Cow;
+use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -215,6 +215,7 @@ impl Analyzer<'_, '_> {
     /// Calculates the return type of a new /call expression.
     ///
     /// This method check arguments
+    #[instrument(skip(self, span, expr, callee, kind, args, type_args, type_ann))]
     fn extract_call_new_expr_member(
         &mut self,
         span: Span,
@@ -933,6 +934,22 @@ impl Analyzer<'_, '_> {
         return Ok(candidates);
     }
 
+    #[instrument(skip(
+        self,
+        span,
+        expr,
+        kind,
+        this,
+        c,
+        prop,
+        is_static_call,
+        type_args,
+        args,
+        arg_types,
+        spread_arg_types,
+        type_ann,
+        opts
+    ))]
     fn call_property_of_class(
         &mut self,
         span: Span,
@@ -1133,6 +1150,21 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[instrument(skip(
+        self,
+        kind,
+        expr,
+        span,
+        obj,
+        members,
+        prop,
+        type_args,
+        args,
+        arg_types,
+        spread_arg_types,
+        type_ann,
+        opts
+    ))]
     fn call_property_of_type_elements(
         &mut self,
         kind: ExtractKind,
@@ -2682,6 +2714,28 @@ impl Analyzer<'_, '_> {
             self.add_required_type_params(&mut ty);
 
             print_type("Return, after adding type params", &self.cm, &ty);
+
+            if type_ann.is_none() {
+                // Type parameters should default to `unknown`.
+                let mut map = HashMap::with_capacity_and_hasher(type_params.len(), Default::default());
+                for tp in type_params.iter() {
+                    map.insert(
+                        tp.name.clone(),
+                        Type::Keyword(KeywordType {
+                            span: tp.span,
+                            kind: TsKeywordTypeKind::TsUnknownKeyword,
+                            metadata: Default::default(),
+                        }),
+                    );
+                }
+
+                info!(
+                    "Defaulting type parameters to unknown:\n{}",
+                    dump_type_map(&self.cm, &map)
+                );
+
+                ty = self.expand_type_params(&map, ty, Default::default())?;
+            }
 
             ty.reposition(span);
             ty.make_clone_cheap();
