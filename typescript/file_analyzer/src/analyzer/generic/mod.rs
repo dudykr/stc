@@ -749,7 +749,12 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                info!("({}): infer: {} = {:?}", self.scope.depth(), name, arg);
+                debug!(
+                    "({}): Inferred `{}` as {}",
+                    self.scope.depth(),
+                    name,
+                    dump_type_as_string(&self.cm, arg)
+                );
 
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
