@@ -26,3 +26,6 @@ var d = foo(h);            // Should be number[] | string[]
 var d = bar(1, "one", h);  // Should be number[] | string[]
 var d = bar("one", 1, h);  // Should be number[] | string[]
 var d = baz(d, d, g);      // Should be number[] | string[]
+
+
+export { }
