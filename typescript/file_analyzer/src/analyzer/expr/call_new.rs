@@ -33,9 +33,9 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Id, IdCtx, IndexedAccessType,
-    Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, Symbol, ThisType,
-    Union, UnionMetadata,
+    type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Function, Id, IdCtx,
+    IndexedAccessType, Instance, Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId,
+    Ref, Symbol, ThisType, Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
@@ -2435,6 +2435,32 @@ impl Analyzer<'_, '_> {
         );
 
         if let Some(type_params) = type_params {
+            // Type parameters should default to `unknown`.
+            let mut default_unknown_map = HashMap::with_capacity_and_hasher(type_params.len(), Default::default());
+
+            if type_ann.is_none() && self.ctx.reevaluating_call_or_new {
+                for at in spread_arg_types {
+                    match at.ty.normalize() {
+                        Type::Function(Function {
+                            type_params: Some(type_params),
+                            ..
+                        }) => {
+                            for tp in type_params.params.iter() {
+                                default_unknown_map.insert(
+                                    tp.name.clone(),
+                                    Type::Keyword(KeywordType {
+                                        span: tp.span,
+                                        kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                        metadata: Default::default(),
+                                    }),
+                                );
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
             for param in type_params {
                 info!("({}) Defining {}", self.scope.depth(), param.name);
 
@@ -2716,25 +2742,12 @@ impl Analyzer<'_, '_> {
             print_type("Return, after adding type params", &self.cm, &ty);
 
             if type_ann.is_none() {
-                // Type parameters should default to `unknown`.
-                let mut map = HashMap::with_capacity_and_hasher(type_params.len(), Default::default());
-                for tp in type_params.iter() {
-                    map.insert(
-                        tp.name.clone(),
-                        Type::Keyword(KeywordType {
-                            span: tp.span,
-                            kind: TsKeywordTypeKind::TsUnknownKeyword,
-                            metadata: Default::default(),
-                        }),
-                    );
-                }
-
                 info!(
                     "Defaulting type parameters to unknown:\n{}",
-                    dump_type_map(&self.cm, &map)
+                    dump_type_map(&self.cm, &default_unknown_map)
                 );
 
-                ty = self.expand_type_params(&map, ty, Default::default())?;
+                ty = self.expand_type_params(&default_unknown_map, ty, Default::default())?;
             }
 
             ty.reposition(span);
