@@ -439,7 +439,7 @@ fn run_vis_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput>
     }
 }
 
-#[testing::fixture("tests/base-vis/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
+#[testing::fixture("tests/vis/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn visualize(file_name: PathBuf) {
     let res = run_vis_test(file_name.clone(), false).unwrap();
     res.compare_to_file(&file_name.with_extension("swc-stderr")).unwrap();
