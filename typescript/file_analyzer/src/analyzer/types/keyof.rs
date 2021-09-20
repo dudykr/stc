@@ -10,7 +10,7 @@ use stc_ts_types::{
     Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, ModuleId,
     PropertySignature, Ref, Type, TypeElement, Union,
 };
-use stc_utils::{debug_ctx, ext::TypeVecExt, try_cache};
+use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, try_cache};
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, SyntaxContext, TypeEq, DUMMY_SP};
@@ -39,7 +39,8 @@ impl Analyzer<'_, '_> {
                     Cow::Borrowed(ty),
                     NormalizeTypeOpts { ..Default::default() },
                 )
-                .context("tried to normalize")?;
+                .context("tried to normalize")?
+                .freezed();
 
             match ty.normalize() {
                 Type::Lit(ty) => {
@@ -154,7 +155,7 @@ impl Analyzer<'_, '_> {
                 },
 
                 Type::TypeLit(l) => {
-                    return Ok(try_cache!(self.data.cache.keyof_type_lit, l.clone(), {
+                    return Ok(try_cache!(self.data.cache.keyof_type_lit, ty.clone().into_owned(), {
                         let mut types = vec![];
                         for member in &l.members {
                             match member {
