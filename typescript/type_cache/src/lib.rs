@@ -1,10 +1,9 @@
-use stc_ts_types::{Id, Type};
+use stc_ts_types::{Id, Type, TypeLit};
 use stc_utils::cache::CacheMap;
 
 #[derive(Debug, Default)]
 pub struct TypeCache {
-    pub normalize: CacheMap<Type, Type>,
-    pub keyof: CacheMap<Type, Type>,
+    pub keyof_type_lit: CacheMap<TypeLit, Type>,
 }
 
 impl TypeCache {
