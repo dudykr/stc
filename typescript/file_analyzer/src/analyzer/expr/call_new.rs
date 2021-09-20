@@ -2595,10 +2595,10 @@ impl Analyzer<'_, '_> {
                 };
                 match expr {
                     ReevalMode::Call(e) => {
-                        return e.validate_with_default(&mut *self.with_ctx(ctx));
+                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann);
                     }
                     ReevalMode::New(e) => {
-                        return e.validate_with_default(&mut *self.with_ctx(ctx));
+                        return e.validate_with_args(&mut *self.with_ctx(ctx), type_ann);
                     }
                     _ => {}
                 }
