@@ -35,6 +35,11 @@ where
     V: Freeze,
     M: CacheMode<K>,
 {
+    #[inline]
+    pub fn can_cache(&self, key: &K) -> bool {
+        M::can_cache(key)
+    }
+
     pub fn get(&self, key: &K) -> Option<V> {
         for (k, v) in &self.data {
             if k.type_eq(key) {

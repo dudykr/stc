@@ -90,7 +90,7 @@ macro_rules! try_cache {
     ($cache:expr, $key:expr, $default_op:expr) => {{
         let key = $key;
 
-        let cached = $cache.get(&key);
+        let cached = if $cache.can_cache(&key) { $cache.get(&key) } else { None };
 
         if let Some(v) = cached {
             v
