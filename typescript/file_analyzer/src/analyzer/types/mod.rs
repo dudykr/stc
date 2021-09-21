@@ -31,7 +31,7 @@ use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{debug, error, instrument};
+use tracing::{debug, error, instrument, span, Level};
 
 mod index_signature;
 mod keyof;
@@ -65,13 +65,20 @@ impl Analyzer<'_, '_> {
     ///
     /// If `span` is provided, it will be used for types **created** by the
     /// method. Otherwise the span of the original type is used.
-    #[instrument(name = "normalize", skip(self, span, ty, opts))]
     pub(crate) fn normalize<'a>(
         &mut self,
         span: Option<Span>,
         mut ty: Cow<'a, Type>,
         mut opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
+        let _tracing = if cfg!(debug_assertions) {
+            let ty_str = dump_type_as_string(&self.cm, &ty);
+
+            Some(span!(Level::ERROR, "normalize", ty = &*ty_str).entered())
+        } else {
+            None
+        };
+
         let res = (|| {
             ty.assert_valid();
 
