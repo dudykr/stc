@@ -2232,6 +2232,7 @@ dependencies = [
  "stc_ts_types",
  "stc_ts_utils",
  "stc_utils",
+ "stc_visit",
  "swc_common",
 ]
 
