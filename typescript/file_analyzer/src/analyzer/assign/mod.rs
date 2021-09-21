@@ -19,7 +19,7 @@ use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, error, info, instrument};
+use tracing::{debug, error, info, span, Level};
 
 mod builtin;
 mod cast;
@@ -531,7 +531,6 @@ impl Analyzer<'_, '_> {
     }
 
     /// Assigns, but does not wrap error with [Error::AssignFailed].
-    #[instrument(name = "assign", skip(self, data, to, rhs, opts))]
     fn assign_without_wrapping(
         &mut self,
         data: &mut AssignData,
@@ -544,6 +543,15 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin && span.is_dummy() {
             panic!("cannot assign with dummy span")
         }
+
+        let _tracing = if cfg!(debug_assertions) {
+            let lhs = dump_type_as_string(&self.cm, &to);
+            let rhs = dump_type_as_string(&self.cm, &rhs);
+
+            Some(span!(Level::ERROR, "assign", lhs = &*lhs, rhs = &*rhs).entered())
+        } else {
+            None
+        };
 
         // It's valid to assign any to everything.
         if rhs.is_any() {
