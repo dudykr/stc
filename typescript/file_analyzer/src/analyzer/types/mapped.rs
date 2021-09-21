@@ -31,9 +31,8 @@ impl Analyzer<'_, '_> {
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
         let orig = dump_type_as_string(&self.cm, &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
 
-        let ty = self.expand_mapped_inner(span, m);
+        let ty = self.expand_mapped_inner(span, m)?;
 
-        let ty = ty?;
         if let Some(ty) = &ty {
             let expanded = dump_type_as_string(&self.cm, &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
 
