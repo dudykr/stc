@@ -2,7 +2,7 @@ use crate::{
     analyzer::{
         assign::AssignOpts,
         generic::{type_form::OldTypeForm, InferData, InferredType},
-        Analyzer, Ctx,
+        Analyzer,
     },
     ty::TypeExt,
     util::unwrap_ref_with_single_arg,
@@ -47,6 +47,10 @@ pub(crate) struct InferTypeOpts {
     ///
     /// This is `true` for array
     pub append_type_as_union: bool,
+
+    pub skip_union: bool,
+
+    pub skip_identical: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -119,7 +123,7 @@ impl Analyzer<'_, '_> {
         }
 
         //
-        if !self.ctx.skip_union_while_inferencing {
+        if !opts.skip_union {
             for p in &param.types {
                 self.infer_type(span, inferred, p, arg, opts)?;
             }
@@ -281,14 +285,17 @@ impl Analyzer<'_, '_> {
 
         let mut inferred = InferData::default();
 
-        let ctx = Ctx {
-            skip_union_while_inferencing: true,
-            ..self.ctx
-        };
-
-        self.with_ctx(ctx)
-            .infer_type(span, &mut inferred, &param, &arg, opts)
-            .context("tried to infer type using two type")?;
+        self.infer_type(
+            span,
+            &mut inferred,
+            &param,
+            &arg,
+            InferTypeOpts {
+                skip_union: true,
+                ..opts
+            },
+        )
+        .context("tried to infer type using two type")?;
 
         let map = self.finalize_inference(inferred);
 
