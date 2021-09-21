@@ -1,34 +1,42 @@
+use self::mode::CacheMode;
 use scoped_tls::scoped_thread_local;
-use std::borrow::Cow;
+use std::{borrow::Cow, marker::PhantomData};
 use swc_common::TypeEq;
+
+pub mod mode;
 
 scoped_thread_local!(pub static ALLOW_DEEP_CLONE: ());
 
 #[derive(Debug)]
-pub struct CacheMap<K, V>
+pub struct CacheMap<K, V, M>
 where
     K: TypeEq,
     V: Freeze,
+    M: CacheMode,
 {
     data: Vec<(K, V)>,
+    _marker: PhantomData<M>,
 }
 
-impl<K, V> Default for CacheMap<K, V>
+impl<K, V, M> Default for CacheMap<K, V, M>
 where
     K: TypeEq,
     V: Freeze,
+    M: CacheMode,
 {
     fn default() -> Self {
         Self {
             data: Default::default(),
+            _marker: Default::default(),
         }
     }
 }
 
-impl<K, V> CacheMap<K, V>
+impl<K, V, M> CacheMap<K, V, M>
 where
     K: TypeEq,
     V: Freeze,
+    M: CacheMode,
 {
     pub fn get(&self, key: &K) -> Option<V> {
         for (k, v) in &self.data {
