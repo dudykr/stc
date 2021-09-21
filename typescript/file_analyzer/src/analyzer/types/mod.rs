@@ -47,6 +47,9 @@ pub(crate) struct NormalizeTypeOpts {
     pub preserve_typeof: bool,
     /// Should we normalize keywords as interfaces?
     pub normalize_keywords: bool,
+
+    //// If `true`, we will not expand generics.
+    pub process_only_key: bool,
 }
 
 impl Analyzer<'_, '_> {

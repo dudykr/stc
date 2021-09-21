@@ -37,7 +37,10 @@ impl Analyzer<'_, '_> {
                 .normalize(
                     Some(span),
                     Cow::Borrowed(ty),
-                    NormalizeTypeOpts { ..Default::default() },
+                    NormalizeTypeOpts {
+                        process_only_key: true,
+                        ..Default::default()
+                    },
                 )
                 .context("tried to normalize")?
                 .freezed();
