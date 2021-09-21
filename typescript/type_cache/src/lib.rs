@@ -1,11 +1,9 @@
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_types::{Id, Type, TypeParamInstantiation};
+use stc_ts_types::{Id, Type};
 use stc_utils::cache::{mode::CacheMode, CacheMap};
 
 #[derive(Debug, Default)]
 pub struct TypeCache {
-    pub expand_cache: CacheMap<(RTsEntityName, Option<TypeParamInstantiation>), Type, RevokeOnTypeDecl>,
-
+    // pub expand_cache: CacheMap<(RTsEntityName, Option<TypeParamInstantiation>), Type, RevokeOnTypeDecl>,
     /// Key should be [Type::Arc] of [Type::TypeLit].
     pub keyof_type_lit: CacheMap<Type, Type, NoRevoke>,
 }
