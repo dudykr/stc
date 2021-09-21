@@ -9,7 +9,7 @@ pub struct CacheMap<K, V, M>
 where
     K: TypeEq,
     V: Freeze,
-    M: CacheMode,
+    M: CacheMode<K>,
 {
     data: Vec<(K, V)>,
     _marker: PhantomData<M>,
@@ -19,7 +19,7 @@ impl<K, V, M> Default for CacheMap<K, V, M>
 where
     K: TypeEq,
     V: Freeze,
-    M: CacheMode,
+    M: CacheMode<K>,
 {
     fn default() -> Self {
         Self {
@@ -33,7 +33,7 @@ impl<K, V, M> CacheMap<K, V, M>
 where
     K: TypeEq,
     V: Freeze,
-    M: CacheMode,
+    M: CacheMode<K>,
 {
     pub fn get(&self, key: &K) -> Option<V> {
         for (k, v) in &self.data {
