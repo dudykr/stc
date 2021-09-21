@@ -2,7 +2,7 @@
 #![feature(specialization)]
 
 use crate::{cache_map::CacheMap, cache_mode::CacheMode, key::CacheKey};
-use stc_ts_types::{Id, Ref, Type};
+use stc_ts_types::{Id, Mapped, Ref, Type};
 use stc_visit::{Visit, VisitWith};
 
 pub mod cache_map;
@@ -13,8 +13,7 @@ pub mod key;
 /// Option<TypeParamInstantiation>), Type, RevokeOnTypeDecl>,
 #[derive(Debug, Default)]
 pub struct TypeCache {
-    /// Key should be [Type::Arc] of [Type::Mapped].
-    pub expand_mapped: CacheMap<Type, Type, NoRefInKey>,
+    pub expand_mapped: CacheMap<Mapped, Option<Type>, NoRefInKey>,
 
     /// Key should be [Type::Arc] of [Type::TypeLit].
     pub keyof_type_lit: CacheMap<Type, Type, NoRevoke>,
