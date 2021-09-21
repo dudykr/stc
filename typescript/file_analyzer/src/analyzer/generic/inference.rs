@@ -49,8 +49,6 @@ pub(crate) struct InferTypeOpts {
     pub append_type_as_union: bool,
 
     pub skip_union: bool,
-
-    pub skip_identical: bool,
 }
 
 impl Analyzer<'_, '_> {
