@@ -1,54 +1,7 @@
 use scoped_tls::scoped_thread_local;
 use std::borrow::Cow;
-use swc_common::TypeEq;
 
 scoped_thread_local!(pub static ALLOW_DEEP_CLONE: ());
-
-#[derive(Debug)]
-pub struct CacheMap<K, V>
-where
-    K: TypeEq,
-    V: Freeze,
-{
-    data: Vec<(K, V)>,
-}
-
-impl<K, V> Default for CacheMap<K, V>
-where
-    K: TypeEq,
-    V: Freeze,
-{
-    fn default() -> Self {
-        Self {
-            data: Default::default(),
-        }
-    }
-}
-
-impl<K, V> CacheMap<K, V>
-where
-    K: TypeEq,
-    V: Freeze,
-{
-    pub fn get(&self, key: &K) -> Option<V> {
-        for (k, v) in &self.data {
-            if k.type_eq(key) {
-                return Some(v.clone());
-            }
-        }
-
-        None
-    }
-
-    /// Returns the inserted value.
-    pub fn insert(&mut self, key: K, mut value: V) -> V {
-        value.make_clone_cheap();
-
-        self.data.push((key, value.clone()));
-
-        value
-    }
-}
 
 pub trait Freeze: Sized + Clone {
     fn is_clone_cheap(&self) -> bool;
@@ -137,7 +90,7 @@ macro_rules! try_cache {
     ($cache:expr, $key:expr, $default_op:expr) => {{
         let key = $key;
 
-        let cached = $cache.get(&key);
+        let cached = if $cache.can_cache(&key) { $cache.get(&key) } else { None };
 
         if let Some(v) = cached {
             v

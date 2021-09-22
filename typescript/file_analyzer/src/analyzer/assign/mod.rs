@@ -19,7 +19,7 @@ use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, error, info, instrument};
+use tracing::{debug, error, info, span, Level};
 
 mod builtin;
 mod cast;
@@ -531,7 +531,6 @@ impl Analyzer<'_, '_> {
     }
 
     /// Assigns, but does not wrap error with [Error::AssignFailed].
-    #[instrument(name = "assign", skip(self, data, to, rhs, opts))]
     fn assign_without_wrapping(
         &mut self,
         data: &mut AssignData,
@@ -544,6 +543,15 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin && span.is_dummy() {
             panic!("cannot assign with dummy span")
         }
+
+        let _tracing = if cfg!(debug_assertions) {
+            let lhs = dump_type_as_string(&self.cm, &to);
+            let rhs = dump_type_as_string(&self.cm, &rhs);
+
+            Some(span!(Level::ERROR, "assign", lhs = &*lhs, rhs = &*rhs).entered())
+        } else {
+            None
+        };
 
         // It's valid to assign any to everything.
         if rhs.is_any() {
@@ -813,7 +821,14 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        {
+        if match rhs.normalize_instance() {
+            Type::Lit(..) => true,
+            Type::Interface(i) => match &**i.name.sym() {
+                "Boolean" | "String" | "Number" => true,
+                _ => false,
+            },
+            _ => false,
+        } {
             // Handle special cases.
             // Assigning boolean to Boolean is ok, but assigning Boolean to boolean is an
             // error.
@@ -823,8 +838,9 @@ impl Analyzer<'_, '_> {
                 (TsKeywordTypeKind::TsNumberKeyword, "Number"),
             ];
 
+            let rhs = rhs.clone().generalize_lit();
+
             for (kwd, interface) in special_cases {
-                let rhs = rhs.clone().generalize_lit();
                 match to {
                     Type::Keyword(k) if k.kind == *kwd => match rhs {
                         Type::Instance(Instance {
@@ -1034,7 +1050,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 if !left_contains_object && rhs_requires_unknown_property_check && !opts.allow_unknown_rhs {
-                    let lhs = self.convert_type_to_type_lit(span, to)?;
+                    let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
 
                     if let Some(lhs) = lhs {
                         self.assign_to_type_elements(data, opts, lhs.span, &lhs.members, &rhs, lhs.metadata)
@@ -1363,7 +1379,7 @@ impl Analyzer<'_, '_> {
                         return res;
                     }
 
-                    let r = self.convert_type_to_type_lit(span, &rhs)?;
+                    let r = self.convert_type_to_type_lit(span, Cow::Borrowed(rhs))?;
                     if let Some(r) = r {
                         for m in &r.members {
                             match m {
@@ -1845,7 +1861,7 @@ impl Analyzer<'_, '_> {
                 // We should check for unknown rhs, while allowing assignment to parent
                 // interfaces.
                 if !opts.allow_unknown_rhs && !opts.allow_unknown_rhs_if_expanded {
-                    let lhs = self.convert_type_to_type_lit(span, to)?;
+                    let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
                     if let Some(lhs) = lhs {
                         self.assign_to_type_elements(data, opts, span, &lhs.members, rhs, Default::default())
                             .with_context(|| {
@@ -2198,6 +2214,7 @@ impl Analyzer<'_, '_> {
             Cow::Borrowed(&ty),
             NormalizeTypeOpts {
                 normalize_keywords: true,
+                process_only_key: true,
                 ..Default::default()
             },
         )?;
@@ -2235,7 +2252,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ty) = self
-            .convert_type_to_type_lit(span, &ty)?
+            .convert_type_to_type_lit(span, Cow::Borrowed(ty))?
             .map(Cow::into_owned)
             .map(Type::TypeLit)
         {
@@ -2306,7 +2323,7 @@ impl Analyzer<'_, '_> {
             match r.normalize() {
                 Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) | Type::Intersection(..) => {
                     if let Some(r) = self
-                        .convert_type_to_type_lit(span, &r)?
+                        .convert_type_to_type_lit(span, Cow::Borrowed(&r))?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                     {

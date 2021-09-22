@@ -48,7 +48,7 @@ use std::{
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
-use tracing::{debug, info, instrument, warn};
+use tracing::{debug, info, instrument, warn, Level};
 use ty::TypeExt;
 
 mod array;
@@ -540,6 +540,8 @@ pub(crate) struct AccessPropertyOpts {
     /// Note: If it's in l-value context, `access_property` will return
     /// undefined even if this field is `false`.
     pub use_undefined_for_tuple_index_error: bool,
+
+    pub for_validation_of_indexed_access_type: bool,
 }
 
 #[validator]
@@ -684,6 +686,7 @@ impl Analyzer<'_, '_> {
     /// # Parameters
     ///
     /// - `declared`: Key of declared property.
+    #[instrument(skip(self, span, declared, cur, allow_union))]
     pub(crate) fn key_matches(&mut self, span: Span, declared: &Key, cur: &Key, allow_union: bool) -> bool {
         match declared {
             Key::Computed(..) => {}
@@ -1030,7 +1033,6 @@ impl Analyzer<'_, '_> {
         Ok(Some(Type::union(matching_elements)))
     }
 
-    #[instrument(skip(self, span, obj, prop, type_mode, id_ctx, opts))]
     pub(super) fn access_property(
         &mut self,
         span: Span,
@@ -1043,6 +1045,15 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
         }
+
+        let _tracing = if cfg!(debug_assertions) {
+            let obj = dump_type_as_string(&self.cm, &obj);
+            let prop_ty = dump_type_as_string(&self.cm, &prop.ty());
+
+            Some(tracing::span!(Level::ERROR, "access_property", obj = &*obj, prop = &*prop_ty).entered())
+        } else {
+            None
+        };
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -1108,6 +1119,25 @@ impl Analyzer<'_, '_> {
                         return Ok(ty);
                     }
                 }
+
+                Type::Param(TypeParam {
+                    constraint: Some(constraint),
+                    ..
+                }) if opts.for_validation_of_indexed_access_type => match constraint.normalize() {
+                    Type::Operator(Operator {
+                        op: TsTypeOperatorOp::KeyOf,
+                        ty: constraint_ty,
+                        ..
+                    }) => {
+                        //
+                        if constraint_ty.as_ref().type_eq(&*obj) {
+                            return Ok(Type::any(DUMMY_SP, Default::default()));
+                        }
+                    }
+
+                    _ => {}
+                },
+
                 _ => {}
             }
         }
@@ -1192,7 +1222,7 @@ impl Analyzer<'_, '_> {
                 let key_ty = prop.ty();
                 let key_ty = self.normalize(Some(span), key_ty, Default::default())?;
 
-                if key_ty.is_function() || key_ty.is_constructor() {
+                if key_ty.normalize().is_function() || key_ty.normalize().is_constructor() {
                     Err(Error::CannotUseTypeAsIndexIndex { span })?
                 }
             };
@@ -2641,7 +2671,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let expand_opts = ExpandOpts {
-                    generic: ExpandGenericOpts {},
+                    generic: ExpandGenericOpts { ..Default::default() },
                     ..Default::default()
                 };
 

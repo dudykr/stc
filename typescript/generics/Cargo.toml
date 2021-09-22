@@ -9,6 +9,7 @@ version = "0.1.0"
 
 [dependencies]
 fxhash = "0.2.1"
+rayon = "1.5.1"
 rnode = {path = "../../rnode"}
 stc_ts_ast_rnode = {path = "../ast_rnode"}
 stc_ts_base_type_ops = {path = "../base_type_ops/"}

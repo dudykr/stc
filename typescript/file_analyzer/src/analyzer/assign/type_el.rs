@@ -176,7 +176,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Interface(..) | Type::Intersection(..) => {
                     if let Some(rty) = self
-                        .convert_type_to_type_lit(span, &rhs)?
+                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs))?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                     {
@@ -283,7 +283,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             if let Some(rhs) = self
-                                .convert_type_to_type_lit(span, rhs)?
+                                .convert_type_to_type_lit(span, Cow::Borrowed(rhs))?
                                 .map(Cow::into_owned)
                                 .map(Type::TypeLit)
                             {
@@ -322,7 +322,7 @@ impl Analyzer<'_, '_> {
 
                 Type::ClassDef(rhs_cls) => {
                     let rhs = self
-                        .convert_type_to_type_lit(span, &rhs)
+                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs))
                         .context("tried to convert a class definition into a type literal for assignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
@@ -371,7 +371,7 @@ impl Analyzer<'_, '_> {
                     // }
 
                     let rhs = self
-                        .convert_type_to_type_lit(span, &rhs)
+                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs))
                         .context("tried to convert a class into type literal for assignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
@@ -447,7 +447,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Function(..) | Type::Constructor(..) => {
                     let mut rhs = self
-                        .convert_type_to_type_lit(span, &rhs)
+                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs))
                         .context("tried to convert a function to a type literal for asssignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)

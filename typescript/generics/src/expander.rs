@@ -5,8 +5,9 @@ use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsLit};
 use stc_ts_base_type_ops::{apply_mapped_flags, fix::Fix};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_types::{
-    Array, ArrayMetadata, ComputedKey, Function, Id, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType,
-    Mapped, Operator, PropertySignature, Ref, Type, TypeElement, TypeLit, TypeParam,
+    Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature, Function, Id,
+    IndexSignature, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature,
+    Operator, PropertySignature, Ref, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, debug_ctx, stack};
 use std::sync::Arc;
@@ -516,6 +517,84 @@ impl Fold<Type> for GenericExpander<'_> {
         debug!(op = "generic:expand", "Expanded {} => {}", start, expanded,);
 
         ty
+    }
+}
+
+impl Fold<CallSignature> for GenericExpander<'_> {
+    fn fold(&mut self, n: CallSignature) -> CallSignature {
+        if self.opts.ignore_values {
+            return n;
+        }
+        n.fold_children_with(self)
+    }
+}
+
+impl Fold<ConstructorSignature> for GenericExpander<'_> {
+    fn fold(&mut self, n: ConstructorSignature) -> ConstructorSignature {
+        if self.opts.ignore_values {
+            return n;
+        }
+        n.fold_children_with(self)
+    }
+}
+
+impl Fold<PropertySignature> for GenericExpander<'_> {
+    fn fold(&mut self, n: PropertySignature) -> PropertySignature {
+        if self.opts.ignore_values {
+            return PropertySignature {
+                key: n.key.fold_with(self),
+                ..n
+            };
+        }
+        n.fold_children_with(self)
+    }
+}
+
+impl Fold<MethodSignature> for GenericExpander<'_> {
+    fn fold(&mut self, n: MethodSignature) -> MethodSignature {
+        if self.opts.ignore_values {
+            return MethodSignature {
+                key: n.key.fold_with(self),
+                ..n
+            };
+        }
+        n.fold_children_with(self)
+    }
+}
+
+impl Fold<IndexSignature> for GenericExpander<'_> {
+    fn fold(&mut self, n: IndexSignature) -> IndexSignature {
+        if self.opts.ignore_values {
+            return IndexSignature {
+                params: n.params.fold_with(self),
+                ..n
+            };
+        }
+        n.fold_children_with(self)
+    }
+}
+
+impl Fold<ClassProperty> for GenericExpander<'_> {
+    fn fold(&mut self, n: ClassProperty) -> ClassProperty {
+        if self.opts.ignore_values {
+            return ClassProperty {
+                key: n.key.fold_with(self),
+                ..n
+            };
+        }
+        n.fold_children_with(self)
+    }
+}
+
+impl Fold<Method> for GenericExpander<'_> {
+    fn fold(&mut self, n: Method) -> Method {
+        if self.opts.ignore_values {
+            return Method {
+                key: n.key.fold_with(self),
+                ..n
+            };
+        }
+        n.fold_children_with(self)
     }
 }
 

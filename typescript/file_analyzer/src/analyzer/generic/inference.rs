@@ -2,7 +2,7 @@ use crate::{
     analyzer::{
         assign::AssignOpts,
         generic::{type_form::OldTypeForm, InferData, InferredType},
-        Analyzer, Ctx,
+        Analyzer,
     },
     ty::TypeExt,
     util::unwrap_ref_with_single_arg,
@@ -47,6 +47,8 @@ pub(crate) struct InferTypeOpts {
     ///
     /// This is `true` for array
     pub append_type_as_union: bool,
+
+    pub skip_union: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -119,7 +121,7 @@ impl Analyzer<'_, '_> {
         }
 
         //
-        if !self.ctx.skip_union_while_inferencing {
+        if !opts.skip_union {
             for p in &param.types {
                 self.infer_type(span, inferred, p, arg, opts)?;
             }
@@ -281,14 +283,17 @@ impl Analyzer<'_, '_> {
 
         let mut inferred = InferData::default();
 
-        let ctx = Ctx {
-            skip_union_while_inferencing: true,
-            ..self.ctx
-        };
-
-        self.with_ctx(ctx)
-            .infer_type(span, &mut inferred, &param, &arg, opts)
-            .context("tried to infer type using two type")?;
+        self.infer_type(
+            span,
+            &mut inferred,
+            &param,
+            &arg,
+            InferTypeOpts {
+                skip_union: true,
+                ..opts
+            },
+        )
+        .context("tried to infer type using two type")?;
 
         let map = self.finalize_inference(inferred);
 
@@ -392,7 +397,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Tuple(..) => {
                 // Convert to a type literal.
-                if let Some(arg) = self.convert_type_to_type_lit(span, arg)? {
+                if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg))? {
                     self.infer_type_using_type_elements_and_type_elements(
                         span,
                         inferred,
@@ -455,8 +460,8 @@ impl Analyzer<'_, '_> {
         match (p, a) {
             (Type::Constructor(..), Type::Class(..)) | (Type::Function(..), Type::Function(..)) => return Ok(false),
             (Type::Constructor(..), _) | (Type::Function(..), _) => {
-                let p = self.convert_type_to_type_lit(span, p)?;
-                let a = self.convert_type_to_type_lit(span, a)?;
+                let p = self.convert_type_to_type_lit(span, Cow::Borrowed(p))?;
+                let a = self.convert_type_to_type_lit(span, Cow::Borrowed(a))?;
                 if let Some(p) = p {
                     if let Some(a) = a {
                         self.infer_type_using_type_elements_and_type_elements(

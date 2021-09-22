@@ -3,6 +3,7 @@ use fxhash::FxHashMap;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_types::{ClassDef, ClassMember, ClassProperty, Id, Interface, Method, Type, TypeElement, TypeParam};
 use stc_utils::cache::Freeze;
+use std::borrow::Cow;
 use swc_common::{Span, Spanned};
 use tracing::info;
 
@@ -58,16 +59,18 @@ impl Analyzer<'_, '_> {
                 if let Some(b_tps) = &bi.type_params {
                     if let Some(a_tp) = &a.type_params {
                         for (idx, b_tp) in b_tps.params.iter().enumerate() {
-                            type_params.insert(
-                                b_tp.name.clone(),
-                                Type::Param(TypeParam {
-                                    span: a_tp.span,
-                                    name: a_tp.params[idx].name.clone(),
-                                    constraint: None,
-                                    default: None,
-                                    metadata: Default::default(),
-                                }),
-                            );
+                            if let Some(a_param) = a_tp.params.get(idx) {
+                                type_params.insert(
+                                    b_tp.name.clone(),
+                                    Type::Param(TypeParam {
+                                        span: a_tp.span,
+                                        name: a_param.name.clone(),
+                                        constraint: None,
+                                        default: None,
+                                        metadata: Default::default(),
+                                    }),
+                                );
+                            }
                         }
                     }
                 }
@@ -76,7 +79,7 @@ impl Analyzer<'_, '_> {
                 let mut new_members = a.body.clone();
 
                 let b = self
-                    .convert_type_to_type_lit(span, &b)
+                    .convert_type_to_type_lit(span, Cow::Owned(b))
                     .context("tried to convert an interface to a type literal to merge with a class definition")?;
                 if let Some(b) = b {
                     for el in &b.members {
@@ -115,7 +118,7 @@ impl Analyzer<'_, '_> {
 
                 // Convert to a type literal first.
                 if let Some(b) = self
-                    .convert_type_to_type_lit(span, &b)
+                    .convert_type_to_type_lit(span, Cow::Owned(b))
                     .context("tried to convert an interface to a type literal to merge with another interface")?
                 {
                     new_members.extend(b.into_owned().members);

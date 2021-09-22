@@ -31,9 +31,8 @@ impl Analyzer<'_, '_> {
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
         let orig = dump_type_as_string(&self.cm, &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
 
-        let ty = self.expand_mapped_inner(span, m);
+        let ty = self.expand_mapped_inner(span, m)?;
 
-        let ty = ty?;
         if let Some(ty) = &ty {
             let expanded = dump_type_as_string(&self.cm, &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
 
@@ -54,7 +53,7 @@ impl Analyzer<'_, '_> {
                     // Special case, but many usages can be handled with this check.
                     if (&**ty).type_eq(&mapped_ty) {
                         let mut new_type = self
-                            .convert_type_to_type_lit(span, &ty)
+                            .convert_type_to_type_lit(span, Cow::Borrowed(&ty))
                             .context("tried to convert a type to type literal to expand mapped type")?
                             .map(Cow::into_owned);
 
@@ -487,7 +486,9 @@ impl Analyzer<'_, '_> {
         optional: Option<TruePlusMinus>,
         readonly: Option<TruePlusMinus>,
     ) -> ValidationResult<Type> {
-        let type_lit = self.convert_type_to_type_lit(span, &ty)?.map(Cow::into_owned);
+        let type_lit = self
+            .convert_type_to_type_lit(span, Cow::Borrowed(&ty))?
+            .map(Cow::into_owned);
         if let Some(mut type_lit) = type_lit {
             for m in &mut type_lit.members {
                 apply_mapped_flags(m, optional, readonly);

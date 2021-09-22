@@ -10,7 +10,7 @@ use stc_ts_types::{
     Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, ModuleId,
     PropertySignature, Ref, Type, TypeElement, Union,
 };
-use stc_utils::{debug_ctx, ext::TypeVecExt};
+use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, try_cache};
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, SyntaxContext, TypeEq, DUMMY_SP};
@@ -33,13 +33,20 @@ impl Analyzer<'_, '_> {
         }
 
         let ty = (|| -> ValidationResult<_> {
-            let ty = self
+            let mut ty = self
                 .normalize(
                     Some(span),
                     Cow::Borrowed(ty),
-                    NormalizeTypeOpts { ..Default::default() },
+                    NormalizeTypeOpts {
+                        process_only_key: true,
+                        ..Default::default()
+                    },
                 )
                 .context("tried to normalize")?;
+
+            if matches!(ty.normalize(), Type::TypeLit(..)) {
+                ty.make_clone_cheap()
+            }
 
             match ty.normalize() {
                 Type::Lit(ty) => {
@@ -154,27 +161,29 @@ impl Analyzer<'_, '_> {
                 },
 
                 Type::TypeLit(l) => {
-                    let mut types = vec![];
-                    for member in &l.members {
-                        match member {
-                            TypeElement::Property(PropertySignature { key, .. })
-                            | TypeElement::Method(MethodSignature { key, .. }) => {
-                                if !key.is_computed() {
-                                    types.push(key.ty().into_owned());
+                    return Ok(try_cache!(self.data.cache.keyof_type_lit, ty.clone().into_owned(), {
+                        let mut types = vec![];
+                        for member in &l.members {
+                            match member {
+                                TypeElement::Property(PropertySignature { key, .. })
+                                | TypeElement::Method(MethodSignature { key, .. }) => {
+                                    if !key.is_computed() {
+                                        types.push(key.ty().into_owned());
+                                    }
                                 }
-                            }
 
-                            TypeElement::Index(i) => {
-                                // TODO: Check if this is correct.
-                                if let Some(p) = i.params.first() {
-                                    types.push(*p.ty.clone());
+                                TypeElement::Index(i) => {
+                                    // TODO: Check if this is correct.
+                                    if let Some(p) = i.params.first() {
+                                        types.push(*p.ty.clone());
+                                    }
                                 }
-                            }
 
-                            TypeElement::Call(_) | TypeElement::Constructor(_) => {}
+                                TypeElement::Call(_) | TypeElement::Constructor(_) => {}
+                            }
                         }
-                    }
-                    return Ok(Type::new_union(span, types));
+                        Ok(Type::new_union(span, types))
+                    }));
                 }
 
                 Type::Class(Class { def, .. }) => {
@@ -232,16 +241,15 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Interface(..) | Type::Enum(..) => {
-                    //
-                    if let Some(ty) = self
-                        .convert_type_to_type_lit(span, &ty)?
+                    let ty = self
+                        .convert_type_to_type_lit(span, ty)?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
-                    {
-                        return self
-                            .keyof(span, &ty)
-                            .context("tried to evaluate `keyof` for type literal created with type_to_type_lit");
-                    }
+                        .unwrap();
+
+                    return self
+                        .keyof(span, &ty)
+                        .context("tried to evaluate `keyof` for type literal created with type_to_type_lit");
                 }
 
                 Type::Intersection(i) => {
