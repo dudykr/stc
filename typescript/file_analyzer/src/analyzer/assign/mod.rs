@@ -821,7 +821,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        {
+        if matches!(rhs.normalize_instance(), Type::Lit(..) | Type::Interface(..)) {
             // Handle special cases.
             // Assigning boolean to Boolean is ok, but assigning Boolean to boolean is an
             // error.
