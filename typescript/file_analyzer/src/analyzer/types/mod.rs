@@ -98,12 +98,6 @@ impl Analyzer<'_, '_> {
             let _stack = stack::track(actual_span)?;
             let _context = debug_ctx!(format!("Normalize: {}", dump_type_as_string(&self.cm, &ty)));
 
-            if ty.is_arc() {
-                let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
-
-                return Ok(Cow::Owned(ty));
-            }
-
             match ty.normalize() {
                 Type::Lit(..)
                 | Type::TypeLit(..)
@@ -119,6 +113,12 @@ impl Analyzer<'_, '_> {
                 | Type::Module(_)
                 | Type::Tpl(..) => return Ok(ty),
                 _ => {}
+            }
+
+            if ty.is_arc() {
+                let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
+
+                return Ok(Cow::Owned(ty));
             }
 
             if matches!(
