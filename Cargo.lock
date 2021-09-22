@@ -2115,6 +2115,7 @@ name = "stc_ts_generics"
 version = "0.1.0"
 dependencies = [
  "fxhash",
+ "rayon",
  "rnode",
  "stc_ts_ast_rnode",
  "stc_ts_base_type_ops",
