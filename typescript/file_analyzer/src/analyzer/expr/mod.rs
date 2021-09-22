@@ -2641,7 +2641,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let expand_opts = ExpandOpts {
-                    generic: ExpandGenericOpts {},
+                    generic: ExpandGenericOpts { ..Default::default() },
                     ..Default::default()
                 };
 

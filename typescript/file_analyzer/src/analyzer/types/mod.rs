@@ -12,6 +12,7 @@ use stc_ts_ast_rnode::{
     RTsModuleDecl, RTsModuleName, RTsTypeAliasDecl,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
+use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Accessor, Array, ArrayMetadata, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional,
@@ -135,7 +136,10 @@ impl Analyzer<'_, '_> {
                                 actual_span,
                                 Cow::Borrowed(&ty),
                                 ExpandOpts {
-                                    process_only_key: opts.process_only_key,
+                                    generic: ExpandGenericOpts {
+                                        process_only_key: opts.process_only_key,
+                                        ..Default::default()
+                                    },
                                     ..Default::default()
                                 },
                             )

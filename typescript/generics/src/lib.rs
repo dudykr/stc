@@ -11,4 +11,7 @@ pub mod expander;
 pub mod type_param;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, TypeEq)]
-pub struct ExpandGenericOpts {}
+pub struct ExpandGenericOpts {
+    //// If `true`, we will not expand values.
+    pub process_only_key: bool,
+}
