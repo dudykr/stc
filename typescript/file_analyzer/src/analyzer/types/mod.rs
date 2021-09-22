@@ -137,7 +137,7 @@ impl Analyzer<'_, '_> {
                                 Cow::Borrowed(&ty),
                                 ExpandOpts {
                                     generic: ExpandGenericOpts {
-                                        process_only_key: opts.process_only_key,
+                                        ignore_values: opts.process_only_key,
                                         ..Default::default()
                                     },
                                     ..Default::default()
