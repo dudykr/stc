@@ -1917,6 +1917,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "stc_arc_cow"
+version = "0.1.0"
+dependencies = [
+ "stc_visit",
+ "swc_common",
+ "tracing",
+ "triomphe",
+]
+
+[[package]]
 name = "stc_testing"
 version = "0.0.0"
 dependencies = [
@@ -2065,6 +2075,7 @@ dependencies = [
  "rnode",
  "serde",
  "smallvec 1.6.1",
+ "stc_arc_cow",
  "stc_testing",
  "stc_ts_ast_rnode",
  "stc_ts_base_type_ops",
@@ -2324,6 +2335,7 @@ dependencies = [
  "servo_arc",
  "smallvec 1.6.1",
  "static_assertions",
+ "stc_arc_cow",
  "stc_ts_ast_rnode",
  "stc_utils",
  "stc_visit",
@@ -2954,6 +2966,17 @@ dependencies = [
  "tracing-core",
  "tracing-log",
  "tracing-serde",
+]
+
+[[package]]
+name = "triomphe"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46bddb80ec09585c58022a2c55e6e7c11e713d9bb26895f1b56cd945c4040c54"
+dependencies = [
+ "memoffset",
+ "serde",
+ "stable_deref_trait",
 ]
 
 [[package]]
