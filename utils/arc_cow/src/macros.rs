@@ -1,7 +1,7 @@
 macro_rules! impl_traits {
     ($Ty:tt, $Raw:ident) => {
         use std::ops::Deref;
-        use swc_common::Spanned;
+        use swc_common::{EqIgnoreSpan, Spanned, TypeEq};
 
         impl<T> Spanned for $Ty<T>
         where
@@ -129,6 +129,26 @@ macro_rules! impl_traits {
             #[inline]
             fn from(arc: Arc<T>) -> Self {
                 Self::Arc(arc)
+            }
+        }
+
+        impl<T> TypeEq for $Ty<T>
+        where
+            T: TypeEq,
+        {
+            #[inline]
+            fn type_eq(&self, other: &Self) -> bool {
+                (**self).type_eq(&**other)
+            }
+        }
+
+        impl<T> EqIgnoreSpan for $Ty<T>
+        where
+            T: EqIgnoreSpan,
+        {
+            #[inline]
+            fn eq_ignore_span(&self, other: &Self) -> bool {
+                (**self).eq_ignore_span(&**other)
             }
         }
 
