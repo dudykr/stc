@@ -81,6 +81,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "15af2628f6890fe2609a3b91bef4c83450512802e59489f9c1cb1fa5df064a61"
 
 [[package]]
+name = "arc_cow"
+version = "0.1.0"
+
+[[package]]
 name = "arrayvec"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2050,6 +2054,7 @@ dependencies = [
 name = "stc_ts_file_analyzer"
 version = "0.1.0"
 dependencies = [
+ "arc_cow",
  "backtrace",
  "bitflags",
  "dashmap 3.11.10",

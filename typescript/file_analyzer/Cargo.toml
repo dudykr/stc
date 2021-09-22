@@ -13,6 +13,7 @@ profile = ["stc_ts_types/profile"]
 [lib]
 
 [dependencies]
+arc_cow = {path = "../../utils/arc_cow"}
 backtrace = "0.3.60"
 bitflags = "1.2.1"
 dashmap = {version = "3", features = ["raw-api"]}
