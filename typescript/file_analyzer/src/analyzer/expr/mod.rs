@@ -48,7 +48,7 @@ use std::{
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
-use tracing::{debug, info, instrument, warn};
+use tracing::{debug, info, instrument, warn, Level};
 use ty::TypeExt;
 
 mod array;
@@ -1031,7 +1031,6 @@ impl Analyzer<'_, '_> {
         Ok(Some(Type::union(matching_elements)))
     }
 
-    #[instrument(skip(self, span, obj, prop, type_mode, id_ctx, opts))]
     pub(super) fn access_property(
         &mut self,
         span: Span,
@@ -1044,6 +1043,15 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
         }
+
+        let _tracing = if cfg!(debug_assertions) {
+            let obj = dump_type_as_string(&self.cm, &obj);
+            let prop_ty = dump_type_as_string(&self.cm, &prop.ty());
+
+            Some(tracing::span!(Level::ERROR, "access_property", obj = &*obj, prop = &*prop_ty).entered())
+        } else {
+            None
+        };
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
