@@ -240,7 +240,7 @@ impl Analyzer<'_, '_> {
                 Type::Interface(..) | Type::Enum(..) => {
                     //
                     if let Some(ty) = self
-                        .convert_type_to_type_lit(span, &ty)?
+                        .convert_type_to_type_lit(span, Cow::Borrowed(&ty))?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                     {

@@ -995,7 +995,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Interface(..) | Type::Enum(..) | Type::Alias(..) => {
-                    if let Some(arg) = self.convert_type_to_type_lit(span, arg)? {
+                    if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg))? {
                         return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, &arg, opts);
                     }
                 }
@@ -1382,7 +1382,7 @@ impl Analyzer<'_, '_> {
             | Type::Class(..)
             | Type::Interface(..) => {
                 let arg = self
-                    .convert_type_to_type_lit(span, arg)
+                    .convert_type_to_type_lit(span, Cow::Borrowed(arg))
                     .context("tried to convert a type into a type literal to infer mapped type")?
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);

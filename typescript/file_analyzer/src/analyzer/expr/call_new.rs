@@ -1917,7 +1917,7 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(..) => {
                 let callee = self
-                    .convert_type_to_type_lit(span, &callee)?
+                    .convert_type_to_type_lit(span, callee)?
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(callee) = callee {

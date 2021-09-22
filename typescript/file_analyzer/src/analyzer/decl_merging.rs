@@ -3,6 +3,7 @@ use fxhash::FxHashMap;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_types::{ClassDef, ClassMember, ClassProperty, Id, Interface, Method, Type, TypeElement, TypeParam};
 use stc_utils::cache::Freeze;
+use std::borrow::Cow;
 use swc_common::{Span, Spanned};
 use tracing::info;
 
@@ -76,7 +77,7 @@ impl Analyzer<'_, '_> {
                 let mut new_members = a.body.clone();
 
                 let b = self
-                    .convert_type_to_type_lit(span, &b)
+                    .convert_type_to_type_lit(span, Cow::Owned(b))
                     .context("tried to convert an interface to a type literal to merge with a class definition")?;
                 if let Some(b) = b {
                     for el in &b.members {
@@ -115,7 +116,7 @@ impl Analyzer<'_, '_> {
 
                 // Convert to a type literal first.
                 if let Some(b) = self
-                    .convert_type_to_type_lit(span, &b)
+                    .convert_type_to_type_lit(span, Cow::Owned(b))
                     .context("tried to convert an interface to a type literal to merge with another interface")?
                 {
                     new_members.extend(b.into_owned().members);
