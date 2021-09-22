@@ -684,6 +684,7 @@ impl Analyzer<'_, '_> {
     /// # Parameters
     ///
     /// - `declared`: Key of declared property.
+    #[instrument(skip(self, span, declared, cur, allow_union))]
     pub(crate) fn key_matches(&mut self, span: Span, declared: &Key, cur: &Key, allow_union: bool) -> bool {
         match declared {
             Key::Computed(..) => {}
