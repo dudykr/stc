@@ -1192,7 +1192,7 @@ impl Analyzer<'_, '_> {
                 let key_ty = prop.ty();
                 let key_ty = self.normalize(Some(span), key_ty, Default::default())?;
 
-                if key_ty.is_function() || key_ty.is_constructor() {
+                if key_ty.normalize().is_function() || key_ty.normalize().is_constructor() {
                     Err(Error::CannotUseTypeAsIndexIndex { span })?
                 }
             };
