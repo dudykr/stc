@@ -1858,6 +1858,9 @@ pub(crate) struct ExpandOpts {
     pub full: bool,
     pub expand_union: bool,
 
+    //// If `true`, we will not expand values.
+    pub process_only_key: bool,
+
     pub generic: ExpandGenericOpts,
 }
 

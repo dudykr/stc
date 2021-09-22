@@ -1,5 +1,5 @@
 use crate::{
-    analyzer::{expr::TypeOfMode, generic::ExtendsOpts, Analyzer, Ctx},
+    analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
     util::unwrap_ref_with_single_arg,
     Marks, ValidationResult,
@@ -131,7 +131,14 @@ impl Analyzer<'_, '_> {
                 match ty.normalize() {
                     Type::Ref(_) => {
                         let mut new_ty = self
-                            .expand_top_ref(actual_span, Cow::Borrowed(&ty), Default::default())
+                            .expand_top_ref(
+                                actual_span,
+                                Cow::Borrowed(&ty),
+                                ExpandOpts {
+                                    process_only_key: opts.process_only_key,
+                                    ..Default::default()
+                                },
+                            )
                             .context("tried to expand a ref type as a part of normalization")?;
 
                         // We are declaring, and expand_top_ref returned Type::Ref
