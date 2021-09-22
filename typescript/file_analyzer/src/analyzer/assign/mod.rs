@@ -821,7 +821,14 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if matches!(rhs.normalize_instance(), Type::Lit(..) | Type::Interface(..)) {
+        if match rhs.normalize_instance() {
+            Type::Lit(..) => true,
+            Type::Interface(i) => match &**i.name.sym() {
+                "Boolean" | "String" | "Number" => true,
+                _ => false,
+            },
+            _ => false,
+        } {
             // Handle special cases.
             // Assigning boolean to Boolean is ok, but assigning Boolean to boolean is an
             // error.
@@ -831,8 +838,9 @@ impl Analyzer<'_, '_> {
                 (TsKeywordTypeKind::TsNumberKeyword, "Number"),
             ];
 
+            let rhs = rhs.clone().generalize_lit();
+
             for (kwd, interface) in special_cases {
-                let rhs = rhs.clone().generalize_lit();
                 match to {
                     Type::Keyword(k) if k.kind == *kwd => match rhs {
                         Type::Instance(Instance {
