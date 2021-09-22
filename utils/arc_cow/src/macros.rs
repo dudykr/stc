@@ -98,5 +98,18 @@ macro_rules! impl_traits {
                 (**self).cmp(&**r)
             }
         }
+
+        impl<T> std::hash::Hash for $Ty<T>
+        where
+            T: std::hash::Hash,
+        {
+            #[inline]
+            fn hash<H>(&self, hasher: &mut H)
+            where
+                H: std::hash::Hasher,
+            {
+                (**self).hash(hasher)
+            }
+        }
     };
 }
