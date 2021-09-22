@@ -238,16 +238,15 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Interface(..) | Type::Enum(..) => {
-                    //
-                    if let Some(ty) = self
-                        .convert_type_to_type_lit(span, Cow::Borrowed(&ty))?
+                    let ty = self
+                        .convert_type_to_type_lit(span, ty)?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
-                    {
-                        return self
-                            .keyof(span, &ty)
-                            .context("tried to evaluate `keyof` for type literal created with type_to_type_lit");
-                    }
+                        .unwrap();
+
+                    return self
+                        .keyof(span, &ty)
+                        .context("tried to evaluate `keyof` for type literal created with type_to_type_lit");
                 }
 
                 Type::Intersection(i) => {
