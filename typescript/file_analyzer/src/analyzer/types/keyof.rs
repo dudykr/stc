@@ -33,7 +33,7 @@ impl Analyzer<'_, '_> {
         }
 
         let ty = (|| -> ValidationResult<_> {
-            let ty = self
+            let mut ty = self
                 .normalize(
                     Some(span),
                     Cow::Borrowed(ty),
@@ -42,8 +42,11 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )
-                .context("tried to normalize")?
-                .freezed();
+                .context("tried to normalize")?;
+
+            if matches!(ty.normalize(), Type::TypeLit(..)) {
+                ty.make_clone_cheap()
+            }
 
             match ty.normalize() {
                 Type::Lit(ty) => {
