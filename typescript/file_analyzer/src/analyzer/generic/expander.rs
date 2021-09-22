@@ -10,7 +10,6 @@ use stc_ts_generics::{expander::GenericExpander, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Interface, KeywordType, TypeParam, TypeParamDecl, TypeParamInstantiation};
 use stc_utils::cache::Freeze;
-use std::time::{Duration, Instant};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
 use tracing::{debug, instrument};
@@ -66,20 +65,6 @@ impl Analyzer<'_, '_> {
         Ok(params)
     }
 
-    #[instrument(name = "expand_type_params", skip(self, params, ty, opts))]
-    pub(in super::super) fn expand_type_params<T>(
-        &mut self,
-        params: &FxHashMap<Id, Type>,
-        ty: T,
-        opts: ExpandGenericOpts,
-    ) -> ValidationResult<T>
-    where
-        T: for<'aa> FoldWith<GenericExpander<'aa>> + Fix,
-    {
-        let ty = self.expand_type_params_inner(params, ty, false, opts)?.fixed();
-        Ok(ty)
-    }
-
     ///
     ///
     ///  This methods handle special types like mapped type.
@@ -96,39 +81,27 @@ impl Analyzer<'_, '_> {
     ///z     T extends {
     ///          x: infer P extends number ? infer P : string;
     ///      } ? P : never
-    fn expand_type_params_inner<T>(
+    #[instrument(name = "expand_type_params", skip(self, params, ty, opts))]
+    pub(in super::super) fn expand_type_params<T>(
         &mut self,
         params: &FxHashMap<Id, Type>,
         ty: T,
-        fully: bool,
         opts: ExpandGenericOpts,
     ) -> ValidationResult<T>
     where
-        T: for<'aa> FoldWith<GenericExpander<'aa>>,
+        T: for<'aa> FoldWith<GenericExpander<'aa>> + Fix,
     {
         for (_, param) in params {
             debug_assert!(param.is_clone_cheap());
         }
 
-        let start = Instant::now();
         let ty = ty.fold_with(&mut GenericExpander {
             cm: self.cm.clone(),
             params,
-            fully,
+            fully: false,
             dejavu: Default::default(),
             opts,
         });
-        let end = Instant::now();
-        let dur = end - start;
-
-        if dur > Duration::from_millis(1) {
-            debug!(
-                kind = "perf",
-                op = "expand_generics",
-                "Expanded type parameters (time = {:?})",
-                dur
-            );
-        }
 
         Ok(ty)
     }
