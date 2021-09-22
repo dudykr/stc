@@ -1920,6 +1920,7 @@ dependencies = [
 name = "stc_arc_cow"
 version = "0.1.0"
 dependencies = [
+ "servo_arc",
  "swc_common",
  "tracing",
 ]
