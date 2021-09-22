@@ -658,6 +658,7 @@ impl ClassMember {
     }
 }
 
+/// A class method.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Method {
     pub span: Span,
