@@ -59,16 +59,18 @@ impl Analyzer<'_, '_> {
                 if let Some(b_tps) = &bi.type_params {
                     if let Some(a_tp) = &a.type_params {
                         for (idx, b_tp) in b_tps.params.iter().enumerate() {
-                            type_params.insert(
-                                b_tp.name.clone(),
-                                Type::Param(TypeParam {
-                                    span: a_tp.span,
-                                    name: a_tp.params[idx].name.clone(),
-                                    constraint: None,
-                                    default: None,
-                                    metadata: Default::default(),
-                                }),
-                            );
+                            if let Some(a_param) = a_tp.params.get(idx) {
+                                type_params.insert(
+                                    b_tp.name.clone(),
+                                    Type::Param(TypeParam {
+                                        span: a_tp.span,
+                                        name: a_param.name.clone(),
+                                        constraint: None,
+                                        default: None,
+                                        metadata: Default::default(),
+                                    }),
+                                );
+                            }
                         }
                     }
                 }
