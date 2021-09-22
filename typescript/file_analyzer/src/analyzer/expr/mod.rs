@@ -1048,9 +1048,9 @@ impl Analyzer<'_, '_> {
 
         let _tracing = if cfg!(debug_assertions) {
             let obj = dump_type_as_string(&self.cm, &obj);
-            let prop_ty = dump_type_as_string(&self.cm, &prop.ty());
+            // let prop_ty = dump_type_as_string(&self.cm, &prop.ty());
 
-            Some(tracing::span!(Level::ERROR, "access_property", obj = &*obj, prop = &*prop_ty).entered())
+            Some(tracing::span!(Level::ERROR, "access_property", obj = &*obj).entered())
         } else {
             None
         };
