@@ -13,7 +13,7 @@ impl Analyzer<'_, '_> {
 
             // TODO: Support type literals and interfaces.
 
-            match &*ty {
+            match ty.normalize() {
                 Type::ClassDef(cls) => return self.get_index_signature_from_class(span, &cls),
                 _ => Ok(None),
             }

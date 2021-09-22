@@ -470,7 +470,7 @@ impl Analyzer<'_, '_> {
 
             Type::Interface(..) => {
                 let ty = self
-                    .convert_type_to_type_lit(span, r)?
+                    .convert_type_to_type_lit(span, Cow::Borrowed(r))?
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {
@@ -607,7 +607,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Interface(..) => {
                 let ty = self
-                    .convert_type_to_type_lit(span, r)?
+                    .convert_type_to_type_lit(span, Cow::Borrowed(r))?
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {

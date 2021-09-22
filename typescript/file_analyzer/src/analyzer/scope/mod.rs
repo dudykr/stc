@@ -2650,6 +2650,12 @@ impl Expander<'_, '_, '_> {
     }
 }
 
+impl Fold<TypeParam> for Expander<'_, '_, '_> {
+    fn fold(&mut self, tp: TypeParam) -> TypeParam {
+        tp
+    }
+}
+
 impl Fold<ty::Function> for Expander<'_, '_, '_> {
     fn fold(&mut self, mut f: ty::Function) -> ty::Function {
         f.type_params = f.type_params.fold_with(self);

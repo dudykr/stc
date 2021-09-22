@@ -1,5 +1,5 @@
 use crate::{
-    analyzer::{expr::TypeOfMode, generic::ExtendsOpts, Analyzer, Ctx},
+    analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
     util::unwrap_ref_with_single_arg,
     Marks, ValidationResult,
@@ -12,6 +12,7 @@ use stc_ts_ast_rnode::{
     RTsModuleDecl, RTsModuleName, RTsTypeAliasDecl,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
+use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     name::Name, Accessor, Array, ArrayMetadata, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional,
@@ -31,7 +32,7 @@ use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{debug, error, instrument};
+use tracing::{debug, error, instrument, span, Level};
 
 mod index_signature;
 mod keyof;
@@ -47,6 +48,9 @@ pub(crate) struct NormalizeTypeOpts {
     pub preserve_typeof: bool,
     /// Should we normalize keywords as interfaces?
     pub normalize_keywords: bool,
+
+    //// If `true`, we will not expand generics.
+    pub process_only_key: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -65,13 +69,20 @@ impl Analyzer<'_, '_> {
     ///
     /// If `span` is provided, it will be used for types **created** by the
     /// method. Otherwise the span of the original type is used.
-    #[instrument(name = "normalize", skip(self, span, ty, opts))]
     pub(crate) fn normalize<'a>(
         &mut self,
         span: Option<Span>,
         mut ty: Cow<'a, Type>,
         mut opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
+        let _tracing = if cfg!(debug_assertions) {
+            let ty_str = dump_type_as_string(&self.cm, &ty);
+
+            Some(span!(Level::ERROR, "normalize", ty = &*ty_str).entered())
+        } else {
+            None
+        };
+
         let res = (|| {
             ty.assert_valid();
 
@@ -86,12 +97,6 @@ impl Analyzer<'_, '_> {
 
             let _stack = stack::track(actual_span)?;
             let _context = debug_ctx!(format!("Normalize: {}", dump_type_as_string(&self.cm, &ty)));
-
-            if ty.is_arc() {
-                let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
-
-                return Ok(Cow::Owned(ty));
-            }
 
             match ty.normalize() {
                 Type::Lit(..)
@@ -110,6 +115,12 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
+            if ty.is_arc() {
+                let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
+
+                return Ok(Cow::Owned(ty));
+            }
+
             if matches!(
                 ty.normalize(),
                 Type::Conditional(..) | Type::Array(..) | Type::IndexedAccessType(..) | Type::Mapped(..)
@@ -121,7 +132,17 @@ impl Analyzer<'_, '_> {
                 match ty.normalize() {
                     Type::Ref(_) => {
                         let mut new_ty = self
-                            .expand_top_ref(actual_span, Cow::Borrowed(&ty), Default::default())
+                            .expand_top_ref(
+                                actual_span,
+                                Cow::Borrowed(&ty),
+                                ExpandOpts {
+                                    generic: ExpandGenericOpts {
+                                        ignore_values: opts.process_only_key,
+                                        ..Default::default()
+                                    },
+                                    ..Default::default()
+                                },
+                            )
                             .context("tried to expand a ref type as a part of normalization")?;
 
                         // We are declaring, and expand_top_ref returned Type::Ref
@@ -1001,13 +1022,58 @@ impl Analyzer<'_, '_> {
     pub(crate) fn convert_type_to_type_lit<'a>(
         &mut self,
         span: Span,
-        ty: &'a Type,
+        ty: Cow<'a, Type>,
     ) -> ValidationResult<Option<Cow<'a, TypeLit>>> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let _ctx = debug_ctx!(format!("type_to_type_lit: {:?}", ty));
 
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
+
+        if ty.normalize().is_type_lit() {
+            match ty {
+                Cow::Owned(ty) => {
+                    let t = ty.foldable().expect_type_lit();
+                    return Ok(Some(Cow::Owned(t)));
+                }
+
+                Cow::Borrowed(ty) => match ty.normalize() {
+                    Type::TypeLit(t) => return Ok(Some(Cow::Borrowed(t))),
+                    _ => {
+                        unreachable!()
+                    }
+                },
+            }
+        }
+
+        if ty.normalize().is_interface() {
+            let t = ty.into_owned().foldable().expect_interface();
+            let mut members = vec![];
+
+            for parent in &t.extends {
+                let parent = self.type_of_ts_entity_name(
+                    parent.span(),
+                    self.ctx.module_id,
+                    &parent.expr,
+                    parent.type_args.as_deref(),
+                )?;
+
+                let super_els = self.convert_type_to_type_lit(span, Cow::Owned(parent))?;
+
+                members.extend(super_els.into_iter().map(Cow::into_owned).flat_map(|v| v.members))
+            }
+
+            // TODO: Override
+            members.extend(t.body);
+            return Ok(Some(Cow::Owned(TypeLit {
+                span: t.span,
+                members,
+                metadata: TypeLitMetadata {
+                    inexact: true,
+                    ..Default::default()
+                },
+            })));
+        }
 
         let ty = ty.normalize();
 
@@ -1024,14 +1090,14 @@ impl Analyzer<'_, '_> {
                 let ty = self
                     .convert_type_to_type_lit(
                         span,
-                        &Type::Keyword(KeywordType {
+                        Cow::Owned(Type::Keyword(KeywordType {
                             span: ty.span,
                             kind,
                             metadata: KeywordTypeMetadata {
                                 common: ty.metadata.common,
                                 ..Default::default()
                             },
-                        }),
+                        })),
                     )
                     .context("tried to convert a literal to type literal")?
                     .map(Cow::into_owned);
@@ -1052,13 +1118,13 @@ impl Analyzer<'_, '_> {
                 return Ok(self
                     .convert_type_to_type_lit(
                         span,
-                        &Type::Ref(Ref {
+                        Cow::Owned(Type::Ref(Ref {
                             span,
                             ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(name, span)),
                             type_args: None,
                             metadata: Default::default(),
-                        }),
+                        })),
                     )?
                     .map(Cow::into_owned)
                     .map(Cow::Owned));
@@ -1067,39 +1133,8 @@ impl Analyzer<'_, '_> {
             Type::Ref(..) => {
                 let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
                 return self
-                    .convert_type_to_type_lit(span, &ty)
+                    .convert_type_to_type_lit(span, ty)
                     .map(|o| o.map(Cow::into_owned).map(Cow::Owned));
-            }
-
-            Type::TypeLit(t) => Cow::Borrowed(t),
-
-            Type::Interface(t) => {
-                let mut members = vec![];
-
-                for parent in &t.extends {
-                    let parent = self.type_of_ts_entity_name(
-                        parent.span(),
-                        self.ctx.module_id,
-                        &parent.expr,
-                        parent.type_args.as_deref(),
-                    )?;
-
-                    let super_els = self.convert_type_to_type_lit(span, &parent)?;
-
-                    members.extend(super_els.into_iter().map(Cow::into_owned).flat_map(|v| v.members))
-                }
-
-                // TODO: Override
-                members.extend(t.body.clone());
-
-                Cow::Owned(TypeLit {
-                    span: t.span,
-                    members,
-                    metadata: TypeLitMetadata {
-                        inexact: true,
-                        ..Default::default()
-                    },
-                })
             }
 
             Type::Enum(e) => self.enum_to_type_lit(e).map(Cow::Owned)?,
@@ -1108,7 +1143,7 @@ impl Analyzer<'_, '_> {
                 let mut members = vec![];
                 if let Some(super_class) = &c.def.super_class {
                     let super_class = self.instantiate_class(span, super_class)?;
-                    let super_els = self.convert_type_to_type_lit(span, &super_class)?;
+                    let super_els = self.convert_type_to_type_lit(span, Cow::Owned(super_class))?;
                     members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
                 }
 
@@ -1128,7 +1163,7 @@ impl Analyzer<'_, '_> {
             Type::ClassDef(c) => {
                 let mut members = vec![];
                 if let Some(super_class) = &c.super_class {
-                    let super_els = self.convert_type_to_type_lit(span, super_class)?;
+                    let super_els = self.convert_type_to_type_lit(span, Cow::Borrowed(&super_class))?;
                     members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
                 }
 
@@ -1148,7 +1183,7 @@ impl Analyzer<'_, '_> {
             Type::Intersection(t) => {
                 let mut members = vec![];
                 for ty in &t.types {
-                    let opt = self.convert_type_to_type_lit(span, ty)?;
+                    let opt = self.convert_type_to_type_lit(span, Cow::Borrowed(ty))?;
                     members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
                 }
 
@@ -1159,7 +1194,12 @@ impl Analyzer<'_, '_> {
                 })
             }
 
-            Type::Alias(ty) => return self.convert_type_to_type_lit(span, &ty.ty),
+            Type::Alias(ty) => {
+                return Ok(self
+                    .convert_type_to_type_lit(span, Cow::Borrowed(&ty.ty))?
+                    .map(Cow::into_owned)
+                    .map(Cow::Owned))
+            }
 
             Type::Constructor(ty) => {
                 let el = TypeElement::Constructor(ConstructorSignature {
@@ -1248,7 +1288,7 @@ impl Analyzer<'_, '_> {
                 let ty = self.expand_mapped(span, m)?;
                 if let Some(ty) = ty {
                     let ty = self
-                        .convert_type_to_type_lit(span, &ty)?
+                        .convert_type_to_type_lit(span, Cow::Owned(ty))?
                         .map(Cow::into_owned)
                         .map(Cow::Owned);
 
@@ -1267,7 +1307,7 @@ impl Analyzer<'_, '_> {
                     .normalize(None, Cow::Borrowed(ty), Default::default())
                     .context("tried to normalize a type to convert it to type literal")?;
                 let ty = self
-                    .convert_type_to_type_lit(span, &ty)
+                    .convert_type_to_type_lit(span, ty)
                     .context("tried to convert a normalized type to type liteal")?
                     .map(Cow::into_owned)
                     .map(Cow::Owned);

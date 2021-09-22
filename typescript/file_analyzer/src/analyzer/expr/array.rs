@@ -569,7 +569,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<Cow<'a, Type>> {
         let iterator = self.normalize(span, iterator, NormalizeTypeOpts { ..Default::default() })?;
 
-        if iterator.is_tuple() {
+        if iterator.normalize().is_tuple() {
             let ty = iterator.into_owned().foldable().tuple().unwrap();
 
             return Ok(Cow::Owned(Type::Tuple(Tuple {
