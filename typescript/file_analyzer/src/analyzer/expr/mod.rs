@@ -540,6 +540,8 @@ pub(crate) struct AccessPropertyOpts {
     /// Note: If it's in l-value context, `access_property` will return
     /// undefined even if this field is `false`.
     pub use_undefined_for_tuple_index_error: bool,
+
+    pub for_validation_of_indexed_access_type: bool,
 }
 
 #[validator]
@@ -1117,6 +1119,25 @@ impl Analyzer<'_, '_> {
                         return Ok(ty);
                     }
                 }
+
+                Type::Param(TypeParam {
+                    constraint: Some(constraint),
+                    ..
+                }) if opts.for_validation_of_indexed_access_type => match constraint.normalize() {
+                    Type::Operator(Operator {
+                        op: TsTypeOperatorOp::KeyOf,
+                        ty: constraint_ty,
+                        ..
+                    }) => {
+                        //
+                        if constraint_ty.as_ref().type_eq(&*obj) {
+                            return Ok(Type::any(DUMMY_SP, Default::default()));
+                        }
+                    }
+
+                    _ => {}
+                },
+
                 _ => {}
             }
         }

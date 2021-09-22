@@ -1,5 +1,11 @@
 use crate::{
-    analyzer::{expr::TypeOfMode, props::ComputedPropMode, scope::VarKind, util::ResultExt, Analyzer, Ctx, ScopeKind},
+    analyzer::{
+        expr::{AccessPropertyOpts, TypeOfMode},
+        props::ComputedPropMode,
+        scope::VarKind,
+        util::ResultExt,
+        Analyzer, Ctx, ScopeKind,
+    },
     util::contains_infer_type,
     validator,
     validator::ValidateWith,
@@ -928,7 +934,10 @@ impl Analyzer<'_, '_> {
                 }),
                 TypeOfMode::RValue,
                 IdCtx::Type,
-                Default::default(),
+                AccessPropertyOpts {
+                    for_validation_of_indexed_access_type: true,
+                    ..Default::default()
+                },
             );
 
             prop_ty.report(&mut self.storage);
