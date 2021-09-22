@@ -111,5 +111,25 @@ macro_rules! impl_traits {
                 (**self).hash(hasher)
             }
         }
+
+        impl<T> std::fmt::Debug for $Ty<T>
+        where
+            T: std::fmt::Debug,
+        {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                match self {
+                    $Ty::Arc(..) => write!(f, "arc: ")?,
+                    $Ty::$Raw(..) => write!(f, "raw: ")?,
+                }
+                std::fmt::Debug::fmt(&**self, f)
+            }
+        }
+
+        impl<T> From<Arc<T>> for $Ty<T> {
+            #[inline]
+            fn from(arc: Arc<T>) -> Self {
+                Self::Arc(arc)
+            }
+        }
     };
 }

@@ -11,10 +11,10 @@ where
 impl_traits!(BoxedArcCow, Boxed);
 
 impl<T> BoxedArcCow<T> {
-    pub fn freezed(mut self) {
+    pub fn freezed(self) -> Self {
         match self {
-            BoxedArcCow::Arc(_) => {}
-            BoxedArcCow::Boxed(v) => {}
+            BoxedArcCow::Boxed(v) => Self::Arc(v.shareable()),
+            _ => self,
         }
     }
 }

@@ -17,10 +17,10 @@ impl_traits!(ArcCow, Raw);
 
 impl<T> ArcCow<T> {
     #[inline]
-    pub fn freeze(&mut self) {
+    pub fn freezed(self) -> Self {
         match self {
-            ArcCow::Arc(_) => todo!(),
-            ArcCow::Raw(_) => todo!(),
+            ArcCow::Raw(v) => Self::Arc(Arc::new(v)),
+            _ => self,
         }
     }
 }
