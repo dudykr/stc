@@ -23,6 +23,7 @@ scoped-tls = "1.0.0"
 servo_arc = "0.1.1"
 smallvec = "1.6.0"
 static_assertions = "1.1.0"
+stc_arc_cow = {path = "../../utils/arc_cow/"}
 stc_ts_ast_rnode = {path = "../ast_rnode"}
 stc_utils = {path = "../../utils/"}
 stc_visit = {path = "../../visit"}
