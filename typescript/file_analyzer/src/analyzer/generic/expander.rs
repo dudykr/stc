@@ -95,13 +95,15 @@ impl Analyzer<'_, '_> {
             debug_assert!(param.is_clone_cheap());
         }
 
-        let ty = ty.fold_with(&mut GenericExpander {
-            cm: self.cm.clone(),
-            params,
-            fully: false,
-            dejavu: Default::default(),
-            opts,
-        });
+        let ty = ty
+            .fold_with(&mut GenericExpander {
+                cm: self.cm.clone(),
+                params,
+                fully: false,
+                dejavu: Default::default(),
+                opts,
+            })
+            .fixed();
 
         Ok(ty)
     }
