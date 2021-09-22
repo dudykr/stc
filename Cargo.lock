@@ -2334,6 +2334,7 @@ dependencies = [
  "servo_arc",
  "smallvec 1.6.1",
  "static_assertions",
+ "stc_arc_cow",
  "stc_ts_ast_rnode",
  "stc_utils",
  "stc_visit",
