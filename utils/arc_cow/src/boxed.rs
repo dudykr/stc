@@ -1,4 +1,4 @@
-use servo_arc::{Arc, UniqueArc};
+use triomphe::{Arc, UniqueArc};
 
 pub enum BoxedArcCow<T>
 where
@@ -22,5 +22,21 @@ impl<T> BoxedArcCow<T> {
 impl<T> From<T> for BoxedArcCow<T> {
     fn from(data: T) -> Self {
         BoxedArcCow::Boxed(UniqueArc::new(data))
+    }
+}
+
+impl<T> BoxedArcCow<T>
+where
+    T: Clone,
+{
+    #[inline]
+    pub fn into_inner(self) -> T {
+        match self {
+            Self::Arc(v) => match Arc::try_unwrap(v) {
+                Ok(v) => v,
+                Err(v) => (*v).clone(),
+            },
+            Self::Boxed(v) => UniqueArc::into_inner(v),
+        }
     }
 }

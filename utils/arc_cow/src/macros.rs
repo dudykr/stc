@@ -1,5 +1,6 @@
 macro_rules! impl_traits {
     ($Ty:tt, $Raw:ident) => {
+        use stc_visit::{FoldWith, VisitMutWith, VisitWith, Visitable};
         use std::ops::Deref;
         use swc_common::{EqIgnoreSpan, Spanned, TypeEq};
 
@@ -152,10 +153,43 @@ macro_rules! impl_traits {
             }
         }
 
+        impl<T> Visitable for $Ty<T> {}
+
+        impl<T, V> VisitWith<V> for $Ty<T>
+        where
+            T: VisitWith<V>,
+        {
+            #[inline]
+            fn visit_children_with(&self, v: &mut V) {
+                (**self).visit_children_with(v)
+            }
+        }
+
+        impl<T, V> VisitMutWith<V> for $Ty<T>
+        where
+            T: Clone + VisitMutWith<V>,
+        {
+            #[inline]
+            fn visit_mut_children_with(&mut self, v: &mut V) {
+                self.make_mut().visit_mut_children_with(v)
+            }
+        }
+
+        impl<T, V> FoldWith<V> for $Ty<T>
+        where
+            T: Clone + FoldWith<V>,
+        {
+            #[inline]
+            fn fold_children_with(self, v: &mut V) -> Self {
+                Self::from(self.into_inner().fold_children_with(v))
+            }
+        }
+
         impl<T> $Ty<T>
         where
             T: Clone,
         {
+            #[inline]
             pub fn make_mut(&mut self) -> &mut T {
                 match self {
                     $Ty::Arc(v) => Arc::make_mut(v),
