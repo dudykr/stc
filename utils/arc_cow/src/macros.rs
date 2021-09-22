@@ -131,5 +131,17 @@ macro_rules! impl_traits {
                 Self::Arc(arc)
             }
         }
+
+        impl<T> $Ty<T>
+        where
+            T: Clone,
+        {
+            pub fn as_mut(&mut self) -> &mut T {
+                match self {
+                    $Ty::Arc(v) => Arc::make_mut(v),
+                    $Ty::$Raw(v) => &mut *v,
+                }
+            }
+        }
     };
 }
