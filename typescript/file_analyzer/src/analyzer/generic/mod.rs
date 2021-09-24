@@ -147,6 +147,7 @@ impl Analyzer<'_, '_> {
         params: &[FnParam],
         args: &[TypeOrSpread],
         default_ty: Option<&Type>,
+        opts: InferTypeOpts,
     ) -> ValidationResult<FxHashMap<Id, Type>> {
         warn!(
             "infer_arg_types: {:?}",
@@ -154,8 +155,6 @@ impl Analyzer<'_, '_> {
         );
 
         let start = Instant::now();
-
-        let opts = InferTypeOpts::default();
 
         let mut inferred = InferData::default();
 

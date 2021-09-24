@@ -3,6 +3,7 @@ use crate::{
     analyzer::{
         assign::AssignOpts,
         expr::TypeOfMode,
+        generic::InferTypeOpts,
         marks::MarkExt,
         scope::ExpandOpts,
         util::{make_instance_type, ResultExt},
@@ -2503,7 +2504,15 @@ impl Analyzer<'_, '_> {
             }
 
             debug!("Inferring arg types for a call");
-            let mut inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
+            let mut inferred = self.infer_arg_types(
+                span,
+                type_args,
+                type_params,
+                &params,
+                &spread_arg_types,
+                None,
+                InferTypeOpts { ..Default::default() },
+            )?;
 
             debug!("Inferred types:\n{}", dump_type_map(&self.cm, &inferred));
 

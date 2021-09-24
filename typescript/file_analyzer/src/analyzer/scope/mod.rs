@@ -5,6 +5,7 @@ use crate::{
         class::ClassState,
         control_flow::CondFacts,
         expr::{IdCtx, TypeOfMode},
+        generic::InferTypeOpts,
         scope::vars::DeclareVarsOpts,
         stmt::return_type::ReturnValues,
         Analyzer, Ctx, ResultExt,
@@ -2058,6 +2059,7 @@ impl Expander<'_, '_, '_> {
                                             members: vec![],
                                             metadata: Default::default(),
                                         })),
+                                        InferTypeOpts { ..Default::default() },
                                     )?;
                                     inferred.iter_mut().for_each(|(_, ty)| {
                                         self.analyzer.allow_expansion(ty);
