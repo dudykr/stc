@@ -796,6 +796,12 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 if !e.is_empty() && !opts.append_type_as_union {
+                                    debug!(
+                                        "Cannot append to `{}` (arg = {})",
+                                        name,
+                                        dump_type_as_string(&self.cm, &arg)
+                                    );
+
                                     inferred.errored.insert(name.clone());
                                     return Ok(());
                                 }
