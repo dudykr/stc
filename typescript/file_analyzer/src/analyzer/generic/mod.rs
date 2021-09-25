@@ -768,10 +768,13 @@ impl Analyzer<'_, '_> {
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
                         match e.get_mut() {
-                            InferredType::Union(e) => return Ok(()),
+                            InferredType::Union(e) => {
+                                debug!("`{}` is already fixed as {}", name, dump_type_as_string(&self.cm, &e));
+                                return Ok(());
+                            }
                             InferredType::Other(e) => {
                                 // If we inferred T as `number`, we don't need to add `1`.
-                                if e.iter().any(|prev| {
+                                if let Some(prev) = e.iter().find(|prev| {
                                     self.assign_with_opts(
                                         &mut Default::default(),
                                         AssignOpts {
@@ -783,6 +786,12 @@ impl Analyzer<'_, '_> {
                                     )
                                     .is_ok()
                                 }) {
+                                    debug!(
+                                        "Ignoring the result for `{}` can be {}",
+                                        name,
+                                        dump_type_as_string(&self.cm, &prev)
+                                    );
+
                                     return Ok(());
                                 }
 
@@ -804,6 +813,8 @@ impl Analyzer<'_, '_> {
                                         )
                                         .is_ok()
                                     {
+                                        debug!("Overrding `{}` with {}", name, dump_type_as_string(&self.cm, &arg));
+
                                         *prev = arg.clone().generalize_lit();
                                         return Ok(());
                                     }
