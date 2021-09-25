@@ -44,7 +44,7 @@ use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::{debug, info, instrument};
+use tracing::{debug, info, instrument, warn};
 use ty::TypeExt;
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -2731,21 +2731,19 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            let ret_ty = {
-                let mut map = HashMap::default();
 
-                for id in &inferred.errored {
-                    map.insert(
-                        id.clone(),
-                        Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsUnknownKeyword,
-                            metadata: KeywordTypeMetadata { ..Default::default() },
-                        }),
-                    );
-                }
-                self.expand_type_params(&map, ret_ty, Default::default())?
-            };
+            warn!("Failed to infer types of {:?}", inferred.errored);
+
+            for id in &inferred.errored {
+                inferred.types.insert(
+                    id.clone(),
+                    Type::Keyword(KeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsUnknownKeyword,
+                        metadata: KeywordTypeMetadata { ..Default::default() },
+                    }),
+                );
+            }
 
             print_type("Return", &self.cm, &ret_ty);
             let mut ty = self
