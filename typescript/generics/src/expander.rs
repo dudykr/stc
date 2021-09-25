@@ -16,6 +16,12 @@ use swc_common::{SourceMap, Spanned, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, info, warn};
 
+#[derive(Debug)]
+pub struct InferTypeResult {
+    pub types: FxHashMap<Id, Type>,
+    pub errored: FxHashSet<Id>,
+}
+
 /// This struct does not expands ref to other thpe. See Analyzer.expand to do
 /// such operation.
 pub struct GenericExpander<'a> {

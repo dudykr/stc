@@ -5,7 +5,7 @@ use crate::{
     util::{unwrap_ref_with_single_arg, RemoveTypes},
     ValidationResult,
 };
-use fxhash::FxHashMap;
+use fxhash::{FxHashMap, FxHashSet};
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RIdent, RPat, RStr, RTsEntityName, RTsLit};
@@ -13,7 +13,10 @@ use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace, print_type},
     DebugExt,
 };
-use stc_ts_generics::type_param::{finder::TypeParamUsageFinder, remover::TypeParamRemover, renamer::TypeParamRenamer};
+use stc_ts_generics::{
+    expander::InferTypeResult,
+    type_param::{finder::TypeParamUsageFinder, remover::TypeParamRemover, renamer::TypeParamRenamer},
+};
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType,
@@ -45,6 +48,8 @@ enum InferredType {
 pub(super) struct InferData {
     /// Inferred type parameters
     type_params: FxHashMap<Id, InferredType>,
+
+    errored: FxHashSet<Id>,
 
     /// For the code below, we can know that `T` defaults to `unknown` while
     /// inferring type of funcation parametrs. We cannot know the type before
@@ -148,7 +153,7 @@ impl Analyzer<'_, '_> {
         args: &[TypeOrSpread],
         default_ty: Option<&Type>,
         opts: InferTypeOpts,
-    ) -> ValidationResult<FxHashMap<Id, Type>> {
+    ) -> ValidationResult<InferTypeResult> {
         warn!(
             "infer_arg_types: {:?}",
             type_params.iter().map(|p| format!("{}, ", p.name)).collect::<String>()
@@ -364,7 +369,7 @@ impl Analyzer<'_, '_> {
         self.infer_type(span, &mut inferred, base, concrete, opts)?;
         let map = self.finalize_inference(inferred);
 
-        Ok(map)
+        Ok(map.types)
     }
 
     ///
@@ -1615,7 +1620,7 @@ impl Analyzer<'_, '_> {
                                         self.infer_type(span, &mut data, &param_ty, &arg_prop_ty, opts)?;
                                         let mut defaults = take(&mut data.defaults);
                                         let mut map = self.finalize_inference(data);
-                                        let inferred_ty = map.remove(&name);
+                                        let inferred_ty = map.types.remove(&name);
 
                                         self.mapped_type_param_name = old;
 
@@ -1686,7 +1691,7 @@ impl Analyzer<'_, '_> {
                             let mut data = InferData::default();
                             self.infer_type(span, &mut data, &param_ty, &arg.elem_type, opts)?;
                             let mut map = self.finalize_inference(data);
-                            let mut inferred_ty = map.remove(&name);
+                            let mut inferred_ty = map.types.remove(&name);
 
                             self.mapped_type_param_name = old;
 
@@ -2285,7 +2290,7 @@ impl Analyzer<'_, '_> {
             return Ok(ty
                 .foldable()
                 .fold_with(&mut TypeParamRenamer {
-                    inferred: map,
+                    inferred: map.types,
                     declared: Default::default(),
                 })
                 .fixed());

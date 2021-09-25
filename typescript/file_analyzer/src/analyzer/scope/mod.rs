@@ -2061,7 +2061,7 @@ impl Expander<'_, '_, '_> {
                                         })),
                                         InferTypeOpts { ..Default::default() },
                                     )?;
-                                    inferred.iter_mut().for_each(|(_, ty)| {
+                                    inferred.types.iter_mut().for_each(|(_, ty)| {
                                         self.analyzer.allow_expansion(ty);
 
                                         ty.make_cheap();
@@ -2070,7 +2070,7 @@ impl Expander<'_, '_, '_> {
                                     let before = dump_type_as_string(&self.analyzer.cm, &ty);
                                     // TODO: PERF
                                     let mut ty = self.analyzer.expand_type_params(
-                                        &inferred,
+                                        &inferred.types,
                                         ty.foldable(),
                                         self.opts.generic,
                                     )?;

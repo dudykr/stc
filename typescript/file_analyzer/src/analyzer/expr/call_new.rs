@@ -2514,12 +2514,12 @@ impl Analyzer<'_, '_> {
                 InferTypeOpts { ..Default::default() },
             )?;
 
-            debug!("Inferred types:\n{}", dump_type_map(&self.cm, &inferred));
+            debug!("Inferred types:\n{}", dump_type_map(&self.cm, &inferred.types));
 
             let expanded_param_types = params
                 .into_iter()
                 .map(|v| -> ValidationResult<_> {
-                    let mut ty = box self.expand_type_params(&inferred, *v.ty, Default::default())?;
+                    let mut ty = box self.expand_type_params(&inferred.types, *v.ty, Default::default())?;
 
                     Ok(FnParam { ty, ..v })
                 })
@@ -2716,8 +2716,8 @@ impl Analyzer<'_, '_> {
 
             if self.ctx.is_instantiating_class {
                 for tp in type_params.iter() {
-                    if !inferred.contains_key(&tp.name) {
-                        inferred.insert(
+                    if !inferred.types.contains_key(&tp.name) {
+                        inferred.types.insert(
                             tp.name.clone(),
                             Type::Keyword(KeywordType {
                                 span: tp.span,
@@ -2731,10 +2731,25 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
+            let ret_ty = {
+                let mut map = HashMap::default();
+
+                for id in &inferred.errored {
+                    map.insert(
+                        id.clone(),
+                        Type::Keyword(KeywordType {
+                            span,
+                            kind: TsKeywordTypeKind::TsUnknownKeyword,
+                            metadata: KeywordTypeMetadata { ..Default::default() },
+                        }),
+                    );
+                }
+                self.expand_type_params(&map, ret_ty, Default::default())?
+            };
 
             print_type("Return", &self.cm, &ret_ty);
             let mut ty = self
-                .expand_type_params(&inferred, ret_ty, Default::default())?
+                .expand_type_params(&inferred.types, ret_ty, Default::default())?
                 .freezed();
             print_type("Return, expanded", &self.cm, &ty);
 
