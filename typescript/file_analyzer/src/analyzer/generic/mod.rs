@@ -252,6 +252,8 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        info!("infer_type is finished:\n{:?}", &inferred.type_params);
+
         // Defaults
         for type_param in type_params {
             if inferred.type_params.contains_key(&type_param.name) {
@@ -468,6 +470,8 @@ impl Analyzer<'_, '_> {
         } else {
             None
         };
+
+        debug!("Start");
 
         let res = self.infer_type_inner(span, inferred, param, arg, opts);
 
