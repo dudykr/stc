@@ -3180,6 +3180,44 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if let Some(ty) = self.find_var_type(&i.into(), type_mode) {
+            ty.assert_valid();
+
+            let ty_str = dump_type_as_string(&self.cm, &ty);
+            debug!("find_var_type returned a type: {}", ty_str);
+            let mut span = span;
+            let mut ty = ty.into_owned();
+            if self.scope.kind().allows_respanning() {
+                if self.is_implicitly_typed(&ty) {
+                    ty.metadata_mut().implicit = true;
+                }
+                if !self.may_generalize(&ty) {
+                    ty.metadata_mut().prevent_generalization = true;
+                }
+                ty.respan(span);
+            }
+            debug!("{:?}", ty);
+            return Ok(ty);
+        }
+
+        if let Some(_var) = self.find_var(&i.into()) {
+            // TODO: Infer type or use type hint to handle
+            //
+            // let id: (x: Foo) => Foo = x => x;
+            //
+            return Ok(Type::any(span, Default::default()));
+        }
+
+        if !self.is_builtin {
+            if let Ok(ty) = self.env.get_global_var(span, &i.sym) {
+                if self.ctx.report_error_for_non_local_vars {
+                    self.storage.report(Error::CannotExportNonLocalVar { span: i.span });
+                }
+
+                return Ok(ty);
+            }
+        }
+
         // Check `declaring` before checking variables.
         if self.scope.is_declaring(&i.into()) {
             debug!("({}) reference in initialization: {}", self.scope.depth(), i.sym);
@@ -3227,44 +3265,6 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::any(span, Default::default()));
             } else {
                 return Err(Error::ReferencedInInit { span });
-            }
-        }
-
-        if let Some(ty) = self.find_var_type(&i.into(), type_mode) {
-            ty.assert_valid();
-
-            let ty_str = dump_type_as_string(&self.cm, &ty);
-            debug!("find_var_type returned a type: {}", ty_str);
-            let mut span = span;
-            let mut ty = ty.into_owned();
-            if self.scope.kind().allows_respanning() {
-                if self.is_implicitly_typed(&ty) {
-                    ty.metadata_mut().implicit = true;
-                }
-                if !self.may_generalize(&ty) {
-                    ty.metadata_mut().prevent_generalization = true;
-                }
-                ty.respan(span);
-            }
-            debug!("{:?}", ty);
-            return Ok(ty);
-        }
-
-        if let Some(_var) = self.find_var(&i.into()) {
-            // TODO: Infer type or use type hint to handle
-            //
-            // let id: (x: Foo) => Foo = x => x;
-            //
-            return Ok(Type::any(span, Default::default()));
-        }
-
-        if !self.is_builtin {
-            if let Ok(ty) = self.env.get_global_var(span, &i.sym) {
-                if self.ctx.report_error_for_non_local_vars {
-                    self.storage.report(Error::CannotExportNonLocalVar { span: i.span });
-                }
-
-                return Ok(ty);
             }
         }
 
