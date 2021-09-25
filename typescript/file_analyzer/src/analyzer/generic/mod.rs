@@ -782,6 +782,11 @@ impl Analyzer<'_, '_> {
                                     return Ok(());
                                 }
 
+                                if !e.is_empty() && !opts.append_type_as_union {
+                                    inferred.errored.insert(name.clone());
+                                    return Ok(());
+                                }
+
                                 for prev in e.iter_mut() {
                                     if self
                                         .assign_with_opts(
@@ -798,11 +803,6 @@ impl Analyzer<'_, '_> {
                                         *prev = arg.clone().generalize_lit();
                                         return Ok(());
                                     }
-                                }
-
-                                if !e.is_empty() && !opts.append_type_as_union {
-                                    inferred.errored.insert(name.clone());
-                                    return Ok(());
                                 }
 
                                 let param_ty = Type::union(e.clone()).cheap();
