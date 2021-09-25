@@ -2212,6 +2212,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn rename_inferred(&mut self, inferred: &mut InferData, arg_type_params: &TypeParamDecl) -> ValidationResult<()> {
+        info!("rename_inferred");
         struct Renamer<'a> {
             fixed: &'a FxHashMap<Id, Type>,
         }
