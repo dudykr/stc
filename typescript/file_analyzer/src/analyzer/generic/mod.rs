@@ -475,6 +475,8 @@ impl Analyzer<'_, '_> {
 
         let res = self.infer_type_inner(span, inferred, param, arg, opts);
 
+        debug!("End");
+
         res
     }
 
