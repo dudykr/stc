@@ -2232,6 +2232,14 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if arg_type_params
+            .params
+            .iter()
+            .any(|v| inferred.errored.contains(&v.name))
+        {
+            return Ok(());
+        }
+
         //
         let mut fixed = FxHashMap::default();
 
@@ -2240,6 +2248,7 @@ impl Analyzer<'_, '_> {
             if arg_type_params.params.iter().all(|v| *param_name != v.name) {
                 return;
             }
+
             let ty = match ty.clone() {
                 InferredType::Union(v) => v,
                 InferredType::Other(types) => Type::union(types).cheap(),
