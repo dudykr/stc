@@ -2513,8 +2513,8 @@ impl Analyzer<'_, '_> {
                 None,
                 InferTypeOpts { ..Default::default() },
             )?;
-
             debug!("Inferred types:\n{}", dump_type_map(&self.cm, &inferred.types));
+            warn!("Failed to infer types of {:?}", inferred.errored);
 
             let expanded_param_types = params
                 .into_iter()
@@ -2731,8 +2731,6 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-
-            warn!("Failed to infer types of {:?}", inferred.errored);
 
             for id in &inferred.errored {
                 inferred.types.insert(
