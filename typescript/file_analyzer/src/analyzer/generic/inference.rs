@@ -228,11 +228,12 @@ impl Analyzer<'_, '_> {
                         unreachable!()
                     }
                     InferredType::Other(e) => {
-                        if !e.is_empty() && !opts.append_type_as_union {
+                        if e.iter().any(|prev| prev.type_eq(&*ty)) {
                             return Ok(());
                         }
 
-                        if e.iter().any(|prev| prev.type_eq(&*ty)) {
+                        if !e.is_empty() && !opts.append_type_as_union {
+                            inferred.errored.insert(name.clone());
                             return Ok(());
                         }
 
