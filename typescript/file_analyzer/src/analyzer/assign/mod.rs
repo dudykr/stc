@@ -65,6 +65,9 @@ pub(crate) struct AssignOpts {
 
     pub for_overload: bool,
 
+    pub disallow_assignment_to_unknown: bool,
+    /// This is `true` for variable overloads, too. This will be fixed in
+    /// future.
     pub for_castablity: bool,
 
     /// If this is `false`, assignment of literals or some other strange type to
@@ -687,6 +690,15 @@ impl Analyzer<'_, '_> {
         if rhs.is_kwd(TsKeywordTypeKind::TsNeverKeyword) {
             return Ok(());
         }
+
+        if opts.disallow_assignment_to_unknown && to.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) {
+            fail!()
+        }
+
+        let opts = AssignOpts {
+            disallow_assignment_to_unknown: false,
+            ..opts
+        };
 
         match (to, rhs) {
             (Type::Rest(lr), r) => match lr.ty.normalize() {

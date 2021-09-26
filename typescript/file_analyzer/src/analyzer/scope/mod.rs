@@ -1486,6 +1486,7 @@ impl Analyzer<'_, '_> {
                                                 AssignOpts {
                                                     span,
                                                     for_overload: true,
+                                                    disallow_assignment_to_unknown: true,
                                                     ..Default::default()
                                                 },
                                                 &ty,
