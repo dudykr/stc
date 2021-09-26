@@ -1537,7 +1537,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
-                        if var_ty.type_eq(&ty) || ty.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) {
+                        if ty.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) || var_ty.type_eq(&ty) {
                             var_ty
                         } else {
                             Type::union(vec![var_ty, ty]).freezed()
