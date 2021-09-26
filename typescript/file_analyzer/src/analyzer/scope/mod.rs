@@ -1480,29 +1480,6 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     _ => {
-                                        let mut ty = self.expand(
-                                            span,
-                                            ty.clone(),
-                                            ExpandOpts {
-                                                full: true,
-                                                expand_union: true,
-                                                ..Default::default()
-                                            },
-                                        )?;
-                                        ty.make_clone_cheap();
-
-                                        let var_ty = self
-                                            .expand(
-                                                span,
-                                                generalized_var_ty,
-                                                ExpandOpts {
-                                                    full: true,
-                                                    expand_union: true,
-                                                    ..Default::default()
-                                                },
-                                            )?
-                                            .freezed();
-
                                         let res = self
                                             .assign_with_opts(
                                                 &mut Default::default(),
@@ -1512,7 +1489,7 @@ impl Analyzer<'_, '_> {
                                                     ..Default::default()
                                                 },
                                                 &ty,
-                                                &var_ty,
+                                                &generalized_var_ty,
                                             )
                                             .context("tried to validate a varaible declared multiple times")
                                             .convert_err(|err| Error::VarDeclNotCompatible {
