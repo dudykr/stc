@@ -939,6 +939,27 @@ impl Analyzer<'_, '_> {
                     self.infer_type_of_fn_params(span, inferred, &p.params, &a.params, opts)?;
                     self.infer_type(span, inferred, &p.ret_ty, &a.ret_ty, InferTypeOpts { ..opts })?;
 
+                    if !opts.for_fn_assignment {
+                        if let Some(arg_type_params) = &a.type_params {
+                            let mut data = InferData::default();
+                            self.infer_type_of_fn_params(
+                                span,
+                                &mut data,
+                                &a.params,
+                                &p.params,
+                                InferTypeOpts { ..opts },
+                            )?;
+
+                            // dbg!(&data);
+
+                            for (name, ty) in data.type_params {
+                                inferred.type_params.entry(name).or_insert(ty);
+                            }
+
+                            inferred.errored.extend(data.errored);
+                        }
+                    }
+
                     if let Some(arg_type_params) = &a.type_params {
                         self.rename_inferred(inferred, arg_type_params)?;
                     }
