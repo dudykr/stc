@@ -950,13 +950,15 @@ impl Analyzer<'_, '_> {
                                 InferTypeOpts { ..opts },
                             )?;
 
-                            // dbg!(&data);
+                            for name in data.errored {
+                                if !inferred.type_params.contains_key(&name) {
+                                    inferred.errored.insert(name);
+                                }
+                            }
 
                             for (name, ty) in data.type_params {
                                 inferred.type_params.entry(name).or_insert(ty);
                             }
-
-                            inferred.errored.extend(data.errored);
                         }
                     }
 
