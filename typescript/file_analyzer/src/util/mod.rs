@@ -10,7 +10,6 @@ use tracing::instrument;
 
 pub(crate) mod dashmap;
 pub(crate) mod graph;
-pub(crate) mod named;
 pub(crate) mod property_map;
 pub(crate) mod type_ext;
 
