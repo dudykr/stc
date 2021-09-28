@@ -228,7 +228,7 @@ impl Analyzer<'_, '_> {
         };
 
         let old_this = self.scope.this.take();
-        let mut res = self.with_ctx(ctx).validate_prop_inner(prop, object_type);
+        let res = self.with_ctx(ctx).validate_prop_inner(prop, object_type);
         self.scope.this = old_this;
 
         res
@@ -449,7 +449,7 @@ impl Analyzer<'_, '_> {
                     _ => false,
                 };
                 let param_span = p.param.span();
-                let mut param = &p.param;
+                let param = &p.param;
 
                 self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
                     |child: &mut Analyzer| -> ValidationResult<_> {

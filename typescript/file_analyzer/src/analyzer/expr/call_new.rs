@@ -3599,29 +3599,6 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
     }
 }
 
-fn is_key_eq_prop(prop: &RExpr, computed: bool, e: &RExpr) -> bool {
-    let tmp;
-    let v = match *e {
-        RExpr::Ident(ref i) => {
-            tmp = Id::from(i);
-            &tmp
-        }
-        RExpr::Lit(RLit::Str(ref s)) => {
-            tmp = Id::word(s.value.clone());
-            &tmp
-        }
-        _ => return false,
-    };
-
-    let p = match &*prop {
-        RExpr::Ident(ref i) => &i.sym,
-        RExpr::Lit(RLit::Str(ref s)) if computed => &s.value,
-        _ => return false,
-    };
-
-    v.sym() == p
-}
-
 fn is_fn_expr(callee: &RExpr) -> bool {
     match callee {
         RExpr::Arrow(..) | RExpr::Fn(..) => true,
