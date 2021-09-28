@@ -3,36 +3,13 @@ use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
 use stc_ts_type_ops::metadata::TypeFinder;
 use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeParam};
-use std::fmt::Debug;
 use swc_common::{Mark, Spanned, SyntaxContext};
 use swc_ecma_ast::*;
 use tracing::instrument;
 
 pub(crate) mod dashmap;
 pub(crate) mod graph;
-pub(crate) mod property_map;
 pub(crate) mod type_ext;
-
-pub(crate) struct TypeParamAssertFinder {
-    found: bool,
-}
-
-impl Visit<TypeParam> for TypeParamAssertFinder {
-    fn visit(&mut self, value: &TypeParam) {
-        self.found = true;
-    }
-}
-
-pub(crate) fn assert_no_type_param<N>(n: &N)
-where
-    N: Debug + VisitWith<TypeParamAssertFinder>,
-{
-    let mut v = TypeParamAssertFinder { found: false };
-    n.visit_with(&mut v);
-    if v.found {
-        panic!("{:#?} should not contain type parameter", n)
-    }
-}
 
 pub(crate) trait ModuleItemOrStmt {
     fn try_into(self) -> Result<RModuleDecl, RStmt>;
@@ -354,17 +331,6 @@ where
 pub(crate) struct TypeParamFinder<'a> {
     name: &'a Id,
     found: bool,
-}
-
-pub(crate) fn contains_type_param<T>(node: &T, name: &Id) -> bool
-where
-    T: for<'a> rnode::VisitWith<TypeParamFinder<'a>>,
-{
-    let mut v = TypeParamFinder { name, found: false };
-
-    name.visit_with(&mut v);
-
-    v.found
 }
 
 impl rnode::Visit<TypeParam> for TypeParamFinder<'_> {

@@ -3185,7 +3185,6 @@ impl Analyzer<'_, '_> {
 
             let ty_str = dump_type_as_string(&self.cm, &ty);
             debug!("find_var_type returned a type: {}", ty_str);
-            let mut span = span;
             let mut ty = ty.into_owned();
             if self.scope.kind().allows_respanning() {
                 if self.is_implicitly_typed(&ty) {

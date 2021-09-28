@@ -38,7 +38,6 @@ mod index_signature;
 mod keyof;
 mod mapped;
 mod narrowing;
-mod replace;
 mod type_param;
 
 /// All fields defaults to false.
@@ -1644,7 +1643,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn exclude_types(&mut self, span: Span, ty: &mut Type, excludes: Option<Vec<Type>>) {
-        let mut mapped_ty = self.normalize(
+        let mapped_ty = self.normalize(
             Some(span),
             Cow::Borrowed(&*ty),
             NormalizeTypeOpts {
