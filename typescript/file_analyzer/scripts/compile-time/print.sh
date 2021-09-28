@@ -2,4 +2,4 @@
 
 set -eu
 
-cargo rustc -- -Ztime-passes
+cargo rustc -- -Ztime-passes -Ztime
