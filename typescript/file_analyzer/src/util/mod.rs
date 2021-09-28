@@ -1,9 +1,9 @@
 use crate::ty::{Intersection, Type, Union};
-use rnode::{Visit, VisitWith};
+use rnode::VisitWith;
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
 use stc_ts_type_ops::metadata::TypeFinder;
 use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeParam};
-use swc_common::{Mark, Spanned, SyntaxContext};
+use swc_common::Spanned;
 use swc_ecma_ast::*;
 use tracing::instrument;
 
@@ -30,44 +30,6 @@ impl ModuleItemOrStmt for RStmt {
     fn try_into(self) -> Result<RModuleDecl, RStmt> {
         Err(self)
     }
-}
-
-pub(crate) struct MarkFinder {
-    found: bool,
-    mark: Mark,
-}
-
-impl Visit<Type> for MarkFinder {
-    fn visit(&mut self, ty: &Type) {
-        if self.found {
-            return;
-        }
-        ty.visit_children_with(self);
-
-        let mut ctxt: SyntaxContext = ty.span().ctxt;
-
-        loop {
-            let mark = ctxt.remove_mark();
-            if mark == Mark::root() {
-                return;
-            }
-
-            if mark == self.mark {
-                self.found = true;
-                return;
-            }
-        }
-    }
-}
-
-#[instrument(skip(n, mark))]
-pub(crate) fn contains_mark<T>(n: &T, mark: Mark) -> bool
-where
-    T: VisitWith<MarkFinder>,
-{
-    let mut v = MarkFinder { found: false, mark };
-    n.visit_with(&mut v);
-    v.found
 }
 
 /// Check if `ty` stores infer type in it.
