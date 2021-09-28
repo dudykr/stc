@@ -48,3 +48,5 @@ pkg/
 
 # Used by scripts
 tmp.txt
+# Used for module graph
+*.dot
