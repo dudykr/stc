@@ -3,16 +3,13 @@ use crate::{
     ty::TypeExt,
     ValidationResult,
 };
-use stc_ts_ast_rnode::{RBool, RExpr, RIdent, RStr, RTsEntityName, RTsLit};
-use stc_ts_errors::{
-    debug::{dump_type_as_string, print_backtrace},
-    DebugExt, Error,
-};
+use stc_ts_ast_rnode::{RBool, RIdent, RStr, RTsEntityName, RTsLit};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, FnParam, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key,
-    KeywordType, KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, Ref, ThisType, Tuple, Type,
-    TypeElement, TypeLit, TypeParam,
+    Array, Conditional, EnumVariant, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType,
+    KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, Ref, ThisType, Tuple, Type, TypeElement,
+    TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, debug_ctx, stack};
 use std::{borrow::Cow, collections::HashMap};
@@ -415,26 +412,6 @@ impl Analyzer<'_, '_> {
                 cause: vec![err],
             },
         })
-    }
-
-    /// Verifies that `ty` is
-    ///
-    /// - Not a reference
-    /// - Not a type parameter declared on child scope.
-    fn verify_before_assign(&self, ctx: &'static str, ty: &Type) {
-        ty.assert_valid();
-
-        match ty.normalize() {
-            Type::Ref(ref r) => {
-                print_backtrace();
-                panic!(
-                    "A reference type (in {}) should be expanded before calling .assign()\n{:?}",
-                    ctx, r,
-                )
-            }
-
-            _ => {}
-        }
     }
 
     fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type) -> ValidationResult<Cow<'a, Type>> {
@@ -2485,19 +2462,6 @@ pub(crate) enum Variance {
     Covariant,
     Contravariant,
     Invariant,
-}
-
-/// Returns true if l and r are lieteral and equal to each other.
-fn is_key_eq(l: &RExpr, r: &RExpr) -> bool {
-    (match (l, r) {
-        (&RExpr::Ident(..), &RExpr::Ident(..)) => true,
-        (&RExpr::Member(..), &RExpr::Member(..)) => true,
-        _ => false,
-    }) && l.eq_ignore_span(r)
-}
-
-fn count_required_params(v: &[FnParam]) -> usize {
-    v.iter().filter(|v| v.required).count()
 }
 
 //fn type_of_ts_fn_param<'a>(p: &TsFnParam) -> Type {

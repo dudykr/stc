@@ -356,7 +356,7 @@ impl Analyzer<'_, '_> {
                 let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
                 obj_type.make_clone_cheap();
 
-                let mut obj_type = match *obj_type.normalize() {
+                let obj_type = match *obj_type.normalize() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..

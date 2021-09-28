@@ -59,7 +59,7 @@ impl Analyzer<'_, '_> {
         } else {
             {
                 // Check for duplicates
-                let mut names = decl.params.iter().map(|param| param.name.clone()).collect::<Vec<_>>();
+                let names = decl.params.iter().map(|param| param.name.clone()).collect::<Vec<_>>();
                 let mut found = AHashSet::default();
 
                 for name in names {
