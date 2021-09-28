@@ -2032,7 +2032,7 @@ impl Analyzer<'_, '_> {
         // TODO: Calculate return type only if selected
         // This can be done by storing type params, return type, params in the
         // candidates.
-        let mut candidates = self.extract_callee_candidates(span, kind, &callee)?;
+        let candidates = self.extract_callee_candidates(span, kind, &callee)?;
 
         info!("get_best_return_type: {} candidates", candidates.len());
 

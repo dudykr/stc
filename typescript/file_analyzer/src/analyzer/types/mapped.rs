@@ -52,7 +52,7 @@ impl Analyzer<'_, '_> {
                 if let Some(mapped_ty) = m.ty.as_deref().map(Type::normalize) {
                     // Special case, but many usages can be handled with this check.
                     if (&**ty).type_eq(&mapped_ty) {
-                        let mut new_type = self
+                        let new_type = self
                             .convert_type_to_type_lit(span, Cow::Borrowed(&ty))
                             .context("tried to convert a type to type literal to expand mapped type")?
                             .map(Cow::into_owned);

@@ -2,7 +2,7 @@ use crate::{
     analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
     util::unwrap_ref_with_single_arg,
-    Marks, ValidationResult,
+    ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
@@ -72,7 +72,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Option<Span>,
         mut ty: Cow<'a, Type>,
-        mut opts: NormalizeTypeOpts,
+        opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
         let _tracing = if cfg!(debug_assertions) {
             let ty_str = dump_type_as_string(&self.cm, &ty);
@@ -985,35 +985,6 @@ impl Analyzer<'_, '_> {
                 return Ok(None);
             }
         }
-    }
-
-    pub(crate) fn intersection(&mut self, span: Span, types: Vec<Type>) -> Type {
-        let mut actual = vec![];
-
-        let all_known = types.iter().all(|ty| ty.normalize().is_union_type())
-            && types.iter().flat_map(|ty| ty.iter_union()).all(|ty| match ty {
-                Type::Lit(..) | Type::Keyword(..) => true,
-                _ => false,
-            });
-
-        if !all_known {
-            return Type::intersection(span, types);
-        }
-
-        for ty in types.iter().flat_map(|ty| ty.iter_union()) {
-            let in_all = types
-                .iter()
-                .all(|candidates| candidates.iter_union().any(|pred| pred.type_eq(ty)));
-
-            if !in_all {
-                continue;
-            }
-
-            actual.push(ty.clone());
-        }
-        actual.dedup_type();
-
-        Type::intersection(span, actual)
     }
 
     /// Note: `span` is only used while expanding type (to prevent panic) in the

@@ -2,8 +2,7 @@ use crate::ty::{Intersection, Type, Union};
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
 use stc_ts_type_ops::metadata::TypeFinder;
-use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeParam};
-use swc_common::Spanned;
+use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Ref};
 use swc_ecma_ast::*;
 use tracing::instrument;
 
@@ -286,21 +285,6 @@ where
         match self.last() {
             Some(ref stmt) => stmt.ends_with_ret(),
             _ => false,
-        }
-    }
-}
-
-pub(crate) struct TypeParamFinder<'a> {
-    name: &'a Id,
-    found: bool,
-}
-
-impl rnode::Visit<TypeParam> for TypeParamFinder<'_> {
-    fn visit(&mut self, p: &TypeParam) {
-        if p.name == *self.name {
-            self.found = true
-        } else {
-            p.visit_children_with(self)
         }
     }
 }

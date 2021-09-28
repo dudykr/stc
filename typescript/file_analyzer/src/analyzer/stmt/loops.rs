@@ -37,7 +37,7 @@ impl Analyzer<'_, '_> {
         let mut orig_facts = self.cur_facts.take();
 
         let mut prev_facts = orig_facts.true_facts.take();
-        let mut prev_false_facts = orig_facts.false_facts.take();
+        let prev_false_facts = orig_facts.false_facts.take();
         let mut facts_of_prev_body_eval = CondFacts::default();
         let mut last = false;
         let mut orig_vars = Some(self.scope.vars.clone());
@@ -179,11 +179,6 @@ impl Analyzer<'_, '_> {
                 ForHeadKind::Of { .. } => Err(Error::InvalidExprOfLhsOfForOf { span: e.span() }),
             },
         }
-    }
-
-    fn check_rhs_of_for_loop(&mut self, e: &RExpr) -> ValidationResult {
-        // Check iterable
-        e.validate_with_default(self)
     }
 
     fn get_element_type_of_for_in(&mut self, rhs: &Type) -> ValidationResult {

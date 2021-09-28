@@ -923,10 +923,6 @@ impl Analyzer<'_, '_> {
         self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty, default_ty)
     }
 
-    pub(super) fn declare_vars_inner(&mut self, kind: VarKind, pat: &RPat) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, None, None, None)
-    }
-
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> ValidationResult {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot resolve `typeof` with a dummy span");
@@ -1622,10 +1618,6 @@ impl Analyzer<'_, '_> {
 
             _ => unimplemented!("declare_complex_vars({:#?}, {:#?})", pat, ty),
         }
-    }
-
-    fn is_infer_type_container(&self, ty: &Type) -> bool {
-        ty.metadata().contains_infer_type
     }
 
     pub(crate) fn mark_type_as_infer_type_container(&self, ty: &mut Type) {
@@ -2665,7 +2657,7 @@ impl Fold<FnParam> for Expander<'_, '_, '_> {
 }
 
 impl Fold<Type> for Expander<'_, '_, '_> {
-    fn fold(&mut self, mut ty: Type) -> Type {
+    fn fold(&mut self, ty: Type) -> Type {
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
             Type::Arc(..) => {
