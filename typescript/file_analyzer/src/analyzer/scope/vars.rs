@@ -386,7 +386,7 @@ impl Analyzer<'_, '_> {
                 for prop in &obj.props {
                     match prop {
                         RObjectPatProp::KeyValue(prop) => {
-                            let mut key = prop.key.validate_with(self)?;
+                            let key = prop.key.validate_with(self)?;
                             used_keys.push(key.clone());
 
                             let ctx = Ctx {

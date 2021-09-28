@@ -572,7 +572,7 @@ impl Scope<'_> {
                             prev.make_cheap();
                         }
                     }
-                    Entry::Vacant(mut e) => {
+                    Entry::Vacant(e) => {
                         e.insert(ty);
                     }
                 }
@@ -2372,7 +2372,7 @@ impl Expander<'_, '_, '_> {
 
         let span = self.span;
 
-        let mut ty = match ty {
+        let ty = match ty {
             Type::Ref(..) => ty,
             _ => ty.fold_children_with(self),
         };
@@ -2551,7 +2551,7 @@ impl Expander<'_, '_, '_> {
             }
         };
 
-        let mut ty = match res {
+        let ty = match res {
             Ok(ty) => ty,
             Err(err) => {
                 self.analyzer.storage.report(err);

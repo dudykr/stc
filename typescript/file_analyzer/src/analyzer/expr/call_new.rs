@@ -2519,7 +2519,7 @@ impl Analyzer<'_, '_> {
             let expanded_param_types = params
                 .into_iter()
                 .map(|v| -> ValidationResult<_> {
-                    let mut ty = box self.expand_type_params(&inferred.types, *v.ty, Default::default())?;
+                    let ty = box self.expand_type_params(&inferred.types, *v.ty, Default::default())?;
 
                     Ok(FnParam { ty, ..v })
                 })
@@ -2577,7 +2577,7 @@ impl Analyzer<'_, '_> {
                                 //         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
                                 //     }
                                 // }
-                                let mut new_ty = *actual.ty.clone();
+                                let new_ty = *actual.ty.clone();
                                 if let Some(node_id) = pat.node_id() {
                                     if let Some(m) = &mut self.mutations {
                                         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
@@ -3031,7 +3031,7 @@ impl Analyzer<'_, '_> {
                             self.storage.report(err)
                         }
                     } else {
-                        let mut allow_unknown_rhs = arg.ty.metadata().resolved_from_var
+                        let allow_unknown_rhs = arg.ty.metadata().resolved_from_var
                             || match arg.ty.normalize() {
                                 Type::TypeLit(..) => false,
                                 _ => true,
