@@ -3,9 +3,6 @@
 //! Codes splitted over multiple crates to reduce compile time.
 
 #![allow(incomplete_features)]
-#![allow(unused_variables)] // temporary
-#![allow(unused_mut)] // temporary
-#![allow(dead_code)] // temporary
 #![deny(unused_must_use)]
 #![deny(unreachable_patterns)]
 #![deny(mutable_borrow_reservation_conflict)]
