@@ -1754,7 +1754,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         let callee_span = callee_ty.span();
 
-        let mut candidates = members
+        let candidates = members
             .iter()
             .filter_map(|member| match member {
                 TypeElement::Call(CallSignature {

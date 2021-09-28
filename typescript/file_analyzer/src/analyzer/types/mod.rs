@@ -1351,7 +1351,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn normalize_tuples(&mut self, ty: &mut Type) {
         let marks = self.marks();
 
-        ty.visit_mut_with(&mut TupleNormalizer { marks });
+        ty.visit_mut_with(&mut TupleNormalizer);
         ty.fix();
     }
 
@@ -1744,9 +1744,7 @@ impl Visit<RTsModuleDecl> for KnownTypeVisitor {
     }
 }
 
-struct TupleNormalizer {
-    marks: Marks,
-}
+struct TupleNormalizer;
 
 impl VisitMut<Type> for TupleNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
