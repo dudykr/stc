@@ -13,7 +13,7 @@ use stc_ts_errors::{Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Interface, KeywordType, KeywordTypeMetadata, Ref,
-    TypeElement, TypeLit,
+    TypeElement,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::cache::Freeze;
@@ -86,7 +86,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            let mut type_params = try_opt!(f.type_params.validate_with(child));
+            let type_params = try_opt!(f.type_params.validate_with(child));
 
             let mut params = {
                 let ctx = Ctx {
@@ -262,14 +262,6 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn fn_to_type_lit(&mut self, f: &Function) -> ValidationResult<TypeLit> {
-        Ok(TypeLit {
-            span: f.span,
-            members: vec![self.fn_to_type_element(f)?],
-            metadata: Default::default(),
-        })
-    }
-
     pub(crate) fn fn_to_type_element(&mut self, f: &Function) -> ValidationResult<TypeElement> {
         Ok(TypeElement::Call(CallSignature {
             span: f.span.with_ctxt(SyntaxContext::empty()),

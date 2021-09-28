@@ -76,7 +76,6 @@ mod visit_mut;
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum Phase {
     HoistingVars,
-    Reporting,
 }
 
 impl Default for Phase {
@@ -782,7 +781,7 @@ impl Analyzer<'_, '_> {
         let globals = self.env.shared().swc_globals().clone();
 
         GLOBALS.set(&globals, || {
-            let mut items_ref = items.iter().collect::<Vec<_>>();
+            let items_ref = items.iter().collect::<Vec<_>>();
             self.load_normal_imports(&items_ref);
 
             self.fill_known_type_names(&items);

@@ -137,8 +137,8 @@ impl Analyzer<'_, '_> {
     {
         let mut graph = DiGraphMap::default();
         let mut declared_by = FxHashMap::<TypedId, Vec<usize>>::default();
-        let mut unresolved_circular_imports = vec![];
-        let mut skip = FxHashSet::default();
+        let unresolved_circular_imports = vec![];
+        let skip = FxHashSet::default();
         let mut used = FxHashMap::<_, FxHashSet<_>>::default();
 
         // TODO: Handle loaded circular imports. This is required to prevent deadlock
@@ -161,7 +161,7 @@ impl Analyzer<'_, '_> {
                         | RDecl::TsEnum(..)
                         | RDecl::Fn(..)
                         | RDecl::Var(..) => {
-                            let mut vars = item.get_decls();
+                            let vars = item.get_decls();
 
                             for (id, deps) in vars {
                                 declared_by.entry(id).or_default().push(idx);
@@ -185,7 +185,7 @@ impl Analyzer<'_, '_> {
                     left: RVarDeclOrPat::VarDecl(..),
                     ..
                 })) => {
-                    let mut vars = item.get_decls();
+                    let vars = item.get_decls();
 
                     for (id, deps) in vars {
                         declared_by.entry(id).or_default().push(idx);
@@ -194,7 +194,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 _ => {
-                    let mut used_vars = item.uses();
+                    let used_vars = item.uses();
                     used.entry(idx).or_default().extend(used_vars);
                 }
             }
