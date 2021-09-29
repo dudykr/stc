@@ -13,14 +13,6 @@ use tracing::warn;
 #[cfg(test)]
 mod tests;
 
-#[cfg_attr(debug_assertiobs, derive(Debug))]
-pub(super) enum TypeOrderItem {
-    /// Normal statement.
-    Normal(usize),
-    /// Processing of a type (or types) name `id` is finished.
-    Done(Id),
-}
-
 impl Analyzer<'_, '_> {
     pub(super) fn validate_stmts_with_hoisting<T>(&mut self, stmts: &Vec<&T>)
     where

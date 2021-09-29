@@ -68,80 +68,6 @@ pub(super) struct InferData {
 
 /// Type inference for arguments.
 impl Analyzer<'_, '_> {
-    /// Create [TypeParamInstantiation] from inferred type information.
-    pub(super) fn instantiate(
-        &mut self,
-        span: Span,
-        type_params: &[TypeParam],
-        mut inferred: FxHashMap<Id, Type>,
-    ) -> ValidationResult<TypeParamInstantiation> {
-        let mut params = Vec::with_capacity(type_params.len());
-        for type_param in type_params {
-            if let Some(ty) = inferred.remove(&type_param.name) {
-                info!("infer_arg_type: {}", type_param.name);
-                params.push(ty);
-            } else {
-                match type_param.constraint {
-                    Some(box Type::Param(ref p)) => {
-                        // TODO: Handle complex inheritance like
-                        //      function foo<A extends B, B extends C>(){ }
-
-                        if let Some(actual) = inferred.remove(&p.name) {
-                            info!(
-                                "infer_arg_type: {} => {} => {:?} because of the extends clause",
-                                type_param.name, p.name, actual
-                            );
-                            params.push(actual);
-                        } else {
-                            info!(
-                                "infer_arg_type: {} => {} because of the extends clause",
-                                type_param.name, p.name
-                            );
-                            params.push(Type::Param(p.clone()));
-                        }
-                        continue;
-                    }
-                    _ => {}
-                }
-
-                if type_param.constraint.is_some() && is_literals(&type_param.constraint.as_ref().unwrap()) {
-                    params.push(*type_param.constraint.clone().unwrap());
-                    continue;
-                }
-
-                if type_param.constraint.is_some()
-                    && match **type_param.constraint.as_ref().unwrap() {
-                        Type::Interface(..) | Type::Keyword(..) | Type::Ref(..) | Type::TypeLit(..) => true,
-                        _ => false,
-                    }
-                {
-                    let ty = self.expand(
-                        span,
-                        *type_param.constraint.clone().unwrap(),
-                        ExpandOpts {
-                            full: true,
-                            expand_union: false,
-                            ..Default::default()
-                        },
-                    )?;
-                    params.push(ty);
-                    continue;
-                }
-
-                warn!("instantiate: A type parameter {} defaults to {{}}", type_param.name);
-
-                // Defaults to {}
-                params.push(Type::TypeLit(TypeLit {
-                    span,
-                    members: vec![],
-                    metadata: Default::default(),
-                }));
-            }
-        }
-
-        Ok(TypeParamInstantiation { span: DUMMY_SP, params })
-    }
-
     /// This method accepts Option<&[TypeParamInstantiation]> because user may
     /// provide only some of type arguments.
     pub(super) fn infer_arg_types(
@@ -1011,7 +937,7 @@ impl Analyzer<'_, '_> {
                                 for member in &param.members {
                                     match member {
                                         TypeElement::Property(p) => {
-                                            let mut p = p.clone();
+                                            let p = p.clone();
                                             if let Some(type_ann) = &p.type_ann {
                                                 // TODO: Change p.ty
 
@@ -2439,17 +2365,6 @@ pub(crate) fn calc_true_plus_minus_in_param(param: Option<TruePlusMinus>, previo
             TruePlusMinus::True => false,
             TruePlusMinus::Plus => true,
             TruePlusMinus::Minus => true,
-        },
-        None => previous,
-    }
-}
-
-pub(crate) fn calc_true_plus_minus_in_arg(v: Option<TruePlusMinus>, previous: bool) -> bool {
-    match v {
-        Some(v) => match v {
-            TruePlusMinus::True => true,
-            TruePlusMinus::Plus => true,
-            TruePlusMinus::Minus => false,
         },
         None => previous,
     }
