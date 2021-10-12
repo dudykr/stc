@@ -2398,12 +2398,13 @@ dependencies = [
 
 [[package]]
 name = "string_cache"
-version = "0.8.1"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ddb1139b5353f96e429e1a5e19fbaf663bddedaa06d1dbd49f82e352601209a"
+checksum = "923f0f39b6267d37d23ce71ae7235602134b250ace715dd2c90421998ddac0c6"
 dependencies = [
  "lazy_static",
  "new_debug_unreachable",
+ "parking_lot 0.11.1",
  "phf_shared",
  "precomputed-hash",
  "serde",
@@ -2472,9 +2473,9 @@ dependencies = [
 
 [[package]]
 name = "swc_atoms"
-version = "0.2.7"
+version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "837a3ef86c2817228e733b6f173c821fd76f9eb21a0bc9001a826be48b00b4e7"
+checksum = "6a20e0ff436c9967b5cbafbc0872f384fef5be6f9913ce92fb5f017427e95c7e"
 dependencies = [
  "string_cache",
  "string_cache_codegen",
