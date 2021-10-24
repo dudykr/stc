@@ -34,24 +34,7 @@ warning: Type
 1 | export let a2 = [{ a: 1, b: 2 }, { a: "abc" }, {}][0];
   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: ({
-              a: 1;
-              b: 2;
-          } | {
-              a: "abc";
-              b?: undefined;
-          } | {
-              a?: undefined;
-              b?: undefined;
-          })[]
-
-warning: Type
- --> $DIR/tests/pass/exprs/object/normalization-2.ts:1:17
-  |
-1 | export let a2 = [{ a: 1, b: 2 }, { a: "abc" }, {}][0];
-  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: {
+  = note: (({
               a: number;
               b: number;
           } | {
@@ -60,5 +43,22 @@ warning: Type
           } | {
               a?: undefined;
               b?: undefined;
-          }
+          }))[]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/normalization-2.ts:1:17
+  |
+1 | export let a2 = [{ a: 1, b: 2 }, { a: "abc" }, {}][0];
+  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: ({
+              a: number;
+              b: number;
+          } | {
+              a: string;
+              b?: undefined;
+          } | {
+              a?: undefined;
+              b?: undefined;
+          })
 
