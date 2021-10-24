@@ -195,6 +195,7 @@ fn simple_01() {
 }
 
 #[test]
+#[ignore]
 fn type_alias_01() {
     assert_order(
         "
