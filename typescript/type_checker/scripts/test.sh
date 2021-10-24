@@ -16,7 +16,6 @@ export RUST_MIN_STACK=$((16 * 1024 * 1024))
 
 # We prevent regression using faster checks
 cargo test -p stc_ts_file_analyzer --test base
-GOLDEN_ONLY=1 cargo test -q -p stc_ts_file_analyzer --test visualize
 
 WIP_STATS=1 cargo test --color always -q --test tsc
 

@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/pass/fn/generator/selfReferential/nested-1.ts:4:20
+ --> $DIR/tests/visualize/fn/genorator/selfReferential/nested-1.ts:4:20
   |
 4 |             yield (foo);
   |                    ^^^
@@ -7,7 +7,7 @@ warning: Type
   = note: typeof foo
 
 warning: Type
- --> $DIR/tests/pass/fn/generator/selfReferential/nested-1.ts:4:19
+ --> $DIR/tests/visualize/fn/genorator/selfReferential/nested-1.ts:4:19
   |
 4 |             yield (foo);
   |                   ^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: typeof foo
 
 warning: Type
- --> $DIR/tests/pass/fn/generator/selfReferential/nested-1.ts:4:13
+ --> $DIR/tests/visualize/fn/genorator/selfReferential/nested-1.ts:4:13
   |
 4 |             yield (foo);
   |             ^^^^^^^^^^^

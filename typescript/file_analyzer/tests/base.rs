@@ -15,6 +15,7 @@ use stc_ts_file_analyzer::{
 use stc_ts_storage::{ErrorStore, Single};
 use stc_ts_testing::tsc::TscError;
 use stc_ts_types::module_id;
+use stc_ts_utils::StcComments;
 use std::{
     path::{Path, PathBuf},
     process::Command,
@@ -125,7 +126,7 @@ fn validate(input: &Path) -> Vec<StcError> {
             let code = d
                 .code
                 .clone()
-                .expect("conformance teting: All errors should have proper error code");
+                .expect("conformance testing: All errors should have proper error code");
             let code = match code {
                 DiagnosticId::Error(err) => err,
                 DiagnosticId::Lint(lint) => {
@@ -305,7 +306,7 @@ fn invoke_tsc(input: &Path) -> Vec<TscError> {
 }
 
 /// If `for_error` is false, this function will run as type dump mode.
-fn run_vis_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
+fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
     let fname = file_name.display().to_string();
     println!("{}", fname);
 
@@ -373,6 +374,7 @@ fn run_vis_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput>
             };
 
             let mut node_id_gen = NodeIdGenerator::default();
+            let comments = StcComments::default();
 
             let lexer = Lexer::new(
                 Syntax::Typescript(TsConfig {
@@ -380,9 +382,9 @@ fn run_vis_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput>
                     decorators: true,
                     ..Default::default()
                 }),
-                EsVersion::latest(),
+                EsVersion::Es2020,
                 SourceFileInput::from(&*fm),
-                None,
+                Some(&comments),
             );
             let mut parser = Parser::new_from(lexer);
             let module = parser.parse_module().unwrap();
@@ -439,8 +441,22 @@ fn run_vis_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput>
     }
 }
 
-#[testing::fixture("tests/vis/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
+#[testing::fixture("tests/visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn visualize(file_name: PathBuf) {
-    let res = run_vis_test(file_name.clone(), false).unwrap();
+    let res = run_test(file_name.clone(), false).unwrap();
     res.compare_to_file(&file_name.with_extension("swc-stderr")).unwrap();
+
+    println!("[SUCCESS]{}", file_name.display())
+}
+
+#[testing::fixture("tests/pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
+fn pass(file_name: PathBuf) {
+    let res = run_test(file_name.clone(), false).unwrap();
+    println!("TYPES: {}", res);
+
+    run_test(file_name.clone(), true);
+
+    res.compare_to_file(&file_name.with_extension("swc-stderr")).unwrap();
+
+    println!("[SUCCESS]{}", file_name.display())
 }

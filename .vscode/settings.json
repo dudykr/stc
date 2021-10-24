@@ -44,4 +44,9 @@
     "workbench.action.debug.start",
     "workbench.action.debug.run"
   ],
+  "cSpell.words": [
+    "dedup",
+    "itertools",
+    "rnode"
+  ],
 }
