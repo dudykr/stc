@@ -21,53 +21,6 @@ use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::instrument;
 
-// RModuleDecl::ExportNamed(export) => {}
-//
-// RModuleDecl::ExportAll(export) => unimplemented!("export * from
-// 'other-file';"),
-//
-// RModuleDecl::TsNamespaceExport(ns) =>
-// unimplemented!("export namespace"),
-
-impl Analyzer<'_, '_> {
-    pub(super) fn export_default_expr(&mut self, expr: &mut RExpr) {
-        let span = expr.span();
-        // assert_eq!(
-        //     self.info.exports.vars.get(&Id::word(js_word!("default"))),
-        //     None,
-        //     "A module can export only one item as default"
-        // );
-
-        let ty = match expr.validate_with_default(self) {
-            Ok(ty) => ty,
-            Err(err) => {
-                match err {
-                    // Handle hoisting. This allows
-                    //
-                    // export = React
-                    // declare namespace React {}
-                    Error::UndefinedSymbol { .. } => {
-                        self.pending_exports
-                            .push(((Id::word(js_word!("default")), expr.span()), expr.clone()));
-                        return;
-                    }
-                    _ => {}
-                }
-                self.storage.report(err);
-                return;
-            }
-        };
-        self.storage
-            .store_private_var(self.ctx.module_id, Id::word(js_word!("default")), ty);
-        self.storage.export_var(
-            span,
-            self.ctx.module_id,
-            Id::word(js_word!("default")),
-            Id::word(js_word!("default")),
-        );
-    }
-}
-
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, export: &RExportDecl) {
@@ -251,7 +204,7 @@ impl Analyzer<'_, '_> {
         if self.ctx.reevaluating() {
             return;
         }
-        let mut v = self
+        let v = self
             .data
             .for_module
             .exports_spans

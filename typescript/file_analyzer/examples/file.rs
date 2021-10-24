@@ -1,7 +1,7 @@
 #![feature(box_syntax)]
 
 use rnode::{NodeIdGenerator, RNode, VisitWith};
-use stc_testing::init_tracing;
+use stc_testing::init_logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_file_analyzer::{
@@ -11,6 +11,7 @@ use stc_ts_file_analyzer::{
 use stc_ts_storage::Single;
 use stc_ts_types::ModuleId;
 use std::{
+    env,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -19,8 +20,9 @@ use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
+use tracing::Level;
 
-fn profile_file(name: &str, path: &Path) {
+fn profile_file(path: &Path) {
     testing::run_test2(false, |cm, _handler| {
         let fm = cm.load_file(path).unwrap();
 
@@ -44,7 +46,7 @@ fn profile_file(name: &str, path: &Path) {
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         // Don't print logs from builtin modules.
-        let _guard = init_tracing(format!("file/{}", name));
+        let _guard = init_logger(Level::DEBUG);
 
         let mut storage = Single {
             parent: None,
@@ -64,8 +66,6 @@ fn profile_file(name: &str, path: &Path) {
 }
 
 fn main() {
-    profile_file(
-        "csstype",
-        &PathBuf::new().join("node_modules").join("csstype").join("index.d.ts"),
-    );
+    let input = env::args().nth(1).expect("failed to analyze first file");
+    profile_file(Path::new(&input));
 }

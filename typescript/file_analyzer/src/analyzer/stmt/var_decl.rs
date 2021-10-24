@@ -323,7 +323,7 @@ impl Analyzer<'_, '_> {
                         let value_ty = get_value_ty!(None);
 
                         // infer type from value.
-                        let mut ty = (|| -> ValidationResult<_> {
+                        let ty = (|| -> ValidationResult<_> {
                             match value_ty.normalize() {
                                 Type::TypeLit(..) | Type::Function(..) | Type::Query(..) => {
                                     if let Some(m) = &mut self.mutations {

@@ -20,5 +20,5 @@ warning: Type
 5 | export const f02: <A>(x: A) => A[] = wrap(list);
   |                                      ^^^^^^^^^^
   |
-  = note: <T>(a: T) => T[]
+  = note: <A>(a: A) => A[]
 

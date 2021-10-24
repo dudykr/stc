@@ -816,7 +816,7 @@ impl Analyzer<'_, '_> {
                         },
                     )));
                 }
-                let mut types = tuple.elems.iter().map(|e| *e.ty.clone()).collect_vec();
+                let types = tuple.elems.iter().map(|e| *e.ty.clone()).collect_vec();
                 return Ok(Cow::Owned(
                     Type::Union(Union {
                         span: tuple.span,
@@ -829,7 +829,7 @@ impl Analyzer<'_, '_> {
                 ));
             }
             Type::Union(u) => {
-                let mut types = u
+                let types = u
                     .types
                     .iter()
                     .map(|iterator| {

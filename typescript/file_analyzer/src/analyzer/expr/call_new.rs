@@ -3,6 +3,7 @@ use crate::{
     analyzer::{
         assign::AssignOpts,
         expr::TypeOfMode,
+        generic::InferTypeOpts,
         marks::MarkExt,
         scope::ExpandOpts,
         util::{make_instance_type, ResultExt},
@@ -43,7 +44,7 @@ use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::{debug, info, instrument};
+use tracing::{debug, info, instrument, warn};
 use ty::TypeExt;
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -355,7 +356,7 @@ impl Analyzer<'_, '_> {
                 let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
                 obj_type.make_clone_cheap();
 
-                let mut obj_type = match *obj_type.normalize() {
+                let obj_type = match *obj_type.normalize() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
@@ -1753,7 +1754,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         let callee_span = callee_ty.span();
 
-        let mut candidates = members
+        let candidates = members
             .iter()
             .filter_map(|member| match member {
                 TypeElement::Call(CallSignature {
@@ -2031,7 +2032,7 @@ impl Analyzer<'_, '_> {
         // TODO: Calculate return type only if selected
         // This can be done by storing type params, return type, params in the
         // candidates.
-        let mut candidates = self.extract_callee_candidates(span, kind, &callee)?;
+        let candidates = self.extract_callee_candidates(span, kind, &callee)?;
 
         info!("get_best_return_type: {} candidates", candidates.len());
 
@@ -2503,14 +2504,22 @@ impl Analyzer<'_, '_> {
             }
 
             debug!("Inferring arg types for a call");
-            let mut inferred = self.infer_arg_types(span, type_args, type_params, &params, &spread_arg_types, None)?;
-
-            debug!("Inferred types:\n{}", dump_type_map(&self.cm, &inferred));
+            let mut inferred = self.infer_arg_types(
+                span,
+                type_args,
+                type_params,
+                &params,
+                &spread_arg_types,
+                None,
+                InferTypeOpts { ..Default::default() },
+            )?;
+            debug!("Inferred types:\n{}", dump_type_map(&self.cm, &inferred.types));
+            warn!("Failed to infer types of {:?}", inferred.errored);
 
             let expanded_param_types = params
                 .into_iter()
                 .map(|v| -> ValidationResult<_> {
-                    let mut ty = box self.expand_type_params(&inferred, *v.ty, Default::default())?;
+                    let ty = box self.expand_type_params(&inferred.types, *v.ty, Default::default())?;
 
                     Ok(FnParam { ty, ..v })
                 })
@@ -2568,7 +2577,7 @@ impl Analyzer<'_, '_> {
                                 //         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
                                 //     }
                                 // }
-                                let mut new_ty = *actual.ty.clone();
+                                let new_ty = *actual.ty.clone();
                                 if let Some(node_id) = pat.node_id() {
                                     if let Some(m) = &mut self.mutations {
                                         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
@@ -2707,8 +2716,8 @@ impl Analyzer<'_, '_> {
 
             if self.ctx.is_instantiating_class {
                 for tp in type_params.iter() {
-                    if !inferred.contains_key(&tp.name) {
-                        inferred.insert(
+                    if !inferred.types.contains_key(&tp.name) {
+                        inferred.types.insert(
                             tp.name.clone(),
                             Type::Keyword(KeywordType {
                                 span: tp.span,
@@ -2723,9 +2732,20 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            for id in &inferred.errored {
+                inferred.types.insert(
+                    id.clone(),
+                    Type::Keyword(KeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsUnknownKeyword,
+                        metadata: KeywordTypeMetadata { ..Default::default() },
+                    }),
+                );
+            }
+
             print_type("Return", &self.cm, &ret_ty);
             let mut ty = self
-                .expand_type_params(&inferred, ret_ty, Default::default())?
+                .expand_type_params(&inferred.types, ret_ty, Default::default())?
                 .freezed();
             print_type("Return, expanded", &self.cm, &ty);
 
@@ -3011,7 +3031,7 @@ impl Analyzer<'_, '_> {
                             self.storage.report(err)
                         }
                     } else {
-                        let mut allow_unknown_rhs = arg.ty.metadata().resolved_from_var
+                        let allow_unknown_rhs = arg.ty.metadata().resolved_from_var
                             || match arg.ty.normalize() {
                                 Type::TypeLit(..) => false,
                                 _ => true,
@@ -3577,29 +3597,6 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
             _ => {}
         }
     }
-}
-
-fn is_key_eq_prop(prop: &RExpr, computed: bool, e: &RExpr) -> bool {
-    let tmp;
-    let v = match *e {
-        RExpr::Ident(ref i) => {
-            tmp = Id::from(i);
-            &tmp
-        }
-        RExpr::Lit(RLit::Str(ref s)) => {
-            tmp = Id::word(s.value.clone());
-            &tmp
-        }
-        _ => return false,
-    };
-
-    let p = match &*prop {
-        RExpr::Ident(ref i) => &i.sym,
-        RExpr::Lit(RLit::Str(ref s)) if computed => &s.value,
-        _ => return false,
-    };
-
-    v.sym() == p
 }
 
 fn is_fn_expr(callee: &RExpr) -> bool {

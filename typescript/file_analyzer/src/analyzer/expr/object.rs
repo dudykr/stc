@@ -48,12 +48,11 @@ impl Analyzer<'_, '_> {
     }
 }
 
-struct UnionNormalizer<'a, 'b, 'c> {
-    anaylzer: &'a mut Analyzer<'b, 'c>,
+struct UnionNormalizer {
     preserve_specified: bool,
 }
 
-impl UnionNormalizer<'_, '_, '_> {
+impl UnionNormalizer {
     /// We need to know shape of normalized type literal.
     ///
     /// We use indexset to remove duplicate while preserving order.
@@ -200,7 +199,7 @@ impl UnionNormalizer<'_, '_, '_> {
                                 if let Some(type_params) = type_params {
                                     if let Some(prev) = new_type_params.get(&i) {
                                         // We replace new type params woth previous type param.
-                                        let mut inferred = prev
+                                        let inferred = prev
                                             .params
                                             .iter()
                                             .cloned()
@@ -321,7 +320,7 @@ impl UnionNormalizer<'_, '_, '_> {
             return;
         }
 
-        let mut new_types = extra_members
+        let new_types = extra_members
             .into_iter()
             .map(|extra_members| {
                 let mut new_lit = new_lit.clone();
@@ -394,7 +393,7 @@ impl UnionNormalizer<'_, '_, '_> {
     }
 }
 
-impl VisitMut<Type> for UnionNormalizer<'_, '_, '_> {
+impl VisitMut<Type> for UnionNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
         // TODO: PERF
         ty.normalize_mut();
@@ -406,7 +405,7 @@ impl VisitMut<Type> for UnionNormalizer<'_, '_, '_> {
     }
 }
 
-impl VisitMut<Union> for UnionNormalizer<'_, '_, '_> {
+impl VisitMut<Union> for UnionNormalizer {
     fn visit_mut(&mut self, u: &mut Union) {
         u.visit_mut_children_with(self);
 
@@ -431,10 +430,7 @@ impl Analyzer<'_, '_> {
     #[instrument(skip(self, ty, preserve_specified))]
     pub(super) fn normalize_union(&mut self, ty: &mut Type, preserve_specified: bool) {
         let start = Instant::now();
-        ty.visit_mut_with(&mut UnionNormalizer {
-            anaylzer: self,
-            preserve_specified,
-        });
+        ty.visit_mut_with(&mut UnionNormalizer { preserve_specified });
 
         let end = Instant::now();
 

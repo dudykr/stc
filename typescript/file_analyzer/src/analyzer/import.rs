@@ -57,7 +57,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn insert_import_info(&mut self, ctxt: ModuleId, info: ModuleInfo) -> ValidationResult<()> {
-        let mut e = self.imports.entry((ctxt, info.module_id)).or_default();
+        let e = self.imports.entry((ctxt, info.module_id)).or_default();
         *e = info.data;
 
         Ok(())
@@ -69,7 +69,7 @@ impl Analyzer<'_, '_> {
             return;
         }
         // We first load non-circular imports.
-        let mut imports = ImportFinder::find_imports(&self.storage, &*items);
+        let imports = ImportFinder::find_imports(&self.storage, &*items);
 
         let loader = self.loader;
         let mut normal_imports = vec![];

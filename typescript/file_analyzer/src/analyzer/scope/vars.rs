@@ -36,15 +36,6 @@ pub enum VarKind {
     Error,
 }
 
-impl VarKind {
-    pub(crate) fn requires_init(self) -> bool {
-        match self {
-            VarKind::Var(_) => true,
-            _ => false,
-        }
-    }
-}
-
 /// All bool fields default to `false`.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct DeclareVarsOpts {
@@ -395,7 +386,7 @@ impl Analyzer<'_, '_> {
                 for prop in &obj.props {
                     match prop {
                         RObjectPatProp::KeyValue(prop) => {
-                            let mut key = prop.key.validate_with(self)?;
+                            let key = prop.key.validate_with(self)?;
                             used_keys.push(key.clone());
 
                             let ctx = Ctx {
@@ -461,7 +452,7 @@ impl Analyzer<'_, '_> {
                             }
                         }
                         RObjectPatProp::Assign(prop) => {
-                            let mut key = Key::Normal {
+                            let key = Key::Normal {
                                 span: prop.key.span,
                                 sym: prop.key.sym.clone(),
                             };
@@ -734,7 +725,7 @@ impl Analyzer<'_, '_> {
 
                 // Create Omit<T, 'foo' | 'bar'>
                 Type::Param(..) => {
-                    let mut key_types = keys
+                    let key_types = keys
                         .iter()
                         .filter_map(|key| match key {
                             Key::BigInt(v) => Some(Type::Lit(LitType {
