@@ -1,5 +1,5 @@
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:15:19
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:15:19
    |
 15 | var a = bar(1, 1, g);      // Should be number
    |                   ^
@@ -7,7 +7,7 @@ warning: Type
    = note: <T>(x: T, y: T) => T
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:15:9
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:15:9
    |
 15 | var a = bar(1, 1, g);      // Should be number
    |         ^^^
@@ -15,7 +15,7 @@ warning: Type
    = note: <T, U, V>(x: T, y: U, cb: (x: T, y: U) => V) => V
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:15:9
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:15:9
    |
 15 | var a = bar(1, 1, g);      // Should be number
    |         ^^^^^^^^^^^^
@@ -23,7 +23,7 @@ warning: Type
    = note: number
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:16:19
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:16:19
    |
 16 | var a = baz(1, 1, g);      // Should be number
    |                   ^
@@ -31,7 +31,7 @@ warning: Type
    = note: <T>(x: T, y: T) => T
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:16:9
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:16:9
    |
 16 | var a = baz(1, 1, g);      // Should be number
    |         ^^^
@@ -39,7 +39,7 @@ warning: Type
    = note: <T, U>(x: T, y: T, cb: (x: T, y: T) => U) => U
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:16:9
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/1.ts:16:9
    |
 16 | var a = baz(1, 1, g);      // Should be number
    |         ^^^^^^^^^^^^

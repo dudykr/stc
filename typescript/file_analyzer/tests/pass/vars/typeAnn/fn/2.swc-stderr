@@ -1,0 +1,80 @@
+warning: Type
+ --> $DIR/tests/pass/vars/typeAnn/fn/2.ts:9:62
+  |
+9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
+  |                                                              ^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/pass/vars/typeAnn/fn/2.ts:9:56
+  |
+9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
+  |                                                        ^^^^^
+  |
+  = note: <W>(x: Box<W>) => W
+
+warning: Type
+ --> $DIR/tests/pass/vars/typeAnn/fn/2.ts:9:56
+  |
+9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
+  |                                                        ^^^^^^^^
+  |
+  = note: W
+
+warning: Type
+ --> $DIR/tests/pass/vars/typeAnn/fn/2.ts:9:51
+  |
+9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
+  |                                                   ^^^^^^^^^^^^^
+  |
+  = note: (a: any) => W
+
+warning: Type
+ --> $DIR/tests/pass/vars/typeAnn/fn/2.ts:9:78
+  |
+9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
+  |                                                                              ^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/pass/vars/typeAnn/fn/2.ts:9:71
+  |
+9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
+  |                                                                       ^^^^^^
+  |
+  = note: <T>(a: T[]) => T
+
+warning: Type
+ --> $DIR/tests/pass/vars/typeAnn/fn/2.ts:9:71
+  |
+9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
+  |                                                                       ^^^^^^^^^
+  |
+  = note: T
+
+warning: Type
+ --> $DIR/tests/pass/vars/typeAnn/fn/2.ts:9:66
+  |
+9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
+  |                                                                  ^^^^^^^^^^^^^^
+  |
+  = note: (b: any) => T
+
+warning: Type
+ --> $DIR/tests/pass/vars/typeAnn/fn/2.ts:9:43
+  |
+9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
+  |                                           ^^^^^^^
+  |
+  = note: <A, B, C>(f: (a: A) => B, g: (b: B) => C) => (a: A) => C
+
+warning: Type
+ --> $DIR/tests/pass/vars/typeAnn/fn/2.ts:9:43
+  |
+9 | export const f12: <T>(x: Box<T[]>) => T = compose(a => unbox(a), b => unlist(b));
+  |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: <A, T>(a: A) => T
+

@@ -1,5 +1,5 @@
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2.ts:12:13
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2.ts:12:13
    |
 12 | var b = baz(b, b, g);      // Should be number | string
    |             ^
@@ -7,7 +7,7 @@ warning: Type
    = note: (number | string)
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2.ts:12:16
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2.ts:12:16
    |
 12 | var b = baz(b, b, g);      // Should be number | string
    |                ^
@@ -15,7 +15,7 @@ warning: Type
    = note: (number | string)
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2.ts:12:19
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2.ts:12:19
    |
 12 | var b = baz(b, b, g);      // Should be number | string
    |                   ^
@@ -23,7 +23,7 @@ warning: Type
    = note: <T>(x: T, y: T) => T
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2.ts:12:9
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2.ts:12:9
    |
 12 | var b = baz(b, b, g);      // Should be number | string
    |         ^^^
@@ -31,7 +31,7 @@ warning: Type
    = note: <T, U>(x: T, y: T, cb: (x: T, y: T) => U) => U
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2.ts:12:9
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2.ts:12:9
    |
 12 | var b = baz(b, b, g);      // Should be number | string
    |         ^^^^^^^^^^^^

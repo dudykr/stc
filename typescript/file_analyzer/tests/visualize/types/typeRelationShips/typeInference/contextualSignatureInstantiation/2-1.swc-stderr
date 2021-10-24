@@ -1,5 +1,5 @@
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1.ts:13:15
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1.ts:13:15
    |
 13 | bar(1, "one", g);
    |               ^
@@ -7,7 +7,7 @@ warning: Type
    = note: <T>(x: T, y: T) => T
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1.ts:13:1
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1.ts:13:1
    |
 13 | bar(1, "one", g);
    | ^^^
@@ -15,7 +15,7 @@ warning: Type
    = note: <T, U, V>(x: T, y: U, cb: (x: T, y: U) => V) => V
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1.ts:13:1
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1.ts:13:1
    |
 13 | bar(1, "one", g);
    | ^^^^^^^^^^^^^^^^
@@ -23,7 +23,7 @@ warning: Type
    = note: unknown
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1.ts:14:6
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1.ts:14:6
    |
 14 | bar2(g, 1, "one");  // Error, number and string are disjoint types
    |      ^
@@ -31,7 +31,7 @@ warning: Type
    = note: <T>(x: T, y: T) => T
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1.ts:14:1
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1.ts:14:1
    |
 14 | bar2(g, 1, "one");  // Error, number and string are disjoint types
    | ^^^^
@@ -39,7 +39,7 @@ warning: Type
    = note: <T, U, V>(cb: (x: T, y: U) => V, x: T, y: U) => V
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1.ts:14:1
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-1.ts:14:1
    |
 14 | bar2(g, 1, "one");  // Error, number and string are disjoint types
    | ^^^^^^^^^^^^^^^^^

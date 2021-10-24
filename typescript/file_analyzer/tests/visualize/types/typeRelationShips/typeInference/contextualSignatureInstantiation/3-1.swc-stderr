@@ -1,5 +1,5 @@
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-1.ts:15:5
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-1.ts:15:5
    |
 15 | foo(h); // Should be number[] | string[]
    |     ^
@@ -7,7 +7,7 @@ warning: Type
    = note: <T, U>(x: T, y: U) => (T[] | U[])
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-1.ts:15:1
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-1.ts:15:1
    |
 15 | foo(h); // Should be number[] | string[]
    | ^^^
@@ -15,7 +15,7 @@ warning: Type
    = note: <T>(cb: (x: number, y: string) => T) => T
 
 warning: Type
-  --> $DIR/tests/vis/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-1.ts:15:1
+  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/3-1.ts:15:1
    |
 15 | foo(h); // Should be number[] | string[]
    | ^^^^^^
