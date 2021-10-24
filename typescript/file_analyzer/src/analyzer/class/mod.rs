@@ -147,7 +147,7 @@ impl Analyzer<'_, '_> {
                 RExpr::Ident(i) => {
                     if &*i.sym == "prototype" {
                         self.storage
-                            .report(Error::StaticPropertyCannotBeNamedProptotype { span: i.span })
+                            .report(Error::StaticPropertyCannotBeNamedPrototype { span: i.span })
                     }
                 }
                 _ => {}
