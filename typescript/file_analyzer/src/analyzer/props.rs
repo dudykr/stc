@@ -14,8 +14,7 @@ use crate::{
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RAssignProp, RComputedPropName, RExpr, RExprOrSuper, RGetterProp, RIdent, RKeyValueProp, RLit, RMemberExpr,
-    RMethodProp, RNumber, RPrivateName, RProp, RPropName, RSetterProp, RStr,
+    RComputedPropName, RExpr, RExprOrSuper, RGetterProp, RIdent, RMemberExpr, RPrivateName, RProp, RPropName,
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -229,7 +228,7 @@ impl Analyzer<'_, '_> {
         };
 
         let old_this = self.scope.this.take();
-        let mut res = self.with_ctx(ctx).validate_prop_inner(prop, object_type);
+        let res = self.with_ctx(ctx).validate_prop_inner(prop, object_type);
         self.scope.this = old_this;
 
         res
@@ -450,7 +449,7 @@ impl Analyzer<'_, '_> {
                     _ => false,
                 };
                 let param_span = p.param.span();
-                let mut param = &p.param;
+                let param = &p.param;
 
                 self.with_child(ScopeKind::Method { is_static: false }, Default::default(), {
                     |child: &mut Analyzer| -> ValidationResult<_> {
@@ -642,27 +641,6 @@ impl Analyzer<'_, '_> {
             },
         }
         .into())
-    }
-}
-
-fn prop_key_to_expr(p: &RProp) -> Box<RExpr> {
-    match *p {
-        RProp::Shorthand(ref i) => box RExpr::Ident(i.clone()),
-        RProp::Assign(RAssignProp { ref key, .. }) => box RExpr::Ident(key.clone()),
-        RProp::Getter(RGetterProp { ref key, .. })
-        | RProp::KeyValue(RKeyValueProp { ref key, .. })
-        | RProp::Method(RMethodProp { ref key, .. })
-        | RProp::Setter(RSetterProp { ref key, .. }) => prop_name_to_expr(key),
-    }
-}
-
-pub(super) fn prop_name_to_expr(key: &RPropName) -> Box<RExpr> {
-    match key {
-        RPropName::Computed(ref p) => p.expr.clone(),
-        RPropName::Ident(ref ident) => box RExpr::Ident(ident.clone()),
-        RPropName::Str(ref s) => box RExpr::Lit(RLit::Str(RStr { ..s.clone() })),
-        RPropName::Num(ref s) => box RExpr::Lit(RLit::Num(RNumber { ..s.clone() })),
-        RPropName::BigInt(n) => box RExpr::Lit(RLit::BigInt(n.clone())),
     }
 }
 

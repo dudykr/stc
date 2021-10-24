@@ -5,7 +5,7 @@ use crate::{
     util::{unwrap_ref_with_single_arg, RemoveTypes},
     ValidationResult,
 };
-use fxhash::FxHashMap;
+use fxhash::{FxHashMap, FxHashSet};
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RIdent, RPat, RStr, RTsEntityName, RTsLit};
@@ -13,7 +13,10 @@ use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace, print_type},
     DebugExt,
 };
-use stc_ts_generics::type_param::{finder::TypeParamUsageFinder, remover::TypeParamRemover, renamer::TypeParamRenamer};
+use stc_ts_generics::{
+    expander::InferTypeResult,
+    type_param::{finder::TypeParamUsageFinder, remover::TypeParamRemover, renamer::TypeParamRenamer},
+};
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType,
@@ -46,6 +49,8 @@ pub(super) struct InferData {
     /// Inferred type parameters
     type_params: FxHashMap<Id, InferredType>,
 
+    errored: FxHashSet<Id>,
+
     /// For the code below, we can know that `T` defaults to `unknown` while
     /// inferring type of funcation parametrs. We cannot know the type before
     /// it. So we store the default type while it.
@@ -63,80 +68,6 @@ pub(super) struct InferData {
 
 /// Type inference for arguments.
 impl Analyzer<'_, '_> {
-    /// Create [TypeParamInstantiation] from inferred type information.
-    pub(super) fn instantiate(
-        &mut self,
-        span: Span,
-        type_params: &[TypeParam],
-        mut inferred: FxHashMap<Id, Type>,
-    ) -> ValidationResult<TypeParamInstantiation> {
-        let mut params = Vec::with_capacity(type_params.len());
-        for type_param in type_params {
-            if let Some(ty) = inferred.remove(&type_param.name) {
-                info!("infer_arg_type: {}", type_param.name);
-                params.push(ty);
-            } else {
-                match type_param.constraint {
-                    Some(box Type::Param(ref p)) => {
-                        // TODO: Handle complex inheritance like
-                        //      function foo<A extends B, B extends C>(){ }
-
-                        if let Some(actual) = inferred.remove(&p.name) {
-                            info!(
-                                "infer_arg_type: {} => {} => {:?} because of the extends clause",
-                                type_param.name, p.name, actual
-                            );
-                            params.push(actual);
-                        } else {
-                            info!(
-                                "infer_arg_type: {} => {} because of the extends clause",
-                                type_param.name, p.name
-                            );
-                            params.push(Type::Param(p.clone()));
-                        }
-                        continue;
-                    }
-                    _ => {}
-                }
-
-                if type_param.constraint.is_some() && is_literals(&type_param.constraint.as_ref().unwrap()) {
-                    params.push(*type_param.constraint.clone().unwrap());
-                    continue;
-                }
-
-                if type_param.constraint.is_some()
-                    && match **type_param.constraint.as_ref().unwrap() {
-                        Type::Interface(..) | Type::Keyword(..) | Type::Ref(..) | Type::TypeLit(..) => true,
-                        _ => false,
-                    }
-                {
-                    let ty = self.expand(
-                        span,
-                        *type_param.constraint.clone().unwrap(),
-                        ExpandOpts {
-                            full: true,
-                            expand_union: false,
-                            ..Default::default()
-                        },
-                    )?;
-                    params.push(ty);
-                    continue;
-                }
-
-                warn!("instantiate: A type parameter {} defaults to {{}}", type_param.name);
-
-                // Defaults to {}
-                params.push(Type::TypeLit(TypeLit {
-                    span,
-                    members: vec![],
-                    metadata: Default::default(),
-                }));
-            }
-        }
-
-        Ok(TypeParamInstantiation { span: DUMMY_SP, params })
-    }
-
     /// This method accepts Option<&[TypeParamInstantiation]> because user may
     /// provide only some of type arguments.
     pub(super) fn infer_arg_types(
@@ -147,15 +78,14 @@ impl Analyzer<'_, '_> {
         params: &[FnParam],
         args: &[TypeOrSpread],
         default_ty: Option<&Type>,
-    ) -> ValidationResult<FxHashMap<Id, Type>> {
+        opts: InferTypeOpts,
+    ) -> ValidationResult<InferTypeResult> {
         warn!(
             "infer_arg_types: {:?}",
             type_params.iter().map(|p| format!("{}, ", p.name)).collect::<String>()
         );
 
         let start = Instant::now();
-
-        let opts = InferTypeOpts::default();
 
         let mut inferred = InferData::default();
 
@@ -247,6 +177,8 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
+
+        info!("infer_type is finished:\n{:?}", &inferred.type_params);
 
         // Defaults
         for type_param in type_params {
@@ -365,7 +297,7 @@ impl Analyzer<'_, '_> {
         self.infer_type(span, &mut inferred, base, concrete, opts)?;
         let map = self.finalize_inference(inferred);
 
-        Ok(map)
+        Ok(map.types)
     }
 
     ///
@@ -465,7 +397,11 @@ impl Analyzer<'_, '_> {
             None
         };
 
+        debug!("Start");
+
         let res = self.infer_type_inner(span, inferred, param, arg, opts);
+
+        debug!("End");
 
         res
     }
@@ -760,14 +696,13 @@ impl Analyzer<'_, '_> {
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
                         match e.get_mut() {
-                            InferredType::Union(e) => return Ok(()),
+                            InferredType::Union(e) => {
+                                debug!("`{}` is already fixed as {}", name, dump_type_as_string(&self.cm, &e));
+                                return Ok(());
+                            }
                             InferredType::Other(e) => {
-                                if !e.is_empty() && !opts.append_type_as_union {
-                                    return Ok(());
-                                }
-
                                 // If we inferred T as `number`, we don't need to add `1`.
-                                if e.iter().any(|prev| {
+                                if let Some(prev) = e.iter().find(|prev| {
                                     self.assign_with_opts(
                                         &mut Default::default(),
                                         AssignOpts {
@@ -779,6 +714,23 @@ impl Analyzer<'_, '_> {
                                     )
                                     .is_ok()
                                 }) {
+                                    debug!(
+                                        "Ignoring the result for `{}` can be {}",
+                                        name,
+                                        dump_type_as_string(&self.cm, &prev)
+                                    );
+
+                                    return Ok(());
+                                }
+
+                                if !e.is_empty() && !opts.append_type_as_union {
+                                    debug!(
+                                        "Cannot append to `{}` (arg = {})",
+                                        name,
+                                        dump_type_as_string(&self.cm, &arg)
+                                    );
+
+                                    inferred.errored.insert(name.clone());
                                     return Ok(());
                                 }
 
@@ -795,6 +747,8 @@ impl Analyzer<'_, '_> {
                                         )
                                         .is_ok()
                                     {
+                                        debug!("Overrding `{}` with {}", name, dump_type_as_string(&self.cm, &arg));
+
                                         *prev = arg.clone().generalize_lit();
                                         return Ok(());
                                     }
@@ -911,6 +865,29 @@ impl Analyzer<'_, '_> {
                     self.infer_type_of_fn_params(span, inferred, &p.params, &a.params, opts)?;
                     self.infer_type(span, inferred, &p.ret_ty, &a.ret_ty, InferTypeOpts { ..opts })?;
 
+                    if !opts.for_fn_assignment {
+                        if let Some(arg_type_params) = &a.type_params {
+                            let mut data = InferData::default();
+                            self.infer_type_of_fn_params(
+                                span,
+                                &mut data,
+                                &a.params,
+                                &p.params,
+                                InferTypeOpts { ..opts },
+                            )?;
+
+                            for name in data.errored {
+                                if !inferred.type_params.contains_key(&name) {
+                                    inferred.errored.insert(name);
+                                }
+                            }
+
+                            for (name, ty) in data.type_params {
+                                inferred.type_params.entry(name).or_insert(ty);
+                            }
+                        }
+                    }
+
                     if let Some(arg_type_params) = &a.type_params {
                         self.rename_inferred(inferred, arg_type_params)?;
                     }
@@ -960,7 +937,7 @@ impl Analyzer<'_, '_> {
                                 for member in &param.members {
                                     match member {
                                         TypeElement::Property(p) => {
-                                            let mut p = p.clone();
+                                            let p = p.clone();
                                             if let Some(type_ann) = &p.type_ann {
                                                 // TODO: Change p.ty
 
@@ -1616,7 +1593,7 @@ impl Analyzer<'_, '_> {
                                         self.infer_type(span, &mut data, &param_ty, &arg_prop_ty, opts)?;
                                         let mut defaults = take(&mut data.defaults);
                                         let mut map = self.finalize_inference(data);
-                                        let inferred_ty = map.remove(&name);
+                                        let inferred_ty = map.types.remove(&name);
 
                                         self.mapped_type_param_name = old;
 
@@ -1687,7 +1664,7 @@ impl Analyzer<'_, '_> {
                             let mut data = InferData::default();
                             self.infer_type(span, &mut data, &param_ty, &arg.elem_type, opts)?;
                             let mut map = self.finalize_inference(data);
-                            let mut inferred_ty = map.remove(&name);
+                            let mut inferred_ty = map.types.remove(&name);
 
                             self.mapped_type_param_name = old;
 
@@ -2184,6 +2161,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn rename_inferred(&mut self, inferred: &mut InferData, arg_type_params: &TypeParamDecl) -> ValidationResult<()> {
+        info!("rename_inferred");
         struct Renamer<'a> {
             fixed: &'a FxHashMap<Id, Type>,
         }
@@ -2203,6 +2181,14 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if arg_type_params
+            .params
+            .iter()
+            .any(|v| inferred.errored.contains(&v.name))
+        {
+            return Ok(());
+        }
+
         //
         let mut fixed = FxHashMap::default();
 
@@ -2211,6 +2197,7 @@ impl Analyzer<'_, '_> {
             if arg_type_params.params.iter().all(|v| *param_name != v.name) {
                 return;
             }
+
             let ty = match ty.clone() {
                 InferredType::Union(v) => v,
                 InferredType::Other(types) => Type::union(types).cheap(),
@@ -2286,7 +2273,7 @@ impl Analyzer<'_, '_> {
             return Ok(ty
                 .foldable()
                 .fold_with(&mut TypeParamRenamer {
-                    inferred: map,
+                    inferred: map.types,
                     declared: Default::default(),
                 })
                 .fixed());
@@ -2378,17 +2365,6 @@ pub(crate) fn calc_true_plus_minus_in_param(param: Option<TruePlusMinus>, previo
             TruePlusMinus::True => false,
             TruePlusMinus::Plus => true,
             TruePlusMinus::Minus => true,
-        },
-        None => previous,
-    }
-}
-
-pub(crate) fn calc_true_plus_minus_in_arg(v: Option<TruePlusMinus>, previous: bool) -> bool {
-    match v {
-        Some(v) => match v {
-            TruePlusMinus::True => true,
-            TruePlusMinus::Plus => true,
-            TruePlusMinus::Minus => false,
         },
         None => previous,
     }

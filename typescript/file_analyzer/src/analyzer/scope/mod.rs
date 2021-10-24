@@ -5,6 +5,7 @@ use crate::{
         class::ClassState,
         control_flow::CondFacts,
         expr::{IdCtx, TypeOfMode},
+        generic::InferTypeOpts,
         scope::vars::DeclareVarsOpts,
         stmt::return_type::ReturnValues,
         Analyzer, Ctx, ResultExt,
@@ -571,7 +572,7 @@ impl Scope<'_> {
                             prev.make_cheap();
                         }
                     }
-                    Entry::Vacant(mut e) => {
+                    Entry::Vacant(e) => {
                         e.insert(ty);
                     }
                 }
@@ -920,10 +921,6 @@ impl Analyzer<'_, '_> {
         default_ty: Option<Type>,
     ) -> ValidationResult<()> {
         self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty, default_ty)
-    }
-
-    pub(super) fn declare_vars_inner(&mut self, kind: VarKind, pat: &RPat) -> ValidationResult<()> {
-        self.declare_vars_inner_with_ty(kind, pat, None, None, None)
     }
 
     pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> ValidationResult {
@@ -1479,39 +1476,17 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     _ => {
-                                        let mut ty = self.expand(
-                                            span,
-                                            ty.clone(),
-                                            ExpandOpts {
-                                                full: true,
-                                                expand_union: true,
-                                                ..Default::default()
-                                            },
-                                        )?;
-                                        ty.make_clone_cheap();
-
-                                        let var_ty = self
-                                            .expand(
-                                                span,
-                                                generalized_var_ty,
-                                                ExpandOpts {
-                                                    full: true,
-                                                    expand_union: true,
-                                                    ..Default::default()
-                                                },
-                                            )?
-                                            .freezed();
-
                                         let res = self
                                             .assign_with_opts(
                                                 &mut Default::default(),
                                                 AssignOpts {
                                                     span,
                                                     for_overload: true,
+                                                    disallow_assignment_to_unknown: true,
                                                     ..Default::default()
                                                 },
                                                 &ty,
-                                                &var_ty,
+                                                &generalized_var_ty,
                                             )
                                             .context("tried to validate a varaible declared multiple times")
                                             .convert_err(|err| Error::VarDeclNotCompatible {
@@ -1536,7 +1511,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
-                        if var_ty.type_eq(&ty) {
+                        if ty.is_kwd(TsKeywordTypeKind::TsUnknownKeyword) || var_ty.type_eq(&ty) {
                             var_ty
                         } else {
                             Type::union(vec![var_ty, ty]).freezed()
@@ -1643,10 +1618,6 @@ impl Analyzer<'_, '_> {
 
             _ => unimplemented!("declare_complex_vars({:#?}, {:#?})", pat, ty),
         }
-    }
-
-    fn is_infer_type_container(&self, ty: &Type) -> bool {
-        ty.metadata().contains_infer_type
     }
 
     pub(crate) fn mark_type_as_infer_type_container(&self, ty: &mut Type) {
@@ -2058,8 +2029,9 @@ impl Expander<'_, '_, '_> {
                                             members: vec![],
                                             metadata: Default::default(),
                                         })),
+                                        InferTypeOpts { ..Default::default() },
                                     )?;
-                                    inferred.iter_mut().for_each(|(_, ty)| {
+                                    inferred.types.iter_mut().for_each(|(_, ty)| {
                                         self.analyzer.allow_expansion(ty);
 
                                         ty.make_cheap();
@@ -2068,7 +2040,7 @@ impl Expander<'_, '_, '_> {
                                     let before = dump_type_as_string(&self.analyzer.cm, &ty);
                                     // TODO: PERF
                                     let mut ty = self.analyzer.expand_type_params(
-                                        &inferred,
+                                        &inferred.types,
                                         ty.foldable(),
                                         self.opts.generic,
                                     )?;
@@ -2400,7 +2372,7 @@ impl Expander<'_, '_, '_> {
 
         let span = self.span;
 
-        let mut ty = match ty {
+        let ty = match ty {
             Type::Ref(..) => ty,
             _ => ty.fold_children_with(self),
         };
@@ -2579,7 +2551,7 @@ impl Expander<'_, '_, '_> {
             }
         };
 
-        let mut ty = match res {
+        let ty = match res {
             Ok(ty) => ty,
             Err(err) => {
                 self.analyzer.storage.report(err);
@@ -2685,7 +2657,7 @@ impl Fold<FnParam> for Expander<'_, '_, '_> {
 }
 
 impl Fold<Type> for Expander<'_, '_, '_> {
-    fn fold(&mut self, mut ty: Type) -> Type {
+    fn fold(&mut self, ty: Type) -> Type {
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
             Type::Arc(..) => {

@@ -1,39 +1,14 @@
 use crate::ty::{Intersection, Type, Union};
-use rnode::{Visit, VisitWith};
+use rnode::VisitWith;
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
 use stc_ts_type_ops::metadata::TypeFinder;
-use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeParam};
-use std::fmt::Debug;
-use swc_common::{Mark, Spanned, SyntaxContext};
+use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Ref};
 use swc_ecma_ast::*;
 use tracing::instrument;
 
 pub(crate) mod dashmap;
 pub(crate) mod graph;
-pub(crate) mod named;
-pub(crate) mod property_map;
 pub(crate) mod type_ext;
-
-pub(crate) struct TypeParamAssertFinder {
-    found: bool,
-}
-
-impl Visit<TypeParam> for TypeParamAssertFinder {
-    fn visit(&mut self, value: &TypeParam) {
-        self.found = true;
-    }
-}
-
-pub(crate) fn assert_no_type_param<N>(n: &N)
-where
-    N: Debug + VisitWith<TypeParamAssertFinder>,
-{
-    let mut v = TypeParamAssertFinder { found: false };
-    n.visit_with(&mut v);
-    if v.found {
-        panic!("{:#?} should not contain type parameter", n)
-    }
-}
 
 pub(crate) trait ModuleItemOrStmt {
     fn try_into(self) -> Result<RModuleDecl, RStmt>;
@@ -54,44 +29,6 @@ impl ModuleItemOrStmt for RStmt {
     fn try_into(self) -> Result<RModuleDecl, RStmt> {
         Err(self)
     }
-}
-
-pub(crate) struct MarkFinder {
-    found: bool,
-    mark: Mark,
-}
-
-impl Visit<Type> for MarkFinder {
-    fn visit(&mut self, ty: &Type) {
-        if self.found {
-            return;
-        }
-        ty.visit_children_with(self);
-
-        let mut ctxt: SyntaxContext = ty.span().ctxt;
-
-        loop {
-            let mark = ctxt.remove_mark();
-            if mark == Mark::root() {
-                return;
-            }
-
-            if mark == self.mark {
-                self.found = true;
-                return;
-            }
-        }
-    }
-}
-
-#[instrument(skip(n, mark))]
-pub(crate) fn contains_mark<T>(n: &T, mark: Mark) -> bool
-where
-    T: VisitWith<MarkFinder>,
-{
-    let mut v = MarkFinder { found: false, mark };
-    n.visit_with(&mut v);
-    v.found
 }
 
 /// Check if `ty` stores infer type in it.
@@ -348,32 +285,6 @@ where
         match self.last() {
             Some(ref stmt) => stmt.ends_with_ret(),
             _ => false,
-        }
-    }
-}
-
-pub(crate) struct TypeParamFinder<'a> {
-    name: &'a Id,
-    found: bool,
-}
-
-pub(crate) fn contains_type_param<T>(node: &T, name: &Id) -> bool
-where
-    T: for<'a> rnode::VisitWith<TypeParamFinder<'a>>,
-{
-    let mut v = TypeParamFinder { name, found: false };
-
-    name.visit_with(&mut v);
-
-    v.found
-}
-
-impl rnode::Visit<TypeParam> for TypeParamFinder<'_> {
-    fn visit(&mut self, p: &TypeParam) {
-        if p.name == *self.name {
-            self.found = true
-        } else {
-            p.visit_children_with(self)
         }
     }
 }

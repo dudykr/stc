@@ -12,6 +12,7 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use stc_ts_ast_rnode::RTsEntityName;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union};
 use stc_ts_types::{
@@ -227,11 +228,12 @@ impl Analyzer<'_, '_> {
                         unreachable!()
                     }
                     InferredType::Other(e) => {
-                        if !e.is_empty() && !opts.append_type_as_union {
+                        if e.iter().any(|prev| prev.type_eq(&*ty)) {
                             return Ok(());
                         }
 
-                        if e.iter().any(|prev| prev.type_eq(&*ty)) {
+                        if !e.is_empty() && !opts.append_type_as_union {
+                            inferred.errored.insert(name.clone());
                             return Ok(());
                         }
 
@@ -297,7 +299,7 @@ impl Analyzer<'_, '_> {
 
         let map = self.finalize_inference(inferred);
 
-        Ok(map)
+        Ok(map.types)
     }
 
     /// Handle some special builtin types
@@ -746,7 +748,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn finalize_inference(&self, inferred: InferData) -> FxHashMap<Id, Type> {
+    pub(super) fn finalize_inference(&self, inferred: InferData) -> InferTypeResult {
         let mut map = HashMap::default();
 
         for (k, v) in inferred.type_params {
@@ -762,7 +764,10 @@ impl Analyzer<'_, '_> {
             map.insert(k, ty);
         }
 
-        map
+        InferTypeResult {
+            types: map,
+            errored: inferred.errored,
+        }
     }
 
     /// TODO: Handle union

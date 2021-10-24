@@ -125,19 +125,6 @@ impl CondFacts {
         }
     }
 
-    fn clear(&mut self) {
-        self.facts.clear();
-        self.vars.clear();
-        self.excludes.clear();
-        self.types.clear();
-    }
-
-    fn extend(&mut self, other: Self) {
-        self.facts.extend(other.facts);
-        self.vars.extend(other.vars);
-        self.types.extend(other.types);
-    }
-
     fn or<K, T>(mut map: FxHashMap<K, T>, map2: FxHashMap<K, T>) -> FxHashMap<K, T>
     where
         K: Eq + Hash,
@@ -183,13 +170,6 @@ impl Facts {
 
         self.true_facts.assert_clone_cheap();
         self.false_facts.assert_clone_cheap();
-    }
-
-    pub fn clear(&mut self) {
-        self.assert_valid();
-
-        self.true_facts.clear();
-        self.false_facts.clear();
     }
 
     pub fn take(&mut self) -> Self {
@@ -607,7 +587,7 @@ impl Analyzer<'_, '_> {
 
             match case.test {
                 Some(ref test) => {
-                    let mut binary_test_expr = RExpr::Bin(RBinExpr {
+                    let binary_test_expr = RExpr::Bin(RBinExpr {
                         node_id: NodeId::invalid(),
                         op: op!("==="),
                         span,

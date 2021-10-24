@@ -1822,7 +1822,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Handle nodes in order described above
-                let mut body = {
+                let body = {
                     let mut declared_static_keys = vec![];
                     let mut declared_instance_keys = vec![];
 
@@ -1896,7 +1896,7 @@ impl Analyzer<'_, '_> {
 
                                     let (i, ty) = match &p.param {
                                         RTsParamPropParam::Ident(i) => {
-                                            let mut ty = i.type_ann.clone();
+                                            let ty = i.type_ann.clone();
                                             let ty = try_opt!(ty.validate_with(child));
                                             (i, ty)
                                         }
@@ -1907,7 +1907,7 @@ impl Analyzer<'_, '_> {
                                             right,
                                             ..
                                         }) => {
-                                            let mut ty = type_ann.clone().or_else(|| i.type_ann.clone());
+                                            let ty = type_ann.clone().or_else(|| i.type_ann.clone());
                                             let mut ty = try_opt!(ty.validate_with(child));
                                             if ty.is_none() {
                                                 ty = Some(right.validate_with_default(child)?.generalize_lit());
@@ -2399,17 +2399,6 @@ impl Analyzer<'_, '_> {
         }
 
         self.scope.this = old_this;
-    }
-}
-
-fn from_pat(pat: RPat) -> RTsFnParam {
-    match pat {
-        RPat::Ident(v) => v.into(),
-        RPat::Array(v) => v.into(),
-        RPat::Rest(v) => v.into(),
-        RPat::Object(v) => v.into(),
-        RPat::Assign(v) => from_pat(*v.left),
-        _ => unreachable!("constructor with parameter {:?}", pat),
     }
 }
 

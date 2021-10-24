@@ -28,5 +28,5 @@ warning: Type
 12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
    |                                           ^^^^^^^^^^^^^^^^^^
    |
-   = note: <T>(a: T) => Box<T[]>
+   = note: <A>(a: A) => Box<A[]>
 

@@ -2,7 +2,7 @@ use crate::{
     analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
     util::unwrap_ref_with_single_arg,
-    Marks, ValidationResult,
+    ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
@@ -38,7 +38,6 @@ mod index_signature;
 mod keyof;
 mod mapped;
 mod narrowing;
-mod replace;
 mod type_param;
 
 /// All fields defaults to false.
@@ -73,7 +72,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Option<Span>,
         mut ty: Cow<'a, Type>,
-        mut opts: NormalizeTypeOpts,
+        opts: NormalizeTypeOpts,
     ) -> ValidationResult<Cow<'a, Type>> {
         let _tracing = if cfg!(debug_assertions) {
             let ty_str = dump_type_as_string(&self.cm, &ty);
@@ -988,35 +987,6 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn intersection(&mut self, span: Span, types: Vec<Type>) -> Type {
-        let mut actual = vec![];
-
-        let all_known = types.iter().all(|ty| ty.normalize().is_union_type())
-            && types.iter().flat_map(|ty| ty.iter_union()).all(|ty| match ty {
-                Type::Lit(..) | Type::Keyword(..) => true,
-                _ => false,
-            });
-
-        if !all_known {
-            return Type::intersection(span, types);
-        }
-
-        for ty in types.iter().flat_map(|ty| ty.iter_union()) {
-            let in_all = types
-                .iter()
-                .all(|candidates| candidates.iter_union().any(|pred| pred.type_eq(ty)));
-
-            if !in_all {
-                continue;
-            }
-
-            actual.push(ty.clone());
-        }
-        actual.dedup_type();
-
-        Type::intersection(span, actual)
-    }
-
     /// Note: `span` is only used while expanding type (to prevent panic) in the
     /// case of [Type::Ref].
     pub(crate) fn convert_type_to_type_lit<'a>(
@@ -1352,7 +1322,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn normalize_tuples(&mut self, ty: &mut Type) {
         let marks = self.marks();
 
-        ty.visit_mut_with(&mut TupleNormalizer { marks });
+        ty.visit_mut_with(&mut TupleNormalizer);
         ty.fix();
     }
 
@@ -1644,7 +1614,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn exclude_types(&mut self, span: Span, ty: &mut Type, excludes: Option<Vec<Type>>) {
-        let mut mapped_ty = self.normalize(
+        let mapped_ty = self.normalize(
             Some(span),
             Cow::Borrowed(&*ty),
             NormalizeTypeOpts {
@@ -1745,9 +1715,7 @@ impl Visit<RTsModuleDecl> for KnownTypeVisitor {
     }
 }
 
-struct TupleNormalizer {
-    marks: Marks,
-}
+struct TupleNormalizer;
 
 impl VisitMut<Type> for TupleNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {

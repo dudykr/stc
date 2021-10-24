@@ -19,7 +19,7 @@ use crate::{
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{
-    RDecorator, RExpr, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsImportEqualsDecl, RTsModuleDecl,
+    RDecorator, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsImportEqualsDecl, RTsModuleDecl,
     RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
 };
 use stc_ts_dts_mutations::Mutations;
@@ -76,7 +76,6 @@ mod visit_mut;
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum Phase {
     HoistingVars,
-    Reporting,
 }
 
 impl Default for Phase {
@@ -237,8 +236,6 @@ pub struct Analyzer<'scope, 'b> {
     export_equals_span: Span,
 
     imports_by_id: FxHashMap<Id, ModuleInfo>,
-
-    pending_exports: Vec<((Id, Span), RExpr)>,
 
     imports: FxHashMap<(ModuleId, ModuleId), Arc<ModuleTypeData>>,
     /// See docs of ModuleitemMut for documentation.
@@ -475,7 +472,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             mutations,
             export_equals_span: DUMMY_SP,
             imports: Default::default(),
-            pending_exports: Default::default(),
             prepend_stmts: Default::default(),
             append_stmts: Default::default(),
             scope,
@@ -785,7 +781,7 @@ impl Analyzer<'_, '_> {
         let globals = self.env.shared().swc_globals().clone();
 
         GLOBALS.set(&globals, || {
-            let mut items_ref = items.iter().collect::<Vec<_>>();
+            let items_ref = items.iter().collect::<Vec<_>>();
             self.load_normal_imports(&items_ref);
 
             self.fill_known_type_names(&items);
