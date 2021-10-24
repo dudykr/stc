@@ -46,7 +46,7 @@ mod type_param;
 
 #[derive(Debug, Default)]
 pub(crate) struct ClassState {
-    /// Used only while valdiation consturctors.
+    /// Used only while validating constructors.
     ///
     /// `false` means `this` can be used.
     pub need_super_call: RefCell<bool>,
