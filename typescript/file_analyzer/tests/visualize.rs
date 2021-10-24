@@ -4,9 +4,8 @@
 #![feature(box_syntax)]
 #![feature(specialization)]
 
-use once_cell::sync::Lazy;
 use rnode::{NodeIdGenerator, RNode};
-use stc_testing::{load_txt, logger};
+use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_errors::{debug::debugger::Debugger, Error};
@@ -19,27 +18,13 @@ use stc_ts_file_analyzer::{
 use stc_ts_storage::{ErrorStore, Single};
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
-use std::{
-    env,
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::{path::PathBuf, sync::Arc};
 use swc_common::{input::SourceFileInput, GLOBALS};
 use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use testing::NormalizedOutput;
 use tracing::Level;
-
-fn should_run(input: &Path) -> bool {
-    static GOLDENS: Lazy<Vec<String>> = Lazy::new(|| load_txt("tests/golden.txt"));
-
-    if env::var("GOLDEN_ONLY").unwrap_or_default() == "1" {
-        return GOLDENS.iter().any(|golden| input.to_string_lossy().contains(&**golden));
-    }
-
-    true
-}
 
 /// If `for_error` is false, this function will run as type dump mode.
 fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
@@ -179,10 +164,6 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
 
 #[testing::fixture("tests/visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn visualize(file_name: PathBuf) {
-    if !should_run(&file_name) {
-        return;
-    }
-
     let res = run_test(file_name.clone(), false).unwrap();
     res.compare_to_file(&file_name.with_extension("stdout")).unwrap();
 
@@ -191,10 +172,6 @@ fn visualize(file_name: PathBuf) {
 
 #[testing::fixture("tests/pass/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn pass(file_name: PathBuf) {
-    if !should_run(&file_name) {
-        return;
-    }
-
     let res = run_test(file_name.clone(), false).unwrap();
     println!("TYPES: {}", res);
 
