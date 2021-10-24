@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/pass/fn/generator/selfReferential/1.ts:2:16
+ --> $DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:16
   |
 2 |     var v = { [yield]: foo }
   |                ^^^^^
@@ -7,7 +7,7 @@ warning: Type
   = note: any
 
 warning: Type
- --> $DIR/tests/pass/fn/generator/selfReferential/1.ts:2:24
+ --> $DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:24
   |
 2 |     var v = { [yield]: foo }
   |                        ^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: typeof foo
 
 warning: Type
- --> $DIR/tests/pass/fn/generator/selfReferential/1.ts:2:13
+ --> $DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:13
   |
 2 |     var v = { [yield]: foo }
   |             ^^^^^^^^^^^^^^^^
