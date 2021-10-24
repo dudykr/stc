@@ -28,7 +28,7 @@ warning: Type
 14 |         x = typeof x === "string" ? x.slice() : "abc";
    |                    ^
    |
-   = note: string | number
+   = note: number
 
 warning: Type
   --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:13
@@ -52,6 +52,54 @@ warning: Type
 14 |         x = typeof x === "string" ? x.slice() : "abc";
    |                                     ^
    |
+   = note: never
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:13
+   |
+14 |         x = typeof x === "string" ? x.slice() : "abc";
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: (any | "abc")
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:9
+   |
+14 |         x = typeof x === "string" ? x.slice() : "abc";
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: (any | "abc")
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:15:9
+   |
+15 |         x;  // string
+   |         ^
+   |
+   = note: (string | number | boolean)
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:13:9
+   |
+13 |         x;  // number, then string | number
+   |         ^
+   |
+   = note: (string | number | boolean)
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:20
+   |
+14 |         x = typeof x === "string" ? x.slice() : "abc";
+   |                    ^
+   |
+   = note: (string | number | boolean)
+
+warning: Type
+  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:37
+   |
+14 |         x = typeof x === "string" ? x.slice() : "abc";
+   |                                     ^
+   |
    = note: string
 
 warning: Type
@@ -68,7 +116,7 @@ warning: Type
 14 |         x = typeof x === "string" ? x.slice() : "abc";
    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: string | "abc"
+   = note: (string | "abc")
 
 warning: Type
   --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:9
@@ -76,7 +124,7 @@ warning: Type
 14 |         x = typeof x === "string" ? x.slice() : "abc";
    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: string | "abc"
+   = note: (string | "abc")
 
 warning: Type
   --> $DIR/tests/pass/exprs/typeAssertion/1.ts:15:9
@@ -87,18 +135,10 @@ warning: Type
    = note: string
 
 warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:13:9
-   |
-13 |         x;  // number, then string | number
-   |         ^
-   |
-   = note: string | number
-
-warning: Type
   --> $DIR/tests/pass/exprs/typeAssertion/1.ts:17:5
    |
 17 |     x;
    |     ^
    |
-   = note: string | number
+   = note: (string | number)
 
