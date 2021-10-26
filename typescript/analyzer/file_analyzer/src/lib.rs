@@ -57,23 +57,3 @@ pub struct Config {
 
     pub env: StableEnv,
 }
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Rule {
-    pub no_implicit_any: bool,
-    pub no_implicit_this: bool,
-    pub always_strict: bool,
-    pub strict_null_checks: bool,
-    pub strict_function_types: bool,
-
-    pub allow_unreachable_code: bool,
-    pub allow_unused_labels: bool,
-    pub no_fallthrough_cases_in_switch: bool,
-    pub no_implicit_returns: bool,
-    pub suppress_excess_property_errors: bool,
-    pub suppress_implicit_any_index_errors: bool,
-    pub no_strict_generic_checks: bool,
-    pub no_unused_locals: bool,
-    pub no_unused_parameters: bool,
-    pub use_define_property_for_class_fields: bool,
-}

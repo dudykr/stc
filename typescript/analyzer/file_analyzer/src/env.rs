@@ -250,18 +250,6 @@ impl BuiltIn {
     }
 }
 
-/// Stuffs which can be changed between runs.
-#[derive(Debug, Clone)]
-pub struct Env {
-    stable: StableEnv,
-    rule: Rule,
-    target: JscTarget,
-    module: ModuleConfig,
-    builtin: Arc<BuiltIn>,
-    global_types: Arc<Mutex<FxHashMap<JsWord, Type>>>,
-    global_vars: Arc<Mutex<FxHashMap<JsWord, Type>>>,
-}
-
 impl Env {
     pub fn new(env: StableEnv, rule: Rule, target: JscTarget, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Self {
         Self {
@@ -376,58 +364,4 @@ impl Env {
             name: Id::word(name.clone()),
         })
     }
-}
-
-/// Stuffs which are not changed regardless
-#[derive(Clone, Derivative)]
-#[derivative(Debug)]
-pub struct StableEnv {
-    #[derivative(Debug = "ignore")]
-    globals: Arc<Globals>,
-    marks: Marks,
-}
-
-impl StableEnv {
-    pub fn new(globals: Arc<Globals>) -> Self {
-        let marks = Marks::new(&globals);
-        Self { globals, marks }
-    }
-
-    /// Note: The return marks should not be modified as it will not has any
-    /// effect.
-    pub const fn marks(&self) -> Marks {
-        self.marks
-    }
-
-    pub fn swc_globals(&self) -> &Arc<Globals> {
-        &self.globals
-    }
-}
-
-impl Default for StableEnv {
-    fn default() -> Self {
-        Self::new(Default::default())
-    }
-}
-
-#[derive(Clone, Copy, StringEnum)]
-pub enum ModuleConfig {
-    /// `commonjs`
-    CommonJs,
-    /// `es6`
-    Es6,
-    /// `es2015`
-    Es2015,
-    /// `es2020`
-    Es2020,
-    /// `none`
-    None,
-    /// `umd`
-    Umd,
-    /// `amd`
-    Amd,
-    /// `system`
-    System,
-    /// `esnext`
-    EsNext,
 }

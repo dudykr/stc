@@ -6,3 +6,5 @@ publish = false
 version = "0.1.0"
 
 [dependencies]
+derivative = "2.1.1"
+stc_ts_storage = {path = "../../storage/"}

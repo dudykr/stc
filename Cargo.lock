@@ -2035,6 +2035,10 @@ dependencies = [
 [[package]]
 name = "stc_ts_env"
 version = "0.1.0"
+dependencies = [
+ "derivative",
+ "stc_ts_storage",
+]
 
 [[package]]
 name = "stc_ts_errors"
