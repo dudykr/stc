@@ -19,14 +19,14 @@ use crate::{
 use fxhash::{FxHashMap, FxHashSet};
 use iter::once;
 use once_cell::sync::Lazy;
-use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
+use rnode::{Fold, FoldWith, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
     DebugExt, Error,
 };
 use stc_ts_generics::ExpandGenericOpts;
-use stc_ts_type_ops::{union_finder::UnionFinder, Fix};
+use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
     name::Name, Class, ClassDef, ClassProperty, Conditional, EnumVariant, FnParam, Id, IndexedAccessType, Intersection,
     Key, KeywordType, KeywordTypeMetadata, Mapped, ModuleId, Operator, QueryExpr, QueryType, StaticThis, TypeElement,
@@ -2701,29 +2701,5 @@ impl Fold<stc_ts_types::ClassMember> for Expander<'_, '_, '_> {
 impl Fold<TypeElement> for Expander<'_, '_, '_> {
     fn fold(&mut self, node: TypeElement) -> TypeElement {
         node
-    }
-}
-
-pub(crate) struct ExpansionPreventer {
-    is_for_ignoring: bool,
-}
-
-impl VisitMut<Ref> for ExpansionPreventer {
-    fn visit_mut(&mut self, ty: &mut Ref) {
-        ty.visit_mut_children_with(self);
-
-        if self.is_for_ignoring {
-            ty.metadata.common.ignore_no_expand = true;
-        } else {
-            ty.metadata.common.no_expand = true;
-        }
-    }
-}
-
-impl VisitMut<Type> for ExpansionPreventer {
-    fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO: PERF
-        ty.normalize_mut();
-        ty.visit_mut_children_with(self)
     }
 }

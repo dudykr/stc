@@ -11,6 +11,7 @@ use stc_ts_ast_rnode::RIdent;
 pub use stc_ts_base_type_ops::{fix::Fix, is_str_lit_or_union};
 use stc_ts_types::Type;
 
+pub mod expansion;
 pub mod generalization;
 pub mod metadata;
 pub mod this;
