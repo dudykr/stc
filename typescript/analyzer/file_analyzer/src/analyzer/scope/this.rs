@@ -1,5 +1,5 @@
 use crate::analyzer::Analyzer;
-use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
+use rnode::{VisitMut, VisitMutWith};
 use stc_ts_type_ops::this::contains_this;
 use stc_ts_types::{ClassMember, ClassProperty, Id, Key, Method, Type};
 use std::borrow::Cow;
