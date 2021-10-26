@@ -15,10 +15,8 @@ use parking_lot::Mutex;
 use serde::Deserialize;
 use stc_testing::init_tracing;
 use stc_ts_builtin_types::Lib;
-use stc_ts_file_analyzer::{
-    env::{Env, ModuleConfig},
-    Rule,
-};
+use stc_ts_env::{Env, ModuleConfig, Rule};
+use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use stc_ts_utils::StcComments;

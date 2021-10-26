@@ -23,6 +23,7 @@ serde = {version = "1.0.130", features = ["derive"]}
 stc_ts_ast_rnode = {path = "../ast_rnode"}
 stc_ts_builtin_types = {path = "../builtin_types"}
 stc_ts_dts = {path = "../dts"}
+stc_ts_env = {path = "../analyzer/env/"}
 stc_ts_errors = {path = "../errors/"}
 stc_ts_file_analyzer = {path = "../analyzer/file_analyzer"}
 stc_ts_module_loader = {path = "../module_loader"}

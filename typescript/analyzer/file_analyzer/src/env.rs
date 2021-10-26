@@ -1,40 +1,29 @@
 use crate::{
     analyzer::{Analyzer, ScopeKind},
     validator::ValidateWith,
-    Marks, Rule,
 };
 use dashmap::DashMap;
-use derivative::Derivative;
-use fxhash::{FxBuildHasher, FxHashMap};
 use once_cell::sync::{Lazy, OnceCell};
 use rnode::{NodeIdGenerator, RNode, VisitWith};
+use rustc_hash::FxHashMap;
 use stc_ts_ast_rnode::{RDecl, RIdent, RModule, RModuleItem, RStmt, RTsModuleName, RVarDecl};
 use stc_ts_builtin_types::Lib;
-use stc_ts_errors::Error;
+use stc_ts_env::{BuiltIn, Env, ModuleConfig, Rule, StableEnv};
 use stc_ts_storage::Builtin;
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{ClassDef, Id, ModuleTypeData, Type};
+use stc_ts_types::{ClassDef, ModuleTypeData, Type};
 use stc_utils::stack;
-use std::{
-    collections::hash_map::Entry,
-    sync::{Arc, Mutex},
-    time::Instant,
-};
-use string_enum::StringEnum;
+use std::{collections::hash_map::Entry, sync::Arc, time::Instant};
 use swc_atoms::JsWord;
-use swc_common::{Globals, Span, Spanned, DUMMY_SP};
+use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 use swc_ecma_parser::JscTarget;
-use tracing::{info, instrument};
+use tracing::info;
 
-#[derive(Debug, Default)]
-pub struct BuiltIn {
-    vars: FxHashMap<JsWord, Type>,
-    types: FxHashMap<JsWord, Type>,
-}
+pub trait BuiltInGen: Sized {
+    fn new(vars: FxHashMap<JsWord, Type>, types: FxHashMap<JsWord, Type>) -> BuiltIn;
 
-impl BuiltIn {
-    pub fn from_ts_libs(env: &StableEnv, libs: &[Lib]) -> Self {
+    fn from_ts_libs(env: &StableEnv, libs: &[Lib]) -> BuiltIn {
         debug_assert_ne!(libs, &[], "No typescript library file is specified");
 
         let _stack = stack::start(300);
@@ -57,11 +46,11 @@ impl BuiltIn {
         Self::from_module_items(env, iter)
     }
 
-    pub fn from_modules(env: &StableEnv, modules: Vec<RModule>) -> Self {
+    fn from_modules(env: &StableEnv, modules: Vec<RModule>) -> BuiltIn {
         Self::from_module_items(env, modules.into_iter().flat_map(|module| module.body))
     }
 
-    pub fn from_module_items<'a, I>(env: &StableEnv, items: I) -> Self
+    fn from_module_items<'a, I>(env: &StableEnv, items: I) -> BuiltIn
     where
         I: IntoIterator<Item = RModuleItem>,
     {
@@ -69,7 +58,8 @@ impl BuiltIn {
 
         let start = Instant::now();
 
-        let mut result = Self::default();
+        let mut types = FxHashMap::default();
+        let mut vars = FxHashMap::default();
         let mut storage = Builtin::default();
         {
             let mut analyzer = Analyzer::for_builtin(env.clone(), &mut storage);
@@ -89,7 +79,7 @@ impl BuiltIn {
                             }
 
                             RStmt::Decl(RDecl::Class(ref c)) => {
-                                debug_assert_eq!(result.types.get(&c.ident.sym.clone()), None);
+                                debug_assert_eq!(types.get(&c.ident.sym.clone()), None);
 
                                 // builtin libraries does not contain a class which extends
                                 // other class.
@@ -126,7 +116,7 @@ impl BuiltIn {
                                     })
                                     .unwrap();
 
-                                result.types.insert(c.ident.sym.clone(), ty);
+                                types.insert(c.ident.sym.clone(), ty);
                             }
 
                             RStmt::Decl(RDecl::TsModule(ref mut m)) => {
@@ -144,7 +134,7 @@ impl BuiltIn {
 
                                 assert!(!data.types.is_empty() || !data.vars.is_empty());
 
-                                match result.types.entry(id.clone()) {
+                                match types.entry(id.clone()) {
                                     Entry::Occupied(mut e) => match e.get_mut().normalize_mut() {
                                         Type::Module(module) => {
                                             //
@@ -176,7 +166,7 @@ impl BuiltIn {
                             RStmt::Decl(RDecl::TsTypeAlias(ref a)) => {
                                 a.visit_with(&mut analyzer);
 
-                                debug_assert_eq!(result.types.get(&a.id.sym.clone()), None);
+                                debug_assert_eq!(types.get(&a.id.sym.clone()), None);
 
                                 let ty = a
                                     .clone()
@@ -184,7 +174,7 @@ impl BuiltIn {
                                     .map(Type::from)
                                     .expect("builtin: failed to process type alias");
 
-                                result.types.insert(a.id.sym.clone(), ty);
+                                types.insert(a.id.sym.clone(), ty);
                             }
 
                             // Merge interface
@@ -201,7 +191,7 @@ impl BuiltIn {
                                     .validate_with(&mut analyzer)
                                     .expect("builtin: failed to parse interface body");
 
-                                match result.types.entry(i.id.sym.clone()) {
+                                match types.entry(i.id.sym.clone()) {
                                     Entry::Occupied(mut e) => match &mut *e.get_mut() {
                                         Type::Interface(ref mut v) => {
                                             v.body.extend(body.body);
@@ -229,16 +219,16 @@ impl BuiltIn {
 
         for (id, ty) in storage.vars {
             //
-            let res = result.vars.insert(id, ty);
+            let res = vars.insert(id, ty);
             assert_eq!(res, None, "duplicate");
         }
 
-        for (_, ty) in result.types.iter_mut() {
+        for (_, ty) in types.iter_mut() {
             ty.fix();
             ty.make_cheap();
         }
 
-        for (_, ty) in result.vars.iter_mut() {
+        for (_, ty) in vars.iter_mut() {
             ty.fix();
             ty.make_cheap();
         }
@@ -246,38 +236,21 @@ impl BuiltIn {
         let dur = Instant::now() - start;
         eprintln!("[builtin] Took {:?}", dur);
 
-        result
+        Self::new(vars, types)
     }
 }
 
-/// Stuffs which can be changed between runs.
-#[derive(Debug, Clone)]
-pub struct Env {
-    stable: StableEnv,
-    rule: Rule,
-    target: JscTarget,
-    module: ModuleConfig,
-    builtin: Arc<BuiltIn>,
-    global_types: Arc<Mutex<FxHashMap<JsWord, Type>>>,
-    global_vars: Arc<Mutex<FxHashMap<JsWord, Type>>>,
+impl BuiltInGen for BuiltIn {
+    fn new(vars: FxHashMap<JsWord, Type>, types: FxHashMap<JsWord, Type>) -> BuiltIn {
+        BuiltIn::new(vars, types)
+    }
 }
 
-impl Env {
-    pub fn new(env: StableEnv, rule: Rule, target: JscTarget, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Self {
-        Self {
-            stable: env,
-            builtin,
-            target,
-            module,
-            global_types: Default::default(),
-            global_vars: Default::default(),
-            rule,
-        }
-    }
-
-    pub fn simple(rule: Rule, target: JscTarget, module: ModuleConfig, libs: &[Lib]) -> Self {
+pub trait EnvFactory {
+    fn new(env: StableEnv, rule: Rule, target: EsVersion, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Env;
+    fn simple(rule: Rule, target: JscTarget, module: ModuleConfig, libs: &[Lib]) -> Env {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);
-        static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>, FxBuildHasher>> = Lazy::new(Default::default);
+        static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>, ahash::RandomState>> = Lazy::new(Default::default);
 
         // TODO: Include `env` in cache
         let mut libs = libs.to_vec();
@@ -295,139 +268,12 @@ impl Env {
             (*builtin).clone()
         });
 
-        Self {
-            stable: STABLE_ENV.clone(),
-            rule,
-            target,
-            module,
-            builtin,
-            global_types: Default::default(),
-            global_vars: Default::default(),
-        }
-    }
-
-    pub const fn shared(&self) -> &StableEnv {
-        &self.stable
-    }
-
-    pub const fn target(&self) -> JscTarget {
-        self.target
-    }
-
-    pub const fn module(&self) -> ModuleConfig {
-        self.module
-    }
-
-    pub const fn rule(&self) -> Rule {
-        self.rule
-    }
-
-    pub(crate) fn declare_global_var(&mut self, name: JsWord, ty: Type) {
-        unimplemented!("declare_global_var")
-    }
-
-    pub(crate) fn declare_global_type(&mut self, name: JsWord, ty: Type) {
-        match self.get_global_type(ty.span(), &name) {
-            Ok(prev_ty) => {
-                self.global_types
-                    .lock()
-                    .unwrap()
-                    .insert(name, Type::intersection(DUMMY_SP, vec![prev_ty, ty]).fixed().cheap());
-            }
-            Err(_) => {
-                self.global_types.lock().unwrap().insert(name, ty);
-            }
-        }
-    }
-
-    #[instrument(skip(self, span))]
-    pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
-        if let Some(ty) = self.global_vars.lock().unwrap().get(name) {
-            debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
-            return Ok((*ty).clone());
-        }
-
-        if let Some(v) = self.builtin.vars.get(name) {
-            debug_assert!(v.is_clone_cheap(), "{:?}", v);
-            return Ok(v.clone());
-        }
-
-        dbg!();
-        Err(Error::NoSuchVar {
-            span,
-            name: Id::word(name.clone()),
-        })
-    }
-
-    #[instrument(skip(self, span))]
-    pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
-        if let Some(ty) = self.global_types.lock().unwrap().get(name) {
-            debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
-            return Ok((*ty).clone());
-        }
-
-        if let Some(ty) = self.builtin.types.get(name) {
-            debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
-            return Ok(ty.clone());
-        }
-
-        Err(Error::NoSuchType {
-            span,
-            name: Id::word(name.clone()),
-        })
+        Self::new(STABLE_ENV.clone(), rule, target, module, builtin)
     }
 }
 
-/// Stuffs which are not changed regardless
-#[derive(Clone, Derivative)]
-#[derivative(Debug)]
-pub struct StableEnv {
-    #[derivative(Debug = "ignore")]
-    globals: Arc<Globals>,
-    marks: Marks,
-}
-
-impl StableEnv {
-    pub fn new(globals: Arc<Globals>) -> Self {
-        let marks = Marks::new(&globals);
-        Self { globals, marks }
+impl EnvFactory for Env {
+    fn new(env: StableEnv, rule: Rule, target: EsVersion, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Env {
+        Env::new(env, rule, target, module, builtin)
     }
-
-    /// Note: The return marks should not be modified as it will not has any
-    /// effect.
-    pub const fn marks(&self) -> Marks {
-        self.marks
-    }
-
-    pub fn swc_globals(&self) -> &Arc<Globals> {
-        &self.globals
-    }
-}
-
-impl Default for StableEnv {
-    fn default() -> Self {
-        Self::new(Default::default())
-    }
-}
-
-#[derive(Clone, Copy, StringEnum)]
-pub enum ModuleConfig {
-    /// `commonjs`
-    CommonJs,
-    /// `es6`
-    Es6,
-    /// `es2015`
-    Es2015,
-    /// `es2020`
-    Es2020,
-    /// `none`
-    None,
-    /// `umd`
-    Umd,
-    /// `amd`
-    Amd,
-    /// `system`
-    System,
-    /// `esnext`
-    EsNext,
 }

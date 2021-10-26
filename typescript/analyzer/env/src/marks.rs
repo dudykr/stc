@@ -7,7 +7,7 @@ pub struct Marks {
 }
 
 impl Marks {
-    pub fn top_level_mark(&self) -> Mark {
+    pub fn top_level_mark(self) -> Mark {
         self.top_level_mark
     }
 
@@ -24,7 +24,7 @@ impl Marks {
     }
 }
 
-pub(crate) trait MarkExt: Copy + Into<Mark> {
+pub trait MarkExt: Copy + Into<Mark> {
     fn as_ctxt(self) -> SyntaxContext {
         let ctxt = SyntaxContext::empty();
         ctxt.apply_mark(self.into())

@@ -14,8 +14,7 @@
 #![feature(specialization)]
 #![recursion_limit = "1024"]
 
-pub use self::analyzer::Marks;
-use self::env::StableEnv;
+use stc_ts_env::StableEnv;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::Type;
@@ -56,24 +55,4 @@ pub struct Config {
     declaration_dir: PathBuf,
 
     pub env: StableEnv,
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Rule {
-    pub no_implicit_any: bool,
-    pub no_implicit_this: bool,
-    pub always_strict: bool,
-    pub strict_null_checks: bool,
-    pub strict_function_types: bool,
-
-    pub allow_unreachable_code: bool,
-    pub allow_unused_labels: bool,
-    pub no_fallthrough_cases_in_switch: bool,
-    pub no_implicit_returns: bool,
-    pub suppress_excess_property_errors: bool,
-    pub suppress_implicit_any_index_errors: bool,
-    pub no_strict_generic_checks: bool,
-    pub no_unused_locals: bool,
-    pub no_unused_parameters: bool,
-    pub use_define_property_for_class_fields: bool,
 }

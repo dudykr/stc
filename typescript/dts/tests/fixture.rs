@@ -11,9 +11,10 @@ use stc_testing::get_git_root;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_dts::{apply_mutations, cleanup_module_for_dts};
+use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_file_analyzer::{
     analyzer::{Analyzer, NoopLoader},
-    env::{Env, ModuleConfig},
+    env::EnvFactory,
     validator::ValidateWith,
 };
 use stc_ts_storage::Single;
