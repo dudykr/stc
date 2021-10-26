@@ -1,8 +1,8 @@
-use std::borrow::Cow;
-
 use crate::analyzer::Analyzer;
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
+use stc_ts_type_ops::this::contains_this;
 use stc_ts_types::{ClassMember, ClassProperty, Id, Key, Method, Type};
+use std::borrow::Cow;
 
 impl Analyzer<'_, '_> {
     pub(crate) fn this_has_property_named(&mut self, p: &Id) -> bool {
@@ -51,24 +51,6 @@ impl Analyzer<'_, '_> {
     }
 }
 
-#[derive(Default)]
-struct ThisFinder {
-    found: bool,
-}
-
-impl Visit<Type> for ThisFinder {
-    fn visit(&mut self, ty: &Type) {
-        ty.visit_children_with(self);
-
-        match ty {
-            Type::This(..) => {
-                self.found = true;
-            }
-            _ => {}
-        }
-    }
-}
-
 struct ThisReplacer<'a, 'b, 'c> {
     this_ty: Type,
     analyzer: &'a mut Analyzer<'b, 'c>,
@@ -82,12 +64,8 @@ impl VisitMut<ClassMember> for ThisReplacer<'_, '_, '_> {
 impl VisitMut<Type> for ThisReplacer<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
         // Fast path.
-        {
-            let mut v = ThisFinder::default();
-            ty.visit_with(&mut v);
-            if !v.found {
-                return;
-            }
+        if !contains_this(&*ty) {
+            return;
         }
 
         // TODO: PERF

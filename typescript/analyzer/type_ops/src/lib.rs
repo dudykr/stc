@@ -13,6 +13,7 @@ use stc_ts_types::Type;
 
 pub mod generalization;
 pub mod metadata;
+pub mod this;
 pub mod tuple_to_array;
 pub mod union_finder;
 
