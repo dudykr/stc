@@ -7,4 +7,5 @@
 #![feature(specialization)]
 #![allow(incomplete_features)]
 
+pub mod ambient_fn;
 pub mod consturctor;
