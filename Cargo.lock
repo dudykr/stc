@@ -38,9 +38,9 @@ dependencies = [
 
 [[package]]
 name = "ahash"
-version = "0.7.4"
+version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43bb833f0bf979d8475d38fbf09ed3b8a55e1885fe93ad3f93239fc6a4f17b98"
+checksum = "fcb51a0695d8f838b1ee009b3fbf66bda078cd64590202a864a8f3e8c4315c47"
 dependencies = [
  "getrandom 0.2.3",
  "once_cell",
@@ -2076,6 +2076,7 @@ dependencies = [
 name = "stc_ts_file_analyzer"
 version = "0.1.0"
 dependencies = [
+ "ahash 0.7.6",
  "backtrace",
  "bitflags",
  "dashmap 3.11.10",
@@ -2210,7 +2211,7 @@ dependencies = [
 name = "stc_ts_passes"
 version = "0.1.0"
 dependencies = [
- "ahash 0.7.4",
+ "ahash 0.7.6",
  "fxhash",
  "rnode",
  "stc_ts_ast_rnode",
@@ -2383,7 +2384,7 @@ dependencies = [
 name = "stc_utils"
 version = "0.1.0"
 dependencies = [
- "ahash 0.7.4",
+ "ahash 0.7.6",
  "mimalloc-rust",
  "once_cell",
  "rustc-hash",
@@ -2504,7 +2505,7 @@ version = "0.11.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "042a1efcb6b394d2e06f6118f1811ea7fbcff317c69e4d5c131f5fcf9766dd6b"
 dependencies = [
- "ahash 0.7.4",
+ "ahash 0.7.6",
  "ast_node",
  "atty",
  "cfg-if 0.1.10",
