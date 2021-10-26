@@ -2089,6 +2089,7 @@ dependencies = [
  "rayon",
  "retain_mut",
  "rnode",
+ "rustc-hash",
  "serde",
  "smallvec 1.6.1",
  "stc_arc_cow",
