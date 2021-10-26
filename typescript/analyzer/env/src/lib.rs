@@ -2,11 +2,13 @@ pub use self::marks::{MarkExt, Marks};
 use derivative::Derivative;
 use parking_lot::Mutex;
 use rustc_hash::FxHashMap;
-use stc_ts_types::Type;
+use stc_ts_errors::Error;
+use stc_ts_type_ops::Fix;
+use stc_ts_types::{Id, Type};
 use std::sync::Arc;
 use string_enum::StringEnum;
 use swc_atoms::JsWord;
-use swc_common::{Globals, DUMMY_SP};
+use swc_common::{Globals, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::EsVersion;
 use tracing::instrument;
 
@@ -16,6 +18,12 @@ mod marks;
 pub struct BuiltIn {
     vars: FxHashMap<JsWord, Type>,
     types: FxHashMap<JsWord, Type>,
+}
+
+impl BuiltIn {
+    pub fn new(vars: FxHashMap<JsWord, Type>, types: FxHashMap<JsWord, Type>) -> Self {
+        BuiltIn { vars, types }
+    }
 }
 
 /// Stuffs which can be changed between runs.
@@ -47,7 +55,7 @@ impl Env {
         self.rule
     }
 
-    pub fn declare_global_var(&mut self, name: JsWord, ty: Type) {
+    pub fn declare_global_var(&mut self, _name: JsWord, _ty: Type) {
         unimplemented!("declare_global_var")
     }
 
@@ -59,14 +67,14 @@ impl Env {
                     .insert(name, Type::intersection(DUMMY_SP, vec![prev_ty, ty]).fixed().cheap());
             }
             Err(_) => {
-                self.global_types.lock().unwrap().insert(name, ty);
+                self.global_types.lock().insert(name, ty);
             }
         }
     }
 
     #[instrument(skip(self, span))]
     pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
-        if let Some(ty) = self.global_vars.lock().unwrap().get(name) {
+        if let Some(ty) = self.global_vars.lock().get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
             return Ok((*ty).clone());
         }
@@ -76,7 +84,6 @@ impl Env {
             return Ok(v.clone());
         }
 
-        dbg!();
         Err(Error::NoSuchVar {
             span,
             name: Id::word(name.clone()),
@@ -85,7 +92,7 @@ impl Env {
 
     #[instrument(skip(self, span))]
     pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
-        if let Some(ty) = self.global_types.lock().unwrap().get(name) {
+        if let Some(ty) = self.global_types.lock().get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
             return Ok((*ty).clone());
         }
