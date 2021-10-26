@@ -46,7 +46,7 @@ mod type_param;
 
 #[derive(Debug, Default)]
 pub(crate) struct ClassState {
-    /// Used only while valdiation consturctors.
+    /// Used only while validating constructors.
     ///
     /// `false` means `this` can be used.
     pub need_super_call: RefCell<bool>,
@@ -147,7 +147,7 @@ impl Analyzer<'_, '_> {
                 RExpr::Ident(i) => {
                     if &*i.sym == "prototype" {
                         self.storage
-                            .report(Error::StaticPropertyCannotBeNamedProptotype { span: i.span })
+                            .report(Error::StaticPropertyCannotBeNamedPrototype { span: i.span })
                     }
                 }
                 _ => {}

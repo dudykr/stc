@@ -446,7 +446,7 @@ pub enum Error {
     },
 
     /// TS2699
-    StaticPropertyCannotBeNamedProptotype {
+    StaticPropertyCannotBeNamedPrototype {
         span: Span,
     },
 
@@ -1668,7 +1668,7 @@ impl Error {
 
             Error::SelfReferentialSuperClass { .. } => 2506,
 
-            Error::StaticPropertyCannotBeNamedProptotype { .. } => 2699,
+            Error::StaticPropertyCannotBeNamedPrototype { .. } => 2699,
 
             Error::CannotExportNonLocalVar { .. } => 2661,
 
