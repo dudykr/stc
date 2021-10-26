@@ -1,8 +1,5 @@
 use crate::{
-    analyzer::{
-        assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, stmt::return_type::yield_check::YieldValueUsageFinder,
-        util::ResultExt, Analyzer, Ctx,
-    },
+    analyzer::{assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, util::ResultExt, Analyzer, Ctx},
     ty::{Array, Type, TypeExt},
     validator,
     validator::ValidateWith,
@@ -11,6 +8,7 @@ use crate::{
 use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RYieldExpr};
 use stc_ts_errors::{DebugExt, Error};
+use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
 use stc_ts_types::{
     CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, ModuleId,
     Operator, PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
@@ -23,8 +21,6 @@ use std::{borrow::Cow, mem::take, ops::AddAssign};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::{debug, instrument};
-
-mod yield_check;
 
 #[derive(Debug, Default)]
 pub(in crate::analyzer) struct ReturnValues {
