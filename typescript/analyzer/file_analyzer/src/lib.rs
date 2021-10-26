@@ -14,7 +14,7 @@
 #![feature(specialization)]
 #![recursion_limit = "1024"]
 
-use self::env::StableEnv;
+use stc_ts_env::StableEnv;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::Type;

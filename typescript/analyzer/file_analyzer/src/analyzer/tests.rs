@@ -1,5 +1,6 @@
 use crate::{
     analyzer::Analyzer,
+    env::EnvFactory,
     loader::{Load, ModuleInfo},
     tests::{GLOBALS, MARKS},
     ValidationResult,
@@ -84,7 +85,7 @@ impl Tester<'_, '_> {
             let module = parser
                 .parse_module()
                 .unwrap()
-                .fold_with(&mut ts_resolver(MARKS.top_level_mark));
+                .fold_with(&mut ts_resolver(MARKS.top_level_mark()));
 
             RModule::from_orig(&mut NodeIdGenerator::invalid(), module)
         })

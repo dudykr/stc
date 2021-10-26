@@ -3,32 +3,27 @@ use crate::{
     validator::ValidateWith,
 };
 use dashmap::DashMap;
-use derivative::Derivative;
-use fxhash::{FxBuildHasher, FxHashMap};
 use once_cell::sync::{Lazy, OnceCell};
 use rnode::{NodeIdGenerator, RNode, VisitWith};
+use rustc_hash::FxHashMap;
 use stc_ts_ast_rnode::{RDecl, RIdent, RModule, RModuleItem, RStmt, RTsModuleName, RVarDecl};
 use stc_ts_builtin_types::Lib;
-use stc_ts_env::StableEnv;
-use stc_ts_errors::Error;
+use stc_ts_env::{BuiltIn, Env, ModuleConfig, Rule, StableEnv};
 use stc_ts_storage::Builtin;
 use stc_ts_type_ops::Fix;
-use stc_ts_types::{ClassDef, Id, ModuleTypeData, Type};
+use stc_ts_types::{ClassDef, ModuleTypeData, Type};
 use stc_utils::stack;
-use std::{
-    collections::hash_map::Entry,
-    sync::{Arc, Mutex},
-    time::Instant,
-};
-use string_enum::StringEnum;
+use std::{collections::hash_map::Entry, sync::Arc, time::Instant};
 use swc_atoms::JsWord;
-use swc_common::{Globals, Span, Spanned, DUMMY_SP};
+use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_parser::JscTarget;
-use tracing::{info, instrument};
+use tracing::info;
 
-impl BuiltIn {
-    pub fn from_ts_libs(env: &StableEnv, libs: &[Lib]) -> Self {
+pub trait BuiltInGen: Sized {
+    fn new(vars: FxHashMap<JsWord, Type>, types: FxHashMap<JsWord, Type>) -> BuiltIn;
+
+    fn from_ts_libs(env: &StableEnv, libs: &[Lib]) -> BuiltIn {
         debug_assert_ne!(libs, &[], "No typescript library file is specified");
 
         let _stack = stack::start(300);
@@ -51,11 +46,11 @@ impl BuiltIn {
         Self::from_module_items(env, iter)
     }
 
-    pub fn from_modules(env: &StableEnv, modules: Vec<RModule>) -> Self {
+    fn from_modules(env: &StableEnv, modules: Vec<RModule>) -> BuiltIn {
         Self::from_module_items(env, modules.into_iter().flat_map(|module| module.body))
     }
 
-    pub fn from_module_items<'a, I>(env: &StableEnv, items: I) -> Self
+    fn from_module_items<'a, I>(env: &StableEnv, items: I) -> BuiltIn
     where
         I: IntoIterator<Item = RModuleItem>,
     {
@@ -63,7 +58,8 @@ impl BuiltIn {
 
         let start = Instant::now();
 
-        let mut result = Self::default();
+        let mut types = FxHashMap::default();
+        let mut vars = FxHashMap::default();
         let mut storage = Builtin::default();
         {
             let mut analyzer = Analyzer::for_builtin(env.clone(), &mut storage);
@@ -83,7 +79,7 @@ impl BuiltIn {
                             }
 
                             RStmt::Decl(RDecl::Class(ref c)) => {
-                                debug_assert_eq!(result.types.get(&c.ident.sym.clone()), None);
+                                debug_assert_eq!(types.get(&c.ident.sym.clone()), None);
 
                                 // builtin libraries does not contain a class which extends
                                 // other class.
@@ -120,7 +116,7 @@ impl BuiltIn {
                                     })
                                     .unwrap();
 
-                                result.types.insert(c.ident.sym.clone(), ty);
+                                types.insert(c.ident.sym.clone(), ty);
                             }
 
                             RStmt::Decl(RDecl::TsModule(ref mut m)) => {
@@ -138,7 +134,7 @@ impl BuiltIn {
 
                                 assert!(!data.types.is_empty() || !data.vars.is_empty());
 
-                                match result.types.entry(id.clone()) {
+                                match types.entry(id.clone()) {
                                     Entry::Occupied(mut e) => match e.get_mut().normalize_mut() {
                                         Type::Module(module) => {
                                             //
@@ -170,7 +166,7 @@ impl BuiltIn {
                             RStmt::Decl(RDecl::TsTypeAlias(ref a)) => {
                                 a.visit_with(&mut analyzer);
 
-                                debug_assert_eq!(result.types.get(&a.id.sym.clone()), None);
+                                debug_assert_eq!(types.get(&a.id.sym.clone()), None);
 
                                 let ty = a
                                     .clone()
@@ -178,7 +174,7 @@ impl BuiltIn {
                                     .map(Type::from)
                                     .expect("builtin: failed to process type alias");
 
-                                result.types.insert(a.id.sym.clone(), ty);
+                                types.insert(a.id.sym.clone(), ty);
                             }
 
                             // Merge interface
@@ -195,7 +191,7 @@ impl BuiltIn {
                                     .validate_with(&mut analyzer)
                                     .expect("builtin: failed to parse interface body");
 
-                                match result.types.entry(i.id.sym.clone()) {
+                                match types.entry(i.id.sym.clone()) {
                                     Entry::Occupied(mut e) => match &mut *e.get_mut() {
                                         Type::Interface(ref mut v) => {
                                             v.body.extend(body.body);
@@ -223,16 +219,16 @@ impl BuiltIn {
 
         for (id, ty) in storage.vars {
             //
-            let res = result.vars.insert(id, ty);
+            let res = vars.insert(id, ty);
             assert_eq!(res, None, "duplicate");
         }
 
-        for (_, ty) in result.types.iter_mut() {
+        for (_, ty) in types.iter_mut() {
             ty.fix();
             ty.make_cheap();
         }
 
-        for (_, ty) in result.vars.iter_mut() {
+        for (_, ty) in vars.iter_mut() {
             ty.fix();
             ty.make_cheap();
         }
@@ -240,26 +236,21 @@ impl BuiltIn {
         let dur = Instant::now() - start;
         eprintln!("[builtin] Took {:?}", dur);
 
-        result
+        Self::new(vars, types)
     }
 }
 
-impl Env {
-    pub fn new(env: StableEnv, rule: Rule, target: JscTarget, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Self {
-        Self {
-            stable: env,
-            builtin,
-            target,
-            module,
-            global_types: Default::default(),
-            global_vars: Default::default(),
-            rule,
-        }
+impl BuiltInGen for BuiltIn {
+    fn new(vars: FxHashMap<JsWord, Type>, types: FxHashMap<JsWord, Type>) -> BuiltIn {
+        BuiltIn::new(vars, types)
     }
+}
 
-    pub fn simple(rule: Rule, target: JscTarget, module: ModuleConfig, libs: &[Lib]) -> Self {
+pub trait EnvFactory {
+    fn new(env: StableEnv, rule: Rule, target: EsVersion, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Env;
+    fn simple(rule: Rule, target: JscTarget, module: ModuleConfig, libs: &[Lib]) -> Env {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);
-        static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>, FxBuildHasher>> = Lazy::new(Default::default);
+        static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>, ahash::RandomState>> = Lazy::new(Default::default);
 
         // TODO: Include `env` in cache
         let mut libs = libs.to_vec();
@@ -277,14 +268,12 @@ impl Env {
             (*builtin).clone()
         });
 
-        Self {
-            stable: STABLE_ENV.clone(),
-            rule,
-            target,
-            module,
-            builtin,
-            global_types: Default::default(),
-            global_vars: Default::default(),
-        }
+        Self::new(STABLE_ENV.clone(), rule, target, module, builtin)
+    }
+}
+
+impl EnvFactory for Env {
+    fn new(env: StableEnv, rule: Rule, target: EsVersion, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Env {
+        Env::new(env, rule, target, module, builtin)
     }
 }

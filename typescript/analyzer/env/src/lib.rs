@@ -39,6 +39,18 @@ pub struct Env {
 }
 
 impl Env {
+    pub fn new(env: StableEnv, rule: Rule, target: EsVersion, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Self {
+        Self {
+            stable: env,
+            builtin,
+            target,
+            module,
+            global_types: Default::default(),
+            global_vars: Default::default(),
+            rule,
+        }
+    }
+
     pub const fn shared(&self) -> &StableEnv {
         &self.stable
     }
