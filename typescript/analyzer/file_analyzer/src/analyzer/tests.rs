@@ -1,6 +1,6 @@
 use crate::{
     analyzer::Analyzer,
-    env::{Env, ModuleConfig},
+    env::EnvFactory,
     loader::{Load, ModuleInfo},
     tests::{GLOBALS, MARKS},
     ValidationResult,
@@ -9,6 +9,7 @@ use once_cell::sync::Lazy;
 use rnode::{NodeIdGenerator, RNode};
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
+use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_storage::Single;
 use stc_ts_types::{ModuleId, ModuleTypeData};
 use std::{path::PathBuf, sync::Arc};
@@ -84,7 +85,7 @@ impl Tester<'_, '_> {
             let module = parser
                 .parse_module()
                 .unwrap()
-                .fold_with(&mut ts_resolver(MARKS.top_level_mark));
+                .fold_with(&mut ts_resolver(MARKS.top_level_mark()));
 
             RModule::from_orig(&mut NodeIdGenerator::invalid(), module)
         })

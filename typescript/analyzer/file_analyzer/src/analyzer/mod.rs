@@ -1,4 +1,3 @@
-pub use self::marks::Marks;
 pub(crate) use self::scope::ScopeKind;
 use self::{
     control_flow::{CondFacts, Facts},
@@ -8,13 +7,12 @@ use self::{
     util::ResultExt,
 };
 use crate::{
-    env::{Env, ModuleConfig, StableEnv},
     loader::{Load, ModuleInfo},
     ty,
     ty::Type,
     validator,
     validator::ValidateWith,
-    Rule, ValidationResult,
+    ValidationResult,
 };
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::VisitWith;
@@ -23,6 +21,7 @@ use stc_ts_ast_rnode::{
     RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
 };
 use stc_ts_dts_mutations::Mutations;
+use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
 use stc_ts_errors::{debug::debugger::Debugger, Error};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
@@ -62,7 +61,6 @@ mod generalize;
 mod generic;
 mod hoisting;
 mod import;
-pub(crate) mod marks;
 mod pat;
 mod props;
 mod scope;

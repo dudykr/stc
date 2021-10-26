@@ -4,9 +4,10 @@ use rnode::{NodeIdGenerator, RNode, VisitWith};
 use stc_testing::init_tracing;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
+use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_file_analyzer::{
     analyzer::{Analyzer, NoopLoader},
-    env::{Env, ModuleConfig},
+    env::EnvFactory,
 };
 use stc_ts_storage::Single;
 use stc_ts_types::ModuleId;

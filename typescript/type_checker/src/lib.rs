@@ -8,10 +8,10 @@ use parking_lot::{Mutex, RwLock};
 use rnode::{NodeIdGenerator, RNode, VisitWith};
 use stc_ts_ast_rnode::RModule;
 use stc_ts_dts::{apply_mutations, cleanup_module_for_dts};
+use stc_ts_env::Env;
 use stc_ts_errors::{debug::debugger::Debugger, Error};
 use stc_ts_file_analyzer::{
     analyzer::Analyzer,
-    env::Env,
     loader::{Load, ModuleInfo},
     validator::ValidateWith,
     ModuleTypeData, ValidationResult,

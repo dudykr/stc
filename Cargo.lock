@@ -38,9 +38,9 @@ dependencies = [
 
 [[package]]
 name = "ahash"
-version = "0.7.4"
+version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43bb833f0bf979d8475d38fbf09ed3b8a55e1885fe93ad3f93239fc6a4f17b98"
+checksum = "fcb51a0695d8f838b1ee009b3fbf66bda078cd64590202a864a8f3e8c4315c47"
 dependencies = [
  "getrandom 0.2.3",
  "once_cell",
@@ -844,9 +844,9 @@ dependencies = [
 
 [[package]]
 name = "lock_api"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0382880606dff6d15c9476c416d18690b72742aa7b605bb6dd6ec9030fbf07eb"
+checksum = "712a4d093c9976e24e7dbca41db895dabcbac38eb5f4045393d17a95bdfb1109"
 dependencies = [
  "scopeguard 1.1.0",
 ]
@@ -1170,13 +1170,13 @@ dependencies = [
 
 [[package]]
 name = "parking_lot"
-version = "0.11.1"
+version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d7744ac029df22dca6284efe4e898991d28e3085c706c972bcd7da4a27a15eb"
+checksum = "7d17b78036a60663b797adeaee46f5c9dfebb86948d1255007a1d6be0271ff99"
 dependencies = [
  "instant",
- "lock_api 0.4.4",
- "parking_lot_core 0.8.3",
+ "lock_api 0.4.5",
+ "parking_lot_core 0.8.5",
 ]
 
 [[package]]
@@ -1194,9 +1194,9 @@ dependencies = [
 
 [[package]]
 name = "parking_lot_core"
-version = "0.8.3"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa7a782938e745763fe6907fc6ba86946d72f49fe7e21de074e08128a99fb018"
+checksum = "d76e8e1493bcac0d2766c42737f34458f1c8c50c0d23bcb24ea953affb273216"
 dependencies = [
  "cfg-if 1.0.0",
  "instant",
@@ -1886,6 +1886,7 @@ dependencies = [
  "log",
  "lspower",
  "stc_ts_builtin_types",
+ "stc_ts_env",
  "stc_ts_file_analyzer",
  "stc_ts_lang_server",
  "stc_ts_module_loader",
@@ -2007,6 +2008,7 @@ dependencies = [
  "stc_ts_ast_rnode",
  "stc_ts_builtin_types",
  "stc_ts_dts_mutations",
+ "stc_ts_env",
  "stc_ts_file_analyzer",
  "stc_ts_storage",
  "stc_ts_types",
@@ -2035,6 +2037,22 @@ dependencies = [
 [[package]]
 name = "stc_ts_env"
 version = "0.1.0"
+dependencies = [
+ "derivative",
+ "parking_lot 0.11.2",
+ "rustc-hash",
+ "serde",
+ "stc_ts_errors",
+ "stc_ts_storage",
+ "stc_ts_type_ops",
+ "stc_ts_types",
+ "string_enum",
+ "swc_atoms",
+ "swc_common",
+ "swc_ecma_ast",
+ "swc_ecma_parser",
+ "tracing",
+]
 
 [[package]]
 name = "stc_ts_errors"
@@ -2060,6 +2078,7 @@ dependencies = [
 name = "stc_ts_file_analyzer"
 version = "0.1.0"
 dependencies = [
+ "ahash 0.7.6",
  "backtrace",
  "bitflags",
  "dashmap 3.11.10",
@@ -2073,6 +2092,7 @@ dependencies = [
  "rayon",
  "retain_mut",
  "rnode",
+ "rustc-hash",
  "serde",
  "smallvec 1.6.1",
  "stc_arc_cow",
@@ -2162,7 +2182,7 @@ dependencies = [
  "log",
  "num_cpus",
  "once_cell",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "petgraph",
  "rayon",
  "serde",
@@ -2193,7 +2213,7 @@ dependencies = [
 name = "stc_ts_passes"
 version = "0.1.0"
 dependencies = [
- "ahash 0.7.4",
+ "ahash 0.7.6",
  "fxhash",
  "rnode",
  "stc_ts_ast_rnode",
@@ -2258,7 +2278,7 @@ dependencies = [
  "ignore",
  "log",
  "once_cell",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "rayon",
  "rnode",
  "serde",
@@ -2267,6 +2287,7 @@ dependencies = [
  "stc_ts_ast_rnode",
  "stc_ts_builtin_types",
  "stc_ts_dts",
+ "stc_ts_env",
  "stc_ts_errors",
  "stc_ts_file_analyzer",
  "stc_ts_module_loader",
@@ -2329,7 +2350,7 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "once_cell",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "rnode",
  "scoped-tls",
  "servo_arc",
@@ -2366,7 +2387,7 @@ dependencies = [
 name = "stc_utils"
 version = "0.1.0"
 dependencies = [
- "ahash 0.7.4",
+ "ahash 0.7.6",
  "mimalloc-rust",
  "once_cell",
  "rustc-hash",
@@ -2404,7 +2425,7 @@ checksum = "923f0f39b6267d37d23ce71ae7235602134b250ace715dd2c90421998ddac0c6"
 dependencies = [
  "lazy_static",
  "new_debug_unreachable",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "phf_shared",
  "precomputed-hash",
  "serde",
@@ -2487,7 +2508,7 @@ version = "0.11.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "042a1efcb6b394d2e06f6118f1811ea7fbcff317c69e4d5c131f5fcf9766dd6b"
 dependencies = [
- "ahash 0.7.4",
+ "ahash 0.7.6",
  "ast_node",
  "atty",
  "cfg-if 0.1.10",
