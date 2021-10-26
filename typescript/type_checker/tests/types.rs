@@ -11,11 +11,9 @@ mod common;
 use self::common::load_fixtures;
 use once_cell::sync::Lazy;
 use stc_ts_builtin_types::Lib;
+use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_errors::debug::debugger::Debugger;
-use stc_ts_file_analyzer::{
-    env::{Env, ModuleConfig},
-    Rule,
-};
+use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_testing::tsc::TsTestCase;
 use stc_ts_type_checker::Checker;

@@ -15,7 +15,7 @@ use stc_ts_types::{ClassDef, ModuleTypeData, Type};
 use stc_utils::stack;
 use std::{collections::hash_map::Entry, sync::Arc, time::Instant};
 use swc_atoms::JsWord;
-use swc_common::{Spanned, DUMMY_SP};
+use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 use swc_ecma_parser::JscTarget;
 use tracing::info;
