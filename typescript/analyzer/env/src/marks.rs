@@ -24,7 +24,7 @@ impl Marks {
     }
 }
 
-pub(crate) trait MarkExt: Copy + Into<Mark> {
+pub trait MarkExt: Copy + Into<Mark> {
     fn as_ctxt(self) -> SyntaxContext {
         let ctxt = SyntaxContext::empty();
         ctxt.apply_mark(self.into())

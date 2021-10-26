@@ -4,7 +4,6 @@ use crate::{
         assign::AssignOpts,
         expr::TypeOfMode,
         generic::InferTypeOpts,
-        marks::MarkExt,
         scope::ExpandOpts,
         util::{make_instance_type, ResultExt},
         Analyzer, Ctx, ScopeKind,

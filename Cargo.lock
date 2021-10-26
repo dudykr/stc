@@ -2041,6 +2041,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "stc_ts_storage",
+ "stc_ts_type_ops",
  "stc_ts_types",
  "string_enum",
  "swc_atoms",

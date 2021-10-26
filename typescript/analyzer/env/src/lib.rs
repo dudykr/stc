@@ -1,16 +1,105 @@
+pub use self::marks::{MarkExt, Marks};
 use derivative::Derivative;
+use parking_lot::Mutex;
+use rustc_hash::FxHashMap;
+use stc_ts_types::Type;
 use std::sync::Arc;
+use string_enum::StringEnum;
+use swc_atoms::JsWord;
+use swc_common::{Globals, DUMMY_SP};
+use swc_ecma_ast::EsVersion;
+use tracing::instrument;
+
+mod marks;
+
+#[derive(Debug, Default)]
+pub struct BuiltIn {
+    vars: FxHashMap<JsWord, Type>,
+    types: FxHashMap<JsWord, Type>,
+}
 
 /// Stuffs which can be changed between runs.
 #[derive(Debug, Clone)]
 pub struct Env {
     stable: StableEnv,
     rule: Rule,
-    target: JscTarget,
+    target: EsVersion,
     module: ModuleConfig,
     builtin: Arc<BuiltIn>,
     global_types: Arc<Mutex<FxHashMap<JsWord, Type>>>,
     global_vars: Arc<Mutex<FxHashMap<JsWord, Type>>>,
+}
+
+impl Env {
+    pub const fn shared(&self) -> &StableEnv {
+        &self.stable
+    }
+
+    pub const fn target(&self) -> EsVersion {
+        self.target
+    }
+
+    pub const fn module(&self) -> ModuleConfig {
+        self.module
+    }
+
+    pub const fn rule(&self) -> Rule {
+        self.rule
+    }
+
+    pub fn declare_global_var(&mut self, name: JsWord, ty: Type) {
+        unimplemented!("declare_global_var")
+    }
+
+    pub fn declare_global_type(&mut self, name: JsWord, ty: Type) {
+        match self.get_global_type(ty.span(), &name) {
+            Ok(prev_ty) => {
+                self.global_types
+                    .lock()
+                    .insert(name, Type::intersection(DUMMY_SP, vec![prev_ty, ty]).fixed().cheap());
+            }
+            Err(_) => {
+                self.global_types.lock().unwrap().insert(name, ty);
+            }
+        }
+    }
+
+    #[instrument(skip(self, span))]
+    pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
+        if let Some(ty) = self.global_vars.lock().unwrap().get(name) {
+            debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
+            return Ok((*ty).clone());
+        }
+
+        if let Some(v) = self.builtin.vars.get(name) {
+            debug_assert!(v.is_clone_cheap(), "{:?}", v);
+            return Ok(v.clone());
+        }
+
+        dbg!();
+        Err(Error::NoSuchVar {
+            span,
+            name: Id::word(name.clone()),
+        })
+    }
+
+    #[instrument(skip(self, span))]
+    pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
+        if let Some(ty) = self.global_types.lock().unwrap().get(name) {
+            debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
+            return Ok((*ty).clone());
+        }
+
+        if let Some(ty) = self.builtin.types.get(name) {
+            debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
+            return Ok(ty.clone());
+        }
+
+        Err(Error::NoSuchType {
+            span,
+            name: Id::word(name.clone()),
+        })
+    }
 }
 
 /// Stuffs which are not changed regardless

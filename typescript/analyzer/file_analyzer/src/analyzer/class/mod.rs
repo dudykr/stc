@@ -8,7 +8,6 @@ use crate::{
         util::{is_prop_name_eq, make_instance_type, ResultExt, VarVisitor},
         Analyzer, Ctx, ScopeKind,
     },
-    env::ModuleConfig,
     ty::TypeExt,
     validator,
     validator::ValidateWith,
@@ -22,6 +21,7 @@ use stc_ts_ast_rnode::{
     RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RSeqExpr, RStmt, RSuper, RTsEntityName,
     RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
+use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};

@@ -27,12 +27,6 @@ use swc_ecma_ast::*;
 use swc_ecma_parser::JscTarget;
 use tracing::{info, instrument};
 
-#[derive(Debug, Default)]
-pub struct BuiltIn {
-    vars: FxHashMap<JsWord, Type>,
-    types: FxHashMap<JsWord, Type>,
-}
-
 impl BuiltIn {
     pub fn from_ts_libs(env: &StableEnv, libs: &[Lib]) -> Self {
         debug_assert_ne!(libs, &[], "No typescript library file is specified");
@@ -292,76 +286,5 @@ impl Env {
             global_types: Default::default(),
             global_vars: Default::default(),
         }
-    }
-
-    pub const fn shared(&self) -> &StableEnv {
-        &self.stable
-    }
-
-    pub const fn target(&self) -> JscTarget {
-        self.target
-    }
-
-    pub const fn module(&self) -> ModuleConfig {
-        self.module
-    }
-
-    pub const fn rule(&self) -> Rule {
-        self.rule
-    }
-
-    pub(crate) fn declare_global_var(&mut self, name: JsWord, ty: Type) {
-        unimplemented!("declare_global_var")
-    }
-
-    pub(crate) fn declare_global_type(&mut self, name: JsWord, ty: Type) {
-        match self.get_global_type(ty.span(), &name) {
-            Ok(prev_ty) => {
-                self.global_types
-                    .lock()
-                    .unwrap()
-                    .insert(name, Type::intersection(DUMMY_SP, vec![prev_ty, ty]).fixed().cheap());
-            }
-            Err(_) => {
-                self.global_types.lock().unwrap().insert(name, ty);
-            }
-        }
-    }
-
-    #[instrument(skip(self, span))]
-    pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
-        if let Some(ty) = self.global_vars.lock().unwrap().get(name) {
-            debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
-            return Ok((*ty).clone());
-        }
-
-        if let Some(v) = self.builtin.vars.get(name) {
-            debug_assert!(v.is_clone_cheap(), "{:?}", v);
-            return Ok(v.clone());
-        }
-
-        dbg!();
-        Err(Error::NoSuchVar {
-            span,
-            name: Id::word(name.clone()),
-        })
-    }
-
-    #[instrument(skip(self, span))]
-    pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
-        if let Some(ty) = self.global_types.lock().unwrap().get(name) {
-            debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
-            return Ok((*ty).clone());
-        }
-
-        if let Some(ty) = self.builtin.types.get(name) {
-            debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
-            return Ok(ty.clone());
-        }
-
-        Err(Error::NoSuchType {
-            span,
-            name: Id::word(name.clone()),
-        })
     }
 }

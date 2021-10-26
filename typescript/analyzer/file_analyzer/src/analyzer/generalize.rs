@@ -1,6 +1,7 @@
-use crate::{analyzer::Analyzer, env::Env, ty::Type};
+use crate::{analyzer::Analyzer, ty::Type};
 use rnode::{Fold, FoldWith, VisitMutWith};
 use stc_ts_ast_rnode::{RNumber, RStr, RTsLit};
+use stc_ts_env::Env;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::{is_str_lit_or_union, PreventComplexSimplification};
 use stc_ts_types::{
