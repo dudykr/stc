@@ -25,19 +25,19 @@ once_cell = "1.5.2"
 petgraph = "0.5.1"
 rayon = "1.5.0"
 retain_mut = "0.1.1"
-rnode = {path = "../../rnode"}
+rnode = {path = "../../../rnode"}
 serde = "1.0.125"
 smallvec = "1.5.1"
-stc_arc_cow = {path = "../../utils/arc_cow"}
-stc_ts_ast_rnode = {path = "../ast_rnode"}
+stc_arc_cow = {path = "../../../utils/arc_cow"}
+stc_ts_ast_rnode = {path = "../../ast_rnode"}
 stc_ts_base_type_ops = {path = "../base_type_ops/"}
-stc_ts_builtin_types = {path = "../builtin_types"}
-stc_ts_dts_mutations = {path = "../dts_mutations"}
+stc_ts_builtin_types = {path = "../../builtin_types"}
+stc_ts_dts_mutations = {path = "../../dts_mutations"}
 stc_ts_env = {path = "../env"}
-stc_ts_errors = {path = "../errors"}
+stc_ts_errors = {path = "../../errors"}
 stc_ts_file_analyzer_macros = {path = "./macros"}
 stc_ts_generics = {path = "../generics"}
-stc_ts_ordering = {path = "./ordering"}
+stc_ts_ordering = {path = "../ordering"}
 stc_ts_storage = {path = "../storage"}
 stc_ts_type_cache = {path = "../type_cache/"}
 stc_ts_type_form = {path = "../type_form"}
