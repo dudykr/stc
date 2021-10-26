@@ -14,16 +14,17 @@ use crate::{
     ValidationResult,
 };
 use itertools::Itertools;
-use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, Visit, VisitWith};
+use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrowExpr, RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp,
+    RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp,
     RComputedPropName, RConstructor, RDecl, RExpr, RExprOrSuper, RFunction, RIdent, RLit, RMemberExpr, RParam,
-    RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RSeqExpr, RStmt, RSuper, RTsEntityName,
-    RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStmt, RTsEntityName, RTsFnParam, RTsParamProp,
+    RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_simple_ast_validations::consturctor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
     Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
@@ -2399,65 +2400,5 @@ impl Analyzer<'_, '_> {
         }
 
         self.scope.this = old_this;
-    }
-}
-
-#[derive(Debug, Default)]
-struct ConstructorSuperCallFinder {
-    has_valid_super_call: bool,
-
-    in_nested: bool,
-    nested_super_calls: Vec<Span>,
-}
-
-impl Visit<RSuper> for ConstructorSuperCallFinder {
-    fn visit(&mut self, s: &RSuper) {
-        if self.in_nested {
-            self.nested_super_calls.push(s.span);
-        } else {
-            self.has_valid_super_call = true;
-        }
-    }
-}
-
-impl Visit<RFunction> for ConstructorSuperCallFinder {
-    fn visit(&mut self, f: &RFunction) {
-        f.decorators.visit_with(self);
-        f.params.visit_with(self);
-
-        let old = self.in_nested;
-        self.in_nested = true;
-        f.body.visit_with(self);
-        self.in_nested = old;
-    }
-}
-
-impl Visit<RArrowExpr> for ConstructorSuperCallFinder {
-    fn visit(&mut self, f: &RArrowExpr) {
-        f.params.visit_with(self);
-
-        let old = self.in_nested;
-        self.in_nested = true;
-        f.body.visit_with(self);
-        self.in_nested = old;
-    }
-}
-
-/// Ignore nested classes.
-impl Visit<RClass> for ConstructorSuperCallFinder {
-    fn visit(&mut self, _: &RClass) {}
-}
-
-/// computedPropertyNames30_ES5.ts says
-///
-/// `Ideally, we would capture this. But the reference is
-/// illegal, and not capturing this is consistent with
-/// treatment of other similar violations.`
-impl Visit<RSeqExpr> for ConstructorSuperCallFinder {
-    fn visit(&mut self, v: &RSeqExpr) {
-        if self.in_nested {
-            return;
-        }
-        v.visit_children_with(self);
     }
 }
