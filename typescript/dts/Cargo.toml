@@ -23,7 +23,7 @@ swc_ecma_ast = "0.49.1"
 anyhow = "1.0.37"
 stc_testing = {path = "../../testing"}
 stc_ts_builtin_types = {path = "../builtin_types"}
-stc_ts_file_analyzer = {path = "../file_analyzer"}
+stc_ts_file_analyzer = {path = "../analyzer/file_analyzer"}
 stc_ts_storage = {path = "../storage"}
 swc_common = "0.11.4"
 swc_ecma_ast = "0.49.1"
