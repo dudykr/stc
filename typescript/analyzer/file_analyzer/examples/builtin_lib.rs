@@ -2,7 +2,8 @@
 #![feature(test)]
 
 use stc_ts_builtin_types::Lib;
-use stc_ts_file_analyzer::env::{Env, ModuleConfig};
+use stc_ts_env::{Env, ModuleConfig};
+use stc_ts_file_analyzer::env::EnvFactory;
 use std::hint::black_box;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::EsVersion;
