@@ -844,9 +844,9 @@ dependencies = [
 
 [[package]]
 name = "lock_api"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0382880606dff6d15c9476c416d18690b72742aa7b605bb6dd6ec9030fbf07eb"
+checksum = "712a4d093c9976e24e7dbca41db895dabcbac38eb5f4045393d17a95bdfb1109"
 dependencies = [
  "scopeguard 1.1.0",
 ]
@@ -1170,13 +1170,13 @@ dependencies = [
 
 [[package]]
 name = "parking_lot"
-version = "0.11.1"
+version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d7744ac029df22dca6284efe4e898991d28e3085c706c972bcd7da4a27a15eb"
+checksum = "7d17b78036a60663b797adeaee46f5c9dfebb86948d1255007a1d6be0271ff99"
 dependencies = [
  "instant",
- "lock_api 0.4.4",
- "parking_lot_core 0.8.3",
+ "lock_api 0.4.5",
+ "parking_lot_core 0.8.5",
 ]
 
 [[package]]
@@ -1194,9 +1194,9 @@ dependencies = [
 
 [[package]]
 name = "parking_lot_core"
-version = "0.8.3"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa7a782938e745763fe6907fc6ba86946d72f49fe7e21de074e08128a99fb018"
+checksum = "d76e8e1493bcac0d2766c42737f34458f1c8c50c0d23bcb24ea953affb273216"
 dependencies = [
  "cfg-if 1.0.0",
  "instant",
@@ -2037,7 +2037,9 @@ name = "stc_ts_env"
 version = "0.1.0"
 dependencies = [
  "derivative",
+ "parking_lot 0.11.2",
  "rustc-hash",
+ "serde",
  "stc_ts_storage",
  "stc_ts_types",
  "string_enum",
@@ -2174,7 +2176,7 @@ dependencies = [
  "log",
  "num_cpus",
  "once_cell",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "petgraph",
  "rayon",
  "serde",
@@ -2270,7 +2272,7 @@ dependencies = [
  "ignore",
  "log",
  "once_cell",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "rayon",
  "rnode",
  "serde",
@@ -2341,7 +2343,7 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "once_cell",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "rnode",
  "scoped-tls",
  "servo_arc",
@@ -2416,7 +2418,7 @@ checksum = "923f0f39b6267d37d23ce71ae7235602134b250ace715dd2c90421998ddac0c6"
 dependencies = [
  "lazy_static",
  "new_debug_unreachable",
- "parking_lot 0.11.1",
+ "parking_lot 0.11.2",
  "phf_shared",
  "precomputed-hash",
  "serde",

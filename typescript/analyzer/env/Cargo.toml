@@ -7,7 +7,9 @@ version = "0.1.0"
 
 [dependencies]
 derivative = "2.1.1"
+parking_lot = "0.11.2"
 rustc-hash = "1.1.0"
+serde = "1.0.130"
 stc_ts_storage = {path = "../../storage/"}
 stc_ts_types = {path = "../../types/"}
 string_enum = "0.3.1"
