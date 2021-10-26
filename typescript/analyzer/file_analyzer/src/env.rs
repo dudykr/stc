@@ -1,7 +1,6 @@
 use crate::{
     analyzer::{Analyzer, ScopeKind},
     validator::ValidateWith,
-    Marks, Rule,
 };
 use dashmap::DashMap;
 use derivative::Derivative;
@@ -10,6 +9,7 @@ use once_cell::sync::{Lazy, OnceCell};
 use rnode::{NodeIdGenerator, RNode, VisitWith};
 use stc_ts_ast_rnode::{RDecl, RIdent, RModule, RModuleItem, RStmt, RTsModuleName, RVarDecl};
 use stc_ts_builtin_types::Lib;
+use stc_ts_env::StableEnv;
 use stc_ts_errors::Error;
 use stc_ts_storage::Builtin;
 use stc_ts_type_ops::Fix;

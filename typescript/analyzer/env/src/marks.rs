@@ -7,7 +7,7 @@ pub struct Marks {
 }
 
 impl Marks {
-    pub fn top_level_mark(&self) -> Mark {
+    pub fn top_level_mark(self) -> Mark {
         self.top_level_mark
     }
 

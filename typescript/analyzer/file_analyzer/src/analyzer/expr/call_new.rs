@@ -25,6 +25,7 @@ use stc_ts_ast_rnode::{
     RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType,
     RTsTypeParamInstantiation, RTsTypeRef,
 };
+use stc_ts_env::MarkExt;
 use stc_ts_errors::{
     debug::{dump_type_as_string, dump_type_map, print_backtrace, print_type},
     DebugExt, Error,
@@ -554,7 +555,7 @@ impl Analyzer<'_, '_> {
                         ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new(
                             "Array".into(),
-                            span.with_ctxt(self.marks().top_level_mark.as_ctxt()),
+                            span.with_ctxt(self.marks().top_level_mark().as_ctxt()),
                         )),
                         type_args: Some(box TypeParamInstantiation {
                             span,
@@ -770,7 +771,7 @@ impl Analyzer<'_, '_> {
                             span: DUMMY_SP,
                             type_name: RTsEntityName::Ident(RIdent::new(
                                 js_word!("Object"),
-                                DUMMY_SP.with_ctxt(self.marks().top_level_mark.as_ctxt()),
+                                DUMMY_SP.with_ctxt(self.marks().top_level_mark().as_ctxt()),
                             )),
                             ctxt: ModuleId::builtin(),
                             type_args: None,

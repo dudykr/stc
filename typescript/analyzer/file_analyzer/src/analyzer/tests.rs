@@ -1,6 +1,5 @@
 use crate::{
     analyzer::Analyzer,
-    env::{Env, ModuleConfig},
     loader::{Load, ModuleInfo},
     tests::{GLOBALS, MARKS},
     ValidationResult,
@@ -9,6 +8,7 @@ use once_cell::sync::Lazy;
 use rnode::{NodeIdGenerator, RNode};
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
+use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_storage::Single;
 use stc_ts_types::{ModuleId, ModuleTypeData};
 use std::{path::PathBuf, sync::Arc};
