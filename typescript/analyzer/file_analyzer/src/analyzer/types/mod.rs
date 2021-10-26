@@ -6,22 +6,21 @@ use crate::{
 };
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
-use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
+use rnode::{Visit, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsLit,
     RTsModuleDecl, RTsModuleName, RTsTypeAliasDecl,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_generics::ExpandGenericOpts;
-use stc_ts_type_ops::Fix;
+use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
-    name::Name, Accessor, Array, ArrayMetadata, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional,
+    name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional,
     ConditionalMetadata, ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection,
     Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature,
     ModuleId, Operator, PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type,
     TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
-use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
     debug_ctx,
@@ -1711,57 +1710,6 @@ impl Visit<RTsModuleDecl> for KnownTypeVisitor {
                 self.add(&i);
             }
             RTsModuleName::Str(_) => {}
-        }
-    }
-}
-
-struct TupleNormalizer;
-
-impl VisitMut<Type> for TupleNormalizer {
-    fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO: PERF
-        ty.normalize_mut();
-        ty.visit_mut_children_with(self);
-
-        match ty.normalize() {
-            Type::Tuple(tuple) => {
-                if tuple.metadata.common.prevent_tuple_to_array {
-                    return;
-                }
-
-                let common_metadata = tuple.metadata.common;
-
-                if tuple.elems.is_empty() {
-                    return;
-                }
-
-                let span = ty.span();
-                let mut types = ty
-                    .take()
-                    .foldable()
-                    .tuple()
-                    .unwrap()
-                    .elems
-                    .into_iter()
-                    .map(|elem| *elem.ty)
-                    .collect::<Vec<_>>();
-                types.dedup_type();
-
-                let has_other = types.iter().any(|ty| !ty.is_null_or_undefined());
-                if has_other {
-                    types.retain(|ty| !ty.is_null_or_undefined())
-                }
-
-                *ty = Type::Array(Array {
-                    span,
-                    elem_type: box Type::union(types),
-                    metadata: ArrayMetadata {
-                        common: common_metadata,
-                        ..Default::default()
-                    },
-                });
-            }
-            _ => {}
         }
     }
 }
