@@ -38,13 +38,13 @@ stc_ts_errors = {path = "../../errors"}
 stc_ts_file_analyzer_macros = {path = "./macros"}
 stc_ts_generics = {path = "../generics"}
 stc_ts_ordering = {path = "../ordering"}
-stc_ts_storage = {path = "../storage"}
+stc_ts_storage = {path = "../../storage"}
 stc_ts_type_cache = {path = "../type_cache/"}
 stc_ts_type_form = {path = "../type_form"}
 stc_ts_type_ops = {path = "../type_ops"}
-stc_ts_types = {path = "../types"}
-stc_ts_utils = {path = "../utils"}
-stc_utils = {path = "../../utils"}
+stc_ts_types = {path = "../../types"}
+stc_ts_utils = {path = "../../utils"}
+stc_utils = {path = "../../../utils"}
 string_enum = "0.3.1"
 swc_atoms = "0.2.6"
 swc_common = {version = "0.11.4", features = ["concurrent"]}
@@ -55,8 +55,8 @@ swc_ecma_utils = "0.41.0"
 tracing = "0.1.26"
 
 [dev-dependencies]
-stc_testing = {path = "../../testing"}
-stc_ts_testing = {path = "../testing"}
+stc_testing = {path = "../../../testing"}
+stc_ts_testing = {path = "../../testing"}
 swc_ecma_parser = "0.66.0"
 swc_ecma_transforms = "0.63.0"
 swc_ecma_visit = "0.35.1"
