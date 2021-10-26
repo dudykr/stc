@@ -2232,6 +2232,8 @@ version = "0.1.0"
 dependencies = [
  "rnode",
  "stc_ts_ast_rnode",
+ "stc_ts_errors",
+ "stc_ts_storage",
  "stc_ts_utils",
  "stc_utils",
  "stc_visit",
