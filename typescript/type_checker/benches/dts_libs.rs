@@ -4,7 +4,8 @@
 extern crate test;
 
 use stc_ts_builtin_types::Lib;
-use stc_ts_file_analyzer::env::{Env, ModuleConfig};
+use stc_ts_env::{Env, ModuleConfig};
+use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use std::{
