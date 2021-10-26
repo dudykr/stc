@@ -2037,7 +2037,9 @@ name = "stc_ts_env"
 version = "0.1.0"
 dependencies = [
  "derivative",
+ "rustc-hash",
  "stc_ts_storage",
+ "stc_ts_types",
  "string_enum",
  "swc_atoms",
  "swc_common",
