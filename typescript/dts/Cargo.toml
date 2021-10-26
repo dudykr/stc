@@ -14,6 +14,7 @@ retain_mut = "0.1.1"
 rnode = {path = "../../rnode/"}
 stc_ts_ast_rnode = {path = "../ast_rnode"}
 stc_ts_dts_mutations = {path = "../dts_mutations"}
+stc_ts_env = {path = "../analyzer/env/"}
 stc_ts_types = {path = "../types"}
 stc_ts_utils = {path = "../utils"}
 swc_common = "0.11.4"
