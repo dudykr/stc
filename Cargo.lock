@@ -2106,6 +2106,7 @@ dependencies = [
  "stc_ts_file_analyzer_macros",
  "stc_ts_generics",
  "stc_ts_ordering",
+ "stc_ts_simple_ast_validations",
  "stc_ts_storage",
  "stc_ts_testing",
  "stc_ts_type_cache",
@@ -2224,6 +2225,10 @@ dependencies = [
  "swc_atoms",
  "swc_common",
 ]
+
+[[package]]
+name = "stc_ts_simple_ast_validations"
+version = "0.1.0"
 
 [[package]]
 name = "stc_ts_storage"
