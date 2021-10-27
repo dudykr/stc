@@ -2351,6 +2351,7 @@ dependencies = [
  "rustc-hash",
  "stc_ts_ast_rnode",
  "stc_ts_base_type_ops",
+ "stc_ts_generics",
  "stc_ts_types",
  "stc_ts_utils",
  "stc_utils",
