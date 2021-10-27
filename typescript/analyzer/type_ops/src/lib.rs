@@ -18,6 +18,7 @@ pub mod this;
 pub mod tuple_normalization;
 pub mod tuple_to_array;
 pub mod union_finder;
+pub mod union_normalization;
 
 pub struct PreventComplexSimplification;
 
