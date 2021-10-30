@@ -133,7 +133,7 @@ impl Analyzer<'_, '_> {
         let skip = FxHashSet::default();
         let mut used = FxHashMap::<_, FxHashSet<_>>::default();
 
-        // TODO: Handle loaded circular imports. This is required to prevent deadlock
+        // TODO(kdy1): Handle loaded circular imports. This is required to prevent deadlock
         // and duplicated work.
 
         // Caculate declarations.
@@ -244,7 +244,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        // TODO: More logic
+        // TODO(kdy1): More logic
 
         // Postpone handling of circular imports as much as possible.
         for i in 0..len {

@@ -67,7 +67,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    /// TODO: Use Cow<TupleElement>
+    /// TODO(kdy1): Use Cow<TupleElement>
     fn append_tuple_element_to_tuple(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> ValidationResult<()> {
         match el.ty.normalize() {
             Type::Union(el_ty) => {

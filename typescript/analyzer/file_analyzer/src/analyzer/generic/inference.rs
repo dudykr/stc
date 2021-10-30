@@ -71,7 +71,7 @@ impl Analyzer<'_, '_> {
         // If there's a top-level type parameters, check for `form`s of type.
         if param.types.len() == arg.types.len() && param.types.iter().map(Type::normalize).any(|ty| ty.is_type_param())
         {
-            // TODO: Sort types so `T | PromiseLike<T>` has same form as
+            // TODO(kdy1): Sort types so `T | PromiseLike<T>` has same form as
             // `PromiseLike<void> | void`.
 
             let param_type_form = param.types.iter().map(OldTypeForm::from).collect_vec();
@@ -744,7 +744,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        // TODO: Check for parents.
+        // TODO(kdy1): Check for parents.
         Ok(())
     }
 
@@ -770,7 +770,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    /// TODO: Handle union
+    /// TODO(kdy1): Handle union
     fn replace_null_or_undefined_while_defaulting_to_any(&self, ty: &mut Type) {
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
             *ty = Type::any(

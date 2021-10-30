@@ -123,7 +123,7 @@ impl UnionNormalizer {
         })
     }
 
-    /// TODO: Add type parameters.
+    /// TODO(kdy1): Add type parameters.
     fn normalize_call_signatures(&self, ty: &mut Type) {
         if !ty.normalize().is_union_type() {
             return;
@@ -361,7 +361,7 @@ impl UnionNormalizer {
 
 impl VisitMut<Type> for UnionNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
 
         ty.visit_mut_children_with(self);

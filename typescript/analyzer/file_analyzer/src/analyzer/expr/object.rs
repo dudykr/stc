@@ -134,10 +134,10 @@ impl Analyzer<'_, '_> {
                             //
                             // See: es6/Symbols/symbolProperty36.ts
 
-                            // TODO: Exclude types which is not valid for computed key
+                            // TODO(kdy1): Exclude types which is not valid for computed key
                             if !key.is_computed()
                                 && known_keys.iter().any(|prev_key| {
-                                    // TODO: Use
+                                    // TODO(kdy1): Use
                                     // self.key_matches(span, prev_key, key, false)
                                     prev_key.type_eq(&key)
                                 })
@@ -211,7 +211,7 @@ impl Analyzer<'_, '_> {
         }
 
         let mut to = to.foldable();
-        // TODO: PERF
+        // TODO(kdy1): PERF
 
         match to {
             Type::TypeLit(ref mut lit) => {
@@ -285,7 +285,7 @@ impl Analyzer<'_, '_> {
 
         match to {
             Type::TypeLit(ref mut lit) => {
-                // TODO: Remove previous member with same key.
+                // TODO(kdy1): Remove previous member with same key.
 
                 lit.members.push(rhs);
                 Ok(to)

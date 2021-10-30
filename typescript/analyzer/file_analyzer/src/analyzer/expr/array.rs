@@ -92,7 +92,7 @@ impl Analyzer<'_, '_> {
                     let element_type = expr.validate_with_default(self)?;
                     let element_type = element_type.foldable();
 
-                    // TODO: PERF
+                    // TODO(kdy1): PERF
 
                     match element_type {
                         Type::Array(array) => {
@@ -389,7 +389,7 @@ impl Analyzer<'_, '_> {
                 "tried to get the type of property named `value` to determine the type of nth element of an iterator",
             )?;
 
-        // TODO: Remove `done: true` instead of removing `any` from value.
+        // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
         if matches!(elem_ty.normalize(), Type::Union(..)) {
             match elem_ty.normalize_mut() {
                 Type::Union(u) => {
@@ -537,7 +537,7 @@ impl Analyzer<'_, '_> {
             .context("tried to get the type of property named `value` to determine the type of an iterator")
             .convert_err(|err| Error::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() })?;
 
-        // TODO: Remove `done: true` instead of removing `any` from value.
+        // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
         if matches!(elem_ty.normalize(), Type::Union(..)) {
             match elem_ty.normalize_mut() {
                 Type::Union(u) => {

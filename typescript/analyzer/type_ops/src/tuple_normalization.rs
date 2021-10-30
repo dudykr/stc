@@ -8,7 +8,7 @@ pub struct TupleNormalizer;
 
 impl VisitMut<Type> for TupleNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
         ty.visit_mut_children_with(self);
 

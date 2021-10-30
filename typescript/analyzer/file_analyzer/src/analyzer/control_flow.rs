@@ -655,7 +655,7 @@ impl Analyzer<'_, '_> {
     /// Returns true if a body of switch always ends with `return`, `throw` or
     /// `continue`.
     ///
-    /// TODO: Support break with other label.
+    /// TODO(kdy1): Support break with other label.
     fn is_switch_case_body_unconditional_termination<S>(&mut self, body: &[S]) -> bool
     where
         S: Borrow<RStmt>,
@@ -771,7 +771,7 @@ impl Analyzer<'_, '_> {
                 self.try_assign_pat_with_opts(span, &assign.left, &ty, opts)
                     .report(&mut self.storage);
 
-                // TODO: Use type annotation?
+                // TODO(kdy1): Use type annotation?
                 let res = assign
                     .right
                     .validate_with_default(self)
@@ -1059,7 +1059,7 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Rest(rest) => {
-                // TODO: Check if this is correct. (in object rest context)
+                // TODO(kdy1): Check if this is correct. (in object rest context)
                 let ty = Type::Array(Array {
                     span,
                     elem_type: box ty.clone(),
@@ -1199,7 +1199,7 @@ impl Analyzer<'_, '_> {
                     let orig = prop_ty.clone();
                     prop_ty = self.apply_type_facts_to_type(type_facts, prop_ty);
 
-                    // TODO: See if which one is correct.
+                    // TODO(kdy1): See if which one is correct.
                     //
                     // if !orig.normalize().type_eq(prop_ty.normalize()) {
                     //     return Ok(Type::never(src.span()));

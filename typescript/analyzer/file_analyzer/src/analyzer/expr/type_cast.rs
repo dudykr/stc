@@ -339,7 +339,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        // TODO: More check
+        // TODO(kdy1): More check
         if from.is_function() && to.is_function() {
             return Ok(false);
         }
@@ -387,7 +387,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        // TODO: This is wrong
+        // TODO(kdy1): This is wrong
         if from.is_type_lit() && to.is_type_lit() {
             return Ok(true);
         }

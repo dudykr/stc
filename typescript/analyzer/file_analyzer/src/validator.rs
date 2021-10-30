@@ -73,7 +73,7 @@ impl ValidateInDeclOrder for RTsTupleElement {}
 
 impl ValidateInDeclOrder for RTsTypeElement {}
 
-/// TODO: Remove this
+/// TODO(kdy1): Remove this
 impl ValidateInDeclOrder for RClassMember {}
 
 impl<'c, T, V, O, E> Validate<'c, Vec<T>> for V

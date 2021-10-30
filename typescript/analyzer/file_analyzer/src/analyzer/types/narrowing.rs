@@ -61,7 +61,7 @@ impl Analyzer<'_, '_> {
         }
 
         let declared = declared.into_owned().foldable();
-        // TODO: PERF
+        // TODO(kdy1): PERF
 
         match declared {
             Type::Union(declared) => {

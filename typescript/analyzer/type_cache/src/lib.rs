@@ -9,7 +9,7 @@ pub mod cache_map;
 pub mod cache_mode;
 pub mod key;
 
-/// TODO: pub expand_cache: CacheMap<(RTsEntityName,
+/// TODO(kdy1): pub expand_cache: CacheMap<(RTsEntityName,
 /// Option<TypeParamInstantiation>), Type, RevokeOnTypeDecl>,
 #[derive(Debug, Default)]
 pub struct TypeCache {

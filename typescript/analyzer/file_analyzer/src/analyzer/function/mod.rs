@@ -36,7 +36,7 @@ impl Analyzer<'_, '_> {
                 let v = self.data.fn_impl_spans.entry(id.into()).or_default();
 
                 v.push(f.span);
-                // TODO: Make this efficient by report same error only once.
+                // TODO(kdy1): Make this efficient by report same error only once.
                 if v.len() >= 2 {
                     for &span in &*v {
                         self.storage.report(Error::DuplicateFnImpl { span })
@@ -55,7 +55,7 @@ impl Analyzer<'_, '_> {
 
             {
                 // Validate params
-                // TODO: Move this to parser
+                // TODO(kdy1): Move this to parser
                 let mut has_optional = false;
                 for p in &f.params {
                     if has_optional {
@@ -278,7 +278,7 @@ impl Analyzer<'_, '_> {
         let actual_ty =
             self.type_of_ts_entity_name(span, self.ctx.module_id, &ty.type_name, ty.type_args.as_deref())?;
 
-        // TODO: PERF
+        // TODO(kdy1): PERF
         let type_params = match actual_ty.foldable() {
             Type::Alias(Alias {
                 type_params: Some(type_params),
@@ -328,7 +328,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    /// TODO: Handle recursive funciton
+    /// TODO(kdy1): Handle recursive funciton
     fn visit_fn(&mut self, name: Option<&RIdent>, f: &RFunction, type_ann: Option<&Type>) -> Type {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
@@ -510,7 +510,7 @@ struct TypeParamHandler<'a> {
 impl Fold<Type> for TypeParamHandler<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
         if let Some(params) = self.params {
-            // TODO: PERF
+            // TODO(kdy1): PERF
             ty.normalize_mut();
 
             let ty: Type = ty.fold_children_with(self);

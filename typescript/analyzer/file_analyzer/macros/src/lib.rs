@@ -168,7 +168,7 @@ pub fn validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
                     }
 
                     // Now we look for extra context args
-                    // TODO: Fix span
+                    // TODO(kdy1): Fix span
                     {
                         let mut ty = ty.clone();
                         ty = LifetimeReplacer.fold_type(ty);

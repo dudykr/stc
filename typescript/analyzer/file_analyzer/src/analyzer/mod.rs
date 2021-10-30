@@ -318,7 +318,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-// TODO:
+// TODO(kdy1):
 //#[validator] #[validator]impl Analyzer<'_, '_> {
 //    type Output = ValidationResult<ty::Module>;
 //
@@ -339,7 +339,7 @@ fn make_module_ty(span: Span, name: RTsModuleName, exports: ModuleTypeData) -> t
     }
 }
 
-// TODO:
+// TODO(kdy1):
 //#[validator] #[validator]impl Analyzer<'_, '_> {
 //    type Output = ValidationResult<ty::Module>;
 //
@@ -553,7 +553,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> Ret,
     {
         self.with_child(ScopeKind::TypeParams, Default::default(), |a: &mut Analyzer| {
-            // TODO: Optimize this.
+            // TODO(kdy1): Optimize this.
             Ok(op(a))
         })
         .unwrap()

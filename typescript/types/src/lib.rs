@@ -717,7 +717,7 @@ pub struct Conditional {
 
 assert_eq_size!(Conditional, [u8; 56]);
 
-/// TODO: Remove this and create `keyof`, `unique` and `readonly` types.
+/// TODO(kdy1): Remove this and create `keyof`, `unique` and `readonly` types.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Operator {
     pub span: Span,
@@ -796,7 +796,7 @@ pub struct TsExpr {
 pub struct TypeParamInstantiation {
     pub span: Span,
 
-    /// TODO: Rename to `args`.
+    /// TODO(kdy1): Rename to `args`.
     pub params: Vec<Type>,
 }
 
@@ -1302,7 +1302,7 @@ impl Type {
             | Type::StaticThis(..)
             | Type::Symbol(..) => true,
 
-            // TODO: Make this false.
+            // TODO(kdy1): Make this false.
             Type::Param(TypeParam {
                 constraint, default, ..
             }) => {
@@ -1737,7 +1737,7 @@ impl Type {
 impl Type {
     /// Converts this type to foldable type.
     ///
-    /// TODO: Remove if possible
+    /// TODO(kdy1): Remove if possible
     pub fn foldable(mut self) -> Type {
         self.normalize_mut();
         self
@@ -1774,7 +1774,7 @@ impl Type {
 
     /// `Type::Static` is normalized.
     ///
-    /// TODO: Remove if possible
+    /// TODO(kdy1): Remove if possible
     #[instrument(skip(self))]
     pub fn normalize_mut(&mut self) -> &mut Type {
         match self {
@@ -1788,7 +1788,7 @@ impl Type {
         self
     }
 
-    /// TODO: Make this more efficient, and explode subunions.
+    /// TODO(kdy1): Make this more efficient, and explode subunions.
     pub fn iter_union(&self) -> impl Debug + Iterator<Item = &Type> {
         Iter { ty: self, idx: 0 }
     }

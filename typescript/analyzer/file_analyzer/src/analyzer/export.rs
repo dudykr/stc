@@ -97,7 +97,7 @@ impl Analyzer<'_, '_> {
                     // export type Foo = 'a' | 'b';
                     // export type Foo = {};
 
-                    // TODO: Handle type parameters.
+                    // TODO(kdy1): Handle type parameters.
 
                     a.export_type(span, decl.id.clone().into(), None)
                 }
@@ -186,7 +186,7 @@ impl Analyzer<'_, '_> {
                 let i = i.id.clone().into();
                 export.visit_children_with(self);
 
-                // TODO: Register type
+                // TODO(kdy1): Register type
 
                 self.export_type(span, Id::word(js_word!("default")), Some(i))
             }
@@ -212,7 +212,7 @@ impl Analyzer<'_, '_> {
             .or_default();
         v.push(span);
 
-        // TODO: Optimize this by emitting same error only once.
+        // TODO(kdy1): Optimize this by emitting same error only once.
         if v.len() >= 2 {
             for &span in &*v {
                 self.storage.report(Error::DuplicateDefaultExport { span });
@@ -363,7 +363,7 @@ impl Analyzer<'_, '_> {
             Ok(())
         });
 
-        // TODO: Add an export
+        // TODO(kdy1): Add an export
 
         Ok(())
     }

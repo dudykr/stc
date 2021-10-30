@@ -14,7 +14,7 @@ impl Analyzer<'_, '_> {
             return true;
         }
 
-        // TODO: Maybe make this check optional, but only if tsc reports error for
+        // TODO(kdy1): Maybe make this check optional, but only if tsc reports error for
         // number + bigint
         if ty.is_kwd(TsKeywordTypeKind::TsBigIntKeyword) {
             return true;
@@ -29,7 +29,7 @@ impl Analyzer<'_, '_> {
                 false
             }
             Type::EnumVariant(e) => {
-                // TODO: Check if value is string
+                // TODO(kdy1): Check if value is string
                 true
             }
             Type::Enum(e) => !e.has_str,

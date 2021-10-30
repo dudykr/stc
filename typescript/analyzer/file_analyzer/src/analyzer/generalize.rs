@@ -108,7 +108,7 @@ impl Fold<Union> for Simplifier<'_> {
 
 impl Fold<Type> for Simplifier<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
 
         match ty.normalize() {
@@ -301,7 +301,7 @@ impl Fold<Type> for Simplifier<'_> {
                         TypeElement::Property(PropertySignature {
                             span,
                             accessibility: None,
-                            // TODO:
+                            // TODO(kdy1):
                             readonly: false,
                             key: Key::Normal {
                                 span: key.span,
@@ -324,7 +324,7 @@ impl Fold<Type> for Simplifier<'_> {
                 });
             }
 
-            // TODO: Handle optional and reaonly
+            // TODO(kdy1): Handle optional and reaonly
             Type::Mapped(Mapped {
                 type_param:
                     TypeParam {
@@ -378,7 +378,7 @@ impl Fold<Type> for Simplifier<'_> {
                     .types
                     .into_iter()
                     .filter_map(|ty| {
-                        // TODO: PERF
+                        // TODO(kdy1): PERF
                         match ty.foldable() {
                             Type::TypeLit(ty) => Some(ty.members),
                             _ => None,

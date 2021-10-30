@@ -693,7 +693,8 @@ impl Analyzer<'_, '_> {
     ///
     ///   - Type alias
     ///
-    /// // TODO: Add an option to expand union (this is required to assign)
+    /// // TODO(kdy1): Add an option to expand union (this is required to
+    /// assign)
     ///
     ///
     ///  - `expand_union` should be true if you are going to use it in
@@ -1165,7 +1166,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(class) = &self.scope.get_this_class_name() {
             if *class == *name {
-                // TODO: Maybe change this to special variant.
+                // TODO(kdy1): Maybe change this to special variant.
                 return Some(ItemRef::Single(iter::once(&STATIC_THIS)));
             }
         }
@@ -1209,7 +1210,7 @@ impl Analyzer<'_, '_> {
         None
     }
 
-    /// TODO: Restore this(?)
+    /// TODO(kdy1): Restore this(?)
     pub(super) fn mark_var_as_truthy(&mut self, name: Id) -> ValidationResult<()> {
         self.modify_var(name, |var| {
             // var.ty = var.ty.take().map(|ty| ty.remove_falsy());
@@ -1281,13 +1282,13 @@ impl Analyzer<'_, '_> {
             (|| match kind {
                 VarKind::Var(v) => v == VarDeclKind::Var,
                 VarKind::Param => true,
-                // TODO: Allow if previous is class / enum (decl merging)
+                // TODO(kdy1): Allow if previous is class / enum (decl merging)
                 VarKind::Class => true,
                 VarKind::Fn => true,
 
                 VarKind::Import => true,
 
-                // TODO: Allow if previous is class / enum (decl merging)
+                // TODO(kdy1): Allow if previous is class / enum (decl merging)
                 VarKind::Enum => true,
 
                 VarKind::Error => true,
@@ -1455,7 +1456,7 @@ impl Analyzer<'_, '_> {
                     Some(if let Some(var_ty) = v.ty {
                         match ty.normalize() {
                             Type::Union(..) => {
-                                // TODO: Check if all types are query or
+                                // TODO(kdy1): Check if all types are query or
                                 // function
                             }
                             Type::Query(..) | Type::Function(..) => {}
@@ -1471,7 +1472,8 @@ impl Analyzer<'_, '_> {
                                     // Allow overloading query type.
                                     Type::Function(..) => {}
                                     Type::Union(..) => {
-                                        // TODO: Check if all types are query or
+                                        // TODO(kdy1): Check if all types are
+                                        // query or
                                         // function
                                     }
 
@@ -1500,7 +1502,7 @@ impl Analyzer<'_, '_> {
                                             restore!();
                                             return Ok(());
 
-                                            // TODO:
+                                            // TODO(kdy1):
                                             //  return Err(Error::
                                             //      RedeclaredVarWithDifferentType {
                                             //          span,
@@ -1538,7 +1540,7 @@ impl Analyzer<'_, '_> {
                         ty.assert_clone_cheap();
                     }
                 }
-                // TODO: Use better logic
+                // TODO(kdy1): Use better logic
                 v.actual_ty = actual_ty.or_else(|| v.ty.clone());
 
                 self.scope.vars.insert(k, v);
@@ -1564,7 +1566,8 @@ impl Analyzer<'_, '_> {
     /// Returns [Err] if overload is wrong.
     fn validate_fn_overloads(&mut self, span: Span, orig: &Type, new: &Type) -> ValidationResult<()> {
         // We validates using the signature of implementing function.
-        // TODO: Validate using last element, when there's a no function decl with body.
+        // TODO(kdy1): Validate using last element, when there's a no function decl with
+        // body.
         if self.is_builtin || self.ctx.in_declare {
             return Ok(());
         }
@@ -1595,7 +1598,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    /// TODO: Merge with declare_vars_*
+    /// TODO(kdy1): Merge with declare_vars_*
     pub fn declare_complex_vars(
         &mut self,
         kind: VarKind,
@@ -1815,7 +1818,7 @@ impl<'a> Scope<'a> {
 /// All fields default to type-native default value. (`false` for [bool] and
 /// [None] for [Option])
 
-/// TODO:
+/// TODO(kdy1):
 /// pub fully: bool,
 ///
 /// pub preserve_ref: bool,
@@ -1825,7 +1828,7 @@ impl<'a> Scope<'a> {
 /// pub expand_return_type: bool,
 #[derive(Debug, Clone, Copy, Default, PartialEq, TypeEq)]
 pub(crate) struct ExpandOpts {
-    /// TODO: Document this.
+    /// TODO(kdy1): Document this.
     pub full: bool,
     pub expand_union: bool,
 
@@ -1886,7 +1889,7 @@ pub(crate) enum ScopeKind {
 }
 
 impl ScopeKind {
-    /// TODO: Change
+    /// TODO(kdy1): Change
     pub fn allows_respanning(self) -> bool {
         match self {
             ScopeKind::Flow | ScopeKind::Class | ScopeKind::ObjectLit => false,
@@ -1978,7 +1981,7 @@ impl Expander<'_, '_, '_> {
                             // Result of type expansion should not be Ref unless really required.
                             Type::Ref(r) => {
                                 let r = r.clone();
-                                // TODO: Handle type args
+                                // TODO(kdy1): Handle type args
 
                                 return self.expand_ref(r, was_top_level);
                             }
@@ -2038,7 +2041,7 @@ impl Expander<'_, '_, '_> {
                                     });
 
                                     let before = dump_type_as_string(&self.analyzer.cm, &ty);
-                                    // TODO: PERF
+                                    // TODO(kdy1): PERF
                                     let mut ty = self.analyzer.expand_type_params(
                                         &inferred.types,
                                         ty.foldable(),
@@ -2084,7 +2087,7 @@ impl Expander<'_, '_, '_> {
                                     _ => {}
                                 }
 
-                                // TODO: PERF
+                                // TODO(kdy1): PERF
                                 let mut ty = ty.foldable();
 
                                 if is_alias {
@@ -2115,7 +2118,7 @@ impl Expander<'_, '_, '_> {
 
                     if let Some(t) = stored_ref {
                         self.expand_top_level = true;
-                        // TODO: PERF
+                        // TODO(kdy1): PERF
                         return Ok(Some(t.into_owned().foldable().fold_with(self).fixed()));
                     }
                 }
@@ -2214,7 +2217,7 @@ impl Expander<'_, '_, '_> {
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
             Type::Arc(..) => {
-                // TODO: PERF
+                // TODO(kdy1): PERF
                 return ty.foldable().fold_with(self);
             }
             _ => {}
@@ -2293,10 +2296,10 @@ impl Expander<'_, '_, '_> {
         // Start handling type expansion.
         let res: ValidationResult<()> = try {
             if contains_infer_type(&ty) {
-                // TODO: PERF
+                // TODO(kdy1): PERF
                 match ty.normalize_mut() {
                     Type::Conditional(cond_ty) => {
-                        // TODO: PERF
+                        // TODO(kdy1): PERF
                         match cond_ty.check_type.normalize_mut() {
                             Type::Query(QueryType {
                                 span,
@@ -2322,7 +2325,7 @@ impl Expander<'_, '_, '_> {
             }
         };
 
-        // TODO: PERF
+        // TODO(kdy1): PERF
         let ty = ty.foldable();
         match ty {
             Type::Intersection(mut i) if was_top_level => {
@@ -2535,7 +2538,7 @@ impl Expander<'_, '_, '_> {
                     metadata,
                 }) => {
                     let ret_ty = self.analyzer.rename_type_params(span, *ret_ty, None)?;
-                    // TODO: PERF
+                    // TODO(kdy1): PERF
                     let ret_ty = box ret_ty.foldable().fold_with(self);
 
                     return Type::Function(ty::Function {
@@ -2661,7 +2664,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
             Type::Arc(..) => {
-                // TODO: PERF
+                // TODO(kdy1): PERF
                 return ty.foldable().fold_with(self);
             }
             _ => {}

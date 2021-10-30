@@ -13,7 +13,7 @@ struct PreventTupleToArray;
 
 impl VisitMut<Type> for PreventTupleToArray {
     fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
         ty.metadata_mut().prevent_tuple_to_array = true;
 

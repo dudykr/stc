@@ -106,7 +106,7 @@ impl Analyzer<'_, '_> {
 
         let is_callee_iife = is_fn_expr(&callee);
 
-        // TODO: validate children
+        // TODO(kdy1): validate children
 
         self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
             analyzer.ctx.is_calling_iife = is_callee_iife;
@@ -140,7 +140,7 @@ impl Analyzer<'_, '_> {
         let mut type_ann = self.expand_type_ann(span, type_ann)?;
         type_ann.make_clone_cheap();
 
-        // TODO: e.visit_children
+        // TODO(kdy1): e.visit_children
 
         self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
             analyzer.extract_call_new_expr_member(
@@ -489,7 +489,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    /// TODO: Use Cow for `obj_type`
+    /// TODO(kdy1): Use Cow for `obj_type`
     ///
     /// ## Parameters
     ///
@@ -918,7 +918,7 @@ impl Analyzer<'_, '_> {
                     if self.key_matches(span, key, prop, false) {
                         // Check for properties with callable type.
 
-                        // TODO: Change error message from no callable
+                        // TODO(kdy1): Change error message from no callable
                         // property to property exists but not callable.
 
                         if let Some(prop_ty) = value.as_deref().map(Type::normalize) {
@@ -968,7 +968,7 @@ impl Analyzer<'_, '_> {
         opts: CallOpts,
     ) -> ValidationResult<Option<Type>> {
         let candidates = {
-            // TODO: Deduplicate.
+            // TODO(kdy1): Deduplicate.
             // This is duplicated intentionally because of regresions.
 
             let mut candidates: Vec<CallCandidate> = vec![];
@@ -996,7 +996,7 @@ impl Analyzer<'_, '_> {
                         if self.key_matches(span, key, prop, false) {
                             // Check for properties with callable type.
 
-                            // TODO: Change error message from no callable
+                            // TODO(kdy1): Change error message from no callable
                             // property to property exists but not callable.
 
                             if let Some(ty) = value.as_deref() {
@@ -1105,7 +1105,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if self.key_matches(span, &p.key, &prop, false) {
-                    // TODO: Remove useless clone
+                    // TODO(kdy1): Remove useless clone
                     let ty = *p
                         .type_ann
                         .clone()
@@ -1117,14 +1117,14 @@ impl Analyzer<'_, '_> {
                         .unwrap_or_else(|_| ty);
                     let ty = ty.foldable();
 
-                    // TODO: PERF
+                    // TODO(kdy1): PERF
 
                     match ty {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsAnyKeyword,
                             ..
                         }) => candidates.push(CallCandidate {
-                            // TODO: Maybe we need Option<Vec<T>>.
+                            // TODO(kdy1): Maybe we need Option<Vec<T>>.
                             params: Default::default(),
                             ret_ty: Type::any(span, Default::default()),
                             type_params: Default::default(),
@@ -1186,15 +1186,15 @@ impl Analyzer<'_, '_> {
         // Candidates of the method call.
         //
         // 4 is just an unscientific guess
-        // TODO: Use smallvec
+        // TODO(kdy1): Use smallvec
         let mut candidates = Vec::with_capacity(4);
 
         for m in members {
             self.check_type_element_for_call(span, kind, &mut candidates, m, prop, opts);
         }
 
-        // TODO: Move this to caller to prevent checking members of `Object` every time
-        // we check parent interface.
+        // TODO(kdy1): Move this to caller to prevent checking members of `Object` every
+        // time we check parent interface.
         {
             // Handle methods from `interface Object`
             let i = self
@@ -1207,7 +1207,7 @@ impl Analyzer<'_, '_> {
                 _ => &[],
             };
 
-            // TODO: Remove clone
+            // TODO(kdy1): Remove clone
             for m in methods {
                 self.check_type_element_for_call(span, kind, &mut candidates, m, prop, opts);
             }
@@ -1415,7 +1415,7 @@ impl Analyzer<'_, '_> {
                             .as_ref()
                             .or_else(|| cls.type_params.as_deref())
                             .map(|v| &*v.params);
-                        // TODO: Constructor's return type.
+                        // TODO(kdy1): Constructor's return type.
 
                         return self
                             .get_return_type(
@@ -1548,7 +1548,7 @@ impl Analyzer<'_, '_> {
 
         match ty.normalize() {
             Type::Intersection(..) if kind == ExtractKind::New => {
-                // TODO: Check if all types has constructor signature
+                // TODO(kdy1): Check if all types has constructor signature
                 return Ok(make_instance_type(self.ctx.module_id, ty.clone()));
             }
 
@@ -1709,7 +1709,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::ClassDef(ref def) if kind == ExtractKind::New => {
-                // TODO: Remove clone
+                // TODO(kdy1): Remove clone
                 return Ok(Class {
                     span,
                     def: box def.clone(),
@@ -1861,7 +1861,7 @@ impl Analyzer<'_, '_> {
             .normalize(Some(span), Cow::Borrowed(callee), Default::default())
             .context("tried to normalize to extract callee")?;
 
-        // TODO: Check if signature match.
+        // TODO(kdy1): Check if signature match.
         match callee.normalize() {
             Type::Intersection(i) => {
                 let candidates = i
@@ -1893,7 +1893,7 @@ impl Analyzer<'_, '_> {
             }
 
             // Type::Union(ty) => {
-            //     // TODO: We should select best one based on the arugment type and count.
+            //     // TODO(kdy1): We should select best one based on the arugment type and count.
             //     let mut types = ty
             //         .types
             //         .iter()
@@ -2029,7 +2029,7 @@ impl Analyzer<'_, '_> {
 
         let has_spread = arg_types.len() != spread_arg_types.len();
 
-        // TODO: Calculate return type only if selected
+        // TODO(kdy1): Calculate return type only if selected
         // This can be done by storing type params, return type, params in the
         // candidates.
         let candidates = self.extract_callee_candidates(span, kind, &callee)?;
@@ -2409,7 +2409,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        // TODO: Optimize by skipping clone if `this type` is not used.
+        // TODO(kdy1): Optimize by skipping clone if `this type` is not used.
         let params = params
             .iter()
             .map(|param| {
@@ -2908,12 +2908,12 @@ impl Analyzer<'_, '_> {
                                             let arg = match args_iter.next() {
                                                 Some(v) => v,
                                                 None => {
-                                                    // TODO: Arugment count
+                                                    // TODO(kdy1): Arugment count
                                                     break;
                                                 }
                                             };
 
-                                            // TODO: Check if arg.spread is none.
+                                            // TODO(kdy1): Check if arg.spread is none.
                                             // The logic below is correct only if the arg is not spread.
 
                                             let res = self
@@ -3113,7 +3113,7 @@ impl Analyzer<'_, '_> {
                         for (idx, param) in params.iter().enumerate() {
                             match &param.pat {
                                 RPat::Ident(i) if i.id.sym == arg_id.sym => {
-                                    // TODO: Check length of args.
+                                    // TODO(kdy1): Check length of args.
                                     let arg = &args[idx];
                                     match &*arg.expr {
                                         RExpr::Ident(var_name) => {
@@ -3205,7 +3205,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                // TODO: Use super class instread of
+                // TODO(kdy1): Use super class instread of
                 if !upcasted {
                     new_types.push(new_ty.clone().into_owned());
                 }
@@ -3263,7 +3263,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         if let Some(type_params) = type_params {
             if let Some(type_args) = type_args {
-                // TODO: Handle defaults of the type parameter (Change to range)
+                // TODO(kdy1): Handle defaults of the type parameter (Change to range)
                 if type_params.len() != type_args.params.len() {
                     return Err(Error::TypeParameterCountMismatch {
                         span,
@@ -3426,7 +3426,7 @@ impl Fold<Type> for ReturnTypeGeneralizer<'_, '_, '_> {
             return ty;
         }
 
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
 
         ty = ty.fold_children_with(self);
@@ -3446,7 +3446,7 @@ struct ReturnTypeSimplifier<'a, 'b, 'c> {
 
 impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
 
         ty.visit_mut_children_with(self);
@@ -3557,7 +3557,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                     _ => false,
                 }) =>
             {
-                // TODO: Replace .ok() with something better
+                // TODO(kdy1): Replace .ok() with something better
                 if let Some(types) = self.analyzer.find_type(*ctxt, &(&*i).into()).ok().flatten() {
                     type_args.make_clone_cheap();
 
@@ -3630,7 +3630,7 @@ fn test_arg_check_result_order() {
     assert_eq!(v, expected);
 }
 
-/// TODO: Use cow
+/// TODO(kdy1): Use cow
 struct CallCandidate {
     pub type_params: Option<Vec<TypeParam>>,
     pub params: Vec<FnParam>,

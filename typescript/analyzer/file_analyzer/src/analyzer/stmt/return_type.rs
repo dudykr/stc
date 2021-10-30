@@ -510,7 +510,7 @@ fn should_preserve_ref(ty: &Type) -> bool {
     match ty {
         Type::IndexedAccessType(..) => true,
         Type::Array(Array { elem_type, .. }) => should_preserve_ref(&elem_type),
-        // TODO: More work
+        // TODO(kdy1): More work
         _ => false,
     }
 }
@@ -521,7 +521,7 @@ struct KeyInliner<'a, 'b, 'c> {
 
 impl Fold<Type> for KeyInliner<'_, '_, '_> {
     fn fold(&mut self, mut ty: Type) -> Type {
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
 
         ty = ty.fold_children_with(self);
@@ -546,7 +546,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                     ..self.analyzer.ctx
                 };
 
-                // TODO: Handle error.
+                // TODO(kdy1): Handle error.
                 let index_ty = self
                     .analyzer
                     .with_ctx(ctx)
@@ -568,7 +568,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                     // };
                     // `S2[keyof S2]`;
 
-                    // TODO: PERF
+                    // TODO(kdy1): PERF
                     match index_ty.foldable() {
                         Type::TypeLit(obj) => {
                             let mut types: Vec<Type> = vec![];
@@ -614,7 +614,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                     // =>
                     // `T["a" | "b"]`
 
-                    // TODO: PERF
+                    // TODO(kdy1): PERF
                     match index_ty.foldable() {
                         Type::TypeLit(obj) => {
                             let mut types: Vec<Type> = vec![];
