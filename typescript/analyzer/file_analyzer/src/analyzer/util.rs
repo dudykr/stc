@@ -238,6 +238,8 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
     }
 }
 
+/// TODO(kdy1): Clarify why this visitor is used.
+/// I fotgot it.
 #[derive(Debug)]
 pub(super) struct Generalizer {
     pub force: bool,
