@@ -191,7 +191,7 @@ impl Analyzer<'_, '_> {
                         .zip(rt.params.iter())
                         .filter(|(l, r)| match (&l.constraint, &r.constraint) {
                             (None, Some(..)) => return false,
-                            // TODO: Use extends()
+                            // TODO(kdy1): Use extends()
                             _ => true,
                         })
                         .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
@@ -367,7 +367,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(l_ret_ty) = l_ret_ty {
             if let Some(r_ret_ty) = r_ret_ty {
-                // TODO: Verify type parameters.
+                // TODO(kdy1): Verify type parameters.
 
                 let opts = AssignOpts {
                     // We are done with the overload context.
@@ -697,7 +697,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        // TODO: Change this to extends call.
+        // TODO(kdy1): Change this to extends call.
 
         let mut l_ty = self.normalize(Some(opts.span), Cow::Borrowed(&l.ty), Default::default())?;
         let mut r_ty = self.normalize(Some(opts.span), Cow::Borrowed(&r.ty), Default::default())?;
@@ -820,7 +820,7 @@ impl Analyzer<'_, '_> {
             _ => false,
         });
 
-        // TODO: Consider optional parameters.
+        // TODO(kdy1): Consider optional parameters.
 
         let required_li = li.clone().filter(|i| i.required);
         let required_ri = ri.clone().filter(|i| i.required);
@@ -861,7 +861,7 @@ impl Analyzer<'_, '_> {
         for pair in li.zip_longest(ri) {
             match pair {
                 EitherOrBoth::Both(lp, rp) => {
-                    // TODO: What should we do?
+                    // TODO(kdy1): What should we do?
                     if opts.allow_assignment_to_param {
                         if let Ok(()) = self.assign_param(
                             data,

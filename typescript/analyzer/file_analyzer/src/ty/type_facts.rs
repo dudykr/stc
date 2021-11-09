@@ -15,7 +15,7 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, instrument};
 
 impl Analyzer<'_, '_> {
-    /// TODO: Note: This method preserves [Type::Ref] in some cases.
+    /// TODO(kdy1): Note: This method preserves [Type::Ref] in some cases.
     ///
     /// Those are preserved if
     ///
@@ -102,7 +102,7 @@ impl Analyzer<'_, '_> {
                 metadata: Default::default(),
             });
 
-            // TODO: PERF
+            // TODO(kdy1): PERF
             match ty.normalize_mut() {
                 Type::Union(u) => {
                     let has_fn = u.types.iter().any(|ty| match ty.normalize() {
@@ -283,7 +283,7 @@ impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
 
         let has_keyword = |kind| ty.types.iter().any(|ty| ty.normalize().is_kwd(kind));
 
-        // TODO: Support literal type.
+        // TODO(kdy1): Support literal type.
         let has_str = has_keyword(TsKeywordTypeKind::TsStringKeyword);
         let has_num = has_keyword(TsKeywordTypeKind::TsNumberKeyword);
         let has_bool = has_keyword(TsKeywordTypeKind::TsBooleanKeyword);
@@ -389,7 +389,7 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, mut ty: Type) -> Type {
         let span = ty.span();
 
-        // TODO: Don't do anything if type fact is none.
+        // TODO(kdy1): Don't do anything if type fact is none.
 
         match ty.normalize() {
             Type::Lit(LitType {
@@ -452,7 +452,7 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             _ => {}
         }
 
-        // TODO: PERF
+        // TODO(kdy1): PERF
 
         ty = ty.foldable();
         ty = ty.fold_children_with(self);

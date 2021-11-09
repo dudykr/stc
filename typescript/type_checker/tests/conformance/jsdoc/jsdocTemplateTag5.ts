@@ -11,7 +11,7 @@
  * @template V
  */
 function Multimap() {
-    /** @type {Object<string, V>} TODO: Remove the prototype from the fresh object */
+    /** @type {Object<string, V>} TODO(kdy1): Remove the prototype from the fresh object */
     this._map = {};
 };
 
@@ -32,7 +32,7 @@ Multimap.prototype = {
  * @template V
  */
 var Multimap2 = function() {
-    /** @type {Object<string, V>} TODO: Remove the prototype from the fresh object */
+    /** @type {Object<string, V>} TODO(kdy1): Remove the prototype from the fresh object */
     this._map = {};
 };
 
@@ -54,7 +54,7 @@ var Ns = {};
  * @template V
  */
 Ns.Multimap3 = function() {
-    /** @type {Object<string, V>} TODO: Remove the prototype from the fresh object */
+    /** @type {Object<string, V>} TODO(kdy1): Remove the prototype from the fresh object */
     this._map = {};
 };
 

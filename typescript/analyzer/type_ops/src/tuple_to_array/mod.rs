@@ -9,7 +9,7 @@ pub struct TupleToArray;
 
 impl Fold<Type> for TupleToArray {
     fn fold(&mut self, mut ty: Type) -> Type {
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
         let ty = ty.fold_children_with(self);
 

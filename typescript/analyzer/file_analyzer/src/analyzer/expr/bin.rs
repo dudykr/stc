@@ -1022,7 +1022,7 @@ impl Analyzer<'_, '_> {
     /// in this case, we cannot store ctor2 as C1 because it would result in an
     /// error.
     ///
-    /// TODO: Use Cow
+    /// TODO(kdy1): Use Cow
     ///
     /// # Related tests
     ///
@@ -1375,7 +1375,7 @@ impl Analyzer<'_, '_> {
             return ty;
         }
 
-        // TODO: We should assign this to builtin interface `Function`.
+        // TODO(kdy1): We should assign this to builtin interface `Function`.
         match ty.normalize() {
             // Error
             Type::Keyword(KeywordType {

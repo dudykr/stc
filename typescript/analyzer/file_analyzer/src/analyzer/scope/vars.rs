@@ -44,7 +44,7 @@ pub(crate) struct DeclareVarsOpts {
 }
 
 impl Analyzer<'_, '_> {
-    /// TODO: Rename to declare_vars
+    /// TODO(kdy1): Rename to declare_vars
     ///
     /// # Parameters
     ///
@@ -273,7 +273,7 @@ impl Analyzer<'_, '_> {
                                 .map(Cow::into_owned)
                                 .freezed();
 
-                            // TODO: actual_ty
+                            // TODO(kdy1): actual_ty
                             self.add_vars(elem, elem_ty, None, default_elem_ty, opts)?;
                         }
                     }
@@ -360,7 +360,7 @@ impl Analyzer<'_, '_> {
                                 }
                                 .freezed();
 
-                                // TODO: actual_ty
+                                // TODO(kdy1): actual_ty
                                 self.add_vars(elem, elem_ty, None, default, opts)
                                     .report(&mut self.storage);
                             }
@@ -379,7 +379,7 @@ impl Analyzer<'_, '_> {
                     _ => true,
                 };
 
-                // TODO: Normalize static
+                // TODO(kdy1): Normalize static
                 //
                 let mut used_keys = vec![];
 
@@ -428,7 +428,7 @@ impl Analyzer<'_, '_> {
 
                             match prop_ty {
                                 Ok(prop_ty) => {
-                                    // TODO: actual_ty
+                                    // TODO(kdy1): actual_ty
                                     self.add_vars(&prop.value, prop_ty.freezed(), None, default_prop_ty, opts)
                                         .report(&mut self.storage);
                                 }
@@ -542,7 +542,7 @@ impl Analyzer<'_, '_> {
                                             }
                                         }
                                         None => {
-                                            // TODO: actual_ty
+                                            // TODO(kdy1): actual_ty
                                             self.add_vars(
                                                 &RPat::Ident(RBindingIdent {
                                                     node_id: NodeId::invalid(),

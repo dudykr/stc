@@ -11,7 +11,7 @@ impl Analyzer<'_, '_> {
         (|| -> ValidationResult<_> {
             let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
 
-            // TODO: Support type literals and interfaces.
+            // TODO(kdy1): Support type literals and interfaces.
 
             match ty.normalize() {
                 Type::ClassDef(cls) => return self.get_index_signature_from_class(span, &cls),

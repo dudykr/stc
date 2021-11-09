@@ -452,7 +452,7 @@ module TypeScript {
         // inside a comment, because the "class" AST node has a limChar corresponding to the position of 
         // the "{" character, meaning we don't traverse the tree down to the stmt list of the class, meaning
         // we don't find the "precomment" attached to the errorneous empty stmt.
-        //TODO: It would be nice to be able to get rid of this.
+        //TODO(kdy1): It would be nice to be able to get rid of this.
         DontPruneSearchBasedOnPosition = 1 << 1,
     }
 
@@ -494,14 +494,14 @@ module TypeScript {
                 var limChar = cur.limChar + (inclusive ? 1 : 0)
                 if (pos >= minChar && pos < limChar) {
 
-                    // TODO: Since AST is sometimes not correct wrt to position, only add "cur" if it's better
+                    // TODO(kdy1): Since AST is sometimes not correct wrt to position, only add "cur" if it's better
                     //       than top of the stack.
                     var previous = ctx.path.ast();
                     if (previous == null || (cur.minChar >= previous.minChar && cur.limChar <= previous.limChar)) {
                         ctx.path.push(cur);
                     }
                     else {
-                        //logger.log("TODO: Ignoring node because minChar, limChar not better than previous node in stack");
+                        //logger.log("TODO(kdy1): Ignoring node because minChar, limChar not better than previous node in stack");
                     }
                 }
 

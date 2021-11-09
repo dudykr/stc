@@ -289,7 +289,7 @@ impl Analyzer<'_, '_> {
                     match rm {
                         ClassMember::Constructor(rc) => {
                             self.assign_params(data, opts, &lc.params, &rc.params)?;
-                            // TODO: Validate parameters and etc..
+                            // TODO(kdy1): Validate parameters and etc..
                             return Ok(());
                         }
                         _ => {}

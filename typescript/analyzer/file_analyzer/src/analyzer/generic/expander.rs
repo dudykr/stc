@@ -44,7 +44,7 @@ impl Analyzer<'_, '_> {
 
         for (idx, param) in type_params.params.iter().enumerate() {
             if let Some(arg) = type_args.params.get(idx) {
-                // TODO: Change this to assert.
+                // TODO(kdy1): Change this to assert.
                 let arg = arg.clone().cheap();
                 params.insert(param.name.clone(), arg);
             } else {

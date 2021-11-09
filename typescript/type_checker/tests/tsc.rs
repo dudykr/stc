@@ -273,7 +273,7 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
             }
         }
 
-        // TODO: Match column and message
+        // TODO(kdy1): Match column and message
 
         Ok(errors)
     }
@@ -420,7 +420,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         rule.no_implicit_returns = v;
                     } else if s.starts_with("declaration") {
                     } else if s.starts_with("stripInternal:") {
-                        // TODO: Handle
+                        // TODO(kdy1): Handle
                     } else if s.starts_with("traceResolution") {
                         // no-op
                     } else if s.starts_with("allowUnusedLabels:") {

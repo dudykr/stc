@@ -14,16 +14,17 @@ use crate::{
     ValidationResult,
 };
 use itertools::Itertools;
-use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, Visit, VisitWith};
+use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrowExpr, RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp,
+    RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp,
     RComputedPropName, RConstructor, RDecl, RExpr, RExprOrSuper, RFunction, RIdent, RLit, RMemberExpr, RParam,
-    RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RSeqExpr, RStmt, RSuper, RTsEntityName,
-    RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStmt, RTsEntityName, RTsFnParam, RTsParamProp,
+    RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_simple_ast_validations::consturctor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
     Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
@@ -282,7 +283,7 @@ impl Analyzer<'_, '_> {
 
                 {
                     // Validate params
-                    // TODO: Move this to parser
+                    // TODO(kdy1): Move this to parser
                     let mut has_optional = false;
                     for p in params.iter() {
                         if has_optional {
@@ -640,7 +641,7 @@ impl Analyzer<'_, '_> {
 
                 {
                     // Validate params
-                    // TODO: Move this to parser
+                    // TODO(kdy1): Move this to parser
                     let mut has_optional = false;
                     for p in &c.function.params {
                         if has_optional {
@@ -1036,7 +1037,7 @@ impl Analyzer<'_, '_> {
                 RPropName::Computed(l) => match r {
                     RPropName::Computed(r) => {
                         if l.eq_ignore_span(&r) {
-                            // TODO: Return true only if l and r are both
+                            // TODO(kdy1): Return true only if l and r are both
                             // symbol type
                             return true;
                         }
@@ -1191,7 +1192,7 @@ impl Analyzer<'_, '_> {
                         }
                     } else {
                         if name.is_none() || is_prop_name_eq_include_computed(&name.unwrap(), &m.key) {
-                            // TODO: Verify parameters
+                            // TODO(kdy1): Verify parameters
 
                             if name.is_some() {
                                 if let Some(mutations) = &mut self.mutations {
@@ -1483,9 +1484,9 @@ impl Analyzer<'_, '_> {
                                     continue 'outer;
                                 }
                                 if super_method.is_optional {
-                                    // TODO: Validate parameters
+                                    // TODO(kdy1): Validate parameters
 
-                                    // TODO: Validate return type
+                                    // TODO(kdy1): Validate return type
                                     continue 'outer;
                                 }
 
@@ -1496,9 +1497,9 @@ impl Analyzer<'_, '_> {
                                                 continue;
                                             }
 
-                                            // TODO: Validate parameters
+                                            // TODO(kdy1): Validate parameters
 
-                                            // TODO: Validate return type
+                                            // TODO(kdy1): Validate return type
                                             continue 'outer;
                                         }
                                         _ => {}
@@ -1506,7 +1507,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                             _ => {
-                                // TODO: Verify
+                                // TODO(kdy1): Verify
                                 continue 'outer;
                             }
                         }
@@ -1714,7 +1715,7 @@ impl Analyzer<'_, '_> {
                                                 span: DUMMY_SP,
                                                 declare: false,
                                                 id: new_ty.clone(),
-                                                // TODO: Handle type parameters
+                                                // TODO(kdy1): Handle type parameters
                                                 type_params: None,
                                                 type_ann: box super_ty.into(),
                                             })));
@@ -1729,7 +1730,7 @@ impl Analyzer<'_, '_> {
                                         span: DUMMY_SP,
                                         ctxt: child.ctx.module_id,
                                         type_name: RTsEntityName::Ident(new_ty),
-                                        // TODO: Handle type parameters
+                                        // TODO(kdy1): Handle type parameters
                                         type_args: None,
                                         metadata: Default::default(),
                                     }))
@@ -1745,7 +1746,7 @@ impl Analyzer<'_, '_> {
 
                 let implements = c.implements.validate_with(child).map(Box::new)?;
 
-                // TODO: Check for implements
+                // TODO(kdy1): Check for implements
 
                 child
                     .report_errors_for_wrong_ambient_methods_of_class(c, false)
@@ -1835,7 +1836,7 @@ impl Analyzer<'_, '_> {
                                 if let Some(member) = m {
                                     // Check for duplicate property names.
                                     if let Some(key) = member.key() {
-                                        // TODO: Use better logic for testing key equality
+                                        // TODO(kdy1): Use better logic for testing key equality
                                         if declared_static_keys.iter().any(|prev: &Key| prev.type_eq(&*key)) {
                                             child.storage.report(Error::DuplicateProperty { span: key.span() })
                                         }
@@ -1960,7 +1961,7 @@ impl Analyzer<'_, '_> {
                                 if let Some(member) = class_member {
                                     // Check for duplicate property names.
                                     if let Some(key) = member.key() {
-                                        // TODO: Use better logic for testing key equality
+                                        // TODO(kdy1): Use better logic for testing key equality
                                         if declared_instance_keys.iter().any(|prev: &Key| prev.type_eq(&*key)) {
                                             child.storage.report(Error::DuplicateProperty { span: key.span() })
                                         }
@@ -2185,7 +2186,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        // TODO: Optimize if intersection is empty
+        // TODO(kdy1): Optimize if intersection is empty
         if getters.is_empty() && setters.is_empty() {
             return body;
         }
@@ -2348,7 +2349,7 @@ impl Analyzer<'_, '_> {
         res.report(&mut self.storage);
     }
 
-    /// TODO: Instantate fully
+    /// TODO(kdy1): Instantate fully
     pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> ValidationResult {
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -2399,65 +2400,5 @@ impl Analyzer<'_, '_> {
         }
 
         self.scope.this = old_this;
-    }
-}
-
-#[derive(Debug, Default)]
-struct ConstructorSuperCallFinder {
-    has_valid_super_call: bool,
-
-    in_nested: bool,
-    nested_super_calls: Vec<Span>,
-}
-
-impl Visit<RSuper> for ConstructorSuperCallFinder {
-    fn visit(&mut self, s: &RSuper) {
-        if self.in_nested {
-            self.nested_super_calls.push(s.span);
-        } else {
-            self.has_valid_super_call = true;
-        }
-    }
-}
-
-impl Visit<RFunction> for ConstructorSuperCallFinder {
-    fn visit(&mut self, f: &RFunction) {
-        f.decorators.visit_with(self);
-        f.params.visit_with(self);
-
-        let old = self.in_nested;
-        self.in_nested = true;
-        f.body.visit_with(self);
-        self.in_nested = old;
-    }
-}
-
-impl Visit<RArrowExpr> for ConstructorSuperCallFinder {
-    fn visit(&mut self, f: &RArrowExpr) {
-        f.params.visit_with(self);
-
-        let old = self.in_nested;
-        self.in_nested = true;
-        f.body.visit_with(self);
-        self.in_nested = old;
-    }
-}
-
-/// Ignore nested classes.
-impl Visit<RClass> for ConstructorSuperCallFinder {
-    fn visit(&mut self, _: &RClass) {}
-}
-
-/// computedPropertyNames30_ES5.ts says
-///
-/// `Ideally, we would capture this. But the reference is
-/// illegal, and not capturing this is consistent with
-/// treatment of other similar violations.`
-impl Visit<RSeqExpr> for ConstructorSuperCallFinder {
-    fn visit(&mut self, v: &RSeqExpr) {
-        if self.in_nested {
-            return;
-        }
-        v.visit_children_with(self);
     }
 }

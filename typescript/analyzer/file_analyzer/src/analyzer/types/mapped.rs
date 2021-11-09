@@ -26,7 +26,7 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     ///
-    /// TODO: Handle index signatures.
+    /// TODO(kdy1): Handle index signatures.
     #[instrument(name = "expand_mapped", skip(self, span, m))]
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
         let orig = dump_type_as_string(&self.cm, &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
@@ -218,7 +218,7 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    /// TODO: Optimize
+    /// TODO(kdy1): Optimize
     fn expand_key_in_mapped(&mut self, mapped_type_param: Id, mapped_ty: &Type, key: &Key) -> ValidationResult<Type> {
         let mapped_ty = mapped_ty.clone();
         let mut type_params = HashMap::default();
@@ -571,7 +571,7 @@ impl VisitMut<Type> for IndexedAccessTypeReplacer<'_> {
             }
         }
 
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
 
         match ty {

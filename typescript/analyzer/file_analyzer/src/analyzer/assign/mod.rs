@@ -259,14 +259,14 @@ impl Analyzer<'_, '_> {
         }
 
         if lhs.is_num() || lhs.is_enum_variant() {
-            // TODO: Check if actual value is number.
+            // TODO(kdy1): Check if actual value is number.
 
             if rhs.is_num() {
                 return Ok(());
             }
 
             if rhs.is_enum_variant() {
-                // TODO: Check if actual value is numberx.
+                // TODO(kdy1): Check if actual value is numberx.
                 return Ok(());
             }
 
@@ -427,7 +427,7 @@ impl Analyzer<'_, '_> {
                 metadata,
                 ..
             }) => {
-                // TODO: Check if ref points global.
+                // TODO(kdy1): Check if ref points global.
                 return Ok(Cow::Owned(Type::Keyword(KeywordType {
                     span: *span,
                     kind: match type_name.sym {
@@ -943,7 +943,7 @@ impl Analyzer<'_, '_> {
 
             Type::Module(to) => {
                 match rhs {
-                    // TODO: Use unique id for module type.
+                    // TODO(kdy1): Use unique id for module type.
                     Type::Module(rhs) => {
                         if to.name.eq_ignore_span(&rhs.name) {
                             return Ok(());
@@ -1009,7 +1009,7 @@ impl Analyzer<'_, '_> {
             Type::Intersection(ref i) => {
                 let mut errors = vec![];
 
-                // TODO: Optimize unknown rhs handling
+                // TODO(kdy1): Optimize unknown rhs handling
 
                 for ty in &i.types {
                     match self
@@ -1190,7 +1190,7 @@ impl Analyzer<'_, '_> {
 
             Type::Union(r) => {
                 if self.should_use_special_union_assignment(span, rhs)? {
-                    // TODO: We should assign rhs as full.
+                    // TODO(kdy1): We should assign rhs as full.
                     //
                     //
                     // lhs = (undefined | {
@@ -1414,7 +1414,7 @@ impl Analyzer<'_, '_> {
                         match res {
                             Ok(_) => return Ok(()),
                             Err(_) => {
-                                // TODO: Log?
+                                // TODO(kdy1): Log?
                             }
                         }
                     }
@@ -1545,7 +1545,7 @@ impl Analyzer<'_, '_> {
                     .map(|to| self.assign_inner(data, &to, rhs, opts))
                     .collect::<Vec<_>>();
 
-                // TODO: Multiple error
+                // TODO(kdy1): Multiple error
                 for v in vs {
                     if let Err(error) = v {
                         return Err(Error::IntersectionError { span, error: box error });
@@ -1763,7 +1763,7 @@ impl Analyzer<'_, '_> {
             Type::Interface(Interface {
                 ref body, ref extends, ..
             }) => {
-                // TODO: Optimize handling of unknown rhs
+                // TODO(kdy1): Optimize handling of unknown rhs
 
                 self.assign_to_type_elements(
                     data,
@@ -1805,7 +1805,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                // TODO: Prevent recursion and uncomment the code below.
+                // TODO(kdy1): Prevent recursion and uncomment the code below.
                 //
                 // // We try assigning as builtin interfaces.
                 // match rhs {
@@ -1836,7 +1836,7 @@ impl Analyzer<'_, '_> {
                 // Assignment failed. This check is required to distinguish an empty interface
                 // from an interface with parents.
                 //
-                // TODO: Use errors returned from parent assignment.
+                // TODO(kdy1): Use errors returned from parent assignment.
                 if body.is_empty() && !extends.is_empty() {
                     return Err(Error::AssignFailed {
                         span,
@@ -1900,7 +1900,7 @@ impl Analyzer<'_, '_> {
 
                 Type::Ref(..) | Type::Param(..) | Type::Query(..) => {}
 
-                // TODO: allow
+                // TODO(kdy1): allow
                 // let a: true | false = bool
                 _ => fail!(),
             },
@@ -2164,7 +2164,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        // TODO: Implement full type checker
+        // TODO(kdy1): Implement full type checker
         error!(
             "unimplemented: assign: \nLeft: {}\nRight: {}",
             dump_type_as_string(&self.cm, to),

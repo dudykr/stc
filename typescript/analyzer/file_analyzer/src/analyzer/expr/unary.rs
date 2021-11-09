@@ -24,7 +24,7 @@ impl Analyzer<'_, '_> {
             self.validate_with(|a| a.validate_delete_operand(&arg));
         }
 
-        // TODO: Check for `self.ctx.in_cond` to improve performance.
+        // TODO(kdy1): Check for `self.ctx.in_cond` to improve performance.
         let arg: Option<Type> = match op {
             op!("!") => {
                 let orig_facts = self.cur_facts.take();

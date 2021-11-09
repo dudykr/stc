@@ -222,7 +222,7 @@ impl Analyzer<'_, '_> {
                 }
                 RExpr::Lit(RLit::Null(RNull { span })) => {
                     if self.ctx.in_export_default_expr {
-                        // TODO: strict mode
+                        // TODO(kdy1): strict mode
                         return Ok(Type::Keyword(KeywordType {
                             span: *span,
                             kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -326,7 +326,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !self.is_builtin {
-            // TODO: Normalize?
+            // TODO(kdy1): Normalize?
             if ty.is_never() {
                 self.ctx.in_unreachable = true;
             }
@@ -498,7 +498,7 @@ impl Analyzer<'_, '_> {
                 None => Err(()),
             };
 
-            // TODO: Deny changing type of const
+            // TODO(kdy1): Deny changing type of const
             if mark_var_as_truthy {
                 if let Some(i) = left_i {
                     analyzer.mark_var_as_truthy(Id::from(i))?;
@@ -850,7 +850,7 @@ impl Analyzer<'_, '_> {
                                 continue;
                             }
 
-                            // TODO: no implicit any?
+                            // TODO(kdy1): no implicit any?
                             matching_elements.push(Type::any(span, Default::default()));
                             continue;
                         }
@@ -995,7 +995,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     match prop_ty.normalize() {
-                        // TODO: Only string or number
+                        // TODO(kdy1): Only string or number
                         Type::EnumVariant(..) => {
                             matching_elements.extend(type_ann.clone().map(|v| *v));
                             continue;
@@ -1236,7 +1236,7 @@ impl Analyzer<'_, '_> {
         };
 
         if id_ctx == IdCtx::Var {
-            // TODO: Use parent scope
+            // TODO(kdy1): Use parent scope
 
             // Recursive method call
             if !computed
@@ -1263,7 +1263,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    // TODO: Remove clone
+                    // TODO(kdy1): Remove clone
                     let members = self.scope.object_lit_members().to_vec();
                     if let Some(mut v) =
                         self.access_property_of_type_elements(span, &obj, prop, type_mode, &members, opts)?
@@ -1381,7 +1381,7 @@ impl Analyzer<'_, '_> {
 
                     warn!("Creating an indexed access type with this as the object");
 
-                    // TODO: Handle string literals like
+                    // TODO(kdy1): Handle string literals like
                     //
                     // `this['props']`
                     return Ok(Type::IndexedAccessType(IndexedAccessType {
@@ -1525,7 +1525,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Enum(ref e) => {
-                // TODO: Check if variant exists.
+                // TODO(kdy1): Check if variant exists.
 
                 match prop {
                     Key::Normal { sym, .. } => {
@@ -1615,7 +1615,7 @@ impl Analyzer<'_, '_> {
                             return Err(Error::ConstEnumNonIndexAccess { span: prop.span() });
                         }
 
-                        // TODO: Validate type of enum
+                        // TODO(kdy1): Validate type of enum
 
                         // enumBasics.ts says
                         //
@@ -2043,13 +2043,13 @@ impl Analyzer<'_, '_> {
                         .instantiate_class(span, &obj)
                         .context("tried to instantiate parents of an interface to access property")?;
 
-                    // TODO: Check if multiple interface has same property.
+                    // TODO(kdy1): Check if multiple interface has same property.
                     if let Ok(ty) = self.access_property(span, &obj, prop, type_mode, id_ctx, opts) {
                         return Ok(ty);
                     }
                 }
 
-                // TODO: Check parent interfaces
+                // TODO(kdy1): Check parent interfaces
 
                 if body.iter().any(|el| el.is_constructor()) {
                     // Constructor extends prototype of `Function` (global interface)
@@ -2217,7 +2217,7 @@ impl Analyzer<'_, '_> {
 
                 tys.dedup_type();
 
-                // TODO: Validate that the ty has same type instead of returning union.
+                // TODO(kdy1): Validate that the ty has same type instead of returning union.
                 let ty = Type::union(tys);
                 ty.assert_valid();
                 return Ok(ty);
@@ -2335,7 +2335,7 @@ impl Analyzer<'_, '_> {
                             if !p.is_static {
                                 continue;
                             }
-                            // TODO: normalized string / ident
+                            // TODO(kdy1): normalized string / ident
                             if self.key_matches(span, &p.key, prop, false) {
                                 if let Some(ref ty) = p.value {
                                     return Ok(*ty.clone());
@@ -2442,7 +2442,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::This(..) => {
-                // TODO: Use parent scope in computed property names.
+                // TODO(kdy1): Use parent scope in computed property names.
                 if let Some(this) = self.scope.this().map(|this| this.into_owned()) {
                     if self.ctx.in_computed_prop_name {
                         self.storage
@@ -2495,7 +2495,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Intersection(Intersection { ref types, .. }) => {
-                // TODO: Verify if multiple type has field
+                // TODO(kdy1): Verify if multiple type has field
                 let mut new = vec![];
                 for ty in types {
                     let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
@@ -2860,7 +2860,7 @@ impl Analyzer<'_, '_> {
                 }
             }
             _ => {
-                // TODO: Report an error.
+                // TODO(kdy1): Report an error.
             }
         }
 
@@ -2930,7 +2930,7 @@ impl Analyzer<'_, '_> {
             // We will expand this type query to proper type while calculating returns types
             // of a function.
             return Ok(Type::Query(QueryType {
-                // TODO: This is a regession.
+                // TODO(kdy1): This is a regession.
                 span: span.with_ctxt(SyntaxContext::empty()),
                 expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(id.into())),
                 metadata: Default::default(),
@@ -2949,8 +2949,8 @@ impl Analyzer<'_, '_> {
         }
         let mut need_intersection = true;
 
-        // TODO: Change return type of type_of_raw_var to Option and inject module from
-        // here.
+        // TODO(kdy1): Change return type of type_of_raw_var to Option and inject module
+        // from here.
         match ty.normalize() {
             Type::Module(..) => {
                 need_intersection = false;
@@ -3200,7 +3200,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(_var) = self.find_var(&i.into()) {
-            // TODO: Infer type or use type hint to handle
+            // TODO(kdy1): Infer type or use type hint to handle
             //
             // let id: (x: Foo) => Foo = x => x;
             //
@@ -3388,10 +3388,10 @@ impl Analyzer<'_, '_> {
             RTsEntityName::Ident(ref i) => {
                 if i.sym == js_word!("Array") {
                     if let Some(type_args) = type_args {
-                        // TODO: Validate number of args.
+                        // TODO(kdy1): Validate number of args.
                         return Ok(Type::Array(Array {
                             span,
-                            // TODO: Check length (After implementing error recovery for the parser)
+                            // TODO(kdy1): Check length (After implementing error recovery for the parser)
                             elem_type: box type_args.clone().params.into_iter().next().unwrap(),
                             metadata: Default::default(),
                         }));
@@ -3476,7 +3476,7 @@ impl Analyzer<'_, '_> {
                             Type::Tuple(_) => {}
                             Type::Array(_) => {}
                             Type::Union(ty) => {
-                                // TODO: Expand types
+                                // TODO(kdy1): Expand types
                                 if !self.is_builtin {
                                     if cfg!(debug_assertions) {
                                         dbg!(&ty);
@@ -3484,7 +3484,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                             Type::Intersection(ty) => {
-                                // TODO: Expand types
+                                // TODO(kdy1): Expand types
                                 if !self.is_builtin {
                                     if cfg!(debug_assertions) {
                                         dbg!(&ty);
@@ -3546,7 +3546,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    /// TODO: Expand type arguments if provided.
+    /// TODO(kdy1): Expand type arguments if provided.
     fn type_of_member_expr(&mut self, expr: &RMemberExpr, type_mode: TypeOfMode) -> ValidationResult {
         let RMemberExpr {
             ref obj,
