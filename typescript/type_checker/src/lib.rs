@@ -224,7 +224,7 @@ impl Checker {
                                 cleanup_module_for_dts(&mut dts_module.body, &type_data);
                             }
 
-                            // TODO: Prevent duplicate work.
+                            // TODO(kdy1): Prevent duplicate work.
                             match self.dts_modules.insert(*id, dts_module) {
                                 Some(..) => {
                                     warn!("Duplicated work: `{}`: (.d.ts already computed)", path.display());

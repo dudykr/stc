@@ -252,7 +252,7 @@ pub trait EnvFactory {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);
         static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>, ahash::RandomState>> = Lazy::new(Default::default);
 
-        // TODO: Include `env` in cache
+        // TODO(kdy1): Include `env` in cache
         let mut libs = libs.to_vec();
         libs.sort();
         libs.dedup();

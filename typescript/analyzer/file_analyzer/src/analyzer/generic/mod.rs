@@ -188,7 +188,7 @@ impl Analyzer<'_, '_> {
 
             match type_param.constraint {
                 Some(box Type::Param(ref p)) => {
-                    // TODO: Handle complex inheritance like
+                    // TODO(kdy1): Handle complex inheritance like
                     //      function foo<A extends B, B extends C>(){ }
 
                     if let Some(actual) = inferred.type_params.remove(&p.name) {
@@ -409,7 +409,7 @@ impl Analyzer<'_, '_> {
     /// Infer types, so that `param` has same type as `arg`.
     ///
     ///
-    /// TODO: Optimize
+    /// TODO(kdy1): Optimize
     fn infer_type_inner(
         &mut self,
         span: Span,
@@ -479,7 +479,7 @@ impl Analyzer<'_, '_> {
         let p;
         let param = match param {
             Type::Mapped(..) => {
-                // TODO: PERF
+                // TODO(kdy1): PERF
                 p = box param
                     .clone()
                     .foldable()
@@ -642,7 +642,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    // TODO: Infer only if constraints are matched
+                    // TODO(kdy1): Infer only if constraints are matched
                     //
                     // if let Some(false) = self.extends(span, ExtendsOpts {
                     // ..Default::default() }, arg, constraint) {
@@ -835,7 +835,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            // // TODO: Check if index type extends `keyof obj_type`
+            // // TODO(kdy1): Check if index type extends `keyof obj_type`
             // Type::IndexedAccessType(IndexedAccessType {
             //     obj_type: box Type::Param(param_obj),
             //     index_type:
@@ -916,7 +916,7 @@ impl Analyzer<'_, '_> {
                         )?
                         .foldable();
 
-                    // TODO: PERF
+                    // TODO(kdy1): PERF
 
                     match arg_obj_ty {
                         Type::Mapped(arg_obj_ty) => match &arg_obj_ty.type_param {
@@ -939,14 +939,14 @@ impl Analyzer<'_, '_> {
                                         TypeElement::Property(p) => {
                                             let p = p.clone();
                                             if let Some(type_ann) = &p.type_ann {
-                                                // TODO: Change p.ty
+                                                // TODO(kdy1): Change p.ty
 
                                                 self.infer_type(span, inferred, &type_ann, arg, opts)?;
                                             }
 
                                             new_lit.members.push(TypeElement::Property(p));
                                         }
-                                        // TODO: Handle IndexSignature
+                                        // TODO(kdy1): Handle IndexSignature
                                         _ => unimplemented!(
                                             "calculating IndexAccessType for member other than property: member = {:?}",
                                             member
@@ -1046,7 +1046,7 @@ impl Analyzer<'_, '_> {
                 //     }
                 // },
                 _ => {
-                    // TODO: Expand children first or add expansion information to inferred.
+                    // TODO(kdy1): Expand children first or add expansion information to inferred.
                     let ctx = Ctx {
                         preserve_ref: false,
                         ignore_expand_prevention_for_top: true,
@@ -1549,7 +1549,7 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Index(i) => {
                                     let type_ann = if let Some(arg_prop_ty) = &i.type_ann {
                                         if let Some(param_ty) = &param.ty {
-                                            // TODO: PERF
+                                            // TODO(kdy1): PERF
 
                                             let mapped_param_ty = arg_prop_ty.clone().foldable().fold_with(
                                                 &mut SingleTypeParamReplacer {
@@ -1746,7 +1746,7 @@ impl Analyzer<'_, '_> {
                                             },
                                         })),
                                         _ => None,
-                                    }, // TODO: Handle method element
+                                    }, // TODO(kdy1): Handle method element
                                     _ => None,
                                 });
                                 let mut key_ty = Type::union(key_ty);
@@ -2173,7 +2173,7 @@ impl Analyzer<'_, '_> {
                         *node = (*self.fixed.get(&p.name).unwrap()).clone();
                     }
                     _ => {
-                        // TODO: PERF
+                        // TODO(kdy1): PERF
                         node.normalize_mut();
                         node.visit_mut_children_with(self)
                     }
@@ -2269,7 +2269,7 @@ impl Analyzer<'_, '_> {
 
             let map = self.finalize_inference(inferred);
 
-            // TODO: PERF
+            // TODO(kdy1): PERF
             return Ok(ty
                 .foldable()
                 .fold_with(&mut TypeParamRenamer {
@@ -2315,7 +2315,7 @@ struct SingleTypeParamReplacer<'a> {
 
 impl Fold<Type> for SingleTypeParamReplacer<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
 
         ty = ty.fold_children_with(self);
@@ -2337,7 +2337,7 @@ struct TypeParamInliner<'a> {
 
 impl VisitMut<Type> for TypeParamInliner<'_> {
     fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
 
         ty.visit_mut_children_with(self);
@@ -2385,7 +2385,7 @@ impl VisitMut<Type> for MappedKeyReplacer<'_> {
                 *ty = self.to.clone();
             }
             _ => {
-                // TODO: PERF
+                // TODO(kdy1): PERF
                 ty.normalize_mut();
                 ty.visit_mut_children_with(self)
             }
@@ -2403,7 +2403,7 @@ struct MappedIndexTypeReplacer<'a> {
 
 impl VisitMut<Type> for MappedIndexTypeReplacer<'_> {
     fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
 
         ty.visit_mut_children_with(self);
@@ -2456,7 +2456,7 @@ struct MappedReverser {
 
 impl Fold<Type> for MappedReverser {
     fn fold(&mut self, mut ty: Type) -> Type {
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
 
         ty = ty.fold_children_with(self);
@@ -2513,7 +2513,7 @@ struct MappedIndexedSimplifier;
 
 impl Fold<Type> for MappedIndexedSimplifier {
     fn fold(&mut self, mut ty: Type) -> Type {
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
 
         ty = ty.fold_children_with(self);

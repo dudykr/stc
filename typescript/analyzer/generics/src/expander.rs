@@ -294,7 +294,7 @@ impl GenericExpander<'_> {
                     _ => {}
                 }
 
-                // TODO: PERF
+                // TODO(kdy1): PERF
                 m.ty = m.ty.map(|v| box v.foldable());
                 m.ty = match m.ty {
                     Some(box Type::IndexedAccessType(IndexedAccessType {
@@ -305,7 +305,7 @@ impl GenericExpander<'_> {
                         metadata,
                     })) => {
                         let obj_type = box obj_type.foldable();
-                        // TODO: PERF
+                        // TODO(kdy1): PERF
                         match *obj_type {
                             Type::TypeLit(TypeLit {
                                 span,
@@ -669,7 +669,7 @@ impl Fold<Type> for MappedHandler<'_> {
             _ => {}
         }
 
-        // TODO: PERF
+        // TODO(kdy1): PERF
         ty.normalize_mut();
         ty = ty.fold_children_with(self);
 

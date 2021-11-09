@@ -258,7 +258,7 @@ impl TypeStore for Single<'_> {
         debug_assert_eq!(ctxt, self.id);
         ty.assert_clone_cheap();
 
-        // TODO: error reporting for duplicate
+        // TODO(kdy1): error reporting for duplicate
         self.info.exports.vars.insert(id, ty);
     }
 }
@@ -401,7 +401,7 @@ impl TypeStore for Group<'_> {
     }
 
     fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
-        // TODO: Error reporting for duplicates
+        // TODO(kdy1): Error reporting for duplicates
         self.info.entry(ctxt).or_default().vars.insert(id, ty);
     }
 }

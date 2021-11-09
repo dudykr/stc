@@ -301,7 +301,7 @@ impl Analyzer<'_, '_> {
             },
         )?;
 
-        // TODO: Recover
+        // TODO(kdy1): Recover
         self.register_type(d.id.clone().into(), Type::Interface(ty.clone()).cheap());
 
         Ok(ty)
@@ -455,7 +455,7 @@ impl Analyzer<'_, '_> {
         let params = d.params.validate_with(self)?;
 
         let type_ann = {
-            // TODO: implicit any
+            // TODO(kdy1): implicit any
             match d.type_ann.validate_with(self) {
                 Some(v) => match v {
                     Ok(mut ty) => {
@@ -1078,7 +1078,7 @@ impl Analyzer<'_, '_> {
 
         for elem in elems {
             match elem {
-                // TODO: Handle getter / setter
+                // TODO(kdy1): Handle getter / setter
                 TypeElement::Property(PropertySignature {
                     accessor:
                         Accessor {

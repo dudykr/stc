@@ -838,7 +838,7 @@ module Harness {
                 return this.compilesOk(testCode);
             }
 
-            // TODO: Find an implementation of isIdenticalTo that works.
+            // TODO(kdy1): Find an implementation of isIdenticalTo that works.
             //public isIdenticalTo(other: Type) {
             //    var testCode = 'module __test1__ {\n';
             //    testCode += '    ' + this.code + ';\n';
@@ -1081,7 +1081,7 @@ module Harness {
                         name = !(<TypeScript.FuncDecl>ast).name ? "" : (<TypeScript.FuncDecl>ast).name.actualText; // name == null for lambdas
                         break;
                     default:
-                        // TODO: is there a reason to mess with all the special cases above and not just do this (ie take whatever property is there and works?)
+                        // TODO(kdy1): is there a reason to mess with all the special cases above and not just do this (ie take whatever property is there and works?)
                         var a = <any>ast;
                         name = (a.id) ? (a.id.actualText) : (a.name) ? a.name.actualText : (a.text) ? a.text : '';
                         break;
@@ -1265,7 +1265,7 @@ module Harness {
                 }
             }
             if (!script) {
-                // TODO: make this toggleable, shouldn't be necessary once typecheck bugs are cleaned up
+                // TODO(kdy1): make this toggleable, shouldn't be necessary once typecheck bugs are cleaned up
                 // but without it subsequent tests are treated as edits, making for somewhat useful stress testing
                 // of persistent typecheck state
                 //compiler.addUnit("", uName, isResident, references); // equivalent to compiler.deleteUnit(...)
@@ -1359,7 +1359,7 @@ module Harness {
 
             var errors;
             if (usePull) {
-                // TODO: no emit support with pull yet
+                // TODO(kdy1): no emit support with pull yet
                 errors = compiler.pullGetErrorsForFile(uName);
                 emit(stdout, true);
             }

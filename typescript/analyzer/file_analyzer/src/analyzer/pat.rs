@@ -519,7 +519,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     _ => {
-                        // TODO: Report an error
+                        // TODO(kdy1): Report an error
                     }
                 }
             }

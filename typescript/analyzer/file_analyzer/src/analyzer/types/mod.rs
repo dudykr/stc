@@ -6,22 +6,21 @@ use crate::{
 };
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::Itertools;
-use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
+use rnode::{Visit, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsLit,
     RTsModuleDecl, RTsModuleName, RTsTypeAliasDecl,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_generics::ExpandGenericOpts;
-use stc_ts_type_ops::Fix;
+use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
-    name::Name, Accessor, Array, ArrayMetadata, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional,
+    name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional,
     ConditionalMetadata, ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection,
     Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature,
     ModuleId, Operator, PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type,
     TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
-use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
     debug_ctx,
@@ -190,7 +189,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::Alias(a) => {
-                        // TODO: Optimize
+                        // TODO(kdy1): Optimize
                         return Ok(Cow::Owned(
                             self.normalize(span, Cow::Borrowed(&a.ty), opts)?.into_owned(),
                         ));
@@ -206,7 +205,7 @@ impl Analyzer<'_, '_> {
 
                     // Leaf types.
                     Type::Array(arr) => {
-                        // TODO: Optimize
+                        // TODO(kdy1): Optimize
                         let elem_type = box self
                             .normalize(span, Cow::Borrowed(&arr.elem_type), opts)
                             .context("tried to normalize the type of the element of an array type")?
@@ -242,7 +241,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(v) = self.extends(ty.span(), Default::default(), &check_type, &extends_type) {
                             let ty = if v { &c.true_type } else { &c.false_type };
-                            // TODO: Optimize
+                            // TODO(kdy1): Optimize
                             let ty = self
                                 .normalize(span, Cow::Borrowed(&ty), opts)
                                 .context("tried to normalize the calculated type of a conditional type")?
@@ -316,7 +315,7 @@ impl Analyzer<'_, '_> {
                         // TOOD: Optimize
                         // If we can calculate type using constraints, do so.
 
-                        // TODO: PERF
+                        // TODO(kdy1): PERF
                         match check_type.normalize_mut() {
                             Type::Param(TypeParam {
                                 name,
@@ -426,7 +425,7 @@ impl Analyzer<'_, '_> {
                     Type::Import(_) => {}
 
                     Type::Predicate(_) => {
-                        // TODO: Add option for this.
+                        // TODO(kdy1): Add option for this.
                     }
 
                     Type::IndexedAccessType(iat) => {
@@ -483,7 +482,7 @@ impl Analyzer<'_, '_> {
 
                             return Ok(Cow::Owned(ty));
                         }
-                        // TODO:
+                        // TODO(kdy1):
 
                         return Ok(Cow::Owned(Type::IndexedAccessType(IndexedAccessType {
                             span: iat.span,
@@ -507,7 +506,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::Operator(_) => {
-                        // TODO:
+                        // TODO(kdy1):
                     }
 
                     _ => {}
@@ -640,7 +639,7 @@ impl Analyzer<'_, '_> {
         let metadata = ty.metadata();
         let actual_span = ty.span();
 
-        // TODO: PERF
+        // TODO(kdy1): PERF
         let ty = ty.into_owned().foldable();
 
         Ok(match ty {
@@ -966,7 +965,7 @@ impl Analyzer<'_, '_> {
                     Some(sc) => {
                         let mut excluded = excluded.to_vec();
                         excluded.extend(members.iter());
-                        // TODO: Override
+                        // TODO(kdy1): Override
 
                         if let Some(super_members) = self.collect_class_members(&excluded, &sc)? {
                             members.extend(super_members)
@@ -1033,7 +1032,7 @@ impl Analyzer<'_, '_> {
                 members.extend(super_els.into_iter().map(Cow::into_owned).flat_map(|v| v.members))
             }
 
-            // TODO: Override
+            // TODO(kdy1): Override
             members.extend(t.body);
             return Ok(Some(Cow::Owned(TypeLit {
                 span: t.span,
@@ -1117,7 +1116,7 @@ impl Analyzer<'_, '_> {
                     members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
                 }
 
-                // TODO: Override
+                // TODO(kdy1): Override
 
                 for member in &c.def.body {
                     members.extend(self.make_type_el_from_class_member(member, false)?);
@@ -1137,7 +1136,7 @@ impl Analyzer<'_, '_> {
                     members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
                 }
 
-                // TODO: Override
+                // TODO(kdy1): Override
 
                 for member in &c.body {
                     members.extend(self.make_type_el_from_class_member(member, true)?);
@@ -1272,7 +1271,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Query(..) => {
-                // TODO: Optimize
+                // TODO(kdy1): Optimize
                 let ty = self
                     .normalize(None, Cow::Borrowed(ty), Default::default())
                     .context("tried to normalize a type to convert it to type literal")?;
@@ -1570,7 +1569,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        // TODO: PERF
+        // TODO(kdy1): PERF
         match ty.normalize_mut() {
             Type::Union(ty) => {
                 for ty in &mut ty.types {
@@ -1711,57 +1710,6 @@ impl Visit<RTsModuleDecl> for KnownTypeVisitor {
                 self.add(&i);
             }
             RTsModuleName::Str(_) => {}
-        }
-    }
-}
-
-struct TupleNormalizer;
-
-impl VisitMut<Type> for TupleNormalizer {
-    fn visit_mut(&mut self, ty: &mut Type) {
-        // TODO: PERF
-        ty.normalize_mut();
-        ty.visit_mut_children_with(self);
-
-        match ty.normalize() {
-            Type::Tuple(tuple) => {
-                if tuple.metadata.common.prevent_tuple_to_array {
-                    return;
-                }
-
-                let common_metadata = tuple.metadata.common;
-
-                if tuple.elems.is_empty() {
-                    return;
-                }
-
-                let span = ty.span();
-                let mut types = ty
-                    .take()
-                    .foldable()
-                    .tuple()
-                    .unwrap()
-                    .elems
-                    .into_iter()
-                    .map(|elem| *elem.ty)
-                    .collect::<Vec<_>>();
-                types.dedup_type();
-
-                let has_other = types.iter().any(|ty| !ty.is_null_or_undefined());
-                if has_other {
-                    types.retain(|ty| !ty.is_null_or_undefined())
-                }
-
-                *ty = Type::Array(Array {
-                    span,
-                    elem_type: box Type::union(types),
-                    metadata: ArrayMetadata {
-                        common: common_metadata,
-                        ..Default::default()
-                    },
-                });
-            }
-            _ => {}
         }
     }
 }

@@ -173,7 +173,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 TypeElement::Index(i) => {
-                                    // TODO: Check if this is correct.
+                                    // TODO(kdy1): Check if this is correct.
                                     if let Some(p) = i.params.first() {
                                         types.push(*p.ty.clone());
                                     }
@@ -187,7 +187,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Class(Class { def, .. }) => {
-                    // TODO: Add `KeyOfOpts` to control thi
+                    // TODO(kdy1): Add `KeyOfOpts` to control thi
                     //
                     // Class instance cannot be operand, but it can be passed as argument while
                     // normalizing.

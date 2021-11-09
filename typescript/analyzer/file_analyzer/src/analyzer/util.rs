@@ -63,7 +63,7 @@ impl Analyzer<'_, '_> {
     /// and `ty` will be returned.
     ///
     ///
-    /// TODO: Use Cow
+    /// TODO(kdy1): Use Cow
     #[instrument(skip(self, span, ty))]
     pub(super) fn make_instance_or_report(&mut self, span: Span, ty: &Type) -> Type {
         if span.is_dummy() {
@@ -85,7 +85,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    /// TODO: Use Cow
+    /// TODO(kdy1): Use Cow
     #[instrument(skip(self, span, ty))]
     pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> ValidationResult {
         let ty = ty.normalize();
@@ -177,7 +177,7 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
                 .iter()
                 .cloned()
                 .map(|mut element| {
-                    // TODO: Remove clone
+                    // TODO(kdy1): Remove clone
                     element.ty = box make_instance_type(module_id, *element.ty);
                     element
                 })
@@ -238,6 +238,8 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
     }
 }
 
+/// TODO(kdy1): Clarify why this visitor is used.
+/// I fotgot it.
 #[derive(Debug)]
 pub(super) struct Generalizer {
     pub force: bool,

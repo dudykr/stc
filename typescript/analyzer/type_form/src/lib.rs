@@ -28,7 +28,7 @@ pub enum TypeForm {
         elems: Vec<TypeForm>,
     },
     Object {
-        /// TODO: `props: Vec<(Key, TypeForm)>`
+        /// TODO(kdy1): `props: Vec<(Key, TypeForm)>`
         prop_count: usize,
     },
     Ref {

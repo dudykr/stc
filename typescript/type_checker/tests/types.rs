@@ -163,7 +163,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
                             rule.no_implicit_returns = v;
                         } else if s.starts_with("declaration") {
                         } else if s.starts_with("stripInternal:") {
-                            // TODO: Handle
+                            // TODO(kdy1): Handle
                         } else if s.starts_with("traceResolution") {
                             // no-op
                         } else if s.starts_with("allowUnusedLabels:") {
@@ -269,7 +269,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
     })
     .unwrap();
 
-    // TODO: Match on type data.
+    // TODO(kdy1): Match on type data.
 
     if spec.type_data.is_empty() {
         return Ok(());

@@ -109,7 +109,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     errors.push(err);
-                    // TODO: Change this to something else (maybe any)
+                    // TODO(kdy1): Change this to something else (maybe any)
                     Type::unknown(span, Default::default())
                 }
             };
@@ -118,7 +118,7 @@ impl Analyzer<'_, '_> {
             if match mode {
                 ComputedPropMode::Class { has_body } => errors.is_empty(),
                 ComputedPropMode::Object => errors.is_empty(),
-                // TODO:
+                // TODO(kdy1):
                 ComputedPropMode::Interface => errors.is_empty(),
             } {
                 if !analyzer.is_type_valid_for_computed_key(span, &ty) {
@@ -141,7 +141,7 @@ impl Analyzer<'_, '_> {
                             .report(&mut analyzer.storage);
 
                         if let Some(ref ty) = ty {
-                            // TODO: Add support for expressions like '' + ''.
+                            // TODO(kdy1): Add support for expressions like '' + ''.
                             match ty.normalize() {
                                 _ if is_valid_key => {}
                                 Type::Lit(..) => {}
@@ -374,11 +374,11 @@ impl Analyzer<'_, '_> {
         };
 
         let span = prop.span();
-        // TODO: Validate prop key
+        // TODO(kdy1): Validate prop key
 
         let shorthand_type_ann = match prop {
             RProp::Shorthand(ref i) => {
-                // TODO: Check if RValue is correct
+                // TODO(kdy1): Check if RValue is correct
                 self.type_of_var(&i, TypeOfMode::RValue, None)
                     .report(&mut self.storage)
                     .map(Box::new)
@@ -569,7 +569,7 @@ impl Analyzer<'_, '_> {
 
                             inferred = Some(inferred_ret_ty)
 
-                            // TODO: Assign
+                            // TODO(kdy1): Assign
                         }
                         let ret_ty = ret_ty.or(inferred).map(Box::new);
 

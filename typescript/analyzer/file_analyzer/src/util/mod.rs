@@ -58,7 +58,7 @@ pub(crate) fn is_str_or_union(t: &Type) -> bool {
     }
 }
 
-/// TODO: Change it to return Box<Type>
+/// TODO(kdy1): Change it to return Box<Type>
 pub(crate) trait RemoveTypes {
     /// Removes falsy values from `self`.
     fn remove_falsy(self) -> Type;

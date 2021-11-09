@@ -303,7 +303,7 @@ impl Evaluator<'_> {
 
                         op!("<<") => ((l.round() as i64) << (r.round() as i64)) as _,
                         op!(">>") => ((l.round() as i64) >> (r.round() as i64)) as _,
-                        // TODO: Verify this
+                        // TODO(kdy1): Verify this
                         op!(">>>") => ((l.round() as u64) >> (r.round() as u64)) as _,
                         _ => Err(Error::InvalidEnumInit { span })?,
                     },
@@ -391,7 +391,7 @@ impl Analyzer<'_, '_> {
                 params: Default::default(),
                 type_ann: Some(box Type::EnumVariant(EnumVariant {
                     span: m.span,
-                    // TODO: Store context in `Enum`
+                    // TODO(kdy1): Store context in `Enum`
                     ctxt: self.ctx.module_id,
                     enum_name: e.id.clone().into(),
                     name: Some(key.sym),

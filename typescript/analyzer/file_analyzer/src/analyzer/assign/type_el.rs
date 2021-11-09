@@ -306,7 +306,7 @@ impl Analyzer<'_, '_> {
                         _ => unreachable!(),
                     }
 
-                    // TODO: Check for literal properties
+                    // TODO(kdy1): Check for literal properties
 
                     // for el in lhs {
                     //     match el {
@@ -360,12 +360,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Class(rhs_cls) => {
-                    // TODO: Check if constructor exists.
+                    // TODO(kdy1): Check if constructor exists.
                     if rhs_cls.def.is_abstract {
                         return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
                     }
 
-                    // TODO: Optimize
+                    // TODO(kdy1): Optimize
                     // for el in lhs {
                     //     self.assign_class_members_to_type_element(opts, el, &rhs.body)?;
                     // }
@@ -581,13 +581,13 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => return Err(Error::SimpleAssignFailed { span, cause: None }),
 
-                // TODO: Strict mode
+                // TODO(kdy1): Strict mode
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) => return Ok(()),
 
-                // TODO: Strict mode
+                // TODO(kdy1): Strict mode
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
@@ -1128,7 +1128,7 @@ impl Analyzer<'_, '_> {
                                                 rm.ret_ty.as_deref(),
                                             )
                                             .context("tried to assign to callable type element");
-                                        // TODO: Return type
+                                        // TODO(kdy1): Return type
 
                                         match res {
                                             Ok(()) => {
@@ -1199,10 +1199,10 @@ impl Analyzer<'_, '_> {
                 }
             } else if !opts.skip_call_and_constructor_elem {
                 match lm {
-                    // TODO: Check type of the index.
+                    // TODO(kdy1): Check type of the index.
                     TypeElement::Index(li) => {
                         unhandled_rhs.clear();
-                        // TODO: Verify
+                        // TODO(kdy1): Verify
                         for rm in rhs_members {
                             match rm {
                                 TypeElement::Call(_) | TypeElement::Constructor(_) => continue,

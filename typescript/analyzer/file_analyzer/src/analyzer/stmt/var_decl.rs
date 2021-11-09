@@ -193,7 +193,7 @@ impl Analyzer<'_, '_> {
 
                 let declared_ty = v.name.get_ty();
                 if declared_ty.is_some() {
-                    //TODO:
+                    //TODO(kdy1):
                     // self.span_allowed_implicit_any = span;
                 }
 
@@ -491,7 +491,7 @@ impl Analyzer<'_, '_> {
                                             span: *span,
                                             elem_type: match constraint {
                                                 Some(_constraint) => {
-                                                    // TODO: We need something smarter
+                                                    // TODO(kdy1): We need something smarter
                                                     box Type::Keyword(KeywordType {
                                                         span: *elem_span,
                                                         kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -572,7 +572,7 @@ impl Analyzer<'_, '_> {
 
                         // Handle implicit any
 
-                        // TODO: PERF
+                        // TODO(kdy1): PERF
                         match ty.normalize_mut() {
                             Type::Tuple(Tuple { ref mut elems, .. }) if !elems.is_empty() => {
                                 for (i, element) in elems.iter_mut().enumerate() {

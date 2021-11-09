@@ -2,7 +2,7 @@ use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{RArrowExpr, RAssignExpr, RExpr, RFunction, RVarDeclarator};
 
 #[derive(Default)]
-pub(super) struct YieldValueUsageFinder {
+pub struct YieldValueUsageFinder {
     pub found: bool,
 }
 
