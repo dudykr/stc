@@ -13,6 +13,7 @@ use swc_common::{
 };
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::TsConfig;
+use tracing_subscriber::EnvFilter;
 
 mod check;
 
@@ -36,6 +37,7 @@ fn main() -> Result<(), Error> {
         .with_target(false)
         .with_ansi(true)
         .without_time()
+        .with_env_filter(EnvFilter::new("STC_LOG"))
         .pretty()
         .finish();
 
