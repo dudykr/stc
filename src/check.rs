@@ -12,5 +12,5 @@ pub struct CheckCommand {
 
     /// Directory name of typings to load.
     #[structopt(long)]
-    pub types: Vec<String>,
+    pub types: Option<Vec<String>>,
 }

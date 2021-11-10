@@ -95,7 +95,7 @@ fn main() -> Result<(), Error> {
             {
                 let start = Instant::now();
 
-                checker.load_typings(&path, None, &cmd.types);
+                checker.load_typings(&path, None, cmd.types.as_deref());
 
                 let end = Instant::now();
 
