@@ -29,7 +29,9 @@ use stc_ts_ast_rnode::{
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    debug_ctx, panic_ctx,
+    debug_ctx,
+    ext::TypeVecExt,
+    panic_ctx,
 };
 use stc_visit::{Visit, Visitable};
 use std::{
@@ -1090,6 +1092,7 @@ impl Type {
                 tys.push(ty);
             }
         }
+        tys.dedup_type();
 
         let has_str = tys.iter().any(|ty| ty.is_str());
         // TODO
