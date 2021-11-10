@@ -1915,8 +1915,6 @@ impl Analyzer<'_, '_> {
                     TsKeywordTypeKind::TsObjectKeyword => js_word!("Object"),
                     TsKeywordTypeKind::TsSymbolKeyword => js_word!("Symbol"),
                     _ => {
-                        dbg!();
-
                         return Err(Error::NoSuchProperty {
                             span: prop.span(),
                             obj: Some(box obj),
@@ -3331,13 +3329,11 @@ impl Analyzer<'_, '_> {
             }
 
             if !self.ctx.disallow_suggesting_property_on_no_var && self.this_has_property_named(&i.clone().into()) {
-                dbg!();
                 Err(Error::NoSuchVarButThisHasSuchProperty {
                     span,
                     name: i.clone().into(),
                 })
             } else {
-                dbg!();
                 if self.ctx.in_shorthand {
                     Err(Error::NoSuchVarForShorthand {
                         span,
