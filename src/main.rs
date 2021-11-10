@@ -1,4 +1,4 @@
-use crate::{check::CheckCommand, lsp::LspCommand, tsc::TscCommand};
+use crate::{check::CheckCommand, tsc::TscCommand};
 use anyhow::Error;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
@@ -15,7 +15,6 @@ use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::TsConfig;
 
 mod check;
-mod lsp;
 mod tsc;
 
 #[derive(Debug, StructOpt)]
@@ -29,11 +28,9 @@ enum Command {
     Check(CheckCommand),
     /// Compatibillity layer for `tsc` cli.
     Tsc(TscCommand),
-    Lsp(LspCommand),
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     let start = Instant::now();
 
     env_logger::init();
@@ -123,7 +120,6 @@ async fn main() -> Result<(), Error> {
         Command::Tsc(..) => {
             todo!("tsc")
         }
-        Command::Lsp(c) => c.run().await,
     }
 
     let end = Instant::now();

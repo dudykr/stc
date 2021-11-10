@@ -17,7 +17,6 @@ lspower = "1.1.0"
 stc_ts_builtin_types = {path = "./typescript/builtin_types/"}
 stc_ts_env = {path = "./typescript/analyzer/env/"}
 stc_ts_file_analyzer = {path = "./typescript/analyzer/file_analyzer/"}
-stc_ts_lang_server = {path = "./typescript/lang_server"}
 stc_ts_module_loader = {path = "./typescript/module_loader"}
 stc_ts_type_checker = {path = "./typescript/type_checker"}
 stc_utils = {path = "utils"}
