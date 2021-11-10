@@ -1,5 +1,8 @@
 #![feature(never_type)]
 
+/// Use good memory allocator.
+extern crate swc_node_base;
+
 use once_cell::sync::Lazy;
 use std::{
     collections::{HashMap, HashSet},
@@ -17,10 +20,6 @@ pub type ABuilderHasher = ahash::RandomState;
 pub type AHashMap<K, V> = HashMap<K, V, ahash::RandomState>;
 
 pub type AHashSet<V> = HashSet<V, ahash::RandomState>;
-
-#[cfg(all(target_arch = "x86_64", not(target_env = "musl"), not(debug_assertions)))]
-#[global_allocator]
-static ALLOC: mimalloc_rust::GlobalMiMalloc = mimalloc_rust::GlobalMiMalloc;
 
 /// If true, errors will not be buffered.
 pub fn early_error() -> bool {

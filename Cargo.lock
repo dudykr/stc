@@ -320,9 +320,9 @@ dependencies = [
 
 [[package]]
 name = "cty"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7313c0d620d0cb4dbd9d019e461a4beb501071ff46ec0ab933efb4daa76d73e3"
+checksum = "b365fabc795046672053e29c954733ec3b05e4be654ab130fe8f1f94d7051f35"
 
 [[package]]
 name = "darling"
@@ -2300,11 +2300,11 @@ name = "stc_utils"
 version = "0.1.0"
 dependencies = [
  "ahash 0.7.6",
- "mimalloc-rust",
  "once_cell",
  "rustc-hash",
  "scoped-tls",
  "swc_common",
+ "swc_node_base",
  "tracing",
 ]
 
@@ -2590,6 +2590,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "swc_node_base"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d32ab9aa6f4abcc9a96c2c2559444919658f1c395965468a205ecff5e5f5a020"
+dependencies = [
+ "mimalloc-rust",
 ]
 
 [[package]]
