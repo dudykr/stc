@@ -1084,12 +1084,10 @@ impl Type {
         let mut tys = vec![];
 
         for ty in iter {
-            match ty {
-                Type::Intersection(Intersection { types, .. }) => {
-                    tys.extend(types);
-                }
-
-                _ => tys.push(ty),
+            if ty.normalize().is_intersection_type() {
+                tys.extend(ty.foldable().expect_intersection_type().types);
+            } else {
+                tys.push(ty);
             }
         }
 
