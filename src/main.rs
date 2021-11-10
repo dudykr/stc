@@ -65,7 +65,9 @@ fn main() -> Result<(), Error> {
             let libs = {
                 let start = Instant::now();
 
-                let libs = Lib::load(cmd.libs);
+                let mut libs = cmd.libs.iter().map(|s| Lib::load(&s)).flatten().collect::<Vec<_>>();
+                libs.sort();
+                libs.dedup();
 
                 let end = Instant::now();
 
