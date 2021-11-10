@@ -65,7 +65,10 @@ fn main() -> Result<(), Error> {
             let libs = {
                 let start = Instant::now();
 
-                let mut libs = cmd.libs.iter().map(|s| Lib::load(&s)).flatten().collect::<Vec<_>>();
+                let mut libs = match cmd.libs {
+                    Some(libs) => libs.iter().map(|s| Lib::load(&s)).flatten().collect::<Vec<_>>(),
+                    None => Lib::load("es5"),
+                };
                 libs.sort();
                 libs.dedup();
 
