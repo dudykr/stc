@@ -5,4 +5,7 @@ use structopt::StructOpt;
 pub struct CheckCommand {
     #[structopt(name = "file")]
     pub file: String,
+
+    #[structopt(long)]
+    pub libs: Vec<String>,
 }
