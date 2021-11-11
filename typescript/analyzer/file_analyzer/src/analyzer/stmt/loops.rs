@@ -211,9 +211,7 @@ impl Analyzer<'_, '_> {
                 // =>
                 // Extract<keyof K, string>
                 if let Some(
-                    contraint
-                    @
-                    Type::Operator(Operator {
+                    contraint @ Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
                         ..
                     }),

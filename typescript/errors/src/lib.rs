@@ -1413,7 +1413,8 @@ impl Error {
             2792 => 2307,
 
             // TS2372: Referenced while initialization.
-            // TS2448: Referenced while initialization and the variable is declared with let or const.
+            // TS2448: Referenced while initialization and the variable is declared with let or
+            // const.
             2448 => 2372,
 
             // ===== ===== ===== For convinience ===== ===== =====

@@ -699,7 +699,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
             return RNodeField {
                 from_orig: q!(
                     Vars { match_binding },
-                    ({ match_binding.map(|match_binding| { rnode::RNode::from_orig(id_gen, *match_binding) }) })
+                    ({ match_binding.map(|match_binding| rnode::RNode::from_orig(id_gen, *match_binding)) })
                 )
                 .parse(),
                 to_orig: q!(Vars { match_binding }, ({ Box::new(match_binding.into_orig()) })).parse(),
