@@ -13,11 +13,9 @@ version = "0.1.0"
 anyhow = "1"
 env_logger = "0.9.0"
 log = "0.4.14"
-lspower = "1.1.0"
 stc_ts_builtin_types = {path = "./typescript/builtin_types/"}
 stc_ts_env = {path = "./typescript/analyzer/env/"}
 stc_ts_file_analyzer = {path = "./typescript/analyzer/file_analyzer/"}
-stc_ts_lang_server = {path = "./typescript/lang_server"}
 stc_ts_module_loader = {path = "./typescript/module_loader"}
 stc_ts_type_checker = {path = "./typescript/type_checker"}
 stc_utils = {path = "utils"}
@@ -27,7 +25,7 @@ swc_ecma_ast = "0.49.5"
 swc_ecma_parser = "0.66.0"
 tokio = "1.7.1"
 tracing = {version = "0.1.26", features = ["release_max_level_off"]}
-tracing-subscriber = "0.2.19"
+tracing-subscriber = {version = "0.2.19", features = ["env-filter"]}
 
 [profile.release]
 codegen-units = 1
@@ -45,25 +43,4 @@ split-debuginfo = "unpacked"
 opt-level = 3
 
 [profile.dev.package."*"]
-opt-level = 3
-
-[profile.dev.package.stc_visit]
-opt-level = 3
-
-[profile.dev.package.stc_ts_types]
-opt-level = 3
-
-[profile.dev.package.stc_ts_ast_rnode]
-opt-level = 3
-
-[profile.test.build-override]
-opt-level = 3
-
-[profile.test.package.stc_visit]
-opt-level = 3
-
-[profile.test.package.stc_ts_types]
-opt-level = 3
-
-[profile.test.package.stc_ts_ast_rnode]
 opt-level = 3
