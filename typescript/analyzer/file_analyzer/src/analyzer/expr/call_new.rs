@@ -2571,7 +2571,8 @@ impl Analyzer<'_, '_> {
                                 metadata,
                                 ..
                             }) if metadata.common.implicit => {
-                                // let new_ty = RTsType::from(actual.ty.clone()).validate_with(self)?;
+                                // let new_ty =
+                                // RTsType::from(actual.ty.clone()).validate_with(self)?;
                                 // if let Some(node_id) = pat.node_id() {
                                 //     if let Some(m) = &mut self.mutations {
                                 //         m.for_pats.entry(node_id).or_default().ty = Some(new_ty);
@@ -2914,7 +2915,8 @@ impl Analyzer<'_, '_> {
                                             };
 
                                             // TODO(kdy1): Check if arg.spread is none.
-                                            // The logic below is correct only if the arg is not spread.
+                                            // The logic below is correct only if the arg is not
+                                            // spread.
 
                                             let res = self
                                                 .assign_with_opts(

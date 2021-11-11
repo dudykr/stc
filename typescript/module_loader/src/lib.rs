@@ -13,8 +13,8 @@ use std::{
 };
 use swc_atoms::JsWord;
 use swc_common::{comments::Comments, SourceMap};
-use swc_ecma_ast::Module;
-use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};
+use swc_ecma_ast::{EsVersion, Module};
+use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use tracing::error;
 
 mod deps;
@@ -27,7 +27,7 @@ where
 {
     cm: Arc<SourceMap>,
     parser_config: TsConfig,
-    target: JscTarget,
+    target: EsVersion,
     comments: Option<C>,
 
     id_generator: module_id::Generator,
@@ -59,7 +59,7 @@ where
         comments: Option<C>,
         resolver: R,
         parser_config: TsConfig,
-        target: JscTarget,
+        target: EsVersion,
     ) -> Self {
         Self {
             cm,

@@ -1716,186 +1716,190 @@ impl Analyzer<'_, '_> {
             //     [P in Key]: Type;
             // };
             match &param.type_param.constraint {
-                Some(constraint) => match constraint.normalize() {
-                    Type::Param(type_param) => {
-                        debug!(
-                            "[generic/inference] Found form of `P in T` where T = {}, P = {}",
-                            type_param.name, param.type_param.name
-                        );
+                Some(constraint) => {
+                    match constraint.normalize() {
+                        Type::Param(type_param) => {
+                            debug!(
+                                "[generic/inference] Found form of `P in T` where T = {}, P = {}",
+                                type_param.name, param.type_param.name
+                            );
 
-                        match arg {
-                            Type::TypeLit(arg) => {
-                                let key_ty = arg.members.iter().filter_map(|element| match element {
-                                    TypeElement::Property(p) => match &p.key {
-                                        Key::Normal {
-                                            span: i_span,
-                                            sym: i_sym,
-                                        } => Some(Type::Lit(LitType {
-                                            span: param.span,
-                                            lit: RTsLit::Str(RStr {
-                                                span: *i_span,
-                                                value: i_sym.clone(),
-                                                has_escape: false,
-                                                kind: Default::default(),
-                                            }),
-                                            metadata: LitTypeMetadata {
-                                                common: param.metadata.common,
-                                                ..Default::default()
-                                            },
-                                        })),
+                            match arg {
+                                Type::TypeLit(arg) => {
+                                    let key_ty = arg.members.iter().filter_map(|element| match element {
+                                        TypeElement::Property(p) => match &p.key {
+                                            Key::Normal {
+                                                span: i_span,
+                                                sym: i_sym,
+                                            } => Some(Type::Lit(LitType {
+                                                span: param.span,
+                                                lit: RTsLit::Str(RStr {
+                                                    span: *i_span,
+                                                    value: i_sym.clone(),
+                                                    has_escape: false,
+                                                    kind: Default::default(),
+                                                }),
+                                                metadata: LitTypeMetadata {
+                                                    common: param.metadata.common,
+                                                    ..Default::default()
+                                                },
+                                            })),
+                                            _ => None,
+                                        }, // TODO(kdy1): Handle method element
                                         _ => None,
-                                    }, // TODO(kdy1): Handle method element
-                                    _ => None,
-                                });
-                                let mut key_ty = Type::union(key_ty);
-                                prevent_generalize(&mut key_ty);
-                                self.insert_inferred(span, inferred, &type_param, Cow::Owned(key_ty), opts)?;
-                            }
-                            _ => {}
-                        }
-
-                        let param_ty = param.ty.as_ref().unwrap();
-
-                        let names = {
-                            let mut tp = type_param;
-
-                            loop {
-                                match &tp.constraint.as_ref().map(|v| v.normalize()) {
-                                    Some(Type::Param(p)) => {
-                                        tp = p;
-                                    }
-                                    Some(Type::Operator(Operator {
-                                        op: TsTypeOperatorOp::KeyOf,
-                                        ty: box Type::Param(p),
-                                        ..
-                                    })) => {
-                                        tp = p;
-                                    }
-                                    _ => {
-                                        break;
-                                    }
+                                    });
+                                    let mut key_ty = Type::union(key_ty);
+                                    prevent_generalize(&mut key_ty);
+                                    self.insert_inferred(span, inferred, &type_param, Cow::Owned(key_ty), opts)?;
                                 }
+                                _ => {}
                             }
 
-                            match &tp.constraint {
-                                Some(box Type::Union(ty))
-                                    if ty.types.iter().all(|ty| match ty.normalize() {
-                                        Type::Operator(Operator {
-                                            ty: box Type::Param(..),
+                            let param_ty = param.ty.as_ref().unwrap();
+
+                            let names = {
+                                let mut tp = type_param;
+
+                                loop {
+                                    match &tp.constraint.as_ref().map(|v| v.normalize()) {
+                                        Some(Type::Param(p)) => {
+                                            tp = p;
+                                        }
+                                        Some(Type::Operator(Operator {
+                                            op: TsTypeOperatorOp::KeyOf,
+                                            ty: box Type::Param(p),
                                             ..
-                                        }) => true,
-                                        _ => false,
-                                    }) =>
-                                {
-                                    ty.types
-                                        .iter()
-                                        .map(|ty| match ty.normalize() {
-                                            Type::Operator(Operator {
-                                                ty: box Type::Param(p), ..
-                                            }) => p.name.clone(),
-                                            _ => unreachable!(),
-                                        })
-                                        .collect()
+                                        })) => {
+                                            tp = p;
+                                        }
+                                        _ => {
+                                            break;
+                                        }
+                                    }
                                 }
 
-                                _ => vec![tp.name.clone()],
+                                match &tp.constraint {
+                                    Some(box Type::Union(ty))
+                                        if ty.types.iter().all(|ty| match ty.normalize() {
+                                            Type::Operator(Operator {
+                                                ty: box Type::Param(..),
+                                                ..
+                                            }) => true,
+                                            _ => false,
+                                        }) =>
+                                    {
+                                        ty.types
+                                            .iter()
+                                            .map(|ty| match ty.normalize() {
+                                                Type::Operator(Operator {
+                                                    ty: box Type::Param(p), ..
+                                                }) => p.name.clone(),
+                                                _ => unreachable!(),
+                                            })
+                                            .collect()
+                                    }
+
+                                    _ => vec![tp.name.clone()],
+                                }
+                            };
+
+                            let old = take(&mut self.mapped_type_param_name);
+                            self.mapped_type_param_name = names.clone();
+                            {
+                                let mut v = MappedReverser::default();
+                                let revesed_param_ty = param_ty.clone().fold_with(&mut v);
+
+                                if v.did_work {
+                                    self.infer_type(span, inferred, &revesed_param_ty, arg, opts)?;
+                                    self.mapped_type_param_name = old;
+
+                                    return Ok(true);
+                                }
                             }
-                        };
 
-                        let old = take(&mut self.mapped_type_param_name);
-                        self.mapped_type_param_name = names.clone();
-                        {
-                            let mut v = MappedReverser::default();
-                            let revesed_param_ty = param_ty.clone().fold_with(&mut v);
-
-                            if v.did_work {
-                                self.infer_type(span, inferred, &revesed_param_ty, arg, opts)?;
-                                self.mapped_type_param_name = old;
-
-                                return Ok(true);
-                            }
-                        }
-
-                        let mut type_elements = FxHashMap::<_, Vec<_>>::default();
-                        match arg {
-                            Type::TypeLit(arg) => {
-                                //
-                                if let Some(param_ty) = &param.ty {
-                                    for m in &arg.members {
-                                        match m {
-                                            TypeElement::Property(p) => {
-                                                //
-                                                if let Some(ref type_ann) = p.type_ann {
-                                                    self.infer_type(span, inferred, &param_ty, &type_ann, opts)?;
-                                                }
-
-                                                for name in &names {
-                                                    if *name == type_param.name {
-                                                        continue;
+                            let mut type_elements = FxHashMap::<_, Vec<_>>::default();
+                            match arg {
+                                Type::TypeLit(arg) => {
+                                    //
+                                    if let Some(param_ty) = &param.ty {
+                                        for m in &arg.members {
+                                            match m {
+                                                TypeElement::Property(p) => {
+                                                    //
+                                                    if let Some(ref type_ann) = p.type_ann {
+                                                        self.infer_type(span, inferred, &param_ty, &type_ann, opts)?;
                                                     }
 
-                                                    let ty = inferred
-                                                        .type_params
-                                                        .remove(name)
-                                                        .map(|ty| match ty {
-                                                            InferredType::Union(v) => v,
-                                                            InferredType::Other(v) => Type::union(v).cheap(),
-                                                        })
-                                                        .map(Box::new);
+                                                    for name in &names {
+                                                        if *name == type_param.name {
+                                                            continue;
+                                                        }
 
-                                                    type_elements.entry(name.clone()).or_default().push(
-                                                        TypeElement::Property(PropertySignature {
-                                                            optional: calc_true_plus_minus_in_param(
-                                                                param.optional,
-                                                                p.optional,
-                                                            ),
-                                                            readonly: calc_true_plus_minus_in_param(
-                                                                param.readonly,
-                                                                p.readonly,
-                                                            ),
-                                                            type_ann: ty,
-                                                            ..p.clone()
-                                                        }),
-                                                    );
+                                                        let ty = inferred
+                                                            .type_params
+                                                            .remove(name)
+                                                            .map(|ty| match ty {
+                                                                InferredType::Union(v) => v,
+                                                                InferredType::Other(v) => Type::union(v).cheap(),
+                                                            })
+                                                            .map(Box::new);
+
+                                                        type_elements.entry(name.clone()).or_default().push(
+                                                            TypeElement::Property(PropertySignature {
+                                                                optional: calc_true_plus_minus_in_param(
+                                                                    param.optional,
+                                                                    p.optional,
+                                                                ),
+                                                                readonly: calc_true_plus_minus_in_param(
+                                                                    param.readonly,
+                                                                    p.readonly,
+                                                                ),
+                                                                type_ann: ty,
+                                                                ..p.clone()
+                                                            }),
+                                                        );
+                                                    }
+                                                }
+
+                                                _ => {
+                                                    unimplemented!("infer_type: Mapped <- Assign: TypeElement({:?})", m)
                                                 }
                                             }
+                                        }
 
-                                            _ => unimplemented!("infer_type: Mapped <- Assign: TypeElement({:?})", m),
+                                        for name in names {
+                                            if name == type_param.name {
+                                                continue;
+                                            }
+
+                                            let list_ty = Type::TypeLit(TypeLit {
+                                                span: arg.span,
+                                                members: type_elements.remove(&name).unwrap_or_default(),
+                                                metadata: arg.metadata,
+                                            });
+
+                                            self.insert_inferred_raw(
+                                                span,
+                                                inferred,
+                                                name.clone(),
+                                                Cow::Owned(list_ty),
+                                                opts,
+                                            )?;
                                         }
                                     }
 
-                                    for name in names {
-                                        if name == type_param.name {
-                                            continue;
-                                        }
-
-                                        let list_ty = Type::TypeLit(TypeLit {
-                                            span: arg.span,
-                                            members: type_elements.remove(&name).unwrap_or_default(),
-                                            metadata: arg.metadata,
-                                        });
-
-                                        self.insert_inferred_raw(
-                                            span,
-                                            inferred,
-                                            name.clone(),
-                                            Cow::Owned(list_ty),
-                                            opts,
-                                        )?;
-                                    }
+                                    self.mapped_type_param_name = old;
+                                    return Ok(true);
                                 }
-
-                                self.mapped_type_param_name = old;
-                                return Ok(true);
+                                // Handled by generic expander, so let's return it as-is.
+                                _ => {}
                             }
-                            // Handled by generic expander, so let's return it as-is.
-                            _ => {}
-                        }
 
-                        self.mapped_type_param_name = old;
+                            self.mapped_type_param_name = old;
+                        }
+                        _ => {}
                     }
-                    _ => {}
-                },
+                }
                 _ => {}
             }
         }
@@ -1904,17 +1908,13 @@ impl Analyzer<'_, '_> {
             Some(constraint) => {
                 match constraint.normalize() {
                     Type::Operator(
-                        operator
-                        @
-                        Operator {
+                        operator @ Operator {
                             op: TsTypeOperatorOp::KeyOf,
                             ..
                         },
                     ) => match operator.ty.normalize() {
                         Type::IndexedAccessType(
-                            iat
-                            @
-                            IndexedAccessType {
+                            iat @ IndexedAccessType {
                                 obj_type: box Type::Param(..),
                                 index_type: box Type::Param(..),
                                 ..
@@ -2011,9 +2011,7 @@ impl Analyzer<'_, '_> {
             match &param.type_param.constraint {
                 Some(constraint) => match constraint.normalize() {
                     Type::Operator(
-                        operator
-                        @
-                        Operator {
+                        operator @ Operator {
                             op: TsTypeOperatorOp::KeyOf,
                             ty: box Type::Mapped(Mapped { ty: Some(..), .. }),
                             ..

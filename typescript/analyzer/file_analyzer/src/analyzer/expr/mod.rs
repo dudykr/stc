@@ -3387,7 +3387,8 @@ impl Analyzer<'_, '_> {
                         // TODO(kdy1): Validate number of args.
                         return Ok(Type::Array(Array {
                             span,
-                            // TODO(kdy1): Check length (After implementing error recovery for the parser)
+                            // TODO(kdy1): Check length (After implementing error recovery for the
+                            // parser)
                             elem_type: box type_args.clone().params.into_iter().next().unwrap(),
                             metadata: Default::default(),
                         }));

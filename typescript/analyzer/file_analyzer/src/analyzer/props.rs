@@ -499,7 +499,8 @@ impl Analyzer<'_, '_> {
                                 for p in p.function.params.iter().zip_longest(ty.params.iter()) {
                                     match p {
                                         EitherOrBoth::Both(param, ty) => {
-                                            // Store type infomations, so the pattern validator can use correct type.
+                                            // Store type infomations, so the pattern validator
+                                            // can use correct type.
                                             if let Some(pat_node_id) = param.pat.node_id() {
                                                 if let Some(m) = &mut child.mutations {
                                                     m.for_pats

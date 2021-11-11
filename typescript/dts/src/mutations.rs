@@ -96,6 +96,7 @@ impl VisitMut<RClassMember> for Operator<'_> {
             RClassMember::ClassProp(p) => p.node_id,
             RClassMember::PrivateProp(p) => p.node_id,
             RClassMember::TsIndexSignature(s) => s.node_id,
+            RClassMember::StaticBlock(s) => s.node_id,
             RClassMember::Empty(_) => return,
         };
 

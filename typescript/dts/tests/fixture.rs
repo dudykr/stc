@@ -29,9 +29,11 @@ use std::{
     sync::Arc,
 };
 use swc_common::{input::SourceFileInput, FileName, SyntaxContext, GLOBALS};
-use swc_ecma_ast::{Ident, Module, TsIntersectionType, TsKeywordTypeKind, TsLit, TsLitType, TsType, TsUnionType};
+use swc_ecma_ast::{
+    EsVersion, Ident, Module, TsIntersectionType, TsKeywordTypeKind, TsLit, TsLitType, TsType, TsUnionType,
+};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
-use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};
+use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_utils::drop_span;
 use swc_ecma_visit::{Fold, FoldWith};
@@ -69,7 +71,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let fm = cm.load_file(&file_name).unwrap();
         let env = Env::simple(
             Default::default(),
-            JscTarget::Es2020,
+            EsVersion::latest(),
             ModuleConfig::None,
             &Lib::load("es2019.full"),
         );
@@ -93,7 +95,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 decorators: true,
                 ..Default::default()
             }),
-            JscTarget::Es2020,
+            EsVersion::latest(),
             SourceFileInput::from(&*fm),
             Some(&comments),
         );
@@ -224,7 +226,7 @@ fn parse_dts(src: &str) -> Module {
                 dts: true,
                 ..Default::default()
             }),
-            JscTarget::Es2020,
+            EsVersion::latest(),
             StringInput::from(&*fm),
             None,
         );

@@ -37,7 +37,6 @@ use std::{
 use swc_atoms::{js_word, JsWord};
 use swc_common::{SourceMap, Span, Spanned, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::*;
-use swc_ecma_parser::JscTarget;
 
 macro_rules! try_opt {
     ($e:expr) => {{
@@ -423,7 +422,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             Env::new(
                 env,
                 Default::default(),
-                JscTarget::Es2020,
+                EsVersion::latest(),
                 ModuleConfig::None,
                 Default::default(),
             ),

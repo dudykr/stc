@@ -21,9 +21,11 @@ use std::{
     sync::Arc,
 };
 use swc_common::{input::SourceFileInput, FileName, SyntaxContext};
-use swc_ecma_ast::{Ident, Module, TsIntersectionType, TsKeywordTypeKind, TsLit, TsLitType, TsType, TsUnionType};
+use swc_ecma_ast::{
+    EsVersion, Ident, Module, TsIntersectionType, TsKeywordTypeKind, TsLit, TsLitType, TsType, TsUnionType,
+};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
-use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};
+use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_ecma_utils::drop_span;
 use swc_ecma_visit::{Fold, FoldWith};
 use testing::{assert_eq, NormalizedOutput, StdErr};
@@ -63,7 +65,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             handler.clone(),
             Env::simple(
                 Default::default(),
-                JscTarget::Es2020,
+                EsVersion::latest(),
                 ModuleConfig::None,
                 &Lib::load("es2019.full"),
             ),
@@ -187,7 +189,7 @@ fn parse_dts(src: &str) -> Module {
                 dts: true,
                 ..Default::default()
             }),
-            JscTarget::Es2020,
+            EsVersion::latest(),
             StringInput::from(&*fm),
             None,
         );

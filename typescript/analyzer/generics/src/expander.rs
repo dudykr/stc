@@ -164,9 +164,7 @@ impl GenericExpander<'_> {
                 match &m.type_param.constraint {
                     Some(constraint) => match constraint.normalize() {
                         Type::Operator(
-                            operator
-                            @
-                            Operator {
+                            operator @ Operator {
                                 op: TsTypeOperatorOp::KeyOf,
                                 ..
                             },
@@ -646,9 +644,7 @@ impl Fold<Type> for MappedHandler<'_> {
                         ..
                     }) => match index_type_constraint.normalize() {
                         Type::Operator(
-                            operator
-                            @
-                            Operator {
+                            operator @ Operator {
                                 op: TsTypeOperatorOp::KeyOf,
                                 ..
                             },

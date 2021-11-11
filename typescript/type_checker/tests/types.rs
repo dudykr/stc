@@ -32,7 +32,8 @@ use swc_common::{
     input::SourceFileInput,
     SourceMap, Span,
 };
-use swc_ecma_parser::{JscTarget, Parser, Syntax, TsConfig};
+use swc_ecma_ast::EsVersion;
+use swc_ecma_parser::{Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
 use testing::{run_test2, NormalizedOutput, StdErr, Tester};
@@ -97,7 +98,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
                 SourceFileInput::from(&*fm),
                 Some(&comments),
             );
-            let mut target = JscTarget::default();
+            let mut target = EsVersion::default();
 
             let module = parser.parse_module().map_err(|e| {
                 e.into_diagnostic(&handler).emit();
@@ -122,26 +123,27 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
                         if s.starts_with("target:") || s.starts_with("Target:") {
                             let s = s["target:".len()..].trim().to_lowercase();
                             target = match &*s {
-                                "es3" => JscTarget::Es3,
-                                "es5" => JscTarget::Es5,
-                                "es2015" => JscTarget::Es2015,
-                                "es6" => JscTarget::Es2015,
-                                "es2016" => JscTarget::Es2016,
-                                "es2017" => JscTarget::Es2017,
-                                "es2018" => JscTarget::Es2018,
-                                "es2019" => JscTarget::Es2019,
-                                "esnext" => JscTarget::Es2019,
+                                "es3" => EsVersion::Es3,
+                                "es5" => EsVersion::Es5,
+                                "es2015" => EsVersion::Es2015,
+                                "es6" => EsVersion::Es2015,
+                                "es2016" => EsVersion::Es2016,
+                                "es2017" => EsVersion::Es2017,
+                                "es2018" => EsVersion::Es2018,
+                                "es2019" => EsVersion::Es2019,
+                                "esnext" => EsVersion::Es2019,
                                 _ => unimplemented!("target: {:?}", s),
                             };
                             libs = match target {
-                                JscTarget::Es3 | JscTarget::Es5 => vec![Lib::Es5],
-                                JscTarget::Es2015 => Lib::load("es2015"),
-                                JscTarget::Es2016 => Lib::load("es2016"),
-                                JscTarget::Es2017 => Lib::load("es2017"),
-                                JscTarget::Es2018 => Lib::load("es2018"),
-                                JscTarget::Es2019 => Lib::load("es2019"),
-                                JscTarget::Es2020 => Lib::load("es2020"),
-                                JscTarget::Es2021 => Lib::load("es2021"),
+                                EsVersion::Es3 | EsVersion::Es5 => vec![Lib::Es5],
+                                EsVersion::Es2015 => Lib::load("es2015"),
+                                EsVersion::Es2016 => Lib::load("es2016"),
+                                EsVersion::Es2017 => Lib::load("es2017"),
+                                EsVersion::Es2018 => Lib::load("es2018"),
+                                EsVersion::Es2019 => Lib::load("es2019"),
+                                EsVersion::Es2020 => Lib::load("es2020"),
+                                EsVersion::Es2021 => Lib::load("es2021"),
+                                EsVersion::Es2022 => Lib::load("es2022"),
                             };
                         } else if s.starts_with("strict:") {
                             let strict = s["strict:".len()..].trim().parse().unwrap();
