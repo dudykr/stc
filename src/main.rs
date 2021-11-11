@@ -1,11 +1,11 @@
-use crate::{check::CheckCommand, lsp::LspCommand, tsc::TscCommand};
+use crate::check::CheckCommand;
 use anyhow::Error;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolver::node::NodeResolver;
 use stc_ts_type_checker::Checker;
-use std::{env, path::PathBuf, sync::Arc, time::Instant};
+use std::{path::PathBuf, sync::Arc, time::Instant};
 use structopt::StructOpt;
 use swc_common::{
     errors::{ColorConfig, EmitterWriter, Handler},
@@ -13,10 +13,9 @@ use swc_common::{
 };
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::TsConfig;
+use tracing_subscriber::EnvFilter;
 
 mod check;
-mod lsp;
-mod tsc;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -27,13 +26,9 @@ mod tsc;
 )]
 enum Command {
     Check(CheckCommand),
-    /// Compatibillity layer for `tsc` cli.
-    Tsc(TscCommand),
-    Lsp(LspCommand),
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     let start = Instant::now();
 
     env_logger::init();
@@ -42,6 +37,7 @@ async fn main() -> Result<(), Error> {
         .with_target(false)
         .with_ansi(true)
         .without_time()
+        .with_env_filter(EnvFilter::new("STC_LOG"))
         .pretty()
         .finish();
 
@@ -71,7 +67,12 @@ async fn main() -> Result<(), Error> {
             let libs = {
                 let start = Instant::now();
 
-                let libs = Lib::load(&env::var("STC_LIBS").unwrap_or("es5".into()));
+                let mut libs = match cmd.libs {
+                    Some(libs) => libs.iter().map(|s| Lib::load(&s)).flatten().collect::<Vec<_>>(),
+                    None => Lib::load("es5"),
+                };
+                libs.sort();
+                libs.dedup();
 
                 let end = Instant::now();
 
@@ -99,7 +100,7 @@ async fn main() -> Result<(), Error> {
             {
                 let start = Instant::now();
 
-                checker.load_typings(&path, None, None);
+                checker.load_typings(&path, None, cmd.types.as_deref());
 
                 let end = Instant::now();
 
@@ -119,11 +120,6 @@ async fn main() -> Result<(), Error> {
                 log::info!("Error reporting took {:?}", end - start);
             }
         }
-
-        Command::Tsc(..) => {
-            todo!("tsc")
-        }
-        Command::Lsp(c) => c.run().await,
     }
 
     let end = Instant::now();

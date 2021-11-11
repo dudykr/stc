@@ -977,9 +977,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                _ => {
-                    dbg!();
-                }
+                _ => {}
             },
 
             Type::Tuple(param) => match arg {
