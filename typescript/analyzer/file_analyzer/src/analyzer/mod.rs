@@ -175,9 +175,6 @@ pub(crate) struct Ctx {
 
     in_class_with_super: bool,
 
-    /// `true` if the value of an exprssion is going to be used.
-    is_value_used: bool,
-
     /// `generatorReturnTypeFallback.3.ts` says
     ///
     /// Do not allow generators to fallback to IterableIterator while in
@@ -508,7 +505,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 skip_identical_while_inferencing: false,
                 super_references_super_class: false,
                 in_class_with_super: false,
-                is_value_used: false,
                 cannot_fallback_to_iterable_iterator: false,
                 allow_new_target: false,
                 disallow_suggesting_property_on_no_var: false,
