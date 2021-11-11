@@ -76,6 +76,7 @@ define_rnode!({
         ClassProp(ClassProp),
         PrivateProp(PrivateProp),
         TsIndexSignature(TsIndexSignature),
+        StaticBlock(StaticBlock),
         Empty(EmptyStmt),
     }
 
@@ -1288,5 +1289,9 @@ define_rnode!({
     pub struct TsConstAssertion {
         pub span: Span,
         pub expr: Box<Expr>,
+    }
+    pub struct StaticBlock {
+        pub span: Span,
+        pub body: BlockStmt,
     }
 });
