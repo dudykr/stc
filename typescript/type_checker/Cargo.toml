@@ -49,6 +49,6 @@ stc_testing = {path = "../../testing"}
 stc_ts_testing = {path = "../testing"}
 swc_ecma_codegen = "0.80.0"
 swc_ecma_utils = "0.52.0"
-testing = "0.12.0"
+testing = "0.15.1"
 testing_macros = "0.1.1"
 walkdir = "2.3.1"
