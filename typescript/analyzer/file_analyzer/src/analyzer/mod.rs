@@ -71,21 +71,8 @@ mod util;
 mod visit_mut;
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) enum Phase {
-    HoistingVars,
-}
-
-impl Default for Phase {
-    fn default() -> Self {
-        Self::HoistingVars
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
 pub(crate) struct Ctx {
     module_id: ModuleId,
-
-    phase: Phase,
 
     in_const_assertion: bool,
 
@@ -474,7 +461,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             scope,
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
-                phase: Default::default(),
                 in_const_assertion: false,
                 in_constructor_param: false,
                 diallow_unknown_object_property: false,
