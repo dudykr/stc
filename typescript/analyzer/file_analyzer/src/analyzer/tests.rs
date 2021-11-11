@@ -15,7 +15,8 @@ use stc_ts_types::{ModuleId, ModuleTypeData};
 use std::{path::PathBuf, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{FileName, SourceMap};
-use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};
+use swc_ecma_ast::EsVersion;
+use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use testing::StdErr;
@@ -23,7 +24,7 @@ use testing::StdErr;
 static ENV: Lazy<Env> = Lazy::new(|| {
     Env::simple(
         Default::default(),
-        JscTarget::Es2020,
+        EsVersion::latest(),
         ModuleConfig::None,
         &Lib::load("es2020.full"),
     )
@@ -76,7 +77,7 @@ impl Tester<'_, '_> {
                     no_early_errors: false,
                     import_assertions: false,
                 }),
-                JscTarget::Es2020,
+                EsVersion::latest(),
                 StringInput::from(&*fm),
                 None,
             );

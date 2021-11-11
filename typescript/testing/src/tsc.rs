@@ -134,7 +134,7 @@ impl TsTestCase {
                 dynamic_import: true,
                 ..Default::default()
             }),
-            swc_ecma_parser::JscTarget::Es2020,
+            EsVersion::latest(),
             SourceFileInput::from(&*fm),
             comments,
         );

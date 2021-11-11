@@ -36,7 +36,7 @@ use swc_common::{
     BytePos, SourceMap, Span, Spanned,
 };
 use swc_ecma_ast::{EsVersion, Program};
-use swc_ecma_parser::{JscTarget, Parser, Syntax, TsConfig};
+use swc_ecma_parser::{Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
 use testing::{StdErr, Tester};
@@ -290,16 +290,16 @@ struct TestSpec {
 
 fn parse_targets(s: &str) -> Vec<EsVersion> {
     match s {
-        "es3" => return vec![JscTarget::Es3],
-        "es5" => return vec![JscTarget::Es5],
-        "es2015" => return vec![JscTarget::Es2015],
-        "es6" => return vec![JscTarget::Es2015],
-        "es2016" => return vec![JscTarget::Es2016],
-        "es2017" => return vec![JscTarget::Es2017],
-        "es2018" => return vec![JscTarget::Es2018],
-        "es2019" => return vec![JscTarget::Es2019],
-        "es2020" => return vec![JscTarget::Es2020],
-        "esnext" => return vec![JscTarget::Es2020],
+        "es3" => return vec![EsVersion::Es3],
+        "es5" => return vec![EsVersion::Es5],
+        "es2015" => return vec![EsVersion::Es2015],
+        "es6" => return vec![EsVersion::Es2015],
+        "es2016" => return vec![EsVersion::Es2016],
+        "es2017" => return vec![EsVersion::Es2017],
+        "es2018" => return vec![EsVersion::Es2018],
+        "es2019" => return vec![EsVersion::Es2019],
+        "es2020" => return vec![EsVersion::Es2020],
+        "esnext" => return vec![EsVersion::Es2020],
         _ => {}
     }
     if !s.contains(",") {
@@ -329,7 +329,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
             SourceFileInput::from(&*fm),
             Some(&comments),
         );
-        let mut targets = vec![(JscTarget::default(), false)];
+        let mut targets = vec![(EsVersion::default(), false)];
 
         let program = parser.parse_program().map_err(|e| {
             e.into_diagnostic(&handler).emit();
@@ -493,14 +493,15 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
             .map(|(target, specified)| {
                 let libs = if specified && libs == vec![Lib::Es5, Lib::Dom] {
                     match target {
-                        JscTarget::Es3 | JscTarget::Es5 => vec![Lib::Es5],
-                        JscTarget::Es2015 => Lib::load("es2015.full"),
-                        JscTarget::Es2016 => Lib::load("es2016.full"),
-                        JscTarget::Es2017 => Lib::load("es2017.full"),
-                        JscTarget::Es2018 => Lib::load("es2018.full"),
-                        JscTarget::Es2019 => Lib::load("es2019.full"),
-                        JscTarget::Es2020 => Lib::load("es2020.full"),
-                        JscTarget::Es2021 => Lib::load("es2021.full"),
+                        EsVersion::Es3 | EsVersion::Es5 => vec![Lib::Es5],
+                        EsVersion::Es2015 => Lib::load("es2015.full"),
+                        EsVersion::Es2016 => Lib::load("es2016.full"),
+                        EsVersion::Es2017 => Lib::load("es2017.full"),
+                        EsVersion::Es2018 => Lib::load("es2018.full"),
+                        EsVersion::Es2019 => Lib::load("es2019.full"),
+                        EsVersion::Es2020 => Lib::load("es2020.full"),
+                        EsVersion::Es2021 => Lib::load("es2021.full"),
+                        EsVersion::Es2022 => Lib::load("es2022.full"),
                     }
                 } else {
                     if specified {

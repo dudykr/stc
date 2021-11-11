@@ -17,7 +17,6 @@ use std::{collections::hash_map::Entry, sync::Arc, time::Instant};
 use swc_atoms::JsWord;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
-use swc_ecma_parser::JscTarget;
 use tracing::info;
 
 pub trait BuiltInGen: Sized {
@@ -248,7 +247,7 @@ impl BuiltInGen for BuiltIn {
 
 pub trait EnvFactory {
     fn new(env: StableEnv, rule: Rule, target: EsVersion, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Env;
-    fn simple(rule: Rule, target: JscTarget, module: ModuleConfig, libs: &[Lib]) -> Env {
+    fn simple(rule: Rule, target: EsVersion, module: ModuleConfig, libs: &[Lib]) -> Env {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);
         static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>, ahash::RandomState>> = Lazy::new(Default::default);
 
