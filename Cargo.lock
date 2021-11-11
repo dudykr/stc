@@ -2091,6 +2091,7 @@ dependencies = [
  "num_cpus",
  "once_cell",
  "parking_lot 0.11.2",
+ "path-clean",
  "petgraph",
  "rayon",
  "serde",
