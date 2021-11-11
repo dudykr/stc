@@ -37,7 +37,7 @@ swc_common = { version = "0.14.6", features = ["concurrent", "tty-emitter"] }
 swc_ecma_ast = "0.58.0"
 swc_ecma_parser = "0.78.0"
 swc_ecma_transforms = "0.94.0"
-swc_ecma_visit = "0.35.1"
+swc_ecma_visit = "0.44.0"
 tracing = {version = "0.1.26", features = ["release_max_level_trace"]}
 
 [dev-dependencies]

@@ -8,6 +8,7 @@ version = "0.1.0"
 [lib]
 
 [dependencies]
+ahash = "0.7.6"
 anyhow = "1"
 dashmap = "3"
 fxhash = "0.2"
@@ -25,5 +26,5 @@ swc_common = {version = "0.14.6", features = ["concurrent"]}
 swc_ecma_ast = "0.58.0"
 swc_ecma_loader = {version = "0.24.2", features = ["node", "lru"]}
 swc_ecma_parser = "0.78.0"
-swc_ecma_visit = "0.35.1"
+swc_ecma_visit = "0.44.0"
 tracing = "0.1.26"
