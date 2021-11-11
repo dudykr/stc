@@ -800,6 +800,7 @@ impl Analyzer<'_, '_> {
             RClassMember::PrivateMethod(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::Empty(..) => None,
+            RClassMember::StaticBlock(..) => todo!("static block"),
 
             RClassMember::Constructor(v) => {
                 if self.is_builtin {
@@ -846,9 +847,7 @@ impl Analyzer<'_, '_> {
         for member in &c.body {
             match member {
                 RClassMember::Method(
-                    m
-                    @
-                    RClassMethod {
+                    m @ RClassMethod {
                         kind: MethodKind::Method,
                         function: RFunction { body: Some(..), .. },
                         ..
@@ -857,9 +856,7 @@ impl Analyzer<'_, '_> {
                     keys.push((normalize_prop_name(&m.key), m.is_static));
                 }
                 RClassMember::PrivateMethod(
-                    m
-                    @
-                    RPrivateMethod {
+                    m @ RPrivateMethod {
                         function: RFunction { body: Some(..), .. },
                         ..
                     },

@@ -351,8 +351,7 @@ impl Fold<Type> for Simplifier<'_> {
                 readonly,
                 obj_type: box Type::Intersection(obj),
                 index_type:
-                    index_type
-                    @ box Type::Lit(LitType {
+                    index_type @ box Type::Lit(LitType {
                         lit: RTsLit::Str(..), ..
                     }),
                 metadata,

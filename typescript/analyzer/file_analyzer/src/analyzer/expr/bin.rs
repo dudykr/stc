@@ -889,9 +889,7 @@ impl Analyzer<'_, '_> {
                 RExpr::OptChain(ROptChainExpr {
                     expr:
                         box RExpr::Member(
-                            e
-                            @
-                            RMemberExpr {
+                            e @ RMemberExpr {
                                 obj: RExprOrSuper::Expr(..),
                                 ..
                             },
@@ -908,9 +906,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 RExpr::Member(
-                    e
-                    @
-                    RMemberExpr {
+                    e @ RMemberExpr {
                         obj: RExprOrSuper::Expr(..),
                         ..
                     },

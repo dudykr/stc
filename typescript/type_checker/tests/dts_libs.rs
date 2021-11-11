@@ -18,9 +18,9 @@ use swc_common::{
     errors::{ColorConfig, Handler},
     FileName, SourceMap, Spanned,
 };
-use swc_ecma_ast::{Module, ModuleDecl, ModuleItem, NamedExport, Stmt};
+use swc_ecma_ast::{EsVersion, Module, ModuleDecl, ModuleItem, NamedExport, Stmt};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
-use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, StringInput, Syntax, TsConfig};
+use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_ecma_utils::drop_span;
 use testing::{assert_eq, NormalizedOutput};
 
@@ -107,7 +107,7 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
             handler.clone(),
             Env::simple(
                 Default::default(),
-                JscTarget::Es2020,
+                EsVersion::latest(),
                 ModuleConfig::None,
                 &Lib::load("es2020.full"),
             ),
@@ -189,7 +189,7 @@ fn parse_dts(cm: &SourceMap, src: &str) -> Module {
             dts: true,
             ..Default::default()
         }),
-        JscTarget::Es2020,
+        EsVersion::latest(),
         StringInput::from(&*fm),
         None,
     );

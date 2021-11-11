@@ -76,6 +76,7 @@ define_rnode!({
         ClassProp(ClassProp),
         PrivateProp(PrivateProp),
         TsIndexSignature(TsIndexSignature),
+        StaticBlock(StaticBlock),
         Empty(EmptyStmt),
     }
 
@@ -642,6 +643,7 @@ define_rnode!({
         pub span: Span,
         pub local: Ident,
         pub imported: Option<Ident>,
+        pub is_type_only: bool,
     }
     pub enum ExportSpecifier {
         Namespace(ExportNamespaceSpecifier),
@@ -660,6 +662,7 @@ define_rnode!({
         pub span: Span,
         pub orig: Ident,
         pub exported: Option<Ident>,
+        pub is_type_only: bool,
     }
 
     pub enum Pat {
@@ -1286,5 +1289,9 @@ define_rnode!({
     pub struct TsConstAssertion {
         pub span: Span,
         pub expr: Box<Expr>,
+    }
+    pub struct StaticBlock {
+        pub span: Span,
+        pub body: BlockStmt,
     }
 });

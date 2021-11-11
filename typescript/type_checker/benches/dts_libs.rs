@@ -1,3 +1,4 @@
+#![feature(bench_black_box)]
 #![feature(box_syntax)]
 #![feature(test)]
 
@@ -15,7 +16,8 @@ use std::{
     sync::Arc,
 };
 use swc_common::errors::{ColorConfig, Handler};
-use swc_ecma_parser::{JscTarget, TsConfig};
+use swc_ecma_ast::EsVersion;
+use swc_ecma_parser::TsConfig;
 use test::Bencher;
 
 #[bench]
@@ -58,7 +60,7 @@ fn run_bench(b: &mut Bencher, path: &Path) {
                 handler.clone(),
                 Env::simple(
                     Default::default(),
-                    JscTarget::Es2020,
+                    EsVersion::latest(),
                     ModuleConfig::None,
                     &Lib::load("es2020.full"),
                 ),

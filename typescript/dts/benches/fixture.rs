@@ -1,3 +1,4 @@
+#![feature(bench_black_box)]
 #![feature(box_syntax)]
 #![feature(test)]
 
@@ -23,7 +24,8 @@ use std::{
     sync::Arc,
 };
 use swc_common::{input::SourceFileInput, GLOBALS};
-use swc_ecma_parser::{lexer::Lexer, JscTarget, Parser, Syntax, TsConfig};
+use swc_ecma_ast::EsVersion;
+use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use test::Bencher;
@@ -162,7 +164,7 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
         let fm = cm.load_file(&path).unwrap();
         let env = Env::simple(
             Default::default(),
-            JscTarget::Es2020,
+            EsVersion::latest(),
             ModuleConfig::None,
             &Lib::load("es2020.full"),
         );
@@ -178,7 +180,7 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
                 decorators: true,
                 ..Default::default()
             }),
-            JscTarget::Es2020,
+            EsVersion::latest(),
             SourceFileInput::from(&*fm),
             Some(&comments),
         );
