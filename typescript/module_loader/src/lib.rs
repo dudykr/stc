@@ -242,6 +242,8 @@ where
             .map(|specifier| resolver.resolve(path, &specifier))
             .collect::<Result<Vec<_>, _>>()?;
 
+        log::debug!("Loaded {:?}: {}", module_id, path.display());
+
         Ok(Some(LoadResult { module, deps }))
     }
 }
