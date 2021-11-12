@@ -164,10 +164,11 @@ where
             .deps
             .into_par_iter()
             .map(|dep_path| -> Result<_, Error> {
-                let _ = self.load_including_deps(&dep_path)?;
-
                 let id = self.id_generator.generate(&dep_path).1;
                 self.paths.insert(id, dep_path.clone());
+
+                let _ = self.load_including_deps(&dep_path)?;
+
                 Ok(id)
             })
             .collect::<Result<Vec<_>, _>>();
