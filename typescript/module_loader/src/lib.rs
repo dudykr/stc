@@ -248,7 +248,10 @@ where
     type ModuleId = ModuleId;
 
     fn deps_of(&self, module_id: Self::ModuleId) -> Vec<Self::ModuleId> {
-        let m = self.loaded.get(&module_id).unwrap();
+        let m = self
+            .loaded
+            .get(&module_id)
+            .unwrap_or_else(|| unreachable!("{:?} is not loaded", module_id));
         m.deps.clone()
     }
 }
