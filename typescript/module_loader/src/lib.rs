@@ -1,13 +1,11 @@
 use self::{deps::find_deps, resolver::Resolve};
 use anyhow::{bail, Context, Error};
 use dashmap::DashMap;
-use fxhash::{FxBuildHasher, FxHashSet};
+use fxhash::FxBuildHasher;
 use parking_lot::{Mutex, RwLock};
-use petgraph::{algo::all_simple_paths, graphmap::DiGraphMap};
 use rayon::prelude::*;
 use stc_ts_types::{module_id, ModuleId};
 use std::{
-    collections::HashSet,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -15,10 +13,18 @@ use swc_atoms::JsWord;
 use swc_common::{comments::Comments, SourceMap};
 use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
+use swc_fast_graph::digraph::FastDiGraphMap;
+use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
 use tracing::error;
 
 mod deps;
 pub mod resolver;
+
+#[derive(Debug, Clone)]
+struct ModuleRecord {
+    pub module: Arc<Module>,
+    pub deps: Vec<ModuleId>,
+}
 
 pub struct ModuleGraph<C, R>
 where
@@ -32,7 +38,7 @@ where
 
     id_generator: module_id::Generator,
     paths: DashMap<ModuleId, Arc<PathBuf>, FxBuildHasher>,
-    loaded: DashMap<ModuleId, Arc<Module>, FxBuildHasher>,
+    loaded: DashMap<ModuleId, ModuleRecord, FxBuildHasher>,
     resolver: R,
 
     parsing_errors: Mutex<Vec<swc_ecma_parser::error::Error>>,
@@ -40,8 +46,9 @@ where
 }
 #[derive(Default)]
 struct Deps {
-    graph: DiGraphMap<ModuleId, ()>,
-    circular: Vec<FxHashSet<ModuleId>>,
+    pub all: Vec<ModuleId>,
+    pub graph: FastDiGraphMap<ModuleId, ()>,
+    pub cycles: Vec<Vec<ModuleId>>,
 }
 
 struct LoadResult {
@@ -86,6 +93,26 @@ where
 
         let (_, module_id) = self.id_generator.generate(entry);
 
+        let res = {
+            let mut analyzer = GraphAnalyzer::new(&self);
+            analyzer.load(module_id);
+            analyzer.into_result()
+        };
+
+        {
+            let mut deps = self.deps.write();
+
+            deps.all.extend(res.all);
+            deps.cycles.extend(res.cycles);
+
+            for n in res.graph.nodes() {
+                deps.graph.add_node(n);
+            }
+            for (a, b, _) in res.graph.all_edges() {
+                deps.graph.add_edge(a, b, ());
+            }
+        }
+
         Ok(module_id)
     }
 
@@ -93,10 +120,10 @@ where
         self.paths.get(&id).unwrap().clone()
     }
 
-    pub fn get_circular(&self, id: ModuleId) -> Option<FxHashSet<ModuleId>> {
+    pub fn get_circular(&self, id: ModuleId) -> Option<Vec<ModuleId>> {
         let deps = self.deps.read();
 
-        deps.circular
+        deps.cycles
             .iter()
             .find_map(|set| if set.contains(&id) { Some(set) } else { None })
             .cloned()
@@ -115,12 +142,12 @@ where
     pub fn clone_module(&self, id: ModuleId) -> Option<Module> {
         let m = self.loaded.get(&id)?;
 
-        Some((&**m).clone())
+        Some((&*m.module).clone())
     }
 
     pub fn stmt_count_of(&self, id: ModuleId) -> usize {
         let m = self.loaded.get(&id).unwrap();
-        m.body.len()
+        m.module.body.len()
     }
 
     fn load_including_deps(&self, path: &Arc<PathBuf>) -> Result<(), Error> {
@@ -135,9 +162,6 @@ where
         let (_, id) = self.id_generator.generate(path);
         self.paths.insert(id, path.clone());
 
-        let _res = self.loaded.insert(id, loaded.module);
-        // assert_eq!(res, None, "duplicate?");
-
         let dep_module_ids = loaded
             .deps
             .into_par_iter()
@@ -150,36 +174,14 @@ where
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        let mut deps = self.deps.write();
-        deps.graph.add_node(id);
-        for dep_id in dep_module_ids {
-            deps.graph.add_edge(id, dep_id, ());
-
-            let cycles = all_simple_paths(&deps.graph, dep_id, id, 0, None).collect::<Vec<Vec<ModuleId>>>();
-
-            for path in cycles {
-                let set = deps.circular.iter_mut().find(|set| {
-                    for &path_id in &path {
-                        if set.contains(&path_id) {
-                            return true;
-                        }
-                    }
-
-                    false
-                });
-
-                match set {
-                    Some(set) => {
-                        set.extend(path);
-                    }
-                    None => {
-                        let mut set = HashSet::default();
-                        set.extend(path);
-                        deps.circular.push(set);
-                    }
-                }
-            }
-        }
+        let _res = self.loaded.insert(
+            id,
+            ModuleRecord {
+                module: loaded.module,
+                deps: dep_module_ids,
+            },
+        );
+        // assert_eq!(res, None, "duplicate?");
 
         Ok(())
     }
@@ -236,5 +238,18 @@ where
             .collect();
 
         Ok(Some(LoadResult { module, deps }))
+    }
+}
+
+impl<C, R> DepGraph for ModuleGraph<C, R>
+where
+    C: Comments + Send + Sync,
+    R: Resolve,
+{
+    type ModuleId = ModuleId;
+
+    fn deps_of(&self, module_id: Self::ModuleId) -> Vec<Self::ModuleId> {
+        let m = self.loaded.get(&module_id).unwrap();
+        m.deps.clone()
     }
 }
