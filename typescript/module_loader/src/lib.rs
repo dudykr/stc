@@ -17,7 +17,6 @@ use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_fast_graph::digraph::FastDiGraphMap;
 use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
-use tracing::error;
 
 mod deps;
 pub mod resolver;
@@ -85,13 +84,8 @@ where
     }
 
     pub fn load_all(&self, entry: &Arc<PathBuf>) -> Result<ModuleId, Error> {
-        let res = self.load_including_deps(entry);
-        match res {
-            Err(err) => {
-                error!("Failed to load {}:\n{:?}", entry.display(), err);
-            }
-            _ => {}
-        }
+        self.load_including_deps(entry)
+            .with_context(|| format!("failed to load entry file at {}", entry.display()))?;
 
         let (_, module_id) = self.id_generator.generate(entry);
 
@@ -177,6 +171,7 @@ where
                 Ok(id)
             })
             .collect::<Result<Vec<_>, _>>();
+
         let dep_module_ids = res?;
 
         let _res = self.loaded.insert(
