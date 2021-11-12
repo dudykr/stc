@@ -234,8 +234,7 @@ where
         let deps = deps
             .into_par_iter()
             .map(|specifier| resolver.resolve(path, &specifier))
-            .filter_map(|id| id.ok())
-            .collect();
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(Some(LoadResult { module, deps }))
     }
