@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 use self::{deps::find_deps, resolver::Resolve};
 use anyhow::{bail, Context, Error};
 use dashmap::DashMap;
@@ -199,12 +201,13 @@ where
             return Ok(None);
         }
 
-        log::debug!("Loading {}", path.display());
+        log::debug!("Loading {:?}: {}", module_id, path.display());
 
         let fm = self.cm.load_file(&path)?;
         let lexer = Lexer::new(
             Syntax::Typescript(TsConfig {
                 dts: path.as_os_str().to_string_lossy().ends_with(".d.ts"),
+                tsx: path.extension().map(|v| v == "tsx").unwrap_or(false),
                 ..self.parser_config.clone()
             }),
             self.target,
