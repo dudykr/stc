@@ -162,7 +162,7 @@ where
 
         let res = loaded
             .deps
-            .into_iter()
+            .into_par_iter()
             .map(|dep_path| -> Result<_, Error> {
                 let _ = self.load_including_deps(&dep_path)?;
 
