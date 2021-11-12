@@ -1,5 +1,6 @@
 use crate::resolver::Resolve;
 use anyhow::{bail, Context, Error};
+use path_clean::PathClean;
 use serde::Deserialize;
 use std::{
     fs::File,
@@ -26,9 +27,7 @@ impl NodeResolver {
     }
 
     fn wrap(&self, path: PathBuf) -> Result<Arc<PathBuf>, Error> {
-        let path = path
-            .canonicalize()
-            .with_context(|| format!("failed to canonicalize {}", path.display()))?;
+        let path = path.clean();
         Ok(Arc::new(path))
     }
 
