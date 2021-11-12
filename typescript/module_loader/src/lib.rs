@@ -154,25 +154,28 @@ where
         let loaded = self
             .load(path)
             .with_context(|| format!("failed to load file at {}", path.display()))?;
+
         let loaded = match loaded {
             Some(v) => v,
             None => return Ok(()),
         };
 
         let (_, id) = self.id_generator.generate(path);
+
         self.paths.insert(id, path.clone());
 
-        let dep_module_ids = loaded
+        let res = loaded
             .deps
-            .into_par_iter()
+            .into_iter()
             .map(|dep_path| -> Result<_, Error> {
-                let _ = self.load_including_deps(&dep_path);
+                let _ = self.load_including_deps(&dep_path)?;
 
                 let id = self.id_generator.generate(&dep_path).1;
                 self.paths.insert(id, dep_path.clone());
                 Ok(id)
             })
-            .collect::<Result<Vec<_>, _>>()?;
+            .collect::<Result<Vec<_>, _>>();
+        let dep_module_ids = res?;
 
         let _res = self.loaded.insert(
             id,
