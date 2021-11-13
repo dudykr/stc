@@ -101,16 +101,31 @@ impl NodeResolver {
         bail!("index not found: {}", path.display())
     }
 
+    fn try_package(&self, pkg_dir: &Path) -> Result<PathBuf, Error> {
+        self.resolve_as_file(&pkg_dir)
+            .or_else(|_| self.resolve_as_directory(&pkg_dir))
+    }
+
     /// Resolve by walking up node_modules folders.
     fn resolve_node_modules(&self, base_dir: &Path, target: &str) -> Result<PathBuf, Error> {
         let node_modules = base_dir.join("node_modules");
         if node_modules.is_dir() {
             let path = node_modules.join(target);
-            let result = self
-                .resolve_as_file(&path)
-                .or_else(|_| self.resolve_as_directory(&path));
+            let result = self.try_package(&path);
             if result.is_ok() {
                 return result;
+            }
+
+            {
+                let types = node_modules.join("types").join(target);
+
+                if types.is_dir() {
+                    let result = self.try_package(&types);
+
+                    if result.is_ok() {
+                        return result;
+                    }
+                }
             }
         }
 
