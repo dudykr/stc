@@ -1978,6 +1978,7 @@ name = "stc_ts_file_analyzer"
 version = "0.1.0"
 dependencies = [
  "ahash 0.7.6",
+ "auto_impl",
  "backtrace",
  "bitflags",
  "dashmap",
