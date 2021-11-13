@@ -1,6 +1,6 @@
 use crate::ValidationResult;
 use auto_impl::auto_impl;
-use stc_ts_types::{Module, ModuleId, ModuleTypeData, Type};
+use stc_ts_types::{ModuleId, ModuleTypeData, Type};
 use std::{path::PathBuf, sync::Arc};
 use swc_atoms::JsWord;
 
