@@ -117,7 +117,7 @@ impl NodeResolver {
             }
 
             {
-                let types = node_modules.join("types").join(target);
+                let types = node_modules.join("@types").join(target);
 
                 if types.is_dir() {
                     let result = self.try_package(&types);
