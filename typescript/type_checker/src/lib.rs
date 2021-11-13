@@ -395,6 +395,7 @@ impl Load for Checker {
     }
 
     fn declare_module(&self, name: &JsWord, module: Type) {
+        info!("Declaring module `{}`", name);
         self.declared_modules.lock().push((name.clone(), module));
     }
 }
