@@ -1001,6 +1001,8 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
+
+                    self.loader.declare_module(&s.value, ty.clone());
                 }
             }
         }
