@@ -735,6 +735,10 @@ impl Load for NoopLoader {
     fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
         unreachable!()
     }
+
+    fn declare_module(&self, name: &JsWord, module: Type) {
+        unreachable!()
+    }
 }
 
 #[validator]

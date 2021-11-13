@@ -18,7 +18,7 @@ use stc_ts_file_analyzer::{
 };
 use stc_ts_module_loader::{resolver::Resolve, ModuleGraph};
 use stc_ts_storage::{ErrorStore, File, Group, Single};
-use stc_ts_types::ModuleId;
+use stc_ts_types::{ModuleId, Type};
 use stc_ts_utils::StcComments;
 use stc_utils::early_error;
 use std::{mem::take, path::PathBuf, sync::Arc, time::Instant};
@@ -38,6 +38,8 @@ pub struct Checker {
     handler: Arc<Handler>,
     /// Cache
     module_types: RwLock<FxHashMap<ModuleId, Arc<OnceCell<Arc<ModuleTypeData>>>>>,
+
+    declared_modules: Mutex<Vec<(JsWord, Type)>>,
 
     /// Informatnion required to generate `.d.ts` files.
     dts_modules: Arc<DashMap<ModuleId, RModule, FxBuildHasher>>,
@@ -79,6 +81,7 @@ impl Checker {
             started: Default::default(),
             errors: Default::default(),
             debugger,
+            declared_modules: Default::default(),
         }
     }
 
@@ -389,5 +392,9 @@ impl Load for Checker {
         let data = self.analyze_module(Some(base_path.clone()), dep_path.clone());
 
         return Ok(ModuleInfo { module_id: dep, data });
+    }
+
+    fn declare_module(&self, name: &JsWord, module: Type) {
+        self.declared_modules.lock().push((name.clone(), module));
     }
 }

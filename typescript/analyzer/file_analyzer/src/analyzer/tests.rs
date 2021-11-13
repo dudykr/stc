@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_storage::Single;
-use stc_ts_types::{ModuleId, ModuleTypeData};
+use stc_ts_types::{Module, ModuleId, ModuleTypeData, Type};
 use std::{path::PathBuf, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{FileName, SourceMap};
@@ -114,6 +114,9 @@ impl Load for Loader {
     }
 
     fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
+        unimplemented!()
+    }
+    fn declare_module(&self, _: &JsWord, _: Type) {
         unimplemented!()
     }
 }
