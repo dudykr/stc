@@ -34,7 +34,7 @@ where
         let resolved = self
             .resolver
             .resolve(&base, module_specifier)
-            .with_context(|| format!("failed to resolve `{}` from `{}`", base, module_specifier))?;
+            .with_context(|| "failed to resolve dependency")?;
 
         Ok(Arc::new(resolved))
     }
