@@ -92,7 +92,8 @@ where
 
     /// TODO: Fix race condition of `errors`.
     pub fn load_all(&self, entry: &Arc<FileName>) -> Result<ModuleId, Error> {
-        self.load_including_deps(entry);
+        self.load_including_deps(entry, false);
+        self.load_including_deps(entry, true);
 
         let module_id = self.id_generator.generate(entry);
 
@@ -175,16 +176,19 @@ where
         self.with_module(id, |m| m.map(|v| v.body.len()).unwrap_or(0))
     }
 
-    fn load_including_deps(&self, path: &Arc<FileName>) {
+    fn load_including_deps(&self, path: &Arc<FileName>, resolve_all: bool) {
         let id = self.id_generator.generate(path);
 
-        let loaded = self.load(path);
+        let loaded = self.load(path, resolve_all);
         let loaded = match loaded {
             Ok(v) => v,
             Err(err) => {
-                self.errors.lock().push(err);
+                if resolve_all {
+                    self.errors.lock().push(err);
 
-                self.loaded.insert(id, Err(()));
+                    self.loaded.insert(id, Err(()));
+                }
+
                 return;
             }
         };
@@ -200,25 +204,27 @@ where
             .map(|dep_path| {
                 let id = self.id_generator.generate(&dep_path);
 
-                self.load_including_deps(&dep_path);
+                self.load_including_deps(&dep_path, resolve_all);
                 id
             })
             .collect::<Vec<_>>();
 
-        let _res = self.loaded.insert(
-            id,
-            Ok(ModuleRecord {
-                module: loaded.module,
-                deps: dep_module_ids,
-            }),
-        );
-        // assert_eq!(res, None, "duplicate?");
+        if resolve_all {
+            let _res = self.loaded.insert(
+                id,
+                Ok(ModuleRecord {
+                    module: loaded.module,
+                    deps: dep_module_ids,
+                }),
+            );
+            // assert_eq!(res, None, "duplicate?");
+        }
     }
 
     /// Returns `Ok(None)` if it's already loaded.
     ///
     /// Note that this methods does not modify `self.loaded`.
-    fn load(&self, filename: &Arc<FileName>) -> Result<Option<LoadResult>, Error> {
+    fn load(&self, filename: &Arc<FileName>, resolve_all: bool) -> Result<Option<LoadResult>, Error> {
         let module_id = self.id_generator.generate(filename);
 
         if self.loaded.contains_key(&module_id) {
@@ -238,10 +244,17 @@ where
         let module = Arc::new(module);
 
         let resolver = &self.resolver;
-        let deps = deps
-            .into_par_iter()
-            .map(|specifier| resolver.resolve(filename, &specifier))
-            .collect::<Result<Vec<_>, _>>()?;
+
+        let deps = if resolve_all {
+            deps.into_par_iter()
+                .map(|specifier| resolver.resolve(filename, &specifier))
+                .collect::<Result<Vec<_>, _>>()?
+        } else {
+            deps.into_par_iter()
+                .map(|specifier| resolver.resolve(filename, &specifier))
+                .filter_map(|res| res.ok())
+                .collect()
+        };
 
         log::debug!("Loaded {:?}: {}", module_id, filename);
 
