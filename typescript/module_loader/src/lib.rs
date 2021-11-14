@@ -17,7 +17,7 @@ use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_fast_graph::digraph::FastDiGraphMap;
 use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
 
-mod deps;
+mod analyzer;
 pub mod resolvers;
 
 #[derive(Debug, Clone)]
