@@ -42,10 +42,10 @@ where
 
     errors: Mutex<Vec<Error>>,
     parsing_errors: Mutex<Vec<swc_ecma_parser::error::Error>>,
-    deps: RwLock<Deps>,
+    deps: RwLock<DepGraphData>,
 }
 #[derive(Default)]
-struct Deps {
+struct DepGraphData {
     pub all: Vec<ModuleId>,
     pub graph: FastDiGraphMap<ModuleId, ()>,
     pub cycles: Vec<Vec<ModuleId>>,
