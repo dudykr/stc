@@ -96,7 +96,7 @@ impl Tester<'_, '_> {
 struct Loader {}
 
 impl Load for Loader {
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
+    fn module_id(&self, base: &Arc<FileName>, src: &JsWord) -> Option<ModuleId> {
         unimplemented!()
     }
 

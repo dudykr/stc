@@ -35,7 +35,7 @@ use std::{
     sync::Arc,
 };
 use swc_atoms::{js_word, JsWord};
-use swc_common::{SourceMap, Span, Spanned, DUMMY_SP, GLOBALS};
+use swc_common::{FileName, SourceMap, Span, Spanned, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::*;
 
 macro_rules! try_opt {
@@ -715,7 +715,7 @@ impl<'b, 'c> DerefMut for WithCtx<'_, 'b, 'c> {
 pub struct NoopLoader;
 
 impl Load for NoopLoader {
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
+    fn module_id(&self, base: &Arc<FileName>, src: &JsWord) -> Option<ModuleId> {
         unreachable!()
     }
 

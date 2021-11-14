@@ -16,7 +16,7 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
-use swc_common::{input::SourceFileInput, GLOBALS};
+use swc_common::{input::SourceFileInput, FileName, GLOBALS};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
@@ -52,7 +52,7 @@ fn profile_file(path: &Path) {
         let mut storage = Single {
             parent: None,
             id: ModuleId::builtin(),
-            path: Arc::new(PathBuf::from(path)),
+            path: Arc::new(FileName::Real(PathBuf::from(path))),
             info: Default::default(),
         };
 

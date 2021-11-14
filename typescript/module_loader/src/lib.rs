@@ -1,22 +1,14 @@
 #![deny(warnings)]
 
-use crate::resolvers::typescript::TsResolver;
-
 use self::deps::find_deps;
+use crate::resolvers::typescript::TsResolver;
 use anyhow::{bail, Error};
 use dashmap::DashMap;
 use fxhash::FxBuildHasher;
 use parking_lot::{Mutex, RwLock};
 use rayon::prelude::*;
-use stc_ts_types::{
-    module_id::{self, ModuleIdGenerator},
-    ModuleId,
-};
-use std::{
-    mem::take,
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
+use std::{mem::take, path::Path, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{comments::Comments, FileName, SourceMap, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, Module};
@@ -44,7 +36,7 @@ where
     target: EsVersion,
     comments: Option<C>,
 
-    id_generator: module_id::ModuleIdGenerator,
+    id_generator: ModuleIdGenerator,
     loaded: DashMap<ModuleId, Result<ModuleRecord, ()>, FxBuildHasher>,
     resolver: TsResolver<R>,
 
@@ -86,16 +78,15 @@ where
             resolver: TsResolver::new(resolver),
             parsing_errors: Default::default(),
             deps: Default::default(),
-            paths: Default::default(),
             errors: Default::default(),
         }
     }
 
     /// TODO: Fix race condition of `errors`.
-    pub fn load_all(&self, entry: &Arc<PathBuf>) -> Result<ModuleId, Error> {
+    pub fn load_all(&self, entry: &Arc<FileName>) -> Result<ModuleId, Error> {
         self.load_including_deps(entry);
 
-        let (_, module_id) = self.id_generator.generate(entry);
+        let module_id = self.id_generator.generate(entry);
 
         let res = {
             let mut analyzer = GraphAnalyzer::new(&*self);
@@ -128,8 +119,8 @@ where
         Ok(module_id)
     }
 
-    pub fn path(&self, id: ModuleId) -> Arc<PathBuf> {
-        self.paths.get(&id).unwrap().clone()
+    pub fn path(&self, id: ModuleId) -> Arc<FileName> {
+        self.id_generator.path(id)
     }
 
     pub fn get_circular(&self, id: ModuleId) -> Option<Vec<ModuleId>> {
@@ -141,10 +132,8 @@ where
             .cloned()
     }
 
-    pub fn id(&self, path: &Arc<PathBuf>) -> ModuleId {
-        let res = self.id_generator.generate(path);
-        self.paths.insert(res.1, path.clone());
-        res.1
+    pub fn id(&self, path: &Arc<FileName>) -> ModuleId {
+        self.id_generator.generate(path)
     }
 
     pub fn resolve(&self, base: &Path, specifier: &JsWord) -> Result<Arc<FileName>, Error> {
@@ -179,7 +168,7 @@ where
     }
 
     fn load_including_deps(&self, path: &Arc<FileName>) {
-        let (_, id) = self.id_generator.generate(path);
+        let id = self.id_generator.generate(path);
 
         let loaded = self.load(path);
         let loaded = match loaded {
@@ -197,14 +186,11 @@ where
             None => return,
         };
 
-        self.paths.insert(id, path.clone());
-
         let dep_module_ids = loaded
             .deps
             .into_par_iter()
             .map(|dep_path| {
-                let id = self.id_generator.generate(&dep_path).1;
-                self.paths.insert(id, dep_path.clone());
+                let id = self.id_generator.generate(&dep_path);
 
                 self.load_including_deps(&dep_path);
                 id
@@ -224,12 +210,19 @@ where
     /// Returns `Ok(None)` if it's already loaded.
     ///
     /// Note that this methods does not modify `self.loaded`.
-    fn load(&self, path: &Arc<PathBuf>) -> Result<Option<LoadResult>, Error> {
-        let (_new, module_id) = self.id_generator.generate(path);
+    fn load(&self, path: &Arc<FileName>) -> Result<Option<LoadResult>, Error> {
+        let module_id = self.id_generator.generate(path);
 
         if self.loaded.contains_key(&module_id) {
             return Ok(None);
         }
+
+        let path = match &**path {
+            FileName::Real(path) => path,
+            _ => {
+                bail!("cannot load `{:?}`", path)
+            }
+        };
 
         log::debug!("Loading {:?}: {}", module_id, path.display());
 

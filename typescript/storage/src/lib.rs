@@ -4,9 +4,9 @@ use fxhash::FxHashMap;
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, Type};
 use stc_utils::cache::Freeze;
-use std::{collections::hash_map::Entry, mem::take, path::PathBuf, sync::Arc};
+use std::{collections::hash_map::Entry, mem::take, sync::Arc};
 use swc_atoms::JsWord;
-use swc_common::{iter::IdentifyLast, Span, TypeEq, DUMMY_SP};
+use swc_common::{iter::IdentifyLast, FileName, Span, TypeEq, DUMMY_SP};
 
 #[derive(Debug, Default)]
 pub struct Info {
@@ -45,7 +45,7 @@ pub trait Mode: TypeStore + ErrorStore {
     /// Returns the id of the module where statement #`stmt_index` came from.
     fn module_id(&self, stmt_index: usize) -> ModuleId;
 
-    fn path(&self, id: ModuleId) -> Arc<PathBuf>;
+    fn path(&self, id: ModuleId) -> Arc<FileName>;
 
     fn subscope(&self) -> Storage;
 
@@ -121,7 +121,7 @@ where
         (**self).module_id(stmt_index)
     }
 
-    fn path(&self, id: ModuleId) -> Arc<PathBuf> {
+    fn path(&self, id: ModuleId) -> Arc<FileName> {
         (**self).path(id)
     }
 
@@ -134,7 +134,7 @@ where
 pub struct Single<'a> {
     pub parent: Option<&'a Single<'a>>,
     pub id: ModuleId,
-    pub path: Arc<PathBuf>,
+    pub path: Arc<FileName>,
     pub info: Info,
 }
 
@@ -268,7 +268,7 @@ impl<'a> Mode for Single<'a> {
         self.id
     }
 
-    fn path(&self, id: ModuleId) -> Arc<PathBuf> {
+    fn path(&self, id: ModuleId) -> Arc<FileName> {
         debug_assert_eq!(id, self.id);
         self.path.clone()
     }
@@ -286,7 +286,7 @@ impl<'a> Mode for Single<'a> {
 #[derive(Debug, Clone)]
 pub struct File {
     pub id: ModuleId,
-    pub path: Arc<PathBuf>,
+    pub path: Arc<FileName>,
     pub stmt_count: usize,
 }
 
@@ -424,7 +424,7 @@ impl Mode for Group<'_> {
         unreachable!("failed to get module id")
     }
 
-    fn path(&self, id: ModuleId) -> Arc<PathBuf> {
+    fn path(&self, id: ModuleId) -> Arc<FileName> {
         for file in self.files.iter() {
             if file.id == id {
                 return file.path.clone();
@@ -516,7 +516,7 @@ impl Mode for Builtin {
         ModuleId::builtin()
     }
 
-    fn path(&self, _: ModuleId) -> Arc<PathBuf> {
+    fn path(&self, _: ModuleId) -> Arc<FileName> {
         unreachable!("builtin.path()")
     }
 
@@ -527,23 +527,23 @@ impl Mode for Builtin {
 
 #[cfg(test)]
 mod tests {
-    use stc_ts_types::module_id;
-
     use super::*;
+    use stc_ts_types::module_id;
+    use std::path::PathBuf;
 
     #[test]
     fn group_01() {
         let gen = module_id::ModuleIdGenerator::default();
 
-        let path1 = Arc::new(PathBuf::from("1"));
+        let path1 = Arc::new(FileName::Real(PathBuf::from("1")));
         let file1 = File {
-            id: gen.generate(&path1).1,
+            id: gen.generate(&path1),
             path: path1.clone(),
             stmt_count: 4,
         };
-        let path2 = Arc::new(PathBuf::from("2"));
+        let path2 = Arc::new(FileName::Real(PathBuf::from("2")));
         let file2 = File {
-            id: gen.generate(&path2).1,
+            id: gen.generate(&path2),
             path: path2.clone(),
             stmt_count: 5,
         };

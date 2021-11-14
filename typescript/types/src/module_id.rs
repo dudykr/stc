@@ -44,4 +44,8 @@ impl ModuleIdGenerator {
         debug_assert_eq!(res, None, "Found multiple module id for one file");
         module_id
     }
+
+    pub fn path(&self, module_id: ModuleId) -> Arc<FileName> {
+        self.cache.lock().paths.get(&module_id).cloned().unwrap()
+    }
 }

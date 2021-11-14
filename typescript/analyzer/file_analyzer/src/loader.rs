@@ -1,8 +1,9 @@
 use crate::ValidationResult;
 use auto_impl::auto_impl;
 use stc_ts_types::{ModuleId, ModuleTypeData, Type};
-use std::{path::PathBuf, sync::Arc};
+use std::sync::Arc;
 use swc_atoms::JsWord;
+use swc_common::FileName;
 
 #[derive(Debug, Clone)]
 pub struct ModuleInfo {
@@ -16,7 +17,7 @@ pub struct ModuleInfo {
 
 #[auto_impl(Box, Arc)]
 pub trait Load: 'static + Send + Sync {
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId>;
+    fn module_id(&self, base: &Arc<FileName>, src: &JsWord) -> Option<ModuleId>;
 
     /// Note: This method called within a thread
     fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool;

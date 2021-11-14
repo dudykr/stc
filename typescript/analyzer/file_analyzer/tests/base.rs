@@ -21,7 +21,7 @@ use std::{
     process::Command,
     sync::Arc,
 };
-use swc_common::{errors::DiagnosticId, input::SourceFileInput, GLOBALS};
+use swc_common::{errors::DiagnosticId, input::SourceFileInput, FileName, GLOBALS};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
@@ -68,7 +68,7 @@ fn validate(input: &Path) -> Vec<StcError> {
             let env = get_env();
 
             let generator = module_id::ModuleIdGenerator::default();
-            let path = Arc::new(input.to_path_buf());
+            let path = Arc::new(FileName::Real(input.to_path_buf()));
 
             let mut node_id_gen = NodeIdGenerator::default();
             let mut module = {
@@ -89,7 +89,7 @@ fn validate(input: &Path) -> Vec<StcError> {
 
             let mut storage = Single {
                 parent: None,
-                id: generator.generate(&path).1,
+                id: generator.generate(&path),
                 path,
                 info: Default::default(),
             };
