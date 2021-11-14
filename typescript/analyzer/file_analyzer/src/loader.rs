@@ -1,7 +1,9 @@
 use crate::ValidationResult;
-use stc_ts_types::{ModuleId, ModuleTypeData};
-use std::{path::PathBuf, sync::Arc};
+use auto_impl::auto_impl;
+use stc_ts_types::{ModuleId, ModuleTypeData, Type};
+use std::sync::Arc;
 use swc_atoms::JsWord;
+use swc_common::FileName;
 
 #[derive(Debug, Clone)]
 pub struct ModuleInfo {
@@ -12,8 +14,10 @@ pub struct ModuleInfo {
 ///
 ///
 /// Group of circular imports are handled by one thread. This
+
+#[auto_impl(Box, Arc)]
 pub trait Load: 'static + Send + Sync {
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId>;
+    fn module_id(&self, base: &Arc<FileName>, src: &JsWord) -> Option<ModuleId>;
 
     /// Note: This method called within a thread
     fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool;
@@ -33,56 +37,7 @@ pub trait Load: 'static + Send + Sync {
 
     /// Note: This method is called in parallel.
     fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo>;
-}
 
-impl<T> Load for Arc<T>
-where
-    T: ?Sized + Load,
-{
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
-        (**self).module_id(base, src)
-    }
-
-    fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool {
-        (**self).is_in_same_circular_group(base, dep)
-    }
-
-    fn load_circular_dep(
-        &self,
-        base: ModuleId,
-        dep: ModuleId,
-        partial: &ModuleTypeData,
-    ) -> ValidationResult<ModuleInfo> {
-        (**self).load_circular_dep(base, dep, partial)
-    }
-
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
-        (**self).load_non_circular_dep(base, dep)
-    }
-}
-
-impl<T> Load for Box<T>
-where
-    T: ?Sized + Load,
-{
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
-        (**self).module_id(base, src)
-    }
-
-    fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool {
-        (**self).is_in_same_circular_group(base, dep)
-    }
-
-    fn load_circular_dep(
-        &self,
-        base: ModuleId,
-        dep: ModuleId,
-        partial: &ModuleTypeData,
-    ) -> ValidationResult<ModuleInfo> {
-        (**self).load_circular_dep(base, dep, partial)
-    }
-
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
-        (**self).load_non_circular_dep(base, dep)
-    }
+    /// `module` should be [Type::Arc] of [Type::Module].
+    fn declare_module(&self, name: &JsWord, module: Type);
 }

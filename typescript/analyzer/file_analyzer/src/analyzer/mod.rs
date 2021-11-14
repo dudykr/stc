@@ -31,11 +31,10 @@ use std::{
     fmt::Debug,
     mem::take,
     ops::{Deref, DerefMut},
-    path::PathBuf,
     sync::Arc,
 };
 use swc_atoms::{js_word, JsWord};
-use swc_common::{SourceMap, Span, Spanned, DUMMY_SP, GLOBALS};
+use swc_common::{FileName, SourceMap, Span, Spanned, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::*;
 
 macro_rules! try_opt {
@@ -71,21 +70,8 @@ mod util;
 mod visit_mut;
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) enum Phase {
-    HoistingVars,
-}
-
-impl Default for Phase {
-    fn default() -> Self {
-        Self::HoistingVars
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
 pub(crate) struct Ctx {
     module_id: ModuleId,
-
-    phase: Phase,
 
     in_const_assertion: bool,
 
@@ -187,9 +173,6 @@ pub(crate) struct Ctx {
     super_references_super_class: bool,
 
     in_class_with_super: bool,
-
-    /// `true` if the value of an exprssion is going to be used.
-    is_value_used: bool,
 
     /// `generatorReturnTypeFallback.3.ts` says
     ///
@@ -474,7 +457,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             scope,
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
-                phase: Default::default(),
                 in_const_assertion: false,
                 in_constructor_param: false,
                 diallow_unknown_object_property: false,
@@ -522,7 +504,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 skip_identical_while_inferencing: false,
                 super_references_super_class: false,
                 in_class_with_super: false,
-                is_value_used: false,
                 cannot_fallback_to_iterable_iterator: false,
                 allow_new_target: false,
                 disallow_suggesting_property_on_no_var: false,
@@ -733,7 +714,7 @@ impl<'b, 'c> DerefMut for WithCtx<'_, 'b, 'c> {
 pub struct NoopLoader;
 
 impl Load for NoopLoader {
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
+    fn module_id(&self, base: &Arc<FileName>, src: &JsWord) -> Option<ModuleId> {
         unreachable!()
     }
 
@@ -751,6 +732,10 @@ impl Load for NoopLoader {
     }
 
     fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
+        unreachable!()
+    }
+
+    fn declare_module(&self, name: &JsWord, module: Type) {
         unreachable!()
     }
 }
@@ -1015,6 +1000,8 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
+
+                    self.loader.declare_module(&s.value, ty.clone());
                 }
             }
         }

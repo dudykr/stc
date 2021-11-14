@@ -7,7 +7,7 @@ extern crate test;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_file_analyzer::env::EnvFactory;
-use stc_ts_module_loader::resolver::node::NodeResolver;
+use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use std::{
     hint::black_box,
@@ -15,7 +15,10 @@ use std::{
     process::{Command, Stdio},
     sync::Arc,
 };
-use swc_common::errors::{ColorConfig, Handler};
+use swc_common::{
+    errors::{ColorConfig, Handler},
+    FileName,
+};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::TsConfig;
 use test::Bencher;
@@ -69,7 +72,7 @@ fn run_bench(b: &mut Bencher, path: &Path) {
                 Arc::new(NodeResolver),
             );
 
-            let id = checker.check(Arc::new(path.to_path_buf()));
+            let id = checker.check(Arc::new(FileName::Real(path.to_path_buf())));
             black_box(checker.take_errors());
             black_box(checker.take_dts(id));
         });

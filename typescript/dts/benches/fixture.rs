@@ -23,7 +23,7 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
-use swc_common::{input::SourceFileInput, GLOBALS};
+use swc_common::{input::SourceFileInput, FileName, GLOBALS};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_transforms::resolver::ts_resolver;
@@ -169,14 +169,14 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
             &Lib::load("es2020.full"),
         );
         let stable_env = env.shared().clone();
-        let generator = module_id::Generator::default();
-        let path = Arc::new(path.clone());
+        let generator = module_id::ModuleIdGenerator::default();
+        let path = Arc::new(FileName::Real(path.clone()));
 
         let comments = StcComments::default();
 
         let lexer = Lexer::new(
             Syntax::Typescript(TsConfig {
-                tsx: path.to_string_lossy().contains("tsx"),
+                tsx: path.to_string().contains("tsx"),
                 decorators: true,
                 ..Default::default()
             }),
@@ -195,7 +195,7 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
         b.iter(|| {
             let mut storage = Single {
                 parent: None,
-                id: generator.generate(&path).1,
+                id: generator.generate(&path),
                 path: path.clone(),
                 info: Default::default(),
             };
