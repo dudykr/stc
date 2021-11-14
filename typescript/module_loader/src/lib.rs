@@ -179,13 +179,6 @@ where
     fn load_including_deps(&self, path: &Arc<FileName>, resolve_all: bool) {
         let id = self.id_generator.generate(path);
 
-        if resolve_all {
-            match &**path {
-                FileName::Real(..) => {}
-                _ => return,
-            }
-        }
-
         let loaded = self.load(path, resolve_all);
         let loaded = match loaded {
             Ok(v) => v,
@@ -239,6 +232,23 @@ where
         }
 
         log::debug!("Loading {:?}: {}", module_id, filename);
+
+        // TODO(kdy1): Check if it's better to use content of `declare module "http"`?
+        if resolve_all {
+            match &**filename {
+                FileName::Real(..) => {}
+                _ => {
+                    return Ok(Some(LoadResult {
+                        module: Arc::new(Module {
+                            span: DUMMY_SP,
+                            body: Default::default(),
+                            shebang: Default::default(),
+                        }),
+                        deps: Default::default(),
+                    }))
+                }
+            }
+        }
 
         let module = self.load_one_module(filename)?;
 
