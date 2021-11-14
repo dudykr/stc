@@ -26,6 +26,20 @@ struct ModuleRecord {
     pub deps: Vec<ModuleId>,
 }
 
+/// # Implementation note
+///
+/// This module loader works by
+///
+/// 1. Collect deps recursively (in parallel)
+/// 2. Load all resolved dependencies (in parallel)
+/// 3. Handle all `declare module` statements (in parallel)
+/// 4. Load all modules again, but this time with all deps resolved. (in
+/// parallel)
+/// 5. Build a dependency graph.
+///
+///
+/// Double-loaidng is required because we have to handle all `declare module`
+/// statements to get all depen`dencies resolved.
 pub struct ModuleGraph<C, R>
 where
     C: Comments + Send + Sync,
