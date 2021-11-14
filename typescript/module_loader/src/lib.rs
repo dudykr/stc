@@ -1,7 +1,7 @@
 #![deny(warnings)]
 
 use self::{deps::find_deps, resolver::Resolve};
-use anyhow::{bail, Context, Error};
+use anyhow::{bail, Error};
 use dashmap::DashMap;
 use fxhash::FxBuildHasher;
 use parking_lot::{Mutex, RwLock};
@@ -86,8 +86,7 @@ where
     }
 
     pub fn load_all(&self, entry: &Arc<PathBuf>) -> Result<ModuleId, Error> {
-        self.load_including_deps(entry)
-            .with_context(|| format!("failed to load entry file at {}", entry.display()))?;
+        self.load_including_deps(entry);
 
         let (_, module_id) = self.id_generator.generate(entry);
 
@@ -164,34 +163,38 @@ where
         self.with_module(id, |m| m.map(|v| v.body.len()).unwrap_or(0))
     }
 
-    fn load_including_deps(&self, path: &Arc<PathBuf>) -> Result<(), Error> {
-        let loaded = self
-            .load(path)
-            .with_context(|| format!("failed to load file at {}", path.display()))?;
+    fn load_including_deps(&self, path: &Arc<PathBuf>) {
+        let (_, id) = self.id_generator.generate(path);
+
+        let loaded = self.load(path);
+        let loaded = match loaded {
+            Ok(v) => v,
+            Err(err) => {
+                self.errors.lock().push(err);
+
+                self.loaded.insert(id, Err(()));
+                return;
+            }
+        };
 
         let loaded = match loaded {
             Some(v) => v,
-            None => return Ok(()),
+            None => return,
         };
-
-        let (_, id) = self.id_generator.generate(path);
 
         self.paths.insert(id, path.clone());
 
-        let res = loaded
+        let dep_module_ids = loaded
             .deps
             .into_par_iter()
-            .map(|dep_path| -> Result<_, Error> {
+            .map(|dep_path| {
                 let id = self.id_generator.generate(&dep_path).1;
                 self.paths.insert(id, dep_path.clone());
 
-                let _ = self.load_including_deps(&dep_path)?;
-
-                Ok(id)
+                self.load_including_deps(&dep_path);
+                id
             })
-            .collect::<Result<Vec<_>, _>>();
-
-        let dep_module_ids = res?;
+            .collect::<Vec<_>>();
 
         let _res = self.loaded.insert(
             id,
@@ -201,8 +204,6 @@ where
             }),
         );
         // assert_eq!(res, None, "duplicate?");
-
-        Ok(())
     }
 
     /// Returns `Ok(None)` if it's already loaded.
