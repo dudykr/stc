@@ -1,8 +1,7 @@
-use fxhash::FxHashMap;
 use parking_lot::Mutex;
 use stc_visit::Visit;
-use std::{path::PathBuf, sync::Arc};
-use swc_common::{EqIgnoreSpan, TypeEq};
+use std::sync::Arc;
+use swc_common::{collections::AHashMap, EqIgnoreSpan, FileName, TypeEq};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ModuleId(u32);
@@ -17,23 +16,32 @@ impl ModuleId {
     }
 }
 
-#[derive(Clone, Default)]
-pub struct Generator {
-    cache: Arc<Mutex<(u32, FxHashMap<Arc<PathBuf>, ModuleId>)>>,
+#[derive(Default)]
+pub struct ModuleIdGenerator {
+    cache: Mutex<Data>,
 }
 
-impl Generator {
-    /// Returns `(true, id)` if it's generated, and returns `(false, id)` if
-    /// it's found from cache.
-    pub fn generate(&self, path: &Arc<PathBuf>) -> (bool, ModuleId) {
-        let mut cache = self.cache.lock();
-        if let Some(v) = cache.1.get(path) {
-            return (false, *v);
+#[derive(Default)]
+struct Data {
+    cur: u32,
+    modules: AHashMap<Arc<FileName>, ModuleId>,
+    paths: AHashMap<ModuleId, Arc<FileName>>,
+}
+
+impl ModuleIdGenerator {
+    pub fn generate(&self, path: &Arc<FileName>) -> ModuleId {
+        let mut data = self.cache.lock();
+        if let Some(v) = data.modules.get(path) {
+            return *v;
         }
-        cache.0 += 1;
-        let module_id = ModuleId(cache.0);
-        let res = cache.1.insert(path.clone(), module_id);
+
+        data.cur += 1;
+
+        let module_id = ModuleId(data.cur);
+        let res = data.modules.insert(path.clone(), module_id);
+        data.paths.insert(module_id, path.clone());
+
         debug_assert_eq!(res, None, "Found multiple module id for one file");
-        (true, module_id)
+        module_id
     }
 }

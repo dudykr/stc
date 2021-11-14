@@ -169,7 +169,7 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
             &Lib::load("es2020.full"),
         );
         let stable_env = env.shared().clone();
-        let generator = module_id::Generator::default();
+        let generator = module_id::ModuleIdGenerator::default();
         let path = Arc::new(path.clone());
 
         let comments = StcComments::default();

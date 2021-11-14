@@ -8,7 +8,10 @@ use dashmap::DashMap;
 use fxhash::FxBuildHasher;
 use parking_lot::{Mutex, RwLock};
 use rayon::prelude::*;
-use stc_ts_types::{module_id, ModuleId};
+use stc_ts_types::{
+    module_id::{self, ModuleIdGenerator},
+    ModuleId,
+};
 use std::{
     mem::take,
     path::{Path, PathBuf},
@@ -41,8 +44,7 @@ where
     target: EsVersion,
     comments: Option<C>,
 
-    id_generator: module_id::Generator,
-    paths: DashMap<ModuleId, Arc<FileName>, FxBuildHasher>,
+    id_generator: module_id::ModuleIdGenerator,
     loaded: DashMap<ModuleId, Result<ModuleRecord, ()>, FxBuildHasher>,
     resolver: TsResolver<R>,
 

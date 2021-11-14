@@ -533,7 +533,7 @@ mod tests {
 
     #[test]
     fn group_01() {
-        let gen = module_id::Generator::default();
+        let gen = module_id::ModuleIdGenerator::default();
 
         let path1 = Arc::new(PathBuf::from("1"));
         let file1 = File {

@@ -76,7 +76,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             &Lib::load("es2019.full"),
         );
         let stable_env = env.shared().clone();
-        let generator = module_id::Generator::default();
+        let generator = module_id::ModuleIdGenerator::default();
         let path = Arc::new(file_name.clone());
 
         let mut storage = Single {

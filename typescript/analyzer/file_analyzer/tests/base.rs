@@ -67,7 +67,7 @@ fn validate(input: &Path) -> Vec<StcError> {
 
             let env = get_env();
 
-            let generator = module_id::Generator::default();
+            let generator = module_id::ModuleIdGenerator::default();
             let path = Arc::new(input.to_path_buf());
 
             let mut node_id_gen = NodeIdGenerator::default();
@@ -151,7 +151,7 @@ fn errors(input: PathBuf) {
 
         let env = get_env();
 
-        let generator = module_id::Generator::default();
+        let generator = module_id::ModuleIdGenerator::default();
         let path = Arc::new(input.to_path_buf());
 
         let mut node_id_gen = NodeIdGenerator::default();
@@ -214,7 +214,7 @@ fn pass_only(input: PathBuf) {
 
         let env = get_env();
 
-        let generator = module_id::Generator::default();
+        let generator = module_id::ModuleIdGenerator::default();
         let path = Arc::new(input.to_path_buf());
 
         let mut node_id_gen = NodeIdGenerator::default();
@@ -363,7 +363,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
 
             let env = Env::simple(rule, EsVersion::Es2020, ModuleConfig::None, &libs);
             let stable_env = env.shared().clone();
-            let generator = module_id::Generator::default();
+            let generator = module_id::ModuleIdGenerator::default();
             let path = Arc::new(file_name.clone());
 
             let mut storage = Single {
