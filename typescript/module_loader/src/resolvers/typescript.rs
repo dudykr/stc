@@ -38,6 +38,12 @@ where
 
         Ok(Arc::new(resolved))
     }
+
+    pub(crate) fn declare_module(&self, decl: JsWord) {
+        self.declared_modules
+            .write()
+            .push((decl.clone(), Arc::new(FileName::Custom(decl.to_string()))));
+    }
 }
 
 fn matches(pat: &JsWord, module_specifier: &str) -> bool {

@@ -1,6 +1,6 @@
 #![deny(warnings)]
 
-use self::deps::find_deps;
+use self::deps::find_modules_and_deps;
 use crate::resolvers::typescript::TsResolver;
 use anyhow::{bail, Error};
 use dashmap::DashMap;
@@ -256,7 +256,12 @@ where
             errors.extend(extra_errors);
         }
 
-        let deps = find_deps(&module);
+        let (declared_modules, deps) = find_modules_and_deps(&module);
+
+        for decl in declared_modules {
+            self.resolver.declare_module(decl);
+        }
+
         let module = Arc::new(module);
 
         let resolver = &self.resolver;
