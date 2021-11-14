@@ -213,7 +213,7 @@ where
 
         log::debug!("Loading {:?}: {}", module_id, filename);
 
-        let module = self.load_and_parse(filename)?;
+        let module = self.load_one_module(filename)?;
 
         let (declared_modules, deps) = find_modules_and_deps(&self.comments, &module);
 
@@ -234,7 +234,7 @@ where
         Ok(Some(LoadResult { module, deps }))
     }
 
-    fn load_and_parse(&self, filename: &FileName) -> Result<Module, Error> {
+    fn load_one_module(&self, filename: &FileName) -> Result<Module, Error> {
         let path = match filename {
             FileName::Real(path) => path,
             _ => {
