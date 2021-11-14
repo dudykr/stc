@@ -1,6 +1,6 @@
 #![deny(warnings)]
 
-use self::{deps::find_deps, resolver::Resolve};
+use self::{deps::find_deps, resolver::TsResolve};
 use anyhow::{bail, Error};
 use dashmap::DashMap;
 use fxhash::FxBuildHasher;
@@ -21,6 +21,7 @@ use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
 
 mod deps;
 pub mod resolver;
+pub mod resolvers;
 
 #[derive(Debug, Clone)]
 struct ModuleRecord {
