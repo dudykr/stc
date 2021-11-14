@@ -14,7 +14,7 @@ use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_errors::debug::debugger::Debugger;
 use stc_ts_file_analyzer::env::EnvFactory;
-use stc_ts_module_loader::resolver::node::NodeResolver;
+use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_testing::tsc::TsTestCase;
 use stc_ts_type_checker::Checker;
 use stc_ts_utils::StcComments;
@@ -30,7 +30,7 @@ use std::{
 use swc_common::{
     errors::{ColorConfig, EmitterWriter, Handler, HandlerFlags},
     input::SourceFileInput,
-    SourceMap, Span,
+    FileName, SourceMap, Span,
 };
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{Parser, Syntax, TsConfig};
@@ -233,7 +233,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
                 Arc::new(NodeResolver),
             );
 
-            checker.check(Arc::new(path.into()));
+            checker.check(Arc::new(FileName::Real(path.into())));
 
             let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
 

@@ -17,7 +17,7 @@ use stc_testing::init_tracing;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_file_analyzer::env::EnvFactory;
-use stc_ts_module_loader::resolver::node::NodeResolver;
+use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use stc_ts_utils::StcComments;
 use std::{
@@ -33,7 +33,7 @@ use std::{
 use swc_common::{
     errors::{DiagnosticBuilder, DiagnosticId},
     input::SourceFileInput,
-    BytePos, SourceMap, Span, Spanned,
+    BytePos, FileName, SourceMap, Span, Spanned,
 };
 use swc_ecma_ast::{EsVersion, Program};
 use swc_ecma_parser::{Parser, Syntax, TsConfig};
@@ -587,7 +587,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
                 let start = Instant::now();
 
-                checker.check(Arc::new(file_name.into()));
+                checker.check(Arc::new(FileName::Real(file_name.into())));
 
                 let end = Instant::now();
 

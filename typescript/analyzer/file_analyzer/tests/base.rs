@@ -152,7 +152,7 @@ fn errors(input: PathBuf) {
         let env = get_env();
 
         let generator = module_id::ModuleIdGenerator::default();
-        let path = Arc::new(input.to_path_buf());
+        let path = Arc::new(FileName::Real(input.to_path_buf()));
 
         let mut node_id_gen = NodeIdGenerator::default();
         let mut module = {
@@ -173,7 +173,7 @@ fn errors(input: PathBuf) {
 
         let mut storage = Single {
             parent: None,
-            id: generator.generate(&path).1,
+            id: generator.generate(&path),
             path,
             info: Default::default(),
         };
@@ -215,7 +215,7 @@ fn pass_only(input: PathBuf) {
         let env = get_env();
 
         let generator = module_id::ModuleIdGenerator::default();
-        let path = Arc::new(input.to_path_buf());
+        let path = Arc::new(FileName::Real(input.to_path_buf()));
 
         let mut node_id_gen = NodeIdGenerator::default();
         let mut module = {
@@ -236,7 +236,7 @@ fn pass_only(input: PathBuf) {
 
         let mut storage = Single {
             parent: None,
-            id: generator.generate(&path).1,
+            id: generator.generate(&path),
             path,
             info: Default::default(),
         };
@@ -364,11 +364,11 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
             let env = Env::simple(rule, EsVersion::Es2020, ModuleConfig::None, &libs);
             let stable_env = env.shared().clone();
             let generator = module_id::ModuleIdGenerator::default();
-            let path = Arc::new(file_name.clone());
+            let path = Arc::new(FileName::Real(file_name.clone()));
 
             let mut storage = Single {
                 parent: None,
-                id: generator.generate(&path).1,
+                id: generator.generate(&path),
                 path,
                 info: Default::default(),
             };

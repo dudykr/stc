@@ -3,13 +3,13 @@ use anyhow::Error;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_file_analyzer::env::EnvFactory;
-use stc_ts_module_loader::resolver::node::NodeResolver;
+use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use std::{path::PathBuf, sync::Arc, time::Instant};
 use structopt::StructOpt;
 use swc_common::{
     errors::{ColorConfig, EmitterWriter, Handler},
-    SourceMap,
+    FileName, SourceMap,
 };
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::TsConfig;
@@ -95,7 +95,7 @@ fn main() -> Result<(), Error> {
                 Arc::new(NodeResolver),
             );
 
-            let path = Arc::new(PathBuf::from(cmd.file));
+            let path = PathBuf::from(cmd.file);
 
             {
                 let start = Instant::now();
@@ -107,7 +107,7 @@ fn main() -> Result<(), Error> {
                 log::info!("Loading typing libraries took {:?}", end - start);
             }
 
-            checker.check(path);
+            checker.check(Arc::new(FileName::Real(path)));
 
             {
                 let start = Instant::now();

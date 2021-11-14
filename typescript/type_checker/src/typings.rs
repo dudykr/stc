@@ -1,12 +1,13 @@
 use crate::Checker;
 use rayon::prelude::*;
-use stc_ts_module_loader::resolver::node::NodeResolver;
+use stc_ts_module_loader::resolvers::node::NodeResolver;
 use std::{
     fs::read_dir,
     path::{Path, PathBuf},
     sync::Arc,
     time::Instant,
 };
+use swc_common::FileName;
 
 impl Checker {
     fn try_loading_typing_of_one_package(&self, dir: &Path) {
@@ -20,7 +21,7 @@ impl Checker {
 
         match result {
             Ok(entry) => {
-                let entry = Arc::new(entry);
+                let entry = Arc::new(FileName::Real(entry));
                 let start = Instant::now();
                 self.module_graph.load_all(&entry).unwrap();
 

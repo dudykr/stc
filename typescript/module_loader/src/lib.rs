@@ -8,7 +8,7 @@ use fxhash::FxBuildHasher;
 use parking_lot::{Mutex, RwLock};
 use rayon::prelude::*;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
-use std::{mem::take, path::Path, sync::Arc};
+use std::{mem::take, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{comments::Comments, FileName, SourceMap, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, Module};
@@ -136,7 +136,7 @@ where
         self.id_generator.generate(path)
     }
 
-    pub fn resolve(&self, base: &Path, specifier: &JsWord) -> Result<Arc<FileName>, Error> {
+    pub fn resolve(&self, base: &FileName, specifier: &JsWord) -> Result<Arc<FileName>, Error> {
         self.resolver.resolve(base, specifier)
     }
 
@@ -210,17 +210,17 @@ where
     /// Returns `Ok(None)` if it's already loaded.
     ///
     /// Note that this methods does not modify `self.loaded`.
-    fn load(&self, path: &Arc<FileName>) -> Result<Option<LoadResult>, Error> {
-        let module_id = self.id_generator.generate(path);
+    fn load(&self, filename: &Arc<FileName>) -> Result<Option<LoadResult>, Error> {
+        let module_id = self.id_generator.generate(filename);
 
         if self.loaded.contains_key(&module_id) {
             return Ok(None);
         }
 
-        let path = match &**path {
+        let path = match &**filename {
             FileName::Real(path) => path,
             _ => {
-                bail!("cannot load `{:?}`", path)
+                bail!("cannot load `{:?}`", filename)
             }
         };
 
@@ -262,7 +262,7 @@ where
         let resolver = &self.resolver;
         let deps = deps
             .into_par_iter()
-            .map(|specifier| resolver.resolve(path, &specifier))
+            .map(|specifier| resolver.resolve(filename, &specifier))
             .collect::<Result<Vec<_>, _>>()?;
 
         log::debug!("Loaded {:?}: {}", module_id, path.display());
