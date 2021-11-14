@@ -211,14 +211,14 @@ where
             return Ok(None);
         }
 
+        log::debug!("Loading {:?}: {}", module_id, filename);
+
         let path = match &**filename {
             FileName::Real(path) => path,
             _ => {
                 bail!("cannot load `{:?}`", filename)
             }
         };
-
-        log::debug!("Loading {:?}: {}", module_id, path.display());
 
         let fm = self.cm.load_file(&path)?;
         let lexer = Lexer::new(

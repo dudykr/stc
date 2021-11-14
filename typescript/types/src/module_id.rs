@@ -42,6 +42,7 @@ impl ModuleIdGenerator {
         data.paths.insert(module_id, path.clone());
 
         debug_assert_eq!(res, None, "Found multiple module id for one file");
+
         module_id
     }
 
