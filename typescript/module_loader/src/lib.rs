@@ -12,7 +12,7 @@ use std::{
     sync::Arc,
 };
 use swc_atoms::JsWord;
-use swc_common::{comments::Comments, SourceMap};
+use swc_common::{comments::Comments, SourceMap, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_fast_graph::digraph::FastDiGraphMap;
@@ -39,9 +39,10 @@ where
 
     id_generator: module_id::Generator,
     paths: DashMap<ModuleId, Arc<PathBuf>, FxBuildHasher>,
-    loaded: DashMap<ModuleId, ModuleRecord, FxBuildHasher>,
+    loaded: DashMap<ModuleId, Result<ModuleRecord, ()>, FxBuildHasher>,
     resolver: R,
 
+    errors: Mutex<Vec<Error>>,
     parsing_errors: Mutex<Vec<swc_ecma_parser::error::Error>>,
     deps: RwLock<Deps>,
 }
@@ -80,6 +81,7 @@ where
             parsing_errors: Default::default(),
             deps: Default::default(),
             paths: Default::default(),
+            errors: Default::default(),
         }
     }
 
@@ -135,15 +137,31 @@ where
         self.resolver.resolve(base, specifier)
     }
 
-    pub fn clone_module(&self, id: ModuleId) -> Option<Module> {
-        let m = self.loaded.get(&id)?;
+    fn with_module<F, Ret>(&self, id: ModuleId, f: F) -> Ret
+    where
+        F: FnOnce(Option<&Module>) -> Ret,
+    {
+        let m = self.loaded.get(&id);
 
-        Some((&*m.module).clone())
+        match m.as_deref() {
+            Some(m) => match m {
+                Ok(v) => f(Some(&v.module)),
+                Err(_) => f(Some(&Module {
+                    span: DUMMY_SP,
+                    body: Default::default(),
+                    shebang: Default::default(),
+                })),
+            },
+            None => f(None),
+        }
+    }
+
+    pub fn clone_module(&self, id: ModuleId) -> Option<Module> {
+        self.with_module(id, |m| m.cloned())
     }
 
     pub fn stmt_count_of(&self, id: ModuleId) -> usize {
-        let m = self.loaded.get(&id).unwrap();
-        m.module.body.len()
+        self.with_module(id, |m| m.map(|v| v.body.len()).unwrap_or(0))
     }
 
     fn load_including_deps(&self, path: &Arc<PathBuf>) -> Result<(), Error> {
@@ -177,10 +195,10 @@ where
 
         let _res = self.loaded.insert(
             id,
-            ModuleRecord {
+            Ok(ModuleRecord {
                 module: loaded.module,
                 deps: dep_module_ids,
-            },
+            }),
         );
         // assert_eq!(res, None, "duplicate?");
 
@@ -256,6 +274,10 @@ where
             .loaded
             .get(&module_id)
             .unwrap_or_else(|| unreachable!("{:?} is not loaded", module_id));
-        m.deps.clone()
+
+        match &*m {
+            Ok(m) => m.deps.clone(),
+            Err(..) => Default::default(),
+        }
     }
 }
