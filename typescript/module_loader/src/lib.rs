@@ -213,7 +213,29 @@ where
 
         log::debug!("Loading {:?}: {}", module_id, filename);
 
-        let path = match &**filename {
+        let module = self.load_and_parse(filename)?;
+
+        let (declared_modules, deps) = find_modules_and_deps(&self.comments, &module);
+
+        for decl in declared_modules {
+            self.resolver.declare_module(decl);
+        }
+
+        let module = Arc::new(module);
+
+        let resolver = &self.resolver;
+        let deps = deps
+            .into_par_iter()
+            .map(|specifier| resolver.resolve(filename, &specifier))
+            .collect::<Result<Vec<_>, _>>()?;
+
+        log::debug!("Loaded {:?}: {}", module_id, filename);
+
+        Ok(Some(LoadResult { module, deps }))
+    }
+
+    fn load_and_parse(&self, filename: &FileName) -> Result<Module, Error> {
+        let path = match filename {
             FileName::Real(path) => path,
             _ => {
                 bail!("cannot load `{:?}`", filename)
@@ -250,23 +272,7 @@ where
             errors.extend(extra_errors);
         }
 
-        let (declared_modules, deps) = find_modules_and_deps(&self.comments, &module);
-
-        for decl in declared_modules {
-            self.resolver.declare_module(decl);
-        }
-
-        let module = Arc::new(module);
-
-        let resolver = &self.resolver;
-        let deps = deps
-            .into_par_iter()
-            .map(|specifier| resolver.resolve(filename, &specifier))
-            .collect::<Result<Vec<_>, _>>()?;
-
-        log::debug!("Loaded {:?}: {}", module_id, path.display());
-
-        Ok(Some(LoadResult { module, deps }))
+        Ok(module)
     }
 }
 
