@@ -1,6 +1,6 @@
 #![deny(warnings)]
 
-use self::deps::find_modules_and_deps;
+use self::analyzer::find_modules_and_deps;
 use crate::resolvers::typescript::TsResolver;
 use anyhow::{bail, Error};
 use dashmap::DashMap;
