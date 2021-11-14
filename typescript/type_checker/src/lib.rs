@@ -16,15 +16,16 @@ use stc_ts_file_analyzer::{
     validator::ValidateWith,
     ModuleTypeData, ValidationResult,
 };
-use stc_ts_module_loader::{resolver::Resolve, ModuleGraph};
+use stc_ts_module_loader::ModuleGraph;
 use stc_ts_storage::{ErrorStore, File, Group, Single};
-use stc_ts_types::ModuleId;
+use stc_ts_types::{ModuleId, Type};
 use stc_ts_utils::StcComments;
 use stc_utils::early_error;
-use std::{mem::take, path::PathBuf, sync::Arc, time::Instant};
+use std::{mem::take, sync::Arc, time::Instant};
 use swc_atoms::JsWord;
-use swc_common::{errors::Handler, SourceMap, Spanned};
+use swc_common::{errors::Handler, FileName, SourceMap, Spanned};
 use swc_ecma_ast::Module;
+use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::TsConfig;
 use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
@@ -38,6 +39,8 @@ pub struct Checker {
     handler: Arc<Handler>,
     /// Cache
     module_types: RwLock<FxHashMap<ModuleId, Arc<OnceCell<Arc<ModuleTypeData>>>>>,
+
+    declared_modules: Mutex<Vec<(JsWord, Type)>>,
 
     /// Informatnion required to generate `.d.ts` files.
     dts_modules: Arc<DashMap<ModuleId, RModule, FxBuildHasher>>,
@@ -71,7 +74,7 @@ impl Checker {
             dts_modules: Default::default(),
             module_graph: Arc::new(ModuleGraph::new(
                 cm,
-                Some(Default::default()),
+                Default::default(),
                 resolver,
                 parser_config,
                 env.target(),
@@ -79,6 +82,7 @@ impl Checker {
             started: Default::default(),
             errors: Default::default(),
             debugger,
+            declared_modules: Default::default(),
         }
     }
 
@@ -106,34 +110,26 @@ impl Checker {
         self.dts_modules.remove(&id).map(|v| v.1.into_orig())
     }
 
-    pub fn id(&self, path: &Arc<PathBuf>) -> ModuleId {
+    pub fn id(&self, path: &Arc<FileName>) -> ModuleId {
         self.module_graph.id(path)
     }
 
     /// After calling this method, you can get errors using `.take_errors()`
-    pub fn check(&self, entry: Arc<PathBuf>) -> ModuleId {
+    pub fn check(&self, entry: Arc<FileName>) -> ModuleId {
         self.run(|| {
             let start = Instant::now();
 
             let id = self.module_graph.load_all(&entry).unwrap();
 
             let end = Instant::now();
-            log::info!(
-                "Loading of `{}` and dependencies took {:?}",
-                entry.display(),
-                end - start
-            );
+            log::info!("Loading of `{}` and dependencies took {:?}", entry, end - start);
 
             let start = Instant::now();
 
             self.analyze_module(None, entry.clone());
 
             let end = Instant::now();
-            log::info!(
-                "Analysis of `{}` and dependencies took {:?}",
-                entry.display(),
-                end - start
-            );
+            log::info!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
 
             id
         })
@@ -144,7 +140,7 @@ impl Checker {
     }
 
     /// Analyzes one module.
-    fn analyze_module(&self, starter: Option<Arc<PathBuf>>, path: Arc<PathBuf>) -> Arc<ModuleTypeData> {
+    fn analyze_module(&self, starter: Option<Arc<FileName>>, path: Arc<FileName>) -> Arc<ModuleTypeData> {
         self.run(|| {
             let id = self.module_graph.id(&path);
 
@@ -227,7 +223,7 @@ impl Checker {
                             // TODO(kdy1): Prevent duplicate work.
                             match self.dts_modules.insert(*id, dts_module) {
                                 Some(..) => {
-                                    warn!("Duplicated work: `{}`: (.d.ts already computed)", path.display());
+                                    warn!("Duplicated work: `{}`: (.d.ts already computed)", path);
                                 }
                                 None => {}
                             }
@@ -244,7 +240,7 @@ impl Checker {
                                 match res {
                                     Ok(()) => {}
                                     Err(..) => {
-                                        warn!("Duplicated work: `{}`: (type info is already cached)", path.display());
+                                        warn!("Duplicated work: `{}`: (type info is already cached)", path);
                                     }
                                 }
                             }
@@ -257,9 +253,7 @@ impl Checker {
             }
             info!(
                 "Request: {}\nRequested by {:?}\nCircular set: {:?}",
-                path.display(),
-                starter,
-                circular_set
+                path, starter, circular_set
             );
 
             {
@@ -283,7 +277,7 @@ impl Checker {
 
                 let dur = Instant::now() - start;
                 if !did_work {
-                    log::warn!("Waited for {}: {:?}", path.display(), dur);
+                    log::warn!("Waited for {}: {:?}", path, dur);
                 }
 
                 res
@@ -291,7 +285,7 @@ impl Checker {
         })
     }
 
-    fn analyze_non_circular_module(&self, id: ModuleId, path: Arc<PathBuf>) -> Arc<ModuleTypeData> {
+    fn analyze_non_circular_module(&self, id: ModuleId, path: Arc<FileName>) -> Arc<ModuleTypeData> {
         self.run(|| {
             let start = Instant::now();
 
@@ -299,7 +293,7 @@ impl Checker {
             let mut module = self
                 .module_graph
                 .clone_module(id)
-                .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", id, path.display()));
+                .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", id, path));
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
             let mut module = RModule::from_orig(&mut node_id_gen, module);
 
@@ -343,7 +337,7 @@ impl Checker {
             self.dts_modules.insert(id, module);
 
             let dur = Instant::now() - start;
-            eprintln!("[Timing] Full analysis of {}: {:?}", path.display(), dur);
+            eprintln!("[Timing] Full analysis of {}: {:?}", path, dur);
 
             type_info
         })
@@ -351,7 +345,7 @@ impl Checker {
 }
 
 impl Load for Checker {
-    fn module_id(&self, base: &Arc<PathBuf>, src: &JsWord) -> Option<ModuleId> {
+    fn module_id(&self, base: &Arc<FileName>, src: &JsWord) -> Option<ModuleId> {
         let path = self.module_graph.resolve(&base, src).ok()?;
         let id = self.module_graph.id(&path);
         Some(id)
@@ -384,10 +378,15 @@ impl Load for Checker {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 
-        info!("({}): Loading {}", base_path.display(), dep_path.display());
+        info!("({}): Loading {}", base_path, dep_path);
 
         let data = self.analyze_module(Some(base_path.clone()), dep_path.clone());
 
         return Ok(ModuleInfo { module_id: dep, data });
+    }
+
+    fn declare_module(&self, name: &JsWord, module: Type) {
+        info!("Declaring module `{}`", name);
+        self.declared_modules.lock().push((name.clone(), module));
     }
 }

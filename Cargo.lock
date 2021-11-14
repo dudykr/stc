@@ -123,6 +123,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "auto_impl"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7862e21c893d65a1650125d157eaeec691439379a1cee17ee49031b79236ada4"
+dependencies = [
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "autocfg"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -367,16 +379,6 @@ checksum = "0f260e2fc850179ef410018660006951c1b55b79e8087e87111a2c388994b9b5"
 dependencies = [
  "ahash 0.3.8",
  "cfg-if 0.1.10",
- "num_cpus",
-]
-
-[[package]]
-name = "dashmap"
-version = "4.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e77a43b28d0668df09411cb0bc9a8c2adc40f9a048afe863e05fd43251e8e39c"
-dependencies = [
- "cfg-if 1.0.0",
  "num_cpus",
 ]
 
@@ -629,9 +631,6 @@ name = "hashbrown"
 version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
-dependencies = [
- "ahash 0.7.6",
-]
 
 [[package]]
 name = "heck"
@@ -824,15 +823,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lru"
-version = "0.6.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ea2d928b485416e8908cff2d97d621db22b27f7b3b6729e438bcf42c671ba91"
-dependencies = [
- "hashbrown",
-]
-
-[[package]]
 name = "matchers"
 version = "0.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -956,15 +946,6 @@ name = "nodrop"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
-
-[[package]]
-name = "normpath"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a9da8c9922c35a1033d76f7272dfc2e7ee20392083d75aeea6ced23c6266578"
-dependencies = [
- "winapi",
-]
 
 [[package]]
 name = "num-bigint"
@@ -1997,9 +1978,10 @@ name = "stc_ts_file_analyzer"
 version = "0.1.0"
 dependencies = [
  "ahash 0.7.6",
+ "auto_impl",
  "backtrace",
  "bitflags",
- "dashmap 3.11.10",
+ "dashmap",
  "derivative",
  "fxhash",
  "indexmap",
@@ -2085,12 +2067,14 @@ version = "0.1.0"
 dependencies = [
  "ahash 0.7.6",
  "anyhow",
- "dashmap 3.11.10",
+ "auto_impl",
+ "dashmap",
  "fxhash",
  "log",
  "num_cpus",
  "once_cell",
  "parking_lot 0.11.2",
+ "path-clean",
  "petgraph",
  "rayon",
  "serde",
@@ -2102,6 +2086,8 @@ dependencies = [
  "swc_ecma_loader",
  "swc_ecma_parser",
  "swc_ecma_visit",
+ "swc_fast_graph",
+ "swc_graph_analyzer",
  "tracing",
 ]
 
@@ -2198,7 +2184,7 @@ name = "stc_ts_type_checker"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "dashmap 3.11.10",
+ "dashmap",
  "fxhash",
  "ignore",
  "log",
@@ -2226,6 +2212,7 @@ dependencies = [
  "swc_common",
  "swc_ecma_ast",
  "swc_ecma_codegen",
+ "swc_ecma_loader",
  "swc_ecma_parser",
  "swc_ecma_transforms",
  "swc_ecma_utils",
@@ -2273,7 +2260,7 @@ dependencies = [
 name = "stc_ts_types"
 version = "0.0.0"
 dependencies = [
- "dashmap 3.11.10",
+ "dashmap",
  "fxhash",
  "is-macro",
  "num-bigint",
@@ -2302,7 +2289,7 @@ dependencies = [
 name = "stc_ts_utils"
 version = "0.1.0"
 dependencies = [
- "dashmap 3.11.10",
+ "dashmap",
  "fxhash",
  "rnode",
  "stc_ts_ast_rnode",
@@ -2513,13 +2500,7 @@ checksum = "68b375e795ace0dcbdb528dc2fadd1666f44a5c212415ae4e01b8f7e379e7ca0"
 dependencies = [
  "ahash 0.7.6",
  "anyhow",
- "dashmap 4.0.2",
- "lru",
- "normpath",
- "once_cell",
- "path-clean",
  "serde",
- "serde_json",
  "swc_atoms",
  "swc_common",
  "tracing",
@@ -2618,6 +2599,31 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "swc_fast_graph"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "216c58d35aaef9ba671166bae0e6137e6b652d5f6db1b1e9db728f8ef6fe3336"
+dependencies = [
+ "ahash 0.7.6",
+ "indexmap",
+ "petgraph",
+ "swc_common",
+]
+
+[[package]]
+name = "swc_graph_analyzer"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f1092de242225a32932e6922bc4cac9b4f5557c967bc3a36eb63b563f301c31"
+dependencies = [
+ "ahash 0.7.6",
+ "auto_impl",
+ "petgraph",
+ "swc_fast_graph",
+ "tracing",
 ]
 
 [[package]]

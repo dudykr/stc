@@ -6,7 +6,7 @@ use stc_testing::get_git_root;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_file_analyzer::env::EnvFactory;
-use stc_ts_module_loader::resolver::node::NodeResolver;
+use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use std::{
     fs::read_to_string,
@@ -117,7 +117,7 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
         );
 
         for main in entries {
-            let main = Arc::new(main);
+            let main = Arc::new(FileName::Real(main));
 
             checker.check(main);
         }
@@ -139,23 +139,23 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
                 continue;
             }
 
-            let file_path = Arc::new(entry.path().to_path_buf());
+            let file_path = Arc::new(FileName::Real(entry.path().to_path_buf()));
 
             let id = checker.id(&file_path);
             let dts_module = match checker.take_dts(id) {
                 Some(v) => v,
                 None => {
-                    eprintln!("Skipping: ({:?}): {}", id, file_path.display());
+                    eprintln!("Skipping: ({:?}): {}", id, file_path);
                     continue;
                 }
             };
-            eprintln!("Checking: ({:?}): {}", id, file_path.display());
+            eprintln!("Checking: ({:?}): {}", id, file_path);
 
             let generated_dts = drop_span(dts_module);
             let expected_dts = parse_dts(
                 &cm,
-                &read_to_string(file_path.with_extension("d.ts")).unwrap_or_else(|err| {
-                    panic!("Failed to read .d.ts file for {}: {}", file_path.display(), err);
+                &read_to_string(entry.path().with_extension("d.ts")).unwrap_or_else(|err| {
+                    panic!("Failed to read .d.ts file for {}: {}", file_path, err);
                 }),
             );
             if generated_dts == expected_dts {

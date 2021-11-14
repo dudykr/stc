@@ -2799,7 +2799,7 @@ impl Analyzer<'_, '_> {
             "access_property(MemberExpr):\nObject: {:?}\nProp: {:?}\nPath: {}",
             obj,
             prop,
-            self.storage.path(self.ctx.module_id).display()
+            self.storage.path(self.ctx.module_id)
         );
     }
 
