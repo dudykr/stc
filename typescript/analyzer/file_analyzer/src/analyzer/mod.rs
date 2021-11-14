@@ -31,7 +31,6 @@ use std::{
     fmt::Debug,
     mem::take,
     ops::{Deref, DerefMut},
-    path::PathBuf,
     sync::Arc,
 };
 use swc_atoms::{js_word, JsWord};

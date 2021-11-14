@@ -21,7 +21,7 @@ use stc_ts_storage::{ErrorStore, File, Group, Single};
 use stc_ts_types::{ModuleId, Type};
 use stc_ts_utils::StcComments;
 use stc_utils::early_error;
-use std::{mem::take, path::PathBuf, sync::Arc, time::Instant};
+use std::{mem::take, sync::Arc, time::Instant};
 use swc_atoms::JsWord;
 use swc_common::{errors::Handler, FileName, SourceMap, Spanned};
 use swc_ecma_ast::Module;

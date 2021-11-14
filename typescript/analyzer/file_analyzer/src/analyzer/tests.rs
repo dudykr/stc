@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_storage::Single;
-use stc_ts_types::{Module, ModuleId, ModuleTypeData, Type};
+use stc_ts_types::{ModuleId, ModuleTypeData, Type};
 use std::{path::PathBuf, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{FileName, SourceMap};
@@ -44,7 +44,7 @@ where
         let mut storage = Single {
             parent: None,
             id: ModuleId::builtin(),
-            path: Arc::new(PathBuf::new()),
+            path: Arc::new(FileName::Real(PathBuf::new())),
             info: Default::default(),
         };
 
