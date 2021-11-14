@@ -179,6 +179,13 @@ where
     fn load_including_deps(&self, path: &Arc<FileName>, resolve_all: bool) {
         let id = self.id_generator.generate(path);
 
+        if resolve_all {
+            match &**path {
+                FileName::Real(..) => {}
+                _ => return,
+            }
+        }
+
         let loaded = self.load(path, resolve_all);
         let loaded = match loaded {
             Ok(v) => v,
