@@ -34,7 +34,7 @@ where
     cm: Arc<SourceMap>,
     parser_config: TsConfig,
     target: EsVersion,
-    comments: Option<C>,
+    comments: C,
 
     id_generator: ModuleIdGenerator,
     loaded: DashMap<ModuleId, Result<ModuleRecord, ()>, FxBuildHasher>,
@@ -61,13 +61,7 @@ where
     C: Comments + Send + Sync,
     R: Resolve,
 {
-    pub fn new(
-        cm: Arc<SourceMap>,
-        comments: Option<C>,
-        resolver: R,
-        parser_config: TsConfig,
-        target: EsVersion,
-    ) -> Self {
+    pub fn new(cm: Arc<SourceMap>, comments: C, resolver: R, parser_config: TsConfig, target: EsVersion) -> Self {
         Self {
             cm,
             comments,
@@ -235,7 +229,7 @@ where
             }),
             self.target,
             StringInput::from(&*fm),
-            self.comments.as_ref().map(|v| v as _),
+            Some(&self.comments),
         );
 
         let mut parser = Parser::new_from(lexer);
@@ -256,7 +250,7 @@ where
             errors.extend(extra_errors);
         }
 
-        let (declared_modules, deps) = find_modules_and_deps(&module);
+        let (declared_modules, deps) = find_modules_and_deps(&self.comments, &module);
 
         for decl in declared_modules {
             self.resolver.declare_module(decl);

@@ -74,7 +74,7 @@ impl Checker {
             dts_modules: Default::default(),
             module_graph: Arc::new(ModuleGraph::new(
                 cm,
-                Some(Default::default()),
+                Default::default(),
                 resolver,
                 parser_config,
                 env.target(),
