@@ -1,7 +1,7 @@
 use swc_atoms::JsWord;
 use swc_common::{
     comments::{CommentKind, Comments},
-    Spanned, DUMMY_SP,
+    Span, Spanned, DUMMY_SP,
 };
 use swc_ecma_ast::*;
 use swc_ecma_visit::{Node, Visit, VisitWith};
@@ -30,6 +30,40 @@ where
     deps: Vec<JsWord>,
 }
 
+impl<C> DepFinder<C>
+where
+    C: Comments,
+{
+    fn check_comments(&mut self, span: Span) {
+        let mut deps = vec![];
+
+        self.comments.with_leading(span.lo, |comments| {
+            for c in comments {
+                if c.kind != CommentKind::Line {
+                    continue;
+                }
+                if let Some(cmt_text) = c
+                    .text
+                    .trim()
+                    .strip_prefix("/")
+                    .map(|s| s.trim())
+                    .and_then(|s| s.strip_prefix("<reference"))
+                    .and_then(|s| s.strip_suffix("\" />"))
+                    .map(|s| s.trim())
+                {
+                    if let Some(path) = cmt_text.strip_prefix("path=\"") {
+                        deps.push(format!("./{}", path).into());
+                    } else {
+                        // TODO: Handle lib, types
+                    }
+                }
+            }
+        });
+
+        self.deps.extend(deps);
+    }
+}
+
 impl<C> Visit for DepFinder<C>
 where
     C: Comments,
@@ -37,28 +71,13 @@ where
     fn visit_module_item(&mut self, i: &ModuleItem, _: &dyn Node) {
         i.visit_children_with(self);
 
-        let mut deps = vec![];
+        self.check_comments(i.span())
+    }
 
-        self.comments.with_leading(i.span().lo, |comments| {
-            for c in comments {
-                if c.kind != CommentKind::Line {
-                    continue;
-                }
-                if let Some(cmt_text) = c
-                    .text
-                    .strip_prefix("/")
-                    .map(|s| s.trim())
-                    .and_then(|s| s.strip_prefix("<reference"))
-                    .and_then(|s| s.strip_suffix("\" />"))
-                    .map(|s| s.trim())
-                    .and_then(|s| s.strip_prefix("types=\""))
-                {
-                    deps.push(cmt_text.into());
-                }
-            }
-        });
+    fn visit_module(&mut self, m: &Module, _: &dyn Node) {
+        m.visit_children_with(self);
 
-        self.deps.extend(deps);
+        self.check_comments(m.span)
     }
 
     fn visit_export_all(&mut self, export: &ExportAll, _: &dyn Node) {
