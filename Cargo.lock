@@ -2067,6 +2067,7 @@ version = "0.1.0"
 dependencies = [
  "ahash 0.7.6",
  "anyhow",
+ "auto_impl",
  "dashmap",
  "fxhash",
  "log",
