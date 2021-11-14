@@ -40,6 +40,8 @@ where
     }
 
     pub(crate) fn declare_module(&self, decl: JsWord) {
+        log::debug!("Declaring module '{}'", decl);
+
         self.declared_modules
             .write()
             .push((decl.clone(), Arc::new(FileName::Custom(decl.to_string()))));
