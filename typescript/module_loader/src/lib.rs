@@ -1,6 +1,8 @@
 #![deny(warnings)]
 
-use self::{deps::find_deps, resolver::TsResolve};
+use crate::resolvers::typescript::TsResolver;
+
+use self::deps::find_deps;
 use anyhow::{bail, Error};
 use dashmap::DashMap;
 use fxhash::FxBuildHasher;
@@ -13,14 +15,14 @@ use std::{
     sync::Arc,
 };
 use swc_atoms::JsWord;
-use swc_common::{comments::Comments, SourceMap, DUMMY_SP};
+use swc_common::{comments::Comments, FileName, SourceMap, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, Module};
+use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_fast_graph::digraph::FastDiGraphMap;
 use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
 
 mod deps;
-pub mod resolver;
 pub mod resolvers;
 
 #[derive(Debug, Clone)]
@@ -40,9 +42,9 @@ where
     comments: Option<C>,
 
     id_generator: module_id::Generator,
-    paths: DashMap<ModuleId, Arc<PathBuf>, FxBuildHasher>,
+    paths: DashMap<ModuleId, Arc<FileName>, FxBuildHasher>,
     loaded: DashMap<ModuleId, Result<ModuleRecord, ()>, FxBuildHasher>,
-    resolver: R,
+    resolver: TsResolver<R>,
 
     errors: Mutex<Vec<Error>>,
     parsing_errors: Mutex<Vec<swc_ecma_parser::error::Error>>,
@@ -57,7 +59,7 @@ struct Deps {
 
 struct LoadResult {
     module: Arc<Module>,
-    deps: Vec<Arc<PathBuf>>,
+    deps: Vec<Arc<FileName>>,
 }
 
 impl<C, R> ModuleGraph<C, R>
@@ -79,7 +81,7 @@ where
             target,
             id_generator: Default::default(),
             loaded: Default::default(),
-            resolver,
+            resolver: TsResolver::new(resolver),
             parsing_errors: Default::default(),
             deps: Default::default(),
             paths: Default::default(),
@@ -143,7 +145,7 @@ where
         res.1
     }
 
-    pub fn resolve(&self, base: &Path, specifier: &JsWord) -> Result<Arc<PathBuf>, Error> {
+    pub fn resolve(&self, base: &Path, specifier: &JsWord) -> Result<Arc<FileName>, Error> {
         self.resolver.resolve(base, specifier)
     }
 
@@ -174,7 +176,7 @@ where
         self.with_module(id, |m| m.map(|v| v.body.len()).unwrap_or(0))
     }
 
-    fn load_including_deps(&self, path: &Arc<PathBuf>) {
+    fn load_including_deps(&self, path: &Arc<FileName>) {
         let (_, id) = self.id_generator.generate(path);
 
         let loaded = self.load(path);

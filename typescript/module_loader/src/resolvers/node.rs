@@ -1,4 +1,3 @@
-use crate::resolver::Resolve;
 use anyhow::{bail, Context, Error};
 use path_clean::PathClean;
 use serde::Deserialize;
@@ -6,9 +5,9 @@ use std::{
     fs::File,
     io::BufReader,
     path::{Path, PathBuf},
-    sync::Arc,
 };
-use swc_atoms::JsWord;
+use swc_common::FileName;
+use swc_ecma_loader::resolve::Resolve;
 
 static EXTENSIONS: &[&str] = &["tsx", "ts", "d.ts"];
 
@@ -26,9 +25,9 @@ impl NodeResolver {
         Self
     }
 
-    fn wrap(&self, path: PathBuf) -> Result<Arc<PathBuf>, Error> {
+    fn wrap(&self, path: PathBuf) -> Result<FileName, Error> {
         let path = path.clean();
-        Ok(Arc::new(path))
+        Ok(FileName::Real(path))
     }
 
     /// Resolve a path as a file. If `path` refers to a file, it is returned;
@@ -137,12 +136,18 @@ impl NodeResolver {
 }
 
 impl Resolve for NodeResolver {
-    fn resolve(&self, base: &Path, target: &JsWord) -> Result<Arc<PathBuf>, Error> {
+    fn resolve(&self, base: &FileName, target: &str) -> Result<FileName, Error> {
+        let base = match base {
+            FileName::Real(base) => &**base,
+            _ => {
+                unreachable!("base = {:?}", base)
+            }
+        };
         // Absolute path
         if target.starts_with("/") {
             let base_dir = &Path::new("/");
 
-            let path = base_dir.join(&**target);
+            let path = base_dir.join(&*target);
             return self
                 .resolve_as_file(&path)
                 .or_else(|_| self.resolve_as_directory(&path))
@@ -153,7 +158,7 @@ impl Resolve for NodeResolver {
         let base_dir = base.parent().unwrap_or(&cwd);
 
         if target.starts_with("./") || target.starts_with("../") {
-            let path = base_dir.join(&**target);
+            let path = base_dir.join(&*target);
             return self
                 .resolve_as_file(&path)
                 .with_context(|| {
