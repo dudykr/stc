@@ -8,6 +8,7 @@ use parking_lot::{Mutex, RwLock};
 use rayon::prelude::*;
 use stc_ts_types::{module_id, ModuleId};
 use std::{
+    mem::take,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -85,13 +86,14 @@ where
         }
     }
 
+    /// TODO: Fix race condition of `errors`.
     pub fn load_all(&self, entry: &Arc<PathBuf>) -> Result<ModuleId, Error> {
         self.load_including_deps(entry);
 
         let (_, module_id) = self.id_generator.generate(entry);
 
         let res = {
-            let mut analyzer = GraphAnalyzer::new(&self);
+            let mut analyzer = GraphAnalyzer::new(&*self);
             analyzer.load(module_id);
             analyzer.into_result()
         };
@@ -108,6 +110,14 @@ where
             for (a, b, _) in res.graph.all_edges() {
                 deps.graph.add_edge(a, b, ());
             }
+        }
+
+        let errors = take(&mut *self.errors.lock());
+        if !errors.is_empty() {
+            bail!(
+                "failed load modules:\n{}",
+                errors.iter().map(|s| format!("{:?}", s)).collect::<Vec<_>>().join("\n")
+            );
         }
 
         Ok(module_id)
