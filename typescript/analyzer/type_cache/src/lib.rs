@@ -2,6 +2,7 @@
 #![feature(specialization)]
 
 use crate::{cache_map::CacheMap, cache_mode::CacheMode, key::CacheKey};
+use stc_arc_cow::BoxedArcCow;
 use stc_ts_types::{Id, Mapped, Ref, Type};
 use stc_visit::{Visit, VisitWith};
 
@@ -13,10 +14,10 @@ pub mod key;
 /// Option<TypeParamInstantiation>), Type, RevokeOnTypeDecl>,
 #[derive(Debug, Default)]
 pub struct TypeCache {
-    pub expand_mapped: CacheMap<Mapped, Option<Type>, NoRefInKey>,
+    pub expand_mapped: CacheMap<Mapped, Option<BoxedArcCow<Type>>, NoRefInKey>,
 
     /// Key should be [Type::Arc] of [Type::TypeLit].
-    pub keyof_type_lit: CacheMap<Type, Type, NoRevoke>,
+    pub keyof_type_lit: CacheMap<Type, BoxedArcCow<Type>, NoRevoke>,
 }
 
 impl TypeCache {

@@ -51,8 +51,8 @@ where
     }
 
     /// Returns the inserted value.
-    pub fn insert(&mut self, key: K, mut value: V) -> V {
-        value.make_clone_cheap();
+    pub fn insert(&mut self, key: K, value: V) -> V {
+        let value = value.freezed();
 
         self.data.push((key, value.clone()));
 
