@@ -644,22 +644,22 @@ struct MappedHandler<'d> {
 
 impl Fold<Type> for MappedHandler<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
-        match ty.normalize() {
-            Type::IndexedAccessType(ty) => match ty.obj_type.normalize() {
+        match &ty {
+            Type::IndexedAccessType(ty) => match &*ty.obj_type {
                 Type::Param(TypeParam {
                     name: obj_param_name, ..
-                }) => match ty.index_type.normalize() {
+                }) => match &*ty.index_type {
                     Type::Param(TypeParam {
                         name: index_param_name,
                         constraint: Some(index_type_constraint),
                         ..
-                    }) => match index_type_constraint.normalize() {
+                    }) => match &**index_type_constraint {
                         Type::Operator(
                             operator @ Operator {
                                 op: TsTypeOperatorOp::KeyOf,
                                 ..
                             },
-                        ) => match operator.ty.normalize() {
+                        ) => match &*operator.ty {
                             Type::Param(constraint_param) => {
                                 if *obj_param_name == constraint_param.name && *self.param_name == *obj_param_name {
                                     return self.prop_ty.clone();
@@ -677,7 +677,6 @@ impl Fold<Type> for MappedHandler<'_> {
         }
 
         // TODO(kdy1): PERF
-        ty.normalize_mut();
         ty = ty.fold_children_with(self);
 
         ty

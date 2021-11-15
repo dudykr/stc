@@ -64,9 +64,9 @@ impl Fold<Function> for TypeParamRenamer {
 
 impl Fold<Type> for TypeParamRenamer {
     fn fold(&mut self, mut ty: Type) -> Type {
-        ty = ty.foldable().fold_children_with(self);
+        ty = ty.fold_children_with(self);
 
-        match ty.normalize() {
+        match &ty {
             Type::Param(ref param) => {
                 if let Some(declared) = &self.declared {
                     if !declared.contains(&param.name) {
