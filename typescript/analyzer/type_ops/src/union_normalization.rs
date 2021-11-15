@@ -311,8 +311,8 @@ impl UnionNormalizer {
 
         // Add properties.
         for ty in u.types.iter_mut() {
-            if matches!(ty.normalize(), Type::TypeLit(..)) {
-                match ty.normalize_mut() {
+            if ty.is_type_lit() {
+                match ty.make_mut() {
                     Type::TypeLit(ty) => {
                         ty.metadata.inexact |= inexact;
                         ty.metadata.normalized = true;
@@ -337,11 +337,14 @@ impl UnionNormalizer {
                                     },
                                     optional: true,
                                     params: Default::default(),
-                                    type_ann: Some(box Type::Keyword(KeywordType {
-                                        span: DUMMY_SP,
-                                        kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
-                                        metadata: Default::default(),
-                                    })),
+                                    type_ann: Some(
+                                        Type::Keyword(KeywordType {
+                                            span: DUMMY_SP,
+                                            kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
+                                            metadata: Default::default(),
+                                        })
+                                        .into(),
+                                    ),
                                     type_params: Default::default(),
                                     metadata: Default::default(),
                                     accessor: Default::default(),
@@ -359,7 +362,6 @@ impl UnionNormalizer {
 impl VisitMut<Type> for UnionNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
         // TODO(kdy1): PERF
-        ty.normalize_mut();
 
         ty.visit_mut_children_with(self);
 
@@ -373,7 +375,7 @@ impl VisitMut<Union> for UnionNormalizer {
         u.visit_mut_children_with(self);
 
         // If an union does not contains object literals, skip it.
-        if u.types.iter().all(|ty| !ty.normalize().is_type_lit()) {
+        if u.types.iter().all(|ty| !ty.is_type_lit()) {
             return;
         }
 

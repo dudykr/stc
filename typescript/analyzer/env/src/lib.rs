@@ -2,6 +2,7 @@ pub use self::marks::{MarkExt, Marks};
 use derivative::Derivative;
 use parking_lot::Mutex;
 use rustc_hash::FxHashMap;
+use stc_arc_cow::BoxedArcCow;
 use stc_ts_errors::Error;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Type};
@@ -34,8 +35,8 @@ pub struct Env {
     target: EsVersion,
     module: ModuleConfig,
     builtin: Arc<BuiltIn>,
-    global_types: Arc<Mutex<FxHashMap<JsWord, Type>>>,
-    global_vars: Arc<Mutex<FxHashMap<JsWord, Type>>>,
+    global_types: Arc<Mutex<FxHashMap<JsWord, BoxedArcCow<Type>>>>,
+    global_vars: Arc<Mutex<FxHashMap<JsWord, BoxedArcCow<Type>>>>,
 }
 
 impl Env {
@@ -76,7 +77,7 @@ impl Env {
             Ok(prev_ty) => {
                 self.global_types
                     .lock()
-                    .insert(name, Type::intersection(DUMMY_SP, vec![prev_ty, ty]).fixed().cheap());
+                    .insert(name, Type::intersection(DUMMY_SP, vec![prev_ty, ty]).fixed().freezed());
             }
             Err(_) => {
                 self.global_types.lock().insert(name, ty);
