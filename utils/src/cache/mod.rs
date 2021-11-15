@@ -1,12 +1,41 @@
 use scoped_tls::scoped_thread_local;
+use stc_arc_cow::{freeze::Freezer, ArcCow, BoxedArcCow};
+use stc_visit::FoldWith;
 use std::borrow::Cow;
+use swc_common::util::map::Map;
 
 scoped_thread_local!(pub static ALLOW_DEEP_CLONE: ());
 
 pub trait Freeze: Sized + Clone {
     fn is_clone_cheap(&self) -> bool;
 
-    fn make_clone_cheap(&mut self);
+    fn freezed(self) -> Self;
+}
+
+impl<T> Freeze for ArcCow<T>
+where
+    T: Clone + FoldWith<Freezer>,
+{
+    fn is_clone_cheap(&self) -> bool {
+        matches!(self, ArcCow::Arc(..))
+    }
+
+    fn freezed(self) -> Self {
+        self.freezed()
+    }
+}
+
+impl<T> Freeze for BoxedArcCow<T>
+where
+    T: Clone + FoldWith<Freezer>,
+{
+    fn is_clone_cheap(&self) -> bool {
+        matches!(self, BoxedArcCow::Arc(..))
+    }
+
+    fn freezed(mut self) -> Self {
+        self.freezed()
+    }
 }
 
 impl<T> Freeze for Option<T>
@@ -20,11 +49,8 @@ where
         }
     }
 
-    fn make_clone_cheap(&mut self) {
-        match self {
-            Some(v) => v.make_clone_cheap(),
-            None => {}
-        }
+    fn freezed(self) -> Self {
+        self.map(Freeze::freezed)
     }
 }
 
@@ -36,8 +62,8 @@ where
         self.iter().all(|v| v.is_clone_cheap())
     }
 
-    fn make_clone_cheap(&mut self) {
-        self.iter_mut().for_each(|v| v.make_clone_cheap())
+    fn freezed(self) -> Self {
+        self.into_iter().map(Freeze::freezed).collect()
     }
 }
 
@@ -45,12 +71,12 @@ impl<T> Freeze for Box<T>
 where
     T: Freeze,
 {
-    fn make_clone_cheap(&mut self) {
-        (**self).make_clone_cheap()
-    }
-
     fn is_clone_cheap(&self) -> bool {
         (**self).is_clone_cheap()
+    }
+
+    fn freezed(self) -> Self {
+        self.map(|v| v.freezed())
     }
 }
 
@@ -59,23 +85,23 @@ impl<T> Freeze for Cow<'_, T>
 where
     T: Clone + Freeze,
 {
-    fn make_clone_cheap(&mut self) {
-        match self {
-            Cow::Borrowed(v) => {
-                if !v.is_clone_cheap() {
-                    let mut v = ALLOW_DEEP_CLONE.set(&(), || v.clone());
-                    v.make_clone_cheap();
-                    *self = Cow::Owned(v);
-                }
-            }
-            Cow::Owned(v) => {
-                v.make_clone_cheap();
-            }
-        }
-    }
-
     fn is_clone_cheap(&self) -> bool {
         (**self).is_clone_cheap()
+    }
+
+    fn freezed(self) -> Self {
+        match self {
+            Cow::Borrowed(v) => {
+                if v.is_clone_cheap() {
+                    return Cow::Borrowed(v);
+                }
+
+                let v = ALLOW_DEEP_CLONE.set(&(), || v.clone());
+                let v = v.freezed();
+                Cow::Owned(v)
+            }
+            Cow::Owned(v) => Cow::Owned(v.freezed()),
+        }
     }
 }
 
