@@ -182,7 +182,6 @@ impl Clone for Type {
     #[instrument(name = "Type::clone", skip(self))]
     fn clone(&self) -> Self {
         match self {
-            Type::Arc(ty) => ty.clone().into(),
             Type::Keyword(ty) => ty.clone().into(),
             Type::StaticThis(ty) => ty.clone().into(),
             Type::This(ty) => ty.clone().into(),
@@ -1294,12 +1293,7 @@ impl Type {
     /// TODO
     pub fn is_clone_cheap(&self) -> bool {
         match self {
-            Type::Arc(..)
-            | Type::Keyword(..)
-            | Type::Lit(..)
-            | Type::This(..)
-            | Type::StaticThis(..)
-            | Type::Symbol(..) => true,
+            Type::Keyword(..) | Type::Lit(..) | Type::This(..) | Type::StaticThis(..) | Type::Symbol(..) => true,
 
             // TODO(kdy1): Make this false.
             Type::Param(TypeParam {
@@ -1427,8 +1421,6 @@ impl Type {
             Type::Symbol(ty) => ty.metadata.common,
             Type::Tpl(ty) => ty.metadata.common,
             Type::Intrinsic(ty) => ty.metadata.common,
-
-            Type::Arc(_) => unreachable!(),
         }
     }
 
@@ -1734,31 +1726,6 @@ impl Type {
 //}
 
 impl Type {
-    /// Converts this type to foldable type.
-    ///
-    /// TODO(kdy1): Remove if possible
-    pub fn foldable(mut self) -> Type {
-        self.normalize_mut();
-        self
-    }
-
-    /// [Type::Arc] is normalized.
-    pub fn normalize<'s, 'c>(&'s self) -> &'c Type
-    where
-        's: 'c,
-    {
-        match *self {
-            Type::Arc(ref s) => {
-                //
-                unsafe { transmute::<&'s Type, &'c Type>(&s.ty) }
-            }
-            _ => unsafe {
-                // Shorten lifetimes
-                transmute::<&'s Self, &'c Type>(self)
-            },
-        }
-    }
-
     /// [Type::Arc] and [Type::Instance] are normalized.
     pub fn normalize_instance<'s, 'c>(&'s self) -> &'c Type
     where
@@ -1769,22 +1736,6 @@ impl Type {
             Type::Instance(ty) => ty.ty.normalize_instance(),
             _ => ty,
         }
-    }
-
-    /// `Type::Static` is normalized.
-    ///
-    /// TODO(kdy1): Remove if possible
-    #[instrument(skip(self))]
-    pub fn normalize_mut(&mut self) -> &mut Type {
-        match self {
-            Type::Arc(Freezed { ty }) => {
-                let ty = Arc::make_mut(ty);
-                *self = replace(ty, Type::any(DUMMY_SP, Default::default()));
-            }
-            _ => {}
-        }
-
-        self
     }
 
     /// TODO(kdy1): Make this more efficient, and explode subunions.
