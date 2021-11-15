@@ -84,6 +84,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             id: generator.generate(&path),
             path,
             info: Default::default(),
+            is_dts: false,
         };
 
         let mut node_id_gen = NodeIdGenerator::default();

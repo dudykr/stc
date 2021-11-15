@@ -91,6 +91,7 @@ fn validate(input: &Path) -> Vec<StcError> {
                 parent: None,
                 id: generator.generate(&path),
                 path,
+                is_dts: false,
                 info: Default::default(),
             };
 
@@ -176,6 +177,7 @@ fn errors(input: PathBuf) {
             id: generator.generate(&path),
             path,
             info: Default::default(),
+            is_dts: false,
         };
 
         {
@@ -239,6 +241,7 @@ fn pass_only(input: PathBuf) {
             id: generator.generate(&path),
             path,
             info: Default::default(),
+            is_dts: false,
         };
 
         {
@@ -371,6 +374,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
                 id: generator.generate(&path),
                 path,
                 info: Default::default(),
+                is_dts: false,
             };
 
             let mut node_id_gen = NodeIdGenerator::default();

@@ -45,6 +45,7 @@ where
             parent: None,
             id: ModuleId::builtin(),
             path: Arc::new(FileName::Real(PathBuf::new())),
+            is_dts: false,
             info: Default::default(),
         };
 

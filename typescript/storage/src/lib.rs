@@ -1,5 +1,6 @@
 #![feature(box_syntax)]
 
+use auto_impl::auto_impl;
 use fxhash::FxHashMap;
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, Type};
@@ -16,11 +17,14 @@ pub struct Info {
 
 pub type Storage<'b> = Box<dyn 'b + Mode>;
 
+#[auto_impl(&mut, Box)]
 pub trait ErrorStore {
     fn report(&mut self, err: Error);
     fn report_all(&mut self, err: Errors);
     fn take_errors(&mut self) -> Errors;
 }
+
+#[auto_impl(&mut, Box)]
 pub trait TypeStore: Send + Sync {
     fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Type>;
     fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Type>;
@@ -41,92 +45,21 @@ pub trait TypeStore: Send + Sync {
 ///
 /// The analyzer can work on multiple module at once, in case of circular
 /// imports.
+#[auto_impl(&mut, Box)]
 pub trait Mode: TypeStore + ErrorStore {
     /// Returns the id of the module where statement #`stmt_index` came from.
     fn module_id(&self, stmt_index: usize) -> ModuleId;
+
+    fn is_dts(&self) -> bool;
 
     fn path(&self, id: ModuleId) -> Arc<FileName>;
 
     fn subscope(&self) -> Storage;
 
-    fn merge_back(&mut self, mut subscope: Storage) {
-        let errors = subscope.take_errors();
+    fn merge_back(&mut self, subscope: Storage) {
+        let mut ss = subscope;
+        let errors = ss.take_errors();
         self.report_all(errors);
-    }
-}
-
-impl<'a, T> ErrorStore for &'a mut T
-where
-    T: ErrorStore,
-{
-    fn report(&mut self, err: Error) {
-        (**self).report(err);
-    }
-
-    fn report_all(&mut self, err: Errors) {
-        (**self).report_all(err);
-    }
-
-    fn take_errors(&mut self) -> Errors {
-        (**self).take_errors()
-    }
-}
-
-impl<'a, T> TypeStore for &'a mut T
-where
-    T: TypeStore,
-{
-    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Type> {
-        (**self).get_local_type(ctxt, id)
-    }
-
-    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Type> {
-        (**self).get_local_var(ctxt, id)
-    }
-
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool) {
-        (**self).store_private_type(ctxt, id, ty, should_override)
-    }
-
-    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
-        (**self).store_private_var(ctxt, id, ty)
-    }
-
-    fn export_type(&mut self, span: Span, ctxt: ModuleId, id: Id) {
-        (**self).export_type(span, ctxt, id)
-    }
-
-    fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id) {
-        (**self).export_var(span, ctxt, id, orig_name)
-    }
-
-    fn take_info(&mut self, ctxt: ModuleId) -> ModuleTypeData {
-        (**self).take_info(ctxt)
-    }
-
-    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
-        (**self).reexport_type(span, ctxt, id, ty)
-    }
-
-    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
-        (**self).reexport_var(span, ctxt, id, ty)
-    }
-}
-
-impl<'a, T> Mode for &'a mut T
-where
-    T: Mode,
-{
-    fn module_id(&self, stmt_index: usize) -> ModuleId {
-        (**self).module_id(stmt_index)
-    }
-
-    fn path(&self, id: ModuleId) -> Arc<FileName> {
-        (**self).path(id)
-    }
-
-    fn subscope(&self) -> Storage {
-        (**self).subscope()
     }
 }
 
@@ -135,6 +68,7 @@ pub struct Single<'a> {
     pub parent: Option<&'a Single<'a>>,
     pub id: ModuleId,
     pub path: Arc<FileName>,
+    pub is_dts: bool,
     pub info: Info,
 }
 
@@ -268,6 +202,10 @@ impl<'a> Mode for Single<'a> {
         self.id
     }
 
+    fn is_dts(&self) -> bool {
+        self.is_dts
+    }
+
     fn path(&self, id: ModuleId) -> Arc<FileName> {
         debug_assert_eq!(id, self.id);
         self.path.clone()
@@ -276,6 +214,7 @@ impl<'a> Mode for Single<'a> {
     fn subscope(&self) -> Storage {
         box Single {
             parent: Some(self),
+            is_dts: self.is_dts,
             id: self.id,
             path: self.path.clone(),
             info: Default::default(),
@@ -424,6 +363,10 @@ impl Mode for Group<'_> {
         unreachable!("failed to get module id")
     }
 
+    fn is_dts(&self) -> bool {
+        false
+    }
+
     fn path(&self, id: ModuleId) -> Arc<FileName> {
         for file in self.files.iter() {
             if file.id == id {
@@ -514,6 +457,10 @@ impl TypeStore for Builtin {
 impl Mode for Builtin {
     fn module_id(&self, _stmt_index: usize) -> ModuleId {
         ModuleId::builtin()
+    }
+
+    fn is_dts(&self) -> bool {
+        true
     }
 
     fn path(&self, _: ModuleId) -> Arc<FileName> {

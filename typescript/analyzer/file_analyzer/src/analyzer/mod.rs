@@ -73,6 +73,8 @@ mod visit_mut;
 pub(crate) struct Ctx {
     module_id: ModuleId,
 
+    is_dts: bool,
+
     in_const_assertion: bool,
 
     in_constructor_param: bool,
@@ -445,6 +447,8 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         debugger: Option<Debugger>,
         data: AnalyzerData,
     ) -> Self {
+        let is_dts = storage.is_dts();
+
         Self {
             env,
             cm,
@@ -457,6 +461,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             scope,
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
+                is_dts,
                 in_const_assertion: false,
                 in_constructor_param: false,
                 diallow_unknown_object_property: false,
@@ -472,7 +477,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_switch_case_test: false,
                 in_computed_prop_name: false,
                 in_opt_chain: false,
-                in_declare: false,
+                in_declare: is_dts,
                 in_fn_without_body: false,
                 in_global: false,
                 in_export_default_expr: false,

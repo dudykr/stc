@@ -198,6 +198,7 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
                 id: generator.generate(&path),
                 path: path.clone(),
                 info: Default::default(),
+                is_dts: false,
             };
 
             let mut module = module.clone();
