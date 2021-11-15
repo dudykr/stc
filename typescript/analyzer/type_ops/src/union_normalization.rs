@@ -25,7 +25,7 @@ impl UnionNormalizer {
     fn find_keys(&self, types: &[Type]) -> IndexSet<JsWord> {
         types
             .iter()
-            .filter_map(|ty| match ty.normalize() {
+            .filter_map(|ty| match ty {
                 Type::TypeLit(ty) => Some(&ty.members),
                 _ => None,
             })
@@ -35,15 +35,14 @@ impl UnionNormalizer {
     }
 
     fn normalize_fn_types(&mut self, ty: &mut Type) {
-        if !ty.normalize().is_union_type() {
+        if !ty.is_union_type() {
             return;
         }
-        ty.make_clone_cheap();
-        let u = match ty.normalize_mut() {
+        let u = match ty {
             Type::Union(u) => u,
             _ => return,
         };
-        if u.types.iter().any(|ty| !ty.normalize().is_function()) {
+        if u.types.iter().any(|ty| !ty.is_function()) {
             return;
         }
 
@@ -52,7 +51,7 @@ impl UnionNormalizer {
         let mut return_types = vec![];
 
         for ty in &u.types {
-            match ty.normalize() {
+            match &**ty {
                 Type::Function(f) => {
                     if new_type_params.is_none() {
                         new_type_params = f.type_params.clone();
