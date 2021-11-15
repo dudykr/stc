@@ -188,6 +188,7 @@ macro_rules! impl_traits {
             V: ?Sized,
             T: Clone + VisitMutWith<V>,
         {
+            /// TODO: Panic with unreachable and explictly handle types in each visitor
             #[inline]
             fn visit_mut_children_with(&mut self, v: &mut V) {
                 self.make_mut().visit_mut_children_with(v)
@@ -199,6 +200,7 @@ macro_rules! impl_traits {
             V: ?Sized,
             T: Clone + FoldWith<V>,
         {
+            /// TODO: Panic with unreachable and explictly handle types in each visitor
             #[inline]
             fn fold_children_with(self, v: &mut V) -> Self {
                 Self::from(self.into_inner().fold_children_with(v))
@@ -215,6 +217,11 @@ macro_rules! impl_traits {
                     $Ty::Arc(v) => Arc::make_mut(v),
                     $Ty::$Raw(v) => &mut *v,
                 }
+            }
+
+            #[inline]
+            pub fn is_arc(&self) -> bool {
+                matches!(self, $Ty::Arc(_))
             }
         }
     };
