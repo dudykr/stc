@@ -246,10 +246,10 @@ impl From<Conditional> for RTsType {
         RTsType::TsConditionalType(RTsConditionalType {
             node_id: NodeId::invalid(),
             span: t.span,
-            check_type: box (*t.check_type).into(),
-            extends_type: box (*t.extends_type).into(),
-            true_type: box (*t.true_type).into(),
-            false_type: box (*t.false_type).into(),
+            check_type: box t.check_type.into_inner().into(),
+            extends_type: box t.extends_type.into_inner().into(),
+            true_type: box t.true_type.into_inner().into(),
+            false_type: box t.false_type.into_inner().into(),
         })
     }
 }
@@ -294,7 +294,7 @@ impl From<Array> for RTsType {
         RTsType::TsArrayType(RTsArrayType {
             node_id: NodeId::invalid(),
             span: t.span,
-            elem_type: box (*t.elem_type).into(),
+            elem_type: box t.elem_type.into_inner().into(),
         })
     }
 }
@@ -490,7 +490,7 @@ impl From<super::Mapped> for RTsType {
 
 impl From<Alias> for RTsType {
     fn from(t: Alias) -> Self {
-        (*t.ty).into()
+        t.ty.into_inner().into()
     }
 }
 
@@ -585,7 +585,7 @@ impl From<super::ClassMember> for RTsTypeElement {
                 type_ann: Some(RTsTypeAnn {
                     node_id: NodeId::invalid(),
                     span: DUMMY_SP,
-                    type_ann: box (*m.ret_ty).into(),
+                    type_ann: box m.ret_ty.into_inner().into(),
                 }),
                 type_params: m.type_params.map(From::from),
             }),

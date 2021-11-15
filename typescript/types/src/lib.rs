@@ -245,7 +245,7 @@ impl Clone for Type {
     }
 }
 
-assert_eq_size!(Type, [u8; 104]);
+assert_eq_size!(Type, [u8; 112]);
 
 fn _assert_send_sync() {
     fn assert<T: Send + Sync>() {}
@@ -388,8 +388,6 @@ pub struct ComputedKey {
     pub ty: BoxedArcCow<Type>,
 }
 
-assert_eq_size!(ComputedKey, [u8; 32]);
-
 /// Used to handle code like
 ///
 ///
@@ -407,8 +405,6 @@ pub struct Instance {
     pub metadata: InstanceMetadata,
 }
 
-assert_eq_size!(Instance, [u8; 32]);
-
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct LitType {
     pub span: Span,
@@ -417,8 +413,6 @@ pub struct LitType {
     pub lit: RTsLit,
     pub metadata: LitTypeMetadata,
 }
-
-assert_eq_size!(LitType, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct KeywordType {
@@ -429,16 +423,12 @@ pub struct KeywordType {
     pub metadata: KeywordTypeMetadata,
 }
 
-assert_eq_size!(KeywordType, [u8; 24]);
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Symbol {
     pub span: Span,
     pub id: SymbolId,
     pub metadata: SymbolMetadata,
 }
-
-assert_eq_size!(Symbol, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct RestType {
@@ -447,16 +437,12 @@ pub struct RestType {
     pub metadata: RestTypeMetadata,
 }
 
-assert_eq_size!(RestType, [u8; 32]);
-
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct OptionalType {
     pub span: Span,
     pub ty: BoxedArcCow<Type>,
     pub metadata: OptionalTypeMetadata,
 }
-
-assert_eq_size!(OptionalType, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct IndexedAccessType {
@@ -466,8 +452,6 @@ pub struct IndexedAccessType {
     pub index_type: BoxedArcCow<Type>,
     pub metadata: IndexedAccessTypeMetadata,
 }
-
-assert_eq_size!(IndexedAccessType, [u8; 40]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Ref {
@@ -479,8 +463,6 @@ pub struct Ref {
     pub type_args: Option<Box<TypeParamInstantiation>>,
     pub metadata: RefMetadata,
 }
-
-assert_eq_size!(Ref, [u8; 80]);
 
 impl Debug for Ref {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
@@ -498,8 +480,6 @@ pub struct InferType {
     pub type_param: TypeParam,
     pub metadata: InferTypeMetadata,
 }
-
-assert_eq_size!(InferType, [u8; 80]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct QueryType {
@@ -526,8 +506,6 @@ pub struct ImportType {
     pub metadata: ImportTypeMetadata,
 }
 
-assert_eq_size!(ImportType, [u8; 96]);
-
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Module {
     pub span: Span,
@@ -536,8 +514,6 @@ pub struct Module {
     pub exports: Box<ModuleTypeData>,
     pub metadata: ModuleTypeMetadata,
 }
-
-assert_eq_size!(Module, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Enum {
@@ -552,8 +528,6 @@ pub struct Enum {
 
     pub metadata: EnumMetadata,
 }
-
-assert_eq_size!(Enum, [u8; 88]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct EnumMember {
@@ -571,8 +545,6 @@ pub struct Class {
     pub metadata: ClassMetadata,
 }
 
-assert_eq_size!(Class, [u8; 32]);
-
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct ClassDef {
     pub span: Span,
@@ -584,8 +556,6 @@ pub struct ClassDef {
     pub implements: Box<Vec<TsExpr>>,
     pub metadata: ClassDefMetadata,
 }
-
-assert_eq_size!(ClassDef, [u8; 88]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is)]
 pub enum ClassMember {
@@ -654,8 +624,6 @@ pub struct Mapped {
     pub metadata: MappedMetadata,
 }
 
-assert_eq_size!(Mapped, [u8; 96]);
-
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Conditional {
     pub span: Span,
@@ -665,8 +633,6 @@ pub struct Conditional {
     pub false_type: BoxedArcCow<Type>,
     pub metadata: ConditionalMetadata,
 }
-
-assert_eq_size!(Conditional, [u8; 56]);
 
 /// TODO(kdy1): Remove this and create `keyof`, `unique` and `readonly` types.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -678,16 +644,12 @@ pub struct Operator {
     pub metadata: OperatorMetadata,
 }
 
-assert_eq_size!(Operator, [u8; 32]);
-
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Tuple {
     pub span: Span,
     pub elems: Vec<TupleElement>,
     pub metadata: TupleMetadata,
 }
-
-assert_eq_size!(Tuple, [u8; 48]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TupleElement {
@@ -705,8 +667,6 @@ pub struct Alias {
     pub metadata: AliasMetadata,
 }
 
-assert_eq_size!(Alias, [u8; 40]);
-
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Interface {
     pub span: Span,
@@ -717,16 +677,12 @@ pub struct Interface {
     pub metadata: InterfaceMetadata,
 }
 
-assert_eq_size!(Interface, [u8; 96]);
-
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeLit {
     pub span: Span,
     pub members: Vec<TypeElement>,
     pub metadata: TypeLitMetadata,
 }
-
-assert_eq_size!(TypeLit, [u8; 56]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeParamDecl {
@@ -850,8 +806,6 @@ pub struct Array {
     pub metadata: ArrayMetadata,
 }
 
-assert_eq_size!(Array, [u8; 32]);
-
 /// a | b
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Union {
@@ -859,8 +813,6 @@ pub struct Union {
     pub types: Vec<BoxedArcCow<Type>>,
     pub metadata: UnionMetadata,
 }
-
-assert_eq_size!(Union, [u8; 48]);
 
 impl Union {
     pub fn assert_valid(&self) {
@@ -972,8 +924,6 @@ pub struct Function {
     pub metadata: FunctionMetadata,
 }
 
-assert_eq_size!(Function, [u8; 96]);
-
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Constructor {
     pub span: Span,
@@ -984,8 +934,6 @@ pub struct Constructor {
     pub is_abstract: bool,
     pub metadata: ConstructorMetadata,
 }
-
-assert_eq_size!(Constructor, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Predicate {
@@ -1036,7 +984,7 @@ impl Type {
 
         for ty in iter {
             if ty.is_intersection_type() {
-                tys.extend(ty.expect_intersection_type().types);
+                tys.extend(ty.into_inner().expect_intersection_type().types);
             } else {
                 tys.push(ty);
             }
@@ -1090,7 +1038,7 @@ impl Type {
 
         for ty in iter {
             if ty.is_union_type() {
-                let types = ty.expect_union_type().types;
+                let types = ty.into_inner().expect_union_type().types;
                 for new in types {
                     if elements.iter().any(|prev| prev.type_eq(&new)) {
                         continue;
@@ -1133,7 +1081,7 @@ impl Type {
             }
 
             if ty.is_union_type() {
-                let types = ty.expect_union_type().types;
+                let types = ty.into_inner().expect_union_type().types;
                 for new in types {
                     if elements.iter().any(|prev| prev.type_eq(&new)) {
                         continue;
