@@ -2,11 +2,13 @@
 #![feature(specialization)]
 
 pub use self::boxed::BoxedArcCow;
+use crate::freeze::Freezer;
 use triomphe::Arc;
 
 #[macro_use]
 mod macros;
 mod boxed;
+pub mod freeze;
 
 pub enum ArcCow<T>
 where
@@ -19,12 +21,14 @@ where
 impl_traits!(ArcCow, Raw);
 
 impl<T> ArcCow<T> {
+    /// This is deep freeze, but doesn't work if `self <- Freezed <- NonFreezed`
+    /// exists.
     #[inline]
-    pub fn freezed(self) -> Self {
-        match self {
-            ArcCow::Raw(v) => Self::Arc(Arc::new(v)),
-            _ => self,
-        }
+    pub fn freezed(self) -> Self
+    where
+        Self: FoldWith<Freezer>,
+    {
+        self.fold_with(&mut Freezer)
     }
 }
 

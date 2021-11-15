@@ -47,6 +47,14 @@ macro_rules! impl_traits {
         {
             #[inline]
             fn eq(&self, other: &Self) -> bool {
+                match (self, other) {
+                    ($Ty::Arc(l), $Ty::Arc(r)) => {
+                        if Arc::ptr_eq(l, r) {
+                            return true;
+                        }
+                    }
+                    _ => {}
+                }
                 (**self).eq(&**other)
             }
 
@@ -139,6 +147,15 @@ macro_rules! impl_traits {
         {
             #[inline]
             fn type_eq(&self, other: &Self) -> bool {
+                match (self, other) {
+                    ($Ty::Arc(l), $Ty::Arc(r)) => {
+                        if Arc::ptr_eq(l, r) {
+                            return true;
+                        }
+                    }
+                    _ => {}
+                }
+
                 (**self).type_eq(&**other)
             }
         }
