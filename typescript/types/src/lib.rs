@@ -23,6 +23,7 @@ use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
 use servo_arc::Arc;
 use static_assertions::assert_eq_size;
+use stc_arc_cow::freeze::Freezer;
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
     RTsKeywordType, RTsLit, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
@@ -2168,9 +2169,7 @@ impl Type {
 //    }
 //}
 
-struct CheapClone;
-
-impl VisitMut<Type> for CheapClone {
+impl VisitMut<Type> for Freezer {
     fn visit_mut(&mut self, ty: &mut Type) {
         if ty.is_clone_cheap() {
             return;
@@ -2205,7 +2204,7 @@ impl Type {
     #[inline]
     #[instrument(skip(self))]
     pub fn make_cheap(&mut self) {
-        self.visit_mut_with(&mut CheapClone);
+        self.visit_mut_with(&mut Freezer);
     }
 
     pub fn as_bool(&self) -> Value<bool> {
@@ -2457,7 +2456,7 @@ macro_rules! impl_freeze {
             #[inline]
             #[instrument(skip(self))]
             fn make_clone_cheap(&mut self) {
-                self.visit_mut_with(&mut CheapClone);
+                self.visit_mut_with(&mut Freezer);
             }
         }
     };

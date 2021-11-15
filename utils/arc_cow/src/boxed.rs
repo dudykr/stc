@@ -15,11 +15,11 @@ impl<T> BoxedArcCow<T> {
     /// This is deep freeze, but doesn't work if `self <- Freezed <- NonFreezed`
     /// exists.
     #[inline]
-    pub fn freezed(self) -> Self
+    pub fn freeze(&mut self)
     where
-        Self: FoldWith<Freezer>,
+        Self: VisitMutWith<Freezer>,
     {
-        self.fold_with(&mut Freezer)
+        self.visit_mut_with(&mut Freezer)
     }
 }
 

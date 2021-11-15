@@ -1,38 +1,43 @@
 use crate::{ArcCow, BoxedArcCow};
-use stc_visit::{Fold, FoldWith};
-use triomphe::{Arc, UniqueArc};
+use stc_visit::{VisitMut, VisitMutWith};
+use swc_common::util::take::Take;
+use triomphe::Arc;
 
 pub struct Freezer;
 
-impl<T> Fold<ArcCow<T>> for Freezer
+impl<T> VisitMut<ArcCow<T>> for Freezer
 where
-    T: FoldWith<Self>,
-    ArcCow<T>: FoldWith<Self>,
+    T: VisitMutWith<Self> + Take,
+    ArcCow<T>: VisitMutWith<Self>,
 {
-    fn fold(&mut self, value: ArcCow<T>) -> ArcCow<T> {
-        match value {
-            ArcCow::Arc(_) => value,
+    fn visit_mut(&mut self, n: &mut ArcCow<T>) {
+        match n {
+            ArcCow::Arc(_) => return,
             ArcCow::Raw(v) => {
-                let v = v.fold_with(self);
-                ArcCow::Arc(Arc::new(v))
+                // Deep
+                v.visit_mut_with(self);
+                let v = v.take();
+
+                *n = ArcCow::Arc(Arc::new(v))
             }
         }
     }
 }
 
-impl<T> Fold<BoxedArcCow<T>> for Freezer
+impl<T> VisitMut<BoxedArcCow<T>> for Freezer
 where
-    T: FoldWith<Self>,
-    BoxedArcCow<T>: FoldWith<Self>,
+    T: VisitMutWith<Self> + Take,
+    BoxedArcCow<T>: VisitMutWith<Self>,
 {
-    fn fold(&mut self, value: BoxedArcCow<T>) -> BoxedArcCow<T> {
-        match value {
-            BoxedArcCow::Arc(_) => value,
+    fn visit_mut(&mut self, n: &mut BoxedArcCow<T>) {
+        match n {
+            BoxedArcCow::Arc(_) => return,
             BoxedArcCow::Boxed(v) => {
-                let v = UniqueArc::into_inner(v);
-                let v = v.fold_with(self);
+                (&mut **v).visit_mut_with(self);
 
-                BoxedArcCow::Arc(Arc::new(v))
+                let v = v.take();
+
+                *n = BoxedArcCow::Arc(Arc::new(v))
             }
         }
     }
