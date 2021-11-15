@@ -289,6 +289,11 @@ impl Checker {
         self.run(|| {
             let start = Instant::now();
 
+            let is_dts = match &*path {
+                FileName::Real(path) => path.extension().map_or(false, |ext| ext == "d.ts"),
+                _ => false,
+            };
+
             let mut node_id_gen = NodeIdGenerator::default();
             let mut module = self
                 .module_graph
@@ -302,6 +307,7 @@ impl Checker {
                 id,
                 path: path.clone(),
                 info: Default::default(),
+                is_dts,
             };
             let mut mutations;
             {
