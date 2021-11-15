@@ -19,21 +19,15 @@ use fxhash::FxHashMap;
 use is_macro::Is;
 use num_bigint::BigInt;
 use num_traits::Zero;
-use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
+use rnode::{FoldWith, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
-use servo_arc::Arc;
 use static_assertions::assert_eq_size;
-use stc_arc_cow::BoxedArcCow;
+use stc_arc_cow::{Arc, BoxedArcCow};
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
     RTsKeywordType, RTsLit, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
-use stc_utils::{
-    cache::{Freeze, ALLOW_DEEP_CLONE},
-    debug_ctx,
-    ext::TypeVecExt,
-    panic_ctx,
-};
+use stc_utils::{cache::ALLOW_DEEP_CLONE, debug_ctx, ext::TypeVecExt, panic_ctx};
 use stc_visit::{Visit, Visitable};
 use std::{
     self,
@@ -41,7 +35,6 @@ use std::{
     fmt,
     fmt::{Debug, Formatter},
     iter::FusedIterator,
-    mem::replace,
     ops::AddAssign,
 };
 use swc_atoms::{js_word, JsWord};
@@ -1347,7 +1340,7 @@ impl Type {
 
 impl Type {
     pub fn metadata(&self) -> CommonTypeMetadata {
-        match self.normalize() {
+        match self {
             Type::Instance(ty) => ty.metadata.common,
             Type::StaticThis(ty) => ty.metadata.common,
             Type::This(ty) => ty.metadata.common,
@@ -1387,7 +1380,7 @@ impl Type {
     }
 
     pub fn metadata_mut(&mut self) -> &mut CommonTypeMetadata {
-        match self.normalize_mut() {
+        match self {
             Type::Instance(ty) => &mut ty.metadata.common,
             Type::StaticThis(ty) => &mut ty.metadata.common,
             Type::This(ty) => &mut ty.metadata.common,
@@ -1423,8 +1416,6 @@ impl Type {
             Type::Symbol(ty) => &mut ty.metadata.common,
             Type::Tpl(ty) => &mut ty.metadata.common,
             Type::Intrinsic(ty) => &mut ty.metadata.common,
-
-            Type::Arc(_) => unreachable!(),
         }
     }
 
@@ -1440,7 +1431,7 @@ impl Type {
             return;
         }
 
-        match self.normalize_mut() {
+        match self {
             Type::Operator(ty) => ty.span = span,
 
             Type::Mapped(ty) => ty.span = span,
@@ -1510,10 +1501,6 @@ impl Type {
             Type::Tpl(ty) => ty.span = span,
 
             Type::Intrinsic(ty) => ty.span = span,
-
-            Type::Arc(..) => {
-                unreachable!()
-            }
         }
     }
 }
@@ -1561,7 +1548,7 @@ impl Visit<Union> for AssertValid {
         ty.assert_valid();
 
         for item in ty.types.iter() {
-            if item.normalize().is_union_type() {
+            if item.is_union_type() {
                 unreachable!("[INVALID_TYPE]: A union type should not have a union item")
             }
         }
@@ -1579,7 +1566,7 @@ impl Visit<Intersection> for AssertValid {
         ty.assert_valid();
 
         for item in ty.types.iter() {
-            if item.normalize().is_intersection_type() {
+            if item.is_intersection_type() {
                 unreachable!("[INVALID_TYPE]: An intersection type should not have an intersection item")
             }
         }
@@ -1604,7 +1591,7 @@ impl Type {
     }
 
     pub fn is_global_this(&self) -> bool {
-        match self.normalize() {
+        match self {
             Type::Query(QueryType {
                 expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i)),
                 ..
@@ -1715,7 +1702,7 @@ impl<'a> Iterator for Iter<'a> {
     type Item = &'a Type;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.ty.normalize() {
+        match self.ty {
             Type::Union(ref u) => {
                 let ty = u.types.get(self.idx);
                 self.idx += 1;
@@ -1737,7 +1724,7 @@ impl FusedIterator for Iter<'_> {}
 impl Type {
     /// Returns true if `self` is a `string` or a string literal.
     pub fn is_str(&self) -> bool {
-        match self.normalize() {
+        match self {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
@@ -1750,7 +1737,7 @@ impl Type {
     }
 
     pub fn is_str_lit(&self) -> bool {
-        match self.normalize() {
+        match self {
             Type::Lit(LitType {
                 lit: RTsLit::Str(..), ..
             }) => true,
@@ -1759,7 +1746,7 @@ impl Type {
     }
 
     pub fn is_num(&self) -> bool {
-        match self.normalize() {
+        match self {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNumberKeyword,
                 ..
@@ -1773,7 +1760,7 @@ impl Type {
     }
 
     pub fn is_num_lit(&self) -> bool {
-        match self.normalize() {
+        match self {
             Type::Lit(LitType {
                 lit: RTsLit::Number(..),
                 ..
@@ -1784,7 +1771,7 @@ impl Type {
 
     /// Returns true if `self` is a `boolean` or a boolean literal.
     pub fn is_bool(&self) -> bool {
-        match self.normalize() {
+        match self {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                 ..
@@ -1797,331 +1784,10 @@ impl Type {
     }
 }
 
-//impl Type {
-//    /// Converts `Type` into `Type`.
-//    pub fn owned(self) -> Type {
-//        unsafe { transmute::<Cow<'_, Type>, Type>(Cow::Owned(self)) }
-//    }
-//
-//    /// Converts `Type` into `Type`.
-//    #[inline]
-//    pub fn static_cast(&self) -> Type {
-//        unsafe { transmute::<Cow<'_, Type>, Type>(Cow::Borrowed(self))
-// }    }
-//}
-
-//impl Interface {
-//    pub fn into_static(self) -> Interface<'static> {
-//        Interface {
-//            span: self.span,
-//            name: self.name,
-//            type_params: self.type_params.map(|v| v),
-//            extends: self.extends.into_iter().map(|v|
-// v).collect(),            body: self.body.into_iter().map(|v|
-// v).collect(),        }
-//    }
-//}
-
-//impl TsExpr {
-//    pub fn into_static(self) -> TsExpr<'static> {
-//        TsExpr {
-//            span: self.span,
-//            expr: self.expr,
-//            type_params: self.type_params.map(|v| v),
-//        }
-//    }
-//}
-//
-//impl TypeElement<'static> {
-//    /// Converts `TypeTypeElement<'static>` into `TypeTypeElement`.
-//    #[inline]
-//    pub fn static_cast(self) -> TypeElement {
-//        unsafe { transmute::<TypeElement<'static>, TypeElement>(self) }
-//    }
-//}
-//
-//impl TypeElement {
-//    pub fn into_static(self) -> TypeElement<'static> {
-//        match self {
-//            TypeElement::Call(call) => TypeElement::Call(call),
-//            TypeElement::Constructor(c) =>
-// TypeElement::Constructor(c),            TypeElement::Index(i)
-// => TypeElement::Index(i),            TypeElement::Method(m) =>
-// TypeElement::Method(m),            TypeElement::Property(p) =>
-// TypeElement::Property(p),        }
-//    }
-//}
-//
-//impl TypeParamInstantiation {
-//    pub fn into_static(self) -> TypeParamInstantiation<'static> {
-//        TypeParamInstantiation {
-//            span: self.span,
-//            params: self.params.into_iter().map(static_type).collect(),
-//        }
-//    }
-//}
-//
-//impl CallSignature {
-//    pub fn into_static(self) -> CallSignature<'static> {
-//        CallSignature {
-//            span: self.span,
-//            params: self.params,
-//            type_params: self.type_params.map(|v| v),
-//            ret_ty: self.ret_ty.map(static_type),
-//        }
-//    }
-//}
-//
-//impl ConstructorSignature {
-//    pub fn into_static(self) -> ConstructorSignature<'static> {
-//        ConstructorSignature {
-//            span: self.span,
-//            params: self.params,
-//            ret_ty: self.ret_ty.map(static_type),
-//            type_params: self.type_params.map(|v| v),
-//        }
-//    }
-//}
-//
-//impl IndexSignature {
-//    pub fn into_static(self) -> IndexSignature<'static> {
-//        IndexSignature {
-//            span: self.span,
-//            readonly: self.readonly,
-//            params: self.params,
-//            type_ann: self.type_ann.map(static_type),
-//        }
-//    }
-//}
-//
-//impl MethodSignature {
-//    pub fn into_static(self) -> MethodSignature<'static> {
-//        MethodSignature {
-//            span: self.span,
-//            computed: self.computed,
-//            optional: self.optional,
-//            key: self.key,
-//            params: self.params,
-//            readonly: self.readonly,
-//            ret_ty: self.ret_ty.map(static_type),
-//            type_params: self.type_params.map(|v| v),
-//        }
-//    }
-//}
-//
-//impl PropertySignature {
-//    pub fn into_static(self) -> PropertySignature<'static> {
-//        PropertySignature {
-//            span: self.span,
-//            computed: self.computed,
-//            optional: self.optional,
-//            key: self.key,
-//            params: self.params,
-//            readonly: self.readonly,
-//            type_ann: self.type_ann.map(static_type),
-//            type_params: self.type_params.map(|v| v),
-//        }
-//    }
-//}
-//
-//impl TypeParam {
-//    pub fn into_static(self) -> TypeParam<'static> {
-//        TypeParam {
-//            span: self.span,
-//            name: self.name,
-//            constraint: self.constraint.map(|v| box static_type(*v)),
-//            default: self.default.map(|v| box static_type(*v)),
-//        }
-//    }
-//}
-//
-//impl TypeParamDecl {
-//    pub fn into_static(self) -> TypeParamDecl<'static> {
-//        TypeParamDecl {
-//            span: self.span,
-//            params: self.params.into_iter().map(|v|
-// v).collect(),        }
-//    }
-//}
-//
-//impl TypeLit {
-//    pub fn into_static(self) -> TypeLit<'static> {
-//        TypeLit {
-//            span: self.span,
-//            members: self.members.into_iter().map(|v|
-// v).collect(),        }
-//    }
-//}
-//
-//impl Alias {
-//    pub fn into_static(self) -> Alias<'static> {
-//        Alias {
-//            span: self.span,
-//            type_params: self.type_params.map(|v| v),
-//            ty: box static_type(*self.ty),
-//        }
-//    }
-//}
-//
-//impl TypeParam {
-//    pub fn into_static(self) -> TypeParam<'static> {
-//        TypeParam {
-//            span: self.span,
-//            name: self.name,
-//            constraint: self.constraint.map(|v| box static_type(*v)),
-//            default: self.default.map(|v| box static_type(*v)),
-//        }
-//    }
-//}
-//
-//impl Tuple {
-//    pub fn into_static(self) -> Tuple<'static> {
-//        Tuple {
-//            span: self.span,
-//            types: self.types.into_iter().map(static_type).collect(),
-//        }
-//    }
-//}
-//
-//impl Conditional {
-//    pub fn into_static(self) -> Conditional<'static> {
-//        Conditional {
-//            span: self.span,
-//            check_type: box static_type(*self.check_type),
-//            extends_type: box static_type(*self.extends_type),
-//            true_type: box static_type(*self.true_type),
-//            false_type: box static_type(*self.false_type),
-//        }
-//    }
-//}
-//
-//impl Mapped {
-//    pub fn into_static(self) -> Mapped<'static> {
-//        Mapped {
-//            span: self.span,
-//            readonly: self.readonly,
-//            optional: self.optional,
-//            type_param: self.type_param,
-//            ty: self.ty.map(|ty| box static_type(*ty)),
-//        }
-//    }
-//}
-//
-//impl Operator {
-//    pub fn into_static(self) -> Operator<'static> {
-//        Operator {
-//            span: self.span,
-//            op: self.op,
-//            ty: box static_type(*self.ty),
-//        }
-//    }
-//}
-//
-//impl Class {
-//    pub fn into_static(self) -> Class<'static> {
-//        Class {
-//            span: self.span,
-//            is_abstract: self.is_abstract,
-//            name: self.name,
-//            body: self.body.into_iter().map(|v| v).collect(),
-//            type_params: self.type_params.map(|v| v),
-//            super_class: self.super_class.map(|v| box static_type(*v)),
-//            // implements: map_types(self.implements, static_type),
-//        }
-//    }
-//}
-//
-//impl ClassInstance {
-//    pub fn into_static(self) -> ClassInstance<'static> {
-//        ClassInstance {
-//            span: self.span,
-//            cls: self.cls,
-//            type_args: self.type_args.map(|v| v),
-//        }
-//    }
-//}
-//
-//impl ClassMember {
-//    pub fn into_static(self) -> ClassMember<'static> {
-//        match self {
-//            ClassMember::Constructor(v) =>
-// ClassMember::Constructor(v),            ClassMember::Method(v)
-// => ClassMember::Method(v),            ClassMember::Property(v)
-// => ClassMember::Property(v),            ClassMember::IndexSignature(v) =>
-// ClassMember::IndexSignature(v),        }
-//    }
-//}
-//
-//impl Constructor {
-//    pub fn into_static(self) -> Constructor<'static> {
-//        Constructor {
-//            span: self.span,
-//            params: self.params,
-//            type_params: self.type_params.map(|v| v),
-//            ret_ty: self.ret_ty.map(|v| box Cow::Owned(v)),
-//        }
-//    }
-//}
-//
-//impl TypeElement {
-//    pub fn key(&self) -> Option<&RExpr> {
-//        static CONSTRUCTOR_EXPR: RExpr =
-//            { RExpr::RIdent(RIdent::new(js_word!("constructor"), DUMMY_SP)) };
-//
-//        match *self {
-//            TypeElement::Call(..) => None,
-//            TypeElement::Constructor(..) => Some(&CONSTRUCTOR_EXPR),
-//            TypeElement::Index(..) => None,
-//            TypeElement::Method(ref el) => Some(&el.key),
-//            TypeElement::Property(ref el) => Some(&el.key),
-//        }
-//    }
-//}
-
-struct CheapClone;
-
-impl VisitMut<Type> for CheapClone {
-    fn visit_mut(&mut self, ty: &mut Type) {
-        if ty.is_clone_cheap() {
-            return;
-        }
-
-        ty.assert_valid();
-
-        ty.visit_mut_children_with(self);
-
-        let new_ty = replace(
-            ty,
-            Type::Keyword(KeywordType {
-                span: DUMMY_SP,
-                kind: TsKeywordTypeKind::TsAnyKeyword,
-                metadata: Default::default(),
-            }),
-        );
-
-        *ty = Type::Arc(Freezed { ty: Arc::new(new_ty) })
-    }
-}
-
 impl Type {
-    /// Make cloning cheap.
-    #[inline]
-    pub fn cheap(mut self) -> Self {
-        self.make_cheap();
-        self
-    }
-
-    /// Make cloning cheap.
-    #[inline]
-    #[instrument(skip(self))]
-    pub fn make_cheap(&mut self) {
-        self.visit_mut_with(&mut CheapClone);
-    }
-
+    /// Evaluates the type as a bool.
     pub fn as_bool(&self) -> Value<bool> {
         match self {
-            Type::Arc(ref ty) => ty.ty.as_bool(),
-
             Type::Class(_) | Type::TypeLit(_) => Known(true),
 
             Type::Lit(ty) => Known(match &ty.lit {
@@ -2229,13 +1895,15 @@ pub struct ValidityChecker {
     valid: bool,
 }
 
+impl<T> Visit<Arc<T>> for ValidityChecker
+where
+    Arc<T>: Visitable,
+{
+    fn visit(&mut self, _: &Arc<T>) {}
+}
+
 impl Visit<Type> for ValidityChecker {
     fn visit(&mut self, ty: &Type) {
-        // Freezed types are valid.
-        if ty.is_arc() {
-            return;
-        }
-
         ty.visit_children_with(self);
     }
 }
@@ -2259,7 +1927,7 @@ impl Visit<Union> for ValidityChecker {
             return;
         }
 
-        if ty.types.iter().map(Type::normalize).any(|t| t.is_union_type()) {
+        if ty.types.iter().any(|t| t.is_union_type()) {
             self.valid = false;
             return;
         }
@@ -2287,7 +1955,7 @@ impl Visit<Intersection> for ValidityChecker {
             return;
         }
 
-        if ty.types.iter().map(Type::normalize).any(|t| t.is_intersection_type()) {
+        if ty.types.iter().any(|t| t.is_intersection_type()) {
             self.valid = false;
             return;
         }
@@ -2295,47 +1963,3 @@ impl Visit<Intersection> for ValidityChecker {
         ty.visit_children_with(self);
     }
 }
-
-struct CheckCheapClone {
-    cheap: bool,
-}
-
-impl Visit<Type> for CheckCheapClone {
-    fn visit(&mut self, ty: &Type) {
-        if ty.is_clone_cheap() {
-            return;
-        }
-
-        self.cheap = false;
-    }
-}
-
-macro_rules! impl_freeze {
-    ($T:ty) => {
-        impl Freeze for $T {
-            fn is_clone_cheap(&self) -> bool {
-                let mut v = CheckCheapClone { cheap: true };
-                self.visit_with(&mut v);
-                v.cheap
-            }
-
-            #[inline]
-            #[instrument(skip(self))]
-            fn make_clone_cheap(&mut self) {
-                self.visit_mut_with(&mut CheapClone);
-            }
-        }
-    };
-}
-
-impl_freeze!(FnParam);
-impl_freeze!(Interface);
-impl_freeze!(TsExpr);
-impl_freeze!(Type);
-impl_freeze!(TypeElement);
-impl_freeze!(TypeParam);
-impl_freeze!(TypeParamDecl);
-impl_freeze!(TypeParamInstantiation);
-impl_freeze!(TypeOrSpread);
-impl_freeze!(Key);
-impl_freeze!(Mapped);

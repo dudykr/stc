@@ -3,7 +3,7 @@
 
 pub use self::boxed::BoxedArcCow;
 use crate::freeze::Freezer;
-use triomphe::Arc;
+pub use triomphe::Arc;
 
 #[macro_use]
 mod macros;
