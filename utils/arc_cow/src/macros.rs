@@ -174,6 +174,7 @@ macro_rules! impl_traits {
 
         impl<T, V> VisitWith<V> for $Ty<T>
         where
+            V: ?Sized,
             T: VisitWith<V>,
         {
             #[inline]
@@ -184,6 +185,7 @@ macro_rules! impl_traits {
 
         impl<T, V> VisitMutWith<V> for $Ty<T>
         where
+            V: ?Sized,
             T: Clone + VisitMutWith<V>,
         {
             #[inline]
@@ -194,6 +196,7 @@ macro_rules! impl_traits {
 
         impl<T, V> FoldWith<V> for $Ty<T>
         where
+            V: ?Sized,
             T: Clone + FoldWith<V>,
         {
             #[inline]
