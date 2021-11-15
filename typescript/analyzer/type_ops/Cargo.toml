@@ -10,6 +10,7 @@ version = "0.1.0"
 indexmap = "1.7.0"
 rnode = {path = "../../../rnode"}
 rustc-hash = "1.1.0"
+stc_arc_cow = {path = "../../../utils/arc_cow/"}
 stc_ts_ast_rnode = {path = "../../ast_rnode"}
 stc_ts_base_type_ops = {path = "../base_type_ops/"}
 stc_ts_generics = {path = "../generics/"}

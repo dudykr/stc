@@ -7,9 +7,10 @@ version = "0.1.0"
 
 [dependencies]
 rustc-hash = "1.1.0"
+stc_arc_cow = {path = "../../../utils/arc_cow/"}
 stc_ts_ast_rnode = {path = "../../ast_rnode/"}
 stc_ts_types = {path = "../../types/"}
 stc_ts_utils = {path = "../../utils/"}
 stc_utils = {path = "../../../utils/"}
 stc_visit = {path = "../../../visit/"}
-swc_common = { version = "0.14.6", features = ["concurrent", "tty-emitter"] }
+swc_common = {version = "0.14.6", features = ["concurrent", "tty-emitter"]}

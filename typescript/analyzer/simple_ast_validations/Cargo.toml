@@ -9,6 +9,7 @@ version = "0.1.0"
 
 [dependencies]
 rnode = {path = "../../../rnode/"}
+stc_arc_cow = {path = "../../../utils/arc_cow/"}
 stc_ts_ast_rnode = {path = "../../ast_rnode/"}
 stc_ts_errors = {path = "../../errors/"}
 stc_ts_storage = {path = "../../storage/"}
