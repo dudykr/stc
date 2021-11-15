@@ -49,7 +49,7 @@ impl GenericExpander<'_> {
             }
         }
 
-        match ty {
+        match &ty {
             Type::StaticThis(..) | Type::Intrinsic(..) | Type::Symbol(..) => return ty,
 
             Type::Param(param) => {
@@ -134,7 +134,7 @@ impl GenericExpander<'_> {
             Type::Alias(mut alias) => {
                 alias = alias.fold_with(self);
 
-                return *alias.ty;
+                return alias.ty.into_inner();
             }
 
             Type::Interface(mut i) => {
@@ -260,7 +260,8 @@ impl GenericExpander<'_> {
 
                         let mut members = lit
                             .members
-                            .into_iter()
+                            .iter()
+                            .cloned()
                             .map(|mut v| match v {
                                 TypeElement::Property(ref mut p) => {
                                     p.type_ann = ty.clone();
@@ -340,7 +341,7 @@ impl GenericExpander<'_> {
                             ),
                         }
                     }
-                    _ => m.ty,
+                    ty => ty.map(|v| v.into()),
                 };
 
                 if let Some(constraint) = &m.type_param.constraint {
@@ -351,7 +352,9 @@ impl GenericExpander<'_> {
                             ty,
                             ..
                         }) => match &**ty {
-                            Type::Keyword(..) if m.optional == None && m.readonly == None => return *ty.clone(),
+                            Type::Keyword(..) if m.optional == None && m.readonly == None => {
+                                return ty.clone().into_inner()
+                            }
                             Type::TypeLit(TypeLit {
                                 span,
                                 members,
@@ -418,7 +421,7 @@ impl GenericExpander<'_> {
 
             Type::IndexedAccessType(ty) => {
                 let mut ty = ty.fold_with(self);
-                ty.obj_type.fix();
+                ty.obj_type.make_mut().fix();
 
                 let key = match &*ty.index_type {
                     Type::Lit(LitType {
