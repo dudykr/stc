@@ -48,7 +48,6 @@ impl VisitMut<Type> for PreventGeneralization {
             }
         }
 
-        ty.normalize_mut();
         ty.metadata_mut().prevent_generalization = true;
 
         ty.visit_mut_children_with(self);

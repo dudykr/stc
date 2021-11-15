@@ -46,13 +46,17 @@ impl Fold<Tuple> for LitGeneralizer {
 
             // Remove types after `...boolean[]`
             tuple.elems.retain(|element| {
-                match element.ty.normalize() {
-                    Type::Rest(RestType {
-                        ty: box Type::Array(Array { elem_type, .. }),
-                        ..
-                    }) => {
-                        rest_ty = Some(elem_type.clone());
-                    }
+                match &*element.ty {
+                    Type::Rest(RestType { ty: arr, .. }) => match &**arr {
+                        Type::Array(Array { elem_type, .. }) => {
+                            rest_ty = Some(elem_type.clone());
+                        }
+                        _ => {
+                            if let Some(_rest_ty) = &rest_ty {
+                                return false;
+                            }
+                        }
+                    },
                     _ => {
                         if let Some(_rest_ty) = &rest_ty {
                             return false;
@@ -78,8 +82,6 @@ impl Fold<Type> for LitGeneralizer {
                 return ty;
             }
         }
-
-        ty.normalize_mut();
 
         match &ty {
             Type::IndexedAccessType(IndexedAccessType { index_type, .. }) if is_str_lit_or_union(&index_type) => {
@@ -163,7 +165,7 @@ struct LitChecker {
 
 impl Visit<Type> for LitChecker {
     fn visit(&mut self, ty: &Type) {
-        match ty.normalize() {
+        match ty {
             Type::Lit(LitType { metadata, .. }) => {
                 if metadata.common.prevent_generalization {
                     return;
