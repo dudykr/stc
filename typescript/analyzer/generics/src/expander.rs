@@ -420,7 +420,7 @@ impl GenericExpander<'_> {
                 let mut ty = ty.fold_with(self);
                 ty.obj_type.fix();
 
-                let key = match ty.index_type.normalize() {
+                let key = match &*ty.index_type {
                     Type::Lit(LitType {
                         lit: RTsLit::Str(s), ..
                     }) => Some(Key::Normal {
@@ -511,7 +511,7 @@ impl Fold<Type> for GenericExpander<'_> {
         let _context = debug_ctx!(format!("Expanding generics of {}", dump_type_as_string(&self.cm, &ty)));
 
         let old_fully = self.fully;
-        self.fully |= match ty.normalize() {
+        self.fully |= match &ty {
             Type::Mapped(..) => true,
             _ => false,
         };
@@ -622,7 +622,7 @@ struct GenericChecker<'a> {
 
 impl Visit<Type> for GenericChecker<'_> {
     fn visit(&mut self, ty: &Type) {
-        match ty.normalize() {
+        match ty {
             Type::Param(p) => {
                 if self.params.contains_key(&p.name) {
                     self.found = true;
