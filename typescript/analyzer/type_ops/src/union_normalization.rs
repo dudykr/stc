@@ -1,6 +1,7 @@
 use indexmap::IndexSet;
 use rnode::{FoldWith, NodeId, VisitMut, VisitMutWith};
 use rustc_hash::FxHashMap;
+use stc_arc_cow::BoxedArcCow;
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_types::{
@@ -22,10 +23,10 @@ impl UnionNormalizer {
     /// We need to know shape of normalized type literal.
     ///
     /// We use indexset to remove duplicate while preserving order.
-    fn find_keys(&self, types: &[Type]) -> IndexSet<JsWord> {
+    fn find_keys(&self, types: &[BoxedArcCow<Type>]) -> IndexSet<JsWord> {
         types
             .iter()
-            .filter_map(|ty| match ty {
+            .filter_map(|ty| match &**ty {
                 Type::TypeLit(ty) => Some(&ty.members),
                 _ => None,
             })
@@ -128,11 +129,11 @@ impl UnionNormalizer {
             return;
         }
 
-        let u = match ty.normalize_mut() {
+        let u = match ty {
             Type::Union(u) => u,
             _ => return,
         };
-        if u.types.iter().any(|ty| !ty.normalize().is_type_lit()) {
+        if u.types.iter().any(|ty| !ty.is_type_lit()) {
             return;
         }
         let mut inexact = false;
@@ -144,7 +145,7 @@ impl UnionNormalizer {
         let mut extra_members = vec![];
         //
         for (type_idx, ty) in u.types.iter().enumerate() {
-            match ty.normalize() {
+            match &**ty {
                 Type::TypeLit(ty) => {
                     inexact |= ty.metadata.inexact;
                     prev_specified |= ty.metadata.specified;
@@ -193,10 +194,7 @@ impl UnionNormalizer {
                                     new_params[idx].push(param);
                                 }
 
-                                new_return_types
-                                    .entry(i)
-                                    .or_default()
-                                    .extend(ret_ty.clone().map(|v| *v));
+                                new_return_types.entry(i).or_default().extend(ret_ty.clone());
                             }
                             _ => {
                                 if extra_members.len() <= type_idx {
@@ -232,7 +230,7 @@ impl UnionNormalizer {
 
             members.push(TypeElement::Call(CallSignature {
                 span: DUMMY_SP,
-                ret_ty: Some(box Type::union(return_types)),
+                ret_ty: Some(Type::union(return_types)),
                 type_params,
                 params: new_params
                     .into_iter()
@@ -244,11 +242,11 @@ impl UnionNormalizer {
                                 pat = Some(param.pat);
                             }
 
-                            types.push(*param.ty);
+                            types.push(param.ty);
                         }
                         types.dedup_type();
 
-                        let ty = box Type::intersection(DUMMY_SP, types);
+                        let ty = Type::intersection(DUMMY_SP, types);
                         FnParam {
                             span: DUMMY_SP,
                             // TODO
@@ -292,6 +290,7 @@ impl UnionNormalizer {
                 new_lit
             })
             .map(Type::TypeLit)
+            .map(From::from)
             .collect();
 
         u.types = new_types;
@@ -305,7 +304,7 @@ impl UnionNormalizer {
 
         let keys = self.find_keys(&u.types);
 
-        let inexact = u.types.iter().any(|ty| match ty.normalize() {
+        let inexact = u.types.iter().any(|ty| match &**ty {
             Type::TypeLit(ty) => ty.metadata.inexact,
             _ => false,
         });
