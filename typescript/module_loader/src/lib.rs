@@ -10,7 +10,7 @@ use rayon::prelude::*;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
 use std::{mem::take, sync::Arc};
 use swc_atoms::JsWord;
-use swc_common::{comments::Comments, FileName, SourceMap, DUMMY_SP};
+use swc_common::{collections::AHashMap, comments::Comments, FileName, SourceMap, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
@@ -57,6 +57,8 @@ where
     errors: Mutex<Vec<Error>>,
     parsing_errors: Mutex<Vec<swc_ecma_parser::error::Error>>,
     deps: RwLock<DepGraphData>,
+
+    parse_cache: Mutex<AHashMap<Arc<FileName>, Arc<Module>>>,
 }
 #[derive(Default)]
 struct DepGraphData {
@@ -76,17 +78,18 @@ where
     R: Resolve,
 {
     pub fn new(cm: Arc<SourceMap>, comments: C, resolver: R, parser_config: TsConfig, target: EsVersion) -> Self {
-        Self {
+        ModuleGraph {
             cm,
-            comments,
             parser_config,
             target,
+            comments,
             id_generator: Default::default(),
             loaded: Default::default(),
             resolver: TsResolver::new(resolver),
+            errors: Default::default(),
             parsing_errors: Default::default(),
             deps: Default::default(),
-            errors: Default::default(),
+            parse_cache: Default::default(),
         }
     }
 
@@ -258,8 +261,6 @@ where
             self.resolver.declare_module(decl);
         }
 
-        let module = Arc::new(module);
-
         let resolver = &self.resolver;
 
         let deps = if resolve_all {
@@ -278,8 +279,12 @@ where
         Ok(Some(LoadResult { module, deps }))
     }
 
-    fn load_one_module(&self, filename: &FileName) -> Result<Module, Error> {
-        let path = match filename {
+    fn load_one_module(&self, filename: &Arc<FileName>) -> Result<Arc<Module>, Error> {
+        if let Some(cache) = self.parse_cache.lock().get(filename).cloned() {
+            return Ok(cache);
+        }
+
+        let path = match &**filename {
             FileName::Real(path) => path,
             _ => {
                 bail!("cannot load `{:?}`", filename)
@@ -315,6 +320,9 @@ where
             let mut errors = self.parsing_errors.lock();
             errors.extend(extra_errors);
         }
+
+        let module = Arc::new(module);
+        self.parse_cache.lock().insert(filename.clone(), module.clone());
 
         Ok(module)
     }

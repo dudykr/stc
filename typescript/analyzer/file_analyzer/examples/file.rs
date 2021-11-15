@@ -53,6 +53,7 @@ fn profile_file(path: &Path) {
             parent: None,
             id: ModuleId::builtin(),
             path: Arc::new(FileName::Real(PathBuf::from(path))),
+            is_dts: false,
             info: Default::default(),
         };
 
