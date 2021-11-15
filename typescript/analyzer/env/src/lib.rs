@@ -17,12 +17,12 @@ mod marks;
 
 #[derive(Debug, Default)]
 pub struct BuiltIn {
-    vars: FxHashMap<JsWord, Type>,
-    types: FxHashMap<JsWord, Type>,
+    vars: FxHashMap<JsWord, BoxedArcCow<Type>>,
+    types: FxHashMap<JsWord, BoxedArcCow<Type>>,
 }
 
 impl BuiltIn {
-    pub fn new(vars: FxHashMap<JsWord, Type>, types: FxHashMap<JsWord, Type>) -> Self {
+    pub fn new(vars: FxHashMap<JsWord, BoxedArcCow<Type>>, types: FxHashMap<JsWord, BoxedArcCow<Type>>) -> Self {
         BuiltIn { vars, types }
     }
 }
@@ -68,11 +68,11 @@ impl Env {
         self.rule
     }
 
-    pub fn declare_global_var(&mut self, _name: JsWord, _ty: Type) {
+    pub fn declare_global_var(&mut self, _name: JsWord, _ty: BoxedArcCow<Type>) {
         unimplemented!("declare_global_var")
     }
 
-    pub fn declare_global_type(&mut self, name: JsWord, ty: Type) {
+    pub fn declare_global_type(&mut self, name: JsWord, ty: BoxedArcCow<Type>) {
         match self.get_global_type(ty.span(), &name) {
             Ok(prev_ty) => {
                 self.global_types
@@ -86,7 +86,7 @@ impl Env {
     }
 
     #[instrument(skip(self, span))]
-    pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
+    pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<BoxedArcCow<Type>, Error> {
         if let Some(ty) = self.global_vars.lock().get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
             return Ok((*ty).clone());
@@ -104,7 +104,7 @@ impl Env {
     }
 
     #[instrument(skip(self, span))]
-    pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
+    pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<BoxedArcCow<Type>, Error> {
         if let Some(ty) = self.global_types.lock().get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
             return Ok((*ty).clone());

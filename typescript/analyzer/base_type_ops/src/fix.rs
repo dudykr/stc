@@ -1,5 +1,5 @@
 use rnode::{VisitMut, VisitMutWith};
-use stc_arc_cow::BoxedArcCow;
+use stc_arc_cow::{ArcCow, BoxedArcCow};
 use stc_ts_types::{
     Array, Conditional, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam, Union, Valid,
 };
@@ -12,6 +12,18 @@ pub trait Fix: Sized {
     fn fixed(mut self) -> Self {
         self.fix();
         self
+    }
+}
+
+impl<T> Fix for ArcCow<T> {
+    fn fix(&mut self) {
+        self.make_mut().fix()
+    }
+}
+
+impl<T> Fix for BoxedArcCow<T> {
+    fn fix(&mut self) {
+        self.make_mut().fix()
     }
 }
 
