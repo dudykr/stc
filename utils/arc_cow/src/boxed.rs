@@ -1,3 +1,4 @@
+use crate::freeze::Freezer;
 use triomphe::{Arc, UniqueArc};
 
 pub enum BoxedArcCow<T>
@@ -11,11 +12,14 @@ where
 impl_traits!(BoxedArcCow, Boxed);
 
 impl<T> BoxedArcCow<T> {
-    pub fn freezed(self) -> Self {
-        match self {
-            BoxedArcCow::Boxed(v) => Self::Arc(v.shareable()),
-            _ => self,
-        }
+    /// This is deep freeze, but doesn't work if `self <- Freezed <- NonFreezed`
+    /// exists.
+    #[inline]
+    pub fn freezed(self) -> Self
+    where
+        Self: FoldWith<Freezer>,
+    {
+        self.fold_with(&mut Freezer)
     }
 }
 
