@@ -68,11 +68,11 @@ pub enum IdCtx {
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ModuleTypeData {
-    pub private_vars: FxHashMap<Id, Type>,
-    pub vars: FxHashMap<JsWord, Type>,
+    pub private_vars: FxHashMap<Id, BoxedArcCow<Type>>,
+    pub vars: FxHashMap<JsWord, BoxedArcCow<Type>>,
 
-    pub private_types: FxHashMap<Id, Vec<Type>>,
-    pub types: FxHashMap<JsWord, Vec<Type>>,
+    pub private_types: FxHashMap<Id, Vec<BoxedArcCow<Type>>>,
+    pub types: FxHashMap<JsWord, Vec<BoxedArcCow<Type>>>,
 }
 
 impl Visitable for ModuleTypeData {}
