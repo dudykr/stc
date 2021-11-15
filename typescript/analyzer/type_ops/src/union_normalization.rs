@@ -65,7 +65,7 @@ impl UnionNormalizer {
                         new_params[idx].push(param);
                     }
 
-                    return_types.push(*f.ret_ty.clone());
+                    return_types.push(f.ret_ty.clone());
                 }
 
                 _ => {}
@@ -93,11 +93,11 @@ impl UnionNormalizer {
                             pat = Some(param.pat.clone());
                         }
 
-                        types.push(*param.ty.clone());
+                        types.push(param.ty.clone());
                     }
                     types.dedup_type();
 
-                    let ty = box Type::intersection(DUMMY_SP, types);
+                    let ty = Type::intersection(DUMMY_SP, types);
                     FnParam {
                         span: DUMMY_SP,
                         // TODO
@@ -114,7 +114,7 @@ impl UnionNormalizer {
                     }
                 })
                 .collect(),
-            ret_ty: box Type::union(return_types),
+            ret_ty: Type::union(return_types),
             metadata: FunctionMetadata {
                 common: u.metadata.common,
                 ..Default::default()
@@ -124,10 +124,9 @@ impl UnionNormalizer {
 
     /// TODO(kdy1): Add type parameters.
     fn normalize_call_signatures(&self, ty: &mut Type) {
-        if !ty.normalize().is_union_type() {
+        if !ty.is_union_type() {
             return;
         }
-        ty.make_clone_cheap();
 
         let u = match ty.normalize_mut() {
             Type::Union(u) => u,
