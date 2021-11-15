@@ -555,7 +555,7 @@ pub struct ClassDef {
     pub span: Span,
     pub is_abstract: bool,
     pub name: Option<Id>,
-    pub super_class: Option<Box<Type>>,
+    pub super_class: Option<BoxedArcCow<Type>>,
     pub body: Vec<ClassMember>,
     pub type_params: Option<Box<TypeParamDecl>>,
     pub implements: Box<Vec<TsExpr>>,
@@ -604,7 +604,7 @@ pub struct ClassProperty {
     pub span: Span,
     #[use_eq_ignore_span]
     pub key: Key,
-    pub value: Option<Box<Type>>,
+    pub value: Option<BoxedArcCow<Type>>,
     pub is_static: bool,
     #[use_eq]
     pub accessibility: Option<Accessibility>,
@@ -623,9 +623,9 @@ pub struct Mapped {
     pub readonly: Option<TruePlusMinus>,
     #[use_eq]
     pub optional: Option<TruePlusMinus>,
-    pub name_type: Option<Box<Type>>,
-    pub type_param: TypeParam,
-    pub ty: Option<Box<Type>>,
+    pub name_type: Option<BoxedArcCow<Type>>,
+    pub type_param: Box<TypeParam>,
+    pub ty: Option<BoxedArcCow<Type>>,
     pub metadata: MappedMetadata,
 }
 
@@ -747,7 +747,7 @@ pub struct CallSignature {
     pub span: Span,
     pub params: Vec<FnParam>,
     pub type_params: Option<TypeParamDecl>,
-    pub ret_ty: Option<Box<Type>>,
+    pub ret_ty: Option<BoxedArcCow<Type>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -757,7 +757,7 @@ pub struct ConstructorSignature {
     #[use_eq]
     pub accessibility: Option<Accessibility>,
     pub params: Vec<FnParam>,
-    pub ret_ty: Option<Box<Type>>,
+    pub ret_ty: Option<BoxedArcCow<Type>>,
     pub type_params: Option<TypeParamDecl>,
 }
 
@@ -771,7 +771,7 @@ pub struct PropertySignature {
     pub key: Key,
     pub optional: bool,
     pub params: Vec<FnParam>,
-    pub type_ann: Option<Box<Type>>,
+    pub type_ann: Option<BoxedArcCow<Type>>,
     pub type_params: Option<TypeParamDecl>,
     pub metadata: TypeElMetadata,
 
@@ -788,7 +788,7 @@ pub struct MethodSignature {
     pub key: Key,
     pub optional: bool,
     pub params: Vec<FnParam>,
-    pub ret_ty: Option<Box<Type>>,
+    pub ret_ty: Option<BoxedArcCow<Type>>,
     pub type_params: Option<TypeParamDecl>,
     pub metadata: TypeElMetadata,
 }
@@ -796,7 +796,7 @@ pub struct MethodSignature {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct IndexSignature {
     pub params: Vec<FnParam>,
-    pub type_ann: Option<Box<Type>>,
+    pub type_ann: Option<BoxedArcCow<Type>>,
 
     pub readonly: bool,
     pub span: Span,
@@ -902,8 +902,8 @@ impl Intersection {
 pub struct TypeParam {
     pub span: Span,
     pub name: Id,
-    pub constraint: Option<Box<Type>>,
-    pub default: Option<Box<Type>>,
+    pub constraint: Option<BoxedArcCow<Type>>,
+    pub default: Option<BoxedArcCow<Type>>,
     pub metadata: TypeParamMetadata,
 }
 
@@ -946,11 +946,9 @@ pub struct Predicate {
     #[use_eq_ignore_span]
     pub param_name: RTsThisTypeOrIdent,
     pub asserts: bool,
-    pub ty: Option<Box<Type>>,
+    pub ty: Option<BoxedArcCow<Type>>,
     pub metadata: PredicateMetadata,
 }
-
-assert_eq_size!(Predicate, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeOrSpread {

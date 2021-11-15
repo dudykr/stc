@@ -162,7 +162,7 @@ impl GenericExpander<'_> {
                 m = m.freezed();
 
                 match &m.type_param.constraint {
-                    Some(constraint) => match constraint.normalize() {
+                    Some(constraint) => match constraint {
                         Type::Operator(
                             operator @ Operator {
                                 op: TsTypeOperatorOp::KeyOf,

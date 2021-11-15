@@ -194,7 +194,7 @@ impl From<Predicate> for RTsType {
             span: t.span,
             asserts: t.asserts,
             param_name: t.param_name,
-            type_ann: t.ty.map(From::from),
+            type_ann: t.ty.map(|v| v.into_inner().into()),
         })
     }
 }
@@ -393,8 +393,8 @@ impl From<TypeParam> for RTsTypeParam {
             span: t.span,
             // TODO
             name: t.name.into(),
-            constraint: t.constraint.map(From::from),
-            default: t.default.map(From::from),
+            constraint: t.constraint.map(|v| v.into_inner().into()),
+            default: t.default.map(|v| v.into_inner().into()),
         }
     }
 }
@@ -477,12 +477,12 @@ impl From<super::Mapped> for RTsType {
             node_id: NodeId::invalid(),
             span: t.span,
 
-            name_type: t.name_type.map(From::from),
+            name_type: t.name_type.map(|v| v.into_inner().into()),
 
             readonly: t.readonly,
-            type_param: t.type_param.into(),
+            type_param: (*t.type_param).into(),
             optional: t.optional.map(From::from),
-            type_ann: t.ty.map(From::from),
+            type_ann: t.ty.map(|v| v.into_inner().into()),
         }
         .into()
     }
@@ -568,7 +568,7 @@ impl From<super::ClassMember> for RTsTypeElement {
                 node_id: NodeId::invalid(),
                 span: c.span,
                 params: c.params.into_iter().map(From::from).collect(),
-                type_ann: c.ret_ty.map(From::from),
+                type_ann: c.ret_ty.map(|v| v.into_inner().into()),
                 type_params: c.type_params.map(From::from),
             }),
             super::ClassMember::Method(m) => RTsTypeElement::TsMethodSignature(RTsMethodSignature {
@@ -601,7 +601,7 @@ impl From<super::ClassMember> for RTsTypeElement {
                 type_ann: p.value.map(|ty| RTsTypeAnn {
                     node_id: NodeId::invalid(),
                     span: DUMMY_SP,
-                    type_ann: box ty.into(),
+                    type_ann: box ty.into_inner().into(),
                 }),
                 type_params: None,
             }),
@@ -612,7 +612,7 @@ impl From<super::ClassMember> for RTsTypeElement {
                 type_ann: s.type_ann.map(|ty| RTsTypeAnn {
                     node_id: NodeId::invalid(),
                     span: DUMMY_SP,
-                    type_ann: box ty.into(),
+                    type_ann: box ty.into_inner().into(),
                 }),
                 readonly: s.readonly,
                 is_static: s.is_static,
@@ -628,14 +628,14 @@ impl From<TypeElement> for RTsTypeElement {
                 node_id: NodeId::invalid(),
                 span: e.span,
                 params: e.params.into_iter().map(|v| v.into()).collect(),
-                type_ann: e.ret_ty.map(From::from),
+                type_ann: e.ret_ty.map(|v| v.into_inner().into()),
                 type_params: e.type_params.map(From::from),
             }),
             TypeElement::Constructor(e) => RTsTypeElement::TsConstructSignatureDecl(RTsConstructSignatureDecl {
                 node_id: NodeId::invalid(),
                 span: e.span,
                 params: e.params.into_iter().map(|v| v.into()).collect(),
-                type_ann: e.ret_ty.map(From::from),
+                type_ann: e.ret_ty.map(|v| v.into_inner().into()),
                 type_params: e.type_params.map(From::from),
             }),
             TypeElement::Property(e) => RTsTypeElement::TsPropertySignature(RTsPropertySignature {
@@ -647,7 +647,7 @@ impl From<TypeElement> for RTsTypeElement {
                 optional: e.optional,
                 init: None,
                 params: e.params.into_iter().map(From::from).collect(),
-                type_ann: e.type_ann.map(From::from),
+                type_ann: e.type_ann.map(|v| v.into_inner().into()),
                 type_params: e.type_params.map(From::from),
             }),
             TypeElement::Method(e) => RTsTypeElement::TsMethodSignature(RTsMethodSignature {
@@ -658,13 +658,13 @@ impl From<TypeElement> for RTsTypeElement {
                 key: e.key.into_expr(),
                 optional: e.optional,
                 params: e.params.into_iter().map(From::from).collect(),
-                type_ann: e.ret_ty.map(From::from),
+                type_ann: e.ret_ty.map(|v| v.into_inner().into()),
                 type_params: e.type_params.map(From::from),
             }),
             TypeElement::Index(e) => RTsTypeElement::TsIndexSignature(RTsIndexSignature {
                 node_id: NodeId::invalid(),
                 params: e.params.into_iter().map(From::from).collect(),
-                type_ann: e.type_ann.map(From::from),
+                type_ann: e.type_ann.map(|v| v.into_inner().into()),
                 readonly: e.readonly,
                 span: e.span,
                 is_static: e.is_static,
