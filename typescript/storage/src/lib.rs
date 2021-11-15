@@ -389,8 +389,8 @@ impl Mode for Group<'_> {
 
 #[derive(Debug, Default)]
 pub struct Builtin {
-    pub vars: FxHashMap<JsWord, Type>,
-    pub types: FxHashMap<JsWord, Vec<Type>>,
+    pub vars: FxHashMap<JsWord, BoxedArcCow<Type>>,
+    pub types: FxHashMap<JsWord, Vec<BoxedArcCow<Type>>>,
 }
 
 impl ErrorStore for Builtin {
