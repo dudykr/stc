@@ -4,6 +4,7 @@
 #![feature(box_syntax)]
 
 use itertools::{EitherOrBoth, Itertools};
+use stc_arc_cow::BoxedArcCow;
 use stc_ts_types::{name::Name, Type};
 use std::cmp::{max_by, Ordering};
 
@@ -58,9 +59,16 @@ impl From<&Box<Type>> for TypeForm {
     }
 }
 
+impl From<&BoxedArcCow<Type>> for TypeForm {
+    #[inline]
+    fn from(ty: &BoxedArcCow<Type>) -> Self {
+        (&**ty).into()
+    }
+}
+
 impl From<&Type> for TypeForm {
     fn from(ty: &Type) -> Self {
-        match ty.normalize() {
+        match ty {
             Type::Instance(ty) => Self::Instance {
                 of: box Self::from(&ty.ty),
             },

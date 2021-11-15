@@ -4,7 +4,6 @@ use auto_impl::auto_impl;
 use fxhash::FxHashMap;
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, Type};
-use stc_utils::cache::Freeze;
 use std::{collections::hash_map::Entry, mem::take, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{iter::IdentifyLast, FileName, Span, TypeEq, DUMMY_SP};

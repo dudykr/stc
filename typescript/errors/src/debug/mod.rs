@@ -51,7 +51,7 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
             }),
         })));
 
-        match t.normalize() {
+        match t {
             Type::Interface(t) => ALLOW_DEEP_CLONE.set(&(), || {
                 body.push(ModuleItem::Stmt(Stmt::Expr(ExprStmt {
                     span: DUMMY_SP,
@@ -83,13 +83,13 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
     }
     let mut s = String::from_utf8_lossy(&buf).replace("TYPE as", "");
 
-    if t.normalize().is_instance() {
+    if t.is_instance() {
         s = format!("instanceof {}", s)
     }
 
-    match t.normalize() {
+    match t {
         Type::ClassDef(..) | Type::Class(..) => {
-            writeln!(s, "\n{:?}", t.normalize()).unwrap();
+            writeln!(s, "\n{:?}", t).unwrap();
         }
         _ => {}
     }
@@ -249,8 +249,6 @@ impl Fold<Type> for Visualizer {
         if self.done_types.iter().any(|prev| prev.type_eq(&ty)) {
             return ty;
         }
-
-        ty = ty.foldable();
 
         self.done_types.push(ty.clone());
 

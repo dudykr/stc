@@ -33,7 +33,7 @@ where
         matches!(self, BoxedArcCow::Arc(..))
     }
 
-    fn freezed(mut self) -> Self {
+    fn freezed(self) -> Self {
         self.freezed()
     }
 }
