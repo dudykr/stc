@@ -2,6 +2,7 @@
 
 use auto_impl::auto_impl;
 use fxhash::FxHashMap;
+use stc_arc_cow::BoxedArcCow;
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, Type};
 use std::{collections::hash_map::Entry, mem::take, sync::Arc};
@@ -25,17 +26,17 @@ pub trait ErrorStore {
 
 #[auto_impl(&mut, Box)]
 pub trait TypeStore: Send + Sync {
-    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Type>;
-    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Type>;
+    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<BoxedArcCow<Type>>;
+    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<BoxedArcCow<Type>>;
 
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool);
-    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type);
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: BoxedArcCow<Type>, should_override: bool);
+    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: BoxedArcCow<Type>);
 
     fn export_type(&mut self, span: Span, ctxt: ModuleId, id: Id);
     fn export_var(&mut self, span: Span, ctxt: ModuleId, id: Id, orig_name: Id);
 
-    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type);
-    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: Type);
+    fn reexport_type(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: BoxedArcCow<Type>);
+    fn reexport_var(&mut self, span: Span, ctxt: ModuleId, id: JsWord, ty: BoxedArcCow<Type>);
 
     fn take_info(&mut self, ctxt: ModuleId) -> ModuleTypeData;
 }
@@ -86,7 +87,7 @@ impl ErrorStore for Single<'_> {
 }
 
 impl TypeStore for Single<'_> {
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool) {
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: BoxedArcCow<Type>, should_override: bool) {
         debug_assert_eq!(ctxt, self.id);
         ty.assert_clone_cheap();
 
@@ -100,7 +101,7 @@ impl TypeStore for Single<'_> {
         }
     }
 
-    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
+    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: BoxedArcCow<Type>) {
         debug_assert_eq!(ctxt, self.id);
         ty.assert_clone_cheap();
 
@@ -151,7 +152,7 @@ impl TypeStore for Single<'_> {
         }
     }
 
-    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Type> {
+    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<BoxedArcCow<Type>> {
         debug_assert_eq!(ctxt, self.id);
         let ty = self
             .info
@@ -166,7 +167,7 @@ impl TypeStore for Single<'_> {
         }
     }
 
-    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Type> {
+    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<BoxedArcCow<Type>> {
         debug_assert_eq!(ctxt, self.id);
 
         match self.info.exports.private_vars.get(&id) {
@@ -180,14 +181,14 @@ impl TypeStore for Single<'_> {
         take(&mut self.info.exports)
     }
 
-    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
+    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: BoxedArcCow<Type>) {
         debug_assert_eq!(ctxt, self.id);
         ty.assert_clone_cheap();
 
         self.info.exports.types.entry(id).or_default().push(ty);
     }
 
-    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
+    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: BoxedArcCow<Type>) {
         debug_assert_eq!(ctxt, self.id);
         ty.assert_clone_cheap();
 
@@ -251,7 +252,7 @@ impl ErrorStore for Group<'_> {
 }
 
 impl TypeStore for Group<'_> {
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool) {
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: BoxedArcCow<Type>, should_override: bool) {
         if should_override {
             if self.info.entry(ctxt).or_default().types.contains_key(&id.sym()) {
                 self.info
@@ -273,7 +274,7 @@ impl TypeStore for Group<'_> {
         }
     }
 
-    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
+    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: BoxedArcCow<Type>) {
         let map = self.info.entry(ctxt).or_default();
 
         match map.private_vars.entry(id) {
@@ -310,7 +311,7 @@ impl TypeStore for Group<'_> {
         }
     }
 
-    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<Type> {
+    fn get_local_type(&self, ctxt: ModuleId, id: Id) -> Option<BoxedArcCow<Type>> {
         let ty = self
             .info
             .get(&ctxt)?
@@ -323,7 +324,7 @@ impl TypeStore for Group<'_> {
         }
     }
 
-    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<Type> {
+    fn get_local_var(&self, ctxt: ModuleId, id: Id) -> Option<BoxedArcCow<Type>> {
         match self.info.get(&ctxt)?.private_vars.get(&id).cloned() {
             Some(ty) => Some(ty),
             None => self.parent?.get_local_var(ctxt, id),
@@ -334,11 +335,11 @@ impl TypeStore for Group<'_> {
         self.info.remove(&ctxt).unwrap_or_default()
     }
 
-    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
+    fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: BoxedArcCow<Type>) {
         self.info.entry(ctxt).or_default().types.entry(id).or_default().push(ty);
     }
 
-    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
+    fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: BoxedArcCow<Type>) {
         // TODO(kdy1): Error reporting for duplicates
         self.info.entry(ctxt).or_default().vars.insert(id, ty);
     }
@@ -410,14 +411,14 @@ impl ErrorStore for Builtin {
 }
 
 impl TypeStore for Builtin {
-    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool) {
+    fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: BoxedArcCow<Type>, should_override: bool) {
         debug_assert_eq!(ctxt, ModuleId::builtin());
         debug_assert!(!should_override);
 
         self.types.entry(id.sym().clone()).or_default().push(ty);
     }
 
-    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: Type) {
+    fn store_private_var(&mut self, ctxt: ModuleId, id: Id, ty: BoxedArcCow<Type>) {
         debug_assert_eq!(ctxt, ModuleId::builtin());
 
         match self.vars.entry(id.sym().clone()) {
@@ -435,12 +436,12 @@ impl TypeStore for Builtin {
 
     fn export_type(&mut self, _: Span, _: ModuleId, _: Id) {}
 
-    fn get_local_type(&self, _ctxt: ModuleId, id: Id) -> Option<Type> {
+    fn get_local_type(&self, _ctxt: ModuleId, id: Id) -> Option<BoxedArcCow<Type>> {
         let types = self.types.get(id.sym()).cloned()?;
         Some(Type::intersection(DUMMY_SP, types))
     }
 
-    fn get_local_var(&self, _ctxt: ModuleId, id: Id) -> Option<Type> {
+    fn get_local_var(&self, _ctxt: ModuleId, id: Id) -> Option<BoxedArcCow<Type>> {
         self.vars.get(id.sym()).cloned()
     }
 
@@ -448,9 +449,9 @@ impl TypeStore for Builtin {
         unimplemented!("builtin.take_info")
     }
 
-    fn reexport_type(&mut self, _: Span, _: ModuleId, _: JsWord, _: Type) {}
+    fn reexport_type(&mut self, _: Span, _: ModuleId, _: JsWord, _: BoxedArcCow<Type>) {}
 
-    fn reexport_var(&mut self, _: Span, _: ModuleId, _: JsWord, _: Type) {}
+    fn reexport_var(&mut self, _: Span, _: ModuleId, _: JsWord, _: BoxedArcCow<Type>) {}
 }
 
 impl Mode for Builtin {
