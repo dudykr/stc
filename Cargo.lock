@@ -2308,6 +2308,8 @@ dependencies = [
  "once_cell",
  "rustc-hash",
  "scoped-tls",
+ "stc_arc_cow",
+ "stc_visit",
  "swc_common",
  "swc_node_base",
  "tracing",
