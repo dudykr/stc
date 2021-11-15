@@ -167,8 +167,6 @@ pub enum Type {
     /// Class definition itself.
     ClassDef(ClassDef),
 
-    Arc(Freezed),
-
     Rest(RestType),
 
     Optional(OptionalType),
@@ -2271,51 +2269,6 @@ pub struct TplType {
 }
 
 assert_eq_size!(TplType, [u8; 72]);
-
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq)]
-pub struct Freezed {
-    ty: Arc<Type>,
-}
-
-impl Spanned for Freezed {
-    fn span(&self) -> Span {
-        self.ty.span()
-    }
-}
-
-assert_eq_size!(Freezed, [u8; 8]);
-
-impl Visitable for Freezed {}
-
-impl<V> VisitWith<V> for Freezed
-where
-    V: ?Sized,
-{
-    #[inline]
-    fn visit_children_with(&self, visitor: &mut V) {
-        self.ty.visit_with(visitor);
-    }
-}
-
-impl<V> VisitMutWith<V> for Freezed
-where
-    V: ?Sized,
-{
-    #[inline]
-    fn visit_mut_children_with(&mut self, _v: &mut V) {
-        unreachable!()
-    }
-}
-
-impl<V> FoldWith<V> for Freezed
-where
-    V: ?Sized,
-{
-    #[inline]
-    fn fold_children_with(self, _v: &mut V) -> Self {
-        unreachable!()
-    }
-}
 
 /// Getter and setter.
 ///
