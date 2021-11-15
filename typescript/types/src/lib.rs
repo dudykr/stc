@@ -23,6 +23,7 @@ use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
 use servo_arc::Arc;
 use static_assertions::assert_eq_size;
+use stc_arc_cow::BoxedArcCow;
 use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
     RTsKeywordType, RTsLit, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
@@ -391,7 +392,7 @@ impl PartialEq<str> for Key {
 pub struct ComputedKey {
     pub span: Span,
     pub expr: Box<RExpr>,
-    pub ty: Box<Type>,
+    pub ty: BoxedArcCow<Type>,
 }
 
 assert_eq_size!(ComputedKey, [u8; 32]);
@@ -409,7 +410,7 @@ assert_eq_size!(ComputedKey, [u8; 32]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Instance {
     pub span: Span,
-    pub ty: Box<Type>,
+    pub ty: BoxedArcCow<Type>,
     pub metadata: InstanceMetadata,
 }
 
@@ -449,7 +450,7 @@ assert_eq_size!(Symbol, [u8; 32]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct RestType {
     pub span: Span,
-    pub ty: Box<Type>,
+    pub ty: BoxedArcCow<Type>,
     pub metadata: RestTypeMetadata,
 }
 
@@ -458,7 +459,7 @@ assert_eq_size!(RestType, [u8; 32]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct OptionalType {
     pub span: Span,
-    pub ty: Box<Type>,
+    pub ty: BoxedArcCow<Type>,
     pub metadata: OptionalTypeMetadata,
 }
 
@@ -468,8 +469,8 @@ assert_eq_size!(OptionalType, [u8; 32]);
 pub struct IndexedAccessType {
     pub span: Span,
     pub readonly: bool,
-    pub obj_type: Box<Type>,
-    pub index_type: Box<Type>,
+    pub obj_type: BoxedArcCow<Type>,
+    pub index_type: BoxedArcCow<Type>,
     pub metadata: IndexedAccessTypeMetadata,
 }
 
@@ -627,7 +628,7 @@ pub struct Method {
     pub is_optional: bool,
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
-    pub ret_ty: Box<Type>,
+    pub ret_ty: BoxedArcCow<Type>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -665,10 +666,10 @@ assert_eq_size!(Mapped, [u8; 96]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Conditional {
     pub span: Span,
-    pub check_type: Box<Type>,
-    pub extends_type: Box<Type>,
-    pub true_type: Box<Type>,
-    pub false_type: Box<Type>,
+    pub check_type: BoxedArcCow<Type>,
+    pub extends_type: BoxedArcCow<Type>,
+    pub true_type: BoxedArcCow<Type>,
+    pub false_type: BoxedArcCow<Type>,
     pub metadata: ConditionalMetadata,
 }
 
@@ -680,7 +681,7 @@ pub struct Operator {
     pub span: Span,
     #[use_eq]
     pub op: TsTypeOperatorOp,
-    pub ty: Box<Type>,
+    pub ty: BoxedArcCow<Type>,
     pub metadata: OperatorMetadata,
 }
 
@@ -700,14 +701,14 @@ pub struct TupleElement {
     pub span: Span,
     #[not_type]
     pub label: Option<RPat>,
-    pub ty: Box<Type>,
+    pub ty: BoxedArcCow<Type>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Alias {
     pub span: Span,
     pub type_params: Option<Box<TypeParamDecl>>,
-    pub ty: Box<Type>,
+    pub ty: BoxedArcCow<Type>,
     pub metadata: AliasMetadata,
 }
 
@@ -754,7 +755,7 @@ pub struct TypeParamInstantiation {
     pub span: Span,
 
     /// TODO(kdy1): Rename to `args`.
-    pub params: Vec<Type>,
+    pub params: Vec<BoxedArcCow<Type>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is)]
@@ -852,7 +853,7 @@ pub struct IndexSignature {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Array {
     pub span: Span,
-    pub elem_type: Box<Type>,
+    pub elem_type: BoxedArcCow<Type>,
     pub metadata: ArrayMetadata,
 }
 
@@ -862,7 +863,7 @@ assert_eq_size!(Array, [u8; 32]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Union {
     pub span: Span,
-    pub types: Vec<Type>,
+    pub types: Vec<BoxedArcCow<Type>>,
     pub metadata: UnionMetadata,
 }
 
@@ -902,14 +903,14 @@ pub struct FnParam {
     pub required: bool,
     #[not_type]
     pub pat: RPat,
-    pub ty: Box<Type>,
+    pub ty: BoxedArcCow<Type>,
 }
 
 /// a & b
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Intersection {
     pub span: Span,
-    pub types: Vec<Type>,
+    pub types: Vec<BoxedArcCow<Type>>,
     pub metadata: IntersectionMetadata,
 }
 
@@ -974,7 +975,7 @@ pub struct Function {
     pub span: Span,
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
-    pub ret_ty: Box<Type>,
+    pub ret_ty: BoxedArcCow<Type>,
     pub metadata: FunctionMetadata,
 }
 
@@ -986,7 +987,7 @@ pub struct Constructor {
     pub type_params: Option<TypeParamDecl>,
     pub params: Vec<FnParam>,
     /// The return type.
-    pub type_ann: Box<Type>,
+    pub type_ann: BoxedArcCow<Type>,
     pub is_abstract: bool,
     pub metadata: ConstructorMetadata,
 }
@@ -1009,7 +1010,7 @@ assert_eq_size!(Predicate, [u8; 72]);
 pub struct TypeOrSpread {
     pub span: Span,
     pub spread: Option<Span>,
-    pub ty: Box<Type>,
+    pub ty: BoxedArcCow<Type>,
 }
 
 pub trait TypeIterExt {}
@@ -1073,7 +1074,7 @@ impl Type {
         }
     }
 
-    pub fn new_union_without_dedup(span: Span, types: Vec<Type>) -> Self {
+    pub fn new_union_without_dedup(span: Span, types: Vec<BoxedArcCow<Type>>) -> Self {
         let ty = match types.len() {
             0 => Type::never(span, Default::default()),
             1 => types.into_iter().next().unwrap(),
@@ -2171,7 +2172,7 @@ pub struct TplType {
 
     #[use_eq_ignore_span]
     pub quasis: Vec<RTplElement>,
-    pub types: Vec<Type>,
+    pub types: Vec<BoxedArcCow<Type>>,
 
     pub metadata: TplTypeMetadata,
 }
