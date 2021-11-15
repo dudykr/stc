@@ -34,7 +34,7 @@ impl DceForDts<'_> {
                 debug_assert!(ty.is_clone_cheap(), "All exported types must be freezed: {:?}", ty);
             }
 
-            types.iter().filter_map(|ty| pred(ty.normalize())).next()
+            types.iter().filter_map(|ty| pred(&ty)).next()
         } else {
             None
         }

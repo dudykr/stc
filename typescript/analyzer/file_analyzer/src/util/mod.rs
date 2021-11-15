@@ -1,5 +1,6 @@
 use crate::ty::{Intersection, Type, Union};
 use rnode::VisitWith;
+use stc_arc_cow::BoxedArcCow;
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
 use stc_ts_type_ops::metadata::TypeFinder;
 use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Ref};
@@ -304,7 +305,7 @@ pub(crate) fn should_instantiate_type_ann(ty: &Type) -> bool {
     }
 }
 
-pub(crate) fn unwrap_ref_with_single_arg<'a>(ty: &'a Type, wanted_ref_name: &str) -> Option<&'a Type> {
+pub(crate) fn unwrap_ref_with_single_arg<'a>(ty: &'a Type, wanted_ref_name: &str) -> Option<&'a BoxedArcCow<Type>> {
     match ty.normalize() {
         Type::Ref(Ref {
             type_name: RTsEntityName::Ident(n),
