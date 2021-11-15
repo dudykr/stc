@@ -290,7 +290,7 @@ impl Checker {
             let start = Instant::now();
 
             let is_dts = match &*path {
-                FileName::Real(path) => path.extension().map_or(false, |ext| ext == "d.ts"),
+                FileName::Real(path) => path.to_string_lossy().ends_with(".d.ts"),
                 _ => false,
             };
 
