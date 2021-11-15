@@ -162,16 +162,16 @@ impl GenericExpander<'_> {
                 m = m.freezed();
 
                 match &m.type_param.constraint {
-                    Some(constraint) => match constraint {
+                    Some(constraint) => match &**constraint {
                         Type::Operator(
                             operator @ Operator {
                                 op: TsTypeOperatorOp::KeyOf,
                                 ..
                             },
-                        ) => match operator.ty.normalize() {
+                        ) => match &*operator.ty {
                             Type::Param(param) if self.params.contains_key(&param.name) => {
                                 let ty = self.params.get(&param.name).unwrap();
-                                match ty.normalize() {
+                                match ty {
                                     Type::TypeLit(ty)
                                         if ty.members.iter().all(|element| match element {
                                             TypeElement::Property(..) | TypeElement::Method(..) => true,
@@ -188,7 +188,7 @@ impl GenericExpander<'_> {
                                                             key: &p.key,
                                                             param_name: &param.name,
                                                             prop_ty: &*p.type_ann.clone().unwrap_or_else(|| {
-                                                                box Type::any(p.span, Default::default())
+                                                                Type::any(p.span, Default::default()).into()
                                                             }),
                                                         }),
                                                         ..p.clone()
@@ -210,7 +210,7 @@ impl GenericExpander<'_> {
                                                                 type_params: method.type_params.clone(),
                                                                 params: method.params.clone(),
                                                                 ret_ty: method.ret_ty.clone().unwrap_or_else(|| {
-                                                                    box Type::any(method.span, Default::default())
+                                                                    Type::any(method.span, Default::default()).into()
                                                                 }),
                                                                 metadata: Default::default(),
                                                             }),
@@ -254,8 +254,8 @@ impl GenericExpander<'_> {
 
                 m = m.fold_with(self);
 
-                match m.type_param.constraint {
-                    Some(box Type::TypeLit(lit)) => {
+                match m.type_param.constraint.as_deref() {
+                    Some(Type::TypeLit(lit)) => {
                         let ty = m.ty.clone();
 
                         let mut members = lit
@@ -282,29 +282,20 @@ impl GenericExpander<'_> {
                         });
                     }
 
-                    Some(box Type::Operator(Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ty: box Type::Union(ref u),
-                        ..
-                    })) => {
-                        error!("Union!");
-                    }
                     _ => {}
                 }
 
                 // TODO(kdy1): PERF
-                m.ty = m.ty.map(|v| box v.foldable());
-                m.ty = match m.ty {
-                    Some(box Type::IndexedAccessType(IndexedAccessType {
+                m.ty = match m.ty.map(|v| v.into_inner()) {
+                    Some(Type::IndexedAccessType(IndexedAccessType {
                         span,
                         readonly,
                         obj_type,
                         index_type,
                         metadata,
                     })) => {
-                        let obj_type = box obj_type.foldable();
                         // TODO(kdy1): PERF
-                        match *obj_type {
+                        match &*obj_type {
                             Type::TypeLit(TypeLit {
                                 span,
                                 members,
@@ -320,7 +311,7 @@ impl GenericExpander<'_> {
                                 for m in members {
                                     match m {
                                         TypeElement::Property(..) | TypeElement::Method(..) => {
-                                            new_members.push(m);
+                                            new_members.push(m.clone());
                                         }
                                         _ => unreachable!(),
                                     }
@@ -331,19 +322,22 @@ impl GenericExpander<'_> {
                                 }
 
                                 return Type::TypeLit(TypeLit {
-                                    span,
+                                    span: *span,
                                     members: new_members,
-                                    metadata,
+                                    metadata: *metadata,
                                 });
                             }
 
-                            _ => Some(box Type::IndexedAccessType(IndexedAccessType {
-                                span,
-                                readonly,
-                                obj_type,
-                                index_type,
-                                metadata,
-                            })),
+                            _ => Some(
+                                Type::IndexedAccessType(IndexedAccessType {
+                                    span,
+                                    readonly,
+                                    obj_type,
+                                    index_type,
+                                    metadata,
+                                })
+                                .into(),
+                            ),
                         }
                     }
                     _ => m.ty,
@@ -356,7 +350,7 @@ impl GenericExpander<'_> {
                             op: TsTypeOperatorOp::KeyOf,
                             ty,
                             ..
-                        }) => match ty.normalize() {
+                        }) => match &**ty {
                             Type::Keyword(..) if m.optional == None && m.readonly == None => return *ty.clone(),
                             Type::TypeLit(TypeLit {
                                 span,
