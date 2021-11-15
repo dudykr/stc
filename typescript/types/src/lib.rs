@@ -40,7 +40,7 @@ use std::{
     fmt,
     fmt::{Debug, Formatter},
     iter::FusedIterator,
-    mem::{replace, transmute},
+    mem::replace,
     ops::AddAssign,
 };
 use swc_atoms::{js_word, JsWord};
@@ -117,7 +117,7 @@ impl AddAssign for ModuleTypeData {
 }
 
 /// This type is expected to stored in a [Box], like `Vec<Type>`.
-#[derive(Debug, PartialEq, Spanned, FromVariant, Is, EqIgnoreSpan, Visit)]
+#[derive(Debug, PartialEq, Spanned, FromVariant, Is, EqIgnoreSpan, TypeEq, Visit)]
 pub enum Type {
     Instance(Instance),
     StaticThis(StaticThis),
@@ -252,48 +252,6 @@ impl Clone for Type {
 }
 
 assert_eq_size!(Type, [u8; 104]);
-
-impl TypeEq for Type {
-    fn type_eq(&self, other: &Self) -> bool {
-        match (self.normalize(), other.normalize()) {
-            (Type::Instance(l), Type::Instance(r)) => l.type_eq(r),
-            (Type::StaticThis(l), Type::StaticThis(r)) => l.type_eq(r),
-            (Type::This(l), Type::This(r)) => l.type_eq(r),
-            (Type::Lit(l), Type::Lit(r)) => l.type_eq(r),
-            (Type::Query(l), Type::Query(r)) => l.type_eq(r),
-            (Type::Infer(l), Type::Infer(r)) => l.type_eq(r),
-            (Type::Import(l), Type::Import(r)) => l.type_eq(r),
-            (Type::Predicate(l), Type::Predicate(r)) => l.type_eq(r),
-            (Type::IndexedAccessType(l), Type::IndexedAccessType(r)) => l.type_eq(r),
-            (Type::Ref(l), Type::Ref(r)) => l.type_eq(r),
-            (Type::TypeLit(l), Type::TypeLit(r)) => l.type_eq(r),
-            (Type::Keyword(l), Type::Keyword(r)) => l.type_eq(r),
-            (Type::Conditional(l), Type::Conditional(r)) => l.type_eq(r),
-            (Type::Tuple(l), Type::Tuple(r)) => l.type_eq(r),
-            (Type::Array(l), Type::Array(r)) => l.type_eq(r),
-            (Type::Union(l), Type::Union(r)) => l.type_eq(r),
-            (Type::Intersection(l), Type::Intersection(r)) => l.type_eq(r),
-            (Type::Function(l), Type::Function(r)) => l.type_eq(r),
-            (Type::Constructor(l), Type::Constructor(r)) => l.type_eq(r),
-            (Type::Operator(l), Type::Operator(r)) => l.type_eq(r),
-            (Type::Param(l), Type::Param(r)) => l.type_eq(r),
-            (Type::EnumVariant(l), Type::EnumVariant(r)) => l.type_eq(r),
-            (Type::Interface(l), Type::Interface(r)) => l.type_eq(r),
-            (Type::Enum(l), Type::Enum(r)) => l.type_eq(r),
-            (Type::Mapped(l), Type::Mapped(r)) => l.type_eq(r),
-            (Type::Alias(l), Type::Alias(r)) => l.type_eq(r),
-            (Type::Namespace(l), Type::Namespace(r)) => l.type_eq(r),
-            (Type::Module(l), Type::Module(r)) => l.type_eq(r),
-            (Type::Class(l), Type::Class(r)) => l.type_eq(r),
-            (Type::ClassDef(l), Type::ClassDef(r)) => l.type_eq(r),
-            (Type::Rest(l), Type::Rest(r)) => l.type_eq(r),
-            (Type::Optional(l), Type::Optional(r)) => l.type_eq(r),
-            (Type::Symbol(l), Type::Symbol(r)) => l.type_eq(r),
-            (Type::Intrinsic(l), Type::Intrinsic(r)) => l.type_eq(r),
-            _ => false,
-        }
-    }
-}
 
 fn _assert_send_sync() {
     fn assert<T: Send + Sync>() {}
@@ -1731,10 +1689,9 @@ impl Type {
     where
         's: 'c,
     {
-        let ty = self.normalize();
-        match ty {
+        match self {
             Type::Instance(ty) => ty.ty.normalize_instance(),
-            _ => ty,
+            _ => self,
         }
     }
 

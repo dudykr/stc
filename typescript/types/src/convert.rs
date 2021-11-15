@@ -201,7 +201,7 @@ impl From<Predicate> for RTsType {
 
 impl From<IndexedAccessType> for RTsType {
     fn from(t: IndexedAccessType) -> Self {
-        let obj_type = match t.obj_type.normalize() {
+        let obj_type = match &*t.obj_type {
             Type::Intersection(..) | Type::Union(..) => box RTsType::TsParenthesizedType(RTsParenthesizedType {
                 node_id: NodeId::invalid(),
                 span: t.obj_type.span(),
@@ -277,7 +277,7 @@ impl From<TupleElement> for RTsTupleElement {
 
 impl From<Array> for RTsType {
     fn from(t: Array) -> Self {
-        match t.elem_type.normalize() {
+        match &*t.elem_type {
             Type::Union(..) | Type::Intersection(..) => {
                 return RTsType::TsArrayType(RTsArrayType {
                     node_id: NodeId::invalid(),
