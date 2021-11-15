@@ -73,6 +73,8 @@ mod visit_mut;
 pub(crate) struct Ctx {
     module_id: ModuleId,
 
+    is_dts: bool,
+
     in_const_assertion: bool,
 
     in_constructor_param: bool,
@@ -459,6 +461,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
             scope,
             ctx: Ctx {
                 module_id: ModuleId::builtin(),
+                is_dts,
                 in_const_assertion: false,
                 in_constructor_param: false,
                 diallow_unknown_object_property: false,

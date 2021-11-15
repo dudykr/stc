@@ -68,6 +68,7 @@ pub struct Single<'a> {
     pub parent: Option<&'a Single<'a>>,
     pub id: ModuleId,
     pub path: Arc<FileName>,
+    pub is_dts: bool,
     pub info: Info,
 }
 
@@ -201,6 +202,10 @@ impl<'a> Mode for Single<'a> {
         self.id
     }
 
+    fn is_dts(&self) -> bool {
+        self.is_dts
+    }
+
     fn path(&self, id: ModuleId) -> Arc<FileName> {
         debug_assert_eq!(id, self.id);
         self.path.clone()
@@ -209,6 +214,7 @@ impl<'a> Mode for Single<'a> {
     fn subscope(&self) -> Storage {
         box Single {
             parent: Some(self),
+            is_dts: self.is_dts,
             id: self.id,
             path: self.path.clone(),
             info: Default::default(),
@@ -357,6 +363,10 @@ impl Mode for Group<'_> {
         unreachable!("failed to get module id")
     }
 
+    fn is_dts(&self) -> bool {
+        false
+    }
+
     fn path(&self, id: ModuleId) -> Arc<FileName> {
         for file in self.files.iter() {
             if file.id == id {
@@ -447,6 +457,10 @@ impl TypeStore for Builtin {
 impl Mode for Builtin {
     fn module_id(&self, _stmt_index: usize) -> ModuleId {
         ModuleId::builtin()
+    }
+
+    fn is_dts(&self) -> bool {
+        true
     }
 
     fn path(&self, _: ModuleId) -> Arc<FileName> {
