@@ -1035,15 +1035,15 @@ impl Type {
         self.visit_with(&mut AssertCloneCheap);
     }
 
-    pub fn intersection<I>(span: Span, iter: I) -> Self
+    pub fn intersection<I>(span: Span, iter: I) -> BoxedArcCow<Self>
     where
-        I: IntoIterator<Item = Type>,
+        I: IntoIterator<Item = BoxedArcCow<Type>>,
     {
         let mut tys = vec![];
 
         for ty in iter {
-            if ty.normalize().is_intersection_type() {
-                tys.extend(ty.foldable().expect_intersection_type().types);
+            if ty.is_intersection_type() {
+                tys.extend(ty.expect_intersection_type().types);
             } else {
                 tys.push(ty);
             }
@@ -1056,54 +1056,56 @@ impl Type {
         let has_num = tys.iter().any(|ty| ty.is_num());
 
         if (has_str && has_bool) || (has_bool && has_num) || (has_num && has_str) {
-            return Type::never(span, Default::default());
+            return Type::never(span, Default::default()).into();
         }
 
         if tys.iter().any(|ty| ty.is_never()) {
-            return Type::never(span, Default::default());
+            return Type::never(span, Default::default()).into();
         }
 
         match tys.len() {
-            0 => Type::never(span, Default::default()),
+            0 => Type::never(span, Default::default()).into(),
             1 => tys.into_iter().next().unwrap(),
             _ => Type::Intersection(Intersection {
                 span,
                 types: tys,
                 metadata: Default::default(),
-            }),
+            })
+            .into(),
         }
     }
 
-    pub fn new_union_without_dedup(span: Span, types: Vec<BoxedArcCow<Type>>) -> Self {
+    pub fn new_union_without_dedup(span: Span, types: Vec<BoxedArcCow<Type>>) -> BoxedArcCow<Self> {
         let ty = match types.len() {
-            0 => Type::never(span, Default::default()),
+            0 => Type::never(span, Default::default()).into(),
             1 => types.into_iter().next().unwrap(),
             _ => Type::Union(Union {
                 span,
                 types,
                 metadata: Default::default(),
-            }),
+            })
+            .into(),
         };
         ty.assert_valid();
         ty
     }
 
-    pub fn new_union<I: IntoIterator<Item = Self> + Debug>(span: Span, iter: I) -> Self {
+    pub fn new_union<I: IntoIterator<Item = BoxedArcCow<Self>> + Debug>(span: Span, iter: I) -> BoxedArcCow<Self> {
         let _ctx = debug_ctx!(format!("Iterator: {:?}", iter));
 
-        let mut elements = vec![];
+        let mut elements: Vec<BoxedArcCow<Type>> = vec![];
 
         for ty in iter {
-            if ty.normalize().is_union_type() {
-                let types = ty.foldable().union_type().unwrap().types;
+            if ty.is_union_type() {
+                let types = ty.expect_union_type().types;
                 for new in types {
-                    if elements.iter().any(|prev: &Type| prev.type_eq(&new)) {
+                    if elements.iter().any(|prev| prev.type_eq(&new)) {
                         continue;
                     }
                     elements.push(new)
                 }
             } else {
-                if elements.iter().any(|prev: &Type| prev.type_eq(&ty)) {
+                if elements.iter().any(|prev| prev.type_eq(&ty)) {
                     continue;
                 }
                 elements.push(ty)
@@ -1120,12 +1122,12 @@ impl Type {
     /// Note:
     ///
     ///  - never types are excluded.
-    pub fn union<I: IntoIterator<Item = Self> + Debug>(iter: I) -> Self {
+    pub fn union<I: IntoIterator<Item = BoxedArcCow<Self>> + Debug>(iter: I) -> BoxedArcCow<Self> {
         let _ctx = debug_ctx!(format!("Iterator: {:?}", iter));
 
         let mut span = DUMMY_SP;
 
-        let mut elements = vec![];
+        let mut elements: Vec<BoxedArcCow<Type>> = vec![];
 
         for ty in iter {
             let sp = ty.span();
@@ -1137,16 +1139,16 @@ impl Type {
                 span = span.with_hi(sp.hi());
             }
 
-            if ty.normalize().is_union_type() {
-                let types = ty.foldable().union_type().unwrap().types;
+            if ty.is_union_type() {
+                let types = ty.expect_union_type().types;
                 for new in types {
-                    if elements.iter().any(|prev: &Type| prev.type_eq(&new)) {
+                    if elements.iter().any(|prev| prev.type_eq(&new)) {
                         continue;
                     }
                     elements.push(new)
                 }
             } else {
-                if elements.iter().any(|prev: &Type| prev.type_eq(&ty)) {
+                if elements.iter().any(|prev| prev.type_eq(&ty)) {
                     continue;
                 }
                 elements.push(ty)
@@ -1156,13 +1158,14 @@ impl Type {
         elements.retain(|ty| !ty.is_never());
 
         let ty = match elements.len() {
-            0 => Type::never(span, Default::default()),
+            0 => Type::never(span, Default::default()).into(),
             1 => elements.into_iter().next().unwrap(),
             _ => Type::Union(Union {
                 span,
                 types: elements,
                 metadata: Default::default(),
-            }),
+            })
+            .into(),
         };
         ty.assert_valid();
         ty
@@ -1192,7 +1195,7 @@ impl Type {
     }
 
     pub fn contains_void(&self) -> bool {
-        match self.normalize() {
+        match self {
             Type::Instance(ty) => ty.ty.contains_void(),
 
             Type::Keyword(KeywordType {
@@ -1207,7 +1210,7 @@ impl Type {
     }
 
     pub fn is_any(&self) -> bool {
-        match self.normalize() {
+        match self {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
@@ -1222,20 +1225,20 @@ impl Type {
     }
 
     pub fn is_unknown(&self) -> bool {
-        match *self.normalize() {
+        match self {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => true,
 
-            Type::Union(ref t) => t.types.iter().any(|t| t.is_unknown()),
+            Type::Union(t) => t.types.iter().any(|t| t.is_unknown()),
 
             _ => false,
         }
     }
 
     pub fn contains_undefined(&self) -> bool {
-        match *self.normalize() {
+        match self {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
@@ -1279,7 +1282,7 @@ impl Type {
     }
 
     pub fn is_kwd(&self, k: TsKeywordTypeKind) -> bool {
-        match self.normalize() {
+        match self {
             Type::Instance(ty) => ty.ty.is_kwd(k),
             Type::Keyword(KeywordType { kind, .. }) if *kind == k => true,
             _ => false,
