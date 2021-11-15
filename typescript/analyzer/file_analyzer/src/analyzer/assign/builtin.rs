@@ -26,8 +26,6 @@ impl Analyzer<'_, '_> {
         r: &Type,
     ) -> Option<ValidationResult<()>> {
         let span = opts.span;
-        let l = l.normalize();
-        let r = r.normalize();
 
         match l {
             Type::Ref(Ref {

@@ -3,6 +3,7 @@ use crate::{
     ty::TypeExt,
     ValidationResult,
 };
+use stc_arc_cow::BoxedArcCow;
 use stc_ts_ast_rnode::{RBool, RIdent, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_file_analyzer_macros::context;
@@ -148,7 +149,7 @@ pub(crate) struct AssignOpts {
 
 #[derive(Default)]
 pub struct AssignData {
-    dejavu: Vec<(Type, Type)>,
+    dejavu: Vec<(BoxedArcCow<Type>, BoxedArcCow<Type>)>,
 }
 
 impl Analyzer<'_, '_> {

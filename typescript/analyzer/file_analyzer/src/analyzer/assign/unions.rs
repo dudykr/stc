@@ -8,7 +8,6 @@ use crate::{
 use itertools::Itertools;
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Tuple, TupleElement, Type, Union};
-use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_common::Span;
 

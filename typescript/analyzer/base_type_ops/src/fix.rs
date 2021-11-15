@@ -15,13 +15,19 @@ pub trait Fix: Sized {
     }
 }
 
-impl<T> Fix for ArcCow<T> {
+impl<T> Fix for ArcCow<T>
+where
+    T: Clone + Fix,
+{
     fn fix(&mut self) {
         self.make_mut().fix()
     }
 }
 
-impl<T> Fix for BoxedArcCow<T> {
+impl<T> Fix for BoxedArcCow<T>
+where
+    T: Clone + Fix,
+{
     fn fix(&mut self) {
         self.make_mut().fix()
     }

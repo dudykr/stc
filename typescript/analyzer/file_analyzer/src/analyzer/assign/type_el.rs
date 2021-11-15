@@ -17,7 +17,7 @@ use stc_ts_types::{
     PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union,
     UnionMetadata,
 };
-use stc_utils::{cache::Freeze, ext::SpanExt};
+use stc_utils::ext::SpanExt;
 use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
