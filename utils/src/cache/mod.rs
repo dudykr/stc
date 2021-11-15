@@ -7,8 +7,6 @@ use swc_common::util::map::Map;
 scoped_thread_local!(pub static ALLOW_DEEP_CLONE: ());
 
 pub trait Freeze: Sized + Clone {
-    fn is_clone_cheap(&self) -> bool;
-
     fn freezed(self) -> Self;
 }
 
@@ -16,10 +14,6 @@ impl<T> Freeze for ArcCow<T>
 where
     T: Clone + FoldWith<Freezer>,
 {
-    fn is_clone_cheap(&self) -> bool {
-        matches!(self, ArcCow::Arc(..))
-    }
-
     fn freezed(self) -> Self {
         self.freezed()
     }
@@ -29,10 +23,6 @@ impl<T> Freeze for BoxedArcCow<T>
 where
     T: Clone + FoldWith<Freezer>,
 {
-    fn is_clone_cheap(&self) -> bool {
-        matches!(self, BoxedArcCow::Arc(..))
-    }
-
     fn freezed(self) -> Self {
         self.freezed()
     }
@@ -42,13 +32,6 @@ impl<T> Freeze for Option<T>
 where
     T: Freeze,
 {
-    fn is_clone_cheap(&self) -> bool {
-        match self {
-            Some(v) => v.is_clone_cheap(),
-            None => true,
-        }
-    }
-
     fn freezed(self) -> Self {
         self.map(Freeze::freezed)
     }
@@ -58,10 +41,6 @@ impl<T> Freeze for Vec<T>
 where
     T: Freeze,
 {
-    fn is_clone_cheap(&self) -> bool {
-        self.iter().all(|v| v.is_clone_cheap())
-    }
-
     fn freezed(self) -> Self {
         self.into_iter().map(Freeze::freezed).collect()
     }
@@ -71,10 +50,6 @@ impl<T> Freeze for Box<T>
 where
     T: Freeze,
 {
-    fn is_clone_cheap(&self) -> bool {
-        (**self).is_clone_cheap()
-    }
-
     fn freezed(self) -> Self {
         self.map(|v| v.freezed())
     }
@@ -85,19 +60,10 @@ impl<T> Freeze for Cow<'_, T>
 where
     T: Clone + Freeze,
 {
-    fn is_clone_cheap(&self) -> bool {
-        (**self).is_clone_cheap()
-    }
-
     fn freezed(self) -> Self {
         match self {
             Cow::Borrowed(v) => {
-                if v.is_clone_cheap() {
-                    return Cow::Borrowed(v);
-                }
-
-                let v = ALLOW_DEEP_CLONE.set(&(), || v.clone());
-                let v = v.freezed();
+                let v = ALLOW_DEEP_CLONE.set(&(), || v.clone().freezed());
                 Cow::Owned(v)
             }
             Cow::Owned(v) => Cow::Owned(v.freezed()),

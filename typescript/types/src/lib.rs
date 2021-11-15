@@ -27,7 +27,12 @@ use stc_ts_ast_rnode::{
     RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
     RTsKeywordType, RTsLit, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
-use stc_utils::{cache::ALLOW_DEEP_CLONE, debug_ctx, ext::TypeVecExt, panic_ctx};
+use stc_utils::{
+    cache::{Freeze, ALLOW_DEEP_CLONE},
+    debug_ctx,
+    ext::TypeVecExt,
+    panic_ctx,
+};
 use stc_visit::{Visit, Visitable};
 use std::{
     self,
@@ -1911,3 +1916,16 @@ impl Visit<Intersection> for ValidityChecker {
         ty.visit_children_with(self);
     }
 }
+
+macro_rules! impl_freezed {
+    ($ty:ty) => {
+        impl Freeze for $ty {
+            fn freezed(self) -> Self {
+                self.fold_with(&mut stc_arc_cow::freeze::Freezer)
+            }
+        }
+    };
+}
+
+impl_freezed!(Mapped);
+impl_freezed!(TsExpr);

@@ -1,6 +1,7 @@
 use crate::{type_param::finder::TypeParamNameUsageFinder, ExpandGenericOpts};
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Fold, FoldWith, Visit, VisitWith};
+use stc_arc_cow::BoxedArcCow;
 use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsLit};
 use stc_ts_base_type_ops::{apply_mapped_flags, fix::Fix};
 use stc_ts_errors::debug::dump_type_as_string;
@@ -48,7 +49,7 @@ impl GenericExpander<'_> {
             }
         }
 
-        match ty.normalize() {
+        match ty {
             Type::StaticThis(..) | Type::Intrinsic(..) | Type::Symbol(..) => return ty,
 
             Type::Param(param) => {
@@ -73,8 +74,6 @@ impl GenericExpander<'_> {
             _ => {}
         }
 
-        let ty = ty.foldable();
-
         match ty {
             Type::Ref(Ref {
                 span,
@@ -86,7 +85,7 @@ impl GenericExpander<'_> {
                 if i.sym == js_word!("Array") {
                     return Type::Array(Array {
                         span,
-                        elem_type: box type_args
+                        elem_type: type_args
                             .as_ref()
                             .and_then(|args| args.params.iter().next().cloned())
                             .unwrap_or_else(|| {
@@ -97,6 +96,7 @@ impl GenericExpander<'_> {
                                         ..Default::default()
                                     },
                                 )
+                                .into()
                             }),
                         metadata: ArrayMetadata {
                             common: metadata.common,
@@ -159,7 +159,7 @@ impl GenericExpander<'_> {
             }
 
             Type::Mapped(mut m @ Mapped { ty: Some(..), .. }) => {
-                m.make_clone_cheap();
+                m = m.freezed();
 
                 match &m.type_param.constraint {
                     Some(constraint) => match constraint.normalize() {
@@ -482,6 +482,23 @@ impl GenericExpander<'_> {
 
             _ => ty,
         }
+    }
+}
+
+impl Fold<BoxedArcCow<Type>> for GenericExpander<'_> {
+    fn fold(&mut self, ty: BoxedArcCow<Type>) -> BoxedArcCow<Type> {
+        if ty.is_arc() {
+            let mut checker = GenericChecker {
+                params: &self.params,
+                found: false,
+            };
+            ty.visit_with(&mut checker);
+            if !checker.found {
+                return ty;
+            }
+        }
+
+        ty.into_inner().fold_with(self).into()
     }
 }
 
