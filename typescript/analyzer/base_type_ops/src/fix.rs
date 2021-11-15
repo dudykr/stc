@@ -1,4 +1,5 @@
 use rnode::{VisitMut, VisitMutWith};
+use stc_arc_cow::BoxedArcCow;
 use stc_ts_types::{
     Array, Conditional, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam, Union, Valid,
 };
@@ -70,7 +71,7 @@ impl VisitMut<Union> for Fixer {
     fn visit_mut(&mut self, u: &mut Union) {
         u.visit_mut_children_with(self);
 
-        let mut new: Vec<Type> = Vec::with_capacity(u.types.capacity());
+        let mut new: Vec<BoxedArcCow<Type>> = Vec::with_capacity(u.types.capacity());
         for ty in u.types.drain(..) {
             if ty.is_never() {
                 continue;
@@ -80,8 +81,8 @@ impl VisitMut<Union> for Fixer {
                 continue;
             }
 
-            if ty.normalize().is_union_type() {
-                let u = ty.foldable().union_type().unwrap();
+            if ty.is_union_type() {
+                let u = ty.into_inner().expect_union_type();
                 for ty in u.types {
                     if new.iter().any(|stored| stored.type_eq(&ty)) {
                         continue;
@@ -104,14 +105,14 @@ impl VisitMut<Intersection> for Fixer {
     fn visit_mut(&mut self, ty: &mut Intersection) {
         ty.visit_mut_children_with(self);
 
-        let mut new: Vec<Type> = Vec::with_capacity(ty.types.capacity());
+        let mut new: Vec<BoxedArcCow<Type>> = Vec::with_capacity(ty.types.capacity());
         for ty in ty.types.drain(..) {
             if new.iter().any(|stored| stored.type_eq(&ty)) {
                 continue;
             }
 
-            if ty.normalize().is_intersection_type() {
-                let i = ty.foldable().intersection_type().unwrap();
+            if ty.is_intersection_type() {
+                let i = ty.into_inner().expect_intersection_type();
                 for ty in i.types {
                     if new.iter().any(|stored| stored.type_eq(&ty)) {
                         continue;
@@ -129,10 +130,6 @@ impl VisitMut<Intersection> for Fixer {
 
 impl Fixer {
     fn fix_type(&mut self, ty: &mut Type) {
-        if ty.is_arc() {
-            return;
-        }
-
         if matches!(ty, Type::Keyword(..) | Type::Lit(..)) {
             return;
         }
@@ -141,7 +138,6 @@ impl Fixer {
             return;
         }
 
-        ty.normalize_mut();
         ty.visit_mut_children_with(self);
 
         match ty {
@@ -157,7 +153,7 @@ impl Fixer {
                     return;
                 }
                 1 => {
-                    let mut elem = u.types.drain(..).next().unwrap();
+                    let mut elem = u.types.drain(..).next().unwrap().into_inner();
                     elem.respan(u.span);
                     *ty = elem;
                     return;
@@ -177,7 +173,7 @@ impl Fixer {
                     return;
                 }
                 1 => {
-                    let mut elem = i.types.drain(..).next().unwrap();
+                    let mut elem = i.types.drain(..).next().unwrap().into_inner();
                     elem.respan(i.span);
                     *ty = elem;
                     return;
@@ -192,6 +188,18 @@ impl Fixer {
 impl VisitMut<Type> for Fixer {
     fn visit_mut(&mut self, ty: &mut Type) {
         self.fix_type(ty);
+
+        ty.assert_valid();
+    }
+}
+
+impl VisitMut<BoxedArcCow<Type>> for Fixer {
+    fn visit_mut(&mut self, ty: &mut BoxedArcCow<Type>) {
+        if ty.is_valid() {
+            return;
+        }
+
+        self.fix_type(ty.make_mut());
 
         ty.assert_valid();
     }
