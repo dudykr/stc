@@ -174,6 +174,7 @@ macro_rules! impl_traits {
 
         impl<T, V> VisitWith<V> for $Ty<T>
         where
+            V: ?Sized,
             T: VisitWith<V>,
         {
             #[inline]
@@ -184,8 +185,10 @@ macro_rules! impl_traits {
 
         impl<T, V> VisitMutWith<V> for $Ty<T>
         where
+            V: ?Sized,
             T: Clone + VisitMutWith<V>,
         {
+            /// TODO(kdy1): Use unreachable!() and manually handle in each visitor
             #[inline]
             fn visit_mut_children_with(&mut self, v: &mut V) {
                 self.make_mut().visit_mut_children_with(v)
@@ -194,8 +197,10 @@ macro_rules! impl_traits {
 
         impl<T, V> FoldWith<V> for $Ty<T>
         where
+            V: ?Sized,
             T: Clone + FoldWith<V>,
         {
+            /// TODO(kdy1): Use unreachable!() and manually handle in each visitor
             #[inline]
             fn fold_children_with(self, v: &mut V) -> Self {
                 Self::from(self.into_inner().fold_children_with(v))
