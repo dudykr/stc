@@ -9,6 +9,7 @@ version = "0.1.0"
 
 [dependencies]
 itertools = "0.10.1"
+stc_arc_cow = {path = "../../../utils/arc_cow/"}
 stc_ts_ast_rnode = {path = "../../ast_rnode"}
 stc_ts_types = {path = "../../types"}
 stc_utils = {path = "../../../utils"}
