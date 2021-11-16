@@ -767,6 +767,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, items: &Vec<RModuleItem>) {
+        let is_dts = self.ctx.is_dts;
+
         let globals = self.env.shared().swc_globals().clone();
 
         GLOBALS.set(&globals, || {
@@ -781,8 +783,9 @@ impl Analyzer<'_, '_> {
                     if self.export_equals_span.is_dummy() {
                         self.export_equals_span = decl.span;
                     }
-                    if has_normal_export {
-                        self.storage.report(Error::TS2309 { span: decl.span });
+                    if !is_dts && has_normal_export {
+                        self.storage
+                            .report(Error::ExportEqualsMixedWithOtherExports { span: decl.span });
                     }
 
                     //
@@ -794,8 +797,8 @@ impl Analyzer<'_, '_> {
                     | RModuleDecl::ExportDefaultExpr(..)
                     | RModuleDecl::TsNamespaceExport(..) => {
                         has_normal_export = true;
-                        if !self.export_equals_span.is_dummy() {
-                            self.storage.report(Error::TS2309 {
+                        if !is_dts && !self.export_equals_span.is_dummy() {
+                            self.storage.report(Error::ExportEqualsMixedWithOtherExports {
                                 span: self.export_equals_span,
                             });
                         }
