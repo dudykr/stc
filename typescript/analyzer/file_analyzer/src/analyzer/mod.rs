@@ -25,7 +25,7 @@ use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
 use stc_ts_errors::{debug::debugger::Debugger, Error};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
-use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData};
+use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
 use stc_utils::{AHashMap, AHashSet};
 use std::{
     fmt::Debug,
@@ -911,7 +911,11 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &RTsNamespaceDecl) {
+    fn validate(&mut self, decl: &RTsNamespaceDecl) -> ValidationResult {
+        let is_builtin = self.is_builtin;
+        let span = decl.span;
+        let ctxt = self.ctx.module_id;
+
         let ctx = Ctx {
             in_global: self.ctx.in_global || decl.global,
             in_declare: self.ctx.in_declare || decl.declare,
@@ -924,7 +928,17 @@ impl Analyzer<'_, '_> {
 
                 decl.body.visit_with(a);
 
-                Ok(())
+                let exports = a.storage.take_info(ctxt);
+
+                let ty = Namespace {
+                    name: decl.id.clone().into(),
+                    span,
+                    exports: box exports,
+                    metadata: Default::default(),
+                };
+                let ty = Type::Namespace(ty).cheap();
+
+                Ok(ty)
             })
     }
 }
