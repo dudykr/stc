@@ -583,8 +583,7 @@ assert_eq_size!(ImportType, [u8; 96]);
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Namespace {
     pub span: Span,
-    #[use_eq_ignore_span]
-    pub name: RTsModuleName,
+    pub name: Id,
     pub exports: Box<ModuleTypeData>,
     pub metadata: NamespaceTypeMetadata,
 }
