@@ -53,7 +53,7 @@ where
                 {
                     if let Some(path) = cmt_text.strip_prefix("path=\"") {
                         deps.push(format!("./{}", path).into());
-                    } else if let Some(path) = cmt_text.strip_prefix("type=\"") {
+                    } else if let Some(path) = cmt_text.strip_prefix("types=\"") {
                         deps.push(path.into());
                     } else {
                         // TODO: Handle lib, types
