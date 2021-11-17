@@ -15,17 +15,6 @@ mod object;
 pub mod stmt;
 pub mod types;
 
-struct Calculator<I> {
-    graph: FastDiGraphMap<usize, ()>,
-
-    used: AHashMap<usize, AHashSet<I>>,
-    declared: AHashMap<I, Vec<usize>>,
-}
-
-impl<I> Calculator<I> {
-    fn add(&mut self) {}
-}
-
 /// # Returns
 ///
 /// This function returns a vector of orders.
@@ -34,8 +23,6 @@ pub fn calc_eval_order<T>(nodes: &[T]) -> Vec<Vec<usize>>
 where
     T: Sortable,
 {
-    let usage = nodes.par_iter().map(|node| node.get_decls()).collect::<Vec<_>>();
-
     let mut graph = DiGraphMap::default();
     let mut declared_by = AHashMap::<_, Vec<usize>>::default();
     let mut used = AHashMap::<_, AHashSet<_>>::default();
