@@ -2,7 +2,9 @@
 #![feature(box_syntax)]
 #![feature(specialization)]
 
-use swc_common::{comments::Comments, input::SourceFileInput, sync::Lrc, SourceFile};
+use rnode::IntoRNode;
+use stc_ts_ast_rnode::RModule;
+use swc_common::{comments::Comments, input::SourceFileInput, SourceFile};
 use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 use swc_ecma_utils::HANDLER;
@@ -10,7 +12,7 @@ use swc_ecma_utils::HANDLER;
 pub mod tsc;
 pub mod visualizer;
 
-pub fn parse(fm: Lrc<SourceFile>, comments: &dyn Comments) -> Module {
+pub fn parse(fm: &SourceFile, comments: &dyn Comments) -> Module {
     let lexer = Lexer::new(
         Syntax::Typescript(TsConfig {
             tsx: fm.name.to_string().ends_with(".tsx"),
@@ -34,4 +36,11 @@ pub fn parse(fm: Lrc<SourceFile>, comments: &dyn Comments) -> Module {
             })
         })
         .unwrap()
+}
+
+pub fn parse_rnode(fm: &SourceFile, comments: &dyn Comments) -> RModule {
+    let module = parse(fm, comments);
+
+    let mut generator = rnode::NodeIdGenerator::default();
+    module.into_rnode(&mut generator)
 }
