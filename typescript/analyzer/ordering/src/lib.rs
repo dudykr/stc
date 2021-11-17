@@ -5,13 +5,26 @@ use self::types::Sortable;
 use fxhash::{FxBuildHasher, FxHashSet};
 use indexmap::IndexSet;
 use petgraph::{algo::all_simple_paths, graphmap::DiGraphMap, EdgeDirection::Outgoing};
+use rayon::prelude::*;
 use std::{collections::VecDeque, iter::from_fn};
 use swc_common::collections::{AHashMap, AHashSet};
+use swc_fast_graph::digraph::FastDiGraphMap;
 
 mod class;
 mod object;
 pub mod stmt;
 pub mod types;
+
+struct Calculator<I> {
+    graph: FastDiGraphMap<usize, ()>,
+
+    used: AHashMap<usize, AHashSet<I>>,
+    declared: AHashMap<I, Vec<usize>>,
+}
+
+impl<I> Calculator<I> {
+    fn add(&mut self) {}
+}
 
 /// # Returns
 ///
@@ -21,6 +34,8 @@ pub fn calc_eval_order<T>(nodes: &[T]) -> Vec<Vec<usize>>
 where
     T: Sortable,
 {
+    let usage = nodes.par_iter().map(|node| node.get_decls()).collect::<Vec<_>>();
+
     let mut graph = DiGraphMap::default();
     let mut declared_by = AHashMap::<_, Vec<usize>>::default();
     let mut used = AHashMap::<_, AHashSet<_>>::default();
