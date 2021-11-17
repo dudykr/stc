@@ -2103,6 +2103,7 @@ dependencies = [
  "stc_ts_testing",
  "stc_ts_types",
  "stc_ts_utils",
+ "testing",
 ]
 
 [[package]]

@@ -18,3 +18,4 @@ stc_ts_utils = {path = "../../utils"}
 
 [dev-dependencies]
 stc_ts_testing = {path = "../../testing/"}
+testing = "0.15.1"
