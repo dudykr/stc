@@ -1044,7 +1044,8 @@ pub enum Error {
         span: Span,
     },
 
-    TS2309 {
+    /// TS2309
+    ExportEqualsMixedWithOtherExports {
         span: Span,
     },
 
@@ -1499,7 +1500,7 @@ impl Error {
             Error::TS1183 { .. } => 1183,
             Error::TS1318 { .. } => 1318,
             Error::TS1319 { .. } => 1319,
-            Error::TS2309 { .. } => 2309,
+            Error::ExportEqualsMixedWithOtherExports { .. } => 2309,
             Error::AnyTypeUsedAsCalleeWithTypeArgs { .. } => 2347,
             Error::TS2360 { .. } => 2360,
             Error::TS2361 { .. } => 2361,

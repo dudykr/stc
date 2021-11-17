@@ -159,7 +159,7 @@ pub enum Type {
 
     /// export type A<B> = Foo<B>;
     Alias(Alias),
-    Namespace(RTsNamespaceDecl),
+    Namespace(Namespace),
     Module(Module),
 
     /// Instance of a class.
@@ -579,6 +579,14 @@ pub struct ImportType {
 }
 
 assert_eq_size!(ImportType, [u8; 96]);
+
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+pub struct Namespace {
+    pub span: Span,
+    pub name: Id,
+    pub exports: Box<ModuleTypeData>,
+    pub metadata: NamespaceTypeMetadata,
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Module {
@@ -1421,7 +1429,7 @@ impl Type {
             Type::Enum(ty) => ty.metadata.common,
             Type::Mapped(ty) => ty.metadata.common,
             Type::Alias(ty) => ty.metadata.common,
-            Type::Namespace(_ty) => todo!("Type::Namespace -> metadata()"),
+            Type::Namespace(ty) => ty.metadata.common,
             Type::Module(ty) => ty.metadata.common,
             Type::Class(ty) => ty.metadata.common,
             Type::ClassDef(ty) => ty.metadata.common,
@@ -1463,7 +1471,7 @@ impl Type {
             Type::Enum(ty) => &mut ty.metadata.common,
             Type::Mapped(ty) => &mut ty.metadata.common,
             Type::Alias(ty) => &mut ty.metadata.common,
-            Type::Namespace(_ty) => todo!("Type::Namespace -> metadata()"),
+            Type::Namespace(ty) => &mut ty.metadata.common,
             Type::Module(ty) => &mut ty.metadata.common,
             Type::Class(ty) => &mut ty.metadata.common,
             Type::ClassDef(ty) => &mut ty.metadata.common,

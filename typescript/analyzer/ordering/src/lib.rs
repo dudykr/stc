@@ -1,11 +1,14 @@
+//! Currently this crate is not used.
+
 #![allow(incomplete_features)]
 #![feature(specialization)]
 
 use self::types::Sortable;
-use fxhash::{FxBuildHasher, FxHashMap, FxHashSet};
+use fxhash::{FxBuildHasher, FxHashSet};
 use indexmap::IndexSet;
 use petgraph::{algo::all_simple_paths, graphmap::DiGraphMap, EdgeDirection::Outgoing};
 use std::{collections::VecDeque, iter::from_fn};
+use swc_common::collections::{AHashMap, AHashSet};
 
 mod class;
 mod object;
@@ -21,8 +24,8 @@ where
     T: Sortable,
 {
     let mut graph = DiGraphMap::default();
-    let mut declared_by = FxHashMap::<_, Vec<usize>>::default();
-    let mut used = FxHashMap::<_, FxHashSet<_>>::default();
+    let mut declared_by = AHashMap::<_, Vec<usize>>::default();
+    let mut used = AHashMap::<_, AHashSet<_>>::default();
 
     for (idx, node) in nodes.iter().enumerate() {
         let decls = node.get_decls();
