@@ -1,8 +1,8 @@
 use fxhash::{FxHashMap, FxHashSet};
 use std::hash::Hash;
 
-pub trait Sortable {
-    type Id: Eq + Hash;
+pub trait Sortable: Send + Sync {
+    type Id: Eq + Hash + Send + Sync;
 
     /// Returns `Set<(var_id, vars_required_for_var_id)>`.
     ///
