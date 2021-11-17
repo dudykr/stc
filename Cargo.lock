@@ -2105,6 +2105,8 @@ dependencies = [
  "stc_ts_utils",
  "swc_atoms",
  "swc_common",
+ "swc_fast_graph",
+ "swc_graph_analyzer",
  "testing",
 ]
 
