@@ -48,7 +48,7 @@ fn main() -> Result<(), Error> {
     let cm = Arc::new(SourceMap::default());
     let handler = {
         let emitter = Box::new(EmitterWriter::stderr(
-            ColorConfig::Never,
+            ColorConfig::Always,
             Some(cm.clone()),
             false,
             false,

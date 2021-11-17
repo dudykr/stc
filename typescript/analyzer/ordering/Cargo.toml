@@ -11,7 +11,16 @@ version = "0.1.0"
 fxhash = "0.2.1"
 indexmap = "1.6.2"
 petgraph = "0.5.1"
+rayon = "1.5.1"
 rnode = {path = "../../../rnode"}
 stc_ts_ast_rnode = {path = "../../ast_rnode"}
 stc_ts_types = {path = "../../types"}
 stc_ts_utils = {path = "../../utils"}
+swc_atoms = "0.2.9"
+swc_common = "0.14.6"
+swc_fast_graph = "0.1.0"
+swc_graph_analyzer = "0.1.0"
+
+[dev-dependencies]
+stc_ts_testing = {path = "../../testing/"}
+testing = "0.15.1"

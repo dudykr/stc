@@ -328,7 +328,12 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsExportAssignment) {
-        self.export_expr(Id::word(js_word!("default")), node.node_id, &node.expr)?;
+        let ctx = Ctx {
+            allow_namespace_var: true,
+            ..self.ctx
+        };
+        self.with_ctx(ctx)
+            .export_expr(Id::word(js_word!("default")), node.node_id, &node.expr)?;
 
         Ok(())
     }

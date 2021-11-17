@@ -1,7 +1,6 @@
 //! Dependency analyzer for statements.
 
 use crate::types::Sortable;
-use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RBindingIdent, RDecl, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RModuleDecl, RModuleItem, RProp, RStmt,
@@ -10,6 +9,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_types::{Id, IdCtx};
 use stc_ts_utils::{find_ids_in_pat, AsModuleDecl};
+use swc_common::collections::{AHashMap, AHashSet};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TypedId {
@@ -20,11 +20,11 @@ pub struct TypedId {
 impl Sortable for RStmt {
     type Id = TypedId;
 
-    fn get_decls(&self) -> FxHashMap<Self::Id, FxHashSet<Self::Id>> {
+    fn get_decls(&self) -> AHashMap<Self::Id, AHashSet<Self::Id>> {
         ids_declared_by(self)
     }
 
-    fn uses(&self) -> FxHashSet<Self::Id> {
+    fn uses(&self) -> AHashSet<Self::Id> {
         deps_of(self)
     }
 }
@@ -32,16 +32,16 @@ impl Sortable for RStmt {
 impl Sortable for RModuleItem {
     type Id = TypedId;
 
-    fn get_decls(&self) -> FxHashMap<Self::Id, FxHashSet<Self::Id>> {
+    fn get_decls(&self) -> AHashMap<Self::Id, AHashSet<Self::Id>> {
         ids_declared_by(self)
     }
 
-    fn uses(&self) -> FxHashSet<Self::Id> {
+    fn uses(&self) -> AHashSet<Self::Id> {
         deps_of(self)
     }
 }
 
-fn deps_of<T>(e: &T) -> FxHashSet<TypedId>
+fn deps_of<T>(e: &T) -> AHashSet<TypedId>
 where
     T: VisitWith<DepAnalyzer>,
 {
@@ -50,8 +50,8 @@ where
     v.used
 }
 
-fn vars_declared_by_var_decl(v: &RVarDecl) -> FxHashMap<TypedId, FxHashSet<TypedId>> {
-    let mut map = FxHashMap::<_, FxHashSet<_>>::default();
+fn vars_declared_by_var_decl(v: &RVarDecl) -> AHashMap<TypedId, AHashSet<TypedId>> {
+    let mut map = AHashMap::<_, AHashSet<_>>::default();
     for decl in &v.decls {
         let vars = find_ids_in_pat(&decl.name);
 
@@ -83,8 +83,8 @@ fn vars_declared_by_var_decl(v: &RVarDecl) -> FxHashMap<TypedId, FxHashSet<Typed
     return map;
 }
 
-fn ids_declared_by_decl(d: &RDecl) -> FxHashMap<TypedId, FxHashSet<TypedId>> {
-    let mut map = FxHashMap::default();
+fn ids_declared_by_decl(d: &RDecl) -> AHashMap<TypedId, AHashSet<TypedId>> {
+    let mut map = AHashMap::default();
     match d {
         RDecl::Class(c) => {
             let used_ids = deps_of(&c.class);
@@ -184,7 +184,7 @@ fn ids_declared_by_decl(d: &RDecl) -> FxHashMap<TypedId, FxHashSet<TypedId>> {
     }
 }
 
-fn ids_declared_by<T>(node: &T) -> FxHashMap<TypedId, FxHashSet<TypedId>>
+fn ids_declared_by<T>(node: &T) -> AHashMap<TypedId, AHashSet<TypedId>>
 where
     T: AsModuleDecl,
 {
@@ -246,7 +246,7 @@ where
 
 #[derive(Default)]
 struct DepAnalyzer {
-    used: FxHashSet<TypedId>,
+    used: AHashSet<TypedId>,
     in_var_decl: bool,
 }
 
