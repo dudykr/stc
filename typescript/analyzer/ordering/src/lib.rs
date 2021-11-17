@@ -1,3 +1,5 @@
+//! Currently this crate is not used.
+
 #![allow(incomplete_features)]
 #![feature(specialization)]
 
@@ -5,10 +7,8 @@ use self::types::Sortable;
 use fxhash::{FxBuildHasher, FxHashSet};
 use indexmap::IndexSet;
 use petgraph::{algo::all_simple_paths, graphmap::DiGraphMap, EdgeDirection::Outgoing};
-use rayon::prelude::*;
 use std::{collections::VecDeque, iter::from_fn};
 use swc_common::collections::{AHashMap, AHashSet};
-use swc_fast_graph::digraph::FastDiGraphMap;
 
 mod class;
 mod object;
