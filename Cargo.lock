@@ -2103,6 +2103,8 @@ dependencies = [
  "stc_ts_testing",
  "stc_ts_types",
  "stc_ts_utils",
+ "swc_atoms",
+ "swc_common",
  "testing",
 ]
 
