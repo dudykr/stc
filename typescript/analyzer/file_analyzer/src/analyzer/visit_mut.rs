@@ -8,9 +8,9 @@ use stc_ts_ast_rnode::{
     RExportNamedSpecifier, RExpr, RFnDecl, RFnExpr, RForInStmt, RForOfStmt, RForStmt, RFunction, RIfStmt, RImportDecl,
     RModule, RModuleItem, RNamedExport, RObjectLit, RParam, RParamOrTsParamProp, RPrivateMethod, RPrivateProp,
     RPropName, RReturnStmt, RSeqExpr, RStmt, RSwitchStmt, RTpl, RTsEnumDecl, RTsExportAssignment, RTsFnParam,
-    RTsFnType, RTsImportEqualsDecl, RTsInterfaceBody, RTsInterfaceDecl, RTsModuleDecl, RTsNamespaceDecl, RTsParamProp,
-    RTsTplLitType, RTsType, RTsTypeAliasDecl, RTsTypeElement, RVarDecl, RVarDeclarator, RWhileStmt, RWithStmt,
-    RYieldExpr,
+    RTsFnType, RTsImportEqualsDecl, RTsInterfaceBody, RTsInterfaceDecl, RTsModuleBlock, RTsModuleDecl,
+    RTsNamespaceDecl, RTsParamProp, RTsTplLitType, RTsType, RTsTypeAliasDecl, RTsTypeElement, RVarDecl, RVarDeclarator,
+    RWhileStmt, RWithStmt, RYieldExpr,
 };
 
 macro_rules! forward {
@@ -106,3 +106,4 @@ forward!(visit_tpl, RTpl);
 forward!(visit_mut_ts_import_equals_decl, RTsImportEqualsDecl);
 forward!(visit, RParamOrTsParamProp);
 forward!(visit, RTsTplLitType);
+forward!(visit, RTsModuleBlock);

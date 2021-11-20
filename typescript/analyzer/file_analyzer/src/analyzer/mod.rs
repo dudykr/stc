@@ -17,8 +17,8 @@ use crate::{
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{
-    RDecorator, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsImportEqualsDecl, RTsModuleDecl,
-    RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
+    RDecorator, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsImportEqualsDecl, RTsModuleBlock,
+    RTsModuleDecl, RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
 };
 use stc_ts_dts_mutations::Mutations;
 use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
@@ -909,6 +909,16 @@ impl Analyzer<'_, '_> {
 
             Ok(())
         })
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, decl: &RTsModuleBlock) -> ValidationResult<()> {
+        let body = decl.body.iter().collect();
+        self.validate_stmts_with_hoisting(&body);
+
+        Ok(())
     }
 }
 
