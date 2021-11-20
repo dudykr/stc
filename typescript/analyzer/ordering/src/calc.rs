@@ -1,5 +1,5 @@
-use petgraph::{graphmap::DiGraphMap, EdgeDirection::Outgoing};
-use std::{hash::Hash, iter::from_fn};
+use petgraph::EdgeDirection::Outgoing;
+use std::hash::Hash;
 use swc_common::collections::{AHashMap, AHashSet};
 use swc_fast_graph::digraph::FastDiGraphMap;
 use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
