@@ -63,12 +63,18 @@ pub(crate) fn calc_order(
     let mut done = AHashSet::default();
     let mut orders = vec![];
 
-    for idx in 0..len {
-        let next = calc_one(&done, &cycles, graph, idx);
+    loop {
+        for idx in 0..len {
+            let next = calc_one(&done, &cycles, graph, idx);
 
-        done.extend(next.iter().copied());
+            done.extend(next.iter().copied());
 
-        orders.push(next);
+            orders.push(next);
+        }
+
+        if (0..len).into_iter().all(|idx| done.contains(&idx)) {
+            break;
+        }
     }
 
     orders
