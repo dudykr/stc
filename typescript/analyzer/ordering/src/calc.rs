@@ -91,7 +91,11 @@ fn calc_one(
     let deps = graph.neighbors_directed(idx, Outgoing).collect::<Vec<_>>();
 
     for dep in deps {
-        return calc_one(done, cycles, graph, dep);
+        let v = calc_one(done, cycles, graph, dep);
+        if v.is_empty() {
+            continue;
+        }
+        return v;
     }
 
     return vec![idx];
