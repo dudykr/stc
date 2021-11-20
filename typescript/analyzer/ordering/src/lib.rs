@@ -4,9 +4,11 @@
 #![feature(specialization)]
 
 use self::types::Sortable;
+use either::Either;
 use fxhash::{FxBuildHasher, FxHashSet};
 use indexmap::IndexSet;
 use petgraph::{algo::all_simple_paths, graphmap::DiGraphMap, EdgeDirection::Outgoing};
+use rayon::prelude::*;
 use std::{collections::VecDeque, iter::from_fn};
 use swc_common::collections::{AHashMap, AHashSet};
 
@@ -23,22 +25,34 @@ pub fn calc_eval_order<T>(nodes: &[T]) -> Vec<Vec<usize>>
 where
     T: Sortable,
 {
+    let usages = nodes
+        .par_iter()
+        .map(|node| {
+            let decls = node.get_decls();
+
+            if decls.is_empty() {
+                Either::Left(node.uses())
+            } else {
+                Either::Right(decls)
+            }
+        })
+        .collect::<Vec<_>>();
+
     let mut graph = DiGraphMap::default();
     let mut declared_by = AHashMap::<_, Vec<usize>>::default();
     let mut used = AHashMap::<_, AHashSet<_>>::default();
 
-    for (idx, node) in nodes.iter().enumerate() {
-        let decls = node.get_decls();
+    for (idx, usage) in usages.into_iter().enumerate() {
+        match usage {
+            Either::Left(uses) => {
+                used.entry(idx).or_default().extend(uses);
+            }
+            Either::Right(decls) => {
+                for (id, deps) in decls {
+                    declared_by.entry(id).or_default().push(idx);
 
-        if decls.is_empty() {
-            let used_vars = node.uses();
-            used.entry(idx).or_default().extend(used_vars);
-            // Assign expressions like `a = b` comes here.
-        } else {
-            for (id, deps) in decls {
-                declared_by.entry(id).or_default().push(idx);
-
-                used.entry(idx).or_default().extend(deps);
+                    used.entry(idx).or_default().extend(deps);
+                }
             }
         }
     }
