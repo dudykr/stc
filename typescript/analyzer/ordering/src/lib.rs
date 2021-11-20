@@ -68,7 +68,11 @@ where
         nodes.len(),
     );
 
-    calc_order(cycles, &mut graph, nodes.len())
+    let mut orders = calc_order(cycles, &mut graph, nodes.len());
+
+    orders.extend(pures.into_iter().map(|v| vec![v]));
+
+    orders
 }
 
 fn iter_from_graph(mut graph: DiGraphMap<usize, ()>, mut queue: VecDeque<usize>) -> impl Iterator<Item = Vec<usize>> {
