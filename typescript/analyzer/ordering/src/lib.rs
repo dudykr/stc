@@ -4,6 +4,7 @@
 #![feature(specialization)]
 
 use self::types::Sortable;
+use crate::calc::Usages;
 use either::Either;
 use fxhash::{FxBuildHasher, FxHashSet};
 use indexmap::IndexSet;
@@ -12,6 +13,7 @@ use rayon::prelude::*;
 use std::{collections::VecDeque, iter::from_fn};
 use swc_common::collections::{AHashMap, AHashSet};
 
+mod calc;
 mod class;
 mod object;
 pub mod stmt;
@@ -38,8 +40,7 @@ where
         })
         .collect::<Vec<_>>();
 
-    let mut declared_by = AHashMap::<_, Vec<usize>>::default();
-    let mut used_by_idx = AHashMap::<_, AHashSet<_>>::default();
+    let mut calc = Usages::default();
 
     for (idx, usage) in usages.into_iter().enumerate() {
         match usage {
@@ -55,25 +56,11 @@ where
             }
         }
     }
-
-    let mut graph = DiGraphMap::default();
-
-    for (idx, deps) in used_by_idx {
-        for dep in deps {
-            if let Some(declarator_indexes) = declared_by.get(&dep) {
-                for &declarator_index in declarator_indexes {
-                    if declarator_index != idx {
-                        graph.add_edge(idx, declarator_index, ());
-                    }
-                }
-            }
-        }
+    for idx in 0..nodes.len() {
+        calc.add_to_output(idx);
     }
 
-    let mut queue = VecDeque::default();
-    queue.extend(0..nodes.len());
-
-    iter_from_graph(graph, queue).collect()
+    calc.into_output()
 }
 
 fn iter_from_graph(mut graph: DiGraphMap<usize, ()>, mut queue: VecDeque<usize>) -> impl Iterator<Item = Vec<usize>> {
