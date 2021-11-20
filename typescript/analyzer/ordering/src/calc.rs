@@ -89,7 +89,7 @@ fn calc_one(
     graph: &mut FastDiGraphMap<usize, ()>,
     idx: usize,
 ) -> Vec<usize> {
-    if cfg!(debug_assertions) {
+    if cfg!(debug_assertions) && cfg!(feauture = "debug") {
         trace!("calc_one(idx = {:?})", idx);
     }
 

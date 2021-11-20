@@ -7,6 +7,9 @@ publish = false
 version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+debug = []
+
 [dependencies]
 either = "1.6.1"
 fxhash = "0.2.1"
