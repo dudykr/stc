@@ -38,7 +38,6 @@ where
         })
         .collect::<Vec<_>>();
 
-    let mut graph = DiGraphMap::default();
     let mut declared_by = AHashMap::<_, Vec<usize>>::default();
     let mut used_by_idx = AHashMap::<_, AHashSet<_>>::default();
 
@@ -56,6 +55,8 @@ where
             }
         }
     }
+
+    let mut graph = DiGraphMap::default();
 
     for (idx, deps) in used_by_idx {
         for dep in deps {
