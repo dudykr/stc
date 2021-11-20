@@ -3,6 +3,7 @@ use std::{hash::Hash, iter::from_fn};
 use swc_common::collections::{AHashMap, AHashSet};
 use swc_fast_graph::digraph::FastDiGraphMap;
 use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
+use tracing::trace;
 
 pub(crate) struct Deps<'a, I>
 where
@@ -88,6 +89,10 @@ fn calc_one(
     graph: &mut FastDiGraphMap<usize, ()>,
     idx: usize,
 ) -> Vec<usize> {
+    if cfg!(debug_assertions) {
+        trace!("calc_one(idx = {:?})", idx);
+    }
+
     if done.contains(&idx) {
         return vec![];
     }
