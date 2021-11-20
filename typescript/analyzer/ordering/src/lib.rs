@@ -40,24 +40,24 @@ where
 
     let mut graph = DiGraphMap::default();
     let mut declared_by = AHashMap::<_, Vec<usize>>::default();
-    let mut used = AHashMap::<_, AHashSet<_>>::default();
+    let mut used_by_idx = AHashMap::<_, AHashSet<_>>::default();
 
     for (idx, usage) in usages.into_iter().enumerate() {
         match usage {
             Either::Left(uses) => {
-                used.entry(idx).or_default().extend(uses);
+                used_by_idx.entry(idx).or_default().extend(uses);
             }
             Either::Right(decls) => {
                 for (id, deps) in decls {
                     declared_by.entry(id).or_default().push(idx);
 
-                    used.entry(idx).or_default().extend(deps);
+                    used_by_idx.entry(idx).or_default().extend(deps);
                 }
             }
         }
     }
 
-    for (idx, deps) in used {
+    for (idx, deps) in used_by_idx {
         for dep in deps {
             if let Some(declarator_indexes) = declared_by.get(&dep) {
                 for &declarator_index in declarator_indexes {
