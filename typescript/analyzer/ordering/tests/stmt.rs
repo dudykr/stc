@@ -1,6 +1,6 @@
 use stc_ts_ordering::calc_eval_order;
 use stc_ts_testing::{parse, parse_rnode};
-use swc_common::{comments::NoopComments, FileName};
+use swc_common::{comments::NoopComments, FileName, Mark};
 
 #[track_caller]
 fn assert_simple(src: &str, expected: Vec<usize>) {
@@ -9,7 +9,7 @@ fn assert_simple(src: &str, expected: Vec<usize>) {
     testing::run_test2(false, |cm, _handler| {
         let fm = cm.new_source_file(FileName::Anon, src.into());
 
-        let module = parse_rnode(&fm, &NoopComments);
+        let module = parse_rnode(&fm, &NoopComments, Mark::fresh(Mark::root()));
 
         let order = calc_eval_order(&module.body);
 

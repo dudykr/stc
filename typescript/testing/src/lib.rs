@@ -4,15 +4,17 @@
 
 use rnode::IntoRNode;
 use stc_ts_ast_rnode::RModule;
-use swc_common::{comments::Comments, input::SourceFileInput, SourceFile};
+use swc_common::{comments::Comments, input::SourceFileInput, Mark, SourceFile};
 use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
+use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_utils::HANDLER;
+use swc_ecma_visit::VisitMutWith;
 
 pub mod tsc;
 pub mod visualizer;
 
-pub fn parse(fm: &SourceFile, comments: &dyn Comments) -> Module {
+pub fn parse(fm: &SourceFile, comments: &dyn Comments, top_level_mark: Mark) -> Module {
     let lexer = Lexer::new(
         Syntax::Typescript(TsConfig {
             tsx: fm.name.to_string().ends_with(".tsx"),
@@ -27,7 +29,7 @@ pub fn parse(fm: &SourceFile, comments: &dyn Comments) -> Module {
         Some(comments),
     );
     let mut parser = Parser::new_from(lexer);
-    parser
+    let mut m = parser
         .parse_module()
         .map_err(|err| {
             HANDLER.with(|handler| {
@@ -35,11 +37,15 @@ pub fn parse(fm: &SourceFile, comments: &dyn Comments) -> Module {
                 ()
             })
         })
-        .unwrap()
+        .unwrap();
+
+    m.visit_mut_with(&mut ts_resolver(top_level_mark));
+
+    m
 }
 
-pub fn parse_rnode(fm: &SourceFile, comments: &dyn Comments) -> RModule {
-    let module = parse(fm, comments);
+pub fn parse_rnode(fm: &SourceFile, comments: &dyn Comments, top_level_mark: Mark) -> RModule {
+    let module = parse(fm, comments, top_level_mark);
 
     let mut generator = rnode::NodeIdGenerator::default();
     module.into_rnode(&mut generator)
