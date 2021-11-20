@@ -224,3 +224,22 @@ fn type_alias_01() {
         vec![1, 0],
     );
 }
+
+#[test]
+fn string_tree_1() {
+    assert_order(
+        "type StringTree = string | StringTreeCollection;
+    class StringTreeCollectionBase {
+        [n: number]: StringTree;
+    }
+    
+    class StringTreeCollection extends StringTreeCollectionBase { }
+    
+    var x: StringTree;
+    if (typeof x !== 'string') {
+        x[0] = '';
+        x[0] = new StringTreeCollection;
+    }",
+        vec![],
+    );
+}
