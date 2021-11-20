@@ -1,14 +1,10 @@
 use crate::{analyzer::Analyzer, util::ModuleItemOrStmt};
 use fxhash::{FxHashMap, FxHashSet};
-use petgraph::{graphmap::DiGraphMap, EdgeDirection::Outgoing};
 use rnode::{Visit, VisitWith};
-use stc_ts_ast_rnode::{
-    RDecl, RExportDecl, RForInStmt, RForOfStmt, RForStmt, RIdent, RModuleDecl, RStmt, RVarDeclOrExpr, RVarDeclOrPat,
-};
-use stc_ts_ordering::{stmt::TypedId, types::Sortable};
+use stc_ts_ast_rnode::{RDecl, RIdent, RModuleDecl, RStmt};
+use stc_ts_ordering::{calc_eval_order, stmt::TypedId, types::Sortable};
 use stc_ts_types::Id;
 use stc_ts_utils::{AsModuleDecl, HasNodeId};
-use tracing::warn;
 
 #[cfg(test)]
 mod tests;
@@ -127,145 +123,9 @@ impl Analyzer<'_, '_> {
     where
         T: AsModuleDecl + Sortable<Id = TypedId>,
     {
-        let mut graph = DiGraphMap::default();
-        let mut declared_by = FxHashMap::<TypedId, Vec<usize>>::default();
-        let unresolved_circular_imports = vec![];
-        let skip = FxHashSet::default();
-        let mut used = FxHashMap::<_, FxHashSet<_>>::default();
+        let orders = calc_eval_order(stmts);
 
-        // TODO(kdy1): Handle loaded circular imports. This is required to prevent
-        // deadlock and duplicated work.
-
-        // Caculate declarations.
-        for (idx, item) in stmts.iter().enumerate() {
-            graph.add_node(idx);
-
-            match item.as_module_decl() {
-                Ok(RModuleDecl::Import(import)) => {}
-
-                // We only check declarations because ids are created by declarations.
-                Ok(RModuleDecl::ExportDecl(RExportDecl { decl, .. })) | Err(RStmt::Decl(decl)) => {
-                    //
-                    match decl {
-                        RDecl::Class(..)
-                        | RDecl::TsInterface(..)
-                        | RDecl::TsTypeAlias(..)
-                        | RDecl::TsEnum(..)
-                        | RDecl::Fn(..)
-                        | RDecl::Var(..)
-                        | RDecl::TsModule(_) => {
-                            let vars = item.get_decls();
-
-                            for (id, deps) in vars {
-                                declared_by.entry(id).or_default().push(idx);
-
-                                used.entry(idx).or_default().extend(deps);
-                            }
-                        }
-                    }
-                }
-                Err(RStmt::For(RForStmt {
-                    init: Some(RVarDeclOrExpr::VarDecl(..)),
-                    ..
-                }))
-                | Err(RStmt::ForOf(RForOfStmt {
-                    left: RVarDeclOrPat::VarDecl(..),
-                    ..
-                }))
-                | Err(RStmt::ForIn(RForInStmt {
-                    left: RVarDeclOrPat::VarDecl(..),
-                    ..
-                })) => {
-                    let vars = item.get_decls();
-
-                    for (id, deps) in vars {
-                        declared_by.entry(id).or_default().push(idx);
-
-                        used.entry(idx).or_default().extend(deps);
-                    }
-                }
-                _ => {
-                    let used_vars = item.uses();
-                    used.entry(idx).or_default().extend(used_vars);
-                }
-            }
-        }
-
-        // Fill graph.
-        for (idx, deps) in used {
-            for dep in deps {
-                if let Some(declarator_indexes) = declared_by.get(&dep) {
-                    for &declarator_index in declarator_indexes {
-                        if declarator_index != idx {
-                            graph.add_edge(idx, declarator_index, ());
-                        }
-                    }
-                }
-            }
-        }
-
-        let len = stmts.len();
-        let mut orders = Vec::with_capacity(stmts.len());
-
-        // No dependencies
-        loop {
-            if graph.all_edges().count() == 0 {
-                break;
-            }
-
-            let mut did_work = false;
-            // Add nodes which does not have any dependencies.
-            for i in 0..len {
-                if skip.contains(&i) || orders.contains(&i) || unresolved_circular_imports.contains(&i) {
-                    continue;
-                }
-
-                // filter is used to workaround the bug of petgraph.
-                let deps = graph
-                    .neighbors_directed(i, Outgoing)
-                    .filter(|dep| !orders.contains(dep))
-                    .collect::<Vec<_>>();
-
-                if deps.len() != 0 {
-                    continue;
-                }
-
-                did_work = true;
-                orders.push(i);
-
-                // Remove dependencies to other node.
-                graph.remove_node(i);
-                break;
-            }
-
-            if !did_work {
-                break;
-            }
-        }
-
-        // TODO(kdy1): More logic
-
-        // Postpone handling of circular imports as much as possible.
-        for i in 0..len {
-            if skip.contains(&i) {
-                continue;
-            }
-            if !orders.contains(&i) && !unresolved_circular_imports.contains(&i) {
-                orders.push(i);
-            }
-        }
-
-        for i in 0..len {
-            if !orders.contains(&i) {
-                orders.push(i);
-            }
-        }
-
-        if self.scope.is_root() {
-            warn!("Order: {:?}", orders);
-        }
-
-        (orders, skip)
+        (orders.into_iter().flatten().collect(), Default::default())
     }
 }
 
