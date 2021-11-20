@@ -6,6 +6,11 @@ use swc_common::{comments::NoopComments, FileName, Mark};
 fn assert_simple(src: &str, expected: Vec<usize>) {
     let expected = expected.into_iter().map(|v| vec![v]).collect::<Vec<_>>();
 
+    assert_order(src, expected)
+}
+
+#[track_caller]
+fn assert_order(src: &str, expected: Vec<Vec<usize>>) {
     testing::run_test2(false, |cm, _handler| {
         let fm = cm.new_source_file(FileName::Anon, src.into());
 
@@ -63,7 +68,7 @@ fn order_3() {
 
 #[test]
 fn order_bfs_1() {
-    assert_simple(
+    assert_order(
         "
     function foo() {
         return new Bar();
@@ -75,13 +80,13 @@ fn order_bfs_1() {
         }
     }
     ",
-        vec![0, 1],
+        vec![vec![0, 1]],
     );
 }
 
 #[test]
 fn var_1() {
-    assert_simple(
+    assert_order(
         "
     function foo() {
         return new Bar();
@@ -93,7 +98,7 @@ fn var_1() {
         }
     }
     ",
-        vec![0, 1],
+        vec![vec![0, 1]],
     );
 }
 
