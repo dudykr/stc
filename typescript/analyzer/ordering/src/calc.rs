@@ -76,7 +76,10 @@ pub(crate) fn calc_order(
             }
         }
 
-        if (0..len).into_iter().all(|idx| done.contains(&idx)) {
+        if (0..len)
+            .into_iter()
+            .all(|idx| done.contains(&idx) || pure.contains(&idx))
+        {
             break;
         }
     }
