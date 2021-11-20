@@ -2110,6 +2110,7 @@ dependencies = [
  "swc_fast_graph",
  "swc_graph_analyzer",
  "testing",
+ "tracing",
 ]
 
 [[package]]
