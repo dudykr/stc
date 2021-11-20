@@ -1,5 +1,5 @@
 use stc_ts_ordering::calc_eval_order;
-use stc_ts_testing::{parse, parse_rnode};
+use stc_ts_testing::parse_rnode;
 use swc_common::{comments::NoopComments, FileName, Mark};
 
 #[track_caller]
