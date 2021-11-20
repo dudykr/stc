@@ -1,4 +1,4 @@
-use petgraph::graphmap::DiGraphMap;
+use petgraph::{graphmap::DiGraphMap, EdgeDirection::Outgoing};
 use std::{hash::Hash, iter::from_fn};
 use swc_common::collections::{AHashMap, AHashSet};
 use swc_fast_graph::digraph::FastDiGraphMap;
@@ -83,4 +83,16 @@ fn calc_one(
     if done.contains(&idx) {
         return vec![];
     }
+
+    if let Some(cycle) = cycles.iter().find(|v| v.contains(&idx)) {
+        return cycle.clone();
+    }
+
+    let deps = graph.neighbors_directed(idx, Outgoing).collect::<Vec<_>>();
+
+    for dep in deps {
+        return calc_one(done, cycles, graph, dep);
+    }
+
+    return vec![idx];
 }

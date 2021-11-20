@@ -60,7 +60,7 @@ where
         }
     }
 
-    let (cycles, graph) = to_graph(
+    let (cycles, mut graph) = to_graph(
         &Deps {
             declared_by: &declared_by,
             used_by_idx: &used_by_idx,
