@@ -69,7 +69,9 @@ pub(crate) fn calc_order(
 
             done.extend(next.iter().copied());
 
-            orders.push(next);
+            if !next.is_empty() {
+                orders.push(next);
+            }
         }
 
         if (0..len).into_iter().all(|idx| done.contains(&idx)) {
