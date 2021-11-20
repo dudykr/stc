@@ -1,34 +1,86 @@
 use petgraph::graphmap::DiGraphMap;
+use std::{hash::Hash, iter::from_fn};
 use swc_common::collections::{AHashMap, AHashSet};
+use swc_fast_graph::digraph::FastDiGraphMap;
+use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
 
-pub struct Usages<I> {
-    declared_by: AHashMap<I, Vec<usize>>,
-    used_by_idx: AHashMap<usize, AHashSet<I>>,
-
-    graph: DiGraphMap<usize, ()>,
-
-    output: Vec<Vec<usize>>,
+pub(crate) struct Deps<'a, I>
+where
+    I: Eq + Hash,
+{
+    pub declared_by: &'a AHashMap<I, Vec<usize>>,
+    pub used_by_idx: &'a AHashMap<usize, AHashSet<I>>,
 }
 
-impl<I> Default for Usages<I> {
-    fn default() -> Self {
-        Self {
-            declared_by: Default::default(),
-            used_by_idx: Default::default(),
-            graph: Default::default(),
-            output: Default::default(),
+/// Returns `(cycles, graph)`.
+pub(crate) fn to_graph<I>(deps: &Deps<I>, len: usize) -> (Vec<Vec<usize>>, FastDiGraphMap<usize, ()>)
+where
+    I: Eq + Hash,
+{
+    let mut a = GraphAnalyzer::new(deps);
+
+    for idx in 0..len {
+        a.load(idx);
+    }
+
+    let res = a.into_result();
+
+    (res.cycles, res.graph)
+}
+
+impl<I> DepGraph for Deps<'_, I>
+where
+    I: Eq + Hash,
+{
+    type ModuleId = usize;
+
+    fn deps_of(&self, module_id: Self::ModuleId) -> Vec<Self::ModuleId> {
+        let used = self.used_by_idx.get(&module_id);
+        let used = match used {
+            Some(v) => v,
+            None => return Default::default(),
+        };
+
+        let mut buf = vec![];
+
+        for used in used {
+            let deps = self.declared_by.get(used);
+
+            if let Some(deps) = deps {
+                buf.extend(deps.iter());
+            }
         }
+
+        buf
     }
 }
 
-impl<I> Usages<I> {
-    pub fn add_to_output(&mut self, idx: usize) {
-        if self.output.iter().any(|vec| vec.contains(&idx)) {
-            return;
-        }
+pub(crate) fn calc_order(
+    cycles: Vec<Vec<usize>>,
+    graph: &mut FastDiGraphMap<usize, ()>,
+    len: usize,
+) -> Vec<Vec<usize>> {
+    let mut done = AHashSet::default();
+    let mut orders = vec![];
+
+    for idx in 0..len {
+        let next = calc_one(&done, &cycles, graph, idx);
+
+        done.extend(next.iter().copied());
+
+        orders.push(next);
     }
 
-    pub fn into_output(self) -> Vec<Vec<usize>> {
-        self.output
+    orders
+}
+
+fn calc_one(
+    done: &AHashSet<usize>,
+    cycles: &[Vec<usize>],
+    graph: &mut FastDiGraphMap<usize, ()>,
+    idx: usize,
+) -> Vec<usize> {
+    if done.contains(&idx) {
+        return vec![];
     }
 }

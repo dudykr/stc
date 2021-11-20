@@ -4,7 +4,7 @@
 #![feature(specialization)]
 
 use self::types::Sortable;
-use crate::calc::Usages;
+use crate::calc::{calc_order, to_graph, Deps};
 use either::Either;
 use fxhash::{FxBuildHasher, FxHashSet};
 use indexmap::IndexSet;
@@ -40,12 +40,15 @@ where
         })
         .collect::<Vec<_>>();
 
-    let mut calc = Usages::default();
+    let mut declared_by: AHashMap<_, Vec<usize>> = Default::default();
+    let mut used_by_idx: AHashMap<usize, AHashSet<_>> = Default::default();
+
+    let mut pures = vec![];
 
     for (idx, usage) in usages.into_iter().enumerate() {
         match usage {
             Either::Left(uses) => {
-                used_by_idx.entry(idx).or_default().extend(uses);
+                pures.push(idx);
             }
             Either::Right(decls) => {
                 for (id, deps) in decls {
@@ -56,11 +59,16 @@ where
             }
         }
     }
-    for idx in 0..nodes.len() {
-        calc.add_to_output(idx);
-    }
 
-    calc.into_output()
+    let (cycles, graph) = to_graph(
+        &Deps {
+            declared_by: &declared_by,
+            used_by_idx: &used_by_idx,
+        },
+        nodes.len(),
+    );
+
+    calc_order(cycles, &mut graph, nodes.len())
 }
 
 fn iter_from_graph(mut graph: DiGraphMap<usize, ()>, mut queue: VecDeque<usize>) -> impl Iterator<Item = Vec<usize>> {
