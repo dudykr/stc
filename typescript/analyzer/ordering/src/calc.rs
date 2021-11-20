@@ -58,7 +58,6 @@ where
 
 pub(crate) fn calc_order(
     cycles: Vec<Vec<usize>>,
-    pure: &[usize],
     graph: &mut FastDiGraphMap<usize, ()>,
     len: usize,
 ) -> Vec<Vec<usize>> {
@@ -67,7 +66,7 @@ pub(crate) fn calc_order(
 
     loop {
         for idx in 0..len {
-            let next = calc_one(&done, pure, &cycles, graph, idx);
+            let next = calc_one(&done, &cycles, graph, idx);
 
             done.extend(next.iter().copied());
 
@@ -76,10 +75,7 @@ pub(crate) fn calc_order(
             }
         }
 
-        if (0..len)
-            .into_iter()
-            .all(|idx| done.contains(&idx) || pure.contains(&idx))
-        {
+        if (0..len).into_iter().all(|idx| done.contains(&idx)) {
             break;
         }
     }
@@ -89,7 +85,6 @@ pub(crate) fn calc_order(
 
 fn calc_one(
     done: &AHashSet<usize>,
-    pure: &[usize],
     cycles: &[Vec<usize>],
     graph: &mut FastDiGraphMap<usize, ()>,
     idx: usize,
@@ -98,7 +93,7 @@ fn calc_one(
         trace!("calc_one(idx = {:?})", idx);
     }
 
-    if done.contains(&idx) || pure.contains(&idx) {
+    if done.contains(&idx) {
         return vec![];
     }
 
@@ -109,7 +104,7 @@ fn calc_one(
     let deps = graph.neighbors_directed(idx, Outgoing).collect::<Vec<_>>();
 
     for dep in deps {
-        let v = calc_one(done, pure, cycles, graph, dep);
+        let v = calc_one(done, cycles, graph, dep);
         if v.is_empty() {
             continue;
         }

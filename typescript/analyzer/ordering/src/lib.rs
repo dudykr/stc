@@ -29,7 +29,7 @@ where
             let decls = node.get_decls();
 
             if decls.is_empty() {
-                Either::Left(())
+                Either::Left(node.uses())
             } else {
                 Either::Right(decls)
             }
@@ -39,12 +39,10 @@ where
     let mut declared_by: AHashMap<_, Vec<usize>> = Default::default();
     let mut used_by_idx: AHashMap<usize, AHashSet<_>> = Default::default();
 
-    let mut pures = vec![];
-
     for (idx, usage) in usages.into_iter().enumerate() {
         match usage {
-            Either::Left(()) => {
-                pures.push(idx);
+            Either::Left(used) => {
+                used_by_idx.entry(idx).or_default().extend(used);
             }
             Either::Right(decls) => {
                 for (id, deps) in decls {
@@ -64,9 +62,7 @@ where
         nodes.len(),
     );
 
-    let mut orders = calc_order(cycles, &pures, &mut graph, nodes.len());
-
-    orders.extend(pures.into_iter().map(|v| vec![v]));
+    let orders = calc_order(cycles, &mut graph, nodes.len());
 
     orders
 }
