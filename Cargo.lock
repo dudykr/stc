@@ -2095,6 +2095,7 @@ dependencies = [
 name = "stc_ts_ordering"
 version = "0.1.0"
 dependencies = [
+ "either",
  "fxhash",
  "indexmap",
  "petgraph",
