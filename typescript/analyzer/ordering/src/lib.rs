@@ -64,7 +64,7 @@ where
         nodes.len(),
     );
 
-    let mut orders = calc_order(cycles, &mut graph, nodes.len());
+    let mut orders = calc_order(cycles, &pures, &mut graph, nodes.len());
 
     orders.extend(pures.into_iter().map(|v| vec![v]));
 
