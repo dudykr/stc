@@ -152,7 +152,8 @@ impl Analyzer<'_, '_> {
                         | RDecl::TsTypeAlias(..)
                         | RDecl::TsEnum(..)
                         | RDecl::Fn(..)
-                        | RDecl::Var(..) => {
+                        | RDecl::Var(..)
+                        | RDecl::TsModule(_) => {
                             let vars = item.get_decls();
 
                             for (id, deps) in vars {
@@ -161,8 +162,6 @@ impl Analyzer<'_, '_> {
                                 used.entry(idx).or_default().extend(deps);
                             }
                         }
-
-                        RDecl::TsModule(_) => {}
                     }
                 }
                 Err(RStmt::For(RForStmt {
