@@ -8,7 +8,8 @@ use swc_common::FileName;
 #[derive(Debug, Clone)]
 pub struct ModuleInfo {
     pub module_id: ModuleId,
-    pub data: Arc<ModuleTypeData>,
+    /// Must be [Type::Arc] of [Type::Module]
+    pub data: Type,
 }
 
 ///
