@@ -2556,9 +2556,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_transforms_base"
-version = "0.44.1"
+version = "0.44.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2b1a55cb06437cab13351d33e3f6147d5068fa3a2807d654965004e4c45109b"
+checksum = "e735ad98a02d713da15200fd2ae1fb4e0853561ae799bfcf5e07da36dba2b57e"
 dependencies = [
  "once_cell",
  "phf",
