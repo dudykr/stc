@@ -11,10 +11,7 @@ use stc_ts_dts::{apply_mutations, cleanup_module_for_dts};
 use stc_ts_env::Env;
 use stc_ts_errors::{debug::debugger::Debugger, Error};
 use stc_ts_file_analyzer::{
-    analyzer::Analyzer,
-    loader::{Load, ModuleInfo},
-    validator::ValidateWith,
-    ModuleTypeData, ValidationResult,
+    analyzer::Analyzer, loader::Load, validator::ValidateWith, ModuleTypeData, ValidationResult,
 };
 use stc_ts_module_loader::ModuleGraph;
 use stc_ts_storage::{ErrorStore, File, Group, Single};
@@ -427,7 +424,7 @@ impl Load for Checker {
 
         let module_id = self.module_graph.id_for_declare_module(name);
 
-        info!("Declaring module `{}`", name);
+        info!("Declaring module with type `{}`", name);
         self.declared_modules.write().push((module_id, module));
     }
 }
