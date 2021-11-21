@@ -28,15 +28,15 @@ pub trait Load: 'static + Send + Sync {
     ///
     /// `partial` denotes the types and variables which the [Analyzer] successed
     /// processing, with resolved imports.
-    fn load_circular_dep(
-        &self,
-        base: ModuleId,
-        dep: ModuleId,
-        partial: &ModuleTypeData,
-    ) -> ValidationResult<ModuleInfo>;
+    ///
+    ///
+    /// Returned value must be [Type::Arc] of [Type::Module]
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult<Type>;
 
     /// Note: This method is called in parallel.
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo>;
+    ///
+    /// Returned value must be [Type::Arc] of [Type::Module]
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<Type>;
 
     /// `module` should be [Type::Arc] of [Type::Module].
     fn declare_module(&self, name: &JsWord, module: Type);
