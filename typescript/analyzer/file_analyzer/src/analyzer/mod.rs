@@ -220,7 +220,8 @@ pub struct Analyzer<'scope, 'b> {
 
     imports_by_id: FxHashMap<Id, ModuleInfo>,
 
-    imports: FxHashMap<(ModuleId, ModuleId), Arc<ModuleTypeData>>,
+    /// Value should [Type::Arc] of [Type::Module]
+    imports: FxHashMap<(ModuleId, ModuleId), Type>,
     /// See docs of ModuleitemMut for documentation.
     prepend_stmts: Vec<RStmt>,
 
@@ -729,16 +730,11 @@ impl Load for NoopLoader {
         unreachable!()
     }
 
-    fn load_circular_dep(
-        &self,
-        base: ModuleId,
-        dep: ModuleId,
-        partial: &ModuleTypeData,
-    ) -> ValidationResult<ModuleInfo> {
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult {
         unreachable!()
     }
 
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult {
         unreachable!()
     }
 
