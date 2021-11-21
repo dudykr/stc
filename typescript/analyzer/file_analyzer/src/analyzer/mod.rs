@@ -26,6 +26,7 @@ use stc_ts_errors::{debug::debugger::Debugger, Error};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
 use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
+use stc_ts_utils::StcComments;
 use stc_utils::{AHashMap, AHashSet};
 use std::{
     fmt::Debug,
@@ -211,6 +212,8 @@ pub struct Analyzer<'scope, 'b> {
     env: Env,
     pub(crate) cm: Arc<SourceMap>,
 
+    comments: StcComments,
+
     /// This is [None] only for `.d.ts` files.
     pub mutations: Option<Mutations>,
 
@@ -383,6 +386,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
     pub fn root(
         env: Env,
         cm: Arc<SourceMap>,
+        comments: StcComments,
         mut storage: Storage<'b>,
         loader: &'b dyn Load,
         debugger: Option<Debugger>,
@@ -394,6 +398,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         Self::new_inner(
             env,
             cm,
+            comments,
             storage,
             Some(Default::default()),
             loader,
@@ -414,6 +419,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 Default::default(),
             ),
             Arc::new(SourceMap::default()),
+            Default::default(),
             box storage,
             None,
             &NoopLoader,
@@ -428,6 +434,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         Self::new_inner(
             self.env.clone(),
             self.cm.clone(),
+            self.comments.clone(),
             self.storage.subscope(),
             None,
             self.loader,
@@ -441,6 +448,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
     fn new_inner(
         env: Env,
         cm: Arc<SourceMap>,
+        comments: StcComments,
         storage: Storage<'b>,
         mutations: Option<Mutations>,
         loader: &'b dyn Load,
@@ -454,6 +462,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         Self {
             env,
             cm,
+            comments,
             storage,
             mutations,
             export_equals_span: DUMMY_SP,

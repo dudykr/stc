@@ -99,7 +99,14 @@ fn validate(input: &Path) -> Vec<StcError> {
                 // Don't print logs from builtin modules.
                 let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-                let mut analyzer = Analyzer::root(env.clone(), cm.clone(), box &mut storage, &NoopLoader, None);
+                let mut analyzer = Analyzer::root(
+                    env.clone(),
+                    cm.clone(),
+                    Default::default(),
+                    box &mut storage,
+                    &NoopLoader,
+                    None,
+                );
                 module.visit_with(&mut analyzer);
             }
 
@@ -184,7 +191,14 @@ fn errors(input: PathBuf) {
             // Don't print logs from builtin modules.
             let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-            let mut analyzer = Analyzer::root(env.clone(), cm.clone(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(
+                env.clone(),
+                cm.clone(),
+                Default::default(),
+                box &mut storage,
+                &NoopLoader,
+                None,
+            );
             module.visit_with(&mut analyzer);
         }
 
@@ -248,7 +262,14 @@ fn pass_only(input: PathBuf) {
             // Don't print logs from builtin modules.
             let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-            let mut analyzer = Analyzer::root(env.clone(), cm.clone(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(
+                env.clone(),
+                cm.clone(),
+                Default::default(),
+                box &mut storage,
+                &NoopLoader,
+                None,
+            );
             module.visit_with(&mut analyzer);
         }
 
@@ -401,6 +422,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
                     let mut analyzer = Analyzer::root(
                         env,
                         cm.clone(),
+                        Default::default(),
                         box &mut storage,
                         &NoopLoader,
                         if for_error {

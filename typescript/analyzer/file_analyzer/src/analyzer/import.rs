@@ -13,7 +13,7 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_storage::Storage;
 use stc_ts_types::{Id, ModuleId, Type};
 use swc_atoms::{js_word, JsWord};
-use swc_common::{Span, Spanned};
+use swc_common::{comments::Comments, Span, Spanned};
 
 impl Analyzer<'_, '_> {
     /// Returns `(dep_module, dep_types)` if an import is valid, and returns
@@ -74,7 +74,7 @@ impl Analyzer<'_, '_> {
             return;
         }
         // We first load non-circular imports.
-        let imports = ImportFinder::find_imports(&self.storage, &*items);
+        let imports = ImportFinder::find_imports(&self.comments, &self.storage, &*items);
 
         let loader = self.loader;
         let mut normal_imports = vec![];
@@ -240,18 +240,26 @@ impl Analyzer<'_, '_> {
     }
 }
 
-struct ImportFinder<'a> {
+struct ImportFinder<'a, C>
+where
+    C: Comments,
+{
     storage: &'a Storage<'a>,
     cur_ctxt: ModuleId,
     to: Vec<(ModuleId, DepInfo)>,
+    comments: C,
 }
 
-impl<'a> ImportFinder<'a> {
-    pub fn find_imports<T>(storage: &'a Storage<'a>, node: &T) -> Vec<(ModuleId, DepInfo)>
+impl<'a, C> ImportFinder<'a, C>
+where
+    C: Comments,
+{
+    pub fn find_imports<T>(comments: C, storage: &'a Storage<'a>, node: &T) -> Vec<(ModuleId, DepInfo)>
     where
-        T: for<'any> VisitWith<ImportFinder<'any>>,
+        T: for<'any> VisitWith<ImportFinder<'any, C>>,
     {
         let mut v = Self {
+            comments,
             storage,
             to: Default::default(),
             cur_ctxt: ModuleId::builtin(),
@@ -263,7 +271,10 @@ impl<'a> ImportFinder<'a> {
     }
 }
 
-impl Visit<Vec<&'_ RModuleItem>> for ImportFinder<'_> {
+impl<C> Visit<Vec<&'_ RModuleItem>> for ImportFinder<'_, C>
+where
+    C: Comments,
+{
     fn visit(&mut self, items: &Vec<&RModuleItem>) {
         for (index, item) in items.iter().enumerate() {
             let ctxt = self.storage.module_id(index);
@@ -279,7 +290,10 @@ impl Visit<Vec<&'_ RModuleItem>> for ImportFinder<'_> {
     }
 }
 
-impl Visit<RCallExpr> for ImportFinder<'_> {
+impl<C> Visit<RCallExpr> for ImportFinder<'_, C>
+where
+    C: Comments,
+{
     /// Extracts require('foo')
     fn visit(&mut self, expr: &RCallExpr) {
         let span = expr.span();
@@ -302,7 +316,10 @@ impl Visit<RCallExpr> for ImportFinder<'_> {
     }
 }
 
-impl Visit<RImportDecl> for ImportFinder<'_> {
+impl<C> Visit<RImportDecl> for ImportFinder<'_, C>
+where
+    C: Comments,
+{
     fn visit(&mut self, import: &RImportDecl) {
         let span = import.span();
 
@@ -316,7 +333,10 @@ impl Visit<RImportDecl> for ImportFinder<'_> {
     }
 }
 
-impl Visit<RNamedExport> for ImportFinder<'_> {
+impl<C> Visit<RNamedExport> for ImportFinder<'_, C>
+where
+    C: Comments,
+{
     fn visit(&mut self, export: &RNamedExport) {
         if export.src.is_none() {
             return;
@@ -332,7 +352,10 @@ impl Visit<RNamedExport> for ImportFinder<'_> {
     }
 }
 
-impl Visit<RExportAll> for ImportFinder<'_> {
+impl<C> Visit<RExportAll> for ImportFinder<'_, C>
+where
+    C: Comments,
+{
     fn visit(&mut self, export: &RExportAll) {
         self.to.push((
             self.cur_ctxt,
