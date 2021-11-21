@@ -1133,13 +1133,20 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(data) = self.imports.get(&(self.ctx.module_id, target)) {
-            if let Some(types) = data.types.get(name.sym()) {
-                let types = types.clone();
-                return Ok(Some(ItemRef::Owned(types.into_iter())));
-            }
-            if let Some(types) = data.private_types.get(name) {
-                let types = types.clone();
-                return Ok(Some(ItemRef::Owned(types.into_iter())));
+            match data.normalize() {
+                Type::Module(data) => {
+                    if let Some(types) = data.exports.types.get(name.sym()) {
+                        let types = types.clone();
+                        return Ok(Some(ItemRef::Owned(types.into_iter())));
+                    }
+                    if let Some(types) = data.exports.private_types.get(name) {
+                        let types = types.clone();
+                        return Ok(Some(ItemRef::Owned(types.into_iter())));
+                    }
+                }
+                _ => {
+                    unreachable!()
+                }
             }
         }
 

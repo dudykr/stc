@@ -12,7 +12,6 @@ use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_storage::Storage;
 use stc_ts_types::{Id, Module, ModuleId, ModuleTypeData, Type};
-use std::sync::Arc;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned};
 
@@ -20,7 +19,7 @@ impl Analyzer<'_, '_> {
     /// Returns `(dep_module, dep_types)` if an import is valid, and returns
     /// `(cur_mod_id, empty_data)` on import errors.
     ////
-    pub(crate) fn get_imported_items(&mut self, span: Span, dst: &JsWord) -> (ModuleId, Arc<ModuleTypeData>) {
+    pub(crate) fn get_imported_items(&mut self, span: Span, dst: &JsWord) -> (ModuleId, Type) {
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);
         let dep_id = self.loader.module_id(&base, &dst);
@@ -29,7 +28,7 @@ impl Analyzer<'_, '_> {
             None => {
                 self.storage.report(Error::ModuleNotFound { span });
 
-                return (ctxt, Default::default());
+                return (ctxt, Type::any(span, Default::default()));
             }
         };
         let data = match self.imports.get(&(ctxt, dep_id)).cloned() {
@@ -37,7 +36,7 @@ impl Analyzer<'_, '_> {
             None => {
                 self.storage.report(Error::ModuleNotFound { span });
 
-                return (ctxt, Default::default());
+                return (ctxt, Type::any(span, Default::default()));
             }
         };
 
@@ -56,9 +55,8 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    fn insert_import_info(&mut self, ctxt: ModuleId, info: ModuleInfo) -> ValidationResult<()> {
-        let e = self.imports.entry((ctxt, info.module_id)).or_default();
-        *e = info.data;
+    fn insert_import_info(&mut self, ctxt: ModuleId, dep_module_id: ModuleId, ty: Type) -> ValidationResult<()> {
+        self.imports.entry((ctxt, dep_module_id)).or_insert(ty);
 
         Ok(())
     }
@@ -107,7 +105,7 @@ impl Analyzer<'_, '_> {
 
             match res {
                 Ok(info) => {
-                    self.insert_import_info(ctxt, info).report(&mut self.storage);
+                    self.insert_import_info(ctxt, dep_id, info).report(&mut self.storage);
                 }
                 Err(err) => self.storage.report(err),
             }
@@ -122,19 +120,26 @@ impl Analyzer<'_, '_> {
         // Check for entry only if import was successful.
         if ctxt != target {
             if let Some(data) = self.imports.get(&(ctxt, target)) {
-                for (i, ty) in &data.vars {
-                    if orig.sym() == i {
-                        found_entry = true;
-                        self.storage.store_private_var(ctxt, id.clone(), ty.clone());
-                    }
-                }
-
-                for (i, types) in &data.types {
-                    if orig.sym() == i {
-                        for ty in types {
-                            found_entry = true;
-                            self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
+                match data.normalize() {
+                    Type::Module(data) => {
+                        for (i, ty) in &data.exports.vars {
+                            if orig.sym() == i {
+                                found_entry = true;
+                                self.storage.store_private_var(ctxt, id.clone(), ty.clone());
+                            }
                         }
+
+                        for (i, types) in &data.exports.types {
+                            if orig.sym() == i {
+                                for ty in types {
+                                    found_entry = true;
+                                    self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
+                                }
+                            }
+                        }
+                    }
+                    _ => {
+                        unreachable!()
                     }
                 }
             }
