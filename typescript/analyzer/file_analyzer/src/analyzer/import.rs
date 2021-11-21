@@ -105,7 +105,6 @@ impl Analyzer<'_, '_> {
                 let res = loader.load_non_circular_dep(ctxt, dep_id);
                 (ctxt, dep_id, import, res)
             })
-            .panic_fuse()
             .collect::<Vec<_>>();
 
         for (ctxt, dep_id, import, res) in import_results {
