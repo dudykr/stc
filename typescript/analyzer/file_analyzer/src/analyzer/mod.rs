@@ -781,7 +781,7 @@ impl Analyzer<'_, '_> {
             let ctxt = self.storage.module_id(0);
             let path = self.storage.path(ctxt);
 
-            panic_ctx!(format!("Validate({})", path));
+            let _panic = panic_ctx!(format!("Validate({})", path));
 
             let items_ref = m.body.iter().collect::<Vec<_>>();
             self.load_normal_imports(vec![(ctxt, m.span)], &items_ref);
