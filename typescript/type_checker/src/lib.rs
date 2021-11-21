@@ -63,7 +63,7 @@ impl Checker {
         debugger: Option<Debugger>,
         resolver: Arc<dyn Resolve>,
     ) -> Self {
-        cm.new_source_file(FileName::Anon, "0".to_string());
+        cm.new_source_file(FileName::Anon, "".into());
 
         Checker {
             env: env.clone(),
