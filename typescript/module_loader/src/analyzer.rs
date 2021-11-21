@@ -35,7 +35,7 @@ where
     fn check_comments(&mut self, span: Span) {
         let deps = find_imports_in_comments(&self.comments, span);
 
-        self.deps.extend(deps);
+        self.deps.extend(deps.into_iter().map(|i| i.to_path()));
     }
 }
 

@@ -4,7 +4,28 @@ use swc_common::{
     Span,
 };
 
-pub fn find_imports_in_comments<C>(comments: C, span: Span) -> Vec<JsWord>
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ImportRef {
+    /// path="foo"
+    Path(JsWord),
+    /// type="foo"
+    Types(JsWord),
+
+    /// ES6 import.
+    Normal(JsWord),
+}
+
+impl ImportRef {
+    pub fn to_path(self) -> JsWord {
+        match self {
+            ImportRef::Path(s) => format!("./{}", s).into(),
+            ImportRef::Types(s) => s,
+            ImportRef::Normal(s) => s,
+        }
+    }
+}
+
+pub fn find_imports_in_comments<C>(comments: C, span: Span) -> Vec<ImportRef>
 where
     C: Comments,
 {
@@ -25,9 +46,9 @@ where
                 .map(|s| s.trim())
             {
                 if let Some(path) = cmt_text.strip_prefix("path=\"") {
-                    deps.push(format!("./{}", path).into());
+                    deps.push(ImportRef::Path(path.into()));
                 } else if let Some(path) = cmt_text.strip_prefix("types=\"") {
-                    deps.push(path.into());
+                    deps.push(ImportRef::Types(path.into()));
                 } else {
                     // TODO: Handle lib, types
                 }
