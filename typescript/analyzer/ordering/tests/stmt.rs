@@ -243,3 +243,19 @@ fn string_tree_1() {
         vec![1, 2, 0, 3, 4],
     );
 }
+
+#[test]
+fn types_range_parser_1() {
+    assert_simple(
+        "
+        interface Ranges extends Array<Range> {
+            type: string;
+        }
+        interface Range {
+            start: number;
+            end: number;
+        }
+        ",
+        vec![1, 0],
+    );
+}
