@@ -131,6 +131,11 @@ where
         Ok(module_id)
     }
 
+    pub fn id_for_declare_module(&self, module_name: &JsWord) -> ModuleId {
+        self.id_generator
+            .generate(&Arc::new(FileName::Custom(module_name.to_string())))
+    }
+
     pub fn path(&self, id: ModuleId) -> Arc<FileName> {
         self.id_generator.path(id)
     }

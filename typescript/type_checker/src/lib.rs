@@ -40,7 +40,7 @@ pub struct Checker {
     /// Cache
     module_types: RwLock<FxHashMap<ModuleId, Arc<OnceCell<Arc<ModuleTypeData>>>>>,
 
-    declared_modules: Mutex<Vec<(JsWord, Type)>>,
+    declared_modules: RwLock<Vec<(ModuleId, Type)>>,
 
     /// Informatnion required to generate `.d.ts` files.
     dts_modules: Arc<DashMap<ModuleId, RModule, FxBuildHasher>>,
@@ -140,7 +140,7 @@ impl Checker {
     }
 
     /// Analyzes one module.
-    fn analyze_module(&self, starter: Option<Arc<FileName>>, path: Arc<FileName>) -> Arc<ModuleTypeData> {
+    fn analyze_module(&self, starter: Option<Arc<FileName>>, path: Arc<FileName>) -> Arc<Type> {
         self.run(|| {
             let id = self.module_graph.id(&path);
 
@@ -366,12 +366,7 @@ impl Load for Checker {
         }
     }
 
-    fn load_circular_dep(
-        &self,
-        base: ModuleId,
-        dep: ModuleId,
-        _partial: &ModuleTypeData,
-    ) -> ValidationResult<ModuleInfo> {
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, _partial: &ModuleTypeData) -> ValidationResult {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 
@@ -384,6 +379,21 @@ impl Load for Checker {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 
+        if matches!(&*dep_path, FileName::Custom(..)) {
+            let ty = self
+                .declared_modules
+                .read()
+                .iter()
+                .find_map(|(v, ty)| if *v == dep { Some(ty.clone()) } else { None });
+
+            if let Some(ty) = ty {
+                return Ok(ModuleInfo {
+                    module_id: dep,
+                    data: ty,
+                });
+            }
+        }
+
         info!("({}): Loading {}", base_path, dep_path);
 
         let data = self.analyze_module(Some(base_path.clone()), dep_path.clone());
@@ -394,7 +404,9 @@ impl Load for Checker {
     fn declare_module(&self, name: &JsWord, module: Type) {
         module.assert_clone_cheap();
 
+        let module_id = self.module_graph.id_for_declare_module(name);
+
         info!("Declaring module `{}`", name);
-        self.declared_modules.lock().push((name.clone(), module));
+        self.declared_modules.write().push((module_id, module));
     }
 }
