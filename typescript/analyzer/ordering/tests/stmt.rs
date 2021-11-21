@@ -227,7 +227,7 @@ fn type_alias_01() {
 
 #[test]
 fn string_tree_1() {
-    assert_order(
+    assert_simple(
         "type StringTree = string | StringTreeCollection;
     class StringTreeCollectionBase {
         [n: number]: StringTree;
@@ -240,6 +240,6 @@ fn string_tree_1() {
         x[0] = '';
         x[0] = new StringTreeCollection;
     }",
-        vec![],
+        vec![1, 2, 0, 3, 4],
     );
 }
