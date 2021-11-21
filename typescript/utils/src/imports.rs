@@ -1,7 +1,7 @@
 use swc_atoms::JsWord;
 use swc_common::{
     comments::{CommentKind, Comments},
-    Span,
+    BytePos, Span,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -29,6 +29,13 @@ pub fn find_imports_in_comments<C>(comments: C, span: Span) -> Vec<ImportRef>
 where
     C: Comments,
 {
+    debug_assert_ne!(
+        span.lo,
+        BytePos(0),
+        "Found {:?}, BytePos(0) should not have comments because it's used by DUMMY_SP",
+        span
+    );
+
     let mut deps = vec![];
 
     comments.with_leading(span.lo, |comments| {
