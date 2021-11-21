@@ -375,6 +375,10 @@ impl Checker {
 
 impl Load for Checker {
     fn module_id(&self, base: &Arc<FileName>, src: &JsWord) -> Option<ModuleId> {
+        if matches!(&**base, FileName::Custom(..)) {
+            return Some(self.module_graph.id_for_declare_module(src));
+        }
+
         let path = self.module_graph.resolve(&base, src).ok()?;
         let id = self.module_graph.id(&path);
         Some(id)
