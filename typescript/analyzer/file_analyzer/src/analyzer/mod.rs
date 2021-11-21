@@ -759,7 +759,8 @@ impl Analyzer<'_, '_> {
         for m in modules {
             items.extend(&m.body);
         }
-        self.load_normal_imports(&items);
+        // TODO: Pass spans.
+        self.load_normal_imports(vec![], &items);
 
         self.fill_known_type_names(&modules);
 
@@ -771,19 +772,20 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, items: &Vec<RModuleItem>) {
+    fn validate(&mut self, m: &RModule) {
         let is_dts = self.ctx.is_dts;
 
         let globals = self.env.shared().swc_globals().clone();
 
         GLOBALS.set(&globals, || {
-            let items_ref = items.iter().collect::<Vec<_>>();
-            self.load_normal_imports(&items_ref);
+            let ctxt = self.storage.module_id(0);
+            let items_ref = m.body.iter().collect::<Vec<_>>();
+            self.load_normal_imports(vec![(ctxt, m.span)], &items_ref);
 
-            self.fill_known_type_names(&items);
+            self.fill_known_type_names(&m.body);
 
             let mut has_normal_export = false;
-            items.iter().for_each(|item| match item {
+            m.body.iter().for_each(|item| match item {
                 RModuleItem::ModuleDecl(RModuleDecl::TsExportAssignment(decl)) => {
                     if self.export_equals_span.is_dummy() {
                         self.export_equals_span = decl.span;
@@ -814,11 +816,11 @@ impl Analyzer<'_, '_> {
             });
 
             if !self.ctx.in_declare {
-                self.report_error_for_wrong_top_level_ambient_fns(&items);
+                self.report_error_for_wrong_top_level_ambient_fns(&m.body);
             }
 
             if self.is_builtin {
-                items.visit_children_with(self);
+                m.body.visit_children_with(self);
             } else {
                 self.validate_stmts_and_collect(&items_ref);
             }

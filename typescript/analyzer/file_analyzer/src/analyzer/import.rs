@@ -12,6 +12,7 @@ use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_storage::Storage;
 use stc_ts_types::{Id, ModuleId, Type};
+use stc_ts_utils::imports::find_imports_in_comments;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{comments::Comments, Span, Spanned};
 
@@ -69,12 +70,12 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    pub(super) fn load_normal_imports(&mut self, items: &Vec<&RModuleItem>) {
+    pub(super) fn load_normal_imports(&mut self, module_spans: Vec<(ModuleId, Span)>, items: &Vec<&RModuleItem>) {
         if self.is_builtin {
             return;
         }
         // We first load non-circular imports.
-        let imports = ImportFinder::find_imports(&self.comments, &self.storage, &*items);
+        let imports = ImportFinder::find_imports(&self.comments, module_spans, &self.storage, &*items);
 
         let loader = self.loader;
         let mut normal_imports = vec![];
@@ -254,7 +255,20 @@ impl<'a, C> ImportFinder<'a, C>
 where
     C: Comments,
 {
-    pub fn find_imports<T>(comments: C, storage: &'a Storage<'a>, node: &T) -> Vec<(ModuleId, DepInfo)>
+    fn check_comments(&mut self, span: Span) {
+        let ctxt = self.cur_ctxt;
+        let deps = find_imports_in_comments(&self.comments, span);
+
+        self.to
+            .extend(deps.into_iter().map(|src| (ctxt, DepInfo { span, src })));
+    }
+
+    pub fn find_imports<T>(
+        comments: C,
+        module_span: Vec<(ModuleId, Span)>,
+        storage: &'a Storage<'a>,
+        node: &T,
+    ) -> Vec<(ModuleId, DepInfo)>
     where
         T: for<'any> VisitWith<ImportFinder<'any, C>>,
     {
@@ -264,6 +278,13 @@ where
             to: Default::default(),
             cur_ctxt: ModuleId::builtin(),
         };
+
+        for (ctxt, span) in module_span {
+            v.cur_ctxt = ctxt;
+            v.check_comments(span);
+        }
+
+        v.cur_ctxt = ModuleId::builtin();
 
         node.visit_with(&mut v);
 
