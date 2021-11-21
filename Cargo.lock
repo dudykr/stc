@@ -2626,9 +2626,9 @@ dependencies = [
 
 [[package]]
 name = "swc_graph_analyzer"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f1092de242225a32932e6922bc4cac9b4f5557c967bc3a36eb63b563f301c31"
+checksum = "ebef7e80ffd2d2669969d9794155de5f08cc122c47c591ba93d4ab96d1adfadb"
 dependencies = [
  "ahash 0.7.6",
  "auto_impl",
