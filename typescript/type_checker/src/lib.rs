@@ -17,7 +17,7 @@ use stc_ts_module_loader::ModuleGraph;
 use stc_ts_storage::{ErrorStore, File, Group, Single};
 use stc_ts_types::{ModuleId, Type};
 use stc_ts_utils::StcComments;
-use stc_utils::{cache::Freeze, early_error};
+use stc_utils::{cache::Freeze, early_error, panic_ctx};
 use std::{mem::take, sync::Arc, time::Instant};
 use swc_atoms::JsWord;
 use swc_common::{errors::Handler, FileName, SourceMap, Spanned, DUMMY_SP};
@@ -298,6 +298,8 @@ impl Checker {
 
     fn analyze_non_circular_module(&self, id: ModuleId, path: Arc<FileName>) -> Type {
         self.run(|| {
+            let _panic = panic_ctx!(format!("analyze_non_circular_module({})", path));
+
             let start = Instant::now();
 
             let is_dts = match &*path {
