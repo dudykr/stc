@@ -3,7 +3,7 @@ use std::hash::Hash;
 use swc_common::collections::{AHashMap, AHashSet};
 use swc_fast_graph::digraph::FastDiGraphMap;
 use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
-use tracing::trace;
+use tracing::{span, trace, Level};
 
 pub(crate) struct Deps<'a, I>
 where
@@ -99,17 +99,31 @@ fn calc_one(
     }
 
     if let Some(cycle) = cycles.iter().find(|v| v.contains(&idx)) {
+        if cfg!(debug_assertions) && cfg!(feature = "debug") {
+            trace!("Cycle: {:?}", cycle);
+        }
+
         return cycle.clone();
     }
 
     let deps = graph.neighbors_directed(idx, Outgoing).collect::<Vec<_>>();
 
     for dep in deps {
+        let _tracing = if cfg!(feature = "debug") {
+            Some(span!(Level::ERROR, "deps_of({})", idx).entered())
+        } else {
+            None
+        };
+
         let v = calc_one(done, cycles, graph, dep);
         if v.is_empty() {
             continue;
         }
         return v;
+    }
+
+    if cfg!(debug_assertions) && cfg!(feature = "debug") {
+        trace!("Done: {:?}", idx);
     }
 
     return vec![idx];
