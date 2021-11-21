@@ -93,6 +93,10 @@ where
         }
     }
 
+    pub fn comments(&self) -> &C {
+        &self.comments
+    }
+
     /// TODO: Fix race condition of `errors`.
     pub fn load_all(&self, entry: &Arc<FileName>) -> Result<ModuleId, Error> {
         self.load_including_deps(entry, false);

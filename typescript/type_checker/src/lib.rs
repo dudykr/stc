@@ -201,6 +201,7 @@ impl Checker {
                             let mut a = Analyzer::root(
                                 self.env.clone(),
                                 self.cm.clone(),
+                                self.module_graph.comments().clone(),
                                 box &mut storage,
                                 self,
                                 self.debugger.clone(),
@@ -324,6 +325,7 @@ impl Checker {
                 let mut a = Analyzer::root(
                     self.env.clone(),
                     self.cm.clone(),
+                    self.module_graph.comments().clone(),
                     box &mut storage,
                     self,
                     self.debugger.clone(),
