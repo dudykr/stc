@@ -1034,13 +1034,20 @@ impl Analyzer<'_, '_> {
             {
                 // Improted variables
                 if let Some(info) = self.imports_by_id.get(name) {
-                    if let Some(var_ty) = info.data.vars.get(name.sym()) {
-                        if cfg!(debug_assertions) {
-                            debug!("Scope.find_var_type({}): Handled with imports", name);
-                        }
-                        var_ty.assert_clone_cheap();
+                    match info.data.normalize() {
+                        Type::Module(data) => {
+                            if let Some(var_ty) = data.exports.vars.get(name.sym()) {
+                                if cfg!(debug_assertions) {
+                                    debug!("Scope.find_var_type({}): Handled with imports", name);
+                                }
+                                var_ty.assert_clone_cheap();
 
-                        return Some(Cow::Borrowed(var_ty));
+                                return Some(Cow::Borrowed(var_ty));
+                            }
+                        }
+                        _ => {
+                            unreachable!()
+                        }
                     }
                 }
             }
@@ -1122,9 +1129,16 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ModuleInfo { data, .. }) = self.imports_by_id.get(name) {
-            if let Some(types) = data.types.get(name.sym()) {
-                let types = types.clone();
-                return Ok(Some(ItemRef::Owned(types.into_iter())));
+            match data.normalize() {
+                Type::Module(data) => {
+                    if let Some(types) = data.exports.types.get(name.sym()) {
+                        let types = types.clone();
+                        return Ok(Some(ItemRef::Owned(types.into_iter())));
+                    }
+                }
+                _ => {
+                    unreachable!()
+                }
             }
         }
 

@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_storage::Storage;
-use stc_ts_types::{Id, Module, ModuleId, ModuleTypeData, Type};
+use stc_ts_types::{Id, ModuleId, Type};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned};
 
@@ -45,10 +45,17 @@ impl Analyzer<'_, '_> {
 
     pub(super) fn find_imported_var(&self, id: &Id) -> ValidationResult<Option<Type>> {
         if let Some(ModuleInfo { module_id, data }) = self.imports_by_id.get(&id) {
-            if let Some(dep) = data.vars.get(id.sym()).cloned() {
-                debug_assert!(dep.is_clone_cheap());
+            match data.normalize() {
+                Type::Module(data) => {
+                    if let Some(dep) = data.exports.vars.get(id.sym()).cloned() {
+                        debug_assert!(dep.is_clone_cheap());
 
-                return Ok(Some(dep));
+                        return Ok(Some(dep));
+                    }
+                }
+                _ => {
+                    unreachable!()
+                }
             }
         }
 
@@ -218,12 +225,7 @@ impl Analyzer<'_, '_> {
                             ns.span,
                             VarKind::Import,
                             ns.local.clone().into(),
-                            Some(Type::Module(Module {
-                                span: ns.span,
-                                name: ns.local.clone().into(),
-                                exports: box (*data).clone(),
-                                metadata: Default::default(),
-                            })),
+                            Some(data.clone()),
                             None,
                             true,
                             false,
