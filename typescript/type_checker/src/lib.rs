@@ -63,6 +63,8 @@ impl Checker {
         debugger: Option<Debugger>,
         resolver: Arc<dyn Resolve>,
     ) -> Self {
+        cm.new_source_file(FileName::Anon, "0".to_string());
+
         Checker {
             env: env.clone(),
             cm: cm.clone(),
@@ -313,6 +315,9 @@ impl Checker {
                 .clone_module(id)
                 .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", id, path));
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
+
+            let _panic = panic_ctx!(format!("Span of module = ({:?})", module.span));
+
             let mut module = RModule::from_orig(&mut node_id_gen, module);
 
             let mut storage = Single {
