@@ -255,6 +255,10 @@ where
     C: Comments,
 {
     fn check_comments(&mut self, span: Span) {
+        if span.is_dummy() {
+            return;
+        }
+
         let ctxt = self.cur_ctxt;
         let deps = find_imports_in_comments(&self.comments, span);
 
