@@ -27,7 +27,7 @@ use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
 use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
-use stc_utils::{AHashMap, AHashSet};
+use stc_utils::{panic_ctx, AHashMap, AHashSet};
 use std::{
     fmt::Debug,
     mem::take,
@@ -779,6 +779,10 @@ impl Analyzer<'_, '_> {
 
         GLOBALS.set(&globals, || {
             let ctxt = self.storage.module_id(0);
+            let path = self.storage.path(ctxt);
+
+            panic_ctx!(format!("Validate({})", path));
+
             let items_ref = m.body.iter().collect::<Vec<_>>();
             self.load_normal_imports(vec![(ctxt, m.span)], &items_ref);
 
