@@ -8,6 +8,7 @@ use fxhash::FxBuildHasher;
 use parking_lot::{Mutex, RwLock};
 use rayon::prelude::*;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
+use stc_utils::panic_ctx;
 use std::{mem::take, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{collections::AHashMap, comments::Comments, FileName, SourceMap, DUMMY_SP};
@@ -263,6 +264,8 @@ where
         }
 
         let module = self.load_one_module(filename)?;
+
+        let _panic = panic_ctx!(format!("ModuleGraph.load({}, span = {:?})", filename, module.span));
 
         let (declared_modules, deps) = find_modules_and_deps(&self.comments, &module);
 
