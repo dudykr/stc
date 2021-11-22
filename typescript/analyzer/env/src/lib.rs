@@ -70,8 +70,12 @@ impl Env {
     pub fn declare_global_var(&mut self, name: JsWord, ty: Type) {
         ty.assert_clone_cheap();
 
-        let res = self.global_vars.lock().insert(name, ty);
-        debug_assert_eq!(res, None);
+        let res = self.global_vars.lock().insert(name.clone(), ty);
+        debug_assert_eq!(
+            res, None,
+            "failed to declare a global var {}. Previous = {:?}",
+            name, res
+        );
     }
 
     pub fn declare_global_type(&mut self, name: JsWord, ty: Type) {
