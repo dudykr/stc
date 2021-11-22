@@ -71,11 +71,7 @@ impl Env {
         ty.assert_clone_cheap();
 
         let res = self.global_vars.lock().insert(name.clone(), ty);
-        debug_assert_eq!(
-            res, None,
-            "failed to declare a global var {}. Previous = {:?}",
-            name, res
-        );
+        debug_assert_eq!(res, None, "failed to declare a global var {}", name);
     }
 
     pub fn declare_global_type(&mut self, name: JsWord, ty: Type) {
