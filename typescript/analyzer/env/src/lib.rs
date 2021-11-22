@@ -67,11 +67,15 @@ impl Env {
         self.rule
     }
 
-    pub fn declare_global_var(&mut self, _name: JsWord, _ty: Type) {
+    pub fn declare_global_var(&mut self, _name: JsWord, ty: Type) {
+        ty.assert_clone_cheap();
+
         unimplemented!("declare_global_var")
     }
 
     pub fn declare_global_type(&mut self, name: JsWord, ty: Type) {
+        ty.assert_clone_cheap();
+
         match self.get_global_type(ty.span(), &name) {
             Ok(prev_ty) => {
                 self.global_types
