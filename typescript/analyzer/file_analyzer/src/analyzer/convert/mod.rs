@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &RTsTypeAliasDecl) -> ValidationResult<Alias> {
+    fn validate(&mut self, d: &RTsTypeAliasDecl) -> ValidationResult<Type> {
         self.record(d);
         let span = d.span;
 
@@ -242,7 +242,7 @@ impl Analyzer<'_, '_> {
                         child.prevent_expansion(&mut ty);
                     }
                     ty.make_cheap();
-                    let alias = Alias {
+                    let alias = Type::Alias(Alias {
                         span: span.with_ctxt(SyntaxContext::empty()),
                         ty: box ty,
                         type_params,
@@ -253,12 +253,13 @@ impl Analyzer<'_, '_> {
                             },
                             ..Default::default()
                         },
-                    };
+                    })
+                    .freezed();
                     Ok(alias)
                 },
             )?
         };
-        self.register_type(d.id.clone().into(), Type::Alias(alias.clone()));
+        self.register_type(d.id.clone().into(), alias.clone());
 
         self.store_unmergeable_type_span(d.id.clone().into(), d.id.span);
 
