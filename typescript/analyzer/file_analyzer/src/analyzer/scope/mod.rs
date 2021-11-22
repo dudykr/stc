@@ -1417,8 +1417,14 @@ impl Analyzer<'_, '_> {
         }
 
         if self.ctx.in_global {
-            if let Some(ty) = ty.clone() {
-                self.env.declare_global_var(name.sym().clone(), ty.clone());
+            match kind {
+                VarKind::Var(_) | VarKind::Class | VarKind::Fn | VarKind::Enum => {
+                    // TODO: Default to any?
+                    if let Some(ty) = ty.clone() {
+                        self.env.declare_global_var(name.sym().clone(), ty.clone());
+                    }
+                }
+                _ => {}
             }
         }
 
