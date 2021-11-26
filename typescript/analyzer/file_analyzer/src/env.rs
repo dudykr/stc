@@ -188,7 +188,9 @@ pub trait BuiltInGen: Sized {
                                 let body = i
                                     .clone()
                                     .validate_with(&mut analyzer)
-                                    .expect("builtin: failed to parse interface body");
+                                    .expect("builtin: failed to parse interface body")
+                                    .foldable()
+                                    .expect_interface();
 
                                 match types.entry(i.id.sym.clone()) {
                                     Entry::Occupied(mut e) => match &mut *e.get_mut() {
