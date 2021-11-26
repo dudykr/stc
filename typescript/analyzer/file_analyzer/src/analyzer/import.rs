@@ -12,7 +12,7 @@ use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_storage::Storage;
 use stc_ts_types::{Id, ModuleId, Type};
-use stc_ts_utils::imports::{find_imports_in_comments, ImportRef};
+use stc_ts_utils::imports::find_imports_in_comments;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{comments::Comments, Span, Spanned};
 
