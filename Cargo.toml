@@ -1,5 +1,4 @@
 [workspace]
-members = ["bindings/node-stc", "devtools"]
 
 [package]
 authors = ["강동윤 <kdy1997.dev@gmail.com>"]
@@ -20,7 +19,7 @@ stc_ts_module_loader = {path = "./typescript/module_loader"}
 stc_ts_type_checker = {path = "./typescript/type_checker"}
 stc_utils = {path = "utils"}
 structopt = "0.3.20"
-swc_common = { version = "0.14.6", features = ["tty-emitter"] }
+swc_common = {version = "0.14.6", features = ["tty-emitter"]}
 swc_ecma_ast = "0.58.0"
 swc_ecma_parser = "0.78.5"
 tokio = "1.7.1"
