@@ -34,7 +34,7 @@ use stc_ts_types::{
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    debug_ctx, stack,
+    debug_ctx, panic_ctx, stack,
 };
 use std::{
     borrow::Cow,
@@ -1034,13 +1034,20 @@ impl Analyzer<'_, '_> {
             {
                 // Improted variables
                 if let Some(info) = self.imports_by_id.get(name) {
-                    if let Some(var_ty) = info.data.vars.get(name.sym()) {
-                        if cfg!(debug_assertions) {
-                            debug!("Scope.find_var_type({}): Handled with imports", name);
-                        }
-                        var_ty.assert_clone_cheap();
+                    match info.data.normalize() {
+                        Type::Module(data) => {
+                            if let Some(var_ty) = data.exports.vars.get(name.sym()) {
+                                if cfg!(debug_assertions) {
+                                    debug!("Scope.find_var_type({}): Handled with imports", name);
+                                }
+                                var_ty.assert_clone_cheap();
 
-                        return Some(Cow::Borrowed(var_ty));
+                                return Some(Cow::Borrowed(var_ty));
+                            }
+                        }
+                        _ => {
+                            unreachable!()
+                        }
                     }
                 }
             }
@@ -1122,9 +1129,16 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ModuleInfo { data, .. }) = self.imports_by_id.get(name) {
-            if let Some(types) = data.types.get(name.sym()) {
-                let types = types.clone();
-                return Ok(Some(ItemRef::Owned(types.into_iter())));
+            match data.normalize() {
+                Type::Module(data) => {
+                    if let Some(types) = data.exports.types.get(name.sym()) {
+                        let types = types.clone();
+                        return Ok(Some(ItemRef::Owned(types.into_iter())));
+                    }
+                }
+                _ => {
+                    unreachable!()
+                }
             }
         }
 
@@ -1133,13 +1147,20 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(data) = self.imports.get(&(self.ctx.module_id, target)) {
-            if let Some(types) = data.types.get(name.sym()) {
-                let types = types.clone();
-                return Ok(Some(ItemRef::Owned(types.into_iter())));
-            }
-            if let Some(types) = data.private_types.get(name) {
-                let types = types.clone();
-                return Ok(Some(ItemRef::Owned(types.into_iter())));
+            match data.normalize() {
+                Type::Module(data) => {
+                    if let Some(types) = data.exports.types.get(name.sym()) {
+                        let types = types.clone();
+                        return Ok(Some(ItemRef::Owned(types.into_iter())));
+                    }
+                    if let Some(types) = data.exports.private_types.get(name) {
+                        let types = types.clone();
+                        return Ok(Some(ItemRef::Owned(types.into_iter())));
+                    }
+                }
+                _ => {
+                    unreachable!()
+                }
             }
         }
 
@@ -1163,6 +1184,8 @@ impl Analyzer<'_, '_> {
                 metadata: Default::default(),
             })
         });
+
+        let _panic = panic_ctx!(format!("find_local_type({})", name));
 
         if let Some(class) = &self.scope.get_this_class_name() {
             if *class == *name {
@@ -1394,8 +1417,14 @@ impl Analyzer<'_, '_> {
         }
 
         if self.ctx.in_global {
-            if let Some(ty) = ty.clone() {
-                self.env.declare_global_var(name.sym().clone(), ty.clone());
+            match kind {
+                VarKind::Var(_) | VarKind::Class | VarKind::Fn | VarKind::Enum => {
+                    // TODO: Default to any?
+                    if let Some(ty) = ty.clone() {
+                        self.env.declare_global_var(name.sym().clone(), ty.clone());
+                    }
+                }
+                _ => {}
             }
         }
 

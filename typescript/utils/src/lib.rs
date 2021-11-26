@@ -12,6 +12,7 @@ use stc_ts_ast_rnode::{
 use swc_common::Spanned;
 
 mod comments;
+pub mod imports;
 mod map_with_mut;
 
 pub trait AsModuleDecl {

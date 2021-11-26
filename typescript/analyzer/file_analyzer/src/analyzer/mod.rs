@@ -17,8 +17,8 @@ use crate::{
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{
-    RDecorator, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsImportEqualsDecl, RTsModuleDecl,
-    RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
+    RDecorator, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsImportEqualsDecl, RTsModuleBlock,
+    RTsModuleDecl, RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
 };
 use stc_ts_dts_mutations::Mutations;
 use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
@@ -26,7 +26,8 @@ use stc_ts_errors::{debug::debugger::Debugger, Error};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
 use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
-use stc_utils::{AHashMap, AHashSet};
+use stc_ts_utils::StcComments;
+use stc_utils::{panic_ctx, AHashMap, AHashSet};
 use std::{
     fmt::Debug,
     mem::take,
@@ -211,6 +212,8 @@ pub struct Analyzer<'scope, 'b> {
     env: Env,
     pub(crate) cm: Arc<SourceMap>,
 
+    comments: StcComments,
+
     /// This is [None] only for `.d.ts` files.
     pub mutations: Option<Mutations>,
 
@@ -220,7 +223,8 @@ pub struct Analyzer<'scope, 'b> {
 
     imports_by_id: FxHashMap<Id, ModuleInfo>,
 
-    imports: FxHashMap<(ModuleId, ModuleId), Arc<ModuleTypeData>>,
+    /// Value should [Type::Arc] of [Type::Module]
+    imports: FxHashMap<(ModuleId, ModuleId), Type>,
     /// See docs of ModuleitemMut for documentation.
     prepend_stmts: Vec<RStmt>,
 
@@ -382,6 +386,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
     pub fn root(
         env: Env,
         cm: Arc<SourceMap>,
+        comments: StcComments,
         mut storage: Storage<'b>,
         loader: &'b dyn Load,
         debugger: Option<Debugger>,
@@ -393,6 +398,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         Self::new_inner(
             env,
             cm,
+            comments,
             storage,
             Some(Default::default()),
             loader,
@@ -413,6 +419,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 Default::default(),
             ),
             Arc::new(SourceMap::default()),
+            Default::default(),
             box storage,
             None,
             &NoopLoader,
@@ -427,6 +434,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         Self::new_inner(
             self.env.clone(),
             self.cm.clone(),
+            self.comments.clone(),
             self.storage.subscope(),
             None,
             self.loader,
@@ -440,6 +448,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
     fn new_inner(
         env: Env,
         cm: Arc<SourceMap>,
+        comments: StcComments,
         storage: Storage<'b>,
         mutations: Option<Mutations>,
         loader: &'b dyn Load,
@@ -453,6 +462,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         Self {
             env,
             cm,
+            comments,
             storage,
             mutations,
             export_equals_span: DUMMY_SP,
@@ -729,16 +739,11 @@ impl Load for NoopLoader {
         unreachable!()
     }
 
-    fn load_circular_dep(
-        &self,
-        base: ModuleId,
-        dep: ModuleId,
-        partial: &ModuleTypeData,
-    ) -> ValidationResult<ModuleInfo> {
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult {
         unreachable!()
     }
 
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult {
         unreachable!()
     }
 
@@ -754,7 +759,8 @@ impl Analyzer<'_, '_> {
         for m in modules {
             items.extend(&m.body);
         }
-        self.load_normal_imports(&items);
+        // TODO: Pass spans.
+        self.load_normal_imports(vec![], &items);
 
         self.fill_known_type_names(&modules);
 
@@ -766,19 +772,24 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, items: &Vec<RModuleItem>) {
+    fn validate(&mut self, m: &RModule) {
         let is_dts = self.ctx.is_dts;
 
         let globals = self.env.shared().swc_globals().clone();
 
         GLOBALS.set(&globals, || {
-            let items_ref = items.iter().collect::<Vec<_>>();
-            self.load_normal_imports(&items_ref);
+            let ctxt = self.storage.module_id(0);
+            let path = self.storage.path(ctxt);
 
-            self.fill_known_type_names(&items);
+            let _panic = panic_ctx!(format!("Validate({}, module_id = {:?})", path, ctxt));
+
+            let items_ref = m.body.iter().collect::<Vec<_>>();
+            self.load_normal_imports(vec![(ctxt, m.span)], &items_ref);
+
+            self.fill_known_type_names(&m.body);
 
             let mut has_normal_export = false;
-            items.iter().for_each(|item| match item {
+            m.body.iter().for_each(|item| match item {
                 RModuleItem::ModuleDecl(RModuleDecl::TsExportAssignment(decl)) => {
                     if self.export_equals_span.is_dummy() {
                         self.export_equals_span = decl.span;
@@ -809,11 +820,11 @@ impl Analyzer<'_, '_> {
             });
 
             if !self.ctx.in_declare {
-                self.report_error_for_wrong_top_level_ambient_fns(&items);
+                self.report_error_for_wrong_top_level_ambient_fns(&m.body);
             }
 
             if self.is_builtin {
-                items.visit_children_with(self);
+                m.body.visit_children_with(self);
             } else {
                 self.validate_stmts_and_collect(&items_ref);
             }
@@ -909,6 +920,16 @@ impl Analyzer<'_, '_> {
 
             Ok(())
         })
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, decl: &RTsModuleBlock) -> ValidationResult<()> {
+        let body = decl.body.iter().collect();
+        self.validate_stmts_with_hoisting(&body);
+
+        Ok(())
     }
 }
 

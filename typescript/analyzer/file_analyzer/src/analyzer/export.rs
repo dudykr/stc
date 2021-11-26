@@ -383,12 +383,19 @@ impl Analyzer<'_, '_> {
         let (dep, data) = self.get_imported_items(span, &node.src.value);
 
         if ctxt != dep {
-            for (id, ty) in data.vars.iter() {
-                self.storage.reexport_var(span, dep, id.clone(), ty.clone());
-            }
-            for (id, types) in data.types.iter() {
-                for ty in types {
-                    self.storage.reexport_type(span, dep, id.clone(), ty.clone());
+            match data.normalize() {
+                Type::Module(data) => {
+                    for (id, ty) in data.exports.vars.iter() {
+                        self.storage.reexport_var(span, dep, id.clone(), ty.clone());
+                    }
+                    for (id, types) in data.exports.types.iter() {
+                        for ty in types {
+                            self.storage.reexport_type(span, dep, id.clone(), ty.clone());
+                        }
+                    }
+                }
+                _ => {
+                    unreachable!()
                 }
             }
         }
@@ -481,15 +488,22 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(data) = self.imports.get(&(ctxt, from)) {
-            if let Some(ty) = data.vars.get(orig.sym()) {
-                did_work = true;
-                self.storage.reexport_var(span, ctxt, id.sym().clone(), ty.clone());
-            }
+            match data.normalize() {
+                Type::Module(data) => {
+                    if let Some(ty) = data.exports.vars.get(orig.sym()) {
+                        did_work = true;
+                        self.storage.reexport_var(span, ctxt, id.sym().clone(), ty.clone());
+                    }
 
-            if let Some(ty) = data.types.get(orig.sym()) {
-                did_work = true;
-                let ty = Type::union(ty.clone());
-                self.storage.reexport_type(span, ctxt, id.sym().clone(), ty);
+                    if let Some(ty) = data.exports.types.get(orig.sym()) {
+                        did_work = true;
+                        let ty = Type::union(ty.clone());
+                        self.storage.reexport_type(span, ctxt, id.sym().clone(), ty);
+                    }
+                }
+                _ => {
+                    unreachable!()
+                }
             }
         }
 

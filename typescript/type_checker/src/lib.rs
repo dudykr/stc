@@ -6,24 +6,21 @@ use fxhash::{FxBuildHasher, FxHashMap};
 use once_cell::sync::OnceCell;
 use parking_lot::{Mutex, RwLock};
 use rnode::{NodeIdGenerator, RNode, VisitWith};
-use stc_ts_ast_rnode::RModule;
+use stc_ts_ast_rnode::{RModule, RStr, RTsModuleName};
 use stc_ts_dts::{apply_mutations, cleanup_module_for_dts};
 use stc_ts_env::Env;
 use stc_ts_errors::{debug::debugger::Debugger, Error};
 use stc_ts_file_analyzer::{
-    analyzer::Analyzer,
-    loader::{Load, ModuleInfo},
-    validator::ValidateWith,
-    ModuleTypeData, ValidationResult,
+    analyzer::Analyzer, loader::Load, validator::ValidateWith, ModuleTypeData, ValidationResult,
 };
 use stc_ts_module_loader::ModuleGraph;
 use stc_ts_storage::{ErrorStore, File, Group, Single};
 use stc_ts_types::{ModuleId, Type};
 use stc_ts_utils::StcComments;
-use stc_utils::early_error;
+use stc_utils::{cache::Freeze, early_error, panic_ctx};
 use std::{mem::take, sync::Arc, time::Instant};
 use swc_atoms::JsWord;
-use swc_common::{errors::Handler, FileName, SourceMap, Spanned};
+use swc_common::{errors::Handler, FileName, SourceMap, Spanned, DUMMY_SP};
 use swc_ecma_ast::Module;
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::TsConfig;
@@ -38,9 +35,9 @@ pub struct Checker {
     cm: Arc<SourceMap>,
     handler: Arc<Handler>,
     /// Cache
-    module_types: RwLock<FxHashMap<ModuleId, Arc<OnceCell<Arc<ModuleTypeData>>>>>,
+    module_types: RwLock<FxHashMap<ModuleId, Arc<OnceCell<Type>>>>,
 
-    declared_modules: Mutex<Vec<(JsWord, Type)>>,
+    declared_modules: RwLock<Vec<(ModuleId, Type)>>,
 
     /// Informatnion required to generate `.d.ts` files.
     dts_modules: Arc<DashMap<ModuleId, RModule, FxBuildHasher>>,
@@ -66,6 +63,8 @@ impl Checker {
         debugger: Option<Debugger>,
         resolver: Arc<dyn Resolve>,
     ) -> Self {
+        cm.new_source_file(FileName::Anon, "".into());
+
         Checker {
             env: env.clone(),
             cm: cm.clone(),
@@ -100,7 +99,7 @@ impl Checker {
 
 impl Checker {
     /// Get type informations of a module.
-    pub fn get_types(&self, id: ModuleId) -> Option<Arc<ModuleTypeData>> {
+    pub fn get_types(&self, id: ModuleId) -> Option<Type> {
         let lock = self.module_types.read();
         lock.get(&id).and_then(|v| v.get().cloned())
     }
@@ -140,7 +139,7 @@ impl Checker {
     }
 
     /// Analyzes one module.
-    fn analyze_module(&self, starter: Option<Arc<FileName>>, path: Arc<FileName>) -> Arc<ModuleTypeData> {
+    fn analyze_module(&self, starter: Option<Arc<FileName>>, path: Arc<FileName>) -> Type {
         self.run(|| {
             let id = self.module_graph.id(&path);
 
@@ -204,6 +203,7 @@ impl Checker {
                             let mut a = Analyzer::root(
                                 self.env.clone(),
                                 self.cm.clone(),
+                                self.module_graph.comments().clone(),
                                 box &mut storage,
                                 self,
                                 self.debugger.clone(),
@@ -236,7 +236,20 @@ impl Checker {
                         {
                             let mut lock = self.module_types.write();
                             for (module_id, data) in storage.info {
-                                let res = lock.entry(module_id).or_default().set(Arc::new(data));
+                                let type_info = Type::Module(stc_ts_types::Module {
+                                    span: DUMMY_SP,
+                                    name: RTsModuleName::Str(RStr {
+                                        span: DUMMY_SP,
+                                        value: format!("{:?}", module_id).into(),
+                                        has_escape: false,
+                                        kind: Default::default(),
+                                    }),
+                                    exports: box data,
+                                    metadata: Default::default(),
+                                })
+                                .freezed();
+
+                                let res = lock.entry(module_id).or_default().set(type_info);
                                 match res {
                                     Ok(()) => {}
                                     Err(..) => {
@@ -285,8 +298,10 @@ impl Checker {
         })
     }
 
-    fn analyze_non_circular_module(&self, id: ModuleId, path: Arc<FileName>) -> Arc<ModuleTypeData> {
+    fn analyze_non_circular_module(&self, id: ModuleId, path: Arc<FileName>) -> Type {
         self.run(|| {
+            let _panic = panic_ctx!(format!("analyze_non_circular_module({})", path));
+
             let start = Instant::now();
 
             let is_dts = match &*path {
@@ -300,6 +315,9 @@ impl Checker {
                 .clone_module(id)
                 .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", id, path));
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
+
+            let _panic = panic_ctx!(format!("Span of module = ({:?})", module.span));
+
             let mut module = RModule::from_orig(&mut node_id_gen, module);
 
             let mut storage = Single {
@@ -314,6 +332,7 @@ impl Checker {
                 let mut a = Analyzer::root(
                     self.env.clone(),
                     self.cm.clone(),
+                    self.module_graph.comments().clone(),
                     box &mut storage,
                     self,
                     self.debugger.clone(),
@@ -338,7 +357,18 @@ impl Checker {
                 errors.extend(storage.info.errors);
             }
 
-            let type_info = Arc::new(storage.info.exports);
+            let type_info = Type::Module(stc_ts_types::Module {
+                span: module.span,
+                name: RTsModuleName::Str(RStr {
+                    span: DUMMY_SP,
+                    value: format!("{:?}", id).into(),
+                    has_escape: false,
+                    kind: Default::default(),
+                }),
+                exports: box storage.info.exports,
+                metadata: Default::default(),
+            })
+            .freezed();
 
             self.dts_modules.insert(id, module);
 
@@ -366,33 +396,44 @@ impl Load for Checker {
         }
     }
 
-    fn load_circular_dep(
-        &self,
-        base: ModuleId,
-        dep: ModuleId,
-        _partial: &ModuleTypeData,
-    ) -> ValidationResult<ModuleInfo> {
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, _partial: &ModuleTypeData) -> ValidationResult {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 
         let data = self.analyze_module(Some(base_path.clone()), dep_path.clone());
 
-        return Ok(ModuleInfo { module_id: dep, data });
+        return Ok(data);
     }
 
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
+
+        if matches!(&*dep_path, FileName::Custom(..)) {
+            let ty = self
+                .declared_modules
+                .read()
+                .iter()
+                .find_map(|(v, ty)| if *v == dep { Some(ty.clone()) } else { None });
+
+            if let Some(ty) = ty {
+                return Ok(ty);
+            }
+        }
 
         info!("({}): Loading {}", base_path, dep_path);
 
         let data = self.analyze_module(Some(base_path.clone()), dep_path.clone());
 
-        return Ok(ModuleInfo { module_id: dep, data });
+        return Ok(data);
     }
 
     fn declare_module(&self, name: &JsWord, module: Type) {
-        info!("Declaring module `{}`", name);
-        self.declared_modules.lock().push((name.clone(), module));
+        module.assert_clone_cheap();
+
+        let module_id = self.module_graph.id_for_declare_module(name);
+
+        info!("Declaring module with type `{}`", name);
+        self.declared_modules.write().push((module_id, module));
     }
 }
