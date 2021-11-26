@@ -8,6 +8,7 @@ use fxhash::FxBuildHasher;
 use parking_lot::{Mutex, RwLock};
 use rayon::prelude::*;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
+use stc_utils::panic_ctx;
 use std::{mem::take, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{collections::AHashMap, comments::Comments, FileName, SourceMap, DUMMY_SP};
@@ -93,6 +94,10 @@ where
         }
     }
 
+    pub fn comments(&self) -> &C {
+        &self.comments
+    }
+
     /// TODO: Fix race condition of `errors`.
     pub fn load_all(&self, entry: &Arc<FileName>) -> Result<ModuleId, Error> {
         self.load_including_deps(entry, false);
@@ -129,6 +134,11 @@ where
         }
 
         Ok(module_id)
+    }
+
+    pub fn id_for_declare_module(&self, module_name: &JsWord) -> ModuleId {
+        self.id_generator
+            .generate(&Arc::new(FileName::Custom(module_name.to_string())))
     }
 
     pub fn path(&self, id: ModuleId) -> Arc<FileName> {
@@ -254,6 +264,8 @@ where
         }
 
         let module = self.load_one_module(filename)?;
+
+        let _panic = panic_ctx!(format!("ModuleGraph.load({}, span = {:?})", filename, module.span));
 
         let (declared_modules, deps) = find_modules_and_deps(&self.comments, &module);
 

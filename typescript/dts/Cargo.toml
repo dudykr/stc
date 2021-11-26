@@ -29,7 +29,7 @@ stc_ts_storage = {path = "../storage"}
 swc_common = "0.14.6"
 swc_ecma_ast = "0.58.0"
 swc_ecma_codegen = "0.80.0"
-swc_ecma_parser = "0.78.0"
+swc_ecma_parser = "0.78.5"
 swc_ecma_transforms = "0.94.0"
 swc_ecma_utils = "0.52.0"
 swc_ecma_visit = "0.44.0"

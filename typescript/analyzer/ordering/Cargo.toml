@@ -7,7 +7,11 @@ publish = false
 version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+debug = []
+
 [dependencies]
+either = "1.6.1"
 fxhash = "0.2.1"
 indexmap = "1.6.2"
 petgraph = "0.5.1"
@@ -19,7 +23,8 @@ stc_ts_utils = {path = "../../utils"}
 swc_atoms = "0.2.9"
 swc_common = "0.14.6"
 swc_fast_graph = "0.1.0"
-swc_graph_analyzer = "0.1.0"
+swc_graph_analyzer = "0.1.1"
+tracing = "0.1.29"
 
 [dev-dependencies]
 stc_ts_testing = {path = "../../testing/"}

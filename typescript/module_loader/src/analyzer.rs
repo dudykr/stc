@@ -1,8 +1,6 @@
+use stc_ts_utils::imports::find_imports_in_comments;
 use swc_atoms::JsWord;
-use swc_common::{
-    comments::{CommentKind, Comments},
-    Span, Spanned, DUMMY_SP,
-};
+use swc_common::{comments::Comments, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_visit::{Node, Visit, VisitWith};
 
@@ -35,34 +33,9 @@ where
     C: Comments,
 {
     fn check_comments(&mut self, span: Span) {
-        let mut deps = vec![];
+        let deps = find_imports_in_comments(&self.comments, span);
 
-        self.comments.with_leading(span.lo, |comments| {
-            for c in comments {
-                if c.kind != CommentKind::Line {
-                    continue;
-                }
-                if let Some(cmt_text) = c
-                    .text
-                    .trim()
-                    .strip_prefix("/")
-                    .map(|s| s.trim())
-                    .and_then(|s| s.strip_prefix("<reference"))
-                    .and_then(|s| s.strip_suffix("\" />"))
-                    .map(|s| s.trim())
-                {
-                    if let Some(path) = cmt_text.strip_prefix("path=\"") {
-                        deps.push(format!("./{}", path).into());
-                    } else if let Some(path) = cmt_text.strip_prefix("types=\"") {
-                        deps.push(path.into());
-                    } else {
-                        // TODO: Handle lib, types
-                    }
-                }
-            }
-        });
-
-        self.deps.extend(deps);
+        self.deps.extend(deps.into_iter().map(|i| i.to_path()));
     }
 }
 

@@ -1,9 +1,7 @@
 use crate::{
-    analyzer::Analyzer,
+    analyzer::{Analyzer, NoopLoader},
     env::EnvFactory,
-    loader::{Load, ModuleInfo},
     tests::{GLOBALS, MARKS},
-    ValidationResult,
 };
 use once_cell::sync::Lazy;
 use rnode::{NodeIdGenerator, RNode};
@@ -11,9 +9,8 @@ use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_storage::Single;
-use stc_ts_types::{ModuleId, ModuleTypeData, Type};
+use stc_ts_types::ModuleId;
 use std::{path::PathBuf, sync::Arc};
-use swc_atoms::JsWord;
 use swc_common::{FileName, SourceMap};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
@@ -51,7 +48,14 @@ where
 
         let handler = Arc::new(handler);
         swc_common::GLOBALS.set(&crate::tests::GLOBALS, || {
-            let analyzer = Analyzer::root(ENV.clone(), cm.clone(), box &mut storage, &Loader {}, None);
+            let analyzer = Analyzer::root(
+                ENV.clone(),
+                cm.clone(),
+                Default::default(),
+                box &mut storage,
+                &NoopLoader,
+                None,
+            );
             let mut tester = Tester {
                 cm: cm.clone(),
                 analyzer,
@@ -91,33 +95,5 @@ impl Tester<'_, '_> {
 
             RModule::from_orig(&mut NodeIdGenerator::invalid(), module)
         })
-    }
-}
-
-struct Loader {}
-
-impl Load for Loader {
-    fn module_id(&self, base: &Arc<FileName>, src: &JsWord) -> Option<ModuleId> {
-        unimplemented!()
-    }
-
-    fn is_in_same_circular_group(&self, base: ModuleId, dep: ModuleId) -> bool {
-        unimplemented!()
-    }
-
-    fn load_circular_dep(
-        &self,
-        base: ModuleId,
-        dep: ModuleId,
-        partial: &ModuleTypeData,
-    ) -> ValidationResult<ModuleInfo> {
-        unimplemented!()
-    }
-
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<ModuleInfo> {
-        unimplemented!()
-    }
-    fn declare_module(&self, _: &JsWord, _: Type) {
-        unimplemented!()
     }
 }

@@ -1,16 +1,16 @@
 //! This module implements VisitMut for Analyzer
 
-use crate::{analyzer::Analyzer, validator, validator::ValidateWith};
-use rnode::{Visit, VisitWith};
+use crate::{analyzer::Analyzer, validator::ValidateWith};
+use rnode::Visit;
 use stc_ts_ast_rnode::{
     RArrowExpr, RBlockStmt, RCatchClause, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod,
     RComputedPropName, RConstructor, RDoWhileStmt, RExportAll, RExportDecl, RExportDefaultDecl, RExportDefaultExpr,
     RExportNamedSpecifier, RExpr, RFnDecl, RFnExpr, RForInStmt, RForOfStmt, RForStmt, RFunction, RIfStmt, RImportDecl,
     RModule, RModuleItem, RNamedExport, RObjectLit, RParam, RParamOrTsParamProp, RPrivateMethod, RPrivateProp,
     RPropName, RReturnStmt, RSeqExpr, RStmt, RSwitchStmt, RTpl, RTsEnumDecl, RTsExportAssignment, RTsFnParam,
-    RTsFnType, RTsImportEqualsDecl, RTsInterfaceBody, RTsInterfaceDecl, RTsModuleDecl, RTsNamespaceDecl, RTsParamProp,
-    RTsTplLitType, RTsType, RTsTypeAliasDecl, RTsTypeElement, RVarDecl, RVarDeclarator, RWhileStmt, RWithStmt,
-    RYieldExpr,
+    RTsFnType, RTsImportEqualsDecl, RTsInterfaceBody, RTsInterfaceDecl, RTsModuleBlock, RTsModuleDecl,
+    RTsNamespaceDecl, RTsParamProp, RTsTplLitType, RTsType, RTsTypeAliasDecl, RTsTypeElement, RVarDecl, RVarDeclarator,
+    RWhileStmt, RWithStmt, RYieldExpr,
 };
 
 macro_rules! forward {
@@ -33,20 +33,6 @@ macro_rules! forward {
     };
 }
 
-macro_rules! use_visit_mut {
-    ($T:ty) => {
-        #[validator]
-        impl Analyzer<'_, '_> {
-            fn validate(&mut self, node: &$T) {
-                node.visit_children_with(self);
-                Ok(())
-            }
-        }
-    };
-}
-
-use_visit_mut!(RModule);
-
 forward!(visit_mut_export_named_specifier, RExportNamedSpecifier);
 forward!(visit_mut_expr, RExpr);
 forward!(visit_mut_seq_expr, RSeqExpr);
@@ -68,7 +54,6 @@ forward!(visit_mut_ts_module_decl, RTsModuleDecl);
 forward!(visit_mut_class_member, RClassMember);
 forward!(visit_mut_stmts, Vec<RStmt>);
 forward!(visit_mut_module_item, RModuleItem);
-forward!(visit_mut_module_items, Vec<RModuleItem>);
 forward!(visit_mut_class, RClass);
 forward!(visit_mut_class_decl, RClassDecl);
 forward!(visit_mut_class_expr, RClassExpr);
@@ -106,3 +91,5 @@ forward!(visit_tpl, RTpl);
 forward!(visit_mut_ts_import_equals_decl, RTsImportEqualsDecl);
 forward!(visit, RParamOrTsParamProp);
 forward!(visit, RTsTplLitType);
+forward!(visit, RTsModuleBlock);
+forward!(visit, RModule);

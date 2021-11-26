@@ -140,7 +140,7 @@ impl Resolve for NodeResolver {
         let base = match base {
             FileName::Real(base) => &**base,
             _ => {
-                unreachable!("base = {:?}", base)
+                unreachable!("base = {:?}; target = {:?}", base, target)
             }
         };
         // Absolute path

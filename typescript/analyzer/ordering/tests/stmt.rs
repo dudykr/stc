@@ -1,15 +1,20 @@
 use stc_ts_ordering::calc_eval_order;
-use stc_ts_testing::{parse, parse_rnode};
-use swc_common::{comments::NoopComments, FileName};
+use stc_ts_testing::parse_rnode;
+use swc_common::{comments::NoopComments, FileName, Mark};
 
 #[track_caller]
 fn assert_simple(src: &str, expected: Vec<usize>) {
     let expected = expected.into_iter().map(|v| vec![v]).collect::<Vec<_>>();
 
+    assert_order(src, expected)
+}
+
+#[track_caller]
+fn assert_order(src: &str, expected: Vec<Vec<usize>>) {
     testing::run_test2(false, |cm, _handler| {
         let fm = cm.new_source_file(FileName::Anon, src.into());
 
-        let module = parse_rnode(&fm, &NoopComments);
+        let module = parse_rnode(&fm, &NoopComments, Mark::fresh(Mark::root()));
 
         let order = calc_eval_order(&module.body);
 
@@ -63,7 +68,7 @@ fn order_3() {
 
 #[test]
 fn order_bfs_1() {
-    assert_simple(
+    assert_order(
         "
     function foo() {
         return new Bar();
@@ -75,13 +80,13 @@ fn order_bfs_1() {
         }
     }
     ",
-        vec![0, 1],
+        vec![vec![0, 1]],
     );
 }
 
 #[test]
 fn var_1() {
-    assert_simple(
+    assert_order(
         "
     function foo() {
         return new Bar();
@@ -93,7 +98,7 @@ fn var_1() {
         }
     }
     ",
-        vec![0, 1],
+        vec![vec![0, 1]],
     );
 }
 
@@ -215,6 +220,41 @@ fn type_alias_01() {
         }
 
         export type C = MyClass;
+        ",
+        vec![1, 0],
+    );
+}
+
+#[test]
+fn string_tree_1() {
+    assert_simple(
+        "type StringTree = string | StringTreeCollection;
+    class StringTreeCollectionBase {
+        [n: number]: StringTree;
+    }
+    
+    class StringTreeCollection extends StringTreeCollectionBase { }
+    
+    var x: StringTree;
+    if (typeof x !== 'string') {
+        x[0] = '';
+        x[0] = new StringTreeCollection;
+    }",
+        vec![1, 2, 0, 3, 4],
+    );
+}
+
+#[test]
+fn types_range_parser_1() {
+    assert_simple(
+        "
+        interface Ranges extends Array<Range> {
+            type: string;
+        }
+        interface Range {
+            start: number;
+            end: number;
+        }
         ",
         vec![1, 0],
     );
