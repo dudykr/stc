@@ -99,8 +99,12 @@ impl Analyzer<'_, '_> {
             normal_imports.push((ctxt, dep_id, import));
         }
 
-        let import_results = normal_imports
-            .into_par_iter()
+        #[cfg(feature = "no-threading")]
+        let iter = normal_imports.into_iter();
+        #[cfg(not(feature = "no-threading"))]
+        let iter = normal_imports.into_par_iter();
+
+        let import_results = iter
             .map(|(ctxt, dep_id, import)| {
                 let res = loader.load_non_circular_dep(ctxt, dep_id);
                 (ctxt, dep_id, import, res)
