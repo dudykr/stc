@@ -9,7 +9,7 @@ use swc_common::{
 };
 use swc_ecma_ast::VarDeclKind;
 
-#[derive(Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq)]
 pub enum BindingKind {
     Import,
     Class,
@@ -24,6 +24,7 @@ pub enum BindingKind {
     Var(#[use_eq_ignore_span] VarDeclKind),
 }
 
+#[derive(Debug)]
 pub struct Bindings {
     pub all: AHashMap<Id, Vec<BindingKind>>,
     pub types: AHashSet<Id>,
