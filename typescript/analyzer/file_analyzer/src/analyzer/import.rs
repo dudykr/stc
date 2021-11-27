@@ -7,6 +7,7 @@ use rayon::prelude::*;
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RCallExpr, RExportAll, RExpr, RExprOrSuper, RImportDecl, RImportSpecifier, RLit, RModuleItem, RNamedExport, RStr,
+    RTsExternalModuleRef,
 };
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -397,6 +398,21 @@ where
             DepInfo {
                 span: export.span,
                 src: export.src.value.clone(),
+            },
+        ));
+    }
+}
+
+impl<C> Visit<RTsExternalModuleRef> for ImportFinder<'_, C>
+where
+    C: Comments,
+{
+    fn visit(&mut self, r: &RTsExternalModuleRef) {
+        self.to.push((
+            self.cur_ctxt,
+            DepInfo {
+                span: r.span,
+                src: r.expr.value.clone(),
             },
         ));
     }
