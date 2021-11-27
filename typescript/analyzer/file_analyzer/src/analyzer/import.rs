@@ -20,7 +20,8 @@ use swc_common::{comments::Comments, Span, Spanned};
 impl Analyzer<'_, '_> {
     /// Returns `(dep_module, dep_types)` if an import is valid, and returns
     /// `(cur_mod_id, empty_data)` on import errors.
-    ////
+    ///
+    /// TODO: Make this returns None when import failed
     pub(crate) fn get_imported_items(&mut self, span: Span, dst: &JsWord) -> (ModuleId, Type) {
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);

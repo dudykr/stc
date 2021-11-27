@@ -28,7 +28,7 @@ use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
 use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
 use stc_ts_utils::StcComments;
-use stc_utils::{panic_ctx, AHashMap, AHashSet};
+use stc_utils::{cache::Freeze, panic_ctx, AHashMap, AHashSet};
 use std::{
     fmt::Debug,
     mem::take,
@@ -863,60 +863,71 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsImportEqualsDecl) {
         self.record(node);
 
+        let ctxt = self.ctx.module_id;
+
         let ctx = Ctx {
             in_declare: self.ctx.in_declare || node.declare,
             ..self.ctx
         };
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
-            match node.module_ref {
-                RTsModuleRef::TsEntityName(ref e) => {
-                    let ty = analyzer
-                        .type_of_ts_entity_name(node.span, analyzer.ctx.module_id, e, None)
-                        .unwrap_or_else(|err| {
-                            analyzer.storage.report(err);
-                            Type::any(node.span, Default::default())
-                        })
-                        .cheap();
-                    ty.assert_valid();
+            let ty = match node.module_ref {
+                RTsModuleRef::TsEntityName(ref e) => analyzer
+                    .type_of_ts_entity_name(node.span, analyzer.ctx.module_id, e, None)
+                    .unwrap_or_else(|err| {
+                        analyzer.storage.report(err);
+                        Type::any(node.span, Default::default())
+                    })
+                    .freezed(),
+                RTsModuleRef::TsExternalModuleRef(ref e) => {
+                    let (dep, data) = analyzer.get_imported_items(e.span, &e.expr.value);
 
-                    let (is_type, is_var) = match ty.normalize() {
-                        Type::Module(..) | Type::Namespace(..) | Type::Interface(..) => (true, false),
-                        Type::ClassDef(..) => (true, true),
-                        _ => (false, true),
-                    };
-
-                    if is_type {
-                        analyzer.register_type(node.id.clone().into(), ty.clone());
-                        if node.is_export {
-                            analyzer.storage.reexport_type(
-                                node.span,
-                                analyzer.ctx.module_id,
-                                node.id.sym.clone(),
-                                ty.clone(),
-                            )
-                        }
-                    }
-
-                    if is_var {
-                        analyzer.declare_var(
-                            node.span,
-                            VarKind::Import,
-                            node.id.clone().into(),
-                            Some(ty.clone()),
-                            None,
-                            true,
-                            false,
-                            false,
-                        )?;
-
-                        if node.is_export {
-                            analyzer
-                                .storage
-                                .reexport_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty)
-                        }
+                    // Import successful
+                    if ctxt != dep {
+                        analyzer
+                            .imports
+                            .get(&(ctxt, dep))
+                            .cloned()
+                            .unwrap_or_else(|| Type::any(e.span, Default::default()))
+                    } else {
+                        Type::any(e.span, Default::default())
                     }
                 }
-                _ => {}
+            };
+            ty.assert_clone_cheap();
+            ty.assert_valid();
+
+            let (is_type, is_var) = match ty.normalize() {
+                Type::Module(..) | Type::Namespace(..) | Type::Interface(..) => (true, false),
+                Type::ClassDef(..) => (true, true),
+                _ => (false, true),
+            };
+
+            if is_type {
+                analyzer.register_type(node.id.clone().into(), ty.clone());
+                if node.is_export {
+                    analyzer
+                        .storage
+                        .reexport_type(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty.clone())
+                }
+            }
+
+            if is_var {
+                analyzer.declare_var(
+                    node.span,
+                    VarKind::Import,
+                    node.id.clone().into(),
+                    Some(ty.clone()),
+                    None,
+                    true,
+                    false,
+                    false,
+                )?;
+
+                if node.is_export {
+                    analyzer
+                        .storage
+                        .reexport_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty)
+                }
             }
 
             Ok(())
