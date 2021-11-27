@@ -20,6 +20,7 @@ use stc_ts_ast_rnode::{
     RDecorator, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsImportEqualsDecl, RTsModuleBlock,
     RTsModuleDecl, RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
 };
+use stc_ts_base_type_ops::bindings::Bindings;
 use stc_ts_dts_mutations::Mutations;
 use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
 use stc_ts_errors::{debug::debugger::Debugger, Error};
@@ -263,7 +264,7 @@ struct AnalyzerData {
     exported_type_decls: FxHashMap<Id, Vec<Span>>,
 
     /// Filled only once, by `fill_known_type_names`.
-    all_local_type_names: FxHashSet<Id>,
+    bindings: Bindings,
 
     unresolved_imports: AHashSet<Id>,
 

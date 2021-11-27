@@ -24,8 +24,9 @@ pub enum BindingKind {
     Var(#[use_eq_ignore_span] VarDeclKind),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Bindings {
+    pub collected: bool,
     pub all: AHashMap<Id, Vec<BindingKind>>,
     pub types: AHashSet<Id>,
 }
@@ -48,7 +49,11 @@ where
         },
     );
 
-    Bindings { all, types }
+    Bindings {
+        collected: true,
+        all,
+        types,
+    }
 }
 
 pub struct BindingCollector<'a> {
