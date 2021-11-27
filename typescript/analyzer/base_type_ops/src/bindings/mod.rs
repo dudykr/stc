@@ -3,7 +3,10 @@
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::*;
 use stc_ts_types::Id;
-use swc_common::{collections::AHashMap, EqIgnoreSpan, TypeEq};
+use swc_common::{
+    collections::{AHashMap, AHashSet},
+    EqIgnoreSpan, TypeEq,
+};
 use swc_ecma_ast::VarDeclKind;
 
 #[derive(Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq)]
@@ -12,21 +15,39 @@ pub enum BindingKind {
     Class,
     Function,
     Enum,
+    TypeAlias,
+    /// Modules declared using `module` keyword.
+    TsModule,
     Inteface,
     Namespace,
     Module,
     Var(#[use_eq_ignore_span] VarDeclKind),
 }
 
-pub fn collect_bindings<N>(n: &N) -> AHashMap<Id, Vec<BindingKind>>
+pub struct Bindings {
+    pub all: AHashMap<Id, Vec<BindingKind>>,
+    pub types: AHashSet<Id>,
+}
+
+pub fn collect_bindings<N>(n: &N) -> Bindings
 where
-    N: for<'aa> VisitWith<BindingCollector<'aa>>,
+    N: Send + Sync + for<'aa> VisitWith<BindingCollector<'aa>> + VisitWith<KnownTypeVisitor>,
 {
-    let mut data = AHashMap::default();
+    let (all, types) = rayon::join(
+        || {
+            let mut all = AHashMap::default();
 
-    n.visit_with(&mut BindingCollector { data: &mut data });
+            n.visit_with(&mut BindingCollector { data: &mut all });
+            all
+        },
+        || {
+            let mut v = KnownTypeVisitor::default();
+            n.visit_with(&mut v);
+            v.types
+        },
+    );
 
-    data
+    Bindings { all, types }
 }
 
 pub struct BindingCollector<'a> {
@@ -85,5 +106,88 @@ impl Visit<RTsEnumDecl> for BindingCollector<'_> {
             .push(BindingKind::Enum);
 
         decl.visit_children_with(self);
+    }
+}
+
+impl Visit<RTsTypeAliasDecl> for BindingCollector<'_> {
+    fn visit(&mut self, decl: &RTsTypeAliasDecl) {
+        self.data
+            .entry(decl.id.clone().into())
+            .or_default()
+            .push(BindingKind::TypeAlias);
+
+        decl.visit_children_with(self);
+    }
+}
+
+impl Visit<RTsModuleDecl> for BindingCollector<'_> {
+    fn visit(&mut self, d: &RTsModuleDecl) {
+        d.visit_children_with(self);
+
+        match &d.id {
+            RTsModuleName::Ident(i) => {
+                self.data
+                    .entry(i.clone().into())
+                    .or_default()
+                    .push(BindingKind::TsModule);
+            }
+            RTsModuleName::Str(_) => {}
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct KnownTypeVisitor {
+    types: AHashSet<Id>,
+}
+
+impl KnownTypeVisitor {
+    fn add(&mut self, id: &RIdent) {
+        self.types.insert(id.into());
+    }
+}
+
+impl Visit<RClassDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RClassDecl) {
+        d.visit_children_with(self);
+
+        self.add(&d.ident);
+    }
+}
+
+impl Visit<RTsInterfaceDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RTsInterfaceDecl) {
+        d.visit_children_with(self);
+
+        self.add(&d.id);
+    }
+}
+
+impl Visit<RTsTypeAliasDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RTsTypeAliasDecl) {
+        d.visit_children_with(self);
+
+        self.add(&d.id);
+    }
+}
+
+impl Visit<RTsEnumDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RTsEnumDecl) {
+        d.visit_children_with(self);
+
+        self.add(&d.id);
+    }
+}
+
+impl Visit<RTsModuleDecl> for KnownTypeVisitor {
+    fn visit(&mut self, d: &RTsModuleDecl) {
+        d.visit_children_with(self);
+
+        match &d.id {
+            RTsModuleName::Ident(i) => {
+                self.add(&i);
+            }
+            RTsModuleName::Str(_) => {}
+        }
     }
 }
