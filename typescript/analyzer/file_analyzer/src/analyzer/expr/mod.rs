@@ -3330,7 +3330,10 @@ impl Analyzer<'_, '_> {
             }
 
             if let Some(kinds) = self.data.bindings.all.get(&i.into()) {
-                if kinds.iter().any(|kind| matches!(kind, BindingKind::Namespace)) {
+                if kinds
+                    .iter()
+                    .any(|kind| matches!(kind, BindingKind::Namespace | BindingKind::TsModule))
+                {
                     return Ok(Type::Query(QueryType {
                         span,
                         expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
