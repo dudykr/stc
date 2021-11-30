@@ -7,19 +7,21 @@ use rayon::prelude::*;
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RCallExpr, RExportAll, RExpr, RExprOrSuper, RImportDecl, RImportSpecifier, RLit, RModuleItem, RNamedExport, RStr,
+    RTsExternalModuleRef,
 };
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_storage::Storage;
 use stc_ts_types::{Id, ModuleId, Type};
-use stc_ts_utils::imports::{find_imports_in_comments, ImportRef};
+use stc_ts_utils::imports::find_imports_in_comments;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{comments::Comments, Span, Spanned};
 
 impl Analyzer<'_, '_> {
     /// Returns `(dep_module, dep_types)` if an import is valid, and returns
     /// `(cur_mod_id, empty_data)` on import errors.
-    ////
+    ///
+    /// TODO: Make this returns None when import failed
     pub(crate) fn get_imported_items(&mut self, span: Span, dst: &JsWord) -> (ModuleId, Type) {
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);
@@ -99,8 +101,12 @@ impl Analyzer<'_, '_> {
             normal_imports.push((ctxt, dep_id, import));
         }
 
-        let import_results = normal_imports
-            .into_par_iter()
+        #[cfg(feature = "no-threading")]
+        let iter = normal_imports.into_iter();
+        #[cfg(not(feature = "no-threading"))]
+        let iter = normal_imports.into_par_iter();
+
+        let import_results = iter
             .map(|(ctxt, dep_id, import)| {
                 let res = loader.load_non_circular_dep(ctxt, dep_id);
                 (ctxt, dep_id, import, res)
@@ -393,6 +399,21 @@ where
             DepInfo {
                 span: export.span,
                 src: export.src.value.clone(),
+            },
+        ));
+    }
+}
+
+impl<C> Visit<RTsExternalModuleRef> for ImportFinder<'_, C>
+where
+    C: Comments,
+{
+    fn visit(&mut self, r: &RTsExternalModuleRef) {
+        self.to.push((
+            self.cur_ctxt,
+            DepInfo {
+                span: r.span,
+                src: r.expr.value.clone(),
             },
         ));
     }

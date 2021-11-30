@@ -269,8 +269,8 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &RTsInterfaceDecl) -> ValidationResult<Interface> {
-        let ty: Interface = self.with_child(
+    fn validate(&mut self, d: &RTsInterfaceDecl) -> ValidationResult {
+        let ty = self.with_child(
             ScopeKind::Flow,
             Default::default(),
             |child: &mut Analyzer| -> ValidationResult<_> {
@@ -296,14 +296,14 @@ impl Analyzer<'_, '_> {
                 child.report_error_for_conflicting_parents(d.id.span, &ty.extends);
                 child.report_error_for_wrong_interface_inheritance(d.id.span, &ty.body, &ty.extends);
 
-                ty.make_clone_cheap();
+                let ty = Type::Interface(ty).freezed();
 
                 Ok(ty)
             },
         )?;
 
         // TODO(kdy1): Recover
-        self.register_type(d.id.clone().into(), Type::Interface(ty.clone()).cheap());
+        self.register_type(d.id.clone().into(), ty.clone());
 
         Ok(ty)
     }

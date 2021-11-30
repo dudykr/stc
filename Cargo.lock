@@ -889,57 +889,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "napi"
-version = "1.7.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59cd02f5de365f9bd6e85f1d11176a9ea70ff63ce55ea4412cb4e00fd5a0fe6c"
-dependencies = [
- "napi-sys",
- "serde",
- "serde_json",
- "winapi",
-]
-
-[[package]]
-name = "napi-build"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fbe11972c601a48aa12a0e2aa032e9e251655ce6c6836cac26e5c0b3b5a5dcc"
-
-[[package]]
-name = "napi-derive"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e7ed160148f94ee17936f00288029cb0cfb37c08bbace9f514f735dcd869ed7"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "napi-sys"
-version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43563506c466587478849d80f46383d859b91bbec586580dadeb3639588f2f7e"
-
-[[package]]
 name = "new_debug_unreachable"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e4a24736216ec316047a1fc4252e27dabb04218aa4a3f37c6e7ddbf1f9782b54"
-
-[[package]]
-name = "node-stc"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "backtrace",
- "napi",
- "napi-build",
- "napi-derive",
- "stc",
-]
 
 [[package]]
 name = "nodrop"
@@ -1801,22 +1754,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "stc-devtools"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "rayon",
- "structopt",
- "swc_atoms",
- "swc_common",
- "swc_ecma_ast",
- "swc_ecma_parser",
- "swc_ecma_utils",
- "swc_ecma_visit",
- "walkdir",
-]
-
-[[package]]
 name = "stc_arc_cow"
 version = "0.1.0"
 dependencies = [
@@ -1855,6 +1792,7 @@ dependencies = [
 name = "stc_ts_base_type_ops"
 version = "0.1.0"
 dependencies = [
+ "rayon",
  "rnode",
  "stc_ts_ast_rnode",
  "stc_ts_types",

@@ -211,9 +211,12 @@ where
             None => return,
         };
 
-        let dep_module_ids = loaded
-            .deps
-            .into_par_iter()
+        #[cfg(feature = "no-threading")]
+        let iter = loaded.deps.into_iter();
+        #[cfg(not(feature = "no-threading"))]
+        let iter = loaded.deps.into_par_iter();
+
+        let dep_module_ids = iter
             .map(|dep_path| {
                 let id = self.id_generator.generate(&dep_path);
 
