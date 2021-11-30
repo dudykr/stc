@@ -5,7 +5,8 @@ name = "stc_ts_module_loader"
 publish = false
 version = "0.1.0"
 
-[lib]
+[features]
+no-threading = []
 
 [dependencies]
 ahash = "0.7.6"

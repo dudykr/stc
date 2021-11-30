@@ -26,6 +26,7 @@ use stc_ts_ast_rnode::{
     RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit,
     RTsNonNullExpr, RUnaryExpr,
 };
+use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
     DebugExt, Error, Errors,
@@ -34,9 +35,9 @@ use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
-    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, ComputedKey, Id, Key, KeywordType,
-    KeywordTypeMetadata, LitType, LitTypeMetadata, Method, ModuleId, Operator, OptionalType, PropertySignature,
-    QueryExpr, QueryType, StaticThis, ThisType,
+    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Key,
+    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, ModuleId, Operator, OptionalType,
+    PropertySignature, QueryExpr, QueryType, QueryTypeMetdata, StaticThis, ThisType,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use std::{
@@ -3325,6 +3326,24 @@ impl Analyzer<'_, '_> {
                             });
                         }
                     }
+                }
+            }
+
+            if let Some(kinds) = self.data.bindings.all.get(&i.into()) {
+                if kinds
+                    .iter()
+                    .any(|kind| matches!(kind, BindingKind::Namespace | BindingKind::TsModule))
+                {
+                    return Ok(Type::Query(QueryType {
+                        span,
+                        expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
+                        metadata: QueryTypeMetdata {
+                            common: CommonTypeMetadata {
+                                resolved_from_var: true,
+                                ..Default::default()
+                            },
+                        },
+                    }));
                 }
             }
 

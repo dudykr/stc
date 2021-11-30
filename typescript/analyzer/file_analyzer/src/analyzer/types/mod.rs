@@ -4,13 +4,11 @@ use crate::{
     util::unwrap_ref_with_single_arg,
     ValidationResult,
 };
-use fxhash::{FxHashMap, FxHashSet};
+use fxhash::FxHashMap;
 use itertools::Itertools;
-use rnode::{Visit, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{
-    RClassDecl, RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsEnumDecl, RTsInterfaceDecl, RTsLit,
-    RTsModuleDecl, RTsModuleName, RTsTypeAliasDecl,
-};
+use rnode::{VisitMutWith, VisitWith};
+use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsLit};
+use stc_ts_base_type_ops::bindings::{collect_bindings, BindingCollector, KnownTypeVisitor};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
@@ -1420,7 +1418,7 @@ impl Analyzer<'_, '_> {
         let l = left(&type_name);
         let top_id: Id = l.into();
 
-        let is_resolved = self.data.all_local_type_names.contains(&top_id)
+        let is_resolved = self.data.bindings.types.contains(&top_id)
             || self.imports_by_id.contains_key(&top_id)
             || self.data.unresolved_imports.contains(&top_id)
             || self.env.get_global_type(l.span, &top_id.sym()).is_ok();
@@ -1641,76 +1639,18 @@ impl Analyzer<'_, '_> {
     }
 
     /// We precomputes all type declarations in the scope, using this method.
-    pub(crate) fn fill_known_type_names<N>(&mut self, node: N)
+    pub(crate) fn fill_known_type_names<N>(&mut self, node: &N)
     where
-        N: VisitWith<KnownTypeVisitor>,
+        N: Send + Sync + for<'aa> VisitWith<BindingCollector<'aa>> + VisitWith<KnownTypeVisitor>,
     {
         if self.is_builtin {
             return;
         }
-        if !self.data.all_local_type_names.is_empty() {
+        if self.data.bindings.collected {
             return;
         }
 
-        let mut v = KnownTypeVisitor::default();
-        node.visit_with(&mut v);
-        self.data.all_local_type_names.extend(v.type_names);
-    }
-}
-
-#[derive(Default)]
-pub(crate) struct KnownTypeVisitor {
-    type_names: FxHashSet<Id>,
-}
-
-impl KnownTypeVisitor {
-    fn add(&mut self, id: &RIdent) {
-        self.type_names.insert(id.into());
-    }
-}
-
-impl Visit<RClassDecl> for KnownTypeVisitor {
-    fn visit(&mut self, d: &RClassDecl) {
-        d.visit_children_with(self);
-
-        self.add(&d.ident);
-    }
-}
-
-impl Visit<RTsInterfaceDecl> for KnownTypeVisitor {
-    fn visit(&mut self, d: &RTsInterfaceDecl) {
-        d.visit_children_with(self);
-
-        self.add(&d.id);
-    }
-}
-
-impl Visit<RTsTypeAliasDecl> for KnownTypeVisitor {
-    fn visit(&mut self, d: &RTsTypeAliasDecl) {
-        d.visit_children_with(self);
-
-        self.add(&d.id);
-    }
-}
-
-impl Visit<RTsEnumDecl> for KnownTypeVisitor {
-    fn visit(&mut self, d: &RTsEnumDecl) {
-        d.visit_children_with(self);
-
-        self.add(&d.id);
-    }
-}
-
-impl Visit<RTsModuleDecl> for KnownTypeVisitor {
-    fn visit(&mut self, d: &RTsModuleDecl) {
-        d.visit_children_with(self);
-
-        match &d.id {
-            RTsModuleName::Ident(i) => {
-                self.add(&i);
-            }
-            RTsModuleName::Str(_) => {}
-        }
+        self.data.bindings = collect_bindings(node);
     }
 }
 

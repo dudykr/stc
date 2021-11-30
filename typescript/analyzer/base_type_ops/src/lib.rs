@@ -10,6 +10,7 @@ use stc_ts_ast_rnode::RTsLit;
 use stc_ts_types::{LitType, Type, TypeElement, Union};
 use swc_ecma_ast::TruePlusMinus;
 
+pub mod bindings;
 pub mod fix;
 
 pub fn apply_mapped_flags(el: &mut TypeElement, optional: Option<TruePlusMinus>, readonly: Option<TruePlusMinus>) {
