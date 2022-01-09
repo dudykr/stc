@@ -63,6 +63,8 @@ fn validate(input: &Path) -> Vec<StcError> {
     let tester = Tester::new();
     let diagnostics = tester
         .errors(|cm, handler| {
+            cm.new_source_file(FileName::Anon, "".to_string());
+
             let fm = cm.load_file(input).unwrap();
 
             let env = get_env();
@@ -155,6 +157,8 @@ fn validate(input: &Path) -> Vec<StcError> {
 #[fixture("tests/errors/**/*.ts")]
 fn errors(input: PathBuf) {
     testing::run_test2(false, |cm, handler| {
+        cm.new_source_file(FileName::Anon, "".to_string());
+
         let fm = cm.load_file(&input).unwrap();
 
         let env = get_env();
@@ -226,6 +230,8 @@ fn errors(input: PathBuf) {
 #[fixture("tests/pass-only/**/*.ts")]
 fn pass_only(input: PathBuf) {
     testing::run_test2(false, |cm, handler| {
+        cm.new_source_file(FileName::Anon, "".to_string());
+
         let fm = cm.load_file(&input).unwrap();
 
         let env = get_env();
@@ -336,6 +342,8 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
 
     let res = testing::Tester::new()
         .print_errors(|cm, handler| -> Result<(), _> {
+            cm.new_source_file(FileName::Anon, "".to_string());
+
             let handler = Arc::new(handler);
             let fm = cm.load_file(&file_name).unwrap();
             let mut libs = vec![];
