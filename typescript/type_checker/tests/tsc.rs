@@ -222,6 +222,8 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
     // If parser returns error, ignore it for now.
 
     let cm = SourceMap::default();
+    cm.new_source_file(FileName::Anon, "".into());
+
     let fm = cm.load_file(&path).unwrap();
 
     // Postpone multi-file tests.
@@ -314,6 +316,8 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
     let fname = file_name.to_string_lossy();
     ::testing::run_test(false, |cm, handler| {
+        cm.new_source_file(FileName::Anon, "".into());
+
         let fm = cm.load_file(file_name).expect("failed to read file");
 
         // We parse files twice. At first, we read comments and detect
@@ -569,6 +573,8 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let tester = Tester::new();
         let diagnostics = tester
             .errors(|cm, handler| {
+                cm.new_source_file(FileName::Anon, "".into());
+
                 let handler = Arc::new(handler);
                 let mut checker = Checker::new(
                     cm.clone(),
