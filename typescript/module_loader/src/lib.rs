@@ -2,7 +2,7 @@
 
 use self::analyzer::find_modules_and_deps;
 use crate::resolvers::typescript::TsResolver;
-use anyhow::{bail, Error};
+use anyhow::{anyhow, bail, Error};
 use dashmap::DashMap;
 use fxhash::FxBuildHasher;
 use parking_lot::{Mutex, RwLock};
@@ -99,7 +99,7 @@ where
     }
 
     /// TODO: Fix race condition of `errors`.
-    pub fn load_all(&self, entry: &Arc<FileName>) -> Result<ModuleId, Error> {
+    pub fn load_all(&self, entry: &Arc<FileName>) -> Result<ModuleId, (ModuleId, Error)> {
         self.load_including_deps(entry, false);
         self.load_including_deps(entry, true);
 
@@ -127,10 +127,11 @@ where
 
         let errors = take(&mut *self.errors.lock());
         if !errors.is_empty() {
-            bail!(
+            let err = anyhow!(
                 "failed load modules:\n{}",
                 errors.iter().map(|s| format!("{:?}", s)).collect::<Vec<_>>().join("\n")
             );
+            return Err((module_id, err));
         }
 
         Ok(module_id)
