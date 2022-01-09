@@ -118,7 +118,10 @@ impl Checker {
         self.run(|| {
             let start = Instant::now();
 
-            let id = self.module_graph.load_all(&entry).unwrap();
+            let id = self
+                .module_graph
+                .load_all(&entry)
+                .expect("failed to load using module graph");
 
             let end = Instant::now();
             log::info!("Loading of `{}` and dependencies took {:?}", entry, end - start);
