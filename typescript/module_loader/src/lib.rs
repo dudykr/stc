@@ -17,7 +17,7 @@ use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_fast_graph::digraph::FastDiGraphMap;
 use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
-use tracing::error;
+use tracing::{debug, error};
 
 mod analyzer;
 pub mod resolvers;
@@ -255,7 +255,7 @@ where
             return Ok(None);
         }
 
-        log::debug!("Loading {:?}: {}", module_id, filename);
+        debug!("Loading {:?}: {}", module_id, filename);
 
         // TODO(kdy1): Check if it's better to use content of `declare module "http"`?
         if resolve_all {
