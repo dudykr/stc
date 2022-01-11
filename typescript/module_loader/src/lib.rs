@@ -289,7 +289,8 @@ where
         let deps = if resolve_all {
             deps.into_par_iter()
                 .map(|specifier| resolver.resolve(filename, &specifier))
-                .collect::<Result<Vec<_>, _>>()?
+                .filter_map(|res| res.ok())
+                .collect()
         } else {
             deps.into_par_iter()
                 .map(|specifier| resolver.resolve(filename, &specifier))
