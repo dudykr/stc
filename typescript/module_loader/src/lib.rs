@@ -17,6 +17,7 @@ use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_fast_graph::digraph::FastDiGraphMap;
 use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
+use tracing::error;
 
 mod analyzer;
 pub mod resolvers;
@@ -172,11 +173,15 @@ where
         match m.as_deref() {
             Some(m) => match m {
                 Ok(v) => f(Some(&v.module)),
-                Err(_) => f(Some(&Module {
-                    span: DUMMY_SP,
-                    body: Default::default(),
-                    shebang: Default::default(),
-                })),
+                Err(..) => {
+                    error!("`self.loaded` did not contain `id`: {:?}", id);
+
+                    f(Some(&Module {
+                        span: DUMMY_SP,
+                        body: Default::default(),
+                        shebang: Default::default(),
+                    }))
+                }
             },
             None => f(None),
         }
@@ -198,6 +203,8 @@ where
             Ok(v) => v,
             Err(err) => {
                 if resolve_all {
+                    error!("failed to load module: {:?}", err);
+
                     self.errors.lock().push(err);
 
                     self.loaded.insert(id, Err(()));
