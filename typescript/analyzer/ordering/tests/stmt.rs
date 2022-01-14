@@ -259,3 +259,25 @@ fn types_range_parser_1() {
         vec![1, 0],
     );
 }
+
+#[test]
+fn recursive() {
+    assert_simple(
+        "
+        function foo<T, U>(x: T, y: U) {
+            foo<U, U>(y, y);
+            return new C<U,T>();
+        }
+        
+        class C<T, U> {
+            x: T;
+        }
+        
+        interface I<T, U> {
+            x: C<U, T>;
+        }
+        
+        ",
+        vec![1, 2, 0],
+    );
+}

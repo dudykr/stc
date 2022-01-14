@@ -2,7 +2,7 @@
 
 use self::analyzer::find_modules_and_deps;
 use crate::resolvers::typescript::TsResolver;
-use anyhow::{bail, Error};
+use anyhow::{anyhow, bail, Error};
 use dashmap::DashMap;
 use fxhash::FxBuildHasher;
 use parking_lot::{Mutex, RwLock};
@@ -17,6 +17,7 @@ use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_fast_graph::digraph::FastDiGraphMap;
 use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
+use tracing::{debug, error};
 
 mod analyzer;
 pub mod resolvers;
@@ -99,7 +100,7 @@ where
     }
 
     /// TODO: Fix race condition of `errors`.
-    pub fn load_all(&self, entry: &Arc<FileName>) -> Result<ModuleId, Error> {
+    pub fn load_all(&self, entry: &Arc<FileName>) -> Result<ModuleId, (ModuleId, Error)> {
         self.load_including_deps(entry, false);
         self.load_including_deps(entry, true);
 
@@ -127,10 +128,11 @@ where
 
         let errors = take(&mut *self.errors.lock());
         if !errors.is_empty() {
-            bail!(
+            let err = anyhow!(
                 "failed load modules:\n{}",
                 errors.iter().map(|s| format!("{:?}", s)).collect::<Vec<_>>().join("\n")
             );
+            return Err((module_id, err));
         }
 
         Ok(module_id)
@@ -171,11 +173,15 @@ where
         match m.as_deref() {
             Some(m) => match m {
                 Ok(v) => f(Some(&v.module)),
-                Err(_) => f(Some(&Module {
-                    span: DUMMY_SP,
-                    body: Default::default(),
-                    shebang: Default::default(),
-                })),
+                Err(..) => {
+                    error!("`self.loaded` did not contain `id`: {:?}", id);
+
+                    f(Some(&Module {
+                        span: DUMMY_SP,
+                        body: Default::default(),
+                        shebang: Default::default(),
+                    }))
+                }
             },
             None => f(None),
         }
@@ -197,6 +203,8 @@ where
             Ok(v) => v,
             Err(err) => {
                 if resolve_all {
+                    error!("failed to load module: {:?}", err);
+
                     self.errors.lock().push(err);
 
                     self.loaded.insert(id, Err(()));
@@ -247,7 +255,7 @@ where
             return Ok(None);
         }
 
-        log::debug!("Loading {:?}: {}", module_id, filename);
+        debug!("Loading {:?}: {}", module_id, filename);
 
         // TODO(kdy1): Check if it's better to use content of `declare module "http"`?
         if resolve_all {
@@ -281,7 +289,8 @@ where
         let deps = if resolve_all {
             deps.into_par_iter()
                 .map(|specifier| resolver.resolve(filename, &specifier))
-                .collect::<Result<Vec<_>, _>>()?
+                .filter_map(|res| res.ok())
+                .collect()
         } else {
             deps.into_par_iter()
                 .map(|specifier| resolver.resolve(filename, &specifier))

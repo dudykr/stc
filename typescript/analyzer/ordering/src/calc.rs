@@ -70,6 +70,28 @@ pub(crate) fn calc_order(
         }
 
         for idx in 0..len {
+            if cycles.iter().any(|v| v.contains(&idx)) {
+                // Skip `idx` if it's in any cycle.
+                continue;
+            }
+
+            let next = calc_one(&done, &cycles, graph, idx);
+
+            done.extend(next.iter().copied());
+
+            if !next.is_empty() {
+                orders.push(next);
+                continue 'outer;
+            }
+        }
+
+        // We handle cycles here.
+        for idx in 0..len {
+            if cycles.iter().all(|v| !v.contains(&idx)) {
+                // Skip `idx` if it's not in any cycle.
+                continue;
+            }
+
             let next = calc_one(&done, &cycles, graph, idx);
 
             done.extend(next.iter().copied());
