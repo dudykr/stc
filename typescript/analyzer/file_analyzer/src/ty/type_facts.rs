@@ -9,6 +9,7 @@ use stc_ts_types::{
     UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
+use stc_utils::stack;
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -388,6 +389,11 @@ impl Fold<Mapped> for TypeFactsHandler<'_, '_, '_> {
 impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, mut ty: Type) -> Type {
         let span = ty.span();
+
+        let _stack = match stack::track(span) {
+            Ok(stack) => stack,
+            Err(_) => return ty,
+        };
 
         // TODO(kdy1): Don't do anything if type fact is none.
 
