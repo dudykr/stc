@@ -108,6 +108,8 @@ pub(crate) struct Ctx {
 
     in_opt_chain: bool,
 
+    reevaluate_type_of_complex_expr: bool,
+
     in_declare: bool,
     in_fn_without_body: bool,
     in_global: bool,
@@ -490,6 +492,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_switch_case_test: false,
                 in_computed_prop_name: false,
                 in_opt_chain: false,
+                reevaluate_type_of_complex_expr: false,
                 in_declare: is_dts,
                 in_fn_without_body: false,
                 in_global: false,
