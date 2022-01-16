@@ -1,5 +1,5 @@
 use crate::{
-    analyzer::{control_flow::CondFacts, types::NormalizeTypeOpts, util::ResultExt, Analyzer, Ctx, ScopeKind},
+    analyzer::{types::NormalizeTypeOpts, util::ResultExt, Analyzer, Ctx, ScopeKind},
     ty::Type,
     util::is_str_or_union,
     validator,
@@ -29,71 +29,6 @@ enum ForHeadKind {
 }
 
 impl Analyzer<'_, '_> {
-    /// We evaluate loop bodies multiple time.
-    /// But actually we don't report errors
-    ///
-    /// If type does not change due to a loop, we evaluate
-    fn validate_loop_body_with_scope(&mut self, test: Option<&RExpr>, body: &RStmt) -> ValidationResult<()> {
-        let mut orig_facts = self.cur_facts.take();
-
-        let mut prev_facts = orig_facts.true_facts.take();
-        let prev_false_facts = orig_facts.false_facts.take();
-        let mut facts_of_prev_body_eval = CondFacts::default();
-        let mut last = false;
-        let mut orig_vars = Some(self.scope.vars.clone());
-
-        loop {
-            let mut facts_from_body: CondFacts = self.with_child_with_hook(
-                ScopeKind::LoopBody { last },
-                prev_facts.clone(),
-                |child: &mut Analyzer| {
-                    child.ctx.ignore_errors |= !last;
-
-                    {
-                        let ctx = Ctx {
-                            in_cond: true,
-                            ..child.ctx
-                        };
-                        test.visit_with(&mut *child.with_ctx(ctx));
-                    }
-
-                    body.visit_with(child);
-
-                    Ok(child.cur_facts.true_facts.take())
-                },
-                |analyzer: &mut Analyzer| {
-                    if last {
-                        analyzer.scope.vars = orig_vars.take().unwrap();
-                    }
-                },
-            )?;
-
-            facts_from_body.excludes.clear();
-
-            if last {
-                prev_facts += facts_from_body;
-                break;
-            }
-
-            if facts_of_prev_body_eval == facts_from_body {
-                last = true;
-            } else {
-                facts_of_prev_body_eval = facts_from_body.clone();
-            }
-
-            // We copy `actual` types and type facts from the child scope.
-
-            prev_facts.override_vars_using(&mut facts_from_body);
-
-            prev_facts += facts_from_body;
-        }
-
-        self.cur_facts.true_facts += prev_facts;
-        self.cur_facts.false_facts += prev_false_facts;
-
-        Ok(())
-    }
-
     #[extra_validator]
     fn validate_lhs_of_for_loop(&mut self, e: &RVarDeclOrPat, elem_ty: &Type, kind: ForHeadKind) {
         let span = e.span();
@@ -383,9 +318,7 @@ impl Analyzer<'_, '_> {
 
                 child.validate_lhs_of_for_loop(left, &elem_ty, kind);
 
-                child
-                    .validate_loop_body_with_scope(None, &body)
-                    .report(&mut child.storage);
+                body.visit_with(child);
 
                 Ok(())
             },
@@ -422,8 +355,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RWhileStmt) {
-        self.validate_loop_body_with_scope(Some(&node.test), &node.body)
-            .report(&mut self.storage);
+        node.test.visit_with(self);
+        node.body.visit_with(self);
 
         Ok(())
     }
@@ -433,9 +366,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RDoWhileStmt) {
         node.body.visit_with(self);
-
-        self.validate_loop_body_with_scope(Some(&node.test), &node.body)
-            .report(&mut self.storage);
+        node.test.visit_with(self);
 
         Ok(())
     }
