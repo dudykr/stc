@@ -49,4 +49,5 @@
     "itertools",
     "rnode"
   ],
+  "rust-analyzer.checkOnSave.command": "check",
 }

@@ -1,3 +1,5 @@
 // We need OUT_DIR
 
-fn main() {}
+fn main() {
+    println!("cargo:rerun-if-changed=build.rs");
+}

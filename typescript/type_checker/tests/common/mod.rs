@@ -62,9 +62,9 @@ where
                 name: TestName::DynTestName(test_name),
                 ignore,
                 should_panic: No,
-                allow_fail: false,
                 compile_fail: Default::default(),
                 no_run: Default::default(),
+                ignore_message: Default::default(),
             },
             testfn: DynTestFn(box move || {
                 eprintln!("\n\n========== Running test {}\nSource:\n{}\n", file_name, input);

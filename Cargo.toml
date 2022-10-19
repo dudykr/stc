@@ -33,12 +33,10 @@ tracing = {version = "0.1.26", features = ["release_max_level_off"]}
 tracing-subscriber = {version = "0.2.19", features = ["env-filter"]}
 
 [profile.release]
-codegen-units = 1
-# lto = true
 debug = true
+lto = true
 
 [profile.bench]
-codegen-units = 1
 debug = true
 
 [profile.dev]

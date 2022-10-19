@@ -4,20 +4,6 @@ rustflags = [
   "procmacro2_semver_exempt",
   "-Z",
   "thinlto=no",
-  "-C",
-  "target-feature=+sse2,+aes",
-  "-Zshare-generics=y",
-]
-
-[target.x86_64-apple-darwin]
-rustflags = [
-  "--cfg",
-  "procmacro2_semver_exempt",
-  "-Z",
-  "thinlto=no",
-  "-C",
-  "target-feature=+sse2,+aes",
-  "-Zshare-generics=y",
 ]
 
 [net]

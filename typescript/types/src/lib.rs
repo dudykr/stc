@@ -532,7 +532,7 @@ pub struct Ref {
     pub metadata: RefMetadata,
 }
 
-assert_eq_size!(Ref, [u8; 80]);
+assert_eq_size!(Ref, [u8; 72]);
 
 impl Debug for Ref {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
@@ -578,7 +578,7 @@ pub struct ImportType {
     pub metadata: ImportTypeMetadata,
 }
 
-assert_eq_size!(ImportType, [u8; 96]);
+assert_eq_size!(ImportType, [u8; 88]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Namespace {
@@ -597,7 +597,7 @@ pub struct Module {
     pub metadata: ModuleTypeMetadata,
 }
 
-assert_eq_size!(Module, [u8; 72]);
+assert_eq_size!(Module, [u8; 64]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Enum {
@@ -1057,7 +1057,7 @@ pub struct Predicate {
     pub metadata: PredicateMetadata,
 }
 
-assert_eq_size!(Predicate, [u8; 72]);
+assert_eq_size!(Predicate, [u8; 64]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TypeOrSpread {

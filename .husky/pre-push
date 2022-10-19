@@ -3,5 +3,6 @@
 set -eu
 
 export HUSKY=1;
-export STC_IGNORE_WIP=1
-(cd ./typescript/type_checker && ./scripts/test.sh)
+# We don't use this anymore
+# export STC_IGNORE_WIP=1
+# (cd ./typescript/type_checker && ./scripts/test.sh)

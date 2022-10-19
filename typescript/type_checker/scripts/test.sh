@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eux
+set -eu
 
 err_handler () {
     ./scripts/_/notify.sh 'Test failed!'
@@ -17,6 +17,6 @@ export RUST_MIN_STACK=$((16 * 1024 * 1024))
 # We prevent regression using faster checks
 cargo test -p stc_ts_file_analyzer --test base
 
-WIP_STATS=1 cargo test --color always -q --test tsc
+TEST="$@" WIP_STATS=1 cargo test --color always -q --test tsc
 
 ./scripts/_/notify.sh 'Test finished!'
