@@ -972,7 +972,14 @@ impl Analyzer<'_, '_> {
                     // Don't know exact reason, but you can index `{ [x: string]: boolean }`
                     // with number type.
                     //
+                    // Reverse also works, although it returns any
+                    //
                     // I guess it's because javascript work in that way.
+
+                    if index_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) && prop_ty.is_str() {
+                        return Ok(Some(Type::any(span, Default::default())));
+                    }
+
                     let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
                         && prop_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
                         || self.assign(span, &mut Default::default(), &index_ty, &prop_ty).is_ok();
