@@ -49,7 +49,7 @@ stc_ts_type_form = {path = "../stc_ts_type_form"}
 stc_ts_type_ops = {path = "../stc_ts_type_ops"}
 stc_ts_types = {path = "../stc_ts_types"}
 stc_ts_utils = {path = "../stc_ts_utils"}
-stc_utils = {path = "./stc_utils"}
+stc_utils = {path = "../stc_utils"}
 string_enum = "0.3.1"
 swc_atoms = "0.2.9"
 swc_common = {version = "0.14.6", features = ["concurrent"]}

@@ -27,5 +27,5 @@ swc_graph_analyzer = "0.1.1"
 tracing = "0.1.29"
 
 [dev-dependencies]
-stc_ts_testing = {path = "../stc_testing"}
+stc_ts_testing = {path = "../stc_ts_testing"}
 testing = "0.15.1"
