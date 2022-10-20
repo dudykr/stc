@@ -820,7 +820,7 @@ impl Analyzer<'_, '_> {
         false
     }
 
-    #[instrument(skip(self, span, obj, prop, type_mode, members, opts))]
+    #[cfg_attr(debug_assertions, instrument(skip_all))]
     fn access_property_of_type_elements(
         &mut self,
         span: Span,
