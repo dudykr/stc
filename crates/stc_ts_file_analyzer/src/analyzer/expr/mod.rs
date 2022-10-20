@@ -951,7 +951,7 @@ impl Analyzer<'_, '_> {
         }
 
         let mut has_index_signature = false;
-        for el in members.iter() {
+        for el in members.iter().rev() {
             match el {
                 TypeElement::Index(IndexSignature {
                     ref params,
