@@ -980,8 +980,7 @@ impl Analyzer<'_, '_> {
                         return Ok(Some(Type::any(span, Default::default())));
                     }
 
-                    let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
-                        && prop_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
+                    let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) && prop_ty.is_num())
                         || self.assign(span, &mut Default::default(), &index_ty, &prop_ty).is_ok();
 
                     if indexed {
