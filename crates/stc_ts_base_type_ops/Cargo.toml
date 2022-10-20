@@ -9,11 +9,11 @@ version = "0.1.0"
 
 [dependencies]
 rayon = "1.5.1"
-rnode = {path = "../../../rnode/"}
-stc_ts_ast_rnode = {path = "../../ast_rnode/"}
-stc_ts_types = {path = "../../types/"}
-stc_utils = {path = "../../../utils/"}
-stc_visit = {path = "../../../visit/"}
+rnode = {path = "../rnode/"}
+stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
+stc_ts_types = {path = "../stc_ts_types"}
+stc_utils = {path = "../stc_utils"}
+stc_visit = {path = "../stc_visit"}
 swc_atoms = "0.2.9"
 swc_common = "0.14.6"
 swc_ecma_ast = "0.58.0"
