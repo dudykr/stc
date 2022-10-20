@@ -420,6 +420,22 @@ impl Analyzer<'_, '_> {
         let ty = ty.normalize();
 
         match ty {
+            Type::Instance(Instance { ty, .. }) => {
+                // Normalize further
+                if ty.normalize().is_ref_type() {
+                    let ty = self
+                        .normalize_for_assign(span, ty)
+                        .context("failed to normalize instance type")?;
+
+                    if ty.normalize().is_keyword() {
+                        return Ok(ty);
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        match ty {
             Type::Ref(Ref {
                 span,
                 type_name: RTsEntityName::Ident(type_name),
