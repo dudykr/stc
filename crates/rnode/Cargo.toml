@@ -9,6 +9,6 @@ version = "0.0.0"
 
 [dependencies]
 Inflector = "0.11.4"
-rnode_macros = {path = "./macros"}
-stc_visit = {path = "../visit"}
+rnode_macros = {path = "./rnode_macros"}
+stc_visit = {path = "../stc_visit"}
 swc_common = "0.14.6"
