@@ -1,0 +1,24 @@
+warning: Type
+ --> $DIR/tests/pass/enum/asssignability/1.ts:6:9
+  |
+6 | var e = E.A;
+  |         ^
+  |
+  = note: E
+
+warning: Type
+ --> $DIR/tests/pass/enum/asssignability/1.ts:6:9
+  |
+6 | var e = E.A;
+  |         ^^^
+  |
+  = note: E.A
+
+warning: Type
+ --> $DIR/tests/pass/enum/asssignability/1.ts:9:21
+  |
+9 |     var p: Number = e;
+  |                     ^
+  |
+  = note: E
+
