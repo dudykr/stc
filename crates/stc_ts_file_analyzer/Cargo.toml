@@ -38,18 +38,18 @@ stc_ts_base_type_ops = {path = "../stc_ts_base_type_ops"}
 stc_ts_builtin_types = {path = "../stc_ts_builtin_types"}
 stc_ts_dts_mutations = {path = "../stc_ts_dts_mutations"}
 stc_ts_env = {path = "../stc_ts_env"}
-stc_ts_errors = {path = "../../stc_ts_errors"}
-stc_ts_file_analyzer_macros = {path = "./stc_ts_file_analyzer_macros"}
-stc_ts_generics = {path = "../generics"}
-stc_ts_ordering = {path = "../ordering"}
-stc_ts_simple_ast_validations = {path = "../simple_ast_validations/"}
-stc_ts_storage = {path = "../../storage"}
-stc_ts_type_cache = {path = "../type_cache/"}
-stc_ts_type_form = {path = "../type_form"}
-stc_ts_type_ops = {path = "../type_ops"}
-stc_ts_types = {path = "../../types"}
-stc_ts_utils = {path = "../../utils"}
-stc_utils = {path = "../../../utils"}
+stc_ts_errors = {path = "../stc_ts_errors"}
+stc_ts_file_analyzer_macros = {path = "../stc_ts_file_analyzer_macros"}
+stc_ts_generics = {path = "../stc_ts_generics"}
+stc_ts_ordering = {path = "../stc_ts_ordering"}
+stc_ts_simple_ast_validations = {path = "../stc_ts_simple_ast_validations"}
+stc_ts_storage = {path = "../stc_ts_storage"}
+stc_ts_type_cache = {path = "../stc_ts_type_cache"}
+stc_ts_type_form = {path = "../stc_ts_type_form"}
+stc_ts_type_ops = {path = "../stc_ts_type_ops"}
+stc_ts_types = {path = "../stc_ts_types"}
+stc_ts_utils = {path = "../stc_ts_utils"}
+stc_utils = {path = "./stc_utils"}
 string_enum = "0.3.1"
 swc_atoms = "0.2.9"
 swc_common = {version = "0.14.6", features = ["concurrent"]}
@@ -60,8 +60,8 @@ swc_ecma_utils = "0.52.0"
 tracing = "0.1.26"
 
 [dev-dependencies]
-stc_testing = {path = "../../../testing"}
-stc_ts_testing = {path = "../../testing"}
+stc_testing = {path = "../stc_testing"}
+stc_ts_testing = {path = "../stc_ts_testing"}
 swc_ecma_parser = "0.78.5"
 swc_ecma_transforms = "0.94.0"
 swc_ecma_visit = "0.44.0"

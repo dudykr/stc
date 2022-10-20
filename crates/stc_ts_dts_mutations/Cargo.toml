@@ -9,6 +9,6 @@ version = "0.1.0"
 
 [dependencies]
 fxhash = "0.2.1"
-rnode = {path = "../../rnode"}
-stc_ts_ast_rnode = {path = "../ast_rnode"}
-stc_ts_types = {path = "../types"}
+rnode = {path = "../rnode"}
+stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
+stc_ts_types = {path = "../stc_ts_types"}
