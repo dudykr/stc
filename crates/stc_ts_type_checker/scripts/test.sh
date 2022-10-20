@@ -15,6 +15,7 @@ export RUST_LOG=debug,swc_common=off
 export RUST_MIN_STACK=$((16 * 1024 * 1024))
 
 # We prevent regression using faster checks
+touch ../stc_ts_file_analyzer/tests/base.rs
 UPDATE=1 cargo test -p stc_ts_file_analyzer --test base
 
 TEST="$@" WIP_STATS=1 cargo test --color always -q --test tsc
