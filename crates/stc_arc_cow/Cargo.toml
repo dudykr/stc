@@ -1,0 +1,14 @@
+[package]
+authors = ["강동윤 <kdy1997.dev@gmail.com>"]
+edition = "2018"
+name = "stc_arc_cow"
+publish = false
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+stc_visit = {path = "../stc_visit"}
+swc_common = "0.14.6"
+tracing = "0.1.26"
+triomphe = "0.1.3"

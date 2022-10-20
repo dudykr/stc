@@ -1,0 +1,20 @@
+[package]
+authors = ["강동윤 <kdy1997.dev@gmail.com>"]
+edition = "2018"
+name = "stc_ts_type_form"
+publish = false
+version = "0.1.0"
+
+[lib]
+
+[dependencies]
+itertools = "0.10.1"
+stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
+stc_ts_types = {path = "../stc_ts_types"}
+stc_utils = {path = "../stc_utils"}
+stc_visit = {path = "../stc_visit"}
+swc_common = "0.14.6"
+swc_ecma_ast = "0.58.0"
+
+[dev-dependencies]
+stc_testing = {path = "../stc_testing"}

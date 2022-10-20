@@ -1,7 +1,7 @@
 {
   "name": "stc-workspace",
   "workspaces": [
-    "typescript/analyzer/file_analyzer"
+    "crates/stc_ts_file_analyzer"
   ],
   "private": true,
   "version": "0.0.0",

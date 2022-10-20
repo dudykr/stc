@@ -1,4 +1,6 @@
-use crate::check::CheckCommand;
+extern crate swc_node_base;
+
+use crate::check::IterateCommand;
 use anyhow::Error;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
@@ -25,7 +27,7 @@ mod check;
     rename_all = "camel"
 )]
 enum Command {
-    Check(CheckCommand),
+    Iterate(IterateCommand),
 }
 
 fn main() -> Result<(), Error> {
@@ -56,14 +58,16 @@ fn main() -> Result<(), Error> {
         Arc::new(Handler::with_emitter(true, false, emitter))
     };
 
+    rayon::ThreadPoolBuilder::new().build_global().unwrap();
+
     {
         let end = Instant::now();
 
-        log::trace!("Initialized in {:?}", end - start);
+        log::info!("Initialization took {:?}", end - start);
     }
 
     match command {
-        Command::Check(cmd) => {
+        Command::Iterate(cmd) => {
             let libs = {
                 let start = Instant::now();
 
@@ -81,24 +85,26 @@ fn main() -> Result<(), Error> {
                 libs
             };
 
-            let mut checker = Checker::new(
-                cm.clone(),
-                handler.clone(),
-                Env::simple(
-                    Rule { ..Default::default() },
-                    EsVersion::latest(),
-                    ModuleConfig::None,
-                    &libs,
-                ),
-                TsConfig { ..Default::default() },
-                None,
-                Arc::new(NodeResolver),
+            let env = Env::simple(
+                Rule { ..Default::default() },
+                EsVersion::latest(),
+                ModuleConfig::None,
+                &libs,
             );
 
             let path = PathBuf::from(cmd.file);
 
             {
                 let start = Instant::now();
+
+                let checker = Checker::new(
+                    cm.clone(),
+                    handler.clone(),
+                    env.clone(),
+                    TsConfig { ..Default::default() },
+                    None,
+                    Arc::new(NodeResolver),
+                );
 
                 checker.load_typings(&path, None, cmd.types.as_deref());
 
@@ -107,11 +113,30 @@ fn main() -> Result<(), Error> {
                 log::info!("Loading typing libraries took {:?}", end - start);
             }
 
-            checker.check(Arc::new(FileName::Real(path)));
+            let mut errors = vec![];
+
+            let start = Instant::now();
+            for _ in 0..1000 {
+                let mut checker = Checker::new(
+                    cm.clone(),
+                    handler.clone(),
+                    env.clone(),
+                    TsConfig { ..Default::default() },
+                    None,
+                    Arc::new(NodeResolver),
+                );
+
+                checker.check(Arc::new(FileName::Real(path.clone())));
+
+                errors.extend(checker.take_errors());
+            }
+            let end = Instant::now();
+
+            log::info!("Checking 1000 times took {:?}", end - start);
 
             {
                 let start = Instant::now();
-                for err in checker.take_errors() {
+                for err in errors {
                     err.emit(&handler);
                 }
 

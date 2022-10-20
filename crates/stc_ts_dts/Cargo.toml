@@ -1,0 +1,37 @@
+[package]
+authors = ["강동윤 <kdy1997.dev@gmail.com>"]
+build = "build.rs"
+edition = "2018"
+name = "stc_ts_dts"
+publish = false
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+fxhash = "0.2.1"
+retain_mut = "0.1.1"
+rnode = {path = "../rnode/"}
+stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
+stc_ts_dts_mutations = {path = "../stc_ts_dts_mutations"}
+stc_ts_env = {path = "../stc_ts_env"}
+stc_ts_types = {path = "../stc_ts_types"}
+stc_ts_utils = {path = "../stc_ts_utils"}
+swc_common = "0.14.6"
+swc_ecma_ast = "0.58.0"
+
+[dev-dependencies]
+anyhow = "1.0.37"
+stc_testing = {path = "../stc_testing"}
+stc_ts_builtin_types = {path = "../stc_ts_builtin_types"}
+stc_ts_file_analyzer = {path = "../stc_ts_file_analyzer"}
+stc_ts_storage = {path = "../stc_ts_storage"}
+swc_common = "0.14.6"
+swc_ecma_ast = "0.58.0"
+swc_ecma_codegen = "0.80.0"
+swc_ecma_parser = "0.78.5"
+swc_ecma_transforms = "0.94.0"
+swc_ecma_utils = "0.52.0"
+swc_ecma_visit = "0.44.0"
+testing = "0.15.1"
+testing_macros = "0.1.1"
