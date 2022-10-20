@@ -18,11 +18,11 @@ no-threading = [
 anyhow = "1"
 env_logger = "0.9.0"
 log = "0.4.14"
-stc_ts_builtin_types = {path = "./typescript/builtin_types/"}
-stc_ts_env = {path = "./typescript/analyzer/env/"}
-stc_ts_file_analyzer = {path = "./typescript/analyzer/file_analyzer/"}
-stc_ts_module_loader = {path = "./typescript/module_loader"}
-stc_ts_type_checker = {path = "./typescript/type_checker"}
+stc_ts_builtin_types = {path = "./crates/stc_ts_builtin_types"}
+stc_ts_env = {path = "./crates/stc_ts_env"}
+stc_ts_file_analyzer = {path = "./crates/stc_ts_file_analyzer"}
+stc_ts_module_loader = {path = "./crates/stc_ts_module_loader"}
+stc_ts_type_checker = {path = "./crates/stc_ts_type_checker"}
 stc_utils = {path = "utils"}
 structopt = "0.3.20"
 swc_common = {version = "0.14.6", features = ["tty-emitter"]}
