@@ -909,10 +909,12 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub fn declare_vars(&mut self, kind: VarKind, pat: &RPat) -> ValidationResult<()> {
         self.declare_vars_inner_with_ty(kind, pat, None, None, None)
     }
 
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub fn declare_vars_with_ty(
         &mut self,
         kind: VarKind,
