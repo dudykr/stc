@@ -278,6 +278,22 @@ impl Fold<Type> for Simplifier<'_> {
                 );
             }
 
+            Type::Intersection(ref i) => {
+                let is_str = i.types.iter().any(|ty| ty.is_str());
+                let is_num = i.types.iter().any(|ty| ty.is_num());
+                let is_bool = i.types.iter().any(|ty| ty.is_bool());
+
+                // LHS is never.
+                if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
+                    return Type::never(
+                        i.span,
+                        KeywordTypeMetadata {
+                            common: i.metadata.common,
+                        },
+                    );
+                }
+            }
+
             Type::Mapped(Mapped {
                 span,
                 type_param:
