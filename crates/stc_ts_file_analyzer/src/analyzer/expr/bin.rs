@@ -560,7 +560,12 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                return Err(Error::InvalidBinaryOp { span, op });
+                return Err(Error::InvalidBinaryOp {
+                    span,
+                    op,
+                    left: box lt,
+                    right: box rt,
+                });
             }
             op!("*") | op!("/") => {
                 no_unknown!();
