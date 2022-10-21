@@ -40,6 +40,7 @@ mod type_form;
 
 #[derive(Debug, Clone)]
 enum InferredType {
+    /// Unions have strange inference rules.
     Union(Type),
     Other(Vec<Type>),
 }
@@ -1272,6 +1273,40 @@ impl Analyzer<'_, '_> {
                         .context("failed to in infer element type of an intersection type")?;
                     data.push(inferred);
                 }
+
+                let mut map = FxHashMap::<_, Vec<_>>::default();
+                for item in data {
+                    for (name, ty) in item.type_params {
+                        map.entry(name).or_default().push(ty);
+                    }
+                }
+
+                for (name, types) in map {
+                    if types.len() == 1 {
+                        inferred.type_params.insert(name, types.into_iter().next().unwrap());
+                    } else {
+                        // TODO(kdy1): Check inference logic of union mixed with intersection
+                        let types = types
+                            .into_iter()
+                            .map(|ty| match ty {
+                                InferredType::Union(v) => v,
+                                InferredType::Other(v) => Type::new_union_without_dedup(span, v),
+                            })
+                            .collect();
+
+                        inferred.type_params.insert(
+                            name,
+                            InferredType::Other(vec![Type::Intersection(Intersection {
+                                types,
+                                span,
+                                metadata: Default::default(),
+                            })
+                            .freezed()]),
+                        );
+                    }
+                }
+
+                return Ok(());
             }
 
             _ => {}
