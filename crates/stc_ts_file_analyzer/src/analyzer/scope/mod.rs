@@ -1628,6 +1628,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Merge with declare_vars_*
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub fn declare_complex_vars(
         &mut self,
         kind: VarKind,

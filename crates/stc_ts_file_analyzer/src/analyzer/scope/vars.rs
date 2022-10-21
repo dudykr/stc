@@ -783,6 +783,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Remove this. All logics are merged into add_vars.
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn declare_vars_inner_with_ty(
         &mut self,
         kind: VarKind,
