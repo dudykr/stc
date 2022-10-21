@@ -10,10 +10,10 @@ use crate::{
     ValidationResult,
 };
 use itertools::Itertools;
-use rnode::NodeId;
+use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
-use stc_ts_type_ops::Fix;
+use stc_ts_type_ops::{tuple_to_array::TupleToArray, Fix};
 use stc_ts_types::{Array, Key, LitType, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, TryOpt};
@@ -162,6 +162,16 @@ impl Analyzer<'_, '_> {
                     .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref().or(ty.as_ref())))
                     .report(&mut self.storage)
                     .unwrap_or_else(|| Type::any(span, Default::default()));
+
+                if self.ctx.is_fn_param && type_ann.is_none() {
+                    // If the declaration includes an initializer expression (which is permitted
+                    // only when the parameter list occurs in conjunction with a
+                    // function body), the parameter type is the widened form (section
+                    // 3.11) of the type of the initializer expression.
+
+                    right = right.fold_with(&mut TupleToArray);
+                }
+
                 right.make_clone_cheap();
 
                 if let Some(left) = &type_ann {

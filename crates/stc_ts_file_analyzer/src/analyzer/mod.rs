@@ -196,6 +196,8 @@ pub(crate) struct Ctx {
 
     /// `true` for top-level type annotations.
     is_not_topmost_type: bool,
+
+    is_fn_param: bool,
 }
 
 impl Ctx {
@@ -287,6 +289,8 @@ struct AnalyzerData {
     cache: TypeCache,
 
     checked_for_async_iterator: bool,
+
+    is_fn_param: bool,
 }
 
 #[derive(Debug, Default)]
@@ -527,6 +531,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 disallow_suggesting_property_on_no_var: false,
                 in_unreachable: false,
                 is_not_topmost_type: false,
+                is_fn_param: false,
             },
             loader,
             is_builtin,
