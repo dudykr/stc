@@ -65,8 +65,8 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
     let expected_module = drop_span(expected_module.fold_with(&mut Normalizer));
     println!("---------- Expected ----------\n{}", expected_code);
 
-    let mut generated = NormalizedOutput::from(String::from("<iinvalid>"));
-    let mut expected = NormalizedOutput::from(String::from("<iinvalid>"));
+    let mut generated = NormalizedOutput::from(String::from("<invalid>"));
+    let mut expected = NormalizedOutput::from(String::from("<invalid>"));
 
     let res = testing::Tester::new().print_errors(|cm, handler| {
         let handler = Arc::new(handler);

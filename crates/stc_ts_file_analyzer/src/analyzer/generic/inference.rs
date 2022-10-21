@@ -14,7 +14,7 @@ use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
-use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union};
+use stc_ts_type_ops::generalization::prevent_generalize;
 use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata,
     LitType, Operator, Ref, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
@@ -24,8 +24,8 @@ use std::{
     collections::{hash_map::Entry, HashMap},
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
-use swc_ecma_ast::{TsKeywordType, TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{error, info, instrument};
+use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use tracing::{error, info};
 
 /// # Default
 ///
@@ -146,7 +146,7 @@ impl Analyzer<'_, '_> {
     ///
     /// ## Type literal
     ///
-    /// If one of type literal is `specified` accoarding to the metadata, type
+    /// If one of type literal is `specified` according to the metadata, type
     /// inference is done.
     ///
     /// See:

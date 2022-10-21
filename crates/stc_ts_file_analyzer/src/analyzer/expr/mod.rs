@@ -49,7 +49,7 @@ use std::{
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
-use tracing::{debug, info, instrument, warn, Level};
+use tracing::{debug, info, warn, Level};
 use ty::TypeExt;
 
 mod array;
