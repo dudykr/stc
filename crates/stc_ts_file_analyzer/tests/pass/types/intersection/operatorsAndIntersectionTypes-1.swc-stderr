@@ -1,0 +1,97 @@
+warning: Type
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:4:12
+  |
+4 |     return "21EC2020-3AEA-4069-A2DD-08002B30309D" as Guid;
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: Guid
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:7:37
+  |
+7 | let map1: { [x: string]: number } = {};
+  |                                     ^^
+  |
+  = note: {
+          }
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:8:12
+  |
+8 | let guid = createGuid();
+  |            ^^^^^^^^^^
+  |
+  = note: () => Guid
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:8:12
+  |
+8 | let guid = createGuid();
+  |            ^^^^^^^^^^^^
+  |
+  = note: Guid
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:9:1
+  |
+9 | map1[guid] = 123;  // Can with tagged string
+  | ^^^^
+  |
+  = note: {
+              [x: string]: number;
+          }
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:9:6
+  |
+9 | map1[guid] = 123;  // Can with tagged string
+  |      ^^^^
+  |
+  = note: (string & {
+              $Guid: any;
+          })
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:9:1
+  |
+9 | map1[guid] = 123;  // Can with tagged string
+  | ^^^^^^^^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:9:1
+  |
+9 | map1[guid] = 123;  // Can with tagged string
+  | ^^^^^^^^^^^^^^^^
+  |
+  = note: 123
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:11:19
+   |
+11 | export const s3 = guid + guid;
+   |                   ^^^^
+   |
+   = note: (string & {
+               $Guid: any;
+           })
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:11:26
+   |
+11 | export const s3 = guid + guid;
+   |                          ^^^^
+   |
+   = note: (string & {
+               $Guid: any;
+           })
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:11:19
+   |
+11 | export const s3 = guid + guid;
+   |                   ^^^^^^^^^^^
+   |
+   = note: string
+
