@@ -1,0 +1,112 @@
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:36
+  |
+7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                    ^^^^^^^^^
+  |
+  = note: undefined
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:35
+  |
+7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                   ^^^^^^^^^^^
+  |
+  = note: [any]
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:48
+  |
+7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                                ^^^^^^^^^
+  |
+  = note: undefined
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:61
+  |
+7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                                             ^^^^^^^^^
+  |
+  = note: undefined
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:72
+  |
+7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                                                        ^^^^^^^^^
+  |
+  = note: undefined
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:60
+  |
+7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                                            ^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: [any, any]
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:59
+  |
+7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                                           ^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: [[any, any]]
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:7:34
+  |
+7 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: [[any], undefined, [[any, any]]]
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:20
+  |
+9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
+  |                    ^^^^^^^^^^
+  |
+  = note: ["string"]
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:36
+  |
+9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
+  |                                    ^^^^^^^^^^^^^
+  |
+  = note: [true, false]
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:35
+  |
+9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
+  |                                   ^^^^^^^^^^^^^^^
+  |
+  = note: [[true, false]]
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:19
+  |
+9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
+  |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: [["string"], 1, [[true, false]]]
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:16
+  |
+9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
+  |                ^^
+  |
+  = note: ([[a], b, [[c, d]]]?: ((any[] | any | any[][]))[]) => void
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-4.ts:9:16
+  |
+9 | export default b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: void
+
