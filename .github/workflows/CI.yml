@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  - push
+  - pull_request
+
+env:
+  CI: 1
+  CARGO_INCREMENTAL: 0
+  CARGO_TERM_COLOR: "always"
+  DIFF: 0
+  # For faster CI
+  RUST_LOG: "off"
+  # https://github.com/swc-project/swc/pull/3742
+  RUST_MIN_STACK: 4194304
+
+jobs:
+  cargo-fmt:
+    name: Cargo fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # We explicitly do this to cache properly.
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: rustfmt
+
+      - run: cargo fmt --all -- --check
