@@ -14,7 +14,7 @@ use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::{widen::Widen, Fix};
-use stc_ts_types::{Array, Key, LitType, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
+use stc_ts_types::{Array, Key, KeywordType, LitType, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, TryOpt};
 use std::borrow::Cow;
@@ -472,7 +472,8 @@ impl Analyzer<'_, '_> {
                                 disallow_unknown_object_property: true,
                                 ..self.ctx
                             };
-                            let prop_ty = ty.as_ref().try_map(|ty| {
+
+                            let mut prop_ty = ty.as_ref().try_map(|ty| {
                                 self.with_ctx(ctx)
                                     .access_property(
                                         span,
@@ -501,6 +502,25 @@ impl Analyzer<'_, '_> {
                                     )
                                     .ok()
                             });
+
+                            if prop.value.is_some() {
+                                prop_ty = prop_ty.map(|ty| {
+                                    // Optional
+                                    ty.map(|ty| {
+                                        Type::new_union(
+                                            span,
+                                            vec![
+                                                ty,
+                                                Type::Keyword(KeywordType {
+                                                    span,
+                                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                                    metadata: Default::default(),
+                                                }),
+                                            ],
+                                        )
+                                    })
+                                });
+                            }
 
                             match prop_ty {
                                 Ok(prop_ty) => {
