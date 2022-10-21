@@ -17,7 +17,6 @@ use stc_utils::cache::ALLOW_DEEP_CLONE;
 use std::iter::once;
 use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::instrument;
 use ty::TypeExt;
 
 impl Analyzer<'_, '_> {
