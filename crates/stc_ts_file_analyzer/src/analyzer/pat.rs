@@ -12,12 +12,13 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use rnode::VisitWith;
+use rnode::{FoldWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RAssignPat, RAssignPatProp, RBindingIdent, RExpr, RIdent, RKeyValuePatProp, RKeyValueProp, RObjectPat,
     RObjectPatProp, RParam, RPat, RProp, RPropOrSpread, RRestPat,
 };
 use stc_ts_errors::{Error, Errors};
+use stc_ts_type_ops::tuple_to_array::TupleToArray;
 use stc_ts_types::{
     Array, ArrayMetadata, CommonTypeMetadata, Instance, Key, KeywordType, PropertySignature, Tuple, TupleElement,
     TypeElMetadata, TypeElement, TypeLit, TypeLitMetadata,
@@ -390,7 +391,20 @@ impl Analyzer<'_, '_> {
             Some(v) => Some(v),
             None => match p {
                 RPat::Assign(p) => match self.ctx.pat_mode {
-                    PatMode::Decl => Some(p.right.validate_with_default(self)?.generalize_lit()),
+                    PatMode::Decl => Some({
+                        let mut ty = p.right.validate_with_default(self)?.generalize_lit();
+
+                        if self.ctx.is_fn_param {
+                            // If the declaration includes an initializer expression (which is permitted
+                            // only when the parameter list occurs in conjunction with a
+                            // function body), the parameter type is the widened form (section
+                            // 3.11) of the type of the initializer expression.
+
+                            ty = ty.fold_with(&mut TupleToArray);
+                        }
+
+                        ty
+                    }),
                     PatMode::Assign => Some(default_value_ty.unwrap_or_else(|| Type::any(p.span, Default::default()))),
                 },
                 _ => None,
