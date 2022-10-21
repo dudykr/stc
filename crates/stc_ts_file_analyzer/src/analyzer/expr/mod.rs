@@ -1935,7 +1935,7 @@ impl Analyzer<'_, '_> {
                     Ok(v) => return Ok(v),
                     Err(err) => err,
                 };
-                if *kind == TsKeywordTypeKind::TsObjectKeyword && !self.ctx.diallow_unknown_object_property {
+                if *kind == TsKeywordTypeKind::TsObjectKeyword && !self.ctx.disallow_unknown_object_property {
                     return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                 }
 

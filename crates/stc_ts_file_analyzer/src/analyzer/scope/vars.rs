@@ -390,7 +390,7 @@ impl Analyzer<'_, '_> {
                             used_keys.push(key.clone());
 
                             let ctx = Ctx {
-                                diallow_unknown_object_property: true,
+                                disallow_unknown_object_property: true,
                                 ..self.ctx
                             };
                             let prop_ty = ty.as_ref().try_map(|ty| {
@@ -459,7 +459,7 @@ impl Analyzer<'_, '_> {
                             used_keys.push(key.clone());
 
                             let ctx = Ctx {
-                                diallow_unknown_object_property: true,
+                                disallow_unknown_object_property: true,
                                 ..self.ctx
                             };
                             let prop_ty = ty.as_ref().try_map(|ty| {

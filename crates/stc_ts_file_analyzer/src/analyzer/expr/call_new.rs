@@ -811,7 +811,7 @@ impl Analyzer<'_, '_> {
             }
 
             let ctx = Ctx {
-                diallow_unknown_object_property: true,
+                disallow_unknown_object_property: true,
                 ..self.ctx
             };
             let callee = self

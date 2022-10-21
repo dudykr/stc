@@ -455,7 +455,7 @@ impl Analyzer<'_, '_> {
                             .freezed();
 
                         let ctx = Ctx {
-                            diallow_unknown_object_property: true,
+                            disallow_unknown_object_property: true,
                             ..self.ctx
                         };
                         let prop_ty = self.with_ctx(ctx).access_property(
