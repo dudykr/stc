@@ -1,0 +1,27 @@
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-5.ts:9:19
+  |
+9 | export default c2({});         // Implied type is {z?: number}
+  |                   ^^
+  |
+  = note: {
+          }
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-5.ts:9:16
+  |
+9 | export default c2({});         // Implied type is {z?: number}
+  |                ^^
+  |
+  = note: ({ z =10  }: {
+              z?;
+          }) => void
+
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-5.ts:9:16
+  |
+9 | export default c2({});         // Implied type is {z?: number}
+  |                ^^^^^^
+  |
+  = note: void
+
