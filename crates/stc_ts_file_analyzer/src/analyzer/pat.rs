@@ -233,7 +233,7 @@ impl Analyzer<'_, '_> {
                 }
             })
             .map(|res| res.map(|ty| ty.cheap()))
-            .try_opt()?
+            .transpose()?
             .freezed();
 
         let prev_declaring_len = self.scope.declaring.len();
