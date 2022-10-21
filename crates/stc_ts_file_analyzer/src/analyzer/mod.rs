@@ -289,8 +289,6 @@ struct AnalyzerData {
     cache: TypeCache,
 
     checked_for_async_iterator: bool,
-
-    is_fn_param: bool,
 }
 
 #[derive(Debug, Default)]
