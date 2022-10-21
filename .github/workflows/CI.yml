@@ -28,3 +28,50 @@ jobs:
           components: rustfmt
 
       - run: cargo fmt --all -- --check
+
+  cargo-test:
+    name: Cargo test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Handle line endings
+        shell: bash
+        if: runner.os == 'Windows'
+        run: |
+          git config --system core.autocrlf false
+          git config --system core.eol lf
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      # Source map format
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "yarn"
+
+      # We explicitly do this to cache properly.
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          target: wasm32-wasi
+
+      - name: Install node dependencies
+        shell: bash
+        run: |
+          yarn
+
+      - name: Configure path (windows)
+        shell: bash
+        if: runner.os == 'Windows'
+        run: |
+          echo $(yarn global bin) >> $GITHUB_PATH
+      - name: Cache rust artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: cargo-test
+          cache-on-failure: true
+
+      - name: Run cargo test
+        run: |
+          cargo test --all
