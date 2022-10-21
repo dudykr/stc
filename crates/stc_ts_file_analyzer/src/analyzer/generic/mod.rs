@@ -1263,6 +1263,15 @@ impl Analyzer<'_, '_> {
 
             Type::Intersection(arg) => {
                 // Infer each type, and then intersect each type parameters.
+
+                let mut data = vec![];
+
+                for ty in &arg.types {
+                    let mut inferred = InferData::default();
+                    self.infer_type(span, &mut inferred, param, ty, opts)
+                        .context("failed to in infer element type of an intersection type")?;
+                    data.push(inferred);
+                }
             }
 
             _ => {}
