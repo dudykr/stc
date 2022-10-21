@@ -1260,6 +1260,11 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
             }
+
+            Type::Intersection(arg) => {
+                // Infer each type, and then intersect each type parameters.
+            }
+
             _ => {}
         }
 
