@@ -820,7 +820,7 @@ impl Analyzer<'_, '_> {
         false
     }
 
-    #[instrument(skip(self, span, obj, prop, type_mode, members, opts))]
+    #[cfg_attr(debug_assertions, instrument(skip_all))]
     fn access_property_of_type_elements(
         &mut self,
         span: Span,
@@ -951,7 +951,7 @@ impl Analyzer<'_, '_> {
         }
 
         let mut has_index_signature = false;
-        for el in members.iter() {
+        for el in members.iter().rev() {
             match el {
                 TypeElement::Index(IndexSignature {
                     ref params,
@@ -972,9 +972,15 @@ impl Analyzer<'_, '_> {
                     // Don't know exact reason, but you can index `{ [x: string]: boolean }`
                     // with number type.
                     //
+                    // Reverse also works, although it returns any
+                    //
                     // I guess it's because javascript work in that way.
-                    let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
-                        && prop_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword))
+
+                    if index_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) && prop_ty.is_str() {
+                        return Ok(Some(Type::any(span, Default::default())));
+                    }
+
+                    let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) && prop_ty.is_num())
                         || self.assign(span, &mut Default::default(), &index_ty, &prop_ty).is_ok();
 
                     if indexed {

@@ -72,7 +72,7 @@ warning: Type
 12 |     var e = r2['1'];
    |             ^^^^^^^
    |
-   = note: Object
+   = note: any
 
 warning: Type
   --> $DIR/tests/pass/exprs/member/indexSignature/mutliple/1.ts:13:16

@@ -420,6 +420,22 @@ impl Analyzer<'_, '_> {
         let ty = ty.normalize();
 
         match ty {
+            Type::Instance(Instance { ty, .. }) => {
+                // Normalize further
+                if ty.normalize().is_ref_type() {
+                    let ty = self
+                        .normalize_for_assign(span, ty)
+                        .context("failed to normalize instance type")?;
+
+                    if ty.normalize().is_keyword() {
+                        return Ok(ty);
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        match ty {
             Type::Ref(Ref {
                 span,
                 type_name: RTsEntityName::Ident(type_name),
@@ -1011,6 +1027,15 @@ impl Analyzer<'_, '_> {
 
                 // TODO(kdy1): Optimize unknown rhs handling
 
+                let is_str = i.types.iter().any(|ty| ty.is_str());
+                let is_num = i.types.iter().any(|ty| ty.is_num());
+                let is_bool = i.types.iter().any(|ty| ty.is_bool());
+
+                // LHS is never.
+                if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
+                    return Ok(());
+                }
+
                 for ty in &i.types {
                     match self
                         .assign_with_opts(
@@ -1165,8 +1190,16 @@ impl Analyzer<'_, '_> {
                 let errors = types
                     .iter()
                     .map(|rhs| {
-                        self.assign_inner(data, to, rhs, opts)
-                            .context("tried to assign an element of an intersection type to another type")
+                        self.assign_inner(
+                            data,
+                            to,
+                            rhs,
+                            AssignOpts {
+                                allow_missing_fields: true,
+                                ..opts
+                            },
+                        )
+                        .context("tried to assign an element of an intersection type to another type")
                     })
                     .collect::<Vec<_>>();
                 if errors.iter().any(Result::is_ok) {

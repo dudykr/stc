@@ -2014,6 +2014,7 @@ types/intersection/intersectionMemberOfUnionNarrowsCorrectly.ts
 types/intersection/intersectionOfUnionOfUnitTypes.ts
 types/intersection/intersectionTypeEquivalence.ts
 types/intersection/intersectionTypeInference.ts
+types/intersection/intersectionTypeInference2.ts
 types/intersection/intersectionTypeInference3.ts
 types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
@@ -2322,6 +2323,7 @@ types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityI
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance2.ts
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance4.ts
 types/typeRelationships/assignmentCompatibility/constructSignatureAssignabilityInInheritance5.ts
+types/typeRelationships/assignmentCompatibility/enumAssignability.ts
 types/typeRelationships/assignmentCompatibility/everyTypeAssignableToAny.ts
 types/typeRelationships/assignmentCompatibility/genericCallWithObjectTypeArgsAndInitializers.ts
 types/typeRelationships/assignmentCompatibility/nullAssignableToEveryType.ts
@@ -2460,6 +2462,7 @@ types/union/discriminatedUnionTypes2.ts
 types/union/unionTypeCallSignatures2.ts
 types/union/unionTypeCallSignatures3.ts
 types/union/unionTypeFromArrayLiteral.ts
+types/union/unionTypeIndexSignature.ts
 types/union/unionTypeReduction.ts
 types/uniqueSymbol/uniqueSymbols.ts
 types/uniqueSymbol/uniqueSymbolsDeclarations.ts

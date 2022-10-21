@@ -1,0 +1,60 @@
+warning: Type
+ --> $DIR/tests/pass/types/intersection/intersectionTypeInference2-2.ts:5:4
+  |
+5 | f2(obj, 'a');
+  |    ^^^
+  |
+  = note: ({
+              a: string;
+          } & {
+              b: string;
+          })
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/intersectionTypeInference2-2.ts:5:1
+  |
+5 | f2(obj, 'a');
+  | ^^
+  |
+  = note: <T, Key extends keyof T>(obj: {
+              [K in keyof T]: T[K];
+          }, key: Key) => T[Key]
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/intersectionTypeInference2-2.ts:5:1
+  |
+5 | f2(obj, 'a');
+  | ^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/intersectionTypeInference2-2.ts:6:4
+  |
+6 | f2(obj, 'b');
+  |    ^^^
+  |
+  = note: ({
+              a: string;
+          } & {
+              b: string;
+          })
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/intersectionTypeInference2-2.ts:6:1
+  |
+6 | f2(obj, 'b');
+  | ^^
+  |
+  = note: <T, Key extends keyof T>(obj: {
+              [K in keyof T]: T[K];
+          }, key: Key) => T[Key]
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/intersectionTypeInference2-2.ts:6:1
+  |
+6 | f2(obj, 'b');
+  | ^^^^^^^^^^^^
+  |
+  = note: string
+

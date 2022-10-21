@@ -216,7 +216,7 @@ impl Analyzer<'_, '_> {
     /// Calculates the return type of a new /call expression.
     ///
     /// This method check arguments
-    #[instrument(skip(self, span, expr, callee, kind, args, type_args, type_ann))]
+    #[cfg_attr(debug_assertions, instrument(skip_all))]
     fn extract_call_new_expr_member(
         &mut self,
         span: Span,

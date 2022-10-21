@@ -40,6 +40,7 @@ mod type_form;
 
 #[derive(Debug, Clone)]
 enum InferredType {
+    /// Unions have strange inference rules.
     Union(Type),
     Other(Vec<Type>),
 }
@@ -723,7 +724,7 @@ impl Analyzer<'_, '_> {
                                     return Ok(());
                                 }
 
-                                if !e.is_empty() && !opts.append_type_as_union {
+                                if !e.is_empty() && !opts.append_type_as_union && !is_ok_to_append(&e, arg) {
                                     debug!(
                                         "Cannot append to `{}` (arg = {})",
                                         name,
@@ -755,7 +756,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 let param_ty = Type::union(e.clone()).cheap();
-                                e.push(arg.clone().generalize_lit());
+                                e.push(arg.clone());
 
                                 match param_ty.normalize() {
                                     Type::Param(param) => {
@@ -774,7 +775,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     Entry::Vacant(e) => {
-                        let arg = arg.clone().generalize_lit();
+                        let arg = arg.clone();
 
                         e.insert(InferredType::Other(vec![arg]));
                     }
@@ -1260,6 +1261,54 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
             }
+
+            Type::Intersection(arg) => {
+                // Infer each type, and then intersect each type parameters.
+
+                let mut data = vec![];
+
+                for ty in &arg.types {
+                    let mut inferred = InferData::default();
+                    self.infer_type(span, &mut inferred, param, ty, opts)
+                        .context("failed to in infer element type of an intersection type")?;
+                    data.push(inferred);
+                }
+
+                let mut map = FxHashMap::<_, Vec<_>>::default();
+                for item in data {
+                    for (name, ty) in item.type_params {
+                        map.entry(name).or_default().push(ty);
+                    }
+                }
+
+                for (name, types) in map {
+                    if types.len() == 1 {
+                        inferred.type_params.insert(name, types.into_iter().next().unwrap());
+                    } else {
+                        // TODO(kdy1): Check inference logic of union mixed with intersection
+                        let types = types
+                            .into_iter()
+                            .map(|ty| match ty {
+                                InferredType::Union(v) => v,
+                                InferredType::Other(v) => Type::new_union_without_dedup(span, v),
+                            })
+                            .collect();
+
+                        inferred.type_params.insert(
+                            name,
+                            InferredType::Other(vec![Type::Intersection(Intersection {
+                                types,
+                                span,
+                                metadata: Default::default(),
+                            })
+                            .freezed()]),
+                        );
+                    }
+                }
+
+                return Ok(());
+            }
+
             _ => {}
         }
 
@@ -2576,4 +2625,20 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
         },
         TruePlusMinus::Minus => {}
     }
+}
+
+fn is_ok_to_append(prev: &[Type], arg: &Type) -> bool {
+    for p in prev {
+        if p.is_num_lit() && arg.is_num_lit() {
+            return true;
+        }
+        if p.is_str_lit() && arg.is_str_lit() {
+            return true;
+        }
+        if p.is_bool_lit() && arg.is_bool_lit() {
+            return true;
+        }
+    }
+
+    false
 }

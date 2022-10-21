@@ -10,21 +10,21 @@ use crate::{
 };
 use fxhash::FxHashMap;
 use itertools::Itertools;
-use stc_ts_ast_rnode::RTsEntityName;
+use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union};
 use stc_ts_types::{
-    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordTypeMetadata, Operator, Ref,
-    Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
+    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata,
+    LitType, Operator, Ref, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use std::{
     borrow::Cow,
     collections::{hash_map::Entry, HashMap},
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
-use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use swc_ecma_ast::{TsKeywordType, TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{error, info, instrument};
 
 /// # Default
@@ -818,7 +818,7 @@ impl Analyzer<'_, '_> {
                 Some(Type::Lit(..)) => {}
 
                 Some(ty) => {
-                    if !is_str_lit_or_union(ty) {
+                    if !should_prevent_generalization(ty) {
                         continue;
                     }
                 }
@@ -838,5 +838,23 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
+    }
+}
+
+fn should_prevent_generalization(constraint: &Type) -> bool {
+    match constraint.normalize() {
+        Type::Lit(LitType {
+            lit: RTsLit::Str(..) | RTsLit::Number(..) | RTsLit::Bool(..),
+            ..
+        })
+        | Type::Keyword(KeywordType {
+            kind:
+                TsKeywordTypeKind::TsStringKeyword
+                | TsKeywordTypeKind::TsNumberKeyword
+                | TsKeywordTypeKind::TsBooleanKeyword,
+            ..
+        }) => true,
+        Type::Union(Union { ref types, .. }) => types.iter().all(|ty| should_prevent_generalization(&ty)),
+        _ => false,
     }
 }

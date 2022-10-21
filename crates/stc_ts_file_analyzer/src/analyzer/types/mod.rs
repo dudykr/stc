@@ -15,9 +15,9 @@ use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional,
     ConditionalMetadata, ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection,
-    Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature,
-    ModuleId, Operator, PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type,
-    TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    IntersectionMetadata, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata,
+    MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple,
+    TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -222,7 +222,23 @@ impl Analyzer<'_, '_> {
                     Type::Infer(_) | Type::StaticThis(_) | Type::This(_) => {}
 
                     // Maybe it can be changed in future, but currently noop
-                    Type::Union(_) | Type::Intersection(_) => {}
+                    Type::Union(_) => {}
+
+                    Type::Intersection(ty) => {
+                        let is_str = ty.types.iter().any(|ty| ty.is_str());
+                        let is_num = ty.types.iter().any(|ty| ty.is_num());
+                        let is_bool = ty.types.iter().any(|ty| ty.is_bool());
+
+                        if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
+                            return Ok(Cow::Owned(Type::Keyword(KeywordType {
+                                span: ty.span,
+                                kind: TsKeywordTypeKind::TsNeverKeyword,
+                                metadata: KeywordTypeMetadata {
+                                    common: ty.metadata.common,
+                                },
+                            })));
+                        }
+                    }
 
                     Type::Conditional(c) => {
                         let mut check_type = self
