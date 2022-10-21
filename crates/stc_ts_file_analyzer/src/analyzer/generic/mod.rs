@@ -775,7 +775,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     Entry::Vacant(e) => {
-                        let arg = arg.clone().generalize_lit();
+                        let arg = arg.clone();
 
                         e.insert(InferredType::Other(vec![arg]));
                     }
