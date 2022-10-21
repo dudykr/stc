@@ -724,7 +724,7 @@ impl Analyzer<'_, '_> {
                                     return Ok(());
                                 }
 
-                                if !e.is_empty() && !opts.append_type_as_union {
+                                if !e.is_empty() && !opts.append_type_as_union && !is_ok_to_append(&e, arg) {
                                     debug!(
                                         "Cannot append to `{}` (arg = {})",
                                         name,
@@ -2625,4 +2625,20 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
         },
         TruePlusMinus::Minus => {}
     }
+}
+
+fn is_ok_to_append(prev: &[Type], arg: &Type) -> bool {
+    for p in prev {
+        if p.is_num_lit() && arg.is_num_lit() {
+            return true;
+        }
+        if p.is_str_lit() && arg.is_str_lit() {
+            return true;
+        }
+        if p.is_bool_lit() && arg.is_bool_lit() {
+            return true;
+        }
+    }
+
+    false
 }

@@ -1857,6 +1857,15 @@ impl Type {
         }
     }
 
+    pub fn is_bool_lit(&self) -> bool {
+        match self.normalize() {
+            Type::Lit(LitType {
+                lit: RTsLit::Bool(..), ..
+            }) => true,
+            _ => false,
+        }
+    }
+
     pub fn is_num(&self) -> bool {
         match self.normalize() {
             Type::Keyword(KeywordType {
