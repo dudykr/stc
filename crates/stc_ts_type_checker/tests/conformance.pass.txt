@@ -2014,6 +2014,7 @@ types/intersection/intersectionMemberOfUnionNarrowsCorrectly.ts
 types/intersection/intersectionOfUnionOfUnitTypes.ts
 types/intersection/intersectionTypeEquivalence.ts
 types/intersection/intersectionTypeInference.ts
+types/intersection/intersectionTypeInference2.ts
 types/intersection/intersectionTypeInference3.ts
 types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
