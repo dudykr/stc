@@ -1123,6 +1123,30 @@ impl Analyzer<'_, '_> {
                     // We should expand ref. We expand it with the match
                     // expression below.
                 }
+                Type::EnumVariant(e) => {
+                    // Single-variant enums seem to be treated like a number.
+                    //
+                    // See typeArgumentInferenceWithObjectLiteral.ts
+
+                    let e = self
+                        .find_type(e.ctxt, &e.enum_name)
+                        .context("failed to find an enum for assignment")?;
+
+                    if let Some(e) = e {
+                        for e in e {
+                            match e.normalize() {
+                                Type::Enum(e) => {
+                                    if e.members.len() == 1 {
+                                        return Ok(());
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+
+                    fail!()
+                }
                 _ => fail!(),
             },
 
