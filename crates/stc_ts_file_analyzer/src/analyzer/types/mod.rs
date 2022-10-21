@@ -859,7 +859,7 @@ impl Analyzer<'_, '_> {
                                 self.expand_type_params(&type_params, *ty, Default::default())
                                     .map(Box::new)
                             })
-                            .try_opt()?;
+                            .transpose()?;
                     }
                     //
                     members.push(TypeElement::Property(PropertySignature {

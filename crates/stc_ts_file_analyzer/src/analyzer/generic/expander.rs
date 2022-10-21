@@ -12,7 +12,7 @@ use stc_ts_types::{Id, Interface, KeywordType, TypeParam, TypeParamDecl, TypePar
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
-use tracing::{debug, instrument};
+use tracing::debug;
 
 /// All fields default to false.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]

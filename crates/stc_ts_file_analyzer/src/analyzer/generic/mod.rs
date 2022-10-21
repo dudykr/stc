@@ -32,7 +32,7 @@ use stc_utils::{
 use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, error, info, instrument, span, trace, warn, Level};
+use tracing::{debug, error, info, span, trace, warn, Level};
 
 mod expander;
 mod inference;
