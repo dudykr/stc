@@ -756,7 +756,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 let param_ty = Type::union(e.clone()).cheap();
-                                e.push(arg.clone().generalize_lit());
+                                e.push(arg.clone());
 
                                 match param_ty.normalize() {
                                     Type::Param(param) => {
