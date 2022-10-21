@@ -18,7 +18,7 @@ use stc_ts_ast_rnode::{
     RObjectPatProp, RParam, RPat, RProp, RPropOrSpread, RRestPat,
 };
 use stc_ts_errors::{Error, Errors};
-use stc_ts_type_ops::tuple_to_array::TupleToArray;
+use stc_ts_type_ops::widen::Widen;
 use stc_ts_types::{
     Array, ArrayMetadata, CommonTypeMetadata, Instance, Key, KeywordType, PropertySignature, Tuple, TupleElement,
     TypeElMetadata, TypeElement, TypeLit, TypeLitMetadata,
@@ -400,7 +400,7 @@ impl Analyzer<'_, '_> {
                             // function body), the parameter type is the widened form (section
                             // 3.11) of the type of the initializer expression.
 
-                            ty = ty.fold_with(&mut TupleToArray);
+                            ty = ty.fold_with(&mut Widen { tuple_to_array: true });
                         }
 
                         ty

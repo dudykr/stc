@@ -13,7 +13,7 @@ use itertools::Itertools;
 use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
-use stc_ts_type_ops::{tuple_to_array::TupleToArray, Fix};
+use stc_ts_type_ops::{widen::Widen, Fix};
 use stc_ts_types::{Array, Key, LitType, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, TryOpt};
@@ -169,7 +169,7 @@ impl Analyzer<'_, '_> {
                     // function body), the parameter type is the widened form (section
                     // 3.11) of the type of the initializer expression.
 
-                    right = right.fold_with(&mut TupleToArray);
+                    right = right.fold_with(&mut Widen { tuple_to_array: true });
                 }
 
                 right.make_clone_cheap();
