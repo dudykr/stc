@@ -1310,7 +1310,7 @@ impl Analyzer<'_, '_> {
                         accessor: Default::default(),
                     }))
                 }
-                RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
+                RObjectPatProp::Assign(RAssignPatProp { key, value, .. }) => {
                     let key = Key::Normal {
                         span: key.span,
                         sym: key.sym.clone(),
@@ -1320,7 +1320,7 @@ impl Analyzer<'_, '_> {
                         accessibility: None,
                         readonly: false,
                         key,
-                        optional: false,
+                        optional: value.is_some(),
                         params: vec![],
                         type_ann: None,
                         type_params: None,
