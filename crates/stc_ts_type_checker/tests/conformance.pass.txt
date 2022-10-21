@@ -623,6 +623,9 @@ es6/destructuring/destructuringTypeAssertionsES5_4.ts
 es6/destructuring/destructuringTypeAssertionsES5_5.ts
 es6/destructuring/destructuringTypeAssertionsES5_6.ts
 es6/destructuring/destructuringTypeAssertionsES5_7.ts
+es6/destructuring/destructuringVariableDeclaration1ES5.ts
+es6/destructuring/destructuringVariableDeclaration1ES5iterable.ts
+es6/destructuring/destructuringVariableDeclaration1ES6.ts
 es6/destructuring/destructuringVoid.ts
 es6/destructuring/destructuringVoidStrictNullChecks.ts
 es6/destructuring/emptyArrayBindingPatternParameter01.ts
