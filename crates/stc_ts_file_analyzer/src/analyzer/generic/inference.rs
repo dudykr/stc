@@ -58,7 +58,7 @@ impl Analyzer<'_, '_> {
     /// `T | PromiseLike<T>` <= `void | PromiseLike<void>`
     ///
     /// should result in `T = void`, not `T = void | PromiseLike<void>`
-    #[instrument(skip(self, span, inferred, param, arg_ty, arg, opts))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn infer_type_using_union_and_union(
         &mut self,
         span: Span,
@@ -93,7 +93,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    #[instrument(skip(self, span, inferred, param, arg, opts))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn infer_type_using_union(
         &mut self,
         span: Span,

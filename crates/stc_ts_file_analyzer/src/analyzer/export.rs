@@ -19,7 +19,6 @@ use stc_utils::cache::Freeze;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::instrument;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -199,7 +198,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// Currently noop because we need to know if a function is last item among
     /// overloads
-    #[instrument(skip(self, span, sym))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn report_errors_for_duplicated_exports_of_var(&mut self, span: Span, sym: JsWord) {
         if self.ctx.reevaluating() {
             return;
@@ -221,7 +220,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    #[instrument(skip(self, span, name, orig_name, check_duplicate))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn export_var(&mut self, span: Span, name: Id, orig_name: Option<Id>, check_duplicate: bool) {
         if check_duplicate {
             self.report_errors_for_duplicated_exports_of_var(span, name.sym().clone());
@@ -239,7 +238,7 @@ impl Analyzer<'_, '_> {
     /// Note: We don't freeze types at here because doing so may prevent proper
     /// finalization.
     #[extra_validator]
-    #[instrument(skip(self, span, name, orig_name,))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn export_type(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
         let orig_name = orig_name.unwrap_or_else(|| name.clone());
 

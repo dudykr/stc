@@ -24,11 +24,10 @@ use stc_ts_types::{
     TypeElMetadata, TypeElement, TypeLit, TypeLitMetadata,
 };
 use stc_ts_utils::PatExt;
-use stc_utils::{cache::Freeze, ext::TypeVecExt, TryOpt};
+use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use swc_atoms::js_word;
 use swc_common::{Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::instrument;
 
 #[derive(Debug, Clone, Copy)]
 pub(super) enum PatMode {
@@ -40,7 +39,7 @@ pub(super) enum PatMode {
 }
 
 impl Analyzer<'_, '_> {
-    #[instrument(skip(self, ty))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn mark_as_implicitly_typed(&mut self, ty: &mut Type) {
         ty.metadata_mut().implicit = true;
     }
@@ -49,7 +48,7 @@ impl Analyzer<'_, '_> {
         ty.metadata().implicit
     }
 
-    #[instrument(skip(self, pat))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn default_type_for_pat(&mut self, pat: &RPat) -> ValidationResult<Type> {
         let span = pat.span();
         match pat {

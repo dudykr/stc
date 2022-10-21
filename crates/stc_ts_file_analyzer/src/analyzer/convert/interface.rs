@@ -8,10 +8,9 @@ use stc_ts_errors::Error;
 use stc_ts_types::{TsExpr, Type, TypeElement, TypeLit};
 use stc_utils::cache::Freeze;
 use swc_common::{Span, TypeEq, DUMMY_SP};
-use tracing::instrument;
 
 impl Analyzer<'_, '_> {
-    #[instrument(skip(self, span, body, parent))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn report_error_for_wrong_interface_inheritance(
         &mut self,
         span: Span,
@@ -71,7 +70,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[instrument(skip(self, span, parent))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn report_error_for_conflicting_parents(&mut self, span: Span, parent: &[TsExpr]) {
         if self.is_builtin {
             return;

@@ -20,21 +20,11 @@ use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::{debug, instrument};
+use tracing::debug;
 
 /// Methods to handle assignment to function types and constructor types.
 impl Analyzer<'_, '_> {
-    #[instrument(skip(
-        self,
-        data,
-        opts,
-        l_type_params,
-        l_params,
-        l_ret_ty,
-        r_type_params,
-        r_params,
-        r_ret_ty
-    ))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn assign_to_fn_like(
         &mut self,
         data: &mut AssignData,
@@ -406,7 +396,7 @@ impl Analyzer<'_, '_> {
     /// a = b;
     /// b = a; // error
     /// ```
-    #[instrument(skip(self, data, lt, l, r, opts))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn assign_to_function(
         &mut self,
         data: &mut AssignData,
@@ -521,7 +511,7 @@ impl Analyzer<'_, '_> {
     /// a18 = b18; // ok
     /// b18 = a18; // ok
     /// ```
-    #[instrument(skip(self, data, lt, l, r, opts))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn assign_to_constructor(
         &mut self,
         data: &mut AssignData,
@@ -662,7 +652,7 @@ impl Analyzer<'_, '_> {
     /// # Notes
     ///
     ///  - `string` is assignable to `...args: any[]`.
-    #[instrument(skip(self, data, l, r, opts))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn assign_param(
         &mut self,
         data: &mut AssignData,
@@ -786,7 +776,7 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// So, it's an error if `l.params.len() < r.params.len()`.
-    #[instrument(skip(self, data, opts, l, r))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn assign_params(
         &mut self,
         data: &mut AssignData,

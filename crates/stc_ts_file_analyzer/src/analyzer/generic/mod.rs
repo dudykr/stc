@@ -286,7 +286,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Handles `infer U`.
-    #[instrument(skip(self, span, base, concrete, opts))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn infer_ts_infer_types(
         &mut self,
         span: Span,
@@ -1349,7 +1349,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    #[instrument(skip(self, span, inferred, param, arg, opts))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn infer_type_using_mapped_type(
         &mut self,
         span: Span,

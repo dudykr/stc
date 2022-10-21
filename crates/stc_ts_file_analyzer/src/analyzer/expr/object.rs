@@ -51,7 +51,7 @@ impl Analyzer<'_, '_> {
     ///
     /// Type of `a` in the code above is `{ a: number, b?: undefined } | {
     /// a:number, b: string }`.
-    #[instrument(skip(self, ty, preserve_specified))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn normalize_union(&mut self, ty: &mut Type, preserve_specified: bool) {
         let start = Instant::now();
         ty.visit_mut_with(&mut UnionNormalizer { preserve_specified });
@@ -61,7 +61,7 @@ impl Analyzer<'_, '_> {
         debug!("Normlaized unions (time = {:?})", end - start);
     }
 
-    #[instrument(skip(self, ty, is_type_ann))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn validate_type_literals(&mut self, ty: &Type, is_type_ann: bool) {
         match ty.normalize() {
             Type::Union(ty) => {
@@ -76,7 +76,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[instrument(skip(self, elems))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn report_errors_for_mixed_optional_method_signatures(&mut self, elems: &[TypeElement]) {
         let mut keys: Vec<(&Key, bool)> = vec![];
         for elem in elems {
@@ -97,7 +97,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[instrument(skip(self, known_keys, to, prop, object_type))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn append_prop_or_spread_to_type(
         &mut self,
         known_keys: &mut Vec<Key>,
@@ -160,7 +160,7 @@ impl Analyzer<'_, '_> {
     ///
     /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
     /// number } | { a: number, c: number }`
-    #[instrument(skip(self, to, rhs))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn append_type(&mut self, to: Type, mut rhs: Type) -> ValidationResult<Type> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
@@ -263,7 +263,7 @@ impl Analyzer<'_, '_> {
         unimplemented!("append_type:\n{:?}\n{:?}", to, rhs)
     }
 
-    #[instrument(skip(self, to, rhs))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> ValidationResult {
         if to.is_any() || to.is_unknown() {
             return Ok(to);

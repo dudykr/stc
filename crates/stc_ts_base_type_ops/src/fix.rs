@@ -3,7 +3,6 @@ use stc_ts_types::{
     Array, Conditional, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam, Union, Valid,
 };
 use swc_common::TypeEq;
-use tracing::instrument;
 
 pub trait Fix: Sized {
     fn fix(&mut self);
@@ -47,7 +46,7 @@ where
 macro_rules! impl_fix {
     ($T:ty) => {
         impl Fix for $T {
-            #[instrument(skip(self))]
+            #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
             fn fix(&mut self) {
                 self.visit_mut_with(&mut Fixer);
             }

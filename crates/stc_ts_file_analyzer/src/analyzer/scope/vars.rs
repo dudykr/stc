@@ -680,7 +680,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[instrument(skip(self, span, ty, keys))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 

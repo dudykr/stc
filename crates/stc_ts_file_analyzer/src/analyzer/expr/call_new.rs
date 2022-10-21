@@ -44,7 +44,7 @@ use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::{debug, info, instrument, warn};
+use tracing::{debug, info, warn};
 use ty::TypeExt;
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -495,20 +495,7 @@ impl Analyzer<'_, '_> {
     ///
     ///  - `expr`: Can be default if argument does not include an arrow
     ///    expression nor a function expression.
-    #[instrument(skip(
-        self,
-        span,
-        kind,
-        expr,
-        this,
-        obj_type,
-        prop,
-        type_args,
-        args,
-        arg_types,
-        spread_arg_types,
-        type_ann
-    ))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn call_property(
         &mut self,
         span: Span,
@@ -935,22 +922,7 @@ impl Analyzer<'_, '_> {
         return Ok(candidates);
     }
 
-    #[instrument(skip(
-        self,
-        span,
-        expr,
-        kind,
-        this,
-        c,
-        prop,
-        is_static_call,
-        type_args,
-        args,
-        arg_types,
-        spread_arg_types,
-        type_ann,
-        opts
-    ))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn call_property_of_class(
         &mut self,
         span: Span,
@@ -1151,21 +1123,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[instrument(skip(
-        self,
-        kind,
-        expr,
-        span,
-        obj,
-        members,
-        prop,
-        type_args,
-        args,
-        arg_types,
-        spread_arg_types,
-        type_ann,
-        opts
-    ))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn call_property_of_type_elements(
         &mut self,
         kind: ExtractKind,
@@ -1724,20 +1682,7 @@ impl Analyzer<'_, '_> {
 
     /// Search for members and returns if there's a match
     #[inline(never)]
-    #[instrument(skip(
-        self,
-        span,
-        expr,
-        callee_ty,
-        type_params_of_type,
-        members,
-        kind,
-        args,
-        arg_types,
-        spread_arg_types,
-        type_args,
-        type_ann
-    ))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn call_type_element(
         &mut self,
         span: Span,
@@ -2379,20 +2324,7 @@ impl Analyzer<'_, '_> {
     ///  8. Type of the arrow function is `(a: number) => [number]`.
     ///  9. Type of the property `foo` is `<A, B>(a: A) => B` where A = `number`
     /// and B = `[number]`.
-    #[instrument(skip(
-        self,
-        span,
-        kind,
-        expr,
-        type_params,
-        params,
-        ret_ty,
-        type_args,
-        args,
-        arg_types,
-        spread_arg_types,
-        type_ann
-    ))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn get_return_type(
         &mut self,
         span: Span,
