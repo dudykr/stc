@@ -1018,6 +1018,27 @@ impl Analyzer<'_, '_> {
                 }
             }
             Type::EnumVariant(ref e @ EnumVariant { name: Some(..), .. }) => {
+                // Single-variant enums seem to be treated like a number.
+                //
+                // See typeArgumentInferenceWithObjectLiteral.ts
+
+                let items = self
+                    .find_type(e.ctxt, &e.enum_name)
+                    .context("failed to find an enum for assignment")?;
+
+                if let Some(items) = items {
+                    for e in items {
+                        match e.normalize() {
+                            Type::Enum(e) => {
+                                if e.members.len() == 1 {
+                                    return Ok(());
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
                 dbg!();
                 return Err(Error::InvalidLValue { span: e.span });
             }
