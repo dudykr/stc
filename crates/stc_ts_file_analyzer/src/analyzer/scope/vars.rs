@@ -57,7 +57,7 @@ impl Analyzer<'_, '_> {
     /// ## default
     ///
     /// The type of default value specified by an assignment pattern.
-    #[instrument(skip(self, pat, ty, actual, default, opts))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn add_vars(
         &mut self,
         pat: &RPat,
