@@ -1181,8 +1181,16 @@ impl Analyzer<'_, '_> {
                 let errors = types
                     .iter()
                     .map(|rhs| {
-                        self.assign_inner(data, to, rhs, opts)
-                            .context("tried to assign an element of an intersection type to another type")
+                        self.assign_inner(
+                            data,
+                            to,
+                            rhs,
+                            AssignOpts {
+                                allow_missing_fields: true,
+                                ..opts
+                            },
+                        )
+                        .context("tried to assign an element of an intersection type to another type")
                     })
                     .collect::<Vec<_>>();
                 if errors.iter().any(Result::is_ok) {
