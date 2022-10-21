@@ -358,7 +358,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[instrument(skip(self, prop, object_type))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn validate_prop_inner(&mut self, prop: &RProp, object_type: Option<&Type>) -> ValidationResult<TypeElement> {
         let computed = match prop {
             RProp::KeyValue(ref kv) => match &kv.key {
