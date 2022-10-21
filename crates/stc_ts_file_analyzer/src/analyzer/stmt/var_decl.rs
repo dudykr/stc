@@ -336,7 +336,11 @@ impl Analyzer<'_, '_> {
                             Ok(value_ty)
                         })()?;
 
-                        let should_generalize_fully = self.may_generalize(&ty) && !contains_type_param(&ty);
+                        let should_generalize_fully = match v.name {
+                            RPat::Array(_) | RPat::Object(..) => false,
+                            _ => true,
+                        } && self.may_generalize(&ty)
+                            && !contains_type_param(&ty);
 
                         debug!("var: user did not declare type");
                         let mut ty = self.rename_type_params(span, ty, None)?;
