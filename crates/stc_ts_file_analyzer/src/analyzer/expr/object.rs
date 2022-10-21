@@ -15,7 +15,7 @@ use stc_utils::cache::Freeze;
 use std::{borrow::Cow, time::Instant};
 use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::{debug, instrument};
+use tracing::debug;
 
 #[validator]
 impl Analyzer<'_, '_> {
