@@ -1,0 +1,8 @@
+# .kodiak.toml
+version = 1
+
+[merge]
+do_not_merge = true
+
+[approve]
+auto_approve_usernames = ["kdy1"]

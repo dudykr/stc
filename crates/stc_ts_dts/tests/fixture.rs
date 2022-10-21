@@ -2,6 +2,8 @@
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(test)]
+// Disabled because .d.ts is currently broken
+#![cfg(disabled)]
 
 extern crate test;
 

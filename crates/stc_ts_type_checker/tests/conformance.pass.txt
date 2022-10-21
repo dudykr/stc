@@ -275,7 +275,6 @@ constEnums/constEnumPropertyAccess2.ts
 controlFlow/constLocalsInFunctionExpressions.ts
 controlFlow/controlFlowAssignmentExpression.ts
 controlFlow/controlFlowBinaryAndExpression.ts
-controlFlow/controlFlowBinaryOrExpression.ts
 controlFlow/controlFlowBindingPatternOrder.ts
 controlFlow/controlFlowCommaOperator.ts
 controlFlow/controlFlowConditionalExpression.ts
@@ -684,12 +683,9 @@ es6/destructuring/optionalBindingParameters1.ts
 es6/destructuring/optionalBindingParameters2.ts
 es6/destructuring/optionalBindingParametersInOverloads2.ts
 es6/destructuring/restElementWithAssignmentPattern1.ts
-es6/destructuring/restElementWithAssignmentPattern2.ts
 es6/destructuring/restElementWithAssignmentPattern3.ts
-es6/destructuring/restElementWithAssignmentPattern4.ts
 es6/destructuring/restElementWithAssignmentPattern5.ts
 es6/destructuring/restElementWithBindingPattern.ts
-es6/destructuring/restElementWithBindingPattern2.ts
 es6/destructuring/restElementWithNullInitializer.ts
 es6/destructuring/restPropertyWithBindingPattern.ts
 es6/for-ofStatements/for-of1.ts
@@ -698,7 +694,6 @@ es6/for-ofStatements/for-of11.ts
 es6/for-ofStatements/for-of12.ts
 es6/for-ofStatements/for-of13.ts
 es6/for-ofStatements/for-of14.ts
-es6/for-ofStatements/for-of15.ts
 es6/for-ofStatements/for-of16.ts
 es6/for-ofStatements/for-of17.ts
 es6/for-ofStatements/for-of18.ts
@@ -1925,7 +1920,6 @@ statements/continueStatements/whileContinueStatements.ts
 statements/foSymbols/ES5SymbolType1.ts
 statements/for-inStatements/for-inStatementsArray.ts
 statements/for-inStatements/for-inStatementsDestructuring.ts
-statements/for-inStatements/for-inStatementsDestructuring2.ts
 statements/for-inStatements/for-inStatementsDestructuring3.ts
 statements/for-inStatements/for-inStatementsDestructuring4.ts
 statements/for-ofStatements/ES3For-ofTypeCheck1.ts
@@ -2047,7 +2041,6 @@ types/literal/stringLiteralsWithSwitchStatements03.ts
 types/literal/stringLiteralsWithSwitchStatements04.ts
 types/literal/stringLiteralsWithTypeAssertions01.ts
 types/literal/templateLiteralTypesPatternsPrefixSuffixAssignability.ts
-types/localTypes/localTypes1.ts
 types/localTypes/localTypes2.ts
 types/localTypes/localTypes3.ts
 types/localTypes/localTypes5.ts
@@ -2251,7 +2244,6 @@ types/typeAliases/asiPreventsParsingAsTypeAlias02.ts
 types/typeAliases/circularTypeAliasForUnionWithClass.ts
 types/typeAliases/circularTypeAliasForUnionWithInterface.ts
 types/typeAliases/classDoesNotDependOnBaseTypes.ts
-types/typeAliases/interfaceDoesNotDependOnBaseTypes.ts
 types/typeAliases/typeAliases.ts
 types/typeAliases/typeAliasesDoNotMerge.ts
 types/typeAliases/typeAliasesForObjectTypes.ts
@@ -2340,7 +2332,6 @@ types/typeRelationships/bestCommonType/bestCommonTypeOfTuple.ts
 types/typeRelationships/bestCommonType/bestCommonTypeOfTuple2.ts
 types/typeRelationships/bestCommonType/functionWithMultipleReturnStatements.ts
 types/typeRelationships/bestCommonType/functionWithMultipleReturnStatements2.ts
-types/typeRelationships/bestCommonType/heterogeneousArrayLiterals.ts
 types/typeRelationships/comparable/equalityStrictNulls.ts
 types/typeRelationships/comparable/equalityWithIntersectionTypes01.ts
 types/typeRelationships/comparable/equalityWithUnionTypes01.ts
@@ -2349,7 +2340,6 @@ types/typeRelationships/comparable/optionalProperties01.ts
 types/typeRelationships/comparable/optionalProperties02.ts
 types/typeRelationships/comparable/switchCaseWithIntersectionTypes01.ts
 types/typeRelationships/comparable/switchCaseWithUnionTypes01.ts
-types/typeRelationships/comparable/typeAssertionsWithIntersectionTypes01.ts
 types/typeRelationships/comparable/typeAssertionsWithUnionTypes01.ts
 types/typeRelationships/instanceOf/narrowingConstrainedTypeVariable.ts
 types/typeRelationships/instanceOf/narrowingGenericTypeFromInstanceof01.ts
