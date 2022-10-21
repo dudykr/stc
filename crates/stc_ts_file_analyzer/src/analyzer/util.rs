@@ -35,7 +35,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// `span` and `callee` is used only for error reporting.
-    #[instrument(skip(self, span, callee, elements))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn make_instance_from_type_elements(
         &mut self,
         span: Span,
@@ -64,7 +64,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// TODO(kdy1): Use Cow
-    #[instrument(skip(self, span, ty))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn make_instance_or_report(&mut self, span: Span, ty: &Type) -> Type {
         if span.is_dummy() {
             panic!("Cannot make an instance with dummy span")
@@ -86,7 +86,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Use Cow
-    #[instrument(skip(self, span, ty))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> ValidationResult {
         let ty = ty.normalize();
 
