@@ -36,6 +36,7 @@ mod keyof;
 mod mapped;
 mod narrowing;
 mod type_param;
+mod unions;
 
 /// All fields defaults to false.
 #[derive(Debug, Default, Clone, Copy)]
