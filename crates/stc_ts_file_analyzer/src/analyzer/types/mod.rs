@@ -599,8 +599,8 @@ impl Analyzer<'_, '_> {
         match check_type_constraint.normalize() {
             Type::Union(check_type_union) => {
                 //
-                let can_match = check_type_union.types.iter().any(|check_type_contraint| {
-                    self.extends(span, Default::default(), check_type_contraint, extends_type)
+                let can_match = check_type_union.types.iter().any(|check_type_constraint| {
+                    self.extends(span, Default::default(), check_type_constraint, extends_type)
                         .unwrap_or(true)
                 });
 
