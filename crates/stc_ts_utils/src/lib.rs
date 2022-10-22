@@ -236,24 +236,3 @@ impl PatExt for RPat {
         })
     }
 }
-
-pub trait OptionExt<T>: Sized {
-    fn as_mut_to_opt(&mut self) -> &mut Option<T>;
-
-    fn fill_with<F>(&mut self, op: F)
-    where
-        F: FnOnce() -> T,
-    {
-        let opt = self.as_mut_to_opt();
-        match opt {
-            Some(..) => {}
-            None => *opt = Some(op()),
-        }
-    }
-}
-
-impl<T> OptionExt<T> for Option<T> {
-    fn as_mut_to_opt(&mut self) -> &mut Option<T> {
-        self
-    }
-}
