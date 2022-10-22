@@ -37,7 +37,7 @@ impl Analyzer<'_, '_> {
                     //
                     // If a type annotation of function is union and there are two or more function
                     // types, the type becomes any implicitly.
-                    if ty.iter_union().filter(|ty| ty.is_function()).count() == 1 {
+                    if ty.iter_union().filter(|ty| ty.normalize().is_function()).count() == 1 {
                         for ty in ty.iter_union() {
                             match ty.normalize() {
                                 Type::Function(ty) => {
