@@ -48,7 +48,7 @@ impl Analyzer<'_, '_> {
     fn flatten_unions_for_assignment(&mut self, span: Span, ty: Cow<Type>) -> ValidationResult<Type> {
         let ty = self.normalize(Some(span), ty, Default::default())?;
 
-        match &*ty {
+        match ty.normalize() {
             Type::Tuple(ty) => {
                 let mut tuple = Type::Tuple(Tuple {
                     span: ty.span,
