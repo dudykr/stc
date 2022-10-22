@@ -6,7 +6,7 @@
 #![allow(unused_variables)] // temporary
 #![deny(unused_must_use)]
 #![deny(unreachable_patterns)]
-#![deny(mutable_borrow_reservation_conflict)]
+#![deny(unused_imports)]
 #![deny(irrefutable_let_patterns)]
 #![feature(box_patterns)]
 #![feature(box_syntax)]

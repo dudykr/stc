@@ -20,7 +20,7 @@ use stc_utils::{cache::Freeze, TryOpt};
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
-use tracing::{debug, instrument};
+use tracing::debug;
 
 /// The kind of binding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
