@@ -68,9 +68,10 @@ impl Analyzer<'_, '_> {
         arg: &Union,
         opts: InferTypeOpts,
     ) -> ValidationResult<()> {
-        // If there's a top-level type parameters, check for `form`s of type.
-        if param.types.len() == arg.types.len() && param.types.iter().map(Type::normalize).any(|ty| ty.is_type_param())
-        {
+        // Check 'form's of type.
+        //
+        // `Promise<T> | T` and `Promise<void> | void` have same 'form'.
+        if param.types.len() == arg.types.len() {
             // TODO(kdy1): Sort types so `T | PromiseLike<T>` has same form as
             // `PromiseLike<void> | void`.
 
