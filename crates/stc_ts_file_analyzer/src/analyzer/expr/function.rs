@@ -33,29 +33,35 @@ impl Analyzer<'_, '_> {
                 };
 
                 if let Some(ty) = type_ann.as_ref().map(|ty| ty.normalize()) {
-                    // TODO(kdy1): Support union of functions
-                    for ty in ty.iter_union() {
-                        match ty.normalize() {
-                            Type::Function(ty) => {
-                                for p in f.params.iter().zip_longest(ty.params.iter()) {
-                                    match p {
-                                        EitherOrBoth::Both(param, ty) => {
-                                            // Store type information, so the pattern validator can use a correct type.
-                                            if let Some(pat_node_id) = param.node_id() {
-                                                if let Some(m) = &mut child.mutations {
-                                                    m.for_pats
-                                                        .entry(pat_node_id)
-                                                        .or_default()
-                                                        .ty
-                                                        .get_or_insert_with(|| *ty.ty.clone());
+                    // See functionExpressionContextualTyping1.ts
+                    //
+                    // If a type annotation of function is union and there are two or more function
+                    // types, the type becomes any implicitly.
+                    if ty.iter_union().filter(|ty| ty.is_function()).count() == 1 {
+                        for ty in ty.iter_union() {
+                            match ty.normalize() {
+                                Type::Function(ty) => {
+                                    for p in f.params.iter().zip_longest(ty.params.iter()) {
+                                        match p {
+                                            EitherOrBoth::Both(param, ty) => {
+                                                // Store type information, so the pattern validator can use a correct
+                                                // type.
+                                                if let Some(pat_node_id) = param.node_id() {
+                                                    if let Some(m) = &mut child.mutations {
+                                                        m.for_pats
+                                                            .entry(pat_node_id)
+                                                            .or_default()
+                                                            .ty
+                                                            .get_or_insert_with(|| *ty.ty.clone());
+                                                    }
                                                 }
                                             }
+                                            _ => {}
                                         }
-                                        _ => {}
                                     }
                                 }
+                                _ => {}
                             }
-                            _ => {}
                         }
                     }
                 }
