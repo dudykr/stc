@@ -4,11 +4,8 @@
 // made for type parameters referenced by the parameters of T's call signature are fixed, and e's type is changed
 // to a function type with e's call signature instantiated in the context of T's call signature (section 3.8.5).
 
-declare function foo<T>(cb: (x: number, y: string) => T): T;
 declare function bar<T, U, V>(x: T, y: U, cb: (x: T, y: U) => V): V;
-declare function baz<T, U>(x: T, y: T, cb: (x: T, y: T) => U): U;
 
-declare function g<T>(x: T, y: T): T;
 declare function h<T, U>(x: T, y: U): T[] | U[];
 
 var d: number[] | string[];
