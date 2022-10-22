@@ -323,8 +323,7 @@ fn compare(input: PathBuf) {
 }
 
 fn invoke_tsc(input: &Path) -> Vec<TscError> {
-    let output = Command::new("yarn")
-        .arg("run")
+    let output = Command::new("npx")
         .arg("tsc")
         .arg("--pretty")
         .arg("--noEmit")
