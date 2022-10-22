@@ -1523,9 +1523,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 match rhs {
-                    Type::Tuple(rt) => {
+                    Type::Tuple(..) | Type::Array(..) => {
                         if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
-                            return res;
+                            return res.context("tried to assign using `assign_to_union`");
                         }
                     }
                     _ => {}
