@@ -368,7 +368,7 @@ impl Analyzer<'_, '_> {
                     ..opts
                 };
 
-                if is_call && opts.reverse_ret_ty {
+                if is_call && opts.reverse_ret_ty && false {
                     self.assign_inner(data, r_ret_ty, l_ret_ty, opts).context(
                         "tried to assign the return type of a function to the return type of another function \
                          (reversed)",
