@@ -34,7 +34,7 @@ use stc_ts_types::{
     QueryType, Ref, RefMetadata, RestType, Symbol, ThisType, TplType, TsExpr, Tuple, TupleElement, TupleMetadata, Type,
     TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
-use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
+use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, AHashSet};
 use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
@@ -1201,7 +1201,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(i.node_id).or_default().ty.fill_with(|| {
+            m.for_pats.entry(i.node_id).or_default().ty.get_or_insert_with(|| {
                 Type::any(
                     DUMMY_SP,
                     KeywordTypeMetadata {
@@ -1333,7 +1333,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(obj.node_id).or_default().ty.fill_with(|| {
+            m.for_pats.entry(obj.node_id).or_default().ty.get_or_insert_with(|| {
                 Type::TypeLit(TypeLit {
                     span: DUMMY_SP,
                     members,

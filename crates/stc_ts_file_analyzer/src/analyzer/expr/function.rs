@@ -8,7 +8,7 @@ use crate::{
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr};
 use stc_ts_types::{Class, ClassMetadata, Function, KeywordType, Type};
-use stc_ts_utils::{OptionExt, PatExt};
+use stc_ts_utils::PatExt;
 use stc_utils::cache::Freeze;
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -47,7 +47,7 @@ impl Analyzer<'_, '_> {
                                                         .entry(pat_node_id)
                                                         .or_default()
                                                         .ty
-                                                        .fill_with(|| *ty.ty.clone());
+                                                        .get_or_insert_with(|| *ty.ty.clone());
                                                 }
                                             }
                                         }
