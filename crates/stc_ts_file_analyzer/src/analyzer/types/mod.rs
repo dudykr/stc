@@ -938,11 +938,11 @@ impl Analyzer<'_, '_> {
 
     /// Collect all class members, including inherited members.
     ///
-    /// # Parmeters
+    /// # Parameters
     ///
     /// ## excluded
     ///
-    /// Memebers of base class.
+    /// Members of base class.
     #[instrument(skip(self, excluded, ty))]
     pub(crate) fn collect_class_members(
         &mut self,
