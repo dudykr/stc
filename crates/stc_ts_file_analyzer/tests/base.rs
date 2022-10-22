@@ -1,6 +1,7 @@
 #![feature(box_syntax)]
 
 use itertools::Itertools;
+use rayon::join;
 use rnode::{NodeIdGenerator, RNode, VisitWith};
 use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
@@ -300,10 +301,15 @@ fn pass_only(input: PathBuf) {
 // This invokes `tsc` to get expected result.
 #[fixture("tests/tsc/**/*.ts")]
 fn compare(input: PathBuf) {
-    let mut actual = validate(&input);
-    actual.sort();
+    let (actual, tsc_result) = join(
+        || {
+            let mut actual = validate(&input);
+            actual.sort();
+            actual
+        },
+        || invoke_tsc(&input),
+    );
 
-    let tsc_result = invoke_tsc(&input);
     let mut expected = tsc_result
         .into_iter()
         .map(|err| StcError {
