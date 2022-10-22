@@ -1,5 +1,6 @@
 #![feature(box_syntax)]
 
+use itertools::Itertools;
 use rnode::{NodeIdGenerator, RNode, VisitWith};
 use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
@@ -296,26 +297,24 @@ fn pass_only(input: PathBuf) {
     .unwrap();
 }
 
-// TODO(kdy1): Enable this after configuring cache
-//
-// /// This invokes `tsc` to get expected result.
-// #[fixture("tests/tsc/**/*.ts")]
-// fn compare(input: PathBuf) {
-//     let mut actual = validate(&input);
-//     actual.sort();
+// This invokes `tsc` to get expected result.
+#[fixture("tests/tsc/**/*.ts")]
+fn compare(input: PathBuf) {
+    let mut actual = validate(&input);
+    actual.sort();
 
-//     let tsc_result = invoke_tsc(&input);
-//     let mut expected = tsc_result
-//         .into_iter()
-//         .map(|err| StcError {
-//             line: err.line,
-//             code: err.code,
-//         })
-//         .collect_vec();
-//     expected.sort();
+    let tsc_result = invoke_tsc(&input);
+    let mut expected = tsc_result
+        .into_iter()
+        .map(|err| StcError {
+            line: err.line,
+            code: err.code,
+        })
+        .collect_vec();
+    expected.sort();
 
-//     assert_eq!(actual, expected);
-// }
+    assert_eq!(actual, expected);
+}
 
 fn invoke_tsc(input: &Path) -> Vec<TscError> {
     let output = Command::new("yarn")
