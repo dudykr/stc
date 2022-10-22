@@ -81,7 +81,7 @@ pub(crate) struct Ctx {
 
     in_constructor_param: bool,
 
-    diallow_unknown_object_property: bool,
+    disallow_unknown_object_property: bool,
 
     use_undefined_for_empty_tuple: bool,
 
@@ -196,6 +196,8 @@ pub(crate) struct Ctx {
 
     /// `true` for top-level type annotations.
     is_not_topmost_type: bool,
+
+    is_fn_param: bool,
 }
 
 impl Ctx {
@@ -476,7 +478,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 is_dts,
                 in_const_assertion: false,
                 in_constructor_param: false,
-                diallow_unknown_object_property: false,
+                disallow_unknown_object_property: false,
                 use_undefined_for_empty_tuple: false,
                 allow_module_var: false,
                 allow_namespace_var: false,
@@ -527,6 +529,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 disallow_suggesting_property_on_no_var: false,
                 in_unreachable: false,
                 is_not_topmost_type: false,
+                is_fn_param: false,
             },
             loader,
             is_builtin,

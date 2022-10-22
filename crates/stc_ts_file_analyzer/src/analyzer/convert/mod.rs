@@ -34,13 +34,13 @@ use stc_ts_types::{
     QueryType, Ref, RefMetadata, RestType, Symbol, ThisType, TplType, TsExpr, Tuple, TupleElement, TupleMetadata, Type,
     TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
 };
-use stc_ts_utils::{find_ids_in_pat, OptionExt, PatExt};
+use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, AHashSet};
 use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::{instrument, warn};
+use tracing::warn;
 
 mod interface;
 
@@ -922,7 +922,7 @@ impl Analyzer<'_, '_> {
 
         if !self.is_builtin {
             let ctx = Ctx {
-                diallow_unknown_object_property: true,
+                disallow_unknown_object_property: true,
                 ..self.ctx
             };
             let prop_ty = self.with_ctx(ctx).access_property(
@@ -1069,7 +1069,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    #[instrument(skip(self, elems))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn report_error_for_duplicate_type_elements(&mut self, elems: &[TypeElement]) {
         if self.is_builtin {
             return;
@@ -1111,7 +1111,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[instrument(skip(self, params))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn report_error_for_duplicate_params(&mut self, params: &[FnParam]) {
         if self.is_builtin {
             return;
@@ -1139,7 +1139,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    #[instrument(skip(self, i))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn report_error_for_type_param_usages_in_static_members(&mut self, i: &RIdent) {
         let span = i.span;
         let id = i.into();
@@ -1201,7 +1201,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(i.node_id).or_default().ty.fill_with(|| {
+            m.for_pats.entry(i.node_id).or_default().ty.get_or_insert_with(|| {
                 Type::any(
                     DUMMY_SP,
                     KeywordTypeMetadata {
@@ -1310,7 +1310,7 @@ impl Analyzer<'_, '_> {
                         accessor: Default::default(),
                     }))
                 }
-                RObjectPatProp::Assign(RAssignPatProp { key, .. }) => {
+                RObjectPatProp::Assign(RAssignPatProp { key, value, .. }) => {
                     let key = Key::Normal {
                         span: key.span,
                         sym: key.sym.clone(),
@@ -1320,7 +1320,7 @@ impl Analyzer<'_, '_> {
                         accessibility: None,
                         readonly: false,
                         key,
-                        optional: false,
+                        optional: value.is_some(),
                         params: vec![],
                         type_ann: None,
                         type_params: None,
@@ -1333,7 +1333,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(obj.node_id).or_default().ty.fill_with(|| {
+            m.for_pats.entry(obj.node_id).or_default().ty.get_or_insert_with(|| {
                 Type::TypeLit(TypeLit {
                     span: DUMMY_SP,
                     members,

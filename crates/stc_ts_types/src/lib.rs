@@ -1800,7 +1800,10 @@ impl Type {
 
     /// TODO(kdy1): Make this more efficient, and explode subunions.
     pub fn iter_union(&self) -> impl Debug + Iterator<Item = &Type> {
-        Iter { ty: self, idx: 0 }
+        Iter {
+            ty: self.normalize(),
+            idx: 0,
+        }
     }
 }
 
@@ -1814,7 +1817,7 @@ impl<'a> Iterator for Iter<'a> {
     type Item = &'a Type;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.ty.normalize() {
+        match &self.ty {
             Type::Union(ref u) => {
                 let ty = u.types.get(self.idx);
                 self.idx += 1;

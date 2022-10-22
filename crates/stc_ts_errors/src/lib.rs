@@ -570,6 +570,8 @@ pub enum Error {
     InvalidBinaryOp {
         span: Span,
         op: BinaryOp,
+        left: Box<Type>,
+        right: Box<Type>,
     },
 
     /// TS2339

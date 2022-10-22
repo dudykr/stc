@@ -610,6 +610,9 @@ es6/destructuring/destructuringObjectBindingPatternAndAssignment1ES5.ts
 es6/destructuring/destructuringObjectBindingPatternAndAssignment1ES6.ts
 es6/destructuring/destructuringObjectBindingPatternAndAssignment4.ts
 es6/destructuring/destructuringObjectBindingPatternAndAssignment5.ts
+es6/destructuring/destructuringParameterDeclaration1ES5.ts
+es6/destructuring/destructuringParameterDeclaration1ES5iterable.ts
+es6/destructuring/destructuringParameterDeclaration1ES6.ts
 es6/destructuring/destructuringParameterDeclaration5.ts
 es6/destructuring/destructuringParameterDeclaration7ES5.ts
 es6/destructuring/destructuringParameterDeclaration7ES5iterable.ts
@@ -623,6 +626,9 @@ es6/destructuring/destructuringTypeAssertionsES5_4.ts
 es6/destructuring/destructuringTypeAssertionsES5_5.ts
 es6/destructuring/destructuringTypeAssertionsES5_6.ts
 es6/destructuring/destructuringTypeAssertionsES5_7.ts
+es6/destructuring/destructuringVariableDeclaration1ES5.ts
+es6/destructuring/destructuringVariableDeclaration1ES5iterable.ts
+es6/destructuring/destructuringVariableDeclaration1ES6.ts
 es6/destructuring/destructuringVoid.ts
 es6/destructuring/destructuringVoidStrictNullChecks.ts
 es6/destructuring/emptyArrayBindingPatternParameter01.ts
@@ -686,7 +692,6 @@ es6/destructuring/restElementWithAssignmentPattern1.ts
 es6/destructuring/restElementWithAssignmentPattern3.ts
 es6/destructuring/restElementWithAssignmentPattern5.ts
 es6/destructuring/restElementWithBindingPattern.ts
-es6/destructuring/restElementWithNullInitializer.ts
 es6/destructuring/restPropertyWithBindingPattern.ts
 es6/for-ofStatements/for-of1.ts
 es6/for-ofStatements/for-of10.ts
@@ -2010,6 +2015,7 @@ types/intersection/intersectionTypeEquivalence.ts
 types/intersection/intersectionTypeInference.ts
 types/intersection/intersectionTypeInference2.ts
 types/intersection/intersectionTypeInference3.ts
+types/intersection/operatorsAndIntersectionTypes.ts
 types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
 types/literal/booleanLiteralTypes1.ts

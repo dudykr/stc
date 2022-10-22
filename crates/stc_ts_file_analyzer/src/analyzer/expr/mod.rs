@@ -49,7 +49,7 @@ use std::{
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
-use tracing::{debug, info, instrument, warn, Level};
+use tracing::{debug, info, warn, Level};
 use ty::TypeExt;
 
 mod array;
@@ -639,7 +639,7 @@ impl Analyzer<'_, '_> {
         true
     }
 
-    #[instrument(skip(self, prop, computed))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
         if computed {
             prop.validate_with_default(self)
@@ -687,7 +687,7 @@ impl Analyzer<'_, '_> {
     /// # Parameters
     ///
     /// - `declared`: Key of declared property.
-    #[instrument(skip(self, span, declared, cur, allow_union))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn key_matches(&mut self, span: Span, declared: &Key, cur: &Key, allow_union: bool) -> bool {
         match declared {
             Key::Computed(..) => {}
@@ -820,7 +820,7 @@ impl Analyzer<'_, '_> {
         false
     }
 
-    #[cfg_attr(debug_assertions, instrument(skip_all))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn access_property_of_type_elements(
         &mut self,
         span: Span,
@@ -1935,7 +1935,7 @@ impl Analyzer<'_, '_> {
                     Ok(v) => return Ok(v),
                     Err(err) => err,
                 };
-                if *kind == TsKeywordTypeKind::TsObjectKeyword && !self.ctx.diallow_unknown_object_property {
+                if *kind == TsKeywordTypeKind::TsObjectKeyword && !self.ctx.disallow_unknown_object_property {
                     return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                 }
 
@@ -2839,7 +2839,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Expand type paramters using `type_args`.
-    #[instrument(skip(self, span, ty, type_args))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn expand_generics_with_type_args(
         &mut self,
         span: Span,
@@ -2872,7 +2872,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    #[instrument(skip(self, span, name, type_mode, type_args))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn type_of_name(
         &mut self,
         span: Span,
@@ -2920,7 +2920,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returned type reflects conditional type facts.
-    #[instrument(skip(self, i, type_mode, type_args))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn type_of_var(
         &mut self,
         i: &RIdent,
@@ -3374,7 +3374,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[instrument(skip(self, span, ctxt, n, type_args))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn type_of_ts_entity_name(
         &mut self,
         span: Span,
@@ -3385,7 +3385,7 @@ impl Analyzer<'_, '_> {
         self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
     }
 
-    #[instrument(skip(self, span, ctxt, n, type_args))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn type_of_ts_entity_name_inner(
         &mut self,
         span: Span,

@@ -317,7 +317,7 @@ impl Analyzer<'_, '_> {
                     }
                     None => {
                         self.ctx.prefer_tuple = match v.name {
-                            RPat::Array(_) => true,
+                            RPat::Array(_) | RPat::Object(..) => true,
                             _ => false,
                         };
                         let value_ty = get_value_ty!(None);
@@ -336,14 +336,23 @@ impl Analyzer<'_, '_> {
                             Ok(value_ty)
                         })()?;
 
-                        let should_generalize_fully = self.may_generalize(&ty) && !contains_type_param(&ty);
+                        let should_generalize_fully = match v.name {
+                            RPat::Array(_) | RPat::Object(..) => false,
+                            _ => true,
+                        } && self.may_generalize(&ty)
+                            && !contains_type_param(&ty);
 
                         debug!("var: user did not declare type");
                         let mut ty = self.rename_type_params(span, ty, None)?;
                         ty.fix();
                         ty.assert_valid();
 
-                        if !(self.ctx.var_kind == VarDeclKind::Const && ty.normalize().is_lit()) {
+                        if !(self.ctx.var_kind == VarDeclKind::Const && ty.normalize().is_lit())
+                            && match v.name {
+                                RPat::Array(_) | RPat::Object(..) => false,
+                                _ => true,
+                            }
+                        {
                             if self.may_generalize(&ty) {
                                 // Vars behave differently based on the context.
                                 if self.ctx.can_generalize_literals() {

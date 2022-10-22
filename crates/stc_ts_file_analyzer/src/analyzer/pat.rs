@@ -12,22 +12,22 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use rnode::VisitWith;
+use rnode::{FoldWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RAssignPat, RAssignPatProp, RBindingIdent, RExpr, RIdent, RKeyValuePatProp, RKeyValueProp, RObjectPat,
     RObjectPatProp, RParam, RPat, RProp, RPropOrSpread, RRestPat,
 };
 use stc_ts_errors::{Error, Errors};
+use stc_ts_type_ops::widen::Widen;
 use stc_ts_types::{
     Array, ArrayMetadata, CommonTypeMetadata, Instance, Key, KeywordType, PropertySignature, Tuple, TupleElement,
     TypeElMetadata, TypeElement, TypeLit, TypeLitMetadata,
 };
 use stc_ts_utils::PatExt;
-use stc_utils::{cache::Freeze, ext::TypeVecExt, TryOpt};
+use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use swc_atoms::js_word;
 use swc_common::{Spanned, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::instrument;
 
 #[derive(Debug, Clone, Copy)]
 pub(super) enum PatMode {
@@ -39,7 +39,7 @@ pub(super) enum PatMode {
 }
 
 impl Analyzer<'_, '_> {
-    #[instrument(skip(self, ty))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn mark_as_implicitly_typed(&mut self, ty: &mut Type) {
         ty.metadata_mut().implicit = true;
     }
@@ -48,7 +48,7 @@ impl Analyzer<'_, '_> {
         ty.metadata().implicit
     }
 
-    #[instrument(skip(self, pat))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn default_type_for_pat(&mut self, pat: &RPat) -> ValidationResult<Type> {
         let span = pat.span();
         match pat {
@@ -232,7 +232,7 @@ impl Analyzer<'_, '_> {
                 }
             })
             .map(|res| res.map(|ty| ty.cheap()))
-            .try_opt()?
+            .transpose()?
             .freezed();
 
         let prev_declaring_len = self.scope.declaring.len();
@@ -390,7 +390,20 @@ impl Analyzer<'_, '_> {
             Some(v) => Some(v),
             None => match p {
                 RPat::Assign(p) => match self.ctx.pat_mode {
-                    PatMode::Decl => Some(p.right.validate_with_default(self)?.generalize_lit()),
+                    PatMode::Decl => Some({
+                        let mut ty = p.right.validate_with_default(self)?.generalize_lit();
+
+                        if self.ctx.is_fn_param {
+                            // If the declaration includes an initializer expression (which is permitted
+                            // only when the parameter list occurs in conjunction with a
+                            // function body), the parameter type is the widened form (section
+                            // 3.11) of the type of the initializer expression.
+
+                            ty = ty.fold_with(&mut Widen { tuple_to_array: true });
+                        }
+
+                        ty
+                    }),
                     PatMode::Assign => Some(default_value_ty.unwrap_or_else(|| Type::any(p.span, Default::default()))),
                 },
                 _ => None,

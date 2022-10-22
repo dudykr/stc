@@ -9,7 +9,7 @@ use crate::{
     },
     ty::{Operator, Type, TypeExt},
     type_facts::TypeFacts,
-    util::{is_str_or_union, RemoveTypes},
+    util::RemoveTypes,
     validator,
     validator::ValidateWith,
     ValidationResult,
@@ -539,7 +539,7 @@ impl Analyzer<'_, '_> {
                     return Err(Error::TS2365 { span });
                 }
 
-                if is_str_or_union(&lt) || is_str_or_union(&rt) {
+                if is_str_like_for_addition(&lt) || is_str_like_for_addition(&rt) {
                     return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsStringKeyword,
@@ -560,7 +560,12 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                return Err(Error::InvalidBinaryOp { span, op });
+                return Err(Error::InvalidBinaryOp {
+                    span,
+                    op,
+                    left: box lt,
+                    right: box rt,
+                });
             }
             op!("*") | op!("/") => {
                 no_unknown!();
@@ -1893,5 +1898,20 @@ pub(super) fn extract_name_for_assignment(e: &RExpr, is_exact_eq: bool) -> Optio
         }
 
         _ => Name::try_from(e).ok(),
+    }
+}
+
+fn is_str_like_for_addition(t: &Type) -> bool {
+    match t.normalize() {
+        Type::Lit(LitType {
+            lit: RTsLit::Str(..), ..
+        }) => true,
+        Type::Keyword(KeywordType {
+            kind: TsKeywordTypeKind::TsStringKeyword,
+            ..
+        }) => true,
+        Type::Intersection(Intersection { types, .. }) => types.iter().any(|ty| is_str_like_for_addition(&ty)),
+        Type::Union(Union { types, .. }) => types.iter().all(|ty| is_str_like_for_addition(&ty)),
+        _ => false,
     }
 }

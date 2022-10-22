@@ -10,17 +10,17 @@ use crate::{
     ValidationResult,
 };
 use itertools::Itertools;
-use rnode::NodeId;
+use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
-use stc_ts_type_ops::Fix;
-use stc_ts_types::{Array, Key, LitType, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
+use stc_ts_type_ops::{widen::Widen, Fix};
+use stc_ts_types::{Array, Key, KeywordType, LitType, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, TryOpt};
 use std::borrow::Cow;
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
-use tracing::{debug, instrument};
+use tracing::debug;
 
 /// The kind of binding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -57,7 +57,7 @@ impl Analyzer<'_, '_> {
     /// ## default
     ///
     /// The type of default value specified by an assignment pattern.
-    #[instrument(skip(self, pat, ty, actual, default, opts))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn add_vars(
         &mut self,
         pat: &RPat,
@@ -162,6 +162,16 @@ impl Analyzer<'_, '_> {
                     .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref().or(ty.as_ref())))
                     .report(&mut self.storage)
                     .unwrap_or_else(|| Type::any(span, Default::default()));
+
+                if self.ctx.is_fn_param && type_ann.is_none() {
+                    // If the declaration includes an initializer expression (which is permitted
+                    // only when the parameter list occurs in conjunction with a
+                    // function body), the parameter type is the widened form (section
+                    // 3.11) of the type of the initializer expression.
+
+                    right = right.fold_with(&mut Widen { tuple_to_array: true });
+                }
+
                 right.make_clone_cheap();
 
                 if let Some(left) = &type_ann {
@@ -390,7 +400,7 @@ impl Analyzer<'_, '_> {
                             used_keys.push(key.clone());
 
                             let ctx = Ctx {
-                                diallow_unknown_object_property: true,
+                                disallow_unknown_object_property: true,
                                 ..self.ctx
                             };
                             let prop_ty = ty.as_ref().try_map(|ty| {
@@ -459,10 +469,11 @@ impl Analyzer<'_, '_> {
                             used_keys.push(key.clone());
 
                             let ctx = Ctx {
-                                diallow_unknown_object_property: true,
+                                disallow_unknown_object_property: true,
                                 ..self.ctx
                             };
-                            let prop_ty = ty.as_ref().try_map(|ty| {
+
+                            let mut prop_ty = ty.as_ref().try_map(|ty| {
                                 self.with_ctx(ctx)
                                     .access_property(
                                         span,
@@ -491,6 +502,25 @@ impl Analyzer<'_, '_> {
                                     )
                                     .ok()
                             });
+
+                            if prop.value.is_some() {
+                                prop_ty = prop_ty.map(|ty| {
+                                    // Optional
+                                    ty.map(|ty| {
+                                        Type::new_union(
+                                            span,
+                                            vec![
+                                                ty,
+                                                Type::Keyword(KeywordType {
+                                                    span,
+                                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                                    metadata: Default::default(),
+                                                }),
+                                            ],
+                                        )
+                                    })
+                                });
+                            }
 
                             match prop_ty {
                                 Ok(prop_ty) => {
@@ -650,7 +680,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[instrument(skip(self, span, ty, keys))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -783,6 +813,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Remove this. All logics are merged into add_vars.
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn declare_vars_inner_with_ty(
         &mut self,
         kind: VarKind,

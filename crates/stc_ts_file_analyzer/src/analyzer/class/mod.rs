@@ -31,7 +31,7 @@ use stc_ts_types::{
     Id, Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetdata,
     Ref, TsExpr, Type,
 };
-use stc_utils::{cache::Freeze, AHashSet, TryOpt};
+use stc_utils::{cache::Freeze, AHashSet};
 use std::{
     borrow::Cow,
     cell::RefCell,
@@ -375,7 +375,7 @@ impl Analyzer<'_, '_> {
 
         match &p.param {
             RTsParamPropParam::Ident(ref i) => {
-                let ty: Option<Type> = i.type_ann.validate_with(self).try_opt()?;
+                let ty: Option<Type> = i.type_ann.validate_with(self).transpose()?;
                 let ty = ty.map(|ty| ty.cheap());
 
                 self.declare_var(
@@ -401,7 +401,7 @@ impl Analyzer<'_, '_> {
                 right,
                 ..
             }) => {
-                let ty: Option<Type> = i.type_ann.validate_with(self).try_opt()?.freezed();
+                let ty: Option<Type> = i.type_ann.validate_with(self).transpose()?.freezed();
 
                 let right = right.validate_with_default(self).report(&mut self.storage).freezed();
 
@@ -461,7 +461,7 @@ impl Analyzer<'_, '_> {
                 {
                     Some(ty) => box ty,
                     None => {
-                        let e: Option<_> = $e.validate_with(self).try_opt()?;
+                        let e: Option<_> = $e.validate_with(self).transpose()?;
                         box e.unwrap_or_else(|| {
                             let mut ty = Type::any(span, Default::default());
                             self.mark_as_implicitly_typed(&mut ty);

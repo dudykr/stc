@@ -32,7 +32,7 @@ use stc_utils::{
 use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
-use tracing::{debug, error, info, instrument, span, trace, warn, Level};
+use tracing::{debug, error, info, span, trace, warn, Level};
 
 mod expander;
 mod inference;
@@ -286,7 +286,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Handles `infer U`.
-    #[instrument(skip(self, span, base, concrete, opts))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn infer_ts_infer_types(
         &mut self,
         span: Span,
@@ -1349,7 +1349,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    #[instrument(skip(self, span, inferred, param, arg, opts))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn infer_type_using_mapped_type(
         &mut self,
         span: Span,

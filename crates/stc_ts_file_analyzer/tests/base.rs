@@ -1,6 +1,5 @@
 #![feature(box_syntax)]
 
-use itertools::Itertools;
 use rnode::{NodeIdGenerator, RNode, VisitWith};
 use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;

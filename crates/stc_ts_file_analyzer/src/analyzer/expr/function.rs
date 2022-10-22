@@ -8,7 +8,7 @@ use crate::{
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr};
 use stc_ts_types::{Class, ClassMetadata, Function, KeywordType, Type};
-use stc_ts_utils::{OptionExt, PatExt};
+use stc_ts_utils::PatExt;
 use stc_utils::cache::Freeze;
 use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -32,20 +32,31 @@ impl Analyzer<'_, '_> {
                     ..child.ctx
                 };
 
-                match type_ann.as_ref().map(|ty| ty.normalize()) {
-                    Some(Type::Function(ty)) => {
-                        for p in f.params.iter().zip_longest(ty.params.iter()) {
-                            match p {
-                                EitherOrBoth::Both(param, ty) => {
-                                    // Store type infomations, so the pattern validator can use
-                                    // correct type.
-                                    if let Some(pat_node_id) = param.node_id() {
-                                        if let Some(m) = &mut child.mutations {
-                                            m.for_pats
-                                                .entry(pat_node_id)
-                                                .or_default()
-                                                .ty
-                                                .fill_with(|| *ty.ty.clone());
+                if let Some(ty) = type_ann.as_ref().map(|ty| ty.normalize()) {
+                    // See functionExpressionContextualTyping1.ts
+                    //
+                    // If a type annotation of function is union and there are two or more function
+                    // types, the type becomes any implicitly.
+                    if ty.iter_union().filter(|ty| ty.normalize().is_function()).count() == 1 {
+                        for ty in ty.iter_union() {
+                            match ty.normalize() {
+                                Type::Function(ty) => {
+                                    for p in f.params.iter().zip_longest(ty.params.iter()) {
+                                        match p {
+                                            EitherOrBoth::Both(param, ty) => {
+                                                // Store type information, so the pattern validator can use a correct
+                                                // type.
+                                                if let Some(pat_node_id) = param.node_id() {
+                                                    if let Some(m) = &mut child.mutations {
+                                                        m.for_pats
+                                                            .entry(pat_node_id)
+                                                            .or_default()
+                                                            .ty
+                                                            .get_or_insert_with(|| *ty.ty.clone());
+                                                    }
+                                                }
+                                            }
+                                            _ => {}
                                         }
                                     }
                                 }
@@ -53,7 +64,6 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
-                    _ => {}
                 }
 
                 for p in &f.params {

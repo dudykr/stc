@@ -700,7 +700,7 @@ impl Analyzer<'_, '_> {
     ///  - `expand_union` should be true if you are going to use it in
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
-    #[instrument(skip(self, span, ty, opts))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> ValidationResult {
         if !self.is_builtin {
             debug_assert_ne!(
@@ -795,7 +795,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[instrument(skip(self, name, ty))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn register_type(&mut self, name: Id, ty: Type) -> Type {
         if cfg!(debug_assertions) {
             debug!("[({})/types] Registering: {:?}", self.scope.depth(), name);
@@ -909,10 +909,12 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub fn declare_vars(&mut self, kind: VarKind, pat: &RPat) -> ValidationResult<()> {
         self.declare_vars_inner_with_ty(kind, pat, None, None, None)
     }
 
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub fn declare_vars_with_ty(
         &mut self,
         kind: VarKind,
@@ -1167,7 +1169,7 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    #[instrument(skip(self, name))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn find_local_type(&self, name: &Id) -> Option<ItemRef<Type>> {
         #[allow(dead_code)]
         static ANY: Lazy<Type> = Lazy::new(|| {
@@ -1628,6 +1630,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Merge with declare_vars_*
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub fn declare_complex_vars(
         &mut self,
         kind: VarKind,
@@ -1657,7 +1660,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Mark `ty` as not expanded by default.
-    #[instrument(skip(self, ty))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn prevent_expansion<T>(&self, ty: &mut T)
     where
         T: VisitMutWith<ExpansionPreventer>,

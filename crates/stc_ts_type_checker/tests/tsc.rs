@@ -150,7 +150,7 @@ fn record_stat(stats: Stats) -> Stats {
     stats
 }
 
-/// Retunrs **path**s (separated by `/`) of tests.
+/// Returns **path**s (separated by `/`) of tests.
 fn load_list(name: &str) -> Vec<String> {
     let content = read_to_string(name).unwrap();
 

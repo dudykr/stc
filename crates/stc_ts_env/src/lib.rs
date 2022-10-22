@@ -10,7 +10,6 @@ use string_enum::StringEnum;
 use swc_atoms::JsWord;
 use swc_common::{Globals, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::EsVersion;
-use tracing::instrument;
 
 mod marks;
 
@@ -90,7 +89,7 @@ impl Env {
         }
     }
 
-    #[instrument(skip(self, span))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
         if let Some(ty) = self.global_vars.lock().get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
@@ -108,7 +107,7 @@ impl Env {
         })
     }
 
-    #[instrument(skip(self, span))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
         if let Some(ty) = self.global_types.lock().get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);

@@ -15,15 +15,15 @@ use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional,
     ConditionalMetadata, ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection,
-    IntersectionMetadata, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata,
-    MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple,
-    TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature,
+    ModuleId, Operator, PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type,
+    TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
     debug_ctx,
     ext::{SpanExt, TypeVecExt},
-    stack, TryOpt,
+    stack,
 };
 use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
@@ -455,7 +455,7 @@ impl Analyzer<'_, '_> {
                             .freezed();
 
                         let ctx = Ctx {
-                            diallow_unknown_object_property: true,
+                            disallow_unknown_object_property: true,
                             ..self.ctx
                         };
                         let prop_ty = self.with_ctx(ctx).access_property(
@@ -599,8 +599,8 @@ impl Analyzer<'_, '_> {
         match check_type_constraint.normalize() {
             Type::Union(check_type_union) => {
                 //
-                let can_match = check_type_union.types.iter().any(|check_type_contraint| {
-                    self.extends(span, Default::default(), check_type_contraint, extends_type)
+                let can_match = check_type_union.types.iter().any(|check_type_constraint| {
+                    self.extends(span, Default::default(), check_type_constraint, extends_type)
                         .unwrap_or(true)
                 });
 
@@ -859,7 +859,7 @@ impl Analyzer<'_, '_> {
                                 self.expand_type_params(&type_params, *ty, Default::default())
                                     .map(Box::new)
                             })
-                            .try_opt()?;
+                            .transpose()?;
                     }
                     //
                     members.push(TypeElement::Property(PropertySignature {
@@ -938,11 +938,11 @@ impl Analyzer<'_, '_> {
 
     /// Collect all class members, including inherited members.
     ///
-    /// # Parmeters
+    /// # Parameters
     ///
     /// ## excluded
     ///
-    /// Memebers of base class.
+    /// Members of base class.
     #[instrument(skip(self, excluded, ty))]
     pub(crate) fn collect_class_members(
         &mut self,

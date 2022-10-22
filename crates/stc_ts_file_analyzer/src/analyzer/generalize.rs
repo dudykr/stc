@@ -13,13 +13,13 @@ use stc_utils::ext::TypeVecExt;
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Spanned};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{info, instrument, trace};
+use tracing::{info, trace};
 
 impl Analyzer<'_, '_> {
     /// TODO(kdy1): Remove this.
     ///
     /// Check if it's okay to generalize `ty`.
-    #[instrument(skip(self, ty))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn may_generalize(&self, ty: &Type) -> bool {
         trace!("may_generalize({:?})", ty);
         match ty.normalize() {
@@ -45,12 +45,12 @@ impl Analyzer<'_, '_> {
         !ty.metadata().prevent_generalization
     }
 
-    #[instrument(skip(self, ty))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn prevent_inference_while_simplifying(&self, ty: &mut Type) {
         ty.visit_mut_with(&mut PreventComplexSimplification);
     }
 
-    #[instrument(skip(self, ty))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn simplify(&self, ty: Type) -> Type {
         info!("Simplifying {}", dump_type_as_string(&self.cm, &ty));
         ty.fold_with(&mut Simplifier { env: &self.env })

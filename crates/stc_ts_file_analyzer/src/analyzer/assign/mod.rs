@@ -1018,6 +1018,27 @@ impl Analyzer<'_, '_> {
                 }
             }
             Type::EnumVariant(ref e @ EnumVariant { name: Some(..), .. }) => {
+                // Single-variant enums seem to be treated like a number.
+                //
+                // See typeArgumentInferenceWithObjectLiteral.ts
+
+                let items = self
+                    .find_type(e.ctxt, &e.enum_name)
+                    .context("failed to find an enum for assignment")?;
+
+                if let Some(items) = items {
+                    for e in items {
+                        match e.normalize() {
+                            Type::Enum(e) => {
+                                if e.members.len() == 1 {
+                                    return Ok(());
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+
                 dbg!();
                 return Err(Error::InvalidLValue { span: e.span });
             }
@@ -1122,6 +1143,30 @@ impl Analyzer<'_, '_> {
                 Type::Ref(..) | Type::Query(..) | Type::Param(..) => {
                     // We should expand ref. We expand it with the match
                     // expression below.
+                }
+                Type::EnumVariant(e) => {
+                    // Single-variant enums seem to be treated like a number.
+                    //
+                    // See typeArgumentInferenceWithObjectLiteral.ts
+
+                    let e = self
+                        .find_type(e.ctxt, &e.enum_name)
+                        .context("failed to find an enum for assignment")?;
+
+                    if let Some(e) = e {
+                        for e in e {
+                            match e.normalize() {
+                                Type::Enum(e) => {
+                                    if e.members.len() == 1 {
+                                        return Ok(());
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+
+                    fail!()
                 }
                 _ => fail!(),
             },

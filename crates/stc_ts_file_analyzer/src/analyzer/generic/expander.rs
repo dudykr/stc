@@ -12,7 +12,7 @@ use stc_ts_types::{Id, Interface, KeywordType, TypeParam, TypeParamDecl, TypePar
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
-use tracing::{debug, instrument};
+use tracing::debug;
 
 /// All fields default to false.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -33,7 +33,7 @@ pub(crate) struct ExtendsOpts {
 
 /// Generic expander.
 impl Analyzer<'_, '_> {
-    #[instrument(skip(self, span, type_params, type_args))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(in super::super) fn instantiate_type_params_using_args(
         &mut self,
         span: Span,
@@ -81,7 +81,7 @@ impl Analyzer<'_, '_> {
     ///z     T extends {
     ///          x: infer P extends number ? infer P : string;
     ///      } ? P : never
-    #[instrument(name = "expand_type_params", skip(self, params, ty, opts))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(in super::super) fn expand_type_params<T>(
         &mut self,
         params: &FxHashMap<Id, Type>,
@@ -109,7 +109,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns `Some(true)` if `child` extends `parent`.
-    #[instrument(name = "extends", skip(self, span, opts, child, parent))]
+    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn extends(&mut self, span: Span, opts: ExtendsOpts, child: &Type, parent: &Type) -> Option<bool> {
         let child = child.normalize();
         let parent = parent.normalize();
