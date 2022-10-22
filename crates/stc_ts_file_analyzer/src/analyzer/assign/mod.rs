@@ -1613,7 +1613,7 @@ impl Analyzer<'_, '_> {
                         right_ident: opts.right_ident_span,
                     });
                 } else {
-                    return Err(Error::Errors { span, errors }.context("tried to a type to a union type"));
+                    return Err(Error::Errors { span, errors }.context("tried to assign a type to a union type"));
                 }
             }
 
