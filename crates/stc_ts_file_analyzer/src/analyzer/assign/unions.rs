@@ -57,7 +57,7 @@ impl Analyzer<'_, '_> {
                 });
 
                 for el in &ty.elems {
-                    self.append_tuple_element_to_tuple(span, &mut tuple, el)
+                    self.append_tuple_element_to_type(span, &mut tuple, el)
                         .context("tried to append an element to a type")?;
                 }
 
@@ -135,13 +135,13 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Use Cow<TupleElement>
-    fn append_tuple_element_to_tuple(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> ValidationResult<()> {
+    fn append_tuple_element_to_type(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> ValidationResult<()> {
         match el.ty.normalize() {
             Type::Union(el_ty) => {
                 let mut to_types = (0..el_ty.types.len()).map(|_| to.clone()).collect_vec();
 
                 for (idx, el_ty) in el_ty.types.iter().enumerate() {
-                    self.append_tuple_element_to_tuple(
+                    self.append_tuple_element_to_type(
                         span,
                         &mut to_types[idx],
                         &TupleElement {
@@ -166,7 +166,7 @@ impl Analyzer<'_, '_> {
         match to.normalize_mut() {
             Type::Union(to) => {
                 for to in &mut to.types {
-                    self.append_tuple_element_to_tuple(span, to, el)?;
+                    self.append_tuple_element_to_type(span, to, el)?;
                 }
 
                 Ok(())
