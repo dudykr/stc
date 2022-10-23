@@ -1521,7 +1521,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 match rhs {
-                    Type::Tuple(..) | Type::TypeLit(..) | Type::Union(..) => {
+                    Type::Tuple(..) | Type::TypeLit(..) | Type::Union(..) | Type::Alias(..) | Type::Interface(..) => {
                         if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
                             return res.context("tried to assign using `assign_to_union`");
                         }

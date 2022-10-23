@@ -89,7 +89,7 @@ impl Analyzer<'_, '_> {
         match el {
             TypeElement::Property(el) => {
                 if let Some(el_ty) = &el.type_ann {
-                    if let Some(ty) = expand_union_for_assignment(&el_ty) {
+                    if let Some(ty) = self.expand_union_for_assignment(span, &el_ty) {
                         let mut to_types = (0..ty.types.len()).map(|_| to.clone()).collect_vec();
 
                         for (idx, el_ty) in ty.types.iter().enumerate() {
@@ -136,7 +136,7 @@ impl Analyzer<'_, '_> {
 
     /// TODO(kdy1): Use Cow<TupleElement>
     fn append_tuple_element_to_type(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> ValidationResult<()> {
-        if let Some(el_ty) = expand_union_for_assignment(&el.ty) {
+        if let Some(el_ty) = self.expand_union_for_assignment(span, &el.ty) {
             let mut to_types = (0..el_ty.types.len()).map(|_| to.clone()).collect_vec();
 
             for (idx, el_ty) in el_ty.types.iter().enumerate() {
@@ -176,42 +176,44 @@ impl Analyzer<'_, '_> {
             _ => Err(Error::SimpleAssignFailed { span, cause: None }),
         }
     }
-}
 
-/// Expands `boolean` to `true | false`.
-fn expand_union_for_assignment(t: &Type) -> Option<Cow<Union>> {
-    match t.normalize() {
-        Type::Keyword(KeywordType {
-            span,
-            metadata,
-            kind: TsKeywordTypeKind::TsBooleanKeyword,
-            ..
-        }) => Some(Cow::Owned(Union {
-            span: *span,
-            types: vec![
-                Type::Lit(LitType {
-                    span: DUMMY_SP,
-                    lit: stc_ts_ast_rnode::RTsLit::Bool(RBool {
+    /// Expands `boolean` to `true | false`.
+    fn expand_union_for_assignment<'a>(&mut self, span: Span, t: &'a Type) -> Option<Union> {
+        let t = self.normalize(Some(span), Cow::Borrowed(t), Default::default()).ok()?;
+
+        match t.normalize() {
+            Type::Keyword(KeywordType {
+                span,
+                metadata,
+                kind: TsKeywordTypeKind::TsBooleanKeyword,
+                ..
+            }) => Some(Union {
+                span: *span,
+                types: vec![
+                    Type::Lit(LitType {
                         span: DUMMY_SP,
-                        value: true,
+                        lit: stc_ts_ast_rnode::RTsLit::Bool(RBool {
+                            span: DUMMY_SP,
+                            value: true,
+                        }),
+                        metadata: LitTypeMetadata::default(),
                     }),
-                    metadata: LitTypeMetadata::default(),
-                }),
-                Type::Lit(LitType {
-                    span: DUMMY_SP,
-                    lit: stc_ts_ast_rnode::RTsLit::Bool(RBool {
+                    Type::Lit(LitType {
                         span: DUMMY_SP,
-                        value: false,
+                        lit: stc_ts_ast_rnode::RTsLit::Bool(RBool {
+                            span: DUMMY_SP,
+                            value: false,
+                        }),
+                        metadata: LitTypeMetadata::default(),
                     }),
-                    metadata: LitTypeMetadata::default(),
-                }),
-            ],
-            metadata: UnionMetadata {
-                common: metadata.common,
-                ..Default::default()
-            },
-        })),
-        Type::Union(ty) => Some(Cow::Borrowed(ty)),
-        _ => None,
+                ],
+                metadata: UnionMetadata {
+                    common: metadata.common,
+                    ..Default::default()
+                },
+            }),
+            Type::Union(ty) => Some(ty.clone()),
+            _ => None,
+        }
     }
 }
