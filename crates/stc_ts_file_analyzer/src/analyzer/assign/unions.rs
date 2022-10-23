@@ -6,13 +6,15 @@ use crate::{
     ValidationResult,
 };
 use itertools::Itertools;
+use stc_ts_ast_rnode::RBool;
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{
-    KeywordType, PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union, UnionMetadata,
+    KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union,
+    UnionMetadata,
 };
 use stc_utils::cache::Freeze;
 use std::borrow::Cow;
-use swc_common::Span;
+use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
@@ -186,7 +188,24 @@ fn expand_union(t: &Type) -> Option<Cow<Union>> {
             ..
         }) => Some(Cow::Owned(Union {
             span: *span,
-            types: Vec::new(),
+            types: vec![
+                Type::Lit(LitType {
+                    span: DUMMY_SP,
+                    lit: stc_ts_ast_rnode::RTsLit::Bool(RBool {
+                        span: DUMMY_SP,
+                        value: true,
+                    }),
+                    metadata: LitTypeMetadata::default(),
+                }),
+                Type::Lit(LitType {
+                    span: DUMMY_SP,
+                    lit: stc_ts_ast_rnode::RTsLit::Bool(RBool {
+                        span: DUMMY_SP,
+                        value: false,
+                    }),
+                    metadata: LitTypeMetadata::default(),
+                }),
+            ],
             metadata: UnionMetadata {
                 common: metadata.common,
                 ..Default::default()
