@@ -899,7 +899,7 @@ impl Analyzer<'_, '_> {
                         (Variance::Covariant, Variance::Covariant) => {
                             return self
                                 .assign_with_opts(data, opts, &lc.check_type, &rc.check_type)
-                                .context("tried assignment of convariant types")
+                                .context("tried assignment of covariant types")
                         }
                         (Variance::Contravariant, Variance::Contravariant) => {
                             return self
