@@ -8,11 +8,12 @@ use crate::{
 use itertools::Itertools;
 use stc_ts_ast_rnode::RBool;
 use stc_ts_errors::{DebugExt, Error};
+use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union,
     UnionMetadata,
 };
-use stc_utils::cache::Freeze;
+use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
 use std::borrow::Cow;
 use swc_common::{Span, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -90,7 +91,9 @@ impl Analyzer<'_, '_> {
             TypeElement::Property(el) => {
                 if let Some(el_ty) = &el.type_ann {
                     if let Some(ty) = self.expand_union_for_assignment(span, &el_ty) {
-                        let mut to_types = (0..ty.types.len()).map(|_| to.clone()).collect_vec();
+                        let mut to_types = (0..ty.types.len())
+                            .map(|_| ALLOW_DEEP_CLONE.set(&(), || to.clone()))
+                            .collect_vec();
 
                         for (idx, el_ty) in ty.types.iter().enumerate() {
                             self.append_type_element_to_type(
@@ -107,7 +110,8 @@ impl Analyzer<'_, '_> {
                             span: ty.span,
                             types: to_types,
                             metadata: ty.metadata,
-                        });
+                        })
+                        .fixed();
 
                         return Ok(());
                     }
