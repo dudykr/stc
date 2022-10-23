@@ -54,9 +54,8 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Tuple(ty) => {
                 let mut tuple = Type::Tuple(Tuple {
-                    span: ty.span,
                     elems: Default::default(),
-                    metadata: ty.metadata,
+                    ..*ty
                 });
 
                 for el in &ty.elems {
@@ -68,9 +67,8 @@ impl Analyzer<'_, '_> {
             }
             Type::TypeLit(ty) => {
                 let mut type_lit = Type::TypeLit(TypeLit {
-                    span: ty.span,
-                    metadata: ty.metadata,
                     members: Default::default(),
+                    ..*ty
                 });
 
                 for el in &ty.members {
