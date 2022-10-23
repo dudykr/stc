@@ -89,7 +89,7 @@ impl Analyzer<'_, '_> {
         match el {
             TypeElement::Property(el) => {
                 if let Some(el_ty) = &el.type_ann {
-                    if let Some(ty) = expand_union(&el_ty) {
+                    if let Some(ty) = expand_union_for_assignment(&el_ty) {
                         let mut to_types = (0..ty.types.len()).map(|_| to.clone()).collect_vec();
 
                         for (idx, el_ty) in ty.types.iter().enumerate() {
@@ -136,7 +136,7 @@ impl Analyzer<'_, '_> {
 
     /// TODO(kdy1): Use Cow<TupleElement>
     fn append_tuple_element_to_type(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> ValidationResult<()> {
-        if let Some(el_ty) = expand_union(&el.ty) {
+        if let Some(el_ty) = expand_union_for_assignment(&el.ty) {
             let mut to_types = (0..el_ty.types.len()).map(|_| to.clone()).collect_vec();
 
             for (idx, el_ty) in el_ty.types.iter().enumerate() {
@@ -179,7 +179,7 @@ impl Analyzer<'_, '_> {
 }
 
 /// Expands `boolean` to `true | false`.
-fn expand_union(t: &Type) -> Option<Cow<Union>> {
+fn expand_union_for_assignment(t: &Type) -> Option<Cow<Union>> {
     match t.normalize() {
         Type::Keyword(KeywordType {
             span,
