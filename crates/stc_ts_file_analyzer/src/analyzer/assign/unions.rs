@@ -7,7 +7,7 @@ use crate::{
 };
 use itertools::Itertools;
 use stc_ts_errors::{DebugExt, Error};
-use stc_ts_types::{Tuple, TupleElement, Type, Union};
+use stc_ts_types::{PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union};
 use stc_utils::cache::Freeze;
 use std::borrow::Cow;
 use swc_common::Span;
@@ -63,7 +63,74 @@ impl Analyzer<'_, '_> {
 
                 Ok(tuple)
             }
+            Type::TypeLit(ty) => {
+                let mut type_lit = Type::TypeLit(TypeLit {
+                    span: ty.span,
+                    metadata: ty.metadata,
+                    members: Default::default(),
+                });
+
+                for el in &ty.members {
+                    self.append_type_element_to_type(span, &mut type_lit, el)
+                        .context("tried to append an element to a type")?;
+                }
+
+                Ok(type_lit)
+            }
             _ => Ok(ty.into_owned()),
+        }
+    }
+
+    /// TODO(kdy1): Use Cow<TupleElement>
+    fn append_type_element_to_type(&mut self, span: Span, to: &mut Type, el: &TypeElement) -> ValidationResult<()> {
+        match el {
+            TypeElement::Property(el) => {
+                if let Some(el_ty) = &el.type_ann {
+                    match el_ty.normalize() {
+                        Type::Union(el_ty) => {
+                            let mut to_types = (0..el_ty.types.len()).map(|_| to.clone()).collect_vec();
+
+                            for (idx, el_ty) in el_ty.types.iter().enumerate() {
+                                self.append_type_element_to_type(
+                                    span,
+                                    &mut to_types[idx],
+                                    &TypeElement::Property(PropertySignature {
+                                        type_ann: Some(box el_ty.clone()),
+                                        ..el.clone()
+                                    }),
+                                )?;
+                            }
+
+                            *to = Type::Union(Union {
+                                span: el_ty.span,
+                                types: to_types,
+                                metadata: el_ty.metadata,
+                            });
+
+                            return Ok(());
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
+            _ => {}
+        }
+
+        match to.normalize_mut() {
+            Type::Union(to) => {
+                for to in &mut to.types {
+                    self.append_type_element_to_type(span, to, el)?;
+                }
+
+                Ok(())
+            }
+            Type::TypeLit(to) => {
+                to.members.push(el.clone());
+
+                Ok(())
+            }
+            _ => Err(Error::SimpleAssignFailed { span, cause: None }),
         }
     }
 
