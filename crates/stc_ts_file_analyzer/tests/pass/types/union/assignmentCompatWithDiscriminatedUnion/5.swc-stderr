@@ -1,0 +1,92 @@
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:13:13
+   |
+13 |         if (1 == 1) {
+   |             ^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:20:32
+   |
+20 |     const bad: IAxis = { type: getAxisType() };
+   |                                ^^^^^^^^^^^
+   |
+   = note: () => IAxisType
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:20:32
+   |
+20 |     const bad: IAxis = { type: getAxisType() };
+   |                                ^^^^^^^^^^^^^
+   |
+   = note: IAxisType
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:20:24
+   |
+20 |     const bad: IAxis = { type: getAxisType() };
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: {
+               type: IAxisType;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:21:33
+   |
+21 |     const good: IAxis = { type: undefined };
+   |                                 ^^^^^^^^^
+   |
+   = note: undefined
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:21:25
+   |
+21 |     const good: IAxis = { type: undefined };
+   |                         ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: {
+               type: undefined;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:22:5
+   |
+22 |     good.type = getAxisType();
+   |     ^^^^
+   |
+   = note: (ILinearAxis | ICategoricalAxis)
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:22:5
+   |
+22 |     good.type = getAxisType();
+   |     ^^^^^^^^^
+   |
+   = note: ("linear" | "categorical")
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:22:17
+   |
+22 |     good.type = getAxisType();
+   |                 ^^^^^^^^^^^
+   |
+   = note: () => IAxisType
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:22:17
+   |
+22 |     good.type = getAxisType();
+   |                 ^^^^^^^^^^^^^
+   |
+   = note: IAxisType
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/5.ts:22:5
+   |
+22 |     good.type = getAxisType();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: IAxisType
+
