@@ -274,6 +274,7 @@ constEnums/constEnumPropertyAccess1.ts
 constEnums/constEnumPropertyAccess2.ts
 controlFlow/constLocalsInFunctionExpressions.ts
 controlFlow/controlFlowAssignmentExpression.ts
+controlFlow/controlFlowAssignmentPatternOrder.ts
 controlFlow/controlFlowBinaryAndExpression.ts
 controlFlow/controlFlowBindingPatternOrder.ts
 controlFlow/controlFlowCommaOperator.ts
@@ -2420,6 +2421,7 @@ types/typeRelationships/typeAndMemberIdentity/objectTypesIdentityWithStringIndex
 types/typeRelationships/typeAndMemberIdentity/primtiveTypesAreIdentical.ts
 types/typeRelationships/typeAndMemberIdentity/typeParametersAreIdenticalToThemselves.ts
 types/typeRelationships/typeInference/bivariantInferences.ts
+types/typeRelationships/typeInference/contextualSignatureInstantiation.ts
 types/typeRelationships/typeInference/discriminatedUnionInference.ts
 types/typeRelationships/typeInference/genericCallTypeArgumentInference.ts
 types/typeRelationships/typeInference/genericCallWithArrayLiteralArgs.ts

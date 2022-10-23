@@ -768,21 +768,20 @@ impl Analyzer<'_, '_> {
             RPat::Invalid(..) => return Ok(()),
 
             RPat::Assign(assign) => {
-                self.try_assign_pat_with_opts(span, &assign.left, &ty, opts)
-                    .report(&mut self.storage);
-
                 // TODO(kdy1): Use type annotation?
                 let res = assign
                     .right
                     .validate_with_default(self)
                     .context("tried to validate type of default expression in an assginment pattern");
 
+                self.try_assign_pat_with_opts(span, &assign.left, &ty, opts)
+                    .report(&mut self.storage);
+
                 res.and_then(|default_value_type| {
                     self.try_assign_pat_with_opts(span, &assign.left, &default_value_type, opts)
                 })
                 .report(&mut self.storage);
 
-                self.try_assign_pat_with_opts(span, &assign.left, ty, opts)?;
                 return Ok(());
             }
 

@@ -142,8 +142,6 @@ pub(crate) struct AssignOpts {
     pub infer_type_params_of_left: bool,
 
     pub is_assigning_to_class_members: bool,
-
-    pub reverse_ret_ty: bool,
 }
 
 #[derive(Default)]
@@ -1523,9 +1521,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 match rhs {
-                    Type::Tuple(rt) => {
+                    Type::Tuple(..) => {
                         if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
-                            return res;
+                            return res.context("tried to assign using `assign_to_union`");
                         }
                     }
                     _ => {}
@@ -1613,7 +1611,7 @@ impl Analyzer<'_, '_> {
                         right_ident: opts.right_ident_span,
                     });
                 } else {
-                    return Err(Error::Errors { span, errors }.context("tried to a type to a union type"));
+                    return Err(Error::Errors { span, errors }.context("tried to assign a type to a union type"));
                 }
             }
 

@@ -1,0 +1,32 @@
+warning: Type
+ --> $DIR/tests/pass/variance/covariance/1.ts:1:51
+  |
+1 | let arrayStringOrNumber: Array<string | number> = [];
+  |                                                   ^^
+  |
+  = note: []
+
+warning: Type
+ --> $DIR/tests/pass/variance/covariance/1.ts:2:34
+  |
+2 | let arrayString: Array<string> = [];
+  |                                  ^^
+  |
+  = note: []
+
+warning: Type
+ --> $DIR/tests/pass/variance/covariance/1.ts:4:23
+  |
+4 | arrayStringOrNumber = arrayString; // Ok
+  |                       ^^^^^^^^^^^
+  |
+  = note: string[]
+
+warning: Type
+ --> $DIR/tests/pass/variance/covariance/1.ts:4:1
+  |
+4 | arrayStringOrNumber = arrayString; // Ok
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string[]
+

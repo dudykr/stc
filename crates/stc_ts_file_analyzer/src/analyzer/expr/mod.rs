@@ -438,7 +438,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 _ => {
-                    e.left.visit_with(analyzer);
+                    // TODO(kdy1): This is wrong and commented out because of the evaluation order.
+                    //
+                    // e.left.visit_with(analyzer);
                     (None, type_ann)
                 }
             };

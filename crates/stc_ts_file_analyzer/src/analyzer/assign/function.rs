@@ -364,20 +364,11 @@ impl Analyzer<'_, '_> {
                     for_overload: false,
                     allow_assignment_of_void: Some(opts.allow_assignment_of_void.unwrap_or(true)),
                     allow_assignment_to_void: !opts.for_overload,
-                    reverse_ret_ty: false,
                     ..opts
                 };
 
-                if is_call && opts.reverse_ret_ty {
-                    self.assign_inner(data, r_ret_ty, l_ret_ty, opts).context(
-                        "tried to assign the return type of a function to the return type of another function \
-                         (reversed)",
-                    )?;
-                } else {
-                    self.assign_inner(data, l_ret_ty, r_ret_ty, opts).context(
-                        "tried to assign the return type of a function to the return type of another function",
-                    )?;
-                }
+                self.assign_inner(data, l_ret_ty, r_ret_ty, opts)
+                    .context("tried to assign the return type of a function to the return type of another function")?;
             }
         }
 
@@ -712,27 +703,11 @@ impl Analyzer<'_, '_> {
             };
 
         let res = if reverse {
-            self.assign_with_opts(
-                data,
-                AssignOpts {
-                    reverse_ret_ty: true,
-                    ..opts
-                },
-                &r_ty,
-                &l_ty,
-            )
-            .context("tried to assign the type of a parameter to another (reversed)")
+            self.assign_with_opts(data, AssignOpts { ..opts }, &r_ty, &l_ty)
+                .context("tried to assign the type of a parameter to another (reversed)")
         } else {
-            self.assign_with_opts(
-                data,
-                AssignOpts {
-                    reverse_ret_ty: true,
-                    ..opts
-                },
-                &l_ty,
-                &r_ty,
-            )
-            .context("tried to assign the type of a parameter to another")
+            self.assign_with_opts(data, AssignOpts { ..opts }, &l_ty, &r_ty)
+                .context("tried to assign the type of a parameter to another")
         };
 
         res.convert_err(|err| match &err {
