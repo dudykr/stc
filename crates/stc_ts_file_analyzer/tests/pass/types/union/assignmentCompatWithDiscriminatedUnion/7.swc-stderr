@@ -1,0 +1,50 @@
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:14:29
+   |
+14 |     dispatchAction({ type: (active ? 'disactivate' : 'activate') });
+   |                             ^^^^^^
+   |
+   = note: true
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:14:29
+   |
+14 |     dispatchAction({ type: (active ? 'disactivate' : 'activate') });
+   |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: ('disactivate' | 'activate')
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:14:28
+   |
+14 |     dispatchAction({ type: (active ? 'disactivate' : 'activate') });
+   |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: ('disactivate' | 'activate')
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:14:20
+   |
+14 |     dispatchAction({ type: (active ? 'disactivate' : 'activate') });
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: {
+               type: ('disactivate' | 'activate');
+           }
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:14:5
+   |
+14 |     dispatchAction({ type: (active ? 'disactivate' : 'activate') });
+   |     ^^^^^^^^^^^^^^
+   |
+   = note: (action: Action) => void
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/7.ts:14:5
+   |
+14 |     dispatchAction({ type: (active ? 'disactivate' : 'activate') });
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: void
+

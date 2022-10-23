@@ -1,0 +1,29 @@
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:16:19
+   |
+16 |             type: obj1.type
+   |                   ^^^^
+   |
+   = note: (A1 | A2)
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:16:19
+   |
+16 |             type: obj1.type
+   |                   ^^^^^^^^^
+   |
+   = note: ("A1" | "A2")
+
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:15:26
+   |
+15 |           const obj2: AU = {
+   |  __________________________^
+16 | |             type: obj1.type
+17 | |         };
+   | |_________^
+   |
+   = note: {
+               type: ("A1" | "A2");
+           }
+
