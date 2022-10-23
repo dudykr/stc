@@ -782,7 +782,6 @@ impl Analyzer<'_, '_> {
                 })
                 .report(&mut self.storage);
 
-                self.try_assign_pat_with_opts(span, &assign.left, ty, opts)?;
                 return Ok(());
             }
 
