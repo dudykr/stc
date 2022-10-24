@@ -503,6 +503,8 @@ impl Analyzer<'_, '_> {
             new.push(ty.clone());
         }
         if new.is_empty() {
+            // All types can be merged
+
             return Ok(types);
         }
 
