@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/pass/types/intersection/intersectionTypeInference2-1.ts:6:3
+ --> $DIR/tests/pass/types/intersection/intersectionTypeInference2/1.ts:6:3
   |
 6 | f(a);  // never
   |   ^
@@ -11,7 +11,7 @@ warning: Type
           })
 
 warning: Type
- --> $DIR/tests/pass/types/intersection/intersectionTypeInference2-1.ts:6:1
+ --> $DIR/tests/pass/types/intersection/intersectionTypeInference2/1.ts:6:1
   |
 6 | f(a);  // never
   | ^
@@ -21,7 +21,7 @@ warning: Type
           }) => T
 
 warning: Type
- --> $DIR/tests/pass/types/intersection/intersectionTypeInference2-1.ts:6:1
+ --> $DIR/tests/pass/types/intersection/intersectionTypeInference2/1.ts:6:1
   |
 6 | f(a);  // never
   | ^^^^

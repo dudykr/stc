@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:4:12
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:4:12
   |
 4 |     return "21EC2020-3AEA-4069-A2DD-08002B30309D" as Guid;
   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -7,7 +7,7 @@ warning: Type
   = note: Guid
 
 warning: Type
- --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:7:37
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:7:37
   |
 7 | let map1: { [x: string]: number } = {};
   |                                     ^^
@@ -16,7 +16,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:8:12
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:8:12
   |
 8 | let guid = createGuid();
   |            ^^^^^^^^^^
@@ -24,7 +24,7 @@ warning: Type
   = note: () => Guid
 
 warning: Type
- --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:8:12
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:8:12
   |
 8 | let guid = createGuid();
   |            ^^^^^^^^^^^^
@@ -32,7 +32,7 @@ warning: Type
   = note: Guid
 
 warning: Type
- --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:9:1
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:9:1
   |
 9 | map1[guid] = 123;  // Can with tagged string
   | ^^^^
@@ -42,7 +42,7 @@ warning: Type
           }
 
 warning: Type
- --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:9:6
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:9:6
   |
 9 | map1[guid] = 123;  // Can with tagged string
   |      ^^^^
@@ -52,7 +52,7 @@ warning: Type
           })
 
 warning: Type
- --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:9:1
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:9:1
   |
 9 | map1[guid] = 123;  // Can with tagged string
   | ^^^^^^^^^^
@@ -60,7 +60,7 @@ warning: Type
   = note: number
 
 warning: Type
- --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:9:1
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:9:1
   |
 9 | map1[guid] = 123;  // Can with tagged string
   | ^^^^^^^^^^^^^^^^
@@ -68,7 +68,7 @@ warning: Type
   = note: 123
 
 warning: Type
-  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:11:19
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:11:19
    |
 11 | export const s3 = guid + guid;
    |                   ^^^^
@@ -78,7 +78,7 @@ warning: Type
            })
 
 warning: Type
-  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:11:26
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:11:26
    |
 11 | export const s3 = guid + guid;
    |                          ^^^^
@@ -88,7 +88,7 @@ warning: Type
            })
 
 warning: Type
-  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes-1.ts:11:19
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/1.ts:11:19
    |
 11 | export const s3 = guid + guid;
    |                   ^^^^^^^^^^^

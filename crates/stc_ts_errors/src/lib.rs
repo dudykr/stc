@@ -471,11 +471,11 @@ pub enum Error {
         span: Span,
     },
 
-    StackOverlfow {
+    StackOverflow {
         span: Span,
     },
 
-    /// TS2416
+    /// TS2420
     InvalidImplOfInterface {
         span: Span,
         cause: Box<Error>,
@@ -1668,7 +1668,7 @@ impl Error {
 
             Error::StaticMemberCannotUseTypeParamOfClass { .. } => 2302,
 
-            Error::InvalidImplOfInterface { .. } => 2416,
+            Error::InvalidImplOfInterface { .. } => 2420,
 
             Error::ClassIncorrectlyImplementsInterface { .. } => 2420,
 
@@ -2026,6 +2026,6 @@ impl Extend<Error> for Errors {
 
 impl From<StackOverflowError> for Error {
     fn from(e: StackOverflowError) -> Self {
-        Error::StackOverlfow { span: e.span }
+        Error::StackOverflow { span: e.span }
     }
 }

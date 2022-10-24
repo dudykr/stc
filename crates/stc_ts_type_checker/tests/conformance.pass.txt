@@ -356,7 +356,6 @@ es6/Symbols/symbolProperty20.ts
 es6/Symbols/symbolProperty21.ts
 es6/Symbols/symbolProperty22.ts
 es6/Symbols/symbolProperty23.ts
-es6/Symbols/symbolProperty24.ts
 es6/Symbols/symbolProperty25.ts
 es6/Symbols/symbolProperty26.ts
 es6/Symbols/symbolProperty27.ts
@@ -502,6 +501,8 @@ es6/computedProperties/computedPropertyNames20_ES5.ts
 es6/computedProperties/computedPropertyNames20_ES6.ts
 es6/computedProperties/computedPropertyNames21_ES5.ts
 es6/computedProperties/computedPropertyNames21_ES6.ts
+es6/computedProperties/computedPropertyNames23_ES5.ts
+es6/computedProperties/computedPropertyNames23_ES6.ts
 es6/computedProperties/computedPropertyNames24_ES5.ts
 es6/computedProperties/computedPropertyNames24_ES6.ts
 es6/computedProperties/computedPropertyNames25_ES5.ts
@@ -1449,6 +1450,7 @@ generators/generatorReturnTypeFallback.4.ts
 generators/generatorReturnTypeFallback.5.ts
 generators/generatorReturnTypeIndirectReferenceToGlobalType.ts
 generators/generatorReturnTypeInference.ts
+generators/generatorYieldContextualType.ts
 generators/restParameterInDownlevelGenerator.ts
 inferFromBindingPattern.ts
 interfaces/declarationMerging/genericAndNonGenericInterfaceWithTheSameName2.ts
@@ -2097,6 +2099,7 @@ types/nonPrimitive/nonPrimitiveIndexingWithForInSupressError.ts
 types/nonPrimitive/nonPrimitiveRhsSideOfInExpression.ts
 types/nonPrimitive/nonPrimitiveUnionIntersection.ts
 types/objectTypeLiteral/callSignatures/callSignatureWithoutAnnotationsOrBody.ts
+types/objectTypeLiteral/callSignatures/callSignatureWithoutReturnTypeAnnotationInference.ts
 types/objectTypeLiteral/callSignatures/callSignaturesThatDifferOnlyByReturnType.ts
 types/objectTypeLiteral/callSignatures/callSignaturesThatDifferOnlyByReturnType2.ts
 types/objectTypeLiteral/callSignatures/callSignaturesThatDifferOnlyByReturnType3.ts
@@ -2205,6 +2208,10 @@ types/stringLiteral/stringLiteralTypesInUnionTypes01.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes02.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes03.ts
 types/stringLiteral/stringLiteralTypesInUnionTypes04.ts
+types/stringLiteral/stringLiteralTypesOverloadAssignability02.ts
+types/stringLiteral/stringLiteralTypesOverloadAssignability03.ts
+types/stringLiteral/stringLiteralTypesOverloadAssignability04.ts
+types/stringLiteral/stringLiteralTypesOverloadAssignability05.ts
 types/stringLiteral/stringLiteralTypesOverloads01.ts
 types/stringLiteral/stringLiteralTypesOverloads02.ts
 types/stringLiteral/stringLiteralTypesOverloads03.ts
@@ -2251,6 +2258,7 @@ types/typeAliases/asiPreventsParsingAsTypeAlias02.ts
 types/typeAliases/circularTypeAliasForUnionWithClass.ts
 types/typeAliases/circularTypeAliasForUnionWithInterface.ts
 types/typeAliases/classDoesNotDependOnBaseTypes.ts
+types/typeAliases/genericTypeAliases.ts
 types/typeAliases/typeAliases.ts
 types/typeAliases/typeAliasesDoNotMerge.ts
 types/typeAliases/typeAliasesForObjectTypes.ts
@@ -2304,6 +2312,7 @@ types/typeRelationships/assignmentCompatibility/assignmentCompatWithGenericCallS
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithNumericIndexer.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithNumericIndexer2.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithNumericIndexer3.ts
+types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers2.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers3.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers4.ts
@@ -2350,6 +2359,14 @@ types/typeRelationships/comparable/switchCaseWithUnionTypes01.ts
 types/typeRelationships/comparable/typeAssertionsWithUnionTypes01.ts
 types/typeRelationships/instanceOf/narrowingConstrainedTypeVariable.ts
 types/typeRelationships/instanceOf/narrowingGenericTypeFromInstanceof01.ts
+types/typeRelationships/recursiveTypes/arrayLiteralsWithRecursiveGenerics.ts
+types/typeRelationships/recursiveTypes/infiniteExpansionThroughInstantiation2.ts
+types/typeRelationships/recursiveTypes/infiniteExpansionThroughTypeInference.ts
+types/typeRelationships/recursiveTypes/nominalSubtypeCheckOfTypeParameter.ts
+types/typeRelationships/recursiveTypes/nominalSubtypeCheckOfTypeParameter2.ts
+types/typeRelationships/recursiveTypes/objectTypeWithRecursiveWrappedProperty.ts
+types/typeRelationships/recursiveTypes/objectTypeWithRecursiveWrappedProperty2.ts
+types/typeRelationships/recursiveTypes/recursiveTypeInGenericConstraint.ts
 types/typeRelationships/subtypesAndSuperTypes/nullIsSubtypeOfEverythingButUndefined.ts
 types/typeRelationships/subtypesAndSuperTypes/stringLiteralTypeIsSubtypeOfString.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypesOfAny.ts
