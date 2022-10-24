@@ -899,7 +899,7 @@ impl Analyzer<'_, '_> {
                         (Variance::Covariant, Variance::Covariant) => {
                             return self
                                 .assign_with_opts(data, opts, &lc.check_type, &rc.check_type)
-                                .context("tried assignment of convariant types")
+                                .context("tried assignment of covariant types")
                         }
                         (Variance::Contravariant, Variance::Contravariant) => {
                             return self
@@ -1521,7 +1521,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 match rhs {
-                    Type::Tuple(..) => {
+                    Type::Tuple(..) | Type::TypeLit(..) | Type::Union(..) | Type::Alias(..) | Type::Interface(..) => {
                         if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
                             return res.context("tried to assign using `assign_to_union`");
                         }

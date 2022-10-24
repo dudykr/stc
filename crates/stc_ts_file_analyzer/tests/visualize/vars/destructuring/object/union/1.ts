@@ -11,5 +11,5 @@ declare var obj: A | B
 
 
 const { a } = obj
-
+a;
 export { }

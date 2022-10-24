@@ -6,11 +6,17 @@ use crate::{
     ValidationResult,
 };
 use itertools::Itertools;
+use stc_ts_ast_rnode::RBool;
 use stc_ts_errors::{DebugExt, Error};
-use stc_ts_types::{Tuple, TupleElement, Type, Union};
-use stc_utils::cache::Freeze;
+use stc_ts_type_ops::Fix;
+use stc_ts_types::{
+    KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union,
+    UnionMetadata,
+};
+use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
 use std::borrow::Cow;
-use swc_common::Span;
+use swc_common::{Span, DUMMY_SP};
+use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
     /// # Cases
@@ -51,55 +57,117 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Tuple(ty) => {
                 let mut tuple = Type::Tuple(Tuple {
-                    span: ty.span,
                     elems: Default::default(),
-                    metadata: ty.metadata,
+                    ..*ty
                 });
 
                 for el in &ty.elems {
-                    self.append_tuple_element_to_tuple(span, &mut tuple, el)
+                    self.append_tuple_element_to_type(span, &mut tuple, el)
                         .context("tried to append an element to a type")?;
                 }
 
                 Ok(tuple)
+            }
+            Type::TypeLit(ty) => {
+                let mut type_lit = Type::TypeLit(TypeLit {
+                    members: Default::default(),
+                    ..*ty
+                });
+
+                for el in &ty.members {
+                    self.append_type_element_to_type(span, &mut type_lit, el)
+                        .context("tried to append an element to a type")?;
+                }
+
+                Ok(type_lit)
             }
             _ => Ok(ty.into_owned()),
         }
     }
 
     /// TODO(kdy1): Use Cow<TupleElement>
-    fn append_tuple_element_to_tuple(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> ValidationResult<()> {
-        match el.ty.normalize() {
-            Type::Union(el_ty) => {
-                let mut to_types = (0..el_ty.types.len()).map(|_| to.clone()).collect_vec();
+    fn append_type_element_to_type(&mut self, span: Span, to: &mut Type, el: &TypeElement) -> ValidationResult<()> {
+        match el {
+            TypeElement::Property(el) => {
+                if let Some(el_ty) = &el.type_ann {
+                    if let Some(ty) = self.expand_union_for_assignment(span, &el_ty) {
+                        let mut to_types = (0..ty.types.len())
+                            .map(|_| ALLOW_DEEP_CLONE.set(&(), || to.clone()))
+                            .collect_vec();
 
-                for (idx, el_ty) in el_ty.types.iter().enumerate() {
-                    self.append_tuple_element_to_tuple(
-                        span,
-                        &mut to_types[idx],
-                        &TupleElement {
-                            span: el.span,
-                            label: el.label.clone(),
-                            ty: box el_ty.clone(),
-                        },
-                    )?;
+                        for (idx, el_ty) in ty.types.iter().enumerate() {
+                            self.append_type_element_to_type(
+                                span,
+                                &mut to_types[idx],
+                                &TypeElement::Property(PropertySignature {
+                                    type_ann: Some(box el_ty.clone()),
+                                    ..el.clone()
+                                }),
+                            )?;
+                        }
+
+                        *to = Type::Union(Union {
+                            span: ty.span,
+                            types: to_types,
+                            metadata: ty.metadata,
+                        })
+                        .fixed();
+
+                        return Ok(());
+                    }
                 }
-
-                *to = Type::Union(Union {
-                    span: el_ty.span,
-                    types: to_types,
-                    metadata: el_ty.metadata,
-                });
-
-                return Ok(());
             }
+
             _ => {}
         }
 
         match to.normalize_mut() {
             Type::Union(to) => {
                 for to in &mut to.types {
-                    self.append_tuple_element_to_tuple(span, to, el)?;
+                    self.append_type_element_to_type(span, to, el)?;
+                }
+
+                Ok(())
+            }
+            Type::TypeLit(to) => {
+                to.members.push(el.clone());
+
+                Ok(())
+            }
+            _ => Err(Error::SimpleAssignFailed { span, cause: None }),
+        }
+    }
+
+    /// TODO(kdy1): Use Cow<TupleElement>
+    fn append_tuple_element_to_type(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> ValidationResult<()> {
+        if let Some(el_ty) = self.expand_union_for_assignment(span, &el.ty) {
+            let mut to_types = (0..el_ty.types.len()).map(|_| to.clone()).collect_vec();
+
+            for (idx, el_ty) in el_ty.types.iter().enumerate() {
+                self.append_tuple_element_to_type(
+                    span,
+                    &mut to_types[idx],
+                    &TupleElement {
+                        span: el.span,
+                        label: el.label.clone(),
+                        ty: box el_ty.clone(),
+                    },
+                )?;
+            }
+
+            *to = Type::Union(Union {
+                span: el_ty.span,
+                types: to_types,
+                metadata: el_ty.metadata,
+            });
+
+            return Ok(());
+        }
+
+        match to.normalize_mut() {
+            Type::Union(to) => {
+                for to in &mut to.types {
+                    self.append_tuple_element_to_type(span, to, el)?;
                 }
 
                 Ok(())
@@ -110,6 +178,46 @@ impl Analyzer<'_, '_> {
                 Ok(())
             }
             _ => Err(Error::SimpleAssignFailed { span, cause: None }),
+        }
+    }
+
+    /// Expands `boolean` to `true | false`.
+    fn expand_union_for_assignment<'a>(&mut self, span: Span, t: &'a Type) -> Option<Union> {
+        let t = self.normalize(Some(span), Cow::Borrowed(t), Default::default()).ok()?;
+
+        match t.normalize() {
+            Type::Keyword(KeywordType {
+                span,
+                metadata,
+                kind: TsKeywordTypeKind::TsBooleanKeyword,
+                ..
+            }) => Some(Union {
+                span: *span,
+                types: vec![
+                    Type::Lit(LitType {
+                        span: DUMMY_SP,
+                        lit: stc_ts_ast_rnode::RTsLit::Bool(RBool {
+                            span: DUMMY_SP,
+                            value: true,
+                        }),
+                        metadata: LitTypeMetadata::default(),
+                    }),
+                    Type::Lit(LitType {
+                        span: DUMMY_SP,
+                        lit: stc_ts_ast_rnode::RTsLit::Bool(RBool {
+                            span: DUMMY_SP,
+                            value: false,
+                        }),
+                        metadata: LitTypeMetadata::default(),
+                    }),
+                ],
+                metadata: UnionMetadata {
+                    common: metadata.common,
+                    ..Default::default()
+                },
+            }),
+            Type::Union(ty) => Some(ty.clone()),
+            _ => None,
         }
     }
 }

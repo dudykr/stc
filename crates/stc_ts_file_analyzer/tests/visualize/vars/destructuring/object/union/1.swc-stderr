@@ -1,0 +1,16 @@
+warning: Type
+  --> $DIR/tests/visualize/vars/destructuring/object/union/1.ts:13:15
+   |
+13 | const { a } = obj
+   |               ^^^
+   |
+   = note: (A | B)
+
+warning: Type
+  --> $DIR/tests/visualize/vars/destructuring/object/union/1.ts:14:1
+   |
+14 | a;
+   | ^
+   |
+   = note: any
+
