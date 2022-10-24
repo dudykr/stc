@@ -1820,11 +1820,13 @@ impl Analyzer<'_, '_> {
             ExtractKind::Call => Err(Error::NoCallSignature {
                 span,
                 callee: box callee_ty.clone(),
-            }),
+            }
+            .context("failed to select the element to invoke")),
             ExtractKind::New => Err(Error::NoNewSignature {
                 span,
                 callee: box callee_ty.clone(),
-            }),
+            }
+            .context("failed to select the element to invoke")),
         }
     }
 
