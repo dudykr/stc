@@ -502,6 +502,9 @@ impl Analyzer<'_, '_> {
 
             new.push(ty.clone());
         }
+        if new.is_empty() {
+            return Ok(types);
+        }
 
         Ok(new)
     }
