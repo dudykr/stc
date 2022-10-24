@@ -454,7 +454,7 @@ impl Analyzer<'_, '_> {
         let should_preserve = types
             .iter()
             .flat_map(|ty| ty.iter_union())
-            .any(|ty| ty.metadata().prevent_converting_to_children);
+            .all(|ty| !ty.metadata().prevent_converting_to_children);
 
         if should_preserve {
             return self.remove_child_types(span, types);
@@ -530,6 +530,11 @@ impl Analyzer<'_, '_> {
             }
 
             new.push(ty.clone());
+        }
+        if new.is_empty() {
+            // All types can be merged
+
+            return Ok(types);
         }
 
         Ok(new)
