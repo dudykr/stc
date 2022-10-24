@@ -1245,7 +1245,7 @@ pub enum Error {
         span: Span,
     },
 
-    NoCallabelPropertyWithName {
+    NoCallablePropertyWithName {
         span: Span,
         obj: Box<Type>,
         key: Box<Key>,
@@ -1753,7 +1753,7 @@ impl Error {
             Error::NotArrayTypeNorStringType { .. } => 2495,
             Error::NotArrayTypeNorStringTypeButDownlevelIterationWouldWork { .. } => 2569,
 
-            Error::NoCallabelPropertyWithName { .. } => 2349,
+            Error::NoCallablePropertyWithName { .. } => 2349,
 
             Error::NoMethodNamedNext { .. } => 2489,
 

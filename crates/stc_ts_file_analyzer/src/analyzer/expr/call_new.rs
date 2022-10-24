@@ -619,7 +619,7 @@ impl Analyzer<'_, '_> {
 
                     if types.is_empty() {
                         if kind == ExtractKind::Call {
-                            return Err(Error::NoCallabelPropertyWithName {
+                            return Err(Error::NoCallablePropertyWithName {
                                 span,
                                 obj: box obj_type.clone(),
                                 key: box prop.clone(),
@@ -816,7 +816,7 @@ impl Analyzer<'_, '_> {
             match obj_type.normalize() {
                 Type::Class(..) => {
                     return Err(match kind {
-                        ExtractKind::Call => Error::NoCallabelPropertyWithName {
+                        ExtractKind::Call => Error::NoCallablePropertyWithName {
                             span,
                             obj: box obj_type.clone(),
                             key: box prop.clone(),
@@ -874,12 +874,12 @@ impl Analyzer<'_, '_> {
                 type_ann,
             )
             .convert_err(|err| match err {
-                Error::NoCallSignature { span, .. } => Error::NoCallabelPropertyWithName {
+                Error::NoCallSignature { span, .. } => Error::NoCallablePropertyWithName {
                     span,
                     obj: box obj_type.clone(),
                     key: box prop.clone(),
                 },
-                Error::NoNewSignature { span, .. } => Error::NoCallabelPropertyWithName {
+                Error::NoNewSignature { span, .. } => Error::NoCallablePropertyWithName {
                     span,
                     obj: box obj_type.clone(),
                     key: box prop.clone(),

@@ -376,7 +376,7 @@ impl Analyzer<'_, '_> {
                 },
             )
             .convert_err(|err| match err {
-                Error::NoCallabelPropertyWithName { span, .. }
+                Error::NoCallablePropertyWithName { span, .. }
                 | Error::NoSuchProperty { span, .. }
                 | Error::NoSuchPropertyInClass { span, .. } => {
                     match iterator.normalize() {
@@ -806,7 +806,7 @@ impl Analyzer<'_, '_> {
                 },
             )
             .convert_err(|err| match err {
-                Error::NoCallabelPropertyWithName { span, .. }
+                Error::NoCallablePropertyWithName { span, .. }
                 | Error::NoSuchPropertyInClass { span, .. }
                 | Error::NoSuchProperty { span, .. } => {
                     Error::MustHaveSymbolIteratorThatReturnsIterator { span }
@@ -959,7 +959,7 @@ impl Analyzer<'_, '_> {
                 Default::default(),
             )
             .convert_err(|err| match err {
-                Error::NoCallabelPropertyWithName { span, .. } => Error::NoMethodNamedNext { span },
+                Error::NoCallablePropertyWithName { span, .. } => Error::NoMethodNamedNext { span },
                 _ => err,
             })
             .context("tried calling `next()` to get element type of iterator")?;
