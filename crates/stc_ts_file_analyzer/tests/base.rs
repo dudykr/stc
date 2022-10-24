@@ -39,14 +39,7 @@ struct StcError {
 
 fn get_env() -> Env {
     let mut libs = vec![];
-    let ls = &[
-        "es2020.full",
-        "es2019.full",
-        "es2018.full",
-        "es2017.full",
-        "es2016.full",
-        "es2015.full",
-    ];
+    let ls = &["es2017.full", "es2016.full", "es2015.full"];
     for s in ls {
         libs.extend(Lib::load(s))
     }
