@@ -844,7 +844,7 @@ impl Analyzer<'_, '_> {
                     IdCtx::Var,
                     Default::default(),
                 )
-                .context("tried to sccess property to call it")?;
+                .context("tried to access property to call it")?;
 
             let callee_before_expanding = dump_type_as_string(&self.cm, &callee);
             let callee = self
