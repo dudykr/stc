@@ -20,7 +20,7 @@ export RUST_MIN_STACK=$((16 * 1024 * 1024))
 
 # We prevent regression using faster checks
 touch ../stc_ts_file_analyzer/tests/base.rs
-UPDATE=1 cargo test -p stc_ts_file_analyzer --test base
+UPDATE=1 cargo test -p stc_ts_file_analyzer --lib --test base
 
 RUST_LOG=off TEST='' DONT_PRINT_MATCHED=1 cargo test --test tsc \
   | tee /dev/stderr \
