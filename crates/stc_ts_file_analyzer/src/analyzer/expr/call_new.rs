@@ -2083,16 +2083,17 @@ impl Analyzer<'_, '_> {
         }
 
         return Err(if kind == ExtractKind::Call {
-            print_backtrace();
             Error::NoCallSignature {
                 span,
                 callee: box callee,
             }
+            .context("tried to calculate return type")
         } else {
             Error::NoNewSignature {
                 span,
                 callee: box callee,
             }
+            .context("tried to calculate return type")
         });
     }
 
