@@ -1,10 +1,4 @@
 recursiveTypes
-unionAndIntersectionInference3.ts
-generatorTypeCheck62.ts
-generatorTypeCheck63.ts
-typeOfThis.ts
-typeGuardOfFormInstanceOfOnInterface.ts
-typeGuardOfFormIsTypeOnInterfaces.ts
 namedTupleMembers.ts
 genericTypeAliases.ts
 assignmentCompatWithObjectMembers.ts
