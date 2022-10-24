@@ -471,7 +471,7 @@ pub enum Error {
         span: Span,
     },
 
-    StackOverlfow {
+    StackOverflow {
         span: Span,
     },
 
@@ -2026,6 +2026,6 @@ impl Extend<Error> for Errors {
 
 impl From<StackOverflowError> for Error {
     fn from(e: StackOverflowError) -> Self {
-        Error::StackOverlfow { span: e.span }
+        Error::StackOverflow { span: e.span }
     }
 }
