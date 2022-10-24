@@ -11,6 +11,7 @@ use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_storage::Single;
 use stc_ts_types::{module_id, Id, ModuleId, Type};
+use stc_utils::stack;
 use swc_common::{input::SourceFileInput, FileName, SourceMap, SyntaxContext};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
@@ -137,6 +138,7 @@ where
         module = swc_common::GLOBALS.set(env.shared().swc_globals(), || {
             module.fold_with(&mut ts_resolver(env.shared().marks().top_level_mark()))
         });
+        let span = module.span;
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         let module_id = generator.generate(&path);
@@ -149,6 +151,8 @@ where
         };
 
         {
+            let _stack = stack::start(256);
+
             // Don't print logs from builtin modules.
             let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
@@ -191,14 +195,7 @@ where
 
 fn get_env() -> Env {
     let mut libs = vec![];
-    let ls = &[
-        "es2020.full",
-        "es2019.full",
-        "es2018.full",
-        "es2017.full",
-        "es2016.full",
-        "es2015.full",
-    ];
+    let ls = &["es5"];
     for s in ls {
         libs.extend(Lib::load(s))
     }
