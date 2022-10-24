@@ -1,5 +1,5 @@
 warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment-1.ts:4:17
+ --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:4:17
   |
 4 | while ((match = re.exec("xxx")) != null) {
   |                 ^^
@@ -7,7 +7,7 @@ warning: Type
   = note: RegExp
 
 warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment-1.ts:4:17
+ --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:4:17
   |
 4 | while ((match = re.exec("xxx")) != null) {
   |                 ^^^^^^^^^^^^^^
@@ -15,7 +15,7 @@ warning: Type
   = note: (RegExpExecArray | null)
 
 warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment-1.ts:4:9
+ --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:4:9
   |
 4 | while ((match = re.exec("xxx")) != null) {
   |         ^^^^^^^^^^^^^^^^^^^^^^
@@ -23,7 +23,7 @@ warning: Type
   = note: (RegExpExecArray | null)
 
 warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment-1.ts:4:8
+ --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:4:8
   |
 4 | while ((match = re.exec("xxx")) != null) {
   |        ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -31,7 +31,7 @@ warning: Type
   = note: (RegExpExecArray | null)
 
 warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment-1.ts:4:8
+ --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:4:8
   |
 4 | while ((match = re.exec("xxx")) != null) {
   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -39,7 +39,7 @@ warning: Type
   = note: boolean
 
 warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment-1.ts:5:20
+ --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:5:20
   |
 5 |     const length = match[1].length + match[2].length
   |                    ^^^^^
@@ -47,7 +47,7 @@ warning: Type
   = note: RegExpExecArray
 
 warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment-1.ts:5:20
+ --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:5:20
   |
 5 |     const length = match[1].length + match[2].length
   |                    ^^^^^^^^
@@ -55,7 +55,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment-1.ts:5:20
+ --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:5:20
   |
 5 |     const length = match[1].length + match[2].length
   |                    ^^^^^^^^^^^^^^^
@@ -63,7 +63,7 @@ warning: Type
   = note: number
 
 warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment-1.ts:5:38
+ --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:5:38
   |
 5 |     const length = match[1].length + match[2].length
   |                                      ^^^^^
@@ -71,7 +71,7 @@ warning: Type
   = note: RegExpExecArray
 
 warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment-1.ts:5:38
+ --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:5:38
   |
 5 |     const length = match[1].length + match[2].length
   |                                      ^^^^^^^^
@@ -79,7 +79,7 @@ warning: Type
   = note: string
 
 warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment-1.ts:5:38
+ --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:5:38
   |
 5 |     const length = match[1].length + match[2].length
   |                                      ^^^^^^^^^^^^^^^
@@ -87,7 +87,7 @@ warning: Type
   = note: number
 
 warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment-1.ts:5:20
+ --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:5:20
   |
 5 |     const length = match[1].length + match[2].length
   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
