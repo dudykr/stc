@@ -1,7 +1,5 @@
-use crate::{
-    analyzer::{Analyzer, ScopeKind},
-    validator::ValidateWith,
-};
+use std::{collections::hash_map::Entry, sync::Arc, time::Instant};
+
 use dashmap::DashMap;
 use once_cell::sync::{Lazy, OnceCell};
 use rnode::{NodeIdGenerator, RNode, VisitWith};
@@ -13,11 +11,15 @@ use stc_ts_storage::Builtin;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{ClassDef, ModuleTypeData, Type};
 use stc_utils::stack;
-use std::{collections::hash_map::Entry, sync::Arc, time::Instant};
 use swc_atoms::JsWord;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
 use tracing::info;
+
+use crate::{
+    analyzer::{Analyzer, ScopeKind},
+    validator::ValidateWith,
+};
 
 pub trait BuiltInGen: Sized {
     fn new(vars: FxHashMap<JsWord, Type>, types: FxHashMap<JsWord, Type>) -> BuiltIn;
@@ -85,34 +87,45 @@ pub trait BuiltInGen: Sized {
                                 debug_assert_eq!(c.class.super_class, None);
                                 debug_assert_eq!(c.class.implements, vec![]);
                                 let ty = analyzer
-                                    .with_child(ScopeKind::Flow, Default::default(), |analyzer: &mut Analyzer| {
-                                        Ok(Type::ClassDef(ClassDef {
-                                            span: c.class.span,
-                                            name: Some(c.ident.clone().into()),
-                                            is_abstract: c.class.is_abstract,
-                                            body: c
-                                                .class
-                                                .body
-                                                .clone()
-                                                .validate_with(analyzer)
-                                                .unwrap()
-                                                .into_iter()
-                                                .filter_map(|v| v)
-                                                .collect(),
-                                            super_class: None,
-                                            // implements: vec![],
-                                            type_params: c.class.type_params.validate_with(analyzer).map(|opt| {
-                                                box opt.expect("builtin: failed to parse type parmas of a class")
-                                            }),
-                                            implements: c
-                                                .class
-                                                .implements
-                                                .validate_with(analyzer)
-                                                .map(Box::new)
-                                                .unwrap(),
-                                            metadata: Default::default(),
-                                        }))
-                                    })
+                                    .with_child(
+                                        ScopeKind::Flow,
+                                        Default::default(),
+                                        |analyzer: &mut Analyzer| {
+                                            Ok(Type::ClassDef(ClassDef {
+                                                span: c.class.span,
+                                                name: Some(c.ident.clone().into()),
+                                                is_abstract: c.class.is_abstract,
+                                                body: c
+                                                    .class
+                                                    .body
+                                                    .clone()
+                                                    .validate_with(analyzer)
+                                                    .unwrap()
+                                                    .into_iter()
+                                                    .filter_map(|v| v)
+                                                    .collect(),
+                                                super_class: None,
+                                                // implements: vec![],
+                                                type_params: c
+                                                    .class
+                                                    .type_params
+                                                    .validate_with(analyzer)
+                                                    .map(|opt| {
+                                                        box opt.expect(
+                                                            "builtin: failed to parse type parmas \
+                                                             of a class",
+                                                        )
+                                                    }),
+                                                implements: c
+                                                    .class
+                                                    .implements
+                                                    .validate_with(analyzer)
+                                                    .map(Box::new)
+                                                    .unwrap(),
+                                                metadata: Default::default(),
+                                            }))
+                                        },
+                                    )
                                     .unwrap();
 
                                 types.insert(c.ident.sym.clone(), ty);
@@ -126,7 +139,8 @@ pub trait BuiltInGen: Sized {
 
                                 let mut data = Builtin::default();
                                 {
-                                    let mut analyzer = Analyzer::for_builtin(env.clone(), &mut data);
+                                    let mut analyzer =
+                                        Analyzer::for_builtin(env.clone(), &mut data);
 
                                     m.body.visit_with(&mut analyzer);
                                 }
@@ -147,7 +161,10 @@ pub trait BuiltInGen: Sized {
                                         e.insert(
                                             Type::Module(stc_ts_types::Module {
                                                 span: DUMMY_SP,
-                                                name: RTsModuleName::Ident(RIdent::new(id.clone(), DUMMY_SP)),
+                                                name: RTsModuleName::Ident(RIdent::new(
+                                                    id.clone(),
+                                                    DUMMY_SP,
+                                                )),
                                                 exports: box ModuleTypeData {
                                                     private_vars: Default::default(),
                                                     vars: data.vars,
@@ -248,10 +265,17 @@ impl BuiltInGen for BuiltIn {
 }
 
 pub trait EnvFactory {
-    fn new(env: StableEnv, rule: Rule, target: EsVersion, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Env;
+    fn new(
+        env: StableEnv,
+        rule: Rule,
+        target: EsVersion,
+        module: ModuleConfig,
+        builtin: Arc<BuiltIn>,
+    ) -> Env;
     fn simple(rule: Rule, target: EsVersion, module: ModuleConfig, libs: &[Lib]) -> Env {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);
-        static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>, ahash::RandomState>> = Lazy::new(Default::default);
+        static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>, ahash::RandomState>> =
+            Lazy::new(Default::default);
 
         // TODO(kdy1): Include `env` in cache
         let mut libs = libs.to_vec();
@@ -274,7 +298,13 @@ pub trait EnvFactory {
 }
 
 impl EnvFactory for Env {
-    fn new(env: StableEnv, rule: Rule, target: EsVersion, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Env {
+    fn new(
+        env: StableEnv,
+        rule: Rule,
+        target: EsVersion,
+        module: ModuleConfig,
+        builtin: Arc<BuiltIn>,
+    ) -> Env {
         Env::new(env, rule, target, module, builtin)
     }
 }

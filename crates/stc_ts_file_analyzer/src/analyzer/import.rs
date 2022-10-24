@@ -1,13 +1,8 @@
-use crate::{
-    analyzer::{scope::VarKind, util::ResultExt, Analyzer},
-    loader::ModuleInfo,
-    validator, DepInfo, ValidationResult,
-};
 use rayon::prelude::*;
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RCallExpr, RExportAll, RExpr, RExprOrSuper, RImportDecl, RImportSpecifier, RLit, RModuleItem, RNamedExport, RStr,
-    RTsExternalModuleRef,
+    RCallExpr, RExportAll, RExpr, RExprOrSuper, RImportDecl, RImportSpecifier, RLit, RModuleItem,
+    RNamedExport, RStr, RTsExternalModuleRef,
 };
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -16,6 +11,12 @@ use stc_ts_types::{Id, ModuleId, Type};
 use stc_ts_utils::imports::find_imports_in_comments;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{comments::Comments, Span, Spanned};
+
+use crate::{
+    analyzer::{scope::VarKind, util::ResultExt, Analyzer},
+    loader::ModuleInfo,
+    validator, DepInfo, ValidationResult,
+};
 
 impl Analyzer<'_, '_> {
     /// Returns `(dep_module, dep_types)` if an import is valid, and returns
@@ -65,19 +66,29 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    fn insert_import_info(&mut self, ctxt: ModuleId, dep_module_id: ModuleId, ty: Type) -> ValidationResult<()> {
+    fn insert_import_info(
+        &mut self,
+        ctxt: ModuleId,
+        dep_module_id: ModuleId,
+        ty: Type,
+    ) -> ValidationResult<()> {
         self.imports.entry((ctxt, dep_module_id)).or_insert(ty);
 
         Ok(())
     }
 
     #[extra_validator]
-    pub(super) fn load_normal_imports(&mut self, module_spans: Vec<(ModuleId, Span)>, items: &Vec<&RModuleItem>) {
+    pub(super) fn load_normal_imports(
+        &mut self,
+        module_spans: Vec<(ModuleId, Span)>,
+        items: &Vec<&RModuleItem>,
+    ) {
         if self.is_builtin {
             return;
         }
         // We first load non-circular imports.
-        let imports = ImportFinder::find_imports(&self.comments, module_spans, &self.storage, &*items);
+        let imports =
+            ImportFinder::find_imports(&self.comments, module_spans, &self.storage, &*items);
 
         let loader = self.loader;
         let mut normal_imports = vec![];
@@ -118,7 +129,8 @@ impl Analyzer<'_, '_> {
 
             match res {
                 Ok(info) => {
-                    self.insert_import_info(ctxt, dep_id, info).report(&mut self.storage);
+                    self.insert_import_info(ctxt, dep_id, info)
+                        .report(&mut self.storage);
                 }
                 Err(err) => self.storage.report(err),
             }
@@ -146,7 +158,12 @@ impl Analyzer<'_, '_> {
                             if orig.sym() == i {
                                 for ty in types {
                                     found_entry = true;
-                                    self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
+                                    self.storage.store_private_type(
+                                        ctxt,
+                                        id.clone(),
+                                        ty.clone(),
+                                        false,
+                                    );
                                 }
                             }
                         }
@@ -197,10 +214,22 @@ impl Analyzer<'_, '_> {
                     //
                     match &named.imported {
                         Some(imported) => {
-                            self.handle_import(named.span, base, dep, Id::from(imported), Id::from(&named.local));
+                            self.handle_import(
+                                named.span,
+                                base,
+                                dep,
+                                Id::from(imported),
+                                Id::from(&named.local),
+                            );
                         }
                         None => {
-                            self.handle_import(named.span, base, dep, Id::from(&named.local), Id::from(&named.local));
+                            self.handle_import(
+                                named.span,
+                                base,
+                                dep,
+                                Id::from(&named.local),
+                                Id::from(&named.local),
+                            );
                         }
                     }
                 }

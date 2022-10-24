@@ -1,8 +1,10 @@
-use crate::analyzer::Analyzer;
+use std::borrow::Cow;
+
 use rnode::{VisitMut, VisitMutWith};
 use stc_ts_type_ops::this::contains_this;
 use stc_ts_types::{ClassMember, ClassProperty, Id, Key, Method, Type};
-use std::borrow::Cow;
+
+use crate::analyzer::Analyzer;
 
 impl Analyzer<'_, '_> {
     pub(crate) fn this_has_property_named(&mut self, p: &Id) -> bool {
@@ -18,10 +20,14 @@ impl Analyzer<'_, '_> {
             for (_, m) in self.scope.class_members() {
                 match m {
                     ClassMember::Method(Method {
-                        key, is_static: false, ..
+                        key,
+                        is_static: false,
+                        ..
                     })
                     | ClassMember::Property(ClassProperty {
-                        key, is_static: false, ..
+                        key,
+                        is_static: false,
+                        ..
                     }) => match key {
                         Key::Normal { sym, .. } => {
                             if *p.sym() == *sym {

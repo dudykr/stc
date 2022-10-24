@@ -1,5 +1,6 @@
-use crate::panic_context;
 use std::cell::RefCell;
+
+use crate::panic_context;
 
 #[macro_export]
 macro_rules! debug_ctx {

@@ -1,3 +1,40 @@
+use std::{
+    borrow::Cow,
+    collections::HashMap,
+    convert::{TryFrom, TryInto},
+    time::{Duration, Instant},
+};
+
+use optional_chaining::is_obj_opt_chaining;
+use rnode::{NodeId, VisitWith};
+use stc_ts_ast_rnode::{
+    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RExprOrSuper, RIdent, RInvalid, RLit,
+    RMemberExpr, RNull, RNumber, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RThisExpr,
+    RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
+};
+use stc_ts_base_type_ops::bindings::BindingKind;
+use stc_ts_errors::{
+    debug::{dump_type_as_string, print_backtrace},
+    DebugExt, Error, Errors,
+};
+use stc_ts_generics::ExpandGenericOpts;
+use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
+pub use stc_ts_types::IdCtx;
+use stc_ts_types::{
+    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata,
+    ComputedKey, Id, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method,
+    ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType, QueryTypeMetdata,
+    StaticThis, ThisType,
+};
+use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
+use swc_atoms::js_word;
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
+use swc_ecma_ast::{
+    op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind,
+};
+use tracing::{debug, info, warn, Level};
+use ty::TypeExt;
+
 use self::bin::extract_name_for_assignment;
 pub(crate) use self::{array::GetIteratorOpts, call_new::CallOpts};
 use crate::{
@@ -10,8 +47,8 @@ use crate::{
     },
     ty,
     ty::{
-        Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple, Type, TypeElement,
-        TypeLit, TypeParam, TypeParamInstantiation,
+        Array, EnumVariant, IndexSignature, IndexedAccessType, Interface, Intersection, Ref, Tuple,
+        Type, TypeElement, TypeLit, TypeParam, TypeParamInstantiation,
     },
     type_facts::TypeFacts,
     util::RemoveTypes,
@@ -19,38 +56,6 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use optional_chaining::is_obj_opt_chaining;
-use rnode::{NodeId, VisitWith};
-use stc_ts_ast_rnode::{
-    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr, RNull, RNumber,
-    RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit,
-    RTsNonNullExpr, RUnaryExpr,
-};
-use stc_ts_base_type_ops::bindings::BindingKind;
-use stc_ts_errors::{
-    debug::{dump_type_as_string, print_backtrace},
-    DebugExt, Error, Errors,
-};
-use stc_ts_generics::ExpandGenericOpts;
-use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
-pub use stc_ts_types::IdCtx;
-use stc_ts_types::{
-    name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Key,
-    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method, ModuleId, Operator, OptionalType,
-    PropertySignature, QueryExpr, QueryType, QueryTypeMetdata, StaticThis, ThisType,
-};
-use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
-use std::{
-    borrow::Cow,
-    collections::HashMap,
-    convert::{TryFrom, TryInto},
-    time::{Duration, Instant},
-};
-use swc_atoms::js_word;
-use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
-use tracing::{debug, info, warn, Level};
-use ty::TypeExt;
 
 mod array;
 mod await_expr;
@@ -123,7 +128,9 @@ impl Analyzer<'_, '_> {
                 RExpr::New(e) => e.validate_with_args(self, type_ann),
                 RExpr::Call(e) => e.validate_with_args(self, type_ann),
                 RExpr::TsAs(e) => e.validate_with_args(self, (mode, type_args, type_ann)),
-                RExpr::TsTypeAssertion(e) => e.validate_with_args(self, (mode, type_args, type_ann)),
+                RExpr::TsTypeAssertion(e) => {
+                    e.validate_with_args(self, (mode, type_args, type_ann))
+                }
                 RExpr::Assign(e) => e.validate_with_args(self, (mode, type_ann)),
                 RExpr::Unary(e) => e.validate_with(self),
 
@@ -131,13 +138,15 @@ impl Analyzer<'_, '_> {
                     let span = *span;
 
                     if self.ctx.in_static_property_initializer {
-                        self.storage.report(Error::ThisInStaticPropertyInitializer { span })
+                        self.storage
+                            .report(Error::ThisInStaticPropertyInitializer { span })
                     } else if self.ctx.in_constructor_param {
                         self.storage.report(Error::ThisInConstructorParam { span })
                     }
 
                     if self.scope.cannot_use_this_because_super_not_called() {
-                        self.storage.report(Error::ThisUsedBeforeCallingSuper { span })
+                        self.storage
+                            .report(Error::ThisUsedBeforeCallingSuper { span })
                     }
 
                     let is_ref_to_module = match self.scope.kind() {
@@ -149,7 +158,8 @@ impl Analyzer<'_, '_> {
                             _ => false,
                         });
                     if is_ref_to_module {
-                        self.storage.report(Error::ThisRefToModuleOrNamespace { span })
+                        self.storage
+                            .report(Error::ThisRefToModuleOrNamespace { span })
                     }
 
                     // Use globalThis
@@ -191,14 +201,22 @@ impl Analyzer<'_, '_> {
                     let ty = self.type_of_var(i, mode, type_args)?;
                     if self.ctx.should_store_truthy_for_access && mode == TypeOfMode::RValue {
                         // `i` is truthy
-                        self.cur_facts.true_facts.facts.insert(i.into(), TypeFacts::Truthy);
-                        self.cur_facts.false_facts.facts.insert(i.into(), TypeFacts::Falsy);
+                        self.cur_facts
+                            .true_facts
+                            .facts
+                            .insert(i.into(), TypeFacts::Truthy);
+                        self.cur_facts
+                            .false_facts
+                            .facts
+                            .insert(i.into(), TypeFacts::Falsy);
                     }
 
                     Ok(ty)
                 }
 
-                RExpr::Array(arr) => return arr.validate_with_args(self, (mode, type_args, type_ann)),
+                RExpr::Array(arr) => {
+                    return arr.validate_with_args(self, (mode, type_args, type_ann))
+                }
 
                 RExpr::Lit(RLit::Bool(v)) => {
                     return Ok(Type::Lit(LitType {
@@ -252,7 +270,9 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                RExpr::Paren(RParenExpr { ref expr, .. }) => expr.validate_with_args(self, (mode, type_args, type_ann)),
+                RExpr::Paren(RParenExpr { ref expr, .. }) => {
+                    expr.validate_with_args(self, (mode, type_args, type_ann))
+                }
 
                 RExpr::Tpl(ref e) => {
                     return e.validate_with(self);
@@ -279,7 +299,9 @@ impl Analyzer<'_, '_> {
                 RExpr::Await(e) => e.validate_with_args(self, type_ann),
 
                 RExpr::Class(RClassExpr {
-                    ref ident, ref class, ..
+                    ref ident,
+                    ref class,
+                    ..
                 }) => {
                     self.scope.this_class_name = ident.as_ref().map(|i| i.into());
                     return Ok(class.validate_with(self)?.into());
@@ -295,8 +317,14 @@ impl Analyzer<'_, '_> {
                     // Foo.a
                     if self.ctx.should_store_truthy_for_access {
                         if let Ok(name) = Name::try_from(&*expr) {
-                            self.cur_facts.true_facts.facts.insert(name.clone(), TypeFacts::Truthy);
-                            self.cur_facts.false_facts.facts.insert(name, TypeFacts::Falsy);
+                            self.cur_facts
+                                .true_facts
+                                .facts
+                                .insert(name.clone(), TypeFacts::Truthy);
+                            self.cur_facts
+                                .false_facts
+                                .facts
+                                .insert(name, TypeFacts::Falsy);
                         }
                     }
 
@@ -309,7 +337,9 @@ impl Analyzer<'_, '_> {
 
                 RExpr::OptChain(expr) => expr.validate_with_args(self, type_ann),
 
-                RExpr::TsConstAssertion(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
+                RExpr::TsConstAssertion(expr) => {
+                    expr.validate_with_args(self, (mode, None, type_ann))
+                }
 
                 _ => unimplemented!("typeof ({:?})", e),
             }
@@ -377,14 +407,24 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RParenExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(
+        &mut self,
+        e: &RParenExpr,
+        mode: TypeOfMode,
+        type_ann: Option<&Type>,
+    ) -> ValidationResult {
         e.expr.validate_with_args(self, (mode, None, type_ann))
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RAssignExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(
+        &mut self,
+        e: &RAssignExpr,
+        mode: TypeOfMode,
+        type_ann: Option<&Type>,
+    ) -> ValidationResult {
         let ctx = Ctx {
             pat_mode: PatMode::Assign,
             ..self.ctx
@@ -446,9 +486,9 @@ impl Analyzer<'_, '_> {
             };
 
             if !is_valid_lhs(&e.left) {
-                analyzer
-                    .storage
-                    .report(Error::InvalidLhsOfAssign { span: e.left.span() });
+                analyzer.storage.report(Error::InvalidLhsOfAssign {
+                    span: e.left.span(),
+                });
             }
 
             let mut errors = Errors::default();
@@ -549,8 +589,15 @@ pub(crate) struct AccessPropertyOpts {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RSeqExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> ValidationResult {
-        let RSeqExpr { span, ref exprs, .. } = *e;
+    fn validate(
+        &mut self,
+        e: &RSeqExpr,
+        mode: TypeOfMode,
+        type_ann: Option<&Type>,
+    ) -> ValidationResult {
+        let RSeqExpr {
+            span, ref exprs, ..
+        } = *e;
 
         assert!(exprs.len() >= 1);
 
@@ -570,15 +617,17 @@ impl Analyzer<'_, '_> {
                     | RExpr::Cond(..)
                     | RExpr::Lit(..)
                     | RExpr::Unary(RUnaryExpr {
-                        op: op!(unary, "-"), ..
+                        op: op!(unary, "-"),
+                        ..
                     })
                     | RExpr::Unary(RUnaryExpr {
-                        op: op!(unary, "+"), ..
+                        op: op!(unary, "+"),
+                        ..
                     })
                     | RExpr::Unary(RUnaryExpr { op: op!("!"), .. })
-                    | RExpr::Unary(RUnaryExpr { op: op!("typeof"), .. })
-                        if !self.rule().allow_unreachable_code =>
-                    {
+                    | RExpr::Unary(RUnaryExpr {
+                        op: op!("typeof"), ..
+                    }) if !self.rule().allow_unreachable_code => {
                         self.storage.report(Error::UselessSeqExpr { span });
                     }
 
@@ -613,7 +662,10 @@ impl Analyzer<'_, '_> {
             return Ok(Type::any(span, Default::default()));
         }
 
-        return exprs.last().unwrap().validate_with_args(self, (mode, None, type_ann));
+        return exprs
+            .last()
+            .unwrap()
+            .validate_with_args(self, (mode, None, type_ann));
     }
 }
 
@@ -690,7 +742,13 @@ impl Analyzer<'_, '_> {
     ///
     /// - `declared`: Key of declared property.
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(crate) fn key_matches(&mut self, span: Span, declared: &Key, cur: &Key, allow_union: bool) -> bool {
+    pub(crate) fn key_matches(
+        &mut self,
+        span: Span,
+        declared: &Key,
+        cur: &Key,
+        allow_union: bool,
+    ) -> bool {
         match declared {
             Key::Computed(..) => {}
             _ => {
@@ -712,7 +770,8 @@ impl Analyzer<'_, '_> {
         match (declared, cur) {
             (
                 Key::Num(RNumber {
-                    value: declared_value, ..
+                    value: declared_value,
+                    ..
                 }),
                 Key::Num(RNumber { value, .. }),
             ) => {
@@ -755,7 +814,13 @@ impl Analyzer<'_, '_> {
             .is_ok()
     }
 
-    fn check_if_type_matches_key(&mut self, span: Span, declared: &Key, key_ty: &Type, allow_union: bool) -> bool {
+    fn check_if_type_matches_key(
+        &mut self,
+        span: Span,
+        declared: &Key,
+        key_ty: &Type,
+        allow_union: bool,
+    ) -> bool {
         let key_ty = key_ty.normalize();
 
         if declared.ty().type_eq(key_ty) {
@@ -771,14 +836,21 @@ impl Analyzer<'_, '_> {
             }
 
             Type::EnumVariant(EnumVariant {
-                enum_name, name: None, ..
+                enum_name,
+                name: None,
+                ..
             }) => {
                 if let Ok(Some(types)) = self.find_type(self.ctx.module_id, enum_name) {
                     for ty in types {
                         match ty.normalize() {
                             Type::Enum(e) => {
                                 let e = e.clone();
-                                return self.check_if_type_matches_key(span, declared, &Type::Enum(e), allow_union);
+                                return self.check_if_type_matches_key(
+                                    span,
+                                    declared,
+                                    &Type::Enum(e),
+                                    allow_union,
+                                );
                             }
                             _ => {}
                         }
@@ -844,7 +916,10 @@ impl Analyzer<'_, '_> {
 
                             if let Some(ref type_ann) = p.type_ann {
                                 if p.optional {
-                                    let mut types = vec![Type::undefined(span, Default::default()), *type_ann.clone()];
+                                    let mut types = vec![
+                                        Type::undefined(span, Default::default()),
+                                        *type_ann.clone(),
+                                    ];
                                     types.dedup_type();
                                     matching_elements.push(Type::union(types));
                                 } else {
@@ -872,7 +947,10 @@ impl Analyzer<'_, '_> {
                             });
 
                             if m.optional {
-                                let mut types = vec![Type::undefined(span, Default::default()), prop_ty.clone()];
+                                let mut types = vec![
+                                    Type::undefined(span, Default::default()),
+                                    prop_ty.clone(),
+                                ];
                                 types.dedup_type();
                                 matching_elements.push(Type::union(types));
                             } else {
@@ -902,7 +980,8 @@ impl Analyzer<'_, '_> {
                         if *prop_sym == js_word!("Infinity") {
                             return Ok(Some(Type::any(span, Default::default())));
                         } else if prop_sym.starts_with("0b") || prop_sym.starts_with("0B") {
-                            let prop_num = lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 2);
+                            let prop_num =
+                                lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 2);
 
                             if let Ok(prop_num) = prop_num {
                                 if key.value == prop_num {
@@ -910,7 +989,8 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         } else if prop_sym.starts_with("0o") || prop_sym.starts_with("0O") {
-                            let prop_num = lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 8);
+                            let prop_num =
+                                lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 8);
 
                             if let Ok(prop_num) = prop_num {
                                 if key.value == prop_num {
@@ -982,12 +1062,19 @@ impl Analyzer<'_, '_> {
                         return Ok(Some(Type::any(span, Default::default())));
                     }
 
-                    let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) && prop_ty.is_num())
-                        || self.assign(span, &mut Default::default(), &index_ty, &prop_ty).is_ok();
+                    let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                        && prop_ty.is_num())
+                        || self
+                            .assign(span, &mut Default::default(), &index_ty, &prop_ty)
+                            .is_ok();
 
                     if indexed {
                         if let Some(ref type_ann) = type_ann {
-                            let ty = self.expand_top_ref(span, Cow::Borrowed(type_ann), Default::default())?;
+                            let ty = self.expand_top_ref(
+                                span,
+                                Cow::Borrowed(type_ann),
+                                Default::default(),
+                            )?;
                             return Ok(Some(ty.into_owned()));
                         }
 
@@ -1080,7 +1167,16 @@ impl Analyzer<'_, '_> {
                     Type::Lit(LitType {
                         lit: RTsLit::Number(prop),
                         ..
-                    }) => return self.access_property(span, obj, &Key::Num(prop.clone()), type_mode, id_ctx, opts),
+                    }) => {
+                        return self.access_property(
+                            span,
+                            obj,
+                            &Key::Num(prop.clone()),
+                            type_mode,
+                            id_ctx,
+                            opts,
+                        )
+                    }
                     _ => {}
                 }
             }
@@ -1088,7 +1184,8 @@ impl Analyzer<'_, '_> {
             // See if key is string.
             match prop.ty().normalize() {
                 Type::Lit(LitType {
-                    lit: RTsLit::Str(prop), ..
+                    lit: RTsLit::Str(prop),
+                    ..
                 }) => {
                     let res = self
                         .access_property(
@@ -1120,11 +1217,19 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Lit(LitType {
-                    lit: RTsLit::Number(n), ..
+                    lit: RTsLit::Number(n),
+                    ..
                 }) => {
                     // As some types has rules about computed propeties, we use the result only if
                     // it sucesses.
-                    if let Ok(ty) = self.access_property(span, obj, &Key::Num(n.clone()), type_mode, id_ctx, opts) {
+                    if let Ok(ty) = self.access_property(
+                        span,
+                        obj,
+                        &Key::Num(n.clone()),
+                        type_mode,
+                        id_ctx,
+                        opts,
+                    ) {
                         return Ok(ty);
                     }
                 }
@@ -1154,15 +1259,16 @@ impl Analyzer<'_, '_> {
         let obj_str = dump_type_as_string(&self.cm, &obj);
 
         // We use child scope to store type parameters.
-        let mut res = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> ValidationResult<_> {
-            let mut ty = analyzer
-                .access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?
-                .fixed();
-            ty.assert_valid();
-            ty = analyzer.expand_type_params_using_scope(ty)?;
-            ty.assert_valid();
-            Ok(ty)
-        });
+        let mut res =
+            self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> ValidationResult<_> {
+                let mut ty = analyzer
+                    .access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?
+                    .fixed();
+                ty.assert_valid();
+                ty = analyzer.expand_type_params_using_scope(ty)?;
+                ty.assert_valid();
+                Ok(ty)
+            });
 
         if !self.is_builtin {
             res = res.with_context(|| {
@@ -1205,6 +1311,7 @@ impl Analyzer<'_, '_> {
 
         Ok(ty)
     }
+
     fn access_property_inner(
         &mut self,
         span: Span,
@@ -1217,7 +1324,10 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy());
 
-            debug!("access_property: obj = {}", dump_type_as_string(&self.cm, &obj));
+            debug!(
+                "access_property: obj = {}",
+                dump_type_as_string(&self.cm, &obj)
+            );
         }
 
         let _stack = stack::track(span)?;
@@ -1261,7 +1371,10 @@ impl Analyzer<'_, '_> {
             }
 
             match &obj {
-                Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_object_lit() => {
+                Type::This(this)
+                    if !self.ctx.in_computed_prop_name
+                        && self.scope.is_this_ref_to_object_lit() =>
+                {
                     if let Key::Computed(prop) = prop {
                         //
                         match &*prop.expr {
@@ -1274,9 +1387,9 @@ impl Analyzer<'_, '_> {
 
                     // TODO(kdy1): Remove clone
                     let members = self.scope.object_lit_members().to_vec();
-                    if let Some(mut v) =
-                        self.access_property_of_type_elements(span, &obj, prop, type_mode, &members, opts)?
-                    {
+                    if let Some(mut v) = self.access_property_of_type_elements(
+                        span, &obj, prop, type_mode, &members, opts,
+                    )? {
                         v.metadata_mut().infected_by_this_in_object_literal = true;
                         return Ok(v);
                     }
@@ -1284,7 +1397,9 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::any(span, Default::default()));
                 }
 
-                Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_class() => {
+                Type::This(this)
+                    if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_class() =>
+                {
                     if !computed {
                         // We are currently declaring a class.
                         for (_, member) in self.scope.class_members() {
@@ -1293,9 +1408,11 @@ impl Analyzer<'_, '_> {
                                 // Validate<Class>.
                                 ClassMember::Constructor(_) => {}
 
-                                ClassMember::Method(member @ Method { is_static: false, .. })
-                                    if member.key.type_eq(prop) =>
-                                {
+                                ClassMember::Method(
+                                    member @ Method {
+                                        is_static: false, ..
+                                    },
+                                ) if member.key.type_eq(prop) => {
                                     return Ok(Type::Function(ty::Function {
                                         span: member.span,
                                         type_params: member.type_params.clone(),
@@ -1305,14 +1422,20 @@ impl Analyzer<'_, '_> {
                                     }));
                                 }
 
-                                ClassMember::Property(member @ ClassProperty { is_static: false, .. }) => {
+                                ClassMember::Property(
+                                    member @ ClassProperty {
+                                        is_static: false, ..
+                                    },
+                                ) => {
                                     if member.key.type_eq(prop) {
-                                        let ty = *member
-                                            .value
-                                            .clone()
-                                            .unwrap_or_else(|| box Type::any(span, Default::default()));
-                                        let ty = match self.expand_top_ref(span, Cow::Borrowed(&ty), Default::default())
-                                        {
+                                        let ty = *member.value.clone().unwrap_or_else(|| {
+                                            box Type::any(span, Default::default())
+                                        });
+                                        let ty = match self.expand_top_ref(
+                                            span,
+                                            Cow::Borrowed(&ty),
+                                            Default::default(),
+                                        ) {
                                             Ok(new_ty) => {
                                                 if new_ty.is_any() {
                                                     new_ty.into_owned()
@@ -1330,7 +1453,9 @@ impl Analyzer<'_, '_> {
                                 ClassMember::Property(..) | ClassMember::Method(..) => {}
 
                                 ClassMember::IndexSignature(_) => {
-                                    unimplemented!("class -> this.foo where an `IndexSignature` exists")
+                                    unimplemented!(
+                                        "class -> this.foo where an `IndexSignature` exists"
+                                    )
                                 }
                             }
                         }
@@ -1352,7 +1477,14 @@ impl Analyzer<'_, '_> {
                                 },
                             )?;
 
-                            if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
+                            if let Ok(v) = self.access_property(
+                                span,
+                                &super_class,
+                                prop,
+                                type_mode,
+                                IdCtx::Var,
+                                opts,
+                            ) {
                                 return Ok(v);
                             }
                         }
@@ -1381,7 +1513,14 @@ impl Analyzer<'_, '_> {
                             },
                         )?;
 
-                        if let Ok(v) = self.access_property(span, &super_class, prop, type_mode, IdCtx::Var, opts) {
+                        if let Ok(v) = self.access_property(
+                            span,
+                            &super_class,
+                            prop,
+                            type_mode,
+                            IdCtx::Var,
+                            opts,
+                        ) {
                             return Ok(v);
                         }
                     }
@@ -1406,7 +1545,11 @@ impl Analyzer<'_, '_> {
                     // Handle static access to class itself while *declaring* the class.
                     for (_, member) in self.scope.class_members() {
                         match member {
-                            stc_ts_types::ClassMember::Method(member @ Method { is_static: true, .. }) => {
+                            stc_ts_types::ClassMember::Method(
+                                member @ Method {
+                                    is_static: true, ..
+                                },
+                            ) => {
                                 if member.key.type_eq(prop) {
                                     return Ok(Type::Function(ty::Function {
                                         span: member.span,
@@ -1418,7 +1561,11 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            stc_ts_types::ClassMember::Property(property @ ClassProperty { is_static: true, .. }) => {
+                            stc_ts_types::ClassMember::Property(
+                                property @ ClassProperty {
+                                    is_static: true, ..
+                                },
+                            ) => {
                                 if property.key.type_eq(prop) {
                                     return Ok(*property.value.clone().unwrap_or_else(|| {
                                         box Type::any(
@@ -1609,7 +1756,14 @@ impl Analyzer<'_, '_> {
                                     },
                                     metadata: Default::default(),
                                 });
-                                return self.access_property(span, &new_obj_ty, prop, type_mode, id_ctx, opts);
+                                return self.access_property(
+                                    span,
+                                    &new_obj_ty,
+                                    prop,
+                                    type_mode,
+                                    id_ctx,
+                                    opts,
+                                );
                             }
                         }
                         return Ok(Type::Keyword(KeywordType {
@@ -1656,7 +1810,9 @@ impl Analyzer<'_, '_> {
                             Type::Enum(ref e) => {
                                 for v in e.members.iter() {
                                     if match *v.val {
-                                        RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => true,
+                                        RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => {
+                                            true
+                                        }
                                         _ => false,
                                     } {
                                         let new_obj_ty = Type::Lit(LitType {
@@ -1671,7 +1827,14 @@ impl Analyzer<'_, '_> {
                                                 ..Default::default()
                                             },
                                         });
-                                        return self.access_property(*span, &new_obj_ty, prop, type_mode, id_ctx, opts);
+                                        return self.access_property(
+                                            *span,
+                                            &new_obj_ty,
+                                            prop,
+                                            type_mode,
+                                            id_ctx,
+                                            opts,
+                                        );
                                     }
                                 }
                             }
@@ -1685,7 +1848,11 @@ impl Analyzer<'_, '_> {
             Type::Class(ref c) => {
                 for v in c.def.body.iter() {
                     match v {
-                        ClassMember::Property(ref class_prop @ ClassProperty { is_static: false, .. }) => {
+                        ClassMember::Property(
+                            ref class_prop @ ClassProperty {
+                                is_static: false, ..
+                            },
+                        ) => {
                             if class_prop.key.is_private() {
                                 self.storage
                                     .report(Error::CannotAccessPrivatePropertyFromOutside { span });
@@ -1706,7 +1873,11 @@ impl Analyzer<'_, '_> {
                                 });
                             }
                         }
-                        ClassMember::Method(ref mtd @ Method { is_static: false, .. }) => {
+                        ClassMember::Method(
+                            ref mtd @ Method {
+                                is_static: false, ..
+                            },
+                        ) => {
                             if mtd.key.is_private() {
                                 self.storage
                                     .report(Error::CannotAccessPrivatePropertyFromOutside { span });
@@ -1715,7 +1886,8 @@ impl Analyzer<'_, '_> {
 
                             if self.key_matches(span, &mtd.key, prop, false) {
                                 if mtd.is_abstract {
-                                    self.storage.report(Error::CannotAccessAbstractMemeber { span });
+                                    self.storage
+                                        .report(Error::CannotAccessAbstractMemeber { span });
                                     return Ok(Type::any(span, Default::default()));
                                 }
 
@@ -1735,7 +1907,10 @@ impl Analyzer<'_, '_> {
                                     span,
                                     type_params: cons.type_params.clone(),
                                     params: cons.params.clone(),
-                                    type_ann: cons.ret_ty.clone().unwrap_or_else(|| box obj.clone()),
+                                    type_ann: cons
+                                        .ret_ty
+                                        .clone()
+                                        .unwrap_or_else(|| box obj.clone()),
                                     is_abstract: false,
                                     metadata: Default::default(),
                                 }));
@@ -1750,8 +1925,11 @@ impl Analyzer<'_, '_> {
 
                                 let prop_ty = prop.ty();
 
-                                let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) && prop_ty.is_num())
-                                    || self.assign(span, &mut Default::default(), &index_ty, &prop_ty).is_ok();
+                                let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                                    && prop_ty.is_num())
+                                    || self
+                                        .assign(span, &mut Default::default(), &index_ty, &prop_ty)
+                                        .is_ok();
 
                                 if indexed {
                                     return Ok(index
@@ -1771,7 +1949,9 @@ impl Analyzer<'_, '_> {
                 if let Some(super_ty) = &c.def.super_class {
                     let super_ty = self.instantiate_class(span, &super_ty)?;
 
-                    if let Ok(v) = self.access_property(span, &super_ty, prop, type_mode, id_ctx, opts) {
+                    if let Ok(v) =
+                        self.access_property(span, &super_ty, prop, type_mode, id_ctx, opts)
+                    {
                         return Ok(v);
                     }
                 }
@@ -1794,7 +1974,8 @@ impl Analyzer<'_, '_> {
                             ..
                         })
                         | Type::Lit(LitType {
-                            lit: RTsLit::Str(..), ..
+                            lit: RTsLit::Str(..),
+                            ..
                         }) => true,
                         _ => false,
                     };
@@ -1824,10 +2005,14 @@ impl Analyzer<'_, '_> {
                                 ignore_errors: true,
                                 ..self.ctx
                             };
-                            if let Ok(ty) =
-                                self.with_ctx(ctx)
-                                    .access_property(span, &constraint, prop, type_mode, id_ctx, opts)
-                            {
+                            if let Ok(ty) = self.with_ctx(ctx).access_property(
+                                span,
+                                &constraint,
+                                prop,
+                                type_mode,
+                                id_ctx,
+                                opts,
+                            ) {
                                 return Ok(ty);
                             }
                         }
@@ -1906,8 +2091,11 @@ impl Analyzer<'_, '_> {
                                 ..
                             }),
                         ) => {
-                            if self.rule().no_implicit_any && !self.rule().suppress_implicit_any_index_errors {
-                                self.storage.report(Error::ImplicitAnyBecauseIndexTypeIsWrong { span });
+                            if self.rule().no_implicit_any
+                                && !self.rule().suppress_implicit_any_index_errors
+                            {
+                                self.storage
+                                    .report(Error::ImplicitAnyBecauseIndexTypeIsWrong { span });
                             }
 
                             return Ok(Type::any(span, Default::default()));
@@ -1933,12 +2121,18 @@ impl Analyzer<'_, '_> {
                 };
                 let interface = self.env.get_global_type(span, &word)?;
 
-                let err = match self.access_property(span, &interface, prop, type_mode, id_ctx, opts) {
-                    Ok(v) => return Ok(v),
-                    Err(err) => err,
-                };
-                if *kind == TsKeywordTypeKind::TsObjectKeyword && !self.ctx.disallow_unknown_object_property {
-                    return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
+                let err =
+                    match self.access_property(span, &interface, prop, type_mode, id_ctx, opts) {
+                        Ok(v) => return Ok(v),
+                        Err(err) => err,
+                    };
+                if *kind == TsKeywordTypeKind::TsObjectKeyword
+                    && !self.ctx.disallow_unknown_object_property
+                {
+                    return Ok(Type::any(
+                        span.with_ctxt(SyntaxContext::empty()),
+                        Default::default(),
+                    ));
                 }
 
                 return Err(err);
@@ -1947,7 +2141,8 @@ impl Analyzer<'_, '_> {
             Type::Array(Array { elem_type, .. }) => {
                 let elem_type = elem_type.clone().cheap();
                 if self.scope.should_store_type_params() {
-                    self.scope.store_type_param(Id::word("T".into()), elem_type.clone());
+                    self.scope
+                        .store_type_param(Id::word("T".into()), elem_type.clone());
                 }
 
                 if let Key::Computed(prop) = prop {
@@ -1987,7 +2182,8 @@ impl Analyzer<'_, '_> {
                             ..
                         })
                         | Type::Lit(LitType {
-                            lit: RTsLit::Str(..), ..
+                            lit: RTsLit::Str(..),
+                            ..
                         }) => true,
                         _ => false,
                     };
@@ -2001,7 +2197,8 @@ impl Analyzer<'_, '_> {
                         type_mode,
                         id_ctx,
                         AccessPropertyOpts {
-                            disallow_creating_indexed_type_from_ty_els: opts.disallow_creating_indexed_type_from_ty_els
+                            disallow_creating_indexed_type_from_ty_els: opts
+                                .disallow_creating_indexed_type_from_ty_els
                                 || has_better_default,
                             ..opts
                         },
@@ -2026,15 +2223,20 @@ impl Analyzer<'_, '_> {
                                 ..
                             })
                             | Type::Lit(LitType {
-                                lit: RTsLit::Str(..), ..
+                                lit: RTsLit::Str(..),
+                                ..
                             }) => Ok(Type::any(span, Default::default())),
                             _ => Err(err),
                         }
                     });
             }
 
-            Type::Interface(Interface { ref body, extends, .. }) => {
-                if let Ok(Some(v)) = self.access_property_of_type_elements(span, &obj, prop, type_mode, body, opts) {
+            Type::Interface(Interface {
+                ref body, extends, ..
+            }) => {
+                if let Ok(Some(v)) =
+                    self.access_property_of_type_elements(span, &obj, prop, type_mode, body, opts)
+                {
                     return Ok(v);
                 }
 
@@ -2046,12 +2248,13 @@ impl Analyzer<'_, '_> {
                         super_ty.type_args.as_deref(),
                     )?;
 
-                    let obj = self
-                        .instantiate_class(span, &obj)
-                        .context("tried to instantiate parents of an interface to access property")?;
+                    let obj = self.instantiate_class(span, &obj).context(
+                        "tried to instantiate parents of an interface to access property",
+                    )?;
 
                     // TODO(kdy1): Check if multiple interface has same property.
-                    if let Ok(ty) = self.access_property(span, &obj, prop, type_mode, id_ctx, opts) {
+                    if let Ok(ty) = self.access_property(span, &obj, prop, type_mode, id_ctx, opts)
+                    {
                         return Ok(ty);
                     }
                 }
@@ -2065,7 +2268,10 @@ impl Analyzer<'_, '_> {
                         &Type::Ref(Ref {
                             span: span.with_ctxt(Default::default()),
                             ctxt: ModuleId::builtin(),
-                            type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
+                            type_name: RTsEntityName::Ident(RIdent::new(
+                                js_word!("Function"),
+                                DUMMY_SP,
+                            )),
                             type_args: None,
                             metadata: Default::default(),
                         }),
@@ -2090,7 +2296,9 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(TypeLit { ref members, .. }) => {
-                if let Some(v) = self.access_property_of_type_elements(span, &obj, prop, type_mode, members, opts)? {
+                if let Some(v) = self
+                    .access_property_of_type_elements(span, &obj, prop, type_mode, members, opts)?
+                {
                     return Ok(v);
                 }
 
@@ -2101,7 +2309,10 @@ impl Analyzer<'_, '_> {
                         &Type::Ref(Ref {
                             span: span.with_ctxt(Default::default()),
                             ctxt: ModuleId::builtin(),
-                            type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
+                            type_name: RTsEntityName::Ident(RIdent::new(
+                                js_word!("Function"),
+                                DUMMY_SP,
+                            )),
                             type_args: None,
                             metadata: Default::default(),
                         }),
@@ -2120,14 +2331,18 @@ impl Analyzer<'_, '_> {
 
                 if members.iter().any(|e| e.is_call()) {
                     let obj = self.env.get_global_type(span, &js_word!("Function"))?;
-                    if let Ok(v) = self.access_property(span, &obj, prop, type_mode, IdCtx::Var, opts) {
+                    if let Ok(v) =
+                        self.access_property(span, &obj, prop, type_mode, IdCtx::Var, opts)
+                    {
                         return Ok(v);
                     }
                 }
 
                 {
                     let obj = self.env.get_global_type(span, &js_word!("Object"))?;
-                    if let Ok(v) = self.access_property(span, &obj, prop, type_mode, IdCtx::Var, opts) {
+                    if let Ok(v) =
+                        self.access_property(span, &obj, prop, type_mode, IdCtx::Var, opts)
+                    {
                         return Ok(v);
                     }
                 }
@@ -2147,8 +2362,12 @@ impl Analyzer<'_, '_> {
                 let mut tys = vec![];
                 let mut errors = Vec::with_capacity(types.len());
 
-                let has_null = types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsNullKeyword));
-                let has_undefined = types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword));
+                let has_null = types
+                    .iter()
+                    .any(|ty| ty.is_kwd(TsKeywordTypeKind::TsNullKeyword));
+                let has_undefined = types
+                    .iter()
+                    .any(|ty| ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword));
 
                 // tsc is crazy. It uses different error code for these errors.
                 if !self.ctx.in_opt_chain && self.rule().strict_null_checks {
@@ -2166,8 +2385,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 let is_all_tuple = types.iter().all(|ty| ty.normalize().is_tuple());
-                let use_undefined_for_tuple_index_error =
-                    opts.use_undefined_for_tuple_index_error || (type_mode == TypeOfMode::LValue && is_all_tuple);
+                let use_undefined_for_tuple_index_error = opts.use_undefined_for_tuple_index_error
+                    || (type_mode == TypeOfMode::LValue && is_all_tuple);
 
                 for ty in types {
                     if !self.rule().strict_null_checks || self.ctx.in_opt_chain {
@@ -2375,7 +2594,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Some(super_ty) = &cls.super_class {
-                    if let Ok(v) = self.access_property(span, &super_ty, prop, type_mode, id_ctx, opts) {
+                    if let Ok(v) =
+                        self.access_property(span, &super_ty, prop, type_mode, id_ctx, opts)
+                    {
                         return Ok(v);
                     }
                 }
@@ -2386,7 +2607,10 @@ impl Analyzer<'_, '_> {
                     &Type::Ref(Ref {
                         span: span.with_ctxt(Default::default()),
                         ctxt: ModuleId::builtin(),
-                        type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
+                        type_name: RTsEntityName::Ident(RIdent::new(
+                            js_word!("Function"),
+                            DUMMY_SP,
+                        )),
                         type_args: None,
                         metadata: Default::default(),
                     }),
@@ -2405,7 +2629,9 @@ impl Analyzer<'_, '_> {
                 });
             }
 
-            Type::Module(ty::Module { name, ref exports, .. }) => {
+            Type::Module(ty::Module {
+                name, ref exports, ..
+            }) => {
                 match id_ctx {
                     IdCtx::Type => {
                         if let Key::Normal { sym, .. } = prop {
@@ -2506,7 +2732,10 @@ impl Analyzer<'_, '_> {
                 let mut new = vec![];
                 for ty in types {
                     let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
-                    if let Some(v) = self.access_property(span, &ty, prop, type_mode, id_ctx, opts).ok() {
+                    if let Some(v) = self
+                        .access_property(span, &ty, prop, type_mode, id_ctx, opts)
+                        .ok()
+                    {
                         new.push(v);
                     }
                 }
@@ -2557,7 +2786,9 @@ impl Analyzer<'_, '_> {
                         // {
                         //     [P in string]: number;
                         // };
-                        if let Ok(()) = self.assign(span, &mut Default::default(), &index, &prop.ty()) {
+                        if let Ok(()) =
+                            self.assign(span, &mut Default::default(), &index, &prop.ty())
+                        {
                             // We handle `Partial<string>` at here.
                             let ty =
                                 m.ty.clone()
@@ -2576,9 +2807,10 @@ impl Analyzer<'_, '_> {
 
                                     Type::union(types)
                                 }
-                                Some(TruePlusMinus::Minus) => {
-                                    self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty)
-                                }
+                                Some(TruePlusMinus::Minus) => self.apply_type_facts_to_type(
+                                    TypeFacts::NEUndefined | TypeFacts::NENull,
+                                    ty,
+                                ),
                                 _ => ty,
                             };
                             return Ok(ty);
@@ -2641,7 +2873,10 @@ impl Analyzer<'_, '_> {
                         Type::Param(..) => {
                             let index_type = computed.ty.clone();
 
-                            warn!("Creating an indexed access type with a type parameter as the object");
+                            warn!(
+                                "Creating an indexed access type with a type parameter as the \
+                                 object"
+                            );
 
                             // Return something like SimpleDBRecord<Flag>[Flag];
                             return Ok(Type::IndexedAccessType(IndexedAccessType {
@@ -2678,7 +2913,9 @@ impl Analyzer<'_, '_> {
                 }
 
                 let expand_opts = ExpandOpts {
-                    generic: ExpandGenericOpts { ..Default::default() },
+                    generic: ExpandGenericOpts {
+                        ..Default::default()
+                    },
                     ..Default::default()
                 };
 
@@ -2763,7 +3000,10 @@ impl Analyzer<'_, '_> {
                     &Type::Ref(Ref {
                         span: span.with_ctxt(Default::default()),
                         ctxt: ModuleId::builtin(),
-                        type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
+                        type_name: RTsEntityName::Ident(RIdent::new(
+                            js_word!("Function"),
+                            DUMMY_SP,
+                        )),
                         type_args: None,
                         metadata: Default::default(),
                     }),
@@ -2912,7 +3152,9 @@ impl Analyzer<'_, '_> {
                         },
                         type_mode,
                         IdCtx::Var,
-                        AccessPropertyOpts { ..Default::default() },
+                        AccessPropertyOpts {
+                            ..Default::default()
+                        },
                     )
                     .context("tried to access property to calculate type of name")?;
 
@@ -2946,7 +3188,9 @@ impl Analyzer<'_, '_> {
 
         let mut modules = vec![];
         let mut ty = self.type_of_raw_var(i, type_mode)?;
-        if type_mode == TypeOfMode::LValue && (ty.normalize().is_class_def() || ty.normalize().is_enum_type()) {
+        if type_mode == TypeOfMode::LValue
+            && (ty.normalize().is_class_def() || ty.normalize().is_enum_type())
+        {
             return Err(Error::NotVariable { span, left: span });
         }
         ty.assert_valid();
@@ -3075,7 +3319,10 @@ impl Analyzer<'_, '_> {
 
         if let Some(ref cls_name) = self.scope.this_class_name {
             if *cls_name == i {
-                warn!("Creating ref because we are currently defining a class: {}", i.sym);
+                warn!(
+                    "Creating ref because we are currently defining a class: {}",
+                    i.sym
+                );
                 return Ok(Type::StaticThis(StaticThis {
                     span,
                     metadata: Default::default(),
@@ -3096,7 +3343,9 @@ impl Analyzer<'_, '_> {
 
                             match scope.kind() {
                                 ScopeKind::ArrowFn => Some(true),
-                                ScopeKind::Fn | ScopeKind::Constructor | ScopeKind::Method { .. } => Some(false),
+                                ScopeKind::Fn
+                                | ScopeKind::Constructor
+                                | ScopeKind::Method { .. } => Some(false),
                                 _ => None,
                             }
                         });
@@ -3110,18 +3359,23 @@ impl Analyzer<'_, '_> {
 
                             match scope.kind() {
                                 ScopeKind::Fn => Some(ctx.in_async),
-                                ScopeKind::ArrowFn | ScopeKind::Constructor | ScopeKind::Method { .. } => Some(false),
+                                ScopeKind::ArrowFn
+                                | ScopeKind::Constructor
+                                | ScopeKind::Method { .. } => Some(false),
                                 _ => None,
                             }
                         })
                     };
 
-                    let is_argument_defined_in_current_scope = self.scope.vars.contains_key(&i.clone().into());
+                    let is_argument_defined_in_current_scope =
+                        self.scope.vars.contains_key(&i.clone().into());
 
                     if !self.scope.is_arguments_implicitly_defined() {
-                        self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span })
+                        self.storage
+                            .report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span })
                     } else if arguments_point_to_arrow && !is_argument_defined_in_current_scope {
-                        self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span });
+                        self.storage
+                            .report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span });
                         return Ok(Type::any(span, Default::default()));
                     } else if arguments_points_async_fn && !is_argument_defined_in_current_scope {
                         self.storage
@@ -3136,7 +3390,9 @@ impl Analyzer<'_, '_> {
         match i.sym {
             js_word!("undefined") => {
                 match type_mode {
-                    TypeOfMode::LValue => self.storage.report(Error::NotVariable { span, left: span }),
+                    TypeOfMode::LValue => {
+                        self.storage.report(Error::NotVariable { span, left: span })
+                    }
                     TypeOfMode::RValue => {}
                 }
                 return Ok(Type::undefined(span, Default::default()));
@@ -3154,7 +3410,11 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ty) = self.find_imported_var(&i.into())? {
-            debug!("({}) type_of({}): resolved import", self.scope.depth(), Id::from(i));
+            debug!(
+                "({}) type_of({}): resolved import",
+                self.scope.depth(),
+                Id::from(i)
+            );
             return Ok(ty.clone());
         }
 
@@ -3217,7 +3477,8 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             if let Ok(ty) = self.env.get_global_var(span, &i.sym) {
                 if self.ctx.report_error_for_non_local_vars {
-                    self.storage.report(Error::CannotExportNonLocalVar { span: i.span });
+                    self.storage
+                        .report(Error::CannotExportNonLocalVar { span: i.span });
                 }
 
                 return Ok(ty);
@@ -3226,7 +3487,11 @@ impl Analyzer<'_, '_> {
 
         // Check `declaring` before checking variables.
         if self.scope.is_declaring(&i.into()) {
-            debug!("({}) reference in initialization: {}", self.scope.depth(), i.sym);
+            debug!(
+                "({}) reference in initialization: {}",
+                self.scope.depth(),
+                i.sym
+            );
 
             // Report an error if a variable is used before initialization.
             (|| {
@@ -3244,7 +3509,10 @@ impl Analyzer<'_, '_> {
                     }
 
                     match scope.kind() {
-                        ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn | ScopeKind::Constructor => {
+                        ScopeKind::Method { .. }
+                        | ScopeKind::Fn
+                        | ScopeKind::ArrowFn
+                        | ScopeKind::Constructor => {
                             return true;
                         }
                         _ => false,
@@ -3252,20 +3520,23 @@ impl Analyzer<'_, '_> {
                 }) {
                     if !scope.is_root() {
                         match scope.kind() {
-                            ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn | ScopeKind::Constructor => {
-                                return
-                            }
+                            ScopeKind::Method { .. }
+                            | ScopeKind::Fn
+                            | ScopeKind::ArrowFn
+                            | ScopeKind::Constructor => return,
                             _ => {}
                         }
                     }
                 }
 
-                self.storage.report(Error::BlockScopedVarUsedBeforeInit { span })
+                self.storage
+                    .report(Error::BlockScopedVarUsedBeforeInit { span })
             })();
 
             if self.ctx.allow_ref_declaring {
                 if self.rule().no_implicit_any {
-                    self.storage.report(Error::ImplicitAnyBecauseOfSelfRef { span });
+                    self.storage
+                        .report(Error::ImplicitAnyBecauseOfSelfRef { span });
                 }
 
                 return Ok(Type::any(span, Default::default()));
@@ -3287,17 +3558,23 @@ impl Analyzer<'_, '_> {
 
                             match scope.kind() {
                                 ScopeKind::ArrowFn => Some(true),
-                                ScopeKind::Fn | ScopeKind::Constructor | ScopeKind::Method { .. } => Some(false),
+                                ScopeKind::Fn
+                                | ScopeKind::Constructor
+                                | ScopeKind::Method { .. } => Some(false),
                                 _ => None,
                             }
                         });
 
                     if !self.scope.is_arguments_implicitly_defined() || arguments_point_to_arrow {
-                        self.storage.report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span })
+                        self.storage
+                            .report(Error::InvalidUseOfArgumentsInEs3OrEs5 { span })
                     }
                 } else {
                     if !self.scope.is_arguments_implicitly_defined() {
-                        self.storage.report(Error::NoSuchVar { span, name: i.into() })
+                        self.storage.report(Error::NoSuchVar {
+                            span,
+                            name: i.into(),
+                        })
                     }
                 }
 
@@ -3355,7 +3632,9 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            if !self.ctx.disallow_suggesting_property_on_no_var && self.this_has_property_named(&i.clone().into()) {
+            if !self.ctx.disallow_suggesting_property_on_no_var
+                && self.this_has_property_named(&i.clone().into())
+            {
                 Err(Error::NoSuchVarButThisHasSuchProperty {
                     span,
                     name: i.clone().into(),
@@ -3446,7 +3725,10 @@ impl Analyzer<'_, '_> {
                                 return Ok(ty);
                             }
 
-                            Type::Interface(_) | Type::Class(_) | Type::ClassDef(_) | Type::Alias(_) => {
+                            Type::Interface(_)
+                            | Type::Class(_)
+                            | Type::ClassDef(_)
+                            | Type::Alias(_) => {
                                 let mut ty = ty.into_owned().clone();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
@@ -3472,16 +3754,21 @@ impl Analyzer<'_, '_> {
                                             ..
                                         }) => {
                                             params = self
-                                                .instantiate_type_params_using_args(span, type_params, type_args)
+                                                .instantiate_type_params_using_args(
+                                                    span,
+                                                    type_params,
+                                                    type_args,
+                                                )
                                                 .map(Some)?;
                                         }
-                                        _ => self
-                                            .storage
-                                            .report(Error::TypeParamsProvidedButCalleeIsNotGeneric { span }),
+                                        _ => self.storage.report(
+                                            Error::TypeParamsProvidedButCalleeIsNotGeneric { span },
+                                        ),
                                     }
                                 }
                                 if let Some(params) = params {
-                                    ty = self.expand_type_params(&params, ty, Default::default())?;
+                                    ty =
+                                        self.expand_type_params(&params, ty, Default::default())?;
                                 }
                                 ty.respan(span);
                                 return Ok(ty);
@@ -3571,7 +3858,11 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Expand type arguments if provided.
-    fn type_of_member_expr(&mut self, expr: &RMemberExpr, type_mode: TypeOfMode) -> ValidationResult {
+    fn type_of_member_expr(
+        &mut self,
+        expr: &RMemberExpr,
+        type_mode: TypeOfMode,
+    ) -> ValidationResult {
         let RMemberExpr {
             ref obj,
             computed,
@@ -3629,7 +3920,8 @@ impl Analyzer<'_, '_> {
 
             RExprOrSuper::Super(RSuper { span, .. }) => {
                 if self.scope.cannot_use_this_because_super_not_called() {
-                    self.storage.report(Error::SuperUsedBeforeCallingSuper { span })
+                    self.storage
+                        .report(Error::SuperUsedBeforeCallingSuper { span })
                 }
 
                 self.report_error_for_super_reference_in_compute_keys(span, false);
@@ -3637,7 +3929,8 @@ impl Analyzer<'_, '_> {
                 if let Some(v) = self.scope.get_super_class() {
                     v.clone()
                 } else {
-                    self.storage.report(Error::SuperInClassWithoutSuper { span });
+                    self.storage
+                        .report(Error::SuperInClassWithoutSuper { span });
                     Type::any(span, Default::default())
                 }
             }
@@ -3666,8 +3959,17 @@ impl Analyzer<'_, '_> {
 
         let mut ty = self
             .with_ctx(prop_access_ctx)
-            .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var, Default::default())
-            .context("tried to access property of an object to calculate type of a member expression")?;
+            .access_property(
+                span,
+                &obj_ty,
+                &prop,
+                type_mode,
+                IdCtx::Var,
+                Default::default(),
+            )
+            .context(
+                "tried to access property of an object to calculate type of a member expression",
+            )?;
 
         if !self.is_builtin {
             if let Some(name) = name {
@@ -3716,7 +4018,10 @@ impl Analyzer<'_, '_> {
         };
 
         if should_be_optional {
-            Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
+            Ok(Type::union(vec![
+                Type::undefined(span, Default::default()),
+                ty,
+            ]))
         } else {
             Ok(ty)
         }
@@ -3781,7 +4086,11 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(crate) fn report_error_for_super_refs_without_supers(&mut self, span: Span, is_super_call: bool) {
+    pub(crate) fn report_error_for_super_refs_without_supers(
+        &mut self,
+        span: Span,
+        is_super_call: bool,
+    ) {
         let res: ValidationResult<_> = try {
             if !self.ctx.in_class_with_super && self.ctx.super_references_super_class {
                 Err(Error::SuperInClassWithoutSuper { span })?
@@ -3791,7 +4100,11 @@ impl Analyzer<'_, '_> {
         res.report(&mut self.storage);
     }
 
-    pub(crate) fn report_error_for_super_reference_in_compute_keys(&mut self, span: Span, is_super_call: bool) {
+    pub(crate) fn report_error_for_super_reference_in_compute_keys(
+        &mut self,
+        span: Span,
+        is_super_call: bool,
+    ) {
         if !self.ctx.in_computed_prop_name {
             return;
         }
@@ -3858,7 +4171,9 @@ impl Analyzer<'_, '_> {
         // Check for numeric keys like '0', '1', '2'.
         elems.is_empty()
             || elems.iter().any(|el| match el {
-                TypeElement::Property(PropertySignature { key: Key::Num(..), .. }) => true,
+                TypeElement::Property(PropertySignature {
+                    key: Key::Num(..), ..
+                }) => true,
                 _ => false,
             })
     }
@@ -3872,7 +4187,12 @@ impl Analyzer<'_, '_> {
         if e.exprs.is_empty() {
             return Ok(Type::Lit(LitType {
                 span: e.span,
-                lit: RTsLit::Str(e.quasis[0].cooked.clone().unwrap_or_else(|| e.quasis[0].raw.clone())),
+                lit: RTsLit::Str(
+                    e.quasis[0]
+                        .cooked
+                        .clone()
+                        .unwrap_or_else(|| e.quasis[0].raw.clone()),
+                ),
                 metadata: Default::default(),
             }));
         }

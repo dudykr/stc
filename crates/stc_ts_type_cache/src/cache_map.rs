@@ -1,8 +1,9 @@
 use std::marker::PhantomData;
 
-use crate::cache_mode::CacheMode;
 use stc_utils::cache::Freeze;
 use swc_common::TypeEq;
+
+use crate::cache_mode::CacheMode;
 
 #[derive(Debug)]
 pub struct CacheMap<K, V, M>

@@ -1,13 +1,19 @@
-use crate::{analyzer::Analyzer, ValidationResult};
+use std::borrow::Cow;
+
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_types::{ClassDef, ClassMember, IndexSignature, Type};
 use stc_utils::ext::ValueExt;
-use std::borrow::Cow;
 use swc_common::Span;
+
+use crate::{analyzer::Analyzer, ValidationResult};
 
 impl Analyzer<'_, '_> {
     /// Get [IndexSignature] from `ty`, if there's one.
-    pub(crate) fn get_index_signature(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<IndexSignature>> {
+    pub(crate) fn get_index_signature(
+        &mut self,
+        span: Span,
+        ty: &Type,
+    ) -> ValidationResult<Option<IndexSignature>> {
         (|| -> ValidationResult<_> {
             let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
 

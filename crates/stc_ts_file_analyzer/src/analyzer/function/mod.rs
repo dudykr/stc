@@ -1,3 +1,22 @@
+use std::borrow::Cow;
+
+use itertools::{EitherOrBoth, Itertools};
+use rnode::{Fold, FoldWith};
+use stc_ts_ast_rnode::{
+    RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName,
+};
+use stc_ts_errors::{Error, Errors};
+use stc_ts_type_ops::Fix;
+use stc_ts_types::{
+    Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Interface, KeywordType,
+    KeywordTypeMetadata, Ref, TypeElement,
+};
+use stc_ts_utils::PatExt;
+use stc_utils::cache::Freeze;
+use swc_common::{Span, Spanned, SyntaxContext};
+use swc_ecma_ast::TsKeywordTypeKind;
+use ty::TypeExt;
+
 use crate::{
     analyzer::{pat::PatMode, scope::VarKind, util::ResultExt, Analyzer, Ctx, ScopeKind},
     ty,
@@ -6,21 +25,6 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use itertools::{EitherOrBoth, Itertools};
-use rnode::{Fold, FoldWith};
-use stc_ts_ast_rnode::{RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName};
-use stc_ts_errors::{Error, Errors};
-use stc_ts_type_ops::Fix;
-use stc_ts_types::{
-    Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Interface, KeywordType, KeywordTypeMetadata, Ref,
-    TypeElement,
-};
-use stc_ts_utils::PatExt;
-use stc_utils::cache::Freeze;
-use std::borrow::Cow;
-use swc_common::{Span, Spanned, SyntaxContext};
-use swc_ecma_ast::TsKeywordTypeKind;
-use ty::TypeExt;
 
 mod return_type;
 
@@ -123,7 +127,9 @@ impl Analyzer<'_, '_> {
             if let Some(ty) = &mut declared_ret_ty {
                 ty.make_cheap();
 
-                child.expand_return_type_of_fn(ty).report(&mut child.storage);
+                child
+                    .expand_return_type_of_fn(ty)
+                    .report(&mut child.storage);
             }
 
             if let Some(ret_ty) = declared_ret_ty {
@@ -156,12 +162,9 @@ impl Analyzer<'_, '_> {
             let is_async = f.is_async;
             let is_generator = f.is_generator;
 
-            let inferred_return_type = try_opt!(f.body.as_ref().map(|body| child.visit_stmts_for_return(
-                span,
-                is_async,
-                is_generator,
-                &body.stmts
-            )));
+            let inferred_return_type = try_opt!(f.body.as_ref().map(
+                |body| child.visit_stmts_for_return(span, is_async, is_generator, &body.stmts)
+            ));
 
             let mut inferred_return_type = match inferred_return_type {
                 Some(Some(inferred_return_type)) => {
@@ -177,7 +180,9 @@ impl Analyzer<'_, '_> {
                         if f.is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
                             child
                                 .storage
-                                .report(Error::GeneratorCannotHaveVoidAsReturnType { span: declared.span() })
+                                .report(Error::GeneratorCannotHaveVoidAsReturnType {
+                                    span: declared.span(),
+                                })
                         }
                     } else {
                         if child.rule().no_implicit_any {
@@ -198,7 +203,11 @@ impl Analyzer<'_, '_> {
 
                     if let Some(ref declared) = declared_ret_ty {
                         span = declared.span();
-                        let declared = child.normalize(Some(span), Cow::Borrowed(&declared), Default::default())?;
+                        let declared = child.normalize(
+                            Some(span),
+                            Cow::Borrowed(&declared),
+                            Default::default(),
+                        )?;
 
                         match declared.normalize() {
                             Type::Keyword(KeywordType {
@@ -221,11 +230,12 @@ impl Analyzer<'_, '_> {
                     if f.return_type.is_none() {
                         if let Some(m) = &mut child.mutations {
                             if m.for_fns.entry(f.node_id).or_default().ret_ty.is_none() {
-                                m.for_fns.entry(f.node_id).or_default().ret_ty = Some(Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsVoidKeyword,
-                                    metadata: Default::default(),
-                                }));
+                                m.for_fns.entry(f.node_id).or_default().ret_ty =
+                                    Some(Type::Keyword(KeywordType {
+                                        span,
+                                        kind: TsKeywordTypeKind::TsVoidKeyword,
+                                        metadata: Default::default(),
+                                    }));
                             }
                         }
                     }
@@ -243,7 +253,8 @@ impl Analyzer<'_, '_> {
             if f.return_type.is_none() {
                 if let Some(m) = &mut child.mutations {
                     if m.for_fns.entry(f.node_id).or_default().ret_ty.is_none() {
-                        m.for_fns.entry(f.node_id).or_default().ret_ty = Some(inferred_return_type.clone())
+                        m.for_fns.entry(f.node_id).or_default().ret_ty =
+                            Some(inferred_return_type.clone())
                     }
                 }
             }
@@ -271,13 +282,18 @@ impl Analyzer<'_, '_> {
             ret_ty: Some(f.ret_ty.clone()),
         }))
     }
+
     /// Fill type arguments using default value.
     ///
     /// If the referred type has default type parameter, we have to include it
     /// in function type of output (.d.ts)
     fn qualify_ref_type_args(&mut self, span: Span, mut ty: Ref) -> ValidationResult<Ref> {
-        let actual_ty =
-            self.type_of_ts_entity_name(span, self.ctx.module_id, &ty.type_name, ty.type_args.as_deref())?;
+        let actual_ty = self.type_of_ts_entity_name(
+            span,
+            self.ctx.module_id,
+            &ty.type_name,
+            ty.type_args.as_deref(),
+        )?;
 
         // TODO(kdy1): PERF
         let type_params = match actual_ty.foldable() {
@@ -320,8 +336,10 @@ impl Analyzer<'_, '_> {
                 } else {
                     self.storage
                         .report(Error::ImplicitAny { span }.context("qualify_ref_type_args"));
-                    args.params
-                        .push(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
+                    args.params.push(Type::any(
+                        span.with_ctxt(SyntaxContext::empty()),
+                        Default::default(),
+                    ));
                 }
             }
         }
@@ -470,11 +488,11 @@ impl Analyzer<'_, '_> {
             in_generator: f.function.is_generator,
             ..self.ctx
         };
-        let fn_ty = self
-            .with_ctx(ctx)
-            .with_child(ScopeKind::Fn, Default::default(), |a: &mut Analyzer| {
-                Ok(a.visit_fn(Some(&f.ident), &f.function, None).cheap())
-            })?;
+        let fn_ty = self.with_ctx(ctx).with_child(
+            ScopeKind::Fn,
+            Default::default(),
+            |a: &mut Analyzer| Ok(a.visit_fn(Some(&f.ident), &f.function, None).cheap()),
+        )?;
 
         let mut a = self.with_ctx(ctx);
         match a.declare_var(

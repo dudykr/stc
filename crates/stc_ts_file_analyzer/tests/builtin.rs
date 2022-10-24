@@ -1,7 +1,8 @@
+use std::sync::Arc;
+
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{BuiltIn, Env, ModuleConfig, StableEnv};
 use stc_ts_file_analyzer::env::BuiltInGen;
-use std::sync::Arc;
 use swc_common::{Globals, DUMMY_SP, GLOBALS};
 
 #[test]

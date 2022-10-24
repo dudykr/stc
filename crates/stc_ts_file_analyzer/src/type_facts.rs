@@ -202,7 +202,9 @@ add_bitflags!(
             | NEUndefined
             | Falsy,
         EmptyObjectStrictFacts: TypeFacts::All.bits
-            & !(TypeFacts::EQUndefined.bits | TypeFacts::EQNull.bits | TypeFacts::EQUndefinedOrNull.bits),
+            & !(TypeFacts::EQUndefined.bits
+                | TypeFacts::EQNull.bits
+                | TypeFacts::EQUndefinedOrNull.bits),
         EmptyObjectFacts: All,
     },
 );
@@ -221,6 +223,7 @@ impl TypeFacts {
             _ => return None,
         })
     }
+
     pub fn typeof_neq(s: &str) -> Option<Self> {
         Some(match s {
             "string" => TypeFacts::TypeofNEString,

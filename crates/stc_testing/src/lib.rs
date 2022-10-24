@@ -1,5 +1,6 @@
-use once_cell::sync::Lazy;
 use std::{self, fs::read_to_string, path::PathBuf, process::Command};
+
+use once_cell::sync::Lazy;
 use tracing::Level;
 use tracing_subscriber::prelude::*;
 
@@ -12,7 +13,10 @@ pub fn get_git_root() -> PathBuf {
             .expect("failed to get root git direcrtory");
 
         assert!(output.status.success());
-        String::from_utf8_lossy(&output.stdout).trim().to_string().into()
+        String::from_utf8_lossy(&output.stdout)
+            .trim()
+            .to_string()
+            .into()
     });
 
     DIR.clone()

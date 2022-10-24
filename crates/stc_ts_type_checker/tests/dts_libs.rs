@@ -1,5 +1,12 @@
 #![feature(box_syntax)]
 
+use std::{
+    fs::read_to_string,
+    path::{Path, PathBuf},
+    process::{Command, Stdio},
+    sync::Arc,
+};
+
 use anyhow::{Context, Error};
 use ignore::WalkBuilder;
 use stc_testing::get_git_root;
@@ -8,12 +15,6 @@ use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_type_checker::Checker;
-use std::{
-    fs::read_to_string,
-    path::{Path, PathBuf},
-    process::{Command, Stdio},
-    sync::Arc,
-};
 use swc_common::{
     errors::{ColorConfig, Handler},
     FileName, SourceMap, Spanned,
@@ -111,7 +112,9 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
                 ModuleConfig::None,
                 &Lib::load("es2020.full"),
             ),
-            TsConfig { ..Default::default() },
+            TsConfig {
+                ..Default::default()
+            },
             None,
             Arc::new(NodeResolver),
         );
@@ -123,7 +126,9 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
         }
 
         for err in checker.take_errors() {
-            handler.struct_span_err(err.span(), &format!("{:?}", err)).emit();
+            handler
+                .struct_span_err(err.span(), &format!("{:?}", err))
+                .emit();
         }
 
         for entry in WalkBuilder::new(dir).git_ignore(false).build() {
@@ -169,7 +174,10 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
                 continue;
             }
 
-            println!("---------- Input ----------\n{}", read_to_string(entry.path()).unwrap());
+            println!(
+                "---------- Input ----------\n{}",
+                read_to_string(entry.path()).unwrap()
+            );
             println!("---------- Expected ----------\n{}", expected);
             println!("---------- Generated ----------\n{}", generated);
 
@@ -198,7 +206,9 @@ fn parse_dts(cm: &SourceMap, src: &str) -> Module {
     let mut module = parser.parse_module().unwrap();
 
     module.body.retain(|item| match item {
-        ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(NamedExport { specifiers, .. })) if specifiers.is_empty() => {
+        ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(NamedExport { specifiers, .. }))
+            if specifiers.is_empty() =>
+        {
             false
         }
         ModuleItem::Stmt(Stmt::Empty(..)) => false,
@@ -218,7 +228,10 @@ fn print(cm: &Arc<SourceMap>, m: &Module) -> NormalizedOutput {
             wr: box JsWriter::new(cm.clone(), "\n", &mut buf, None),
         };
 
-        emitter.emit_module(&m).context("failed to emit module").unwrap();
+        emitter
+            .emit_module(&m)
+            .context("failed to emit module")
+            .unwrap();
     }
     String::from_utf8(buf).unwrap().into()
 }

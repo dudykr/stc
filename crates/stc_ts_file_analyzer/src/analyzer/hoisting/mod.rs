@@ -1,4 +1,3 @@
-use crate::{analyzer::Analyzer, util::ModuleItemOrStmt};
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{RDecl, RIdent, RModuleDecl, RStmt};
@@ -6,16 +5,24 @@ use stc_ts_ordering::{calc_eval_order, stmt::TypedId, types::Sortable};
 use stc_ts_types::Id;
 use stc_ts_utils::{AsModuleDecl, HasNodeId};
 
+use crate::{analyzer::Analyzer, util::ModuleItemOrStmt};
+
 #[cfg(test)]
 mod tests;
 
 impl Analyzer<'_, '_> {
     pub(super) fn validate_stmts_with_hoisting<T>(&mut self, stmts: &Vec<&T>)
     where
-        T: AsModuleDecl + ModuleItemOrStmt + VisitWith<Self> + From<RStmt> + HasNodeId + Sortable<Id = TypedId>,
+        T: AsModuleDecl
+            + ModuleItemOrStmt
+            + VisitWith<Self>
+            + From<RStmt>
+            + HasNodeId
+            + Sortable<Id = TypedId>,
     {
         let (order, skip) = self.reorder_stmts(&stmts);
-        let mut type_decls = FxHashMap::<Id, Vec<usize>>::with_capacity_and_hasher(order.len(), Default::default());
+        let mut type_decls =
+            FxHashMap::<Id, Vec<usize>>::with_capacity_and_hasher(order.len(), Default::default());
 
         if self.scope.is_root() {
             // We should track type declarations.
@@ -76,7 +83,12 @@ impl Analyzer<'_, '_> {
     /// ```
     pub(super) fn validate_stmts_and_collect<T>(&mut self, stmts: &Vec<&T>)
     where
-        T: AsModuleDecl + ModuleItemOrStmt + VisitWith<Self> + From<RStmt> + HasNodeId + Sortable<Id = TypedId>,
+        T: AsModuleDecl
+            + ModuleItemOrStmt
+            + VisitWith<Self>
+            + From<RStmt>
+            + HasNodeId
+            + Sortable<Id = TypedId>,
     {
         self.validate_stmts_with_hoisting(stmts);
     }

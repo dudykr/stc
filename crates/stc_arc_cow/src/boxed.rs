@@ -1,5 +1,6 @@
-use crate::freeze::Freezer;
 use triomphe::{Arc, UniqueArc};
+
+use crate::freeze::Freezer;
 
 pub enum BoxedArcCow<T>
 where

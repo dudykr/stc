@@ -1,10 +1,11 @@
-use crate::analyzer::Analyzer;
 use fxhash::FxBuildHasher;
 use indexmap::IndexSet;
 use itertools::Itertools;
 use rnode::{Visit, VisitWith};
 use stc_ts_types::{Id, Type, TypeParam, TypeParamDecl};
 use swc_common::DUMMY_SP;
+
+use crate::analyzer::Analyzer;
 
 impl Analyzer<'_, '_> {
     pub(crate) fn add_required_type_params(&self, ty: &mut Type) {
@@ -40,7 +41,12 @@ impl Analyzer<'_, '_> {
                     Some(v) => {
                         v.params = params;
                     }
-                    None => f.type_params = Some(TypeParamDecl { span: DUMMY_SP, params }),
+                    None => {
+                        f.type_params = Some(TypeParamDecl {
+                            span: DUMMY_SP,
+                            params,
+                        })
+                    }
                 }
             }
             _ => {}

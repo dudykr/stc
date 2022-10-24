@@ -3,11 +3,12 @@
 /// Use good memory allocator.
 extern crate swc_node_base;
 
-use once_cell::sync::Lazy;
 use std::{
     collections::{HashMap, HashSet},
     env,
 };
+
+use once_cell::sync::Lazy;
 
 pub mod cache;
 pub mod error;
@@ -23,7 +24,11 @@ pub type AHashSet<V> = HashSet<V, ahash::RandomState>;
 
 /// If true, errors will not be buffered.
 pub fn early_error() -> bool {
-    static EARLY_ERROR: Lazy<bool> = Lazy::new(|| env::var("STC_EARLY_ERROR").map(|s| s == "1").unwrap_or(false));
+    static EARLY_ERROR: Lazy<bool> = Lazy::new(|| {
+        env::var("STC_EARLY_ERROR")
+            .map(|s| s == "1")
+            .unwrap_or(false)
+    });
 
     *EARLY_ERROR
 }

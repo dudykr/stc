@@ -14,12 +14,13 @@
 #![feature(specialization)]
 #![recursion_limit = "1024"]
 
+use std::path::PathBuf;
+
 use stc_ts_env::StableEnv;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::Type;
 pub use stc_ts_types::{Id, ModuleTypeData};
-use std::path::PathBuf;
 use swc_atoms::JsWord;
 use swc_common::Span;
 

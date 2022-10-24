@@ -1,7 +1,8 @@
-use crate::analyzer::Analyzer;
 use rnode::VisitWith;
 use stc_ts_ast_rnode::RModuleItem;
 use stc_ts_simple_ast_validations::ambient_fn::AmbientFunctionHandler;
+
+use crate::analyzer::Analyzer;
 
 impl Analyzer<'_, '_> {
     pub(crate) fn report_error_for_wrong_top_level_ambient_fns(&mut self, nodes: &[RModuleItem]) {

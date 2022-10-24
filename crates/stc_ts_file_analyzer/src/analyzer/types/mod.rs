@@ -1,9 +1,5 @@
-use crate::{
-    analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
-    type_facts::TypeFacts,
-    util::unwrap_ref_with_single_arg,
-    ValidationResult,
-};
+use std::{borrow::Cow, collections::HashMap};
+
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{VisitMutWith, VisitWith};
@@ -13,10 +9,11 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
-    name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional,
-    ConditionalMetadata, ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection,
-    Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature,
-    ModuleId, Operator, PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type,
+    name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey,
+    Conditional, ConditionalMetadata, ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance,
+    InstanceMetadata, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId, Operator,
+    PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type,
     TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_utils::{
@@ -25,11 +22,17 @@ use stc_utils::{
     ext::{SpanExt, TypeVecExt},
     stack,
 };
-use std::{borrow::Cow, collections::HashMap};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, instrument, span, Level};
+
+use crate::{
+    analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
+    type_facts::TypeFacts,
+    util::unwrap_ref_with_single_arg,
+    ValidationResult,
+};
 
 mod index_signature;
 mod keyof;
@@ -112,14 +115,19 @@ impl Analyzer<'_, '_> {
             }
 
             if ty.is_arc() {
-                let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
+                let ty = self
+                    .normalize(span, Cow::Borrowed(ty.normalize()), opts)?
+                    .into_owned();
 
                 return Ok(Cow::Owned(ty));
             }
 
             if matches!(
                 ty.normalize(),
-                Type::Conditional(..) | Type::Array(..) | Type::IndexedAccessType(..) | Type::Mapped(..)
+                Type::Conditional(..)
+                    | Type::Array(..)
+                    | Type::IndexedAccessType(..)
+                    | Type::Mapped(..)
             ) {
                 ty.make_clone_cheap();
             }
@@ -179,7 +187,10 @@ impl Analyzer<'_, '_> {
                             if let Some(ty) = ty {
                                 return Ok(Cow::Owned(
                                     self.normalize(span, Cow::Owned(ty), opts)
-                                        .context("tried to expand a mapped type as a part of normalization")?
+                                        .context(
+                                            "tried to expand a mapped type as a part of \
+                                             normalization",
+                                        )?
                                         .into_owned(),
                                 ));
                             }
@@ -189,7 +200,8 @@ impl Analyzer<'_, '_> {
                     Type::Alias(a) => {
                         // TODO(kdy1): Optimize
                         return Ok(Cow::Owned(
-                            self.normalize(span, Cow::Borrowed(&a.ty), opts)?.into_owned(),
+                            self.normalize(span, Cow::Borrowed(&a.ty), opts)?
+                                .into_owned(),
                         ));
                     }
 
@@ -249,16 +261,22 @@ impl Analyzer<'_, '_> {
 
                         let mut extends_type = self
                             .normalize(span, Cow::Borrowed(&c.extends_type), Default::default())
-                            .context("tried to normalize the `extends` type of a conditional type")?;
+                            .context(
+                                "tried to normalize the `extends` type of a conditional type",
+                            )?;
 
                         extends_type.make_clone_cheap();
 
-                        if let Some(v) = self.extends(ty.span(), Default::default(), &check_type, &extends_type) {
+                        if let Some(v) =
+                            self.extends(ty.span(), Default::default(), &check_type, &extends_type)
+                        {
                             let ty = if v { &c.true_type } else { &c.false_type };
                             // TODO(kdy1): Optimize
                             let ty = self
                                 .normalize(span, Cow::Borrowed(&ty), opts)
-                                .context("tried to normalize the calculated type of a conditional type")?
+                                .context(
+                                    "tried to normalize the calculated type of a conditional type",
+                                )?
                                 .into_owned();
                             return Ok(Cow::Owned(ty));
                         }
@@ -293,7 +311,12 @@ impl Analyzer<'_, '_> {
                                 let mut all = true;
                                 let mut types = vec![];
                                 for check_type in &check_type_union.types {
-                                    let res = self.extends(ty.span(), Default::default(), &check_type, &extends_type);
+                                    let res = self.extends(
+                                        ty.span(),
+                                        Default::default(),
+                                        &check_type,
+                                        &extends_type,
+                                    );
                                     if let Some(v) = res {
                                         if v {
                                             if !c.true_type.is_never() {
@@ -349,8 +372,12 @@ impl Analyzer<'_, '_> {
                                         let mut all = true;
                                         let mut types = vec![];
                                         for check_type in &check_type_union.types {
-                                            let res =
-                                                self.extends(ty.span(), Default::default(), &check_type, &extends_type);
+                                            let res = self.extends(
+                                                ty.span(),
+                                                Default::default(),
+                                                &check_type,
+                                                &extends_type,
+                                            );
                                             if let Some(v) = res {
                                                 if v {
                                                     if !c.true_type.is_never() {
@@ -380,9 +407,15 @@ impl Analyzer<'_, '_> {
                                             let mut params = HashMap::default();
                                             params.insert(
                                                 name.clone(),
-                                                ALLOW_DEEP_CLONE.set(&(), || check_type.clone().fixed().cheap()),
+                                                ALLOW_DEEP_CLONE.set(&(), || {
+                                                    check_type.clone().fixed().cheap()
+                                                }),
                                             );
-                                            let c = self.expand_type_params(&params, c.clone(), Default::default())?;
+                                            let c = self.expand_type_params(
+                                                &params,
+                                                c.clone(),
+                                                Default::default(),
+                                            )?;
                                             let c = Type::Conditional(c);
                                             c.assert_valid();
 
@@ -400,9 +433,9 @@ impl Analyzer<'_, '_> {
                         if !opts.preserve_typeof {
                             match &*q.expr {
                                 QueryExpr::TsEntityName(e) => {
-                                    let expanded_ty = self
-                                        .resolve_typeof(actual_span, e)
-                                        .context("tried to resolve typeof as a part of normalization")?;
+                                    let expanded_ty = self.resolve_typeof(actual_span, e).context(
+                                        "tried to resolve typeof as a part of normalization",
+                                    )?;
 
                                     if ty.type_eq(&expanded_ty) {
                                         return Ok(Cow::Owned(Type::any(
@@ -420,7 +453,9 @@ impl Analyzer<'_, '_> {
 
                                     return Ok(self
                                         .normalize(span, Cow::Owned(expanded_ty), opts)
-                                        .context("tried to normalize the type returned from typeof")?);
+                                        .context(
+                                            "tried to normalize the type returned from typeof",
+                                        )?);
                                 }
                                 QueryExpr::Import(_) => {}
                             }
@@ -476,16 +511,20 @@ impl Analyzer<'_, '_> {
                                 return Ok(ty);
                             }
 
-                            let _context =
-                                debug_ctx!(format!("Property type: {}", dump_type_as_string(&self.cm, &prop_ty)));
+                            let _context = debug_ctx!(format!(
+                                "Property type: {}",
+                                dump_type_as_string(&self.cm, &prop_ty)
+                            ));
 
                             match prop_ty.normalize() {
-                                Type::IndexedAccessType(prop_ty) => match prop_ty.index_type.normalize() {
-                                    Type::Param(..) => {}
-                                    _ => {
-                                        panic!("{:?}", prop_ty);
+                                Type::IndexedAccessType(prop_ty) => {
+                                    match prop_ty.index_type.normalize() {
+                                        Type::Param(..) => {}
+                                        _ => {
+                                            panic!("{:?}", prop_ty);
+                                        }
                                     }
-                                },
+                                }
                                 _ => {}
                             }
 
@@ -549,8 +588,10 @@ impl Analyzer<'_, '_> {
         let span = span.with_ctxt(SyntaxContext::empty());
         let mut worked = false;
 
-        let mut true_type = self.normalize(Some(span), Cow::Borrowed(true_type), Default::default())?;
-        let mut false_type = self.normalize(Some(span), Cow::Borrowed(false_type), Default::default())?;
+        let mut true_type =
+            self.normalize(Some(span), Cow::Borrowed(true_type), Default::default())?;
+        let mut false_type =
+            self.normalize(Some(span), Cow::Borrowed(false_type), Default::default())?;
 
         match true_type.normalize() {
             Type::Conditional(c) => {
@@ -600,8 +641,13 @@ impl Analyzer<'_, '_> {
             Type::Union(check_type_union) => {
                 //
                 let can_match = check_type_union.types.iter().any(|check_type_constraint| {
-                    self.extends(span, Default::default(), check_type_constraint, extends_type)
-                        .unwrap_or(true)
+                    self.extends(
+                        span,
+                        Default::default(),
+                        check_type_constraint,
+                        extends_type,
+                    )
+                    .unwrap_or(true)
                 });
 
                 if !can_match {
@@ -612,7 +658,9 @@ impl Analyzer<'_, '_> {
                 //
                 if let Some(extends) = self.extends(
                     span,
-                    ExtendsOpts { ..Default::default() },
+                    ExtendsOpts {
+                        ..Default::default()
+                    },
                     &check_type_constraint,
                     extends_type,
                 ) {
@@ -640,7 +688,11 @@ impl Analyzer<'_, '_> {
     }
 
     // This is part of normalization.
-    fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type) -> ValidationResult<Type> {
+    fn instantiate_for_normalization(
+        &mut self,
+        span: Option<Span>,
+        ty: &Type,
+    ) -> ValidationResult<Type> {
         let mut ty = self.normalize(
             span,
             Cow::Borrowed(ty),
@@ -726,7 +778,11 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    pub(crate) fn report_possibly_null_or_undefined(&mut self, span: Span, ty: &Type) -> ValidationResult<()> {
+    pub(crate) fn report_possibly_null_or_undefined(
+        &mut self,
+        span: Span,
+        ty: &Type,
+    ) -> ValidationResult<()> {
         let ty = self
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize to see if it can be undefined")?;
@@ -735,7 +791,9 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+        if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+            || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+        {
             return Err(Error::ObjectIsPossiblyUndefined { span });
         }
         if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
@@ -753,9 +811,13 @@ impl Analyzer<'_, '_> {
             | Type::TypeLit(..)
             | Type::Param(..) => Ok(()),
             Type::Union(ty) => {
-                let has_null = ty.types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsNullKeyword));
+                let has_null = ty
+                    .types
+                    .iter()
+                    .any(|ty| ty.is_kwd(TsKeywordTypeKind::TsNullKeyword));
                 let has_undefined = ty.types.iter().any(|ty| {
-                    ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
+                    ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                        || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
                 });
 
                 // tsc is crazy. It uses different error code for these errors.
@@ -835,7 +897,10 @@ impl Analyzer<'_, '_> {
     }
 
     #[instrument(skip(self, def))]
-    pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> ValidationResult<TypeLit> {
+    pub(crate) fn create_prototype_of_class_def(
+        &mut self,
+        def: &ClassDef,
+    ) -> ValidationResult<TypeLit> {
         let mut members = vec![];
 
         let type_params = def.type_params.as_ref().map(|decl| {
@@ -893,13 +958,24 @@ impl Analyzer<'_, '_> {
     /// current scope.
     #[instrument(skip(self, span, name, ty))]
     pub(crate) fn exclude_types_using_fact(&mut self, span: Span, name: &Name, ty: &mut Type) {
-        debug_assert!(!span.is_dummy(), "exclude_types should not be called with a dummy span");
+        debug_assert!(
+            !span.is_dummy(),
+            "exclude_types should not be called with a dummy span"
+        );
 
         let mut types_to_exclude = vec![];
         let mut s = Some(&self.scope);
 
         while let Some(scope) = s {
-            types_to_exclude.extend(scope.facts.excludes.get(&name).cloned().into_iter().flatten());
+            types_to_exclude.extend(
+                scope
+                    .facts
+                    .excludes
+                    .get(&name)
+                    .cloned()
+                    .into_iter()
+                    .flatten(),
+            );
             s = scope.parent();
         }
 
@@ -963,7 +1039,12 @@ impl Analyzer<'_, '_> {
                         if let Some(super_key) = super_member.key() {
                             for excluded in excluded {
                                 if let Some(exc_key) = excluded.key() {
-                                    if self.key_matches(super_key.span(), &super_key, &exc_key, false) {
+                                    if self.key_matches(
+                                        super_key.span(),
+                                        &super_key,
+                                        &exc_key,
+                                        false,
+                                    ) {
                                         return false;
                                     }
                                 }
@@ -1011,7 +1092,10 @@ impl Analyzer<'_, '_> {
 
         let _ctx = debug_ctx!(format!("type_to_type_lit: {:?}", ty));
 
-        debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
+        debug_assert!(
+            !span.is_dummy(),
+            "type_to_type_lit: `span` should not be dummy"
+        );
 
         if ty.normalize().is_type_lit() {
             match ty {
@@ -1043,7 +1127,12 @@ impl Analyzer<'_, '_> {
 
                 let super_els = self.convert_type_to_type_lit(span, Cow::Owned(parent))?;
 
-                members.extend(super_els.into_iter().map(Cow::into_owned).flat_map(|v| v.members))
+                members.extend(
+                    super_els
+                        .into_iter()
+                        .map(Cow::into_owned)
+                        .flat_map(|v| v.members),
+                )
             }
 
             // TODO(kdy1): Override
@@ -1127,7 +1216,12 @@ impl Analyzer<'_, '_> {
                 if let Some(super_class) = &c.def.super_class {
                     let super_class = self.instantiate_class(span, super_class)?;
                     let super_els = self.convert_type_to_type_lit(span, Cow::Owned(super_class))?;
-                    members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
+                    members.extend(
+                        super_els
+                            .map(|ty| ty.into_owned().members)
+                            .into_iter()
+                            .flatten(),
+                    );
                 }
 
                 // TODO(kdy1): Override
@@ -1139,15 +1233,23 @@ impl Analyzer<'_, '_> {
                 Cow::Owned(TypeLit {
                     span: c.span,
                     members,
-                    metadata: TypeLitMetadata { ..Default::default() },
+                    metadata: TypeLitMetadata {
+                        ..Default::default()
+                    },
                 })
             }
 
             Type::ClassDef(c) => {
                 let mut members = vec![];
                 if let Some(super_class) = &c.super_class {
-                    let super_els = self.convert_type_to_type_lit(span, Cow::Borrowed(&super_class))?;
-                    members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
+                    let super_els =
+                        self.convert_type_to_type_lit(span, Cow::Borrowed(&super_class))?;
+                    members.extend(
+                        super_els
+                            .map(|ty| ty.into_owned().members)
+                            .into_iter()
+                            .flatten(),
+                    );
                 }
 
                 // TODO(kdy1): Override
@@ -1159,7 +1261,9 @@ impl Analyzer<'_, '_> {
                 Cow::Owned(TypeLit {
                     span: c.span,
                     members,
-                    metadata: TypeLitMetadata { ..Default::default() },
+                    metadata: TypeLitMetadata {
+                        ..Default::default()
+                    },
                 })
             }
 
@@ -1356,7 +1460,11 @@ impl Analyzer<'_, '_> {
         v
     }
 
-    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> ValidationResult {
+    pub(crate) fn expand_intrinsic_types(
+        &mut self,
+        span: Span,
+        ty: &Intrinsic,
+    ) -> ValidationResult {
         let arg = &ty.type_args;
 
         match ty.kind {
@@ -1365,7 +1473,8 @@ impl Analyzer<'_, '_> {
             | IntrinsicKind::Capitalize
             | IntrinsicKind::Uncapitalize => match arg.params[0].normalize() {
                 Type::Lit(LitType {
-                    lit: RTsLit::Str(s), ..
+                    lit: RTsLit::Str(s),
+                    ..
                 }) => {
                     let new_val = match ty.kind {
                         IntrinsicKind::Uppercase => s.value.to_uppercase(),
@@ -1468,6 +1577,7 @@ impl Analyzer<'_, '_> {
             }),
         }
     }
+
     /// Utility method to convert a class member to a type element.
     ///
     /// This method is used while inferring types and while assigning type
@@ -1647,7 +1757,11 @@ impl Analyzer<'_, '_> {
         };
 
         for excluded in excludes {
-            self.exclude_type(span, ALLOW_DEEP_CLONE.set(&(), || mapped_ty.to_mut()), &excluded);
+            self.exclude_type(
+                span,
+                ALLOW_DEEP_CLONE.set(&(), || mapped_ty.to_mut()),
+                &excluded,
+            );
         }
 
         *ty = ALLOW_DEEP_CLONE.set(&(), || mapped_ty.into_owned());

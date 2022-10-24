@@ -1,7 +1,8 @@
-use crate::{ArcCow, BoxedArcCow};
 use stc_visit::{VisitMut, VisitMutWith};
 use swc_common::util::take::Take;
 use triomphe::Arc;
+
+use crate::{ArcCow, BoxedArcCow};
 
 pub struct Freezer;
 

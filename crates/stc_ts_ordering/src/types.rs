@@ -1,4 +1,5 @@
 use std::hash::Hash;
+
 use swc_common::collections::{AHashMap, AHashSet};
 
 pub trait Sortable: Send + Sync {

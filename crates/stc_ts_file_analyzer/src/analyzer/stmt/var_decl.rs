@@ -1,3 +1,24 @@
+use std::borrow::Cow;
+
+use rnode::{FoldWith, Visit, VisitWith};
+use stc_ts_ast_rnode::{
+    RArrayPat, RCallExpr, RExpr, RExprOrSuper, RIdent, RPat, RTsAsExpr, RTsEntityName,
+    RTsTypeAssertion, RVarDecl, RVarDeclarator,
+};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
+use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
+use stc_ts_types::{
+    Array, EnumVariant, Id, Instance, InstanceMetadata, KeywordType, KeywordTypeMetadata, Operator,
+    OperatorMetadata, QueryExpr, QueryType, Symbol, SymbolMetadata,
+};
+use stc_ts_utils::{find_ids_in_pat, PatExt};
+use stc_utils::cache::Freeze;
+use swc_atoms::js_word;
+use swc_common::Spanned;
+use swc_ecma_ast::*;
+use tracing::debug;
+use ty::TypeExt;
+
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -13,25 +34,6 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use rnode::{FoldWith, Visit, VisitWith};
-use stc_ts_ast_rnode::{
-    RArrayPat, RCallExpr, RExpr, RExprOrSuper, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsTypeAssertion, RVarDecl,
-    RVarDeclarator,
-};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
-use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
-use stc_ts_types::{
-    Array, EnumVariant, Id, Instance, InstanceMetadata, KeywordType, KeywordTypeMetadata, Operator, OperatorMetadata,
-    QueryExpr, QueryType, Symbol, SymbolMetadata,
-};
-use stc_ts_utils::{find_ids_in_pat, PatExt};
-use stc_utils::cache::Freeze;
-use std::borrow::Cow;
-use swc_atoms::js_word;
-use swc_common::Spanned;
-use swc_ecma_ast::*;
-use tracing::debug;
-use ty::TypeExt;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -53,10 +55,15 @@ impl Analyzer<'_, '_> {
         for decl in &var.decls {
             match &decl.name {
                 RPat::Array(RArrayPat {
-                    span, elems, node_id, ..
+                    span,
+                    elems,
+                    node_id,
+                    ..
                 }) => {
                     if let Some(m) = &self.mutations {
-                        if let Some(Type::Tuple(tuple)) = m.for_pats.get(&node_id).map(|m| &m.ty).cloned().flatten() {
+                        if let Some(Type::Tuple(tuple)) =
+                            m.for_pats.get(&node_id).map(|m| &m.ty).cloned().flatten()
+                        {
                             for (i, elem) in elems.iter().enumerate() {
                                 match elem {
                                     Some(pat) => {
@@ -65,7 +72,8 @@ impl Analyzer<'_, '_> {
                                             let ty = &tuple.elems[i].ty;
                                             if let Some(node_id) = pat.node_id() {
                                                 if let Some(m) = &mut self.mutations {
-                                                    m.for_pats.entry(node_id).or_default().ty = Some(*ty.clone());
+                                                    m.for_pats.entry(node_id).or_default().ty =
+                                                        Some(*ty.clone());
                                                 }
                                             }
                                         }
@@ -133,7 +141,9 @@ impl Analyzer<'_, '_> {
             let forced_type_ann = {
                 // let a = {} as Foo
                 match &v.init {
-                    Some(box RExpr::TsAs(RTsAsExpr { type_ann, .. })) => Some(type_ann.validate_with(self)?),
+                    Some(box RExpr::TsAs(RTsAsExpr { type_ann, .. })) => {
+                        Some(type_ann.validate_with(self)?)
+                    }
 
                     Some(box RExpr::TsTypeAssertion(RTsTypeAssertion { type_ann, .. })) => {
                         Some(type_ann.validate_with(self)?)
@@ -189,7 +199,11 @@ impl Analyzer<'_, '_> {
                     _ => false,
                 };
 
-                let old_this = if creates_new_this { self.scope.this.take() } else { None };
+                let old_this = if creates_new_this {
+                    self.scope.this.take()
+                } else {
+                    None
+                };
 
                 let declared_ty = v.name.get_ty();
                 if declared_ty.is_some() {
@@ -246,7 +260,9 @@ impl Analyzer<'_, '_> {
 
                             Type::Instance(Instance {
                                 span: ty.span(),
-                                metadata: InstanceMetadata { common: ty.metadata() },
+                                metadata: InstanceMetadata {
+                                    common: ty.metadata(),
+                                },
                                 ty: box ty,
                             })
                         })();
@@ -285,14 +301,20 @@ impl Analyzer<'_, '_> {
                                 prevent_generalize(&mut ty);
                                 ty.make_clone_cheap();
 
-                                let actual_ty =
-                                    self.narrowed_type_of_assignment(span, ty.clone(), &value_ty)?.freezed();
+                                let actual_ty = self
+                                    .narrowed_type_of_assignment(span, ty.clone(), &value_ty)?
+                                    .freezed();
 
                                 actual_ty.assert_valid();
 
                                 // let ty = ty.fold_with(&mut Generalizer::default());
-                                match self.declare_complex_vars(VarKind::Var(kind), &v.name, ty, Some(actual_ty), None)
-                                {
+                                match self.declare_complex_vars(
+                                    VarKind::Var(kind),
+                                    &v.name,
+                                    ty,
+                                    Some(actual_ty),
+                                    None,
+                                ) {
                                     Ok(()) => {}
                                     Err(err) => {
                                         self.storage.report(err);
@@ -304,7 +326,13 @@ impl Analyzer<'_, '_> {
                             Err(err) => {
                                 self.storage.report(err);
 
-                                match self.declare_complex_vars(VarKind::Var(kind), &v.name, ty, None, None) {
+                                match self.declare_complex_vars(
+                                    VarKind::Var(kind),
+                                    &v.name,
+                                    ty,
+                                    None,
+                                    None,
+                                ) {
                                     Ok(()) => {}
                                     Err(err) => {
                                         self.storage.report(err);
@@ -327,7 +355,8 @@ impl Analyzer<'_, '_> {
                             match value_ty.normalize() {
                                 Type::TypeLit(..) | Type::Function(..) | Type::Query(..) => {
                                     if let Some(m) = &mut self.mutations {
-                                        m.for_var_decls.entry(v.node_id).or_default().remove_init = true;
+                                        m.for_var_decls.entry(v.node_id).or_default().remove_init =
+                                            true;
                                     }
                                 }
                                 _ => {}
@@ -382,7 +411,10 @@ impl Analyzer<'_, '_> {
                             ty = match ty.normalize() {
                                 Type::Function(f) => {
                                     let ret_ty = box f.ret_ty.clone().generalize_lit();
-                                    Type::Function(stc_ts_types::Function { ret_ty, ..f.clone() })
+                                    Type::Function(stc_ts_types::Function {
+                                        ret_ty,
+                                        ..f.clone()
+                                    })
                                 }
 
                                 _ => ty,
@@ -405,7 +437,10 @@ impl Analyzer<'_, '_> {
                                 ty = self.with_ctx(ctx).expand(span, ty, Default::default())?;
                                 ty.assert_valid();
 
-                                debug!("[vars]: Type after expansion: {}", dump_type_as_string(&self.cm, &ty));
+                                debug!(
+                                    "[vars]: Type after expansion: {}",
+                                    dump_type_as_string(&self.cm, &ty)
+                                );
                             }
                             _ => {}
                         }
@@ -420,7 +455,8 @@ impl Analyzer<'_, '_> {
                                 // Normalize unresolved parameters
                                 let ty = match ty.normalize() {
                                     Type::Param(TypeParam {
-                                        constraint: Some(ty), ..
+                                        constraint: Some(ty),
+                                        ..
                                     }) => *ty.clone(),
                                     _ => ty,
                                 };
@@ -456,22 +492,24 @@ impl Analyzer<'_, '_> {
                                     }) => {
                                         match self.ctx.var_kind {
                                             // It's `uniqute symbol` only if it's `Symbol()`
-                                            VarDeclKind::Const if is_symbol_call => Type::Operator(Operator {
-                                                span: *span,
-                                                op: TsTypeOperatorOp::Unique,
-                                                ty: box Type::Keyword(KeywordType {
+                                            VarDeclKind::Const if is_symbol_call => {
+                                                Type::Operator(Operator {
                                                     span: *span,
-                                                    kind: TsKeywordTypeKind::TsSymbolKeyword,
-                                                    metadata: KeywordTypeMetadata {
+                                                    op: TsTypeOperatorOp::Unique,
+                                                    ty: box Type::Keyword(KeywordType {
+                                                        span: *span,
+                                                        kind: TsKeywordTypeKind::TsSymbolKeyword,
+                                                        metadata: KeywordTypeMetadata {
+                                                            common: *common,
+                                                            ..Default::default()
+                                                        },
+                                                    }),
+                                                    metadata: OperatorMetadata {
                                                         common: *common,
                                                         ..Default::default()
                                                     },
-                                                }),
-                                                metadata: OperatorMetadata {
-                                                    common: *common,
-                                                    ..Default::default()
-                                                },
-                                            }),
+                                                })
+                                            }
 
                                             _ => Type::Keyword(KeywordType {
                                                 span: *span,
@@ -524,14 +562,16 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     // We failed to infer type of the type parameter.
-                                    Type::Param(TypeParam { span, metadata, .. }) => Type::Keyword(KeywordType {
-                                        span: *span,
-                                        kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                        metadata: KeywordTypeMetadata {
-                                            common: metadata.common,
-                                            ..Default::default()
-                                        },
-                                    }),
+                                    Type::Param(TypeParam { span, metadata, .. }) => {
+                                        Type::Keyword(KeywordType {
+                                            span: *span,
+                                            kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                            metadata: KeywordTypeMetadata {
+                                                common: metadata.common,
+                                                ..Default::default()
+                                            },
+                                        })
+                                    }
 
                                     _ => ty,
                                 };
@@ -542,11 +582,14 @@ impl Analyzer<'_, '_> {
                             if let Some(box RExpr::Ident(ref alias)) = &v.init {
                                 if let RPat::Ident(ref i) = v.name {
                                     if let Some(m) = &mut self.mutations {
-                                        m.for_pats.entry(i.node_id).or_default().ty = Some(Type::Query(QueryType {
-                                            span,
-                                            expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(alias.clone())),
-                                            metadata: Default::default(),
-                                        }));
+                                        m.for_pats.entry(i.node_id).or_default().ty =
+                                            Some(Type::Query(QueryType {
+                                                span,
+                                                expr: box QueryExpr::TsEntityName(
+                                                    RTsEntityName::Ident(alias.clone()),
+                                                ),
+                                                metadata: Default::default(),
+                                            }));
                                     }
                                 }
                             }
@@ -613,14 +656,18 @@ impl Analyzer<'_, '_> {
                                         match v.name {
                                             RPat::Ident(ref i) => {
                                                 let span = i.id.span;
-                                                type_errors
-                                                    .push(Error::ImplicitAny { span }.context("tuple type widenning"));
+                                                type_errors.push(
+                                                    Error::ImplicitAny { span }
+                                                        .context("tuple type widenning"),
+                                                );
                                                 break;
                                             }
                                             RPat::Array(RArrayPat { ref elems, .. }) => {
                                                 let span = elems[i].span();
-                                                type_errors
-                                                    .push(Error::ImplicitAny { span }.context("tuple type widenning"));
+                                                type_errors.push(
+                                                    Error::ImplicitAny { span }
+                                                        .context("tuple type widenning"),
+                                                );
                                             }
                                             _ => {}
                                         }
@@ -641,7 +688,9 @@ impl Analyzer<'_, '_> {
                         let var_ty = (|| -> ValidationResult<_> {
                             match ty.normalize() {
                                 Type::EnumVariant(ref v) => {
-                                    if let Some(..) = self.find_type(self.ctx.module_id, &v.enum_name)? {
+                                    if let Some(..) =
+                                        self.find_type(self.ctx.module_id, &v.enum_name)?
+                                    {
                                         return Ok(Type::EnumVariant(EnumVariant {
                                             name: None,
                                             ..v.clone()
@@ -654,8 +703,14 @@ impl Analyzer<'_, '_> {
                         })()?
                         .cheap();
 
-                        self.declare_complex_vars(VarKind::Var(kind), &v.name, var_ty.clone(), None, None)
-                            .report(&mut self.storage);
+                        self.declare_complex_vars(
+                            VarKind::Var(kind),
+                            &v.name,
+                            var_ty.clone(),
+                            None,
+                            None,
+                        )
+                        .report(&mut self.storage);
                         remove_declaring!();
                         return Ok(());
                     }
@@ -705,8 +760,12 @@ impl Analyzer<'_, '_> {
                         if !self.is_builtin {
                             // Report error if type is not found.
                             if let Some(ty) = &ty {
-                                self.normalize(Some(i.id.span), Cow::Borrowed(ty), Default::default())
-                                    .report(&mut self.storage);
+                                self.normalize(
+                                    Some(i.id.span),
+                                    Cow::Borrowed(ty),
+                                    Default::default(),
+                                )
+                                .report(&mut self.storage);
                             }
                         }
 
@@ -745,7 +804,8 @@ impl Analyzer<'_, '_> {
 
             debug_assert_eq!(self.ctx.allow_ref_declaring, true);
             if v.name.get_ty().is_none() {
-                self.declare_vars(VarKind::Var(kind), &v.name).report(&mut self.storage);
+                self.declare_vars(VarKind::Var(kind), &v.name)
+                    .report(&mut self.storage);
             }
 
             remove_declaring!();

@@ -1,21 +1,24 @@
-use crate::{
-    analyzer::{Analyzer, ScopeKind},
-    validator::ValidateWith,
-    ValidationResult,
-};
+use std::{borrow::Cow, time::Instant};
+
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::{RObjectLit, RPropOrSpread, RSpreadElement};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_type_ops::{union_normalization::UnionNormalizer, Fix};
 use stc_ts_types::{
-    Accessor, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit, Union, UnionMetadata,
+    Accessor, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit, Union,
+    UnionMetadata,
 };
 use stc_utils::cache::Freeze;
-use std::{borrow::Cow, time::Instant};
 use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::debug;
+
+use crate::{
+    analyzer::{Analyzer, ScopeKind},
+    validator::ValidateWith,
+    ValidationResult,
+};
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -23,22 +26,31 @@ impl Analyzer<'_, '_> {
         let type_ann = self.expand_type_ann(node.span, type_ann)?;
         debug_assert_eq!(node.span.ctxt, SyntaxContext::empty());
 
-        self.with_child(ScopeKind::ObjectLit, Default::default(), |a: &mut Analyzer| {
-            let mut ret = Type::TypeLit(TypeLit {
-                span: node.span,
-                members: vec![],
-                metadata: Default::default(),
-            });
+        self.with_child(
+            ScopeKind::ObjectLit,
+            Default::default(),
+            |a: &mut Analyzer| {
+                let mut ret = Type::TypeLit(TypeLit {
+                    span: node.span,
+                    members: vec![],
+                    metadata: Default::default(),
+                });
 
-            let mut known_keys = vec![];
-            for prop in node.props.iter() {
-                ret = a.append_prop_or_spread_to_type(&mut known_keys, ret, prop, type_ann.as_deref())?;
-            }
+                let mut known_keys = vec![];
+                for prop in node.props.iter() {
+                    ret = a.append_prop_or_spread_to_type(
+                        &mut known_keys,
+                        ret,
+                        prop,
+                        type_ann.as_deref(),
+                    )?;
+                }
 
-            a.validate_type_literals(&ret, false);
+                a.validate_type_literals(&ret, false);
 
-            Ok(ret)
-        })
+                Ok(ret)
+            },
+        )
     }
 }
 
@@ -77,7 +89,10 @@ impl Analyzer<'_, '_> {
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(crate) fn report_errors_for_mixed_optional_method_signatures(&mut self, elems: &[TypeElement]) {
+    pub(crate) fn report_errors_for_mixed_optional_method_signatures(
+        &mut self,
+        elems: &[TypeElement],
+    ) {
         let mut keys: Vec<(&Key, bool)> = vec![];
         for elem in elems {
             match elem {
@@ -85,7 +100,9 @@ impl Analyzer<'_, '_> {
                     if let Some(prev) = keys.iter().find(|v| v.0.type_eq(key)) {
                         if *optional != prev.1 {
                             self.storage
-                                .report(Error::OptionalAndNonOptionalMethodPropertyMixed { span: key.span() });
+                                .report(Error::OptionalAndNonOptionalMethodPropertyMixed {
+                                    span: key.span(),
+                                });
                             continue;
                         }
                     }

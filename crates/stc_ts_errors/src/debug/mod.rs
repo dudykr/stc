@@ -1,11 +1,12 @@
 //! A module to validate while type checking
+use std::{collections::HashSet, fmt::Write};
+
 use backtrace::Backtrace;
 use fxhash::FxHashMap;
 use rnode::{Fold, FoldWith, RNode, Visit, VisitWith};
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_types::{Id, IndexedAccessType, Ref, Type, TypeLit, TypeParam};
 use stc_utils::cache::ALLOW_DEEP_CLONE;
-use std::{collections::HashSet, fmt::Write};
 use swc_common::{sync::Lrc, SourceMap, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};

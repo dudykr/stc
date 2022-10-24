@@ -1,6 +1,7 @@
+use std::sync::Arc;
+
 use parking_lot::Mutex;
 use stc_visit::Visit;
-use std::sync::Arc;
 use swc_common::{collections::AHashMap, EqIgnoreSpan, FileName, TypeEq};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq, Visit)]

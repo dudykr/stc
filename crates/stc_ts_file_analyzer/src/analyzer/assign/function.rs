@@ -1,12 +1,5 @@
-use crate::{
-    analyzer::{
-        assign::{AssignData, AssignOpts},
-        generic::InferTypeOpts,
-        Analyzer,
-    },
-    util::unwrap_ref_with_single_arg,
-    ValidationResult,
-};
+use std::borrow::Cow;
+
 use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
@@ -16,11 +9,20 @@ use stc_ts_errors::{
 };
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, debug_ctx};
-use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::debug;
+
+use crate::{
+    analyzer::{
+        assign::{AssignData, AssignOpts},
+        generic::InferTypeOpts,
+        Analyzer,
+    },
+    util::unwrap_ref_with_single_arg,
+    ValidationResult,
+};
 
 /// Methods to handle assignment to function types and constructor types.
 impl Analyzer<'_, '_> {
@@ -62,7 +64,8 @@ impl Analyzer<'_, '_> {
                                     && l_ret_ty.types[0].normalize().is_type_param()
                                     && unwrap_ref_with_single_arg(&l_ret_ty.types[1], "PromiseLike")
                                         .type_eq(&Some(&l_ret_ty.types[0]))
-                                    && l_ret_ty.types[2].is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                                    && l_ret_ty.types[2]
+                                        .is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
                                     && l_ret_ty.types[3].is_kwd(TsKeywordTypeKind::TsNullKeyword)
                                 {
                                     return Ok(());
@@ -120,7 +123,10 @@ impl Analyzer<'_, '_> {
                             }
                         };
 
-                        let mut vec = (0..count).into_iter().map(|_| l_params.to_vec()).collect_vec();
+                        let mut vec = (0..count)
+                            .into_iter()
+                            .map(|_| l_params.to_vec())
+                            .collect_vec();
 
                         for (el_idx, new_params) in vec.iter_mut().enumerate() {
                             match new_params[l_pos].ty.normalize_mut() {
@@ -162,7 +168,9 @@ impl Analyzer<'_, '_> {
                                     r_params,
                                     r_ret_ty,
                                 )
-                                .context("tried to assign by expanding overloads in a type literal");
+                                .context(
+                                    "tried to assign by expanding overloads in a type literal",
+                                );
                         }
                     }
                 }};
@@ -188,10 +196,14 @@ impl Analyzer<'_, '_> {
                         .collect::<FxHashMap<_, _>>();
                     let mut new_r_params = self
                         .expand_type_params(&map, r_params.to_vec(), Default::default())
-                        .context("tried to expand type parameters as a step of function assignemnt")?;
+                        .context(
+                            "tried to expand type parameters as a step of function assignemnt",
+                        )?;
                     let mut new_r_ret_ty = self
                         .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
-                        .context("tried to expand return type of rhs as a step of function assignemnt")?;
+                        .context(
+                            "tried to expand return type of rhs as a step of function assignemnt",
+                        )?;
 
                     new_r_params.make_clone_cheap();
                     new_r_ret_ty.make_clone_cheap();
@@ -229,25 +241,40 @@ impl Analyzer<'_, '_> {
                     span,
                     type_params: None,
                     params: l_params.to_vec(),
-                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: box l_ret_ty
+                        .cloned()
+                        .unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
                 });
                 let rf = Type::Function(Function {
                     span,
                     type_params: None,
                     params: r_params.to_vec(),
-                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: box r_ret_ty
+                        .cloned()
+                        .unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
                 });
 
-                let map =
-                    self.infer_type_with_types(span, &*lt.params, &lf, &rf, InferTypeOpts { ..Default::default() })?;
+                let map = self.infer_type_with_types(
+                    span,
+                    &*lt.params,
+                    &lf,
+                    &rf,
+                    InferTypeOpts {
+                        ..Default::default()
+                    },
+                )?;
                 let mut new_l_params = self
                     .expand_type_params(&map, l_params.to_vec(), Default::default())
-                    .context("tried to expand type parameters of lhs as a step of function assignemnt")?;
+                    .context(
+                        "tried to expand type parameters of lhs as a step of function assignemnt",
+                    )?;
                 let mut new_l_ret_ty = self
                     .expand_type_params(&map, l_ret_ty.cloned(), Default::default())
-                    .context("tried to expand return type of lhs as a step of function assignemnt")?;
+                    .context(
+                        "tried to expand return type of lhs as a step of function assignemnt",
+                    )?;
 
                 new_l_params.make_clone_cheap();
                 new_l_ret_ty.make_clone_cheap();
@@ -273,14 +300,18 @@ impl Analyzer<'_, '_> {
                     span,
                     type_params: None,
                     params: l_params.to_vec(),
-                    ret_ty: box l_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: box l_ret_ty
+                        .cloned()
+                        .unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
                 });
                 let rf = Type::Function(Function {
                     span,
                     type_params: None,
                     params: r_params.to_vec(),
-                    ret_ty: box r_ret_ty.cloned().unwrap_or_else(|| Type::any(span, Default::default())),
+                    ret_ty: box r_ret_ty
+                        .cloned()
+                        .unwrap_or_else(|| Type::any(span, Default::default())),
                     metadata: Default::default(),
                 });
 
@@ -301,7 +332,9 @@ impl Analyzer<'_, '_> {
 
                 let new_l_params = self
                     .expand_type_params(&map, l_params.to_vec(), Default::default())
-                    .context("tried to expand type parameters of lhs as a step of function assignemnt")?
+                    .context(
+                        "tried to expand type parameters of lhs as a step of function assignemnt",
+                    )?
                     .freezed();
                 let new_l_ret_ty = self
                     .expand_type_params(&map, l_ret_ty.cloned(), Default::default())
@@ -310,7 +343,9 @@ impl Analyzer<'_, '_> {
 
                 let new_r_params = self
                     .expand_type_params(&map, r_params.to_vec(), Default::default())
-                    .context("tried to expand type parameters of rhs as a step of function assignemnt")?
+                    .context(
+                        "tried to expand type parameters of rhs as a step of function assignemnt",
+                    )?
                     .freezed();
                 let new_r_ret_ty = self
                     .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
@@ -352,7 +387,9 @@ impl Analyzer<'_, '_> {
         // So we check for length first.
         if r_params.len() != 0 {
             self.assign_params(data, opts, l_params, &r_params)
-                .context("tried to assign parameters of a function to parameters of another function")?;
+                .context(
+                    "tried to assign parameters of a function to parameters of another function",
+                )?;
         }
 
         if let Some(l_ret_ty) = l_ret_ty {
@@ -367,8 +404,10 @@ impl Analyzer<'_, '_> {
                     ..opts
                 };
 
-                self.assign_inner(data, l_ret_ty, r_ret_ty, opts)
-                    .context("tried to assign the return type of a function to the return type of another function")?;
+                self.assign_inner(data, l_ret_ty, r_ret_ty, opts).context(
+                    "tried to assign the return type of a function to the return type of another \
+                     function",
+                )?;
             }
         }
 
@@ -535,9 +574,11 @@ impl Analyzer<'_, '_> {
 
                 return Ok(());
             }
-            Type::Lit(..) | Type::ClassDef(ClassDef { is_abstract: true, .. }) | Type::Function(..) => {
-                return Err(Error::SimpleAssignFailed { span, cause: None })
-            }
+            Type::Lit(..)
+            | Type::ClassDef(ClassDef {
+                is_abstract: true, ..
+            })
+            | Type::Function(..) => return Err(Error::SimpleAssignFailed { span, cause: None }),
 
             Type::TypeLit(rt) => {
                 let r_el_cnt = rt
@@ -554,7 +595,8 @@ impl Analyzer<'_, '_> {
                                 .assign_to_fn_like(
                                     data,
                                     AssignOpts {
-                                        allow_assignment_to_param: opts.allow_assignment_to_param || r_el_cnt > 1,
+                                        allow_assignment_to_param: opts.allow_assignment_to_param
+                                            || r_el_cnt > 1,
                                         ..opts
                                     },
                                     false,
@@ -567,7 +609,8 @@ impl Analyzer<'_, '_> {
                                 )
                                 .with_context(|| {
                                     format!(
-                                        "tried to assign a constructor to another constructor ({}th element)",
+                                        "tried to assign a constructor to another constructor \
+                                         ({}th element)",
                                         idx
                                     )
                                 })
@@ -583,7 +626,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !errors.is_empty() {
-                    return Err(Error::SimpleAssignFailedWithCause { span, cause: errors });
+                    return Err(Error::SimpleAssignFailedWithCause {
+                        span,
+                        cause: errors,
+                    });
                 }
             }
             Type::Interface(..) => {
@@ -657,8 +703,16 @@ impl Analyzer<'_, '_> {
             "Cannot assign function parameters with dummy span"
         );
 
-        let _panic = debug_ctx!(format!("left = {}\n{:?}", dump_type_as_string(&self.cm, &l.ty), &l.ty));
-        let _panic = debug_ctx!(format!("right = {}\n{:?}", dump_type_as_string(&self.cm, &r.ty), &r.ty));
+        let _panic = debug_ctx!(format!(
+            "left = {}\n{:?}",
+            dump_type_as_string(&self.cm, &l.ty),
+            &l.ty
+        ));
+        let _panic = debug_ctx!(format!(
+            "right = {}\n{:?}",
+            dump_type_as_string(&self.cm, &r.ty),
+            &r.ty
+        ));
 
         match l.pat {
             RPat::Rest(..) => {
@@ -763,18 +817,22 @@ impl Analyzer<'_, '_> {
 
         let li = l.iter().filter(|p| match p.pat {
             RPat::Ident(RBindingIdent {
-                id: RIdent {
-                    sym: js_word!("this"), ..
-                },
+                id:
+                    RIdent {
+                        sym: js_word!("this"),
+                        ..
+                    },
                 ..
             }) => false,
             _ => true,
         });
         let ri = r.iter().filter(|p| match p.pat {
             RPat::Ident(RBindingIdent {
-                id: RIdent {
-                    sym: js_word!("this"), ..
-                },
+                id:
+                    RIdent {
+                        sym: js_word!("this"),
+                        ..
+                    },
                 ..
             }) => false,
             _ => true,
@@ -806,7 +864,9 @@ impl Analyzer<'_, '_> {
 
         // Don't ask why.
         if li.clone().count() < required_ri.clone().count() {
-            if !l_has_rest && required_non_void_li.clone().count() < required_non_void_ri.clone().count() {
+            if !l_has_rest
+                && required_non_void_li.clone().count() < required_non_void_ri.clone().count()
+            {
                 // I don't know why, but overload signature does not need to match overloaded
                 // signature.
                 if opts.for_overload {
@@ -815,7 +875,8 @@ impl Analyzer<'_, '_> {
 
                 return Err(Error::SimpleAssignFailed { span, cause: None }).with_context(|| {
                     format!(
-                        "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: {:?}\nRight: {:?}\n",
+                        "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: \
+                         {:?}\nRight: {:?}\n",
                         required_non_void_li.collect_vec(),
                         required_non_void_ri.collect_vec()
                     )
@@ -850,7 +911,9 @@ impl Analyzer<'_, '_> {
                             ..opts
                         },
                     )
-                    .with_context(|| format!("tried to assign a parameter to another parameter",))?;
+                    .with_context(|| {
+                        format!("tried to assign a parameter to another parameter",)
+                    })?;
                 }
                 EitherOrBoth::Left(_) => {}
                 EitherOrBoth::Right(_) => {}

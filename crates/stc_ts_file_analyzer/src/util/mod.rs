@@ -1,10 +1,11 @@
-use crate::ty::{Intersection, Type, Union};
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RModuleDecl, RModuleItem, RStmt, RTsEntityName, RTsLit};
 use stc_ts_type_ops::metadata::TypeFinder;
 use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Ref};
 use swc_ecma_ast::*;
 use tracing::instrument;
+
+use crate::ty::{Intersection, Type, Union};
 
 pub(crate) mod dashmap;
 pub(crate) mod graph;
@@ -47,7 +48,8 @@ where
 pub(crate) fn is_str_or_union(t: &Type) -> bool {
     match t.normalize() {
         Type::Lit(LitType {
-            lit: RTsLit::Str(..), ..
+            lit: RTsLit::Str(..),
+            ..
         }) => true,
         Type::Keyword(KeywordType {
             kind: TsKeywordTypeKind::TsStringKeyword,
@@ -74,14 +76,21 @@ impl RemoveTypes for Type {
         }
 
         match self {
-            Type::Keyword(KeywordType { kind, span, metadata }) => match kind {
+            Type::Keyword(KeywordType {
+                kind,
+                span,
+                metadata,
+            }) => match kind {
                 TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword => {
                     return Type::never(span, metadata);
                 }
                 _ => {}
             },
             Type::Lit(LitType {
-                lit: RTsLit::Bool(RBool { value: false, span, .. }),
+                lit:
+                    RTsLit::Bool(RBool {
+                        value: false, span, ..
+                    }),
                 ..
             }) => {
                 return Type::never(
@@ -108,7 +117,10 @@ impl RemoveTypes for Type {
 
         match self {
             Type::Lit(LitType {
-                lit: RTsLit::Bool(RBool { value: true, span, .. }),
+                lit:
+                    RTsLit::Bool(RBool {
+                        value: true, span, ..
+                    }),
                 ..
             }) => {
                 return Type::never(
@@ -129,7 +141,11 @@ impl RemoveTypes for Type {
 
 impl RemoveTypes for Intersection {
     fn remove_falsy(self) -> Type {
-        let types = self.types.into_iter().map(|ty| ty.remove_falsy()).collect::<Vec<_>>();
+        let types = self
+            .types
+            .into_iter()
+            .map(|ty| ty.remove_falsy())
+            .collect::<Vec<_>>();
 
         if types.iter().any(|ty| ty.is_never()) {
             return Type::never(
@@ -154,7 +170,11 @@ impl RemoveTypes for Intersection {
     }
 
     fn remove_truthy(self) -> Type {
-        let types = self.types.into_iter().map(|ty| ty.remove_truthy()).collect::<Vec<_>>();
+        let types = self
+            .types
+            .into_iter()
+            .map(|ty| ty.remove_truthy())
+            .collect::<Vec<_>>();
         if types.iter().any(|ty| ty.is_never()) {
             return Type::never(
                 self.span,
@@ -304,7 +324,10 @@ pub(crate) fn should_instantiate_type_ann(ty: &Type) -> bool {
     }
 }
 
-pub(crate) fn unwrap_ref_with_single_arg<'a>(ty: &'a Type, wanted_ref_name: &str) -> Option<&'a Type> {
+pub(crate) fn unwrap_ref_with_single_arg<'a>(
+    ty: &'a Type,
+    wanted_ref_name: &str,
+) -> Option<&'a Type> {
     match ty.normalize() {
         Type::Ref(Ref {
             type_name: RTsEntityName::Ident(n),

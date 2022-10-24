@@ -1,8 +1,3 @@
-use crate::{
-    analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer, Ctx},
-    ty::Type,
-    ValidationResult,
-};
 use fxhash::FxHashMap;
 use rnode::FoldWith;
 use stc_ts_errors::debug::dump_type_as_string;
@@ -13,6 +8,12 @@ use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
 use tracing::debug;
+
+use crate::{
+    analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer, Ctx},
+    ty::Type,
+    ValidationResult,
+};
 
 /// All fields default to false.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -110,7 +111,13 @@ impl Analyzer<'_, '_> {
 
     /// Returns `Some(true)` if `child` extends `parent`.
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(crate) fn extends(&mut self, span: Span, opts: ExtendsOpts, child: &Type, parent: &Type) -> Option<bool> {
+    pub(crate) fn extends(
+        &mut self,
+        span: Span,
+        opts: ExtendsOpts,
+        child: &Type,
+        parent: &Type,
+    ) -> Option<bool> {
         let child = child.normalize();
         let parent = parent.normalize();
 
@@ -259,19 +266,26 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Interface(Interface { name, .. }) if *name.sym() == *"ObjectConstructor" => match child {
-                Type::Class(..) | Type::ClassDef(..) | Type::Interface(..) | Type::TypeLit(..) => {
-                    return Some(true);
+            Type::Interface(Interface { name, .. }) if *name.sym() == *"ObjectConstructor" => {
+                match child {
+                    Type::Class(..)
+                    | Type::ClassDef(..)
+                    | Type::Interface(..)
+                    | Type::TypeLit(..) => {
+                        return Some(true);
+                    }
+                    _ => {}
                 }
-                _ => {}
-            },
+            }
 
-            Type::Interface(Interface { name, .. }) if *name.sym() == *"ArrayConstructor" => match child {
-                Type::Array(..) | Type::Tuple(..) => {
-                    return Some(true);
+            Type::Interface(Interface { name, .. }) if *name.sym() == *"ArrayConstructor" => {
+                match child {
+                    Type::Array(..) | Type::Tuple(..) => {
+                        return Some(true);
+                    }
+                    _ => {}
                 }
-                _ => {}
-            },
+            }
 
             _ => {}
         }
@@ -336,7 +350,8 @@ impl Analyzer<'_, '_> {
             Type::Tuple(child_tuple) => match parent {
                 Type::Array(parent_array) => {
                     if child_tuple.elems.iter().all(|child_element| {
-                        self.extends(span, opts, &child_element.ty, &parent_array.elem_type) == Some(true)
+                        self.extends(span, opts, &child_element.ty, &parent_array.elem_type)
+                            == Some(true)
                     }) {
                         return Some(true);
                     }

@@ -8,16 +8,6 @@ extern crate test;
 #[path = "common/mod.rs"]
 mod common;
 
-use self::common::load_fixtures;
-use once_cell::sync::Lazy;
-use stc_ts_builtin_types::Lib;
-use stc_ts_env::{Env, ModuleConfig, Rule};
-use stc_ts_errors::debug::debugger::Debugger;
-use stc_ts_file_analyzer::env::EnvFactory;
-use stc_ts_module_loader::resolvers::node::NodeResolver;
-use stc_ts_testing::tsc::TsTestCase;
-use stc_ts_type_checker::Checker;
-use stc_ts_utils::StcComments;
 use std::{
     collections::HashSet,
     env,
@@ -27,6 +17,16 @@ use std::{
     path::{Path, PathBuf},
     sync::{Arc, RwLock},
 };
+
+use once_cell::sync::Lazy;
+use stc_ts_builtin_types::Lib;
+use stc_ts_env::{Env, ModuleConfig, Rule};
+use stc_ts_errors::debug::debugger::Debugger;
+use stc_ts_file_analyzer::env::EnvFactory;
+use stc_ts_module_loader::resolvers::node::NodeResolver;
+use stc_ts_testing::tsc::TsTestCase;
+use stc_ts_type_checker::Checker;
+use stc_ts_utils::StcComments;
 use swc_common::{
     errors::{ColorConfig, EmitterWriter, Handler, HandlerFlags},
     input::SourceFileInput,
@@ -37,6 +37,8 @@ use swc_ecma_parser::{Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
 use testing::{run_test2, NormalizedOutput, StdErr, Tester};
+
+use self::common::load_fixtures;
 
 fn is_ignored(path: &Path) -> bool {
     static IGNORED: Lazy<Vec<String>> = Lazy::new(|| {
@@ -59,8 +61,12 @@ fn is_ignored(path: &Path) -> bool {
             .collect()
     });
 
-    !PASS.iter().any(|line| path.to_string_lossy().contains(line))
-        || IGNORED.iter().any(|line| path.to_string_lossy().contains(line))
+    !PASS
+        .iter()
+        .any(|line| path.to_string_lossy().contains(line))
+        || IGNORED
+            .iter()
+            .any(|line| path.to_string_lossy().contains(line))
 }
 
 #[test]
@@ -277,7 +283,9 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
         return Ok(());
     }
 
-    visualized.compare_to_file(path.with_extension("stdout")).unwrap();
+    visualized
+        .compare_to_file(path.with_extension("stdout"))
+        .unwrap();
 
     Ok(())
 }
@@ -317,6 +325,7 @@ impl Write for BufferedError {
     fn write(&mut self, d: &[u8]) -> io::Result<usize> {
         self.0.write().unwrap().write(d)
     }
+
     fn flush(&mut self) -> io::Result<()> {
         Ok(())
     }

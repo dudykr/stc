@@ -1,8 +1,9 @@
-use crate::analyzer::{Analyzer, ScopeKind};
 use rnode::{Visit, VisitWith};
 use stc_ts_errors::Error;
 use stc_ts_types::{Id, TypeParam};
 use swc_common::Span;
+
+use crate::analyzer::{Analyzer, ScopeKind};
 
 impl Analyzer<'_, '_> {
     pub(crate) fn is_type_param_declared_in_containing_class(&mut self, id: &Id) -> bool {
@@ -32,7 +33,10 @@ impl Visit<TypeParam> for StaticTypeParamValidator<'_, '_, '_> {
     fn visit(&mut self, param: &TypeParam) {
         param.visit_children_with(self);
 
-        if self.analyzer.is_type_param_declared_in_containing_class(&param.name) {
+        if self
+            .analyzer
+            .is_type_param_declared_in_containing_class(&param.name)
+        {
             self.analyzer
                 .storage
                 .report(Error::StaticMemberCannotUseTypeParamOfClass { span: self.span })

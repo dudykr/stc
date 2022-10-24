@@ -1,8 +1,11 @@
 //! Support for official typescript tests.
 
-use anyhow::{bail, Context, Error};
 use std::{fs::read_to_string, path::Path, sync::Arc};
-use swc_common::{comments::Comments, errors::Handler, input::SourceFileInput, FileName, SourceMap};
+
+use anyhow::{bail, Context, Error};
+use swc_common::{
+    comments::Comments, errors::Handler, input::SourceFileInput, FileName, SourceMap,
+};
 use swc_ecma_ast::*;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
 
@@ -35,7 +38,9 @@ impl TscError {
                             Some(v) => v,
                             None => continue 'outer,
                         };
-                        let item = item.strip_suffix("\u{001b}[0m").expect("expected colored output");
+                        let item = item
+                            .strip_suffix("\u{001b}[0m")
+                            .expect("expected colored output");
 
                         error.file = item.to_string();
                     }
@@ -50,7 +55,8 @@ impl TscError {
                     2 => {
                         for (j, item) in item.split(' ').enumerate() {
                             if item.starts_with("TS") {
-                                error.code = item[2..].parse().expect("failed to parse ts error code");
+                                error.code =
+                                    item[2..].parse().expect("failed to parse ts error code");
                                 continue;
                             }
 
@@ -101,8 +107,12 @@ impl TsTestCase {
         file_name: &Path,
         comments: Option<&dyn Comments>,
     ) -> Result<Self, Error> {
-        let s = read_to_string(&file_name)
-            .with_context(|| format!("failed to parse typescript test file at `{}`", file_name.display()))?;
+        let s = read_to_string(&file_name).with_context(|| {
+            format!(
+                "failed to parse typescript test file at `{}`",
+                file_name.display()
+            )
+        })?;
         let mut code = String::new();
         let mut type_data = vec![];
 
@@ -112,7 +122,10 @@ impl TsTestCase {
                 let idx = match idx {
                     Some(idx) => idx,
                     None => {
-                        bail!("failed to find the separator of expression and type from `{}`", line)
+                        bail!(
+                            "failed to find the separator of expression and type from `{}`",
+                            line
+                        )
                     }
                 };
 

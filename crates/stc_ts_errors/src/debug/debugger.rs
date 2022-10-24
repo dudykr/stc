@@ -1,7 +1,8 @@
+use std::sync::Arc;
+
 use rnode::RNode;
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_types::Type;
-use std::sync::Arc;
 use swc_common::{errors::Handler, SourceMap, Span};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter, Node};
 
@@ -34,7 +35,10 @@ impl Debugger {
 
     pub fn dump_type(&self, span: Span, ty: &Type) {
         let ty_str = self.dump(ty);
-        self.handler.struct_span_warn(span, "Type").note(&ty_str).emit();
+        self.handler
+            .struct_span_warn(span, "Type")
+            .note(&ty_str)
+            .emit();
     }
 }
 

@@ -1,21 +1,23 @@
-use crate::{
-    analyzer::{types::NormalizeTypeOpts, Analyzer},
-    ValidationResult,
-};
+use std::{borrow::Cow, collections::HashMap};
+
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::apply_mapped_flags;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
-    Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, LitType, Mapped, Operator, PropertySignature,
-    Type, TypeElement, TypeLit,
+    Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, LitType, Mapped, Operator,
+    PropertySignature, Type, TypeElement, TypeLit,
 };
 use stc_utils::cache::ALLOW_DEEP_CLONE;
-use std::{borrow::Cow, collections::HashMap};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsTypeOperatorOp};
 use tracing::{debug, error, instrument};
+
+use crate::{
+    analyzer::{types::NormalizeTypeOpts, Analyzer},
+    ValidationResult,
+};
 
 impl Analyzer<'_, '_> {
     /// Required because mapped type can specified by user, like
@@ -28,13 +30,23 @@ impl Analyzer<'_, '_> {
     ///
     /// TODO(kdy1): Handle index signatures.
     #[instrument(name = "expand_mapped", skip(self, span, m))]
-    pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
-        let orig = dump_type_as_string(&self.cm, &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
+    pub(crate) fn expand_mapped(
+        &mut self,
+        span: Span,
+        m: &Mapped,
+    ) -> ValidationResult<Option<Type>> {
+        let orig = dump_type_as_string(
+            &self.cm,
+            &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())),
+        );
 
         let ty = self.expand_mapped_inner(span, m)?;
 
         if let Some(ty) = &ty {
-            let expanded = dump_type_as_string(&self.cm, &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
+            let expanded = dump_type_as_string(
+                &self.cm,
+                &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())),
+            );
 
             debug!("[types/mapped]: Expanded {} as {}", orig, expanded);
         }
@@ -54,7 +66,9 @@ impl Analyzer<'_, '_> {
                     if (&**ty).type_eq(&mapped_ty) {
                         let new_type = self
                             .convert_type_to_type_lit(span, Cow::Borrowed(&ty))
-                            .context("tried to convert a type to type literal to expand mapped type")?
+                            .context(
+                                "tried to convert a type to type literal to expand mapped type",
+                            )?
                             .map(Cow::into_owned);
 
                         if let Some(mut new) = new_type {
@@ -76,7 +90,11 @@ impl Analyzer<'_, '_> {
                                 PropertyName::Key(key) => {
                                     let ty = match &m.ty {
                                         Some(mapped_ty) => self
-                                            .expand_key_in_mapped(m.type_param.name.clone(), &mapped_ty, &key)
+                                            .expand_key_in_mapped(
+                                                m.type_param.name.clone(),
+                                                &mapped_ty,
+                                                &key,
+                                            )
                                             .map(Box::new)
                                             .map(Some)?,
                                         None => None,
@@ -99,12 +117,23 @@ impl Analyzer<'_, '_> {
                                     apply_mapped_flags(&mut el, m.optional, m.readonly);
                                     Ok(el)
                                 }
-                                PropertyName::IndexSignature { span, params, readonly } => {
+                                PropertyName::IndexSignature {
+                                    span,
+                                    params,
+                                    readonly,
+                                } => {
                                     let ty = match &m.ty {
                                         Some(mapped_ty) => {
                                             let mut map = HashMap::default();
-                                            map.insert(m.type_param.name.clone(), *params[0].ty.clone());
-                                            self.expand_type_params(&map, m.ty.clone(), Default::default())?
+                                            map.insert(
+                                                m.type_param.name.clone(),
+                                                *params[0].ty.clone(),
+                                            );
+                                            self.expand_type_params(
+                                                &map,
+                                                m.ty.clone(),
+                                                Default::default(),
+                                            )?
                                         }
                                         None => None,
                                     };
@@ -165,7 +194,8 @@ impl Analyzer<'_, '_> {
                             let mut ret_ty = mapped_ty.clone();
                             ret_ty.visit_mut_with(&mut replacer);
 
-                            ret_ty = self.apply_mapped_flags_to_type(span, ret_ty, m.optional, m.readonly)?;
+                            ret_ty = self
+                                .apply_mapped_flags_to_type(span, ret_ty, m.optional, m.readonly)?;
 
                             return Ok(Some(ret_ty));
                         }
@@ -180,7 +210,11 @@ impl Analyzer<'_, '_> {
                             .map(|key| -> ValidationResult<_> {
                                 let ty = match &m.ty {
                                     Some(mapped_ty) => self
-                                        .expand_key_in_mapped(m.type_param.name.clone(), &mapped_ty, &key)
+                                        .expand_key_in_mapped(
+                                            m.type_param.name.clone(),
+                                            &mapped_ty,
+                                            &key,
+                                        )
                                         .map(Box::new)
                                         .map(Some)?,
                                     None => None,
@@ -219,7 +253,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Optimize
-    fn expand_key_in_mapped(&mut self, mapped_type_param: Id, mapped_ty: &Type, key: &Key) -> ValidationResult<Type> {
+    fn expand_key_in_mapped(
+        &mut self,
+        mapped_type_param: Id,
+        mapped_ty: &Type,
+        key: &Key,
+    ) -> ValidationResult<Type> {
         let mapped_ty = mapped_ty.clone();
         let mut type_params = HashMap::default();
         type_params.insert(mapped_type_param, key.ty().into_owned().cheap());
@@ -229,7 +268,11 @@ impl Analyzer<'_, '_> {
     /// Evaluate a type and convert it to keys.
     ///
     /// Used for types like `'foo' | 'bar'` or alias of them.
-    fn convert_type_to_keys(&mut self, span: Span, ty: &Type) -> ValidationResult<Option<Vec<Key>>> {
+    fn convert_type_to_keys(
+        &mut self,
+        span: Span,
+        ty: &Type,
+    ) -> ValidationResult<Option<Vec<Key>>> {
         let ty = ty.normalize();
 
         match ty {
@@ -275,7 +318,9 @@ impl Analyzer<'_, '_> {
                 return Ok(Some(keys));
             }
 
-            Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) => return Ok(None),
+            Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) => {
+                return Ok(None)
+            }
 
             _ => {
                 error!("unimplemented: convert_type_to_keys: {:#?}", ty);
@@ -359,7 +404,9 @@ impl Analyzer<'_, '_> {
                         &parent.expr,
                         parent.type_args.as_deref(),
                     )?;
-                    if let Some(parent_keys) = self.get_property_names_for_mapped_type(span, &parent)? {
+                    if let Some(parent_keys) =
+                        self.get_property_names_for_mapped_type(span, &parent)?
+                    {
                         keys.extend(parent_keys);
                     }
                 }
@@ -389,7 +436,9 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> ValidationResult<_> { self.get_property_names_for_mapped_type(span, &ty) })
+                    .map(|ty| -> ValidationResult<_> {
+                        self.get_property_names_for_mapped_type(span, &ty)
+                    })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 if keys_types.is_empty() {
@@ -428,7 +477,9 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> ValidationResult<_> { self.get_property_names_for_mapped_type(span, &ty) })
+                    .map(|ty| -> ValidationResult<_> {
+                        self.get_property_names_for_mapped_type(span, &ty)
+                    })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 let mut result: Vec<PropertyName> = vec![];

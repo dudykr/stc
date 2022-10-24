@@ -1,22 +1,24 @@
+use std::{borrow::Cow, collections::HashMap};
+
+use stc_ts_ast_rnode::{RBool, RIdent, RStr, RTsEntityName, RTsLit};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
+use stc_ts_file_analyzer_macros::context;
+use stc_ts_types::{
+    Array, Conditional, EnumVariant, Instance, Interface, Intersection, Intrinsic, IntrinsicKind,
+    Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, Ref,
+    ThisType, Tuple, Type, TypeElement, TypeLit, TypeParam,
+};
+use stc_utils::{cache::Freeze, debug_ctx, stack};
+use swc_atoms::js_word;
+use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
+use swc_ecma_ast::*;
+use tracing::{debug, error, info, span, Level};
+
 use crate::{
     analyzer::{types::NormalizeTypeOpts, Analyzer},
     ty::TypeExt,
     ValidationResult,
 };
-use stc_ts_ast_rnode::{RBool, RIdent, RStr, RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
-use stc_ts_file_analyzer_macros::context;
-use stc_ts_types::{
-    Array, Conditional, EnumVariant, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType,
-    KeywordTypeMetadata, LitType, Mapped, Operator, PropertySignature, Ref, ThisType, Tuple, Type, TypeElement,
-    TypeLit, TypeParam,
-};
-use stc_utils::{cache::Freeze, debug_ctx, stack};
-use std::{borrow::Cow, collections::HashMap};
-use swc_atoms::js_word;
-use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq, DUMMY_SP};
-use swc_ecma_ast::*;
-use tracing::{debug, error, info, span, Level};
 
 mod builtin;
 mod cast;
@@ -167,7 +169,13 @@ impl Analyzer<'_, '_> {
     }
 
     /// Used to validate assignments like `a += b`.
-    pub(crate) fn assign_with_op(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> ValidationResult<()> {
+    pub(crate) fn assign_with_op(
+        &mut self,
+        span: Span,
+        op: AssignOp,
+        lhs: &Type,
+        rhs: &Type,
+    ) -> ValidationResult<()> {
         debug_assert_ne!(op, op!("="));
 
         let l = self.expand_top_ref(span, Cow::Borrowed(lhs), Default::default())?;
@@ -197,7 +205,10 @@ impl Analyzer<'_, '_> {
             | op!("<<=")
             | op!(">>=")
             | op!(">>>=") => {
-                if lhs.is_symbol() || lhs.is_unique_symbol() || lhs.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
+                if lhs.is_symbol()
+                    || lhs.is_unique_symbol()
+                    || lhs.is_kwd(TsKeywordTypeKind::TsSymbolKeyword)
+                {
                     return Err(Error::WrongTypeForLhsOfNumericOperation { span });
                 }
             }
@@ -210,16 +221,26 @@ impl Analyzer<'_, '_> {
                     .context("checking operands of a numeric assignment")?;
 
                 match lhs {
-                    Type::TypeLit(..) => return Err(Error::WrongTypeForLhsOfNumericOperation { span }),
-                    ty if ty.is_bool() || ty.is_str() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
+                    Type::TypeLit(..) => {
+                        return Err(Error::WrongTypeForLhsOfNumericOperation { span })
+                    }
+                    ty if ty.is_bool()
+                        || ty.is_str()
+                        || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) =>
+                    {
                         return Err(Error::WrongTypeForLhsOfNumericOperation { span });
                     }
                     _ => {}
                 }
 
                 match rhs {
-                    Type::TypeLit(..) => return Err(Error::WrongTypeForRhsOfNumericOperation { span }),
-                    ty if ty.is_bool() || ty.is_str() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
+                    Type::TypeLit(..) => {
+                        return Err(Error::WrongTypeForRhsOfNumericOperation { span })
+                    }
+                    ty if ty.is_bool()
+                        || ty.is_str()
+                        || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) =>
+                    {
                         return Err(Error::WrongTypeForRhsOfNumericOperation { span })
                     }
                     _ => {}
@@ -309,7 +330,9 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                if self.can_be_casted_to_number_in_rhs(span, &l) && self.can_be_casted_to_number_in_rhs(span, &r) {
+                if self.can_be_casted_to_number_in_rhs(span, &l)
+                    && self.can_be_casted_to_number_in_rhs(span, &r)
+                {
                     return Ok(());
                 }
             }
@@ -414,7 +437,11 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type) -> ValidationResult<Cow<'a, Type>> {
+    fn normalize_for_assign<'a>(
+        &mut self,
+        span: Span,
+        ty: &'a Type,
+    ) -> ValidationResult<Cow<'a, Type>> {
         ty.assert_valid();
 
         let ty = ty.normalize();
@@ -510,13 +537,15 @@ impl Analyzer<'_, '_> {
 
         data.dejavu.push((left.clone(), right.clone()));
 
-        let res = self.assign_without_wrapping(data, left, right, opts).with_context(|| {
-            //
-            let l = dump_type_as_string(&self.cm, &left);
-            let r = dump_type_as_string(&self.cm, &right);
+        let res = self
+            .assign_without_wrapping(data, left, right, opts)
+            .with_context(|| {
+                //
+                let l = dump_type_as_string(&self.cm, &left);
+                let r = dump_type_as_string(&self.cm, &right);
 
-            format!("\nlhs = {}\nrhs = {}", l, r)
-        });
+                format!("\nlhs = {}\nrhs = {}", l, r)
+            });
 
         let dejavu = data.dejavu.pop();
         debug_assert!(dejavu.is_some());
@@ -563,9 +592,13 @@ impl Analyzer<'_, '_> {
         }
 
         // debug_assert!(!span.is_dummy(), "\n\t{:?}\n<-\n\t{:?}", to, rhs);
-        let mut to = self.normalize_for_assign(span, to).context("tried to normalize lhs")?;
+        let mut to = self
+            .normalize_for_assign(span, to)
+            .context("tried to normalize lhs")?;
         to.make_clone_cheap();
-        let mut rhs = self.normalize_for_assign(span, rhs).context("tried to normalize rhs")?;
+        let mut rhs = self
+            .normalize_for_assign(span, rhs)
+            .context("tried to normalize rhs")?;
         rhs.make_clone_cheap();
 
         let to = to.normalize();
@@ -752,10 +785,12 @@ impl Analyzer<'_, '_> {
 
             // Str contains `kind`, and it's not handled properly by type_eq.
             Type::Lit(LitType {
-                lit: RTsLit::Str(to), ..
+                lit: RTsLit::Str(to),
+                ..
             }) => match rhs {
                 Type::Lit(LitType {
-                    lit: RTsLit::Str(rhs), ..
+                    lit: RTsLit::Str(rhs),
+                    ..
                 }) => {
                     if to.value == rhs.value {
                         return Ok(());
@@ -776,7 +811,9 @@ impl Analyzer<'_, '_> {
                 match rhs {
                     Type::Ref(right) => {
                         // We need this as type may recurse, and thus cannot be handled by expander.
-                        if left.type_name.type_eq(&right.type_name) && left.type_args.type_eq(&right.type_args) {
+                        if left.type_name.type_eq(&right.type_name)
+                            && left.type_args.type_eq(&right.type_args)
+                        {
                             return Ok(());
                         }
                     }
@@ -794,7 +831,8 @@ impl Analyzer<'_, '_> {
                         &new_lhs,
                         rhs,
                         AssignOpts {
-                            allow_unknown_rhs: opts.allow_unknown_rhs || opts.allow_unknown_rhs_if_expanded,
+                            allow_unknown_rhs: opts.allow_unknown_rhs
+                                || opts.allow_unknown_rhs_if_expanded,
                             allow_unknown_rhs_if_expanded: false,
                             ..opts
                         },
@@ -878,15 +916,19 @@ impl Analyzer<'_, '_> {
 
         match (to, rhs) {
             (Type::Conditional(lc), Type::Conditional(rc)) => {
-                if lc.check_type.type_eq(&rc.check_type) && lc.extends_type.type_eq(&rc.extends_type) {
+                if lc.check_type.type_eq(&rc.check_type)
+                    && lc.extends_type.type_eq(&rc.extends_type)
+                {
                     self.assign_with_opts(data, opts, &lc.true_type, &rc.true_type)
                         .context(
-                            "tried to assign the true type of a conditional type to it of similar conditional type",
+                            "tried to assign the true type of a conditional type to it of similar \
+                             conditional type",
                         )?;
 
                     self.assign_with_opts(data, opts, &lc.false_type, &rc.false_type)
                         .context(
-                            "tried to assign the true type of a conditional type to it of similar conditional type",
+                            "tried to assign the true type of a conditional type to it of similar \
+                             conditional type",
                         )?;
 
                     return Ok(());
@@ -1078,28 +1120,41 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let left_contains_object = i.types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
+                let left_contains_object = i
+                    .types
+                    .iter()
+                    .any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
                 let rhs_requires_unknown_property_check = match rhs.normalize() {
                     Type::Keyword(..) => false,
                     _ => true,
                 };
 
-                if !left_contains_object && rhs_requires_unknown_property_check && !opts.allow_unknown_rhs {
+                if !left_contains_object
+                    && rhs_requires_unknown_property_check
+                    && !opts.allow_unknown_rhs
+                {
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
 
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(data, opts, lhs.span, &lhs.members, &rhs, lhs.metadata)
-                            .with_context(|| {
-                                format!(
-                                    "tried to check if unknown rhs exists while assigning to an intersection \
-                                     type:\nLHS: {}",
-                                    dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
-                                )
-                            })
-                            .convert_err(|err| Error::SimpleAssignFailed {
-                                span: err.span(),
-                                cause: Some(box err),
-                            })?;
+                        self.assign_to_type_elements(
+                            data,
+                            opts,
+                            lhs.span,
+                            &lhs.members,
+                            &rhs,
+                            lhs.metadata,
+                        )
+                        .with_context(|| {
+                            format!(
+                                "tried to check if unknown rhs exists while assigning to an \
+                                 intersection type:\nLHS: {}",
+                                dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
+                            )
+                        })
+                        .convert_err(|err| Error::SimpleAssignFailed {
+                            span: err.span(),
+                            cause: Some(box err),
+                        })?;
 
                         errors.retain(|err| match err.actual() {
                             Error::UnknownPropertyInObjectLiteralAssignment { .. } => false,
@@ -1194,7 +1249,8 @@ impl Analyzer<'_, '_> {
 
         match rhs {
             Type::Ref(..) => {
-                let mut new_rhs = self.expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?;
+                let mut new_rhs =
+                    self.expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?;
                 new_rhs.make_clone_cheap();
                 // self.replace(&mut new_rhs, &[(rhs, &Type::any(span))]);
                 return self
@@ -1244,7 +1300,9 @@ impl Analyzer<'_, '_> {
                                 ..opts
                             },
                         )
-                        .context("tried to assign an element of an intersection type to another type")
+                        .context(
+                            "tried to assign an element of an intersection type to another type",
+                        )
                     })
                     .collect::<Vec<_>>();
                 if errors.iter().any(Result::is_ok) {
@@ -1316,7 +1374,9 @@ impl Analyzer<'_, '_> {
                 if errors.is_empty() {
                     return Ok(());
                 }
-                return Err(Error::Errors { span, errors }.context("tried to assign a union to other type"));
+                return Err(
+                    Error::Errors { span, errors }.context("tried to assign a union to other type")
+                );
             }
 
             Type::Keyword(KeywordType {
@@ -1331,7 +1391,9 @@ impl Analyzer<'_, '_> {
             }) => {
                 //
                 match to {
-                    Type::Param(TypeParam { name: ref l_name, .. }) => {
+                    Type::Param(TypeParam {
+                        name: ref l_name, ..
+                    }) => {
                         if opts.allow_assignment_to_param {
                             return Ok(());
                         }
@@ -1363,7 +1425,9 @@ impl Analyzer<'_, '_> {
                         );
                     }
                     None => match to.normalize() {
-                        Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => return Ok(()),
+                        Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => {
+                            return Ok(())
+                        }
                         _ => {}
                     },
                 }
@@ -1457,7 +1521,8 @@ impl Analyzer<'_, '_> {
                                         ..
                                     }) => {
                                         if let Some(type_ann) = &m.type_ann {
-                                            return self.assign_with_opts(data, opts, elem_type, type_ann);
+                                            return self
+                                                .assign_with_opts(data, opts, elem_type, type_ann);
                                         }
                                     }
                                     _ => {}
@@ -1472,11 +1537,13 @@ impl Analyzer<'_, '_> {
                         let res: ValidationResult<_> = try {
                             let r = self
                                 .get_iterator(span, Cow::Borrowed(&rhs), Default::default())
-                                .context("tried to convert a type to an iterator to assign to a tuple")?;
+                                .context(
+                                    "tried to convert a type to an iterator to assign to a tuple",
+                                )?;
                             //
-                            let rhs_el = self
-                                .get_iterator_element_type(span, r, false)
-                                .context("tried to get the element type of an iterator assignment")?;
+                            let rhs_el = self.get_iterator_element_type(span, r, false).context(
+                                "tried to get the element type of an iterator assignment",
+                            )?;
 
                             self.assign_with_opts(
                                 data,
@@ -1523,7 +1590,11 @@ impl Analyzer<'_, '_> {
                 }
 
                 match rhs {
-                    Type::Tuple(..) | Type::TypeLit(..) | Type::Union(..) | Type::Alias(..) | Type::Interface(..) => {
+                    Type::Tuple(..)
+                    | Type::TypeLit(..)
+                    | Type::Union(..)
+                    | Type::Alias(..)
+                    | Type::Interface(..) => {
                         if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
                             return res.context("tried to assign using `assign_to_union`");
                         }
@@ -1534,7 +1605,9 @@ impl Analyzer<'_, '_> {
                 // Same operation as above, but for enums.
                 match rhs {
                     Type::EnumVariant(EnumVariant {
-                        enum_name, name: None, ..
+                        enum_name,
+                        name: None,
+                        ..
                     }) => {
                         // If `types` contains all variant of the enum, the
                         // assignment is valid.
@@ -1613,7 +1686,8 @@ impl Analyzer<'_, '_> {
                         right_ident: opts.right_ident_span,
                     });
                 } else {
-                    return Err(Error::Errors { span, errors }.context("tried to assign a type to a union type"));
+                    return Err(Error::Errors { span, errors }
+                        .context("tried to assign a type to a union type"));
                 }
             }
 
@@ -1626,7 +1700,10 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Multiple error
                 for v in vs {
                     if let Err(error) = v {
-                        return Err(Error::IntersectionError { span, error: box error });
+                        return Err(Error::IntersectionError {
+                            span,
+                            error: box error,
+                        });
                     }
                 }
 
@@ -1673,7 +1750,8 @@ impl Analyzer<'_, '_> {
                 match kind {
                     TsKeywordTypeKind::TsStringKeyword => match *rhs {
                         Type::Lit(LitType {
-                            lit: RTsLit::Str(..), ..
+                            lit: RTsLit::Str(..),
+                            ..
                         }) => return Ok(()),
                         _ => {}
                     },
@@ -1708,7 +1786,8 @@ impl Analyzer<'_, '_> {
 
                     TsKeywordTypeKind::TsBooleanKeyword => match *rhs {
                         Type::Lit(LitType {
-                            lit: RTsLit::Bool(..), ..
+                            lit: RTsLit::Bool(..),
+                            ..
                         }) => return Ok(()),
                         _ => {}
                     },
@@ -1729,7 +1808,9 @@ impl Analyzer<'_, '_> {
                             | Type::Interface(..)
                             | Type::Module(..)
                             | Type::EnumVariant(..) => fail!(),
-                            Type::Function(..) => return Err(Error::CannotAssignToNonVariable { span: rhs.span() }),
+                            Type::Function(..) => {
+                                return Err(Error::CannotAssignToNonVariable { span: rhs.span() })
+                            }
                             _ => {}
                         }
                     }
@@ -1838,10 +1919,14 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            Type::This(ThisType { span, .. }) => return Err(Error::CannotAssingToThis { span: *span }),
+            Type::This(ThisType { span, .. }) => {
+                return Err(Error::CannotAssingToThis { span: *span })
+            }
 
             Type::Interface(Interface {
-                ref body, ref extends, ..
+                ref body,
+                ref extends,
+                ..
             }) => {
                 // TODO(kdy1): Optimize handling of unknown rhs
 
@@ -1862,7 +1947,12 @@ impl Analyzer<'_, '_> {
                 let mut errors = vec![];
                 for parent in extends {
                     let parent = self
-                        .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?
+                        .type_of_ts_entity_name(
+                            span,
+                            self.ctx.module_id,
+                            &parent.expr,
+                            parent.type_args.as_deref(),
+                        )?
                         .freezed();
 
                     // An interface can extend a class.
@@ -1932,13 +2022,21 @@ impl Analyzer<'_, '_> {
                 if !opts.allow_unknown_rhs && !opts.allow_unknown_rhs_if_expanded {
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(data, opts, span, &lhs.members, rhs, Default::default())
-                            .with_context(|| {
-                                format!(
-                                    "tried to assign a type to an interface to check if unknown rhs exists\nLHS: {}",
-                                    dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
-                                )
-                            })?;
+                        self.assign_to_type_elements(
+                            data,
+                            opts,
+                            span,
+                            &lhs.members,
+                            rhs,
+                            Default::default(),
+                        )
+                        .with_context(|| {
+                            format!(
+                                "tried to assign a type to an interface to check if unknown rhs \
+                                 exists\nLHS: {}",
+                                dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
+                            )
+                        })?;
                     }
                 }
 
@@ -1956,7 +2054,9 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(TypeLit {
-                ref members, metadata, ..
+                ref members,
+                metadata,
+                ..
             }) => {
                 return self
                     .assign_to_type_elements(data, opts, span, &members, rhs, *metadata)
@@ -1971,7 +2071,9 @@ impl Analyzer<'_, '_> {
 
                     // Extra check to handle "has_escape"
                     match (lit, r_lit) {
-                        (&RTsLit::Str(ref l), &RTsLit::Str(ref r)) if l.value == r.value => return Ok(()),
+                        (&RTsLit::Str(ref l), &RTsLit::Str(ref r)) if l.value == r.value => {
+                            return Ok(())
+                        }
                         _ => {}
                     }
 
@@ -2029,7 +2131,8 @@ impl Analyzer<'_, '_> {
                 //
                 match *rhs.normalize() {
                     Type::Tuple(Tuple {
-                        elems: ref rhs_elems, ..
+                        elems: ref rhs_elems,
+                        ..
                     }) => {
                         if elems.len() < rhs_elems.len() {
                             return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
@@ -2092,12 +2195,17 @@ impl Analyzer<'_, '_> {
                         if opts.allow_iterable_on_rhs {
                             let r = self
                                 .get_iterator(span, Cow::Borrowed(&rhs), Default::default())
-                                .context("tried to convert a type to an iterator to assign to a tuple")?;
+                                .context(
+                                    "tried to convert a type to an iterator to assign to a tuple",
+                                )?;
                             //
                             for (i, elem) in elems.iter().enumerate() {
                                 let r_ty = self
                                     .get_element_from_iterator(span, Cow::Borrowed(&r), i)
-                                    .context("tried to get an element of type to assign to a tuple element")?;
+                                    .context(
+                                        "tried to get an element of type to assign to a tuple \
+                                         element",
+                                    )?;
 
                                 self.assign_with_opts(
                                     data,
@@ -2140,7 +2248,9 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => {
-                if to.is_kwd(TsKeywordTypeKind::TsAnyKeyword) || to.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+                if to.is_kwd(TsKeywordTypeKind::TsAnyKeyword)
+                    || to.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                {
                     return Ok(());
                 }
 
@@ -2376,7 +2486,9 @@ impl Analyzer<'_, '_> {
             .normalize(
                 Some(span),
                 Cow::Borrowed(&r),
-                NormalizeTypeOpts { ..Default::default() },
+                NormalizeTypeOpts {
+                    ..Default::default()
+                },
             )
             .context("tried to normalize rhs of assignment (to a mapped type)")?;
         r.make_clone_cheap();
@@ -2390,14 +2502,19 @@ impl Analyzer<'_, '_> {
             };
 
             match r.normalize() {
-                Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) | Type::Intersection(..) => {
+                Type::Interface(..)
+                | Type::Class(..)
+                | Type::ClassDef(..)
+                | Type::Intersection(..) => {
                     if let Some(r) = self
                         .convert_type_to_type_lit(span, Cow::Borrowed(&r))?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                     {
-                        self.assign_to_mapped(data, opts, l, &r)
-                            .context("tried to assign a type to a mapped type by converting it to a type literal")?;
+                        self.assign_to_mapped(data, opts, l, &r).context(
+                            "tried to assign a type to a mapped type by converting it to a type \
+                             literal",
+                        )?;
                         return Ok(());
                     }
                 }
@@ -2418,7 +2535,10 @@ impl Analyzer<'_, '_> {
                             }
                             _ => Err(Error::Unimplemented {
                                 span: opts.span,
-                                msg: format!("Assignment to mapped type: type element - {:?}", member),
+                                msg: format!(
+                                    "Assignment to mapped type: type element - {:?}",
+                                    member
+                                ),
                             })?,
                         }
                     }
@@ -2439,9 +2559,13 @@ impl Analyzer<'_, '_> {
                         }
 
                         let mut map = HashMap::default();
-                        map.insert(r.type_param.name.clone(), Type::Param(l.type_param.clone()).cheap());
+                        map.insert(
+                            r.type_param.name.clone(),
+                            Type::Param(l.type_param.clone()).cheap(),
+                        );
 
-                        let new_r_ty = self.expand_type_params(&map, r.ty.clone(), Default::default())?;
+                        let new_r_ty =
+                            self.expand_type_params(&map, r.ty.clone(), Default::default())?;
 
                         if l.ty.type_eq(&new_r_ty) {
                             return Ok(());
@@ -2470,13 +2594,22 @@ impl Analyzer<'_, '_> {
             })?
         };
 
-        res.with_context(|| format!("tried to assign {} to a mapped type", dump_type_as_string(&self.cm, &r)))
+        res.with_context(|| {
+            format!(
+                "tried to assign {} to a mapped type",
+                dump_type_as_string(&self.cm, &r)
+            )
+        })
     }
 
     /// Returns true for `A | B | | C = A | B` and simillar cases.
     ///
     /// Should be called iff lhs is a union type.
-    fn should_use_special_union_assignment(&mut self, span: Span, r: &Type) -> ValidationResult<bool> {
+    fn should_use_special_union_assignment(
+        &mut self,
+        span: Span,
+        r: &Type,
+    ) -> ValidationResult<bool> {
         match r.normalize() {
             Type::Union(..) => return Ok(true),
             Type::TypeLit(r) => {
@@ -2502,8 +2635,8 @@ impl Analyzer<'_, '_> {
 
     /// TODO(kdy1): I'm not sure about this.
     fn variance(&mut self, ty: &Conditional) -> ValidationResult<Variance> {
-        let convariant =
-            self.is_covariant(&ty.check_type, &ty.true_type)? || self.is_covariant(&ty.check_type, &ty.false_type)?;
+        let convariant = self.is_covariant(&ty.check_type, &ty.true_type)?
+            || self.is_covariant(&ty.check_type, &ty.false_type)?;
 
         let contravariant = self.is_contravariant(&ty.check_type, &ty.true_type)?
             || self.is_contravariant(&ty.check_type, &ty.false_type)?;
@@ -2519,7 +2652,11 @@ impl Analyzer<'_, '_> {
         Ok(check_type.type_eq(output_type))
     }
 
-    fn is_contravariant(&mut self, check_type: &Type, output_type: &Type) -> ValidationResult<bool> {
+    fn is_contravariant(
+        &mut self,
+        check_type: &Type,
+        output_type: &Type,
+    ) -> ValidationResult<bool> {
         match output_type.normalize() {
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,

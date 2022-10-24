@@ -1,15 +1,17 @@
-pub use self::marks::{MarkExt, Marks};
+use std::sync::Arc;
+
 use derivative::Derivative;
 use parking_lot::Mutex;
 use rustc_hash::FxHashMap;
 use stc_ts_errors::Error;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Type};
-use std::sync::Arc;
 use string_enum::StringEnum;
 use swc_atoms::JsWord;
 use swc_common::{Globals, Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::EsVersion;
+
+pub use self::marks::{MarkExt, Marks};
 
 mod marks;
 
@@ -38,7 +40,13 @@ pub struct Env {
 }
 
 impl Env {
-    pub fn new(env: StableEnv, rule: Rule, target: EsVersion, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Self {
+    pub fn new(
+        env: StableEnv,
+        rule: Rule,
+        target: EsVersion,
+        module: ModuleConfig,
+        builtin: Arc<BuiltIn>,
+    ) -> Self {
         Self {
             stable: env,
             builtin,
@@ -79,9 +87,12 @@ impl Env {
 
         match self.get_global_type(ty.span(), &name) {
             Ok(prev_ty) => {
-                self.global_types
-                    .lock()
-                    .insert(name, Type::intersection(DUMMY_SP, vec![prev_ty, ty]).fixed().cheap());
+                self.global_types.lock().insert(
+                    name,
+                    Type::intersection(DUMMY_SP, vec![prev_ty, ty])
+                        .fixed()
+                        .cheap(),
+                );
             }
             Err(_) => {
                 self.global_types.lock().insert(name, ty);

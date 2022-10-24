@@ -1,8 +1,10 @@
+use std::any::type_name;
+
 use rnode::RNode;
 use stc_ts_ast_rnode::{
-    RClassMember, RParam, RPat, RTsExprWithTypeArgs, RTsFnParam, RTsTupleElement, RTsType, RTsTypeElement, RTsTypeParam,
+    RClassMember, RParam, RPat, RTsExprWithTypeArgs, RTsFnParam, RTsTupleElement, RTsType,
+    RTsTypeElement, RTsTypeParam,
 };
-use std::any::type_name;
 
 /// Visit with output
 pub trait Validate<'context, T: ?Sized>
@@ -20,8 +22,8 @@ where
     Self: Validate<'c, T>,
     T: RNode,
 {
-    type Output = <Self as Validate<'c, T>>::Output;
     type Context = <Self as Validate<'c, T>>::Context;
+    type Output = <Self as Validate<'c, T>>::Output;
 
     fn validate(&mut self, node: &Box<T>, ctxt: Self::Context) -> Self::Output {
         self.validate(&**node, ctxt)
@@ -33,8 +35,8 @@ where
     Self: Validate<'c, T>,
     T: RNode,
 {
-    type Output = Option<<Self as Validate<'c, T>>::Output>;
     type Context = <Self as Validate<'c, T>>::Context;
+    type Output = Option<<Self as Validate<'c, T>>::Output>;
 
     fn validate(&mut self, node: &Option<T>, ctxt: Self::Context) -> Self::Output {
         let _tracing_guard = if cfg!(feature = "profile") {
@@ -82,8 +84,8 @@ where
     T: ValidateInDeclOrder,
     Vec<T>: RNode,
 {
-    type Output = Result<Vec<O>, E>;
     type Context = <Self as Validate<'c, T>>::Context;
+    type Output = Result<Vec<O>, E>;
 
     fn validate(&mut self, nodes: &Vec<T>, ctxt: Self::Context) -> Self::Output {
         let _tracing_guard = if cfg!(feature = "profile") {
@@ -128,8 +130,8 @@ where
     V: Validate<'c, T>,
     T: RNode,
 {
-    type Output = V::Output;
     type Context = V::Context;
+    type Output = V::Output;
 
     #[inline]
     fn validate_with_args(&self, v: &mut V, ctxt: Self::Context) -> Self::Output {

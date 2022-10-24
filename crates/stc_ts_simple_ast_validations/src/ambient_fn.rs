@@ -57,7 +57,9 @@ impl Visit<RFnDecl> for AmbientFunctionHandler<'_, '_> {
                 if node.ident.sym == name.sym {
                     self.last_ambient_name = None;
                 } else {
-                    self.errors.report(Error::TS2389 { span: node.ident.span });
+                    self.errors.report(Error::TS2389 {
+                        span: node.ident.span,
+                    });
                     self.last_ambient_name = None;
                 }
             }

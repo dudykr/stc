@@ -1,16 +1,18 @@
+use std::borrow::Cow;
+
+use stc_ts_ast_rnode::{RExpr, RLit, RParenExpr, RTsLit, RUpdateExpr};
+use stc_ts_errors::Error;
+use stc_ts_types::{KeywordType, LitType, Type};
+use stc_utils::cache::Freeze;
+use swc_common::Spanned;
+use swc_ecma_ast::TsKeywordTypeKind;
+
 use crate::{
     analyzer::{expr::TypeOfMode, util::ResultExt, Analyzer},
     validator,
     validator::ValidateWith,
     ValidationResult,
 };
-use stc_ts_ast_rnode::{RExpr, RLit, RParenExpr, RTsLit, RUpdateExpr};
-use stc_ts_errors::Error;
-use stc_ts_types::{KeywordType, LitType, Type};
-use stc_utils::cache::Freeze;
-use std::borrow::Cow;
-use swc_common::Spanned;
-use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -43,10 +45,12 @@ impl Analyzer<'_, '_> {
                     ..
                 })
                 | Type::Lit(LitType {
-                    lit: RTsLit::Str(..), ..
+                    lit: RTsLit::Str(..),
+                    ..
                 })
                 | Type::Lit(LitType {
-                    lit: RTsLit::Bool(..), ..
+                    lit: RTsLit::Bool(..),
+                    ..
                 })
                 | Type::TypeLit(..)
                 | Type::Array(..)
@@ -99,7 +103,8 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = ty {
             if let Some(false) = self.is_update_operand_valid(&ty).report(&mut self.storage) {
-                self.storage.report(Error::InvalidNumericOperand { span: e.arg.span() })
+                self.storage
+                    .report(Error::InvalidNumericOperand { span: e.arg.span() })
             }
         } else {
             if !errored

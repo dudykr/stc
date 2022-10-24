@@ -79,7 +79,9 @@ where
 impl Tester<'_, '_> {
     pub fn parse(&self, name: &str, src: &str) -> RModule {
         swc_common::GLOBALS.set(&GLOBALS, || {
-            let fm = self.cm.new_source_file(FileName::Real(name.into()), src.into());
+            let fm = self
+                .cm
+                .new_source_file(FileName::Real(name.into()), src.into());
 
             let lexer = Lexer::new(
                 Syntax::Typescript(TsConfig {
@@ -126,7 +128,9 @@ where
         let mut node_id_gen = NodeIdGenerator::default();
         let mut module = {
             let lexer = Lexer::new(
-                Syntax::Typescript(TsConfig { ..Default::default() }),
+                Syntax::Typescript(TsConfig {
+                    ..Default::default()
+                }),
                 EsVersion::Es2021,
                 SourceFileInput::from(&*fm),
                 None,
@@ -166,7 +170,8 @@ where
             );
             module.visit_with(&mut analyzer);
 
-            let top_level_ctxt = SyntaxContext::empty().apply_mark(env.shared().marks().top_level_mark());
+            let top_level_ctxt =
+                SyntaxContext::empty().apply_mark(env.shared().marks().top_level_mark());
 
             let t1 = analyzer
                 .find_type(module_id, &Id::new("T1".into(), top_level_ctxt))
@@ -203,7 +208,9 @@ fn get_env() -> Env {
     libs.dedup();
 
     Env::simple(
-        Rule { ..Default::default() },
+        Rule {
+            ..Default::default()
+        },
         EsVersion::latest(),
         ModuleConfig::None,
         &libs,

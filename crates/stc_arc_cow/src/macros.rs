@@ -1,7 +1,8 @@
 macro_rules! impl_traits {
     ($Ty:tt, $Raw:ident) => {
-        use stc_visit::{FoldWith, VisitMutWith, VisitWith, Visitable};
         use std::ops::Deref;
+
+        use stc_visit::{FoldWith, VisitMutWith, VisitWith, Visitable};
         use swc_common::{EqIgnoreSpan, Spanned, TypeEq};
 
         impl<T> Spanned for $Ty<T>

@@ -3,11 +3,12 @@
 #![allow(incomplete_features)]
 #![feature(specialization)]
 
-use self::types::Sortable;
-use crate::calc::{calc_order, to_graph, Deps};
 use either::Either;
 use rayon::prelude::*;
 use swc_common::collections::{AHashMap, AHashSet};
+
+use self::types::Sortable;
+use crate::calc::{calc_order, to_graph, Deps};
 
 mod calc;
 mod class;

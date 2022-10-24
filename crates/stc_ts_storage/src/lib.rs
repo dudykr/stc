@@ -1,11 +1,12 @@
 #![feature(box_syntax)]
 
+use std::{collections::hash_map::Entry, mem::take, sync::Arc};
+
 use auto_impl::auto_impl;
 use fxhash::FxHashMap;
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, Type};
 use stc_utils::cache::Freeze;
-use std::{collections::hash_map::Entry, mem::take, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{iter::IdentifyLast, FileName, Span, TypeEq, DUMMY_SP};
 
@@ -93,11 +94,19 @@ impl TypeStore for Single<'_> {
 
         if should_override {
             if self.info.exports.types.contains_key(&id.sym()) {
-                self.info.exports.types.insert(id.sym().clone(), vec![ty.clone()]);
+                self.info
+                    .exports
+                    .types
+                    .insert(id.sym().clone(), vec![ty.clone()]);
             }
             self.info.exports.private_types.insert(id, vec![ty]);
         } else {
-            self.info.exports.private_types.entry(id).or_default().push(ty);
+            self.info
+                .exports
+                .private_types
+                .entry(id)
+                .or_default()
+                .push(ty);
         }
     }
 
@@ -254,7 +263,13 @@ impl ErrorStore for Group<'_> {
 impl TypeStore for Group<'_> {
     fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool) {
         if should_override {
-            if self.info.entry(ctxt).or_default().types.contains_key(&id.sym()) {
+            if self
+                .info
+                .entry(ctxt)
+                .or_default()
+                .types
+                .contains_key(&id.sym())
+            {
                 self.info
                     .entry(ctxt)
                     .or_default()
@@ -262,7 +277,11 @@ impl TypeStore for Group<'_> {
                     .insert(id.sym().clone(), vec![ty.clone()]);
             }
 
-            self.info.entry(ctxt).or_default().private_types.insert(id, vec![ty]);
+            self.info
+                .entry(ctxt)
+                .or_default()
+                .private_types
+                .insert(id, vec![ty]);
         } else {
             self.info
                 .entry(ctxt)
@@ -336,7 +355,13 @@ impl TypeStore for Group<'_> {
     }
 
     fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
-        self.info.entry(ctxt).or_default().types.entry(id).or_default().push(ty);
+        self.info
+            .entry(ctxt)
+            .or_default()
+            .types
+            .entry(id)
+            .or_default()
+            .push(ty);
     }
 
     fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
@@ -374,7 +399,10 @@ impl Mode for Group<'_> {
             }
         }
 
-        unreachable!("failed to get path by module id({:?}):  {:?}", id, self.files)
+        unreachable!(
+            "failed to get path by module id({:?}):  {:?}",
+            id, self.files
+        )
     }
 
     fn subscope(&self) -> Storage {
@@ -424,7 +452,8 @@ impl TypeStore for Builtin {
         match self.vars.entry(id.sym().clone()) {
             Entry::Occupied(entry) => {
                 let (id, prev_ty) = entry.remove_entry();
-                self.vars.insert(id, Type::intersection(DUMMY_SP, vec![prev_ty, ty]));
+                self.vars
+                    .insert(id, Type::intersection(DUMMY_SP, vec![prev_ty, ty]));
             }
             Entry::Vacant(entry) => {
                 entry.insert(ty);
@@ -474,9 +503,11 @@ impl Mode for Builtin {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use stc_ts_types::module_id;
     use std::path::PathBuf;
+
+    use stc_ts_types::module_id;
+
+    use super::*;
 
     #[test]
     fn group_01() {

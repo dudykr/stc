@@ -1,3 +1,9 @@
+use stc_ts_ast_rnode::{RExpr, RExprOrSuper, RMemberExpr, ROptChainExpr};
+use stc_ts_errors::DebugExt;
+use stc_ts_types::Type;
+use stc_utils::ext::TypeVecExt;
+use swc_ecma_ast::TsKeywordTypeKind;
+
 use crate::{
     analyzer::{
         expr::{IdCtx, TypeOfMode},
@@ -8,11 +14,6 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use stc_ts_ast_rnode::{RExpr, RExprOrSuper, RMemberExpr, ROptChainExpr};
-use stc_ts_errors::DebugExt;
-use stc_ts_types::Type;
-use stc_utils::ext::TypeVecExt;
-use swc_ecma_ast::TsKeywordTypeKind;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -34,8 +35,17 @@ impl Analyzer<'_, '_> {
                 };
                 let ty = self
                     .with_ctx(ctx)
-                    .access_property(span, &obj, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default())
-                    .context("tried to access property to validate an optional chaining expression")?;
+                    .access_property(
+                        span,
+                        &obj,
+                        &prop,
+                        TypeOfMode::RValue,
+                        IdCtx::Var,
+                        Default::default(),
+                    )
+                    .context(
+                        "tried to access property to validate an optional chaining expression",
+                    )?;
 
                 //
 
@@ -51,7 +61,10 @@ impl Analyzer<'_, '_> {
             RExpr::Call(ce) => {
                 let ty = ce.validate_with_args(self, type_ann)?;
 
-                Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
+                Ok(Type::union(vec![
+                    Type::undefined(span, Default::default()),
+                    ty,
+                ]))
             }
 
             _ => unreachable!("Onvalid optional chaining expression found",),
@@ -61,7 +74,9 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     pub(super) fn is_obj_optional(&mut self, obj: &Type) -> ValidationResult<bool> {
-        if obj.is_kwd(TsKeywordTypeKind::TsNullKeyword) || obj.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+        if obj.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+            || obj.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+        {
             return Ok(true);
         }
 

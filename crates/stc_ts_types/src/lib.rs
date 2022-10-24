@@ -7,14 +7,16 @@
 #![feature(box_patterns)]
 #![feature(specialization)]
 
-use self::type_id::SymbolId;
-pub use self::{
-    convert::rprop_name_to_expr,
-    id::Id,
-    intrinsic::{Intrinsic, IntrinsicKind},
-    metadata::*,
-    module_id::ModuleId,
+use std::{
+    self,
+    borrow::Cow,
+    fmt,
+    fmt::{Debug, Formatter},
+    iter::FusedIterator,
+    mem::{replace, transmute},
+    ops::AddAssign,
 };
+
 use fxhash::FxHashMap;
 use is_macro::Is;
 use num_bigint::BigInt;
@@ -25,8 +27,9 @@ use servo_arc::Arc;
 use static_assertions::assert_eq_size;
 use stc_arc_cow::freeze::Freezer;
 use stc_ts_ast_rnode::{
-    RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId,
-    RTsKeywordType, RTsLit, RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
+    RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName,
+    RTsEnumMemberId, RTsKeywordType, RTsLit, RTsModuleName, RTsNamespaceDecl, RTsThisType,
+    RTsThisTypeOrIdent,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -35,15 +38,6 @@ use stc_utils::{
     panic_ctx,
 };
 use stc_visit::{Visit, Visitable};
-use std::{
-    self,
-    borrow::Cow,
-    fmt,
-    fmt::{Debug, Formatter},
-    iter::FusedIterator,
-    mem::{replace, transmute},
-    ops::AddAssign,
-};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{EqIgnoreSpan, FromVariant, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{Accessibility, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
@@ -52,6 +46,15 @@ use swc_ecma_utils::{
     Value::{Known, Unknown},
 };
 use tracing::instrument;
+
+use self::type_id::SymbolId;
+pub use self::{
+    convert::rprop_name_to_expr,
+    id::Id,
+    intrinsic::{Intrinsic, IntrinsicKind},
+    metadata::*,
+    module_id::ModuleId,
+};
 
 mod convert;
 mod id;
@@ -936,7 +939,10 @@ impl Union {
                     continue;
                 }
                 if t1.type_eq(t2) {
-                    unreachable!("[INVALID_TYPE]: A union type has duplicate elements: ({:?})", t1)
+                    unreachable!(
+                        "[INVALID_TYPE]: A union type has duplicate elements: ({:?})",
+                        t1
+                    )
                 }
             }
         }
@@ -1105,7 +1111,9 @@ impl Type {
 
         let has_str = tys.iter().any(|ty| ty.is_str());
         // TODO
-        let has_bool = tys.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword));
+        let has_bool = tys
+            .iter()
+            .any(|ty| ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword));
         let has_num = tys.iter().any(|ty| ty.is_num());
 
         if (has_str && has_bool) || (has_bool && has_num) || (has_num && has_str) {
@@ -1314,10 +1322,18 @@ impl Type {
 
             // TODO(kdy1): Make this false.
             Type::Param(TypeParam {
-                constraint, default, ..
+                constraint,
+                default,
+                ..
             }) => {
-                constraint.as_ref().map(|ty| ty.is_clone_cheap()).unwrap_or(true)
-                    && default.as_ref().map(|ty| ty.is_clone_cheap()).unwrap_or(true)
+                constraint
+                    .as_ref()
+                    .map(|ty| ty.is_clone_cheap())
+                    .unwrap_or(true)
+                    && default
+                        .as_ref()
+                        .map(|ty| ty.is_clone_cheap())
+                        .unwrap_or(true)
             }
 
             _ => false,
@@ -1637,7 +1653,9 @@ impl Visit<Intersection> for AssertValid {
 
         for item in ty.types.iter() {
             if item.normalize().is_intersection_type() {
-                unreachable!("[INVALID_TYPE]: An intersection type should not have an intersection item")
+                unreachable!(
+                    "[INVALID_TYPE]: An intersection type should not have an intersection item"
+                )
             }
         }
     }
@@ -1845,7 +1863,8 @@ impl Type {
                 ..
             })
             | Type::Lit(LitType {
-                lit: RTsLit::Str(..), ..
+                lit: RTsLit::Str(..),
+                ..
             }) => true,
             _ => false,
         }
@@ -1854,7 +1873,8 @@ impl Type {
     pub fn is_str_lit(&self) -> bool {
         match self.normalize() {
             Type::Lit(LitType {
-                lit: RTsLit::Str(..), ..
+                lit: RTsLit::Str(..),
+                ..
             }) => true,
             _ => false,
         }
@@ -1863,7 +1883,8 @@ impl Type {
     pub fn is_bool_lit(&self) -> bool {
         match self.normalize() {
             Type::Lit(LitType {
-                lit: RTsLit::Bool(..), ..
+                lit: RTsLit::Bool(..),
+                ..
             }) => true,
             _ => false,
         }
@@ -1901,7 +1922,8 @@ impl Type {
                 ..
             })
             | Type::Lit(LitType {
-                lit: RTsLit::Bool(..), ..
+                lit: RTsLit::Bool(..),
+                ..
             }) => true,
             _ => false,
         }
@@ -2208,7 +2230,9 @@ impl VisitMut<Type> for Freezer {
             }),
         );
 
-        *ty = Type::Arc(Freezed { ty: Arc::new(new_ty) })
+        *ty = Type::Arc(Freezed {
+            ty: Arc::new(new_ty),
+        })
     }
 }
 
@@ -2413,7 +2437,12 @@ impl Visit<Union> for ValidityChecker {
             return;
         }
 
-        if ty.types.iter().map(Type::normalize).any(|t| t.is_union_type()) {
+        if ty
+            .types
+            .iter()
+            .map(Type::normalize)
+            .any(|t| t.is_union_type())
+        {
             self.valid = false;
             return;
         }
@@ -2441,7 +2470,12 @@ impl Visit<Intersection> for ValidityChecker {
             return;
         }
 
-        if ty.types.iter().map(Type::normalize).any(|t| t.is_intersection_type()) {
+        if ty
+            .types
+            .iter()
+            .map(Type::normalize)
+            .any(|t| t.is_intersection_type())
+        {
             self.valid = false;
             return;
         }

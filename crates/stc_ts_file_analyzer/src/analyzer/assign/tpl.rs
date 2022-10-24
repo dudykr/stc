@@ -1,10 +1,11 @@
+use stc_ts_ast_rnode::RTsLit;
+use stc_ts_errors::Error;
+use stc_ts_types::{LitType, TplType, Type};
+
 use crate::{
     analyzer::{assign::AssignOpts, Analyzer},
     ValidationResult,
 };
-use stc_ts_ast_rnode::RTsLit;
-use stc_ts_errors::Error;
-use stc_ts_types::{LitType, TplType, Type};
 
 impl Analyzer<'_, '_> {
     /// # Implementation notes
@@ -18,13 +19,19 @@ impl Analyzer<'_, '_> {
     /// orders.
     ///
     /// After splitting, we can check if each element is assignable.
-    pub(crate) fn assign_to_tpl(&mut self, l: &TplType, r: &Type, opts: AssignOpts) -> ValidationResult<()> {
+    pub(crate) fn assign_to_tpl(
+        &mut self,
+        l: &TplType,
+        r: &Type,
+        opts: AssignOpts,
+    ) -> ValidationResult<()> {
         let span = opts.span;
         let r = r.normalize();
 
         match r {
             Type::Lit(LitType {
-                lit: RTsLit::Str(r), ..
+                lit: RTsLit::Str(r),
+                ..
             }) => {
                 let mut start = 0;
                 let mut positions = vec![];

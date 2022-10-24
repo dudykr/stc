@@ -1,10 +1,11 @@
+use std::mem::replace;
+
 use rnode::NodeId;
 use stc_ts_ast_rnode::{
-    RBool, RClassMember, RDecl, REmptyStmt, RExpr, RIdent, RInvalid, RModuleItem, RPat, RPropName, RStmt,
-    RTsKeywordType, RTsLit, RTsType, RVarDecl,
+    RBool, RClassMember, RDecl, REmptyStmt, RExpr, RIdent, RInvalid, RModuleItem, RPat, RPropName,
+    RStmt, RTsKeywordType, RTsLit, RTsType, RVarDecl,
 };
 use stc_ts_types::{LitType, Type};
-use std::mem::replace;
 use swc_atoms::js_word;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;

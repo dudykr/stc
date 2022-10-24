@@ -1,12 +1,13 @@
-use crate::{
-    analyzer::Analyzer,
-    util::graph::{Inliner, NodeId},
-};
 use fxhash::{FxHashMap, FxHashSet};
 use petgraph::graphmap::DiGraphMap;
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{RClassMember, RExpr, RExprOrSuper, RMemberExpr};
 use stc_ts_types::{rprop_name_to_expr, Id};
+
+use crate::{
+    analyzer::Analyzer,
+    util::graph::{Inliner, NodeId},
+};
 
 impl Analyzer<'_, '_> {
     /// Calculate the order of the evaluation of class members.
@@ -42,7 +43,9 @@ impl Analyzer<'_, '_> {
 
                 RClassMember::TsIndexSignature(_) => {}
 
-                RClassMember::ClassProp(_) | RClassMember::PrivateProp(_) | RClassMember::Empty(_) => {
+                RClassMember::ClassProp(_)
+                | RClassMember::PrivateProp(_)
+                | RClassMember::Empty(_) => {
                     // unreachable!
                     continue;
                 }
@@ -133,7 +136,9 @@ impl Visit<RMemberExpr> for MethodAnalyzer {
                         self.result.depends_on.insert(Key::Id(i.into()));
                     }
                     RExpr::PrivateName(i) => {
-                        self.result.depends_on.insert(Key::Private(i.id.clone().into()));
+                        self.result
+                            .depends_on
+                            .insert(Key::Private(i.id.clone().into()));
                     }
                     _ => {}
                 }
