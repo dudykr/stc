@@ -31,7 +31,7 @@ static ENV: Lazy<Env> = Lazy::new(|| {
         Default::default(),
         EsVersion::latest(),
         ModuleConfig::None,
-        &Lib::load("es2020.full"),
+        &Lib::load("es5"),
     )
 });
 
