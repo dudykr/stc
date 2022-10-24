@@ -1,10 +1,11 @@
+use rnode::{VisitMut, VisitMutWith};
+use stc_ts_ast_rnode::RTsEntityName;
+use stc_ts_types::{QueryExpr, QueryType, Type};
+
 use crate::{
     analyzer::{scope::VarInfo, Analyzer},
     ValidationResult,
 };
-use rnode::{VisitMut, VisitMutWith};
-use stc_ts_ast_rnode::RTsEntityName;
-use stc_ts_types::{QueryExpr, QueryType, Type};
 
 impl Analyzer<'_, '_> {
     pub(crate) fn expand_return_type_of_fn(&mut self, ret_ty: &mut Type) -> ValidationResult<()> {

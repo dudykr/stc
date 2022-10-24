@@ -1,9 +1,10 @@
 #![allow(incomplete_features)]
 #![feature(specialization)]
 
+use triomphe::Arc;
+
 pub use self::boxed::BoxedArcCow;
 use crate::freeze::Freezer;
-use triomphe::Arc;
 
 #[macro_use]
 mod macros;

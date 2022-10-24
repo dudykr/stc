@@ -1,3 +1,17 @@
+use std::borrow::Cow;
+
+use itertools::Itertools;
+use stc_ts_ast_rnode::RBool;
+use stc_ts_errors::{DebugExt, Error};
+use stc_ts_type_ops::Fix;
+use stc_ts_types::{
+    KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type,
+    TypeElement, TypeLit, Union, UnionMetadata,
+};
+use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
+use swc_common::{Span, DUMMY_SP};
+use swc_ecma_ast::TsKeywordTypeKind;
+
 use crate::{
     analyzer::{
         assign::{AssignData, AssignOpts},
@@ -5,18 +19,6 @@ use crate::{
     },
     ValidationResult,
 };
-use itertools::Itertools;
-use stc_ts_ast_rnode::RBool;
-use stc_ts_errors::{DebugExt, Error};
-use stc_ts_type_ops::Fix;
-use stc_ts_types::{
-    KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union,
-    UnionMetadata,
-};
-use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
-use std::borrow::Cow;
-use swc_common::{Span, DUMMY_SP};
-use swc_ecma_ast::TsKeywordTypeKind;
 
 impl Analyzer<'_, '_> {
     /// # Cases
@@ -51,7 +53,11 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn flatten_unions_for_assignment(&mut self, span: Span, ty: Cow<Type>) -> ValidationResult<Type> {
+    fn flatten_unions_for_assignment(
+        &mut self,
+        span: Span,
+        ty: Cow<Type>,
+    ) -> ValidationResult<Type> {
         let ty = self.normalize(Some(span), ty, Default::default())?;
 
         match ty.normalize() {
@@ -86,7 +92,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Use Cow<TupleElement>
-    fn append_type_element_to_type(&mut self, span: Span, to: &mut Type, el: &TypeElement) -> ValidationResult<()> {
+    fn append_type_element_to_type(
+        &mut self,
+        span: Span,
+        to: &mut Type,
+        el: &TypeElement,
+    ) -> ValidationResult<()> {
         match el {
             TypeElement::Property(el) => {
                 if let Some(el_ty) = &el.type_ann {
@@ -139,7 +150,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Use Cow<TupleElement>
-    fn append_tuple_element_to_type(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> ValidationResult<()> {
+    fn append_tuple_element_to_type(
+        &mut self,
+        span: Span,
+        to: &mut Type,
+        el: &TupleElement,
+    ) -> ValidationResult<()> {
         if let Some(el_ty) = self.expand_union_for_assignment(span, &el.ty) {
             let mut to_types = (0..el_ty.types.len()).map(|_| to.clone()).collect_vec();
 
@@ -183,7 +199,9 @@ impl Analyzer<'_, '_> {
 
     /// Expands `boolean` to `true | false`.
     fn expand_union_for_assignment<'a>(&mut self, span: Span, t: &'a Type) -> Option<Union> {
-        let t = self.normalize(Some(span), Cow::Borrowed(t), Default::default()).ok()?;
+        let t = self
+            .normalize(Some(span), Cow::Borrowed(t), Default::default())
+            .ok()?;
 
         match t.normalize() {
             Type::Keyword(KeywordType {

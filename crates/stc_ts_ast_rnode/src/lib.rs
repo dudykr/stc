@@ -19,13 +19,16 @@ impl RExpr {
     pub fn is_new_target(&self) -> bool {
         match self {
             RExpr::MetaProp(RMetaPropExpr {
-                meta: RIdent {
-                    sym: js_word!("new"), ..
-                },
-                prop: RIdent {
-                    sym: js_word!("target"),
-                    ..
-                },
+                meta:
+                    RIdent {
+                        sym: js_word!("new"),
+                        ..
+                    },
+                prop:
+                    RIdent {
+                        sym: js_word!("target"),
+                        ..
+                    },
                 ..
             }) => true,
             _ => false,

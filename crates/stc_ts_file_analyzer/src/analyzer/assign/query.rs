@@ -1,3 +1,6 @@
+use stc_ts_errors::DebugExt;
+use stc_ts_types::{QueryExpr, QueryType, Type};
+
 use crate::{
     analyzer::{
         assign::{AssignData, AssignOpts},
@@ -5,8 +8,6 @@ use crate::{
     },
     ValidationResult,
 };
-use stc_ts_errors::DebugExt;
-use stc_ts_types::{QueryExpr, QueryType, Type};
 
 impl Analyzer<'_, '_> {
     pub(super) fn assign_to_query_type(

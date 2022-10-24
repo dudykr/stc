@@ -1,5 +1,6 @@
-use dashmap::{DashMap, SharedValue};
 use std::hash::{BuildHasher, Hash};
+
+use dashmap::{DashMap, SharedValue};
 
 pub(crate) trait DashMapExt<'a, K, V, H>
 where
@@ -53,6 +54,7 @@ where
             Some(v) => v,
             None => return,
         };
-        lock.entry(k).or_insert_with(|| SharedValue::new(Default::default()));
+        lock.entry(k)
+            .or_insert_with(|| SharedValue::new(Default::default()));
     }
 }

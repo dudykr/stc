@@ -4,24 +4,27 @@
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(specialization)]
-use self::{
-    ambient::RealImplRemover,
-    dce::{get_used, DceForDts},
-};
-pub use crate::mutations::apply_mutations;
 use fxhash::FxHashSet;
 use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RAssignPat, RBlockStmt, RClass, RClassDecl, RClassMember, RClassProp, RDecl, RExportDecl,
-    RExportDefaultExpr, RExpr, RExprOrSuper, RFnDecl, RIdent, RImportDecl, RImportSpecifier, RLit, RMemberExpr,
-    RModuleDecl, RModuleItem, RNamedExport, RParamOrTsParamProp, RPat, RPrivateName, RPrivateProp, RPropName, RStmt,
-    RTsEntityName, RTsEnumDecl, RTsIndexSignature, RTsInterfaceDecl, RTsKeywordType, RTsModuleDecl, RTsParamProp,
-    RTsParamPropParam, RTsPropertySignature, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RArrayPat, RAssignPat, RBlockStmt, RClass, RClassDecl, RClassMember, RClassProp, RDecl,
+    RExportDecl, RExportDefaultExpr, RExpr, RExprOrSuper, RFnDecl, RIdent, RImportDecl,
+    RImportSpecifier, RLit, RMemberExpr, RModuleDecl, RModuleItem, RNamedExport,
+    RParamOrTsParamProp, RPat, RPrivateName, RPrivateProp, RPropName, RStmt, RTsEntityName,
+    RTsEnumDecl, RTsIndexSignature, RTsInterfaceDecl, RTsKeywordType, RTsModuleDecl, RTsParamProp,
+    RTsParamPropParam, RTsPropertySignature, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl,
+    RVarDeclarator,
 };
 use stc_ts_types::{Id, ModuleTypeData};
 use stc_ts_utils::{find_ids_in_pat, MapWithMut};
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
+
+use self::{
+    ambient::RealImplRemover,
+    dce::{get_used, DceForDts},
+};
+pub use crate::mutations::apply_mutations;
 
 mod ambient;
 mod dce;
@@ -213,7 +216,9 @@ impl VisitMut<RClassMember> for Dts {
                         span: method.span,
                         key: match &method.key {
                             RPropName::Ident(i) => box RExpr::Ident(i.clone()),
-                            RPropName::Str(s) => box RExpr::Ident(RIdent::new(s.value.clone(), s.span)),
+                            RPropName::Str(s) => {
+                                box RExpr::Ident(RIdent::new(s.value.clone(), s.span))
+                            }
                             RPropName::Num(n) => box RExpr::Lit(RLit::Num(n.clone())),
                             RPropName::Computed(e) => e.expr.clone(),
                             RPropName::BigInt(n) => box RExpr::Lit(RLit::BigInt(n.clone())),
@@ -385,7 +390,9 @@ impl VisitMut<Vec<RModuleItem>> for Dts {
         }
 
         items.retain(|item| match item {
-            RModuleItem::ModuleDecl(RModuleDecl::Import(RImportDecl { specifiers, .. })) => !specifiers.is_empty(),
+            RModuleItem::ModuleDecl(RModuleDecl::Import(RImportDecl { specifiers, .. })) => {
+                !specifiers.is_empty()
+            }
             RModuleItem::Stmt(RStmt::Empty(..)) => false,
             _ => true,
         });
@@ -395,9 +402,15 @@ impl VisitMut<Vec<RModuleItem>> for Dts {
 impl VisitMut<Vec<RImportSpecifier>> for Dts {
     fn visit_mut(&mut self, specifiers: &mut Vec<RImportSpecifier>) {
         specifiers.retain(|specifier| match specifier {
-            RImportSpecifier::Named(specifier) => self.used_types.contains(&Id::from(&specifier.local)),
-            RImportSpecifier::Default(specifier) => self.used_types.contains(&Id::from(&specifier.local)),
-            RImportSpecifier::Namespace(specifier) => self.used_types.contains(&Id::from(&specifier.local)),
+            RImportSpecifier::Named(specifier) => {
+                self.used_types.contains(&Id::from(&specifier.local))
+            }
+            RImportSpecifier::Default(specifier) => {
+                self.used_types.contains(&Id::from(&specifier.local))
+            }
+            RImportSpecifier::Namespace(specifier) => {
+                self.used_types.contains(&Id::from(&specifier.local))
+            }
         });
     }
 }
@@ -512,11 +525,17 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                                             span: Default::default(),
                                             declare: false,
                                             key: box match &p.param {
-                                                RTsParamPropParam::Ident(p) => RExpr::Ident(p.id.clone()),
+                                                RTsParamPropParam::Ident(p) => {
+                                                    RExpr::Ident(p.id.clone())
+                                                }
                                                 RTsParamPropParam::Assign(p) => match &p.left {
                                                     //
-                                                    box RPat::Ident(i) => RExpr::Ident(i.id.clone()),
-                                                    _ => unreachable!("binding pattern in property initializer"),
+                                                    box RPat::Ident(i) => {
+                                                        RExpr::Ident(i.id.clone())
+                                                    }
+                                                    _ => unreachable!(
+                                                        "binding pattern in property initializer"
+                                                    ),
                                                 },
                                             },
                                             value: None,

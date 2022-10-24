@@ -8,6 +8,8 @@ extern crate test;
 #[path = "common/mod.rs"]
 mod common;
 
+use std::{env, path::Path, sync::Arc};
+
 use common::load_fixtures;
 use serde::Deserialize;
 use stc_ts_builtin_types::Lib;
@@ -15,7 +17,6 @@ use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_type_checker::Checker;
-use std::{env, path::Path, sync::Arc};
 use swc_common::FileName;
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::TsConfig;
@@ -48,7 +49,12 @@ fn passes() {
 fn do_test(file_name: &Path) -> Result<(), StdErr> {
     let fname = file_name.display().to_string();
 
-    let (libs, rule, ts_config, target) = (vec![Lib::Es5], Default::default(), Default::default(), EsVersion::Es5);
+    let (libs, rule, ts_config, target) = (
+        vec![Lib::Es5],
+        Default::default(),
+        Default::default(),
+        EsVersion::Es5,
+    );
 
     let res = ::testing::run_test2(false, |cm, handler| {
         let handler = Arc::new(handler);

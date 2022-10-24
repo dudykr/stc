@@ -3,14 +3,6 @@
 #![feature(box_syntax)]
 #![feature(specialization)]
 
-pub use self::result_ext::DebugExt;
-use ansi_term::Color::Yellow;
-use derivative::Derivative;
-use fmt::Formatter;
-use static_assertions::assert_eq_size;
-use stc_ts_ast_rnode::RTsModuleName;
-use stc_ts_types::{name::Name, Id, Key, ModuleId, Type, TypeElement, TypeParamInstantiation};
-use stc_utils::stack::StackOverflowError;
 use std::{
     borrow::Cow,
     fmt,
@@ -18,12 +10,22 @@ use std::{
     ops::RangeInclusive,
     path::PathBuf,
 };
+
+use ansi_term::Color::Yellow;
+use derivative::Derivative;
+use fmt::Formatter;
+use static_assertions::assert_eq_size;
+use stc_ts_ast_rnode::RTsModuleName;
+use stc_ts_types::{name::Name, Id, Key, ModuleId, Type, TypeElement, TypeParamInstantiation};
+use stc_utils::stack::StackOverflowError;
 use swc_atoms::JsWord;
 use swc_common::{
     errors::{DiagnosticId, Handler},
     Span, Spanned, DUMMY_SP,
 };
 use swc_ecma_ast::{AssignOp, BinaryOp, UnaryOp, UpdateOp};
+
+pub use self::result_ext::DebugExt;
 
 pub mod debug;
 mod result_ext;
@@ -1452,7 +1454,10 @@ impl Error {
             Error::Errors { .. } | Error::DebugContext { .. } => {}
             _ => {
                 if self.span().is_dummy() {
-                    panic!("Error with dummy span found(context: {}): {:#?}", context, self)
+                    panic!(
+                        "Error with dummy span found(context: {}): {:#?}",
+                        context, self
+                    )
                 }
             }
         }
@@ -1589,7 +1594,8 @@ impl Error {
             Error::DebugContext(c) => c.inner.code(),
 
             Error::ObjectIsPossiblyNull { .. } => 2531,
-            Error::ObjectIsPossiblyUndefined { .. } | Error::ObjectIsPossiblyUndefinedWithType { .. } => 2532,
+            Error::ObjectIsPossiblyUndefined { .. }
+            | Error::ObjectIsPossiblyUndefinedWithType { .. } => 2532,
             Error::ObjectIsPossiblyNullOrUndefined { .. } => 2533,
 
             Error::InvalidBinaryOp { .. } => 2365,
@@ -1932,7 +1938,10 @@ impl Error {
 impl From<Vec<Error>> for Error {
     #[inline]
     fn from(errors: Vec<Error>) -> Self {
-        Error::Errors { span: DUMMY_SP, errors }
+        Error::Errors {
+            span: DUMMY_SP,
+            errors,
+        }
     }
 }
 
@@ -1955,8 +1964,8 @@ impl From<Errors> for Vec<Error> {
 }
 
 impl IntoIterator for Errors {
-    type Item = Error;
     type IntoIter = <Vec<Error> as IntoIterator>::IntoIter;
+    type Item = Error;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {

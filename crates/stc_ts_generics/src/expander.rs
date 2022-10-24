@@ -1,20 +1,23 @@
-use crate::{type_param::finder::TypeParamNameUsageFinder, ExpandGenericOpts};
+use std::sync::Arc;
+
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsLit};
 use stc_ts_base_type_ops::{apply_mapped_flags, fix::Fix};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_types::{
-    Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature, Function, Id,
-    IndexSignature, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature,
-    Operator, PropertySignature, Ref, Type, TypeElement, TypeLit, TypeParam,
+    Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature,
+    Function, Id, IndexSignature, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata,
+    LitType, Mapped, Method, MethodSignature, Operator, PropertySignature, Ref, Type, TypeElement,
+    TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, debug_ctx, stack};
-use std::sync::Arc;
 use swc_atoms::js_word;
 use swc_common::{SourceMap, Spanned, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, info, warn};
+
+use crate::{type_param::finder::TypeParamNameUsageFinder, ExpandGenericOpts};
 
 #[derive(Debug)]
 pub struct InferTypeResult {
@@ -162,26 +165,28 @@ impl GenericExpander<'_> {
                 m.make_clone_cheap();
 
                 match &m.type_param.constraint {
-                    Some(constraint) => match constraint.normalize() {
-                        Type::Operator(
-                            operator @ Operator {
-                                op: TsTypeOperatorOp::KeyOf,
-                                ..
-                            },
-                        ) => match operator.ty.normalize() {
-                            Type::Param(param) if self.params.contains_key(&param.name) => {
-                                let ty = self.params.get(&param.name).unwrap();
-                                match ty.normalize() {
-                                    Type::TypeLit(ty)
-                                        if ty.members.iter().all(|element| match element {
-                                            TypeElement::Property(..) | TypeElement::Method(..) => true,
-                                            _ => false,
-                                        }) =>
-                                    {
-                                        let mut members = vec![];
+                    Some(constraint) => {
+                        match constraint.normalize() {
+                            Type::Operator(
+                                operator @ Operator {
+                                    op: TsTypeOperatorOp::KeyOf,
+                                    ..
+                                },
+                            ) => match operator.ty.normalize() {
+                                Type::Param(param) if self.params.contains_key(&param.name) => {
+                                    let ty = self.params.get(&param.name).unwrap();
+                                    match ty.normalize() {
+                                        Type::TypeLit(ty)
+                                            if ty.members.iter().all(|element| match element {
+                                                TypeElement::Property(..)
+                                                | TypeElement::Method(..) => true,
+                                                _ => false,
+                                            }) =>
+                                        {
+                                            let mut members = vec![];
 
-                                        for member in &ty.members {
-                                            match member {
+                                            for member in &ty.members {
+                                                match member {
                                                 TypeElement::Property(p) => {
                                                     members.push(TypeElement::Property(PropertySignature {
                                                         type_ann: m.ty.clone().fold_with(&mut MappedHandler {
@@ -222,25 +227,26 @@ impl GenericExpander<'_> {
                                                 }
                                                 _ => {}
                                             }
-                                        }
+                                            }
 
-                                        for member in &mut members {
-                                            apply_mapped_flags(member, m.optional, m.readonly);
-                                        }
+                                            for member in &mut members {
+                                                apply_mapped_flags(member, m.optional, m.readonly);
+                                            }
 
-                                        return Type::TypeLit(TypeLit {
-                                            span: ty.span,
-                                            members,
-                                            metadata: ty.metadata,
-                                        });
+                                            return Type::TypeLit(TypeLit {
+                                                span: ty.span,
+                                                members,
+                                                metadata: ty.metadata,
+                                            });
+                                        }
+                                        _ => {}
                                     }
-                                    _ => {}
                                 }
-                            }
+                                _ => {}
+                            },
                             _ => {}
-                        },
-                        _ => {}
-                    },
+                        }
+                    }
                     _ => {}
                 }
 
@@ -357,7 +363,9 @@ impl GenericExpander<'_> {
                             ty,
                             ..
                         }) => match ty.normalize() {
-                            Type::Keyword(..) if m.optional == None && m.readonly == None => return *ty.clone(),
+                            Type::Keyword(..) if m.optional == None && m.readonly == None => {
+                                return *ty.clone()
+                            }
                             Type::TypeLit(TypeLit {
                                 span,
                                 members,
@@ -373,18 +381,20 @@ impl GenericExpander<'_> {
                                 for member in members {
                                     match member {
                                         TypeElement::Method(method) => {
-                                            new_members.push(TypeElement::Property(PropertySignature {
-                                                span: method.span,
-                                                accessibility: None,
-                                                readonly: method.readonly,
-                                                key: method.key.clone(),
-                                                optional: method.optional,
-                                                params: vec![],
-                                                type_ann: m.ty.clone().map(|v| v),
-                                                type_params: None,
-                                                metadata: Default::default(),
-                                                accessor: Default::default(),
-                                            }));
+                                            new_members.push(TypeElement::Property(
+                                                PropertySignature {
+                                                    span: method.span,
+                                                    accessibility: None,
+                                                    readonly: method.readonly,
+                                                    key: method.key.clone(),
+                                                    optional: method.optional,
+                                                    params: vec![],
+                                                    type_ann: m.ty.clone().map(|v| v),
+                                                    type_params: None,
+                                                    metadata: Default::default(),
+                                                    accessor: Default::default(),
+                                                },
+                                            ));
                                         }
                                         TypeElement::Property(p) => {
                                             let mut p = p.clone();
@@ -428,13 +438,15 @@ impl GenericExpander<'_> {
 
                 let key = match ty.index_type.normalize() {
                     Type::Lit(LitType {
-                        lit: RTsLit::Str(s), ..
+                        lit: RTsLit::Str(s),
+                        ..
                     }) => Some(Key::Normal {
                         span: s.span,
                         sym: s.value.clone(),
                     }),
                     Type::Lit(LitType {
-                        lit: RTsLit::Number(v), ..
+                        lit: RTsLit::Number(v),
+                        ..
                     }) => Some(Key::Num(v.clone())),
 
                     Type::Keyword(KeywordType {
@@ -497,7 +509,10 @@ impl Fold<Type> for GenericExpander<'_> {
                 return ty;
             }
         };
-        let _context = debug_ctx!(format!("Expanding generics of {}", dump_type_as_string(&self.cm, &ty)));
+        let _context = debug_ctx!(format!(
+            "Expanding generics of {}",
+            dump_type_as_string(&self.cm, &ty)
+        ));
 
         let old_fully = self.fully;
         self.fully |= match ty.normalize() {
@@ -508,7 +523,10 @@ impl Fold<Type> for GenericExpander<'_> {
         {
             let mut v = TypeParamNameUsageFinder::default();
             ty.visit_with(&mut v);
-            let will_expand = v.params.iter().any(|param| self.params.contains_key(&param));
+            let will_expand = v
+                .params
+                .iter()
+                .any(|param| self.params.contains_key(&param));
             if !will_expand {
                 return ty;
             }
@@ -636,7 +654,8 @@ impl Fold<Type> for MappedHandler<'_> {
         match ty.normalize() {
             Type::IndexedAccessType(ty) => match ty.obj_type.normalize() {
                 Type::Param(TypeParam {
-                    name: obj_param_name, ..
+                    name: obj_param_name,
+                    ..
                 }) => match ty.index_type.normalize() {
                     Type::Param(TypeParam {
                         name: index_param_name,
@@ -650,7 +669,9 @@ impl Fold<Type> for MappedHandler<'_> {
                             },
                         ) => match operator.ty.normalize() {
                             Type::Param(constraint_param) => {
-                                if *obj_param_name == constraint_param.name && *self.param_name == *obj_param_name {
+                                if *obj_param_name == constraint_param.name
+                                    && *self.param_name == *obj_param_name
+                                {
                                     return self.prop_ty.clone();
                                 }
                             }

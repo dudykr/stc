@@ -1,23 +1,25 @@
-use crate::{
-    analyzer::{generic::is_literals, scope::ExpandOpts, Analyzer, Ctx},
-    ty,
-    ty::Type,
-    ValidationResult,
-};
+use std::iter::once;
+
 use rnode::{Fold, FoldWith, Visit};
 use stc_ts_ast_rnode::{RExpr, RIdent, RPropName, RStr, RTsEntityName, RTsType};
 use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    Class, ClassMetadata, Enum, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType, Intersection, ModuleId,
-    QueryExpr, QueryType, Ref, RefMetadata, Tuple, TypeElement, Union,
+    Class, ClassMetadata, Enum, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType,
+    Intersection, ModuleId, QueryExpr, QueryType, Ref, RefMetadata, Tuple, TypeElement, Union,
 };
 use stc_utils::cache::ALLOW_DEEP_CLONE;
-use std::iter::once;
 use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
 use ty::TypeExt;
+
+use crate::{
+    analyzer::{generic::is_literals, scope::ExpandOpts, Analyzer, Ctx},
+    ty,
+    ty::Type,
+    ValidationResult,
+};
 
 impl Analyzer<'_, '_> {
     /// Prints type for visualization testing.
@@ -95,7 +97,9 @@ impl Analyzer<'_, '_> {
             return Ok(ty.clone());
         }
 
-        if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+        if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+            || ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+        {
             return Ok(ty.clone());
         }
 
@@ -254,7 +258,9 @@ impl Fold<stc_ts_types::Function> for Generalizer {
 impl Fold<Type> for Generalizer {
     fn fold(&mut self, mut ty: Type) -> Type {
         match ty.normalize() {
-            Type::IndexedAccessType(IndexedAccessType { index_type, .. }) if is_str_lit_or_union(&index_type) => {
+            Type::IndexedAccessType(IndexedAccessType { index_type, .. })
+                if is_str_lit_or_union(&index_type) =>
+            {
                 return ty
             }
             _ => {}
@@ -366,10 +372,12 @@ pub(super) fn is_prop_name_eq(l: &RPropName, r: &RPropName) -> bool {
             let r = $r;
 
             match l {
-                RPropName::Ident(RIdent { ref sym, .. }) | RPropName::Str(RStr { value: ref sym, .. }) => match &*r {
-                    RPropName::Ident(RIdent { sym: ref r_sym, .. }) | RPropName::Str(RStr { value: ref r_sym, .. }) => {
-                        return sym == r_sym
-                    }
+                RPropName::Ident(RIdent { ref sym, .. })
+                | RPropName::Str(RStr { value: ref sym, .. }) => match &*r {
+                    RPropName::Ident(RIdent { sym: ref r_sym, .. })
+                    | RPropName::Str(RStr {
+                        value: ref r_sym, ..
+                    }) => return sym == r_sym,
                     RPropName::Num(n) => return sym == &*n.value.to_string(),
                     _ => return false,
                 },

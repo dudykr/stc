@@ -1,11 +1,12 @@
-use anyhow::{bail, Context, Error};
-use path_clean::PathClean;
-use serde::Deserialize;
 use std::{
     fs::File,
     io::BufReader,
     path::{Path, PathBuf},
 };
+
+use anyhow::{bail, Context, Error};
+use path_clean::PathClean;
+use serde::Deserialize;
 use swc_common::FileName;
 use swc_ecma_loader::resolve::Resolve;
 
@@ -71,7 +72,8 @@ impl NodeResolver {
         let pkg_dir = pkg_path.parent().unwrap_or(&root);
         let file = File::open(pkg_path)?;
         let reader = BufReader::new(file);
-        let pkg: PackageJson = serde_json::from_reader(reader).context("failed to deserialize package.json")?;
+        let pkg: PackageJson =
+            serde_json::from_reader(reader).context("failed to deserialize package.json")?;
 
         for main in &[&pkg.types] {
             if let Some(target) = main {

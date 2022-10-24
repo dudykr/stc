@@ -1,10 +1,11 @@
+use rnode::VisitWith;
+use stc_ts_ast_rnode::RCatchClause;
+
 use crate::{
     analyzer::{pat::PatMode, scope::ScopeKind, Analyzer, Ctx},
     validator,
     validator::ValidateWith,
 };
-use rnode::VisitWith;
-use stc_ts_ast_rnode::RCatchClause;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -13,8 +14,10 @@ impl Analyzer<'_, '_> {
             pat_mode: PatMode::Decl,
             ..self.ctx
         };
-        self.with_ctx(ctx)
-            .with_child(ScopeKind::Block, Default::default(), |child: &mut Analyzer| {
+        self.with_ctx(ctx).with_child(
+            ScopeKind::Block,
+            Default::default(),
+            |child: &mut Analyzer| {
                 match &s.param {
                     Some(pat) => {
                         pat.validate_with(child)?;
@@ -25,6 +28,7 @@ impl Analyzer<'_, '_> {
                 s.body.visit_with(child);
 
                 Ok(())
-            })
+            },
+        )
     }
 }

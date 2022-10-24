@@ -1,10 +1,11 @@
-use rnode::NodeId;
-use stc_ts_ast_rnode::{RIdent, RTsEntityName};
-use stc_visit::Visit;
 use std::{
     cmp::PartialEq,
     fmt::{self, Debug, Display, Formatter},
 };
+
+use rnode::NodeId;
+use stc_ts_ast_rnode::{RIdent, RTsEntityName};
+use stc_visit::Visit;
 use swc_atoms::JsWord;
 use swc_common::{EqIgnoreSpan, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::Ident;

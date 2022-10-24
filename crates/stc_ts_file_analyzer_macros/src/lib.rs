@@ -9,12 +9,15 @@ extern crate proc_macro;
 use pmutil::{Quote, ToTokensExt};
 use swc_macros_common::prelude::*;
 use syn::{
-    fold::Fold, Block, ExprTryBlock, FnArg, Ident, ImplItem, ImplItemMethod, ItemImpl, Lifetime, LitStr, ReturnType,
-    Token, Type, TypeReference,
+    fold::Fold, Block, ExprTryBlock, FnArg, Ident, ImplItem, ImplItemMethod, ItemImpl, Lifetime,
+    LitStr, ReturnType, Token, Type, TypeReference,
 };
 
 #[proc_macro_attribute]
-pub fn context(arg: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn context(
+    arg: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
     let context_arg: LitStr = syn::parse(arg).unwrap();
     let mut item: ImplItemMethod = syn::parse(item).expect("failed to parse input as an item");
 
@@ -71,7 +74,10 @@ pub fn context(arg: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
 /// }
 /// ```
 #[proc_macro_attribute]
-pub fn extra_validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn extra_validator(
+    _: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
     fn expand_extra_validator(i: ImplItemMethod) -> ImplItemMethod {
         let should_return = match i.sig.output {
             ReturnType::Default => false,
@@ -86,34 +92,44 @@ pub fn extra_validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream
 
         let block = if should_return {
             Quote::new_call_site()
-                .quote_with(smart_quote!(Vars { try_block: &try_block }, {
+                .quote_with(smart_quote!(
+                    Vars {
+                        try_block: &try_block
+                    },
                     {
-                        let res: Result<_, Error> = try_block;
+                        {
+                            let res: Result<_, Error> = try_block;
 
-                        match res {
-                            Ok(v) => Ok(v),
-                            Err(err) => {
-                                self.storage.report(err);
-                                Err(())
+                            match res {
+                                Ok(v) => Ok(v),
+                                Err(err) => {
+                                    self.storage.report(err);
+                                    Err(())
+                                }
                             }
                         }
                     }
-                }))
+                ))
                 .parse()
         } else {
             Quote::new_call_site()
-                .quote_with(smart_quote!(Vars { try_block: &try_block }, {
+                .quote_with(smart_quote!(
+                    Vars {
+                        try_block: &try_block
+                    },
                     {
-                        let res: Result<_, Error> = try_block;
+                        {
+                            let res: Result<_, Error> = try_block;
 
-                        match res {
-                            Err(err) => {
-                                self.storage.report(err);
+                            match res {
+                                Err(err) => {
+                                    self.storage.report(err);
+                                }
+                                _ => {}
                             }
-                            _ => {}
                         }
                     }
-                }))
+                ))
                 .parse()
         };
 
@@ -127,7 +143,10 @@ pub fn extra_validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream
 
 /// This trait implements Validate with proper types.
 #[proc_macro_attribute]
-pub fn validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn validator(
+    _: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
     let impl_item: ItemImpl = syn::parse(item).expect("failed to parse input as an ItemImpl");
     let visitor_type = &*impl_item.self_ty;
 
@@ -161,7 +180,9 @@ pub fn validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
                             Type::Reference(ty) if ty.mutability.is_none() => {
                                 node_type = Some(ty.elem.clone());
                             }
-                            _ => unimplemented!("first argument should be self and second argument must be `&T`"),
+                            _ => unimplemented!(
+                                "first argument should be self and second argument must be `&T`"
+                            ),
                         }
                         node_pat = Some(pat_ty.pat.clone());
                         continue;
@@ -202,16 +223,18 @@ pub fn validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
             },
             {
                 impl<'context> crate::validator::Validate<'context, NodeType> for VisitorType {
-                    type Output = ReturnType;
                     type Context = (ContextType);
+                    type Output = ReturnType;
 
                     fn validate(&mut self, node_pat: &NodeType, ctxt: Self::Context) -> ReturnType {
                         let (conext_pats) = ctxt;
 
                         let ret = {
-                            let _tracing_guard =
-                                tracing::span!(tracing::Level::ERROR, concat!("validate<", stringify!(NodeType), ">"))
-                                    .entered();
+                            let _tracing_guard = tracing::span!(
+                                tracing::Level::ERROR,
+                                concat!("validate<", stringify!(NodeType), ">")
+                            )
+                            .entered();
                             (|| body)()
                         };
 

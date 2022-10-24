@@ -1,13 +1,13 @@
 extern crate swc_node_base;
 
-use crate::check::IterateCommand;
+use std::{path::PathBuf, sync::Arc, time::Instant};
+
 use anyhow::Error;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_type_checker::Checker;
-use std::{path::PathBuf, sync::Arc, time::Instant};
 use structopt::StructOpt;
 use swc_common::{
     errors::{ColorConfig, EmitterWriter, Handler},
@@ -16,6 +16,8 @@ use swc_common::{
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::TsConfig;
 use tracing_subscriber::EnvFilter;
+
+use crate::check::IterateCommand;
 
 mod check;
 
@@ -72,7 +74,11 @@ fn main() -> Result<(), Error> {
                 let start = Instant::now();
 
                 let mut libs = match cmd.libs {
-                    Some(libs) => libs.iter().map(|s| Lib::load(&s)).flatten().collect::<Vec<_>>(),
+                    Some(libs) => libs
+                        .iter()
+                        .map(|s| Lib::load(&s))
+                        .flatten()
+                        .collect::<Vec<_>>(),
                     None => Lib::load("es5"),
                 };
                 libs.sort();
@@ -86,7 +92,9 @@ fn main() -> Result<(), Error> {
             };
 
             let env = Env::simple(
-                Rule { ..Default::default() },
+                Rule {
+                    ..Default::default()
+                },
                 EsVersion::latest(),
                 ModuleConfig::None,
                 &libs,
@@ -101,7 +109,9 @@ fn main() -> Result<(), Error> {
                     cm.clone(),
                     handler.clone(),
                     env.clone(),
-                    TsConfig { ..Default::default() },
+                    TsConfig {
+                        ..Default::default()
+                    },
                     None,
                     Arc::new(NodeResolver),
                 );
@@ -121,7 +131,9 @@ fn main() -> Result<(), Error> {
                     cm.clone(),
                     handler.clone(),
                     env.clone(),
-                    TsConfig { ..Default::default() },
+                    TsConfig {
+                        ..Default::default()
+                    },
                     None,
                     Arc::new(NodeResolver),
                 );

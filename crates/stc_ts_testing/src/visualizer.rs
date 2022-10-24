@@ -1,7 +1,8 @@
+use std::sync::Arc;
+
 use rnode::{RNode, Visit, VisitWith};
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_types::Type;
-use std::sync::Arc;
 use swc_common::{errors::Handler, SourceMap, Spanned};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter, Node};
 
@@ -32,6 +33,9 @@ impl Visit<Type> for TypeVisualizer<'_> {
 
         let ty_str = String::from_utf8_lossy(&buf);
 
-        self.handler.struct_span_warn(span, "Type").note(&ty_str).emit();
+        self.handler
+            .struct_span_warn(span, "Type")
+            .note(&ty_str)
+            .emit();
     }
 }

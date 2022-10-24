@@ -1,19 +1,21 @@
-use crate::{analyzer::Analyzer, type_facts::TypeFacts};
+use std::borrow::Cow;
+
 use rnode::{Fold, FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RRestPat, RTsLit};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType, Intersection,
-    IntersectionMetadata, KeywordType, KeywordTypeMetadata, LitType, Mapped, Type, TypeElement, TypeLit, Union,
-    UnionMetadata,
+    ClassDef, ClassMember, Conditional, Constructor, FnParam, Function, IndexedAccessType,
+    Intersection, IntersectionMetadata, KeywordType, KeywordTypeMetadata, LitType, Mapped, Type,
+    TypeElement, TypeLit, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
 use stc_utils::stack;
-use std::borrow::Cow;
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, instrument};
+
+use crate::{analyzer::Analyzer, type_facts::TypeFacts};
 
 impl Analyzer<'_, '_> {
     /// TODO(kdy1): Note: This method preserves [Type::Ref] in some cases.
@@ -75,7 +77,10 @@ impl Analyzer<'_, '_> {
         }
 
         let before = dump_type_as_string(&self.cm, &ty);
-        ty = ty.fold_with(&mut TypeFactsHandler { analyzer: self, facts });
+        ty = ty.fold_with(&mut TypeFactsHandler {
+            analyzer: self,
+            facts,
+        });
 
         // Add `(...args: any) => any` for typeof foo === 'function'
         if facts.contains(TypeFacts::TypeofEQFunction) {
@@ -119,7 +124,9 @@ impl Analyzer<'_, '_> {
                     *ty = Type::Union(Union {
                         span: ty.span(),
                         types: vec![ty.take(), fn_type],
-                        metadata: UnionMetadata { common: ty.metadata() },
+                        metadata: UnionMetadata {
+                            common: ty.metadata(),
+                        },
                     })
                 }
             }
@@ -127,7 +134,10 @@ impl Analyzer<'_, '_> {
 
         let after = dump_type_as_string(&self.cm, &ty);
 
-        debug!("[types/fact] {} => {}\nTypeFacts: {:?}", before, after, facts);
+        debug!(
+            "[types/fact] {} => {}\nTypeFacts: {:?}",
+            before, after, facts
+        );
 
         ty.fixed()
     }
@@ -142,9 +152,9 @@ struct TypeFactsHandler<'a, 'b, 'c> {
 impl TypeFactsHandler<'_, '_, '_> {
     #[instrument(skip(self, ty))]
     fn can_be_primitive(&mut self, ty: &Type) -> bool {
-        let ty = if let Ok(ty) = self
-            .analyzer
-            .expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default())
+        let ty = if let Ok(ty) =
+            self.analyzer
+                .expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default())
         {
             ty
         } else {
@@ -219,7 +229,9 @@ impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
             };
         }
 
-        if ty.kind == TsKeywordTypeKind::TsUndefinedKeyword && self.facts.contains(TypeFacts::NEUndefined) {
+        if ty.kind == TsKeywordTypeKind::TsUndefinedKeyword
+            && self.facts.contains(TypeFacts::NEUndefined)
+        {
             return KeywordType {
                 kind: TsKeywordTypeKind::TsNeverKeyword,
                 ..ty
@@ -227,11 +239,26 @@ impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
         }
 
         let keyword_types = &[
-            (TypeFacts::TypeofNEString, TsKeywordTypeKind::TsStringKeyword),
-            (TypeFacts::TypeofNENumber, TsKeywordTypeKind::TsNumberKeyword),
-            (TypeFacts::TypeofNEBoolean, TsKeywordTypeKind::TsBooleanKeyword),
-            (TypeFacts::TypeofNEBigInt, TsKeywordTypeKind::TsBigIntKeyword),
-            (TypeFacts::TypeofNESymbol, TsKeywordTypeKind::TsSymbolKeyword),
+            (
+                TypeFacts::TypeofNEString,
+                TsKeywordTypeKind::TsStringKeyword,
+            ),
+            (
+                TypeFacts::TypeofNENumber,
+                TsKeywordTypeKind::TsNumberKeyword,
+            ),
+            (
+                TypeFacts::TypeofNEBoolean,
+                TsKeywordTypeKind::TsBooleanKeyword,
+            ),
+            (
+                TypeFacts::TypeofNEBigInt,
+                TsKeywordTypeKind::TsBigIntKeyword,
+            ),
+            (
+                TypeFacts::TypeofNESymbol,
+                TsKeywordTypeKind::TsSymbolKeyword,
+            ),
         ];
 
         if ty.kind != TsKeywordTypeKind::TsAnyKeyword {
@@ -248,14 +275,31 @@ impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
 
         {
             let keyword_types = &[
-                (TypeFacts::TypeofEQString, TsKeywordTypeKind::TsStringKeyword),
-                (TypeFacts::TypeofEQNumber, TsKeywordTypeKind::TsNumberKeyword),
-                (TypeFacts::TypeofEQBoolean, TsKeywordTypeKind::TsBooleanKeyword),
-                (TypeFacts::TypeofEQBigInt, TsKeywordTypeKind::TsBigIntKeyword),
-                (TypeFacts::TypeofEQSymbol, TsKeywordTypeKind::TsSymbolKeyword),
+                (
+                    TypeFacts::TypeofEQString,
+                    TsKeywordTypeKind::TsStringKeyword,
+                ),
+                (
+                    TypeFacts::TypeofEQNumber,
+                    TsKeywordTypeKind::TsNumberKeyword,
+                ),
+                (
+                    TypeFacts::TypeofEQBoolean,
+                    TsKeywordTypeKind::TsBooleanKeyword,
+                ),
+                (
+                    TypeFacts::TypeofEQBigInt,
+                    TsKeywordTypeKind::TsBigIntKeyword,
+                ),
+                (
+                    TypeFacts::TypeofEQSymbol,
+                    TsKeywordTypeKind::TsSymbolKeyword,
+                ),
             ];
 
-            let has_any = keyword_types.iter().any(|&(fact, _)| self.facts.contains(fact));
+            let has_any = keyword_types
+                .iter()
+                .any(|&(fact, _)| self.facts.contains(fact));
 
             if has_any {
                 let allowed_keywords = keyword_types
@@ -337,7 +381,8 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
             {
                 u.types.retain(|ty| match ty.normalize() {
                     Type::Lit(LitType {
-                        lit: RTsLit::Str(..), ..
+                        lit: RTsLit::Str(..),
+                        ..
                     })
                     | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsStringKeyword,
@@ -345,7 +390,8 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
                     }) if !self.facts.contains(TypeFacts::TypeofEQString) => false,
 
                     Type::Lit(LitType {
-                        lit: RTsLit::Bool(..), ..
+                        lit: RTsLit::Bool(..),
+                        ..
                     })
                     | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsBooleanKeyword,
@@ -429,9 +475,9 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
 
         if !span.is_dummy() {
             if ty.normalize().is_ref_type() {
-                if let Ok(ty) = self
-                    .analyzer
-                    .expand_top_ref(ty.span(), Cow::Borrowed(&ty), Default::default())
+                if let Ok(ty) =
+                    self.analyzer
+                        .expand_top_ref(ty.span(), Cow::Borrowed(&ty), Default::default())
                 {
                     if ty.normalize().is_ref_type() {
                         return ty.into_owned();
@@ -486,7 +532,8 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
 
             Type::Keyword(..) => {}
 
-            Type::IndexedAccessType(IndexedAccessType { span, .. }) | Type::TypeLit(TypeLit { span, .. }) => {
+            Type::IndexedAccessType(IndexedAccessType { span, .. })
+            | Type::TypeLit(TypeLit { span, .. }) => {
                 // Treat as any and apply type facts.
                 let simple = facts_to_union(span, self.facts);
                 if !simple.is_never() {

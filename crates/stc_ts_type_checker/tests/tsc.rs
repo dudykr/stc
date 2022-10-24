@@ -8,7 +8,17 @@ extern crate test;
 #[path = "common/mod.rs"]
 mod common;
 
-use self::common::load_fixtures;
+use std::{
+    collections::HashSet,
+    env, fs,
+    fs::{read_to_string, File},
+    mem,
+    panic::catch_unwind,
+    path::{Path, PathBuf},
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
 use anyhow::{Context, Error};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
@@ -20,16 +30,6 @@ use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_type_checker::Checker;
 use stc_ts_utils::StcComments;
-use std::{
-    collections::HashSet,
-    env, fs,
-    fs::{read_to_string, File},
-    mem,
-    panic::catch_unwind,
-    path::{Path, PathBuf},
-    sync::Arc,
-    time::{Duration, Instant},
-};
 use swc_common::{
     errors::{DiagnosticBuilder, DiagnosticId},
     input::SourceFileInput,
@@ -40,6 +40,8 @@ use swc_ecma_parser::{Parser, Syntax, TsConfig};
 use swc_ecma_visit::Fold;
 use test::test_main;
 use testing::{StdErr, Tester};
+
+use self::common::load_fixtures;
 
 struct RecordOnPanic {
     stats: Stats,
@@ -70,7 +72,9 @@ fn is_all_test_enabled() -> bool {
 }
 
 fn print_matched_errors() -> bool {
-    !env::var("DONT_PRINT_MATCHED").map(|s| s == "1").unwrap_or(false)
+    !env::var("DONT_PRINT_MATCHED")
+        .map(|s| s == "1")
+        .unwrap_or(false)
 }
 
 fn record_time(line_count: usize, time_of_check: Duration, full_time: Duration) {
@@ -138,7 +142,9 @@ fn record_stat(stats: Stats) -> Stats {
 
     let content = format!("{:#?}", stats);
 
-    if env::var("WIP_STATS").unwrap_or_default() == "1" && env::var("STC_IGNORE_WIP").unwrap_or_default() != "1" {
+    if env::var("WIP_STATS").unwrap_or_default() == "1"
+        && env::var("STC_IGNORE_WIP").unwrap_or_default() != "1"
+    {
         fs::write("tests/wip-stats.rust-debug", &content).unwrap();
     }
 
@@ -179,7 +185,10 @@ fn is_ignored(path: &Path) -> bool {
         v
     });
 
-    if IGNORED.iter().any(|line| path.to_string_lossy().contains(line)) {
+    if IGNORED
+        .iter()
+        .any(|line| path.to_string_lossy().contains(line))
+    {
         return true;
     }
 
@@ -187,7 +196,9 @@ fn is_ignored(path: &Path) -> bool {
         return !path.to_string_lossy().contains(&test);
     }
 
-    !PASS.iter().any(|line| path.to_string_lossy().contains(line))
+    !PASS
+        .iter()
+        .any(|line| path.to_string_lossy().contains(line))
 }
 
 #[test]
@@ -230,7 +241,9 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
     if fm.src.to_lowercase().contains("@filename") || fm.src.contains("<reference path") {
         if is_all_test_enabled() {
             record_stat(Stats {
-                required_error: load_expected_errors(&path).map(|v| v.len()).unwrap_or_default(),
+                required_error: load_expected_errors(&path)
+                    .map(|v| v.len())
+                    .unwrap_or_default(),
                 ..Default::default()
             });
         }
@@ -267,7 +280,11 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
                 .context("failed to parse errors.txt.json")?;
 
         for err in &mut errors {
-            let orig_code = err.code.replace("TS", "").parse().expect("failed to parse error code");
+            let orig_code = err
+                .code
+                .replace("TS", "")
+                .parse()
+                .expect("failed to parse error code");
             let code = stc_ts_errors::Error::normalize_error_code(orig_code);
 
             if orig_code != code {
@@ -307,7 +324,10 @@ fn parse_targets(s: &str) -> Vec<EsVersion> {
     if !s.contains(",") {
         panic!("failed to parse `{}` as targets", s)
     }
-    s.split(",").map(|s| s.trim()).flat_map(parse_targets).collect()
+    s.split(",")
+        .map(|s| s.trim())
+        .flat_map(parse_targets)
+        .collect()
 }
 
 fn parse_test(file_name: &Path) -> Vec<TestSpec> {
@@ -398,7 +418,8 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         continue;
                     }
                     had_comment = true;
-                    err_shift_n = cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line - cmt_start_line;
+                    err_shift_n =
+                        cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line - cmt_start_line;
                     let s = &s[1..]; // '@'
 
                     if s.starts_with("target:") || s.starts_with("Target:") {
@@ -458,7 +479,10 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         // TODO
                     } else if s.starts_with("suppressImplicitAnyIndexErrors:") {
                         // TODO
-                        let v = s["suppressImplicitAnyIndexErrors:".len()..].trim().parse().unwrap();
+                        let v = s["suppressImplicitAnyIndexErrors:".len()..]
+                            .trim()
+                            .parse()
+                            .unwrap();
                         rule.suppress_implicit_any_index_errors = v;
                     } else if s.starts_with("module:") {
                         let v = s["module:".len()..].trim().parse().unwrap();
@@ -665,10 +689,9 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
                 let is_zero_line = expected_errors[idx].line == 0;
                 expected_errors.remove(idx);
-                if let Some(idx) = extra_errors
-                    .iter()
-                    .position(|(r_line, r_code)| (line == *r_line || is_zero_line) && error_code == *r_code)
-                {
+                if let Some(idx) = extra_errors.iter().position(|(r_line, r_code)| {
+                    (line == *r_line || is_zero_line) && error_code == *r_code
+                }) {
                     extra_errors.remove(idx);
                 }
             }
@@ -726,8 +749,9 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             if print_matched_errors() {
                 panic!(
                     "\n============================================================\n{:?}
-    ============================================================\n{} unmatched errors out of {} errors. Got {} extra \
-                     errors.\nWanted: {:?}\nUnwanted: {:?}\n\nAll required errors: {:?}\nAll actual errors: {:?}",
+    ============================================================\n{} unmatched errors out of {} \
+                     errors. Got {} extra errors.\nWanted: {:?}\nUnwanted: {:?}\n\nAll required \
+                     errors: {:?}\nAll actual errors: {:?}",
                     err,
                     expected_errors.len(),
                     full_ref_err_cnt,
@@ -740,8 +764,8 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             } else {
                 panic!(
                     "\n============================================================\n{:?}
-    ============================================================\n{} unmatched errors out of {} errors. Got {} extra \
-                     errors.\nWanted: {:?}\nUnwanted: {:?}",
+    ============================================================\n{} unmatched errors out of {} \
+                     errors. Got {} extra errors.\nWanted: {:?}\nUnwanted: {:?}",
                     err,
                     expected_errors.len(),
                     full_ref_err_cnt,

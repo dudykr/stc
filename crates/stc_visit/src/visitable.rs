@@ -1,4 +1,5 @@
 use std::{cell::RefCell, rc::Rc, sync::Arc};
+
 use swc_common::Span;
 
 /// Marker to prevent mistakes.

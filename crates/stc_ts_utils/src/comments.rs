@@ -1,6 +1,7 @@
+use std::sync::Arc;
+
 use dashmap::DashMap;
 use fxhash::FxBuildHasher;
-use std::sync::Arc;
 use swc_common::{
     comments::{Comment, CommentKind, Comments},
     BytePos, DUMMY_SP,

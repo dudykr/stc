@@ -1,15 +1,17 @@
 //! Dependency analyzer for statements.
 
-use crate::types::Sortable;
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RBindingIdent, RDecl, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RModuleDecl, RModuleItem, RProp, RStmt,
-    RTsEntityName, RTsExprWithTypeArgs, RTsIndexSignature, RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl,
-    RVarDeclOrExpr, RVarDeclOrPat, RVarDeclarator,
+    RBindingIdent, RDecl, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RModuleDecl,
+    RModuleItem, RProp, RStmt, RTsEntityName, RTsExprWithTypeArgs, RTsIndexSignature,
+    RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl, RVarDeclOrExpr, RVarDeclOrPat,
+    RVarDeclarator,
 };
 use stc_ts_types::{Id, IdCtx};
 use stc_ts_utils::{find_ids_in_pat, AsModuleDecl};
 use swc_common::collections::{AHashMap, AHashSet};
+
+use crate::types::Sortable;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TypedId {

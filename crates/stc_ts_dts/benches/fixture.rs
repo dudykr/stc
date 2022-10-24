@@ -4,6 +4,13 @@
 
 extern crate test;
 
+use std::{
+    fs::read_to_string,
+    hint::black_box,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
+
 use rnode::{NodeIdGenerator, RNode};
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
@@ -17,12 +24,6 @@ use stc_ts_file_analyzer::{
 use stc_ts_storage::Single;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
-use std::{
-    fs::read_to_string,
-    hint::black_box,
-    path::{Path, PathBuf},
-    sync::Arc,
-};
 use swc_common::{input::SourceFileInput, FileName, GLOBALS};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};

@@ -1,3 +1,21 @@
+use std::borrow::Cow;
+
+use itertools::Itertools;
+use rnode::{FoldWith, NodeId};
+use stc_ts_ast_rnode::{
+    RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit,
+};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
+use stc_ts_type_ops::{widen::Widen, Fix};
+use stc_ts_types::{
+    Array, Key, KeywordType, LitType, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union,
+};
+use stc_ts_utils::PatExt;
+use stc_utils::{cache::Freeze, TryOpt};
+use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
+use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
+use tracing::debug;
+
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -9,18 +27,6 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use itertools::Itertools;
-use rnode::{FoldWith, NodeId};
-use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
-use stc_ts_type_ops::{widen::Widen, Fix};
-use stc_ts_types::{Array, Key, KeywordType, LitType, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
-use stc_ts_utils::PatExt;
-use stc_utils::{cache::Freeze, TryOpt};
-use std::borrow::Cow;
-use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
-use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
-use tracing::debug;
 
 /// The kind of binding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -159,7 +165,10 @@ impl Analyzer<'_, '_> {
 
                 let mut right = p
                     .right
-                    .validate_with_args(self, (TypeOfMode::RValue, None, type_ann.as_ref().or(ty.as_ref())))
+                    .validate_with_args(
+                        self,
+                        (TypeOfMode::RValue, None, type_ann.as_ref().or(ty.as_ref())),
+                    )
                     .report(&mut self.storage)
                     .unwrap_or_else(|| Type::any(span, Default::default()));
 
@@ -169,7 +178,9 @@ impl Analyzer<'_, '_> {
                     // function body), the parameter type is the widened form (section
                     // 3.11) of the type of the initializer expression.
 
-                    right = right.fold_with(&mut Widen { tuple_to_array: true });
+                    right = right.fold_with(&mut Widen {
+                        tuple_to_array: true,
+                    });
                 }
 
                 right.make_clone_cheap();
@@ -224,7 +235,10 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         )
-                        .context("tried to convert a type to an iterator to assign with an array pattern.")
+                        .context(
+                            "tried to convert a type to an iterator to assign with an array \
+                             pattern.",
+                        )
                         .unwrap_or_else(|err| {
                             self.storage.report(err);
                             Cow::Owned(Type::any(span, Default::default()))
@@ -241,7 +255,8 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .context(
-                            "tried to convert a type to an iterator to assign with an array pattern (default value)",
+                            "tried to convert a type to an iterator to assign with an array \
+                             pattern (default value)",
                         )
                         .unwrap_or_else(|err| {
                             self.storage.report(err);
@@ -258,8 +273,8 @@ impl Analyzer<'_, '_> {
                                         .get_element_from_iterator(span, Cow::Borrowed(&ty), idx)
                                         .with_context(|| {
                                             format!(
-                                                "tried to get the type of {}th element from iterator to declare vars \
-                                                 with an array pattern",
+                                                "tried to get the type of {}th element from \
+                                                 iterator to declare vars with an array pattern",
                                                 idx
                                             )
                                         })?
@@ -273,8 +288,9 @@ impl Analyzer<'_, '_> {
                                     self.get_element_from_iterator(span, Cow::Borrowed(&ty), idx)
                                         .with_context(|| {
                                             format!(
-                                                "tried to get the type of {}th element from iterator to declare vars \
-                                                 with an array pattern (default value)",
+                                                "tried to get the type of {}th element from \
+                                                 iterator to declare vars with an array pattern \
+                                                 (default value)",
                                                 idx
                                             )
                                         })
@@ -298,10 +314,14 @@ impl Analyzer<'_, '_> {
                                         // Rest element is special.
                                         let type_for_rest_arg = match ty {
                                             Some(ty) => self
-                                                .get_lefting_elements(Some(span), Cow::Owned(ty), idx)
+                                                .get_lefting_elements(
+                                                    Some(span),
+                                                    Cow::Owned(ty),
+                                                    idx,
+                                                )
                                                 .context(
-                                                    "tried to get lefting elements of an iterator to declare \
-                                                     variables using a rest pattern",
+                                                    "tried to get lefting elements of an iterator \
+                                                     to declare variables using a rest pattern",
                                                 )
                                                 .map(Cow::into_owned)
                                                 .report(&mut self.storage),
@@ -311,10 +331,14 @@ impl Analyzer<'_, '_> {
 
                                         let default = match default {
                                             Some(ty) => self
-                                                .get_lefting_elements(Some(span), Cow::Owned(ty), idx)
+                                                .get_lefting_elements(
+                                                    Some(span),
+                                                    Cow::Owned(ty),
+                                                    idx,
+                                                )
                                                 .context(
-                                                    "tried to get lefting elements of an iterator to declare \
-                                                     variables using a rest pattern",
+                                                    "tried to get lefting elements of an iterator \
+                                                     to declare variables using a rest pattern",
                                                 )
                                                 .map(Cow::into_owned)
                                                 .report(&mut self.storage),
@@ -322,11 +346,18 @@ impl Analyzer<'_, '_> {
                                         }
                                         .freezed();
 
-                                        self.add_vars(&elem.arg, type_for_rest_arg, None, default, opts)
-                                            .context(
-                                                "tried to declare lefting elements to the arugment of a rest pattern",
-                                            )
-                                            .report(&mut self.storage);
+                                        self.add_vars(
+                                            &elem.arg,
+                                            type_for_rest_arg,
+                                            None,
+                                            default,
+                                            opts,
+                                        )
+                                        .context(
+                                            "tried to declare lefting elements to the arugment of \
+                                             a rest pattern",
+                                        )
+                                        .report(&mut self.storage);
                                         break;
                                     }
                                     _ => {}
@@ -345,7 +376,10 @@ impl Analyzer<'_, '_> {
                                             IdCtx::Var,
                                             Default::default(),
                                         )
-                                        .context("tried to access property to declare variables using an array pattern")
+                                        .context(
+                                            "tried to access property to declare variables using \
+                                             an array pattern",
+                                        )
                                         .report(&mut self.storage),
                                     None => None,
                                 }
@@ -364,7 +398,10 @@ impl Analyzer<'_, '_> {
                                             IdCtx::Var,
                                             Default::default(),
                                         )
-                                        .context("tried to access property to declare variables using an array pattern")
+                                        .context(
+                                            "tried to access property to declare variables using \
+                                             an array pattern",
+                                        )
                                         .report(&mut self.storage),
                                     None => None,
                                 }
@@ -439,8 +476,14 @@ impl Analyzer<'_, '_> {
                             match prop_ty {
                                 Ok(prop_ty) => {
                                     // TODO(kdy1): actual_ty
-                                    self.add_vars(&prop.value, prop_ty.freezed(), None, default_prop_ty, opts)
-                                        .report(&mut self.storage);
+                                    self.add_vars(
+                                        &prop.value,
+                                        prop_ty.freezed(),
+                                        None,
+                                        default_prop_ty,
+                                        opts,
+                                    )
+                                    .report(&mut self.storage);
                                 }
 
                                 Err(err) => {
@@ -450,7 +493,9 @@ impl Analyzer<'_, '_> {
                                             if !should_use_no_such_property =>
                                         {
                                             if default_prop_ty.is_none() {
-                                                self.storage.report(Error::NoInitAndNoDefault { span: *span })
+                                                self.storage.report(Error::NoInitAndNoDefault {
+                                                    span: *span,
+                                                })
                                             }
                                         }
                                         _ => self.storage.report(err),
@@ -534,15 +579,24 @@ impl Analyzer<'_, '_> {
                                                     (
                                                         TypeOfMode::RValue,
                                                         None,
-                                                        prop_ty.as_ref().or(default_prop_ty.as_ref()),
+                                                        prop_ty
+                                                            .as_ref()
+                                                            .or(default_prop_ty.as_ref()),
                                                     ),
                                                 )
-                                                .context("tried to validate default value of an assignment pattern")
+                                                .context(
+                                                    "tried to validate default value of an \
+                                                     assignment pattern",
+                                                )
                                                 .report(&mut self.storage)
                                                 .freezed();
 
-                                            let default =
-                                                opt_union(span, default_prop_ty, default_value_type).freezed();
+                                            let default = opt_union(
+                                                span,
+                                                default_prop_ty,
+                                                default_value_type,
+                                            )
+                                            .freezed();
 
                                             self.add_vars(
                                                 &RPat::Ident(RBindingIdent {
@@ -595,7 +649,9 @@ impl Analyzer<'_, '_> {
                                             if !should_use_no_such_property =>
                                         {
                                             if default_prop_ty.is_none() {
-                                                self.storage.report(Error::NoInitAndNoDefault { span: *span })
+                                                self.storage.report(Error::NoInitAndNoDefault {
+                                                    span: *span,
+                                                })
                                             }
                                         }
                                         _ => self.storage.report(err),
@@ -620,8 +676,10 @@ impl Analyzer<'_, '_> {
                             let rest_ty = ty
                                 .as_ref()
                                 .try_map(|ty| {
-                                    self.exclude_props(pat.span(), &ty, &used_keys)
-                                        .context("tried to exclude keys for assignment with a object rest pattern")
+                                    self.exclude_props(pat.span(), &ty, &used_keys).context(
+                                        "tried to exclude keys for assignment with a object rest \
+                                         pattern",
+                                    )
                                 })?
                                 .freezed();
 
@@ -681,7 +739,12 @@ impl Analyzer<'_, '_> {
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> ValidationResult<Type> {
+    pub(crate) fn exclude_props(
+        &mut self,
+        span: Span,
+        ty: &Type,
+        keys: &[Key],
+    ) -> ValidationResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let ty = (|| -> ValidationResult<_> {
@@ -735,7 +798,10 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                Type::Intersection(..) | Type::Class(..) | Type::Interface(..) | Type::ClassDef(..) => {
+                Type::Intersection(..)
+                | Type::Class(..)
+                | Type::Interface(..)
+                | Type::ClassDef(..) => {
                     let ty = self
                         .convert_type_to_type_lit(ty.span(), Cow::Borrowed(&ty))?
                         .map(Cow::into_owned)
@@ -830,11 +896,18 @@ impl Analyzer<'_, '_> {
             .and_then(|span| if span.is_dummy() { None } else { Some(span) })
             .unwrap_or_else(|| pat.span());
         if !self.is_builtin {
-            debug_assert!(!span.is_dummy(), "Cannot declare a variable with a dummy span")
+            debug_assert!(
+                !span.is_dummy(),
+                "Cannot declare a variable with a dummy span"
+            )
         }
 
         match &*pat {
-            RPat::Ident(..) | RPat::Assign(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => {
+            RPat::Ident(..)
+            | RPat::Assign(..)
+            | RPat::Array(..)
+            | RPat::Object(..)
+            | RPat::Rest(..) => {
                 return self.add_vars(
                     pat,
                     ty,

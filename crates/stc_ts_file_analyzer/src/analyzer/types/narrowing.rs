@@ -1,13 +1,15 @@
-use crate::{
-    analyzer::{assign::AssignOpts, Analyzer},
-    ValidationResult,
-};
+use std::borrow::Cow;
+
 use stc_ts_errors::DebugExt;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{KeywordTypeMetadata, Type, Union, UnionMetadata};
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
-use std::borrow::Cow;
 use swc_common::{Span, Spanned};
+
+use crate::{
+    analyzer::{assign::AssignOpts, Analyzer},
+    ValidationResult,
+};
 
 impl Analyzer<'_, '_> {
     pub(crate) fn narrowed_type_of_assignment(
@@ -33,7 +35,11 @@ impl Analyzer<'_, '_> {
             Type::Union(actual) => {
                 let mut new_types = vec![];
                 for actual in &actual.types {
-                    let ty = self.narrowed_type_of_assignment(span, declared.clone().into_owned(), &actual)?;
+                    let ty = self.narrowed_type_of_assignment(
+                        span,
+                        declared.clone().into_owned(),
+                        &actual,
+                    )?;
                     new_types.push(ty);
                 }
 

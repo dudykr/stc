@@ -1,13 +1,15 @@
-use crate::Checker;
-use rayon::prelude::*;
-use stc_ts_module_loader::resolvers::node::NodeResolver;
 use std::{
     fs::read_dir,
     path::{Path, PathBuf},
     sync::Arc,
     time::Instant,
 };
+
+use rayon::prelude::*;
+use stc_ts_module_loader::resolvers::node::NodeResolver;
 use swc_common::FileName;
+
+use crate::Checker;
 
 impl Checker {
     fn try_loading_typing_of_one_package(&self, dir: &Path) {
@@ -28,7 +30,11 @@ impl Checker {
                 self.analyze_module(None, entry.clone());
 
                 let end = Instant::now();
-                log::debug!("Loading typings at `{}` took {:?}", dir.display(), end - start);
+                log::debug!(
+                    "Loading typings at `{}` took {:?}",
+                    dir.display(),
+                    end - start
+                );
             }
             Err(_) => {}
         }
@@ -66,7 +72,12 @@ impl Checker {
     ///
     /// - https://www.typescriptlang.org/tsconfig#typeRoots
     /// - https://www.typescriptlang.org/tsconfig#types
-    pub fn load_typings(&self, base: &Path, _type_roots: Option<&[PathBuf]>, types: Option<&[String]>) {
+    pub fn load_typings(
+        &self,
+        base: &Path,
+        _type_roots: Option<&[PathBuf]>,
+        types: Option<&[String]>,
+    ) {
         let mut dirs = vec![];
 
         let mut cur = Some(base);

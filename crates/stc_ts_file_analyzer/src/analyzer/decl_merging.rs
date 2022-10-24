@@ -1,14 +1,21 @@
-use crate::{analyzer::Analyzer, ValidationResult};
+use std::borrow::Cow;
+
 use fxhash::FxHashMap;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
-use stc_ts_types::{ClassDef, ClassMember, ClassProperty, Id, Interface, Method, Type, TypeElement, TypeParam};
+use stc_ts_types::{
+    ClassDef, ClassMember, ClassProperty, Id, Interface, Method, Type, TypeElement, TypeParam,
+};
 use stc_utils::cache::Freeze;
-use std::borrow::Cow;
 use swc_common::{Span, Spanned};
 use tracing::info;
 
+use crate::{analyzer::Analyzer, ValidationResult};
+
 impl Analyzer<'_, '_> {
-    fn type_element_to_class_member(&mut self, el: &TypeElement) -> ValidationResult<Option<ClassMember>> {
+    fn type_element_to_class_member(
+        &mut self,
+        el: &TypeElement,
+    ) -> ValidationResult<Option<ClassMember>> {
         match el {
             TypeElement::Call(_) => Ok(None),
             TypeElement::Constructor(c) => Ok(Some(ClassMember::Constructor(c.clone()))),
@@ -78,9 +85,10 @@ impl Analyzer<'_, '_> {
 
                 let mut new_members = a.body.clone();
 
-                let b = self
-                    .convert_type_to_type_lit(span, Cow::Owned(b))
-                    .context("tried to convert an interface to a type literal to merge with a class definition")?;
+                let b = self.convert_type_to_type_lit(span, Cow::Owned(b)).context(
+                    "tried to convert an interface to a type literal to merge with a class \
+                     definition",
+                )?;
                 if let Some(b) = b {
                     for el in &b.members {
                         new_members.extend(self.type_element_to_class_member(el)?);
@@ -112,15 +120,17 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-                let b = self.expand_type_params(&type_params, b, Default::default())?.freezed();
+                let b = self
+                    .expand_type_params(&type_params, b, Default::default())?
+                    .freezed();
 
                 let mut new_members = a.body.clone();
 
                 // Convert to a type literal first.
-                if let Some(b) = self
-                    .convert_type_to_type_lit(span, Cow::Owned(b))
-                    .context("tried to convert an interface to a type literal to merge with another interface")?
-                {
+                if let Some(b) = self.convert_type_to_type_lit(span, Cow::Owned(b)).context(
+                    "tried to convert an interface to a type literal to merge with another \
+                     interface",
+                )? {
                     new_members.extend(b.into_owned().members);
 
                     return Ok(Some(Type::Interface(Interface {
@@ -137,7 +147,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// Handle declaration merging.
-    fn merge_declaration_types(&mut self, span: Span, orig: Type, new: Type) -> ValidationResult<Type> {
+    fn merge_declaration_types(
+        &mut self,
+        span: Span,
+        orig: Type,
+        new: Type,
+    ) -> ValidationResult<Type> {
         debug_assert!(orig.is_clone_cheap());
         debug_assert!(new.is_clone_cheap());
 
@@ -151,7 +166,11 @@ impl Analyzer<'_, '_> {
         Ok(new)
     }
 
-    pub(crate) fn merge_decl_with_name(&mut self, name: Id, new: Type) -> ValidationResult<(Type, bool)> {
+    pub(crate) fn merge_decl_with_name(
+        &mut self,
+        name: Id,
+        new: Type,
+    ) -> ValidationResult<(Type, bool)> {
         let orig = self.find_type(self.ctx.module_id, &name)?;
         let mut orig = match orig {
             Some(v) => v,

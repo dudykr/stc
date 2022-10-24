@@ -1,4 +1,5 @@
 use std::{cell::RefCell, mem::replace};
+
 use swc_common::Span;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

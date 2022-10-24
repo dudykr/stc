@@ -1,3 +1,12 @@
+use std::borrow::Cow;
+
+use stc_ts_ast_rnode::{RTsAsExpr, RTsLit, RTsTypeAssertion};
+use stc_ts_errors::{DebugExt, Error};
+use stc_ts_types::{Interface, KeywordType, LitType, TypeElement, TypeParamInstantiation};
+use stc_utils::cache::Freeze;
+use swc_common::{Span, Spanned, TypeEq};
+use swc_ecma_ast::TsKeywordTypeKind;
+
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -12,13 +21,6 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use stc_ts_ast_rnode::{RTsAsExpr, RTsLit, RTsTypeAssertion};
-use stc_ts_errors::{DebugExt, Error};
-use stc_ts_types::{Interface, KeywordType, LitType, TypeElement, TypeParamInstantiation};
-use stc_utils::cache::Freeze;
-use std::borrow::Cow;
-use swc_common::{Span, Spanned, TypeEq};
-use swc_ecma_ast::TsKeywordTypeKind;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct CastableOpts {
@@ -42,7 +44,9 @@ impl Analyzer<'_, '_> {
         // We don't apply type annotation because it can corrupt type checking.
         let mut casted_ty = e.type_ann.validate_with(self)?;
         casted_ty.make_clone_cheap();
-        let mut orig_ty = e.expr.validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
+        let mut orig_ty = e
+            .expr
+            .validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
         orig_ty.make_clone_cheap();
 
         self.validate_type_cast(e.span, orig_ty, casted_ty)
@@ -64,7 +68,9 @@ impl Analyzer<'_, '_> {
 
         // We don't apply type annotation because it can corrupt type checking.
         let casted_ty = e.type_ann.validate_with(self)?;
-        let orig_ty = e.expr.validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
+        let orig_ty = e
+            .expr
+            .validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
 
         self.validate_type_cast(e.span, orig_ty, casted_ty)
     }
@@ -84,7 +90,12 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// results in error.
-    fn validate_type_cast(&mut self, span: Span, orig_ty: Type, casted_ty: Type) -> ValidationResult {
+    fn validate_type_cast(
+        &mut self,
+        span: Span,
+        orig_ty: Type,
+        casted_ty: Type,
+    ) -> ValidationResult {
         let mut orig_ty = self.expand(
             span,
             orig_ty,
@@ -109,7 +120,12 @@ impl Analyzer<'_, '_> {
         Ok(casted_ty)
     }
 
-    fn validate_type_cast_inner(&mut self, span: Span, orig: &Type, casted: &Type) -> ValidationResult<()> {
+    fn validate_type_cast_inner(
+        &mut self,
+        span: Span,
+        orig: &Type,
+        casted: &Type,
+    ) -> ValidationResult<()> {
         // I don't know why this is valid, but `stringLiteralsWithTypeAssertions01.ts`
         // has some tests for this.
         if is_str_or_union(&orig) && casted.is_str() {
@@ -151,7 +167,11 @@ impl Analyzer<'_, '_> {
                             // }
                             let right_element = &rt.elems[i];
 
-                            let res = self.validate_type_cast_inner(span, &right_element.ty, &left_element.ty);
+                            let res = self.validate_type_cast_inner(
+                                span,
+                                &right_element.ty,
+                                &left_element.ty,
+                            );
 
                             if res.is_err() {
                                 all_castable = false;
@@ -230,7 +250,13 @@ impl Analyzer<'_, '_> {
             .convert_err(|err| Error::NonOverlappingTypeCast { span })
     }
 
-    pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type, opts: CastableOpts) -> ValidationResult<bool> {
+    pub(crate) fn has_overlap(
+        &mut self,
+        span: Span,
+        l: &Type,
+        r: &Type,
+        opts: CastableOpts,
+    ) -> ValidationResult<bool> {
         let l = l.normalize();
         let r = r.normalize();
 
@@ -240,6 +266,7 @@ impl Analyzer<'_, '_> {
 
         Ok(self.castable(span, l, r, opts)? || self.castable(span, r, l, opts)?)
     }
+
     /// # Parameters
     ///
     /// - `l`: from
@@ -280,7 +307,8 @@ impl Analyzer<'_, '_> {
             ) => return Ok(true),
             (
                 Type::Lit(LitType {
-                    lit: RTsLit::Str(..), ..
+                    lit: RTsLit::Str(..),
+                    ..
                 }),
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
@@ -289,7 +317,8 @@ impl Analyzer<'_, '_> {
             ) => return Ok(true),
             (
                 Type::Lit(LitType {
-                    lit: RTsLit::Bool(..), ..
+                    lit: RTsLit::Bool(..),
+                    ..
                 }),
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
@@ -318,10 +347,12 @@ impl Analyzer<'_, '_> {
             )
             | (
                 Type::Lit(LitType {
-                    lit: RTsLit::Str(..), ..
+                    lit: RTsLit::Str(..),
+                    ..
                 }),
                 Type::Lit(LitType {
-                    lit: RTsLit::Str(..), ..
+                    lit: RTsLit::Str(..),
+                    ..
                 }),
             )
             | (
@@ -335,7 +366,9 @@ impl Analyzer<'_, '_> {
                 }),
             ) => return Ok(false),
 
-            (Type::Function(..), Type::Interface(Interface { name, .. })) if name == "Function" => return Ok(true),
+            (Type::Function(..), Type::Interface(Interface { name, .. })) if name == "Function" => {
+                return Ok(true)
+            }
             _ => {}
         }
 
@@ -368,8 +401,12 @@ impl Analyzer<'_, '_> {
                                 if lm.params.type_eq(&rm.params) {
                                     if let Some(lt) = &lm.type_ann {
                                         if let Some(rt) = &rm.type_ann {
-                                            if self.assign(span, &mut Default::default(), &lt, &rt).is_err()
-                                                && self.assign(span, &mut Default::default(), &rt, &lt).is_err()
+                                            if self
+                                                .assign(span, &mut Default::default(), &lt, &rt)
+                                                .is_err()
+                                                && self
+                                                    .assign(span, &mut Default::default(), &rt, &lt)
+                                                    .is_err()
                                             {
                                                 return Ok(false);
                                             }
@@ -448,7 +485,8 @@ impl Analyzer<'_, '_> {
                 span,
                 disallow_different_classes: opts.disallow_different_classes,
                 allow_assignment_to_param_constraint: opts.allow_assignment_to_param_constraint,
-                disallow_special_assignment_to_empty_class: opts.disallow_special_assignment_to_empty_class,
+                disallow_special_assignment_to_empty_class: opts
+                    .disallow_special_assignment_to_empty_class,
                 for_castablity: true,
                 ..Default::default()
             },

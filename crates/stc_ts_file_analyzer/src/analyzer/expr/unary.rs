@@ -1,3 +1,12 @@
+use stc_ts_ast_rnode::{
+    RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, RStr, RTsLit, RUnaryExpr,
+};
+use stc_ts_errors::{Error, Errors};
+use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
+use swc_atoms::js_word;
+use swc_common::{Span, Spanned};
+use swc_ecma_ast::*;
+
 use crate::{
     analyzer::{expr::TypeOfMode, util::ResultExt, Analyzer, ScopeKind},
     ty::Type,
@@ -5,12 +14,6 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, RStr, RTsLit, RUnaryExpr};
-use stc_ts_errors::{Error, Errors};
-use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
-use swc_atoms::js_word;
-use swc_common::{Span, Spanned};
-use swc_ecma_ast::*;
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -32,7 +35,9 @@ impl Analyzer<'_, '_> {
                     .with_child(
                         ScopeKind::Flow,
                         orig_facts.true_facts.clone(),
-                        |child: &mut Analyzer| arg.validate_with_args(child, (TypeOfMode::RValue, None, None)),
+                        |child: &mut Analyzer| {
+                            arg.validate_with_args(child, (TypeOfMode::RValue, None, None))
+                        },
                     )
                     .report(&mut self.storage)
                     .map(|mut ty| {
@@ -129,7 +134,11 @@ impl Analyzer<'_, '_> {
                                 span,
                                 lit: RTsLit::Number(RNumber {
                                     span,
-                                    value: if *op == op!(unary, "-") { -(*value) } else { *value },
+                                    value: if *op == op!(unary, "-") {
+                                        -(*value)
+                                    } else {
+                                        *value
+                                    },
                                 }),
                                 metadata: Default::default(),
                             }));
@@ -218,7 +227,9 @@ impl Analyzer<'_, '_> {
 
         match op {
             op!("typeof") | op!("delete") | op!("void") => match arg.normalize() {
-                Type::EnumVariant(..) if op == op!("delete") => errors.push(Error::TS2704 { span: arg.span() }),
+                Type::EnumVariant(..) if op == op!("delete") => {
+                    errors.push(Error::TS2704 { span: arg.span() })
+                }
 
                 _ => {}
             },

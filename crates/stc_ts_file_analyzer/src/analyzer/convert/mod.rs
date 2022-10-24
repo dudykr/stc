@@ -1,3 +1,39 @@
+use std::{borrow::Cow, collections::HashMap};
+
+use itertools::Itertools;
+use rnode::{NodeId, VisitWith};
+use stc_ts_ast_rnode::{
+    RArrayPat, RAssignPatProp, RBindingIdent, RComputedPropName, RExpr, RIdent, RInvalid,
+    RObjectPat, RObjectPatProp, RPat, RTsArrayType, RTsCallSignatureDecl, RTsConditionalType,
+    RTsConstructSignatureDecl, RTsConstructorType, RTsEntityName, RTsExprWithTypeArgs,
+    RTsFnOrConstructorType, RTsFnParam, RTsFnType, RTsImportType, RTsIndexSignature,
+    RTsIndexedAccessType, RTsInferType, RTsInterfaceBody, RTsInterfaceDecl, RTsIntersectionType,
+    RTsKeywordType, RTsLit, RTsMappedType, RTsMethodSignature, RTsOptionalType,
+    RTsParenthesizedType, RTsPropertySignature, RTsRestType, RTsTplLitType, RTsTupleElement,
+    RTsTupleType, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RTsTypeElement, RTsTypeLit,
+    RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation, RTsTypePredicate,
+    RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
+};
+use stc_ts_errors::Error;
+use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_type_ops::Fix;
+use stc_ts_types::{
+    type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata,
+    ComputedKey, Conditional, ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature,
+    IndexedAccessType, InferType, InferTypeMetadata, Interface, Intersection, Intrinsic,
+    IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped,
+    MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr, QueryType,
+    Ref, RefMetadata, RestType, Symbol, ThisType, TplType, TsExpr, Tuple, TupleElement,
+    TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
+    TypeParamInstantiation, Union,
+};
+use stc_ts_utils::{find_ids_in_pat, PatExt};
+use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, AHashSet};
+use swc_atoms::js_word;
+use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
+use swc_ecma_ast::TsKeywordTypeKind;
+use tracing::warn;
+
 use crate::{
     analyzer::{
         expr::{AccessPropertyOpts, TypeOfMode},
@@ -11,36 +47,6 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use itertools::Itertools;
-use rnode::{NodeId, VisitWith};
-use stc_ts_ast_rnode::{
-    RArrayPat, RAssignPatProp, RBindingIdent, RComputedPropName, RExpr, RIdent, RInvalid, RObjectPat, RObjectPatProp,
-    RPat, RTsArrayType, RTsCallSignatureDecl, RTsConditionalType, RTsConstructSignatureDecl, RTsConstructorType,
-    RTsEntityName, RTsExprWithTypeArgs, RTsFnOrConstructorType, RTsFnParam, RTsFnType, RTsImportType,
-    RTsIndexSignature, RTsIndexedAccessType, RTsInferType, RTsInterfaceBody, RTsInterfaceDecl, RTsIntersectionType,
-    RTsKeywordType, RTsLit, RTsMappedType, RTsMethodSignature, RTsOptionalType, RTsParenthesizedType,
-    RTsPropertySignature, RTsRestType, RTsTplLitType, RTsTupleElement, RTsTupleType, RTsType, RTsTypeAliasDecl,
-    RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation,
-    RTsTypePredicate, RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
-};
-use stc_ts_errors::Error;
-use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_type_ops::Fix;
-use stc_ts_types::{
-    type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey,
-    Conditional, ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType,
-    InferTypeMetadata, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
-    LitType, LitTypeMetadata, Mapped, MethodSignature, Operator, OptionalType, Predicate, PropertySignature, QueryExpr,
-    QueryType, Ref, RefMetadata, RestType, Symbol, ThisType, TplType, TsExpr, Tuple, TupleElement, TupleMetadata, Type,
-    TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation, Union,
-};
-use stc_ts_utils::{find_ids_in_pat, PatExt};
-use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, AHashSet};
-use std::{borrow::Cow, collections::HashMap};
-use swc_atoms::js_word;
-use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::TsKeywordTypeKind;
-use tracing::warn;
 
 mod interface;
 
@@ -59,7 +65,11 @@ impl Analyzer<'_, '_> {
         } else {
             {
                 // Check for duplicates
-                let names = decl.params.iter().map(|param| param.name.clone()).collect::<Vec<_>>();
+                let names = decl
+                    .params
+                    .iter()
+                    .map(|param| param.name.clone())
+                    .collect::<Vec<_>>();
                 let mut found = AHashSet::default();
 
                 for name in names {
@@ -69,7 +79,10 @@ impl Analyzer<'_, '_> {
                                 span: name.span,
                                 name: name.into(),
                             }
-                            .context("tried to validate duplicate entries of a type parameter declaration"),
+                            .context(
+                                "tried to validate duplicate entries of a type parameter \
+                                 declaration",
+                            ),
                         );
                     }
                 }
@@ -96,9 +109,15 @@ impl Analyzer<'_, '_> {
             let ctxt = self.ctx.module_id;
             let mut map = HashMap::default();
             for param in &params {
-                let ty = self.find_type(ctxt, &param.name).unwrap().unwrap().next().unwrap();
+                let ty = self
+                    .find_type(ctxt, &param.name)
+                    .unwrap()
+                    .unwrap()
+                    .next()
+                    .unwrap();
 
-                map.entry(param.name.clone()).or_insert_with(|| ty.into_owned());
+                map.entry(param.name.clone())
+                    .or_insert_with(|| ty.into_owned());
             }
 
             // Resolve contraints
@@ -275,8 +294,11 @@ impl Analyzer<'_, '_> {
             Default::default(),
             |child: &mut Analyzer| -> ValidationResult<_> {
                 match &*d.id.sym {
-                    "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
-                        child.storage.report(Error::InvalidInterfaceName { span: d.id.span });
+                    "any" | "void" | "never" | "string" | "number" | "boolean" | "null"
+                    | "undefined" | "symbol" => {
+                        child
+                            .storage
+                            .report(Error::InvalidInterfaceName { span: d.id.span });
                     }
                     _ => {}
                 }
@@ -284,7 +306,10 @@ impl Analyzer<'_, '_> {
                 let mut ty = Interface {
                     span: d.span,
                     name: d.id.clone().into(),
-                    type_params: try_opt!(d.type_params.validate_with(&mut *child).map(|v| v.map(Box::new))),
+                    type_params: try_opt!(d
+                        .type_params
+                        .validate_with(&mut *child)
+                        .map(|v| v.map(Box::new))),
                     extends: d.extends.validate_with(child)?.freezed(),
                     body: d.body.validate_with(child)?,
                     metadata: Default::default(),
@@ -294,7 +319,11 @@ impl Analyzer<'_, '_> {
 
                 child.resolve_parent_interfaces(&d.extends);
                 child.report_error_for_conflicting_parents(d.id.span, &ty.extends);
-                child.report_error_for_wrong_interface_inheritance(d.id.span, &ty.body, &ty.extends);
+                child.report_error_for_wrong_interface_inheritance(
+                    d.id.span,
+                    &ty.body,
+                    &ty.extends,
+                );
 
                 let ty = Type::Interface(ty).freezed();
 
@@ -349,7 +378,9 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RTsTypeElement) -> ValidationResult<TypeElement> {
         Ok(match e {
             RTsTypeElement::TsCallSignatureDecl(d) => TypeElement::Call(d.validate_with(self)?),
-            RTsTypeElement::TsConstructSignatureDecl(d) => TypeElement::Constructor(d.validate_with(self)?),
+            RTsTypeElement::TsConstructSignatureDecl(d) => {
+                TypeElement::Constructor(d.validate_with(self)?)
+            }
             RTsTypeElement::TsIndexSignature(d) => TypeElement::Index(d.validate_with(self)?),
             RTsTypeElement::TsMethodSignature(d) => TypeElement::Method(d.validate_with(self)?),
             RTsTypeElement::TsPropertySignature(d) => TypeElement::Property(d.validate_with(self)?),
@@ -365,7 +396,10 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &RTsConstructSignatureDecl) -> ValidationResult<ConstructorSignature> {
+    fn validate(
+        &mut self,
+        d: &RTsConstructSignatureDecl,
+    ) -> ValidationResult<ConstructorSignature> {
         let type_params = try_opt!(d.type_params.validate_with(self));
         Ok(ConstructorSignature {
             accessibility: None,
@@ -462,7 +496,9 @@ impl Analyzer<'_, '_> {
                     Ok(mut ty) => {
                         // Handle some symbol types.
                         if self.is_builtin {
-                            if ty.is_unique_symbol() || ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
+                            if ty.is_unique_symbol()
+                                || ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword)
+                            {
                                 let key = match &key {
                                     Key::Normal { sym, .. } => sym,
                                     _ => {
@@ -516,7 +552,10 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, i: &RTsTypeParamInstantiation) -> ValidationResult<TypeParamInstantiation> {
+    fn validate(
+        &mut self,
+        i: &RTsTypeParamInstantiation,
+    ) -> ValidationResult<TypeParamInstantiation> {
         let params = {
             let ctx = Ctx {
                 in_actual_type: true,
@@ -525,7 +564,10 @@ impl Analyzer<'_, '_> {
             i.params.validate_with(&mut *self.with_ctx(ctx))?
         };
 
-        Ok(TypeParamInstantiation { span: i.span, params })
+        Ok(TypeParamInstantiation {
+            span: i.span,
+            params,
+        })
     }
 }
 
@@ -654,36 +696,45 @@ impl Analyzer<'_, '_> {
             in_ts_fn_type: true,
             ..self.ctx
         };
-        self.with_ctx(ctx).with_scope_for_type_params(|child: &mut Analyzer| {
-            let type_params = try_opt!(t.type_params.validate_with(child));
+        self.with_ctx(ctx)
+            .with_scope_for_type_params(|child: &mut Analyzer| {
+                let type_params = try_opt!(t.type_params.validate_with(child));
 
-            for param in &t.params {
-                child.default_any_param(&param);
-            }
-
-            let mut params: Vec<_> = t.params.validate_with(child)?;
-            params.make_clone_cheap();
-
-            let mut ret_ty = box t.type_ann.validate_with(child)?;
-
-            if !child.is_builtin {
-                for param in params.iter() {
-                    child
-                        .declare_complex_vars(VarKind::Param, &param.pat, *param.ty.clone(), None, None)
-                        .report(&mut child.storage);
+                for param in &t.params {
+                    child.default_any_param(&param);
                 }
-            }
 
-            child.expand_return_type_of_fn(&mut ret_ty).report(&mut child.storage);
+                let mut params: Vec<_> = t.params.validate_with(child)?;
+                params.make_clone_cheap();
 
-            Ok(stc_ts_types::Function {
-                span: t.span,
-                type_params,
-                params,
-                ret_ty,
-                metadata: Default::default(),
+                let mut ret_ty = box t.type_ann.validate_with(child)?;
+
+                if !child.is_builtin {
+                    for param in params.iter() {
+                        child
+                            .declare_complex_vars(
+                                VarKind::Param,
+                                &param.pat,
+                                *param.ty.clone(),
+                                None,
+                                None,
+                            )
+                            .report(&mut child.storage);
+                    }
+                }
+
+                child
+                    .expand_return_type_of_fn(&mut ret_ty)
+                    .report(&mut child.storage);
+
+                Ok(stc_ts_types::Function {
+                    span: t.span,
+                    type_params,
+                    params,
+                    ret_ty,
+                    metadata: Default::default(),
+                })
             })
-        })
     }
 }
 
@@ -720,7 +771,9 @@ impl Analyzer<'_, '_> {
         self.record(t);
 
         let span = t.span;
-        let type_args = try_opt!(t.type_params.validate_with(self)).map(Box::new).freezed();
+        let type_args = try_opt!(t.type_params.validate_with(self))
+            .map(Box::new)
+            .freezed();
         let mut contains_infer = false;
 
         let mut reported_type_not_found = false;
@@ -756,16 +809,20 @@ impl Analyzer<'_, '_> {
 
                     if !self.is_builtin && !found && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
-                            self.storage
-                                .report(Error::NoSuchTypeButVarExists { span, name: i.into() });
+                            self.storage.report(Error::NoSuchTypeButVarExists {
+                                span,
+                                name: i.into(),
+                            });
                             reported_type_not_found = true;
                         }
                     }
                 } else {
                     if !self.is_builtin && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
-                            self.storage
-                                .report(Error::NoSuchTypeButVarExists { span, name: i.into() });
+                            self.storage.report(Error::NoSuchTypeButVarExists {
+                                span,
+                                name: i.into(),
+                            });
                             reported_type_not_found = true;
                         }
                     }
@@ -1017,7 +1074,10 @@ impl Analyzer<'_, '_> {
                                 span,
                                 name: Id::word("intrinsic".into()),
                             });
-                            return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
+                            return Ok(Type::any(
+                                span.with_ctxt(SyntaxContext::empty()),
+                                Default::default(),
+                            ));
                         }
                     }
                     Type::Keyword(KeywordType {
@@ -1030,9 +1090,9 @@ impl Analyzer<'_, '_> {
                 RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => {
                     Type::Union(u.validate_with(a)?).fixed()
                 }
-                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(i)) => {
-                    Type::Intersection(i.validate_with(a)?).fixed()
-                }
+                RTsType::TsUnionOrIntersectionType(
+                    RTsUnionOrIntersectionType::TsIntersectionType(i),
+                ) => Type::Intersection(i.validate_with(a)?).fixed(),
                 RTsType::TsArrayType(arr) => Type::Array(arr.validate_with(a)?),
                 RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(f)) => {
                     Type::Function(f.validate_with(a)?)
@@ -1096,7 +1156,9 @@ impl Analyzer<'_, '_> {
                         if key_ty.normalize().is_symbol() {
                             continue;
                         }
-                        if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(&*prev_key)) {
+                        if let Some(prev) =
+                            prev_keys.iter().find(|prev_key| key.type_eq(&*prev_key))
+                        {
                             self.storage
                                 .report(Error::DuplicateNameWithoutName { span: prev.span() });
                             self.storage
@@ -1157,7 +1219,9 @@ impl Analyzer<'_, '_> {
             }
 
             match scope.kind() {
-                ScopeKind::Method { is_static: true, .. } => true,
+                ScopeKind::Method {
+                    is_static: true, ..
+                } => true,
                 _ => false,
             }
         });
@@ -1201,18 +1265,22 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(i.node_id).or_default().ty.get_or_insert_with(|| {
-                Type::any(
-                    DUMMY_SP,
-                    KeywordTypeMetadata {
-                        common: CommonTypeMetadata {
-                            implicit: true,
+            m.for_pats
+                .entry(i.node_id)
+                .or_default()
+                .ty
+                .get_or_insert_with(|| {
+                    Type::any(
+                        DUMMY_SP,
+                        KeywordTypeMetadata {
+                            common: CommonTypeMetadata {
+                                implicit: true,
+                                ..Default::default()
+                            },
                             ..Default::default()
                         },
-                        ..Default::default()
-                    },
-                )
-            });
+                    )
+                });
         }
     }
 
@@ -1235,7 +1303,12 @@ impl Analyzer<'_, '_> {
                         Some(RPat::Array(ref arr)) => {
                             self.default_any_array_pat(arr);
                             if let Some(m) = &mut self.mutations {
-                                m.for_pats.entry(arr.node_id).or_default().ty.take().unwrap()
+                                m.for_pats
+                                    .entry(arr.node_id)
+                                    .or_default()
+                                    .ty
+                                    .take()
+                                    .unwrap()
                             } else {
                                 unreachable!();
                             }
@@ -1244,7 +1317,12 @@ impl Analyzer<'_, '_> {
                             self.default_any_object(obj);
 
                             if let Some(m) = &mut self.mutations {
-                                m.for_pats.entry(obj.node_id).or_default().ty.take().unwrap()
+                                m.for_pats
+                                    .entry(obj.node_id)
+                                    .or_default()
+                                    .ty
+                                    .take()
+                                    .unwrap()
                             } else {
                                 unreachable!();
                             }
@@ -1264,7 +1342,11 @@ impl Analyzer<'_, '_> {
             metadata: Default::default(),
         });
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert_with(|| ty);
+            m.for_pats
+                .entry(arr.node_id)
+                .or_default()
+                .ty
+                .get_or_insert_with(|| ty);
         }
     }
 
@@ -1289,7 +1371,12 @@ impl Analyzer<'_, '_> {
                     }
                     let ty = if let Some(value_node_id) = p.value.node_id() {
                         if let Some(m) = &mut self.mutations {
-                            m.for_pats.entry(value_node_id).or_default().ty.take().map(Box::new)
+                            m.for_pats
+                                .entry(value_node_id)
+                                .or_default()
+                                .ty
+                                .take()
+                                .map(Box::new)
                         } else {
                             None
                         }
@@ -1333,19 +1420,23 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(obj.node_id).or_default().ty.get_or_insert_with(|| {
-                Type::TypeLit(TypeLit {
-                    span: DUMMY_SP,
-                    members,
-                    metadata: TypeLitMetadata {
-                        common: CommonTypeMetadata {
-                            implicit: true,
+            m.for_pats
+                .entry(obj.node_id)
+                .or_default()
+                .ty
+                .get_or_insert_with(|| {
+                    Type::TypeLit(TypeLit {
+                        span: DUMMY_SP,
+                        members,
+                        metadata: TypeLitMetadata {
+                            common: CommonTypeMetadata {
+                                implicit: true,
+                                ..Default::default()
+                            },
                             ..Default::default()
                         },
-                        ..Default::default()
-                    },
-                })
-            });
+                    })
+                });
         }
     }
 

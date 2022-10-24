@@ -1,26 +1,32 @@
+use std::borrow::Cow;
+
+use rnode::VisitWith;
+use stc_ts_ast_rnode::{
+    RDoWhileStmt, RExpr, RForInStmt, RForOfStmt, RIdent, RPat, RStmt, RTsEntityName, RVarDecl,
+    RVarDeclOrPat, RWhileStmt,
+};
+use stc_ts_errors::{DebugExt, Error};
+use stc_ts_file_analyzer_macros::extra_validator;
+use stc_ts_types::{
+    Id, KeywordType, KeywordTypeMetadata, ModuleId, Operator, Ref, RefMetadata,
+    TypeParamInstantiation,
+};
+use stc_ts_utils::{find_ids_in_pat, PatExt};
+use stc_utils::cache::Freeze;
+use swc_common::{Span, Spanned, DUMMY_SP};
+use swc_ecma_ast::{EsVersion, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
+
 use crate::{
-    analyzer::{control_flow::CondFacts, types::NormalizeTypeOpts, util::ResultExt, Analyzer, Ctx, ScopeKind},
+    analyzer::{
+        control_flow::CondFacts, types::NormalizeTypeOpts, util::ResultExt, Analyzer, Ctx,
+        ScopeKind,
+    },
     ty::Type,
     util::is_str_or_union,
     validator,
     validator::ValidateWith,
     ValidationResult,
 };
-use rnode::VisitWith;
-use stc_ts_ast_rnode::{
-    RDoWhileStmt, RExpr, RForInStmt, RForOfStmt, RIdent, RPat, RStmt, RTsEntityName, RVarDecl, RVarDeclOrPat,
-    RWhileStmt,
-};
-use stc_ts_errors::{DebugExt, Error};
-use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{
-    Id, KeywordType, KeywordTypeMetadata, ModuleId, Operator, Ref, RefMetadata, TypeParamInstantiation,
-};
-use stc_ts_utils::{find_ids_in_pat, PatExt};
-use stc_utils::cache::Freeze;
-use std::borrow::Cow;
-use swc_common::{Span, Spanned, DUMMY_SP};
-use swc_ecma_ast::{EsVersion, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
 
 #[derive(Clone, Copy)]
 enum ForHeadKind {
@@ -33,7 +39,11 @@ impl Analyzer<'_, '_> {
     /// But actually we don't report errors
     ///
     /// If type does not change due to a loop, we evaluate
-    fn validate_loop_body_with_scope(&mut self, test: Option<&RExpr>, body: &RStmt) -> ValidationResult<()> {
+    fn validate_loop_body_with_scope(
+        &mut self,
+        test: Option<&RExpr>,
+        body: &RStmt,
+    ) -> ValidationResult<()> {
         let mut orig_facts = self.cur_facts.take();
 
         let mut prev_facts = orig_facts.true_facts.take();
@@ -145,7 +155,11 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn validate_lhs_of_for_in_of_loop(&mut self, e: &RVarDeclOrPat, kind: ForHeadKind) -> ValidationResult<()> {
+    fn validate_lhs_of_for_in_of_loop(
+        &mut self,
+        e: &RVarDeclOrPat,
+        kind: ForHeadKind,
+    ) -> ValidationResult<()> {
         match e {
             RVarDeclOrPat::VarDecl(v) => {
                 if v.decls.len() >= 1 {
@@ -158,10 +172,16 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn validate_lhs_of_for_in_of_loop_pat(&mut self, p: &RPat, kind: ForHeadKind) -> ValidationResult<()> {
+    fn validate_lhs_of_for_in_of_loop_pat(
+        &mut self,
+        p: &RPat,
+        kind: ForHeadKind,
+    ) -> ValidationResult<()> {
         match p {
             RPat::Object(..) | RPat::Array(..) => match kind {
-                ForHeadKind::In => Err(Error::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() }),
+                ForHeadKind::In => {
+                    Err(Error::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() })
+                }
                 ForHeadKind::Of { .. } => Ok(()),
             },
             RPat::Expr(e) => self.validate_lhs_of_for_in_of_loop_expr(e, kind),
@@ -169,7 +189,11 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn validate_lhs_of_for_in_of_loop_expr(&mut self, e: &RExpr, kind: ForHeadKind) -> ValidationResult<()> {
+    fn validate_lhs_of_for_in_of_loop_expr(
+        &mut self,
+        e: &RExpr,
+        kind: ForHeadKind,
+    ) -> ValidationResult<()> {
         match e {
             RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) => Ok(()),
             // We use different error code for this.
@@ -271,7 +295,14 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    fn check_for_of_in_loop(&mut self, span: Span, left: &RVarDeclOrPat, rhs: &RExpr, kind: ForHeadKind, body: &RStmt) {
+    fn check_for_of_in_loop(
+        &mut self,
+        span: Span,
+        left: &RVarDeclOrPat,
+        rhs: &RExpr,
+        kind: ForHeadKind,
+        body: &RStmt,
+    ) {
         self.with_child(
             ScopeKind::Flow,
             Default::default(),
@@ -288,7 +319,8 @@ impl Analyzer<'_, '_> {
 
                 child.ctx.allow_ref_declaring = match left {
                     RVarDeclOrPat::VarDecl(RVarDecl {
-                        kind: VarDeclKind::Var, ..
+                        kind: VarDeclKind::Var,
+                        ..
                     }) => true,
                     _ => false,
                 };
@@ -300,14 +332,14 @@ impl Analyzer<'_, '_> {
                             if decls[0].name.get_ty().is_some() {
                                 match kind {
                                     ForHeadKind::In => {
-                                        child
-                                            .storage
-                                            .report(Error::TypeAnnOnLhsOfForInLoops { span: decls[0].span });
+                                        child.storage.report(Error::TypeAnnOnLhsOfForInLoops {
+                                            span: decls[0].span,
+                                        });
                                     }
                                     ForHeadKind::Of { .. } => {
-                                        child
-                                            .storage
-                                            .report(Error::TypeAnnOnLhsOfForOfLoops { span: decls[0].span });
+                                        child.storage.report(Error::TypeAnnOnLhsOfForOfLoops {
+                                            span: decls[0].span,
+                                        });
                                     }
                                 }
                             }
@@ -359,7 +391,10 @@ impl Analyzer<'_, '_> {
                             }
                             _ => err,
                         })
-                        .context("tried to get the element type of an iterator to calculate type for a for-of loop")
+                        .context(
+                            "tried to get the element type of an iterator to calculate type for a \
+                             for-of loop",
+                        )
                         .report(&mut child.storage)
                         .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),
 

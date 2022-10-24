@@ -1,3 +1,24 @@
+use std::{
+    borrow::Cow,
+    collections::{hash_map::Entry, HashMap},
+};
+
+use fxhash::FxHashMap;
+use itertools::Itertools;
+use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_generics::expander::InferTypeResult;
+use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
+use stc_ts_type_ops::generalization::prevent_generalize;
+use stc_ts_types::{
+    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType,
+    KeywordTypeMetadata, LitType, Operator, Ref, Type, TypeElement, TypeLit, TypeParam,
+    TypeParamMetadata, Union,
+};
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
+use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
+use tracing::{error, info};
+
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -8,24 +29,6 @@ use crate::{
     util::unwrap_ref_with_single_arg,
     ValidationResult,
 };
-use fxhash::FxHashMap;
-use itertools::Itertools;
-use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
-use stc_ts_generics::expander::InferTypeResult;
-use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
-use stc_ts_type_ops::generalization::prevent_generalize;
-use stc_ts_types::{
-    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata,
-    LitType, Operator, Ref, Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
-};
-use std::{
-    borrow::Cow,
-    collections::{hash_map::Entry, HashMap},
-};
-use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
-use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{error, info};
 
 /// # Default
 ///
@@ -113,7 +116,9 @@ impl Analyzer<'_, '_> {
         let max = matched_paths.iter().max_by(|a, b| max_path(a, b));
 
         if let Some(max) = max {
-            for (idx, (param, type_path)) in param.types.iter().zip(matched_paths.iter()).enumerate() {
+            for (idx, (param, type_path)) in
+                param.types.iter().zip(matched_paths.iter()).enumerate()
+            {
                 if type_path == max {
                     self.infer_type(span, inferred, &param, arg, opts)?;
                 }
@@ -176,7 +181,11 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         let marks = self.marks();
 
-        info!("Inferred {} as {}", name, dump_type_as_string(&self.cm, &ty));
+        info!(
+            "Inferred {} as {}",
+            name,
+            dump_type_as_string(&self.cm, &ty)
+        );
 
         match ty.normalize() {
             Type::Param(ty) => {
@@ -396,7 +405,13 @@ impl Analyzer<'_, '_> {
                 self.infer_type_using_interface_and_interface(span, inferred, param, arg, opts)?;
             }
             Type::TypeLit(arg) => {
-                self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members, opts)?;
+                self.infer_type_using_type_elements_and_type_elements(
+                    span,
+                    inferred,
+                    &param.body,
+                    &arg.members,
+                    opts,
+                )?;
             }
             Type::Tuple(..) => {
                 // Convert to a type literal.
@@ -416,8 +431,12 @@ impl Analyzer<'_, '_> {
         }
 
         for parent in &param.extends {
-            let parent =
-                self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
+            let parent = self.type_of_ts_entity_name(
+                span,
+                self.ctx.module_id,
+                &parent.expr,
+                parent.type_args.as_deref(),
+            )?;
             self.infer_type(span, inferred, &parent, arg, opts)?;
         }
 
@@ -432,7 +451,13 @@ impl Analyzer<'_, '_> {
         arg: &Interface,
         opts: InferTypeOpts,
     ) -> ValidationResult<()> {
-        self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.body, opts)?;
+        self.infer_type_using_type_elements_and_type_elements(
+            span,
+            inferred,
+            &param.body,
+            &arg.body,
+            opts,
+        )?;
 
         Ok(())
     }
@@ -446,7 +471,13 @@ impl Analyzer<'_, '_> {
         arg: &TypeLit,
         opts: InferTypeOpts,
     ) -> ValidationResult<()> {
-        self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.members, &arg.members, opts)
+        self.infer_type_using_type_elements_and_type_elements(
+            span,
+            inferred,
+            &param.members,
+            &arg.members,
+            opts,
+        )
     }
 
     /// Returns `Ok(true)` if this method know how to infer types.
@@ -461,7 +492,9 @@ impl Analyzer<'_, '_> {
         let p = param.normalize();
         let a = arg.normalize();
         match (p, a) {
-            (Type::Constructor(..), Type::Class(..)) | (Type::Function(..), Type::Function(..)) => return Ok(false),
+            (Type::Constructor(..), Type::Class(..)) | (Type::Function(..), Type::Function(..)) => {
+                return Ok(false)
+            }
             (Type::Constructor(..), _) | (Type::Function(..), _) => {
                 let p = self.convert_type_to_type_lit(span, Cow::Borrowed(p))?;
                 let a = self.convert_type_to_type_lit(span, Cow::Borrowed(a))?;
@@ -538,10 +571,9 @@ impl Analyzer<'_, '_> {
                                         span,
                                         type_params: a.type_params.clone(),
                                         params: a.params.clone(),
-                                        ret_ty: a
-                                            .ret_ty
-                                            .clone()
-                                            .unwrap_or_else(|| box Type::any(span, Default::default())),
+                                        ret_ty: a.ret_ty.clone().unwrap_or_else(|| {
+                                            box Type::any(span, Default::default())
+                                        }),
                                         metadata: Default::default(),
                                     }),
                                     opts,
@@ -563,10 +595,9 @@ impl Analyzer<'_, '_> {
                                         span,
                                         type_params: p.type_params.clone(),
                                         params: p.params.clone(),
-                                        ret_ty: p
-                                            .ret_ty
-                                            .clone()
-                                            .unwrap_or_else(|| box Type::any(span, Default::default())),
+                                        ret_ty: p.ret_ty.clone().unwrap_or_else(|| {
+                                            box Type::any(span, Default::default())
+                                        }),
                                         metadata: Default::default(),
                                     }),
                                     &at,
@@ -602,7 +633,11 @@ impl Analyzer<'_, '_> {
                     }
 
                     (TypeElement::Index(p), TypeElement::Property(a)) => {
-                        assert_eq!(p.params.len(), 1, "Index signature should have exactly one parameter");
+                        assert_eq!(
+                            p.params.len(),
+                            1,
+                            "Index signature should have exactly one parameter"
+                        );
 
                         if self
                             .assign(span, &mut Default::default(), &p.params[0].ty, &a.key.ty())
@@ -633,7 +668,9 @@ impl Analyzer<'_, '_> {
                             .assign(span, &mut Default::default(), &p.key.ty(), &a.key.ty())
                             .is_ok()
                         {
-                            self.infer_type_of_fn_params(span, inferred, &p.params, &a.params, opts)?;
+                            self.infer_type_of_fn_params(
+                                span, inferred, &p.params, &a.params, opts,
+                            )?;
 
                             if let Some(p_ret) = &p.ret_ty {
                                 if let Some(a_ret) = &a.ret_ty {
@@ -698,7 +735,9 @@ impl Analyzer<'_, '_> {
         match param.op {
             TsTypeOperatorOp::KeyOf => {}
             TsTypeOperatorOp::Unique => {}
-            TsTypeOperatorOp::ReadOnly => return self.infer_type(span, inferred, &param.ty, arg, opts),
+            TsTypeOperatorOp::ReadOnly => {
+                return self.infer_type(span, inferred, &param.ty, arg, opts)
+            }
         }
 
         error!(
@@ -730,7 +769,9 @@ impl Analyzer<'_, '_> {
         for pm in &param.body {
             for am in &arg.body {
                 match (pm, am) {
-                    (ClassMember::Property(p), ClassMember::Property(a)) if p.is_static == a.is_static => {
+                    (ClassMember::Property(p), ClassMember::Property(a))
+                        if p.is_static == a.is_static =>
+                    {
                         if self.key_matches(span, &p.key, &a.key, false) {
                             if let Some(p_ty) = &p.value {
                                 if let Some(a_ty) = &a.value {
@@ -855,7 +896,9 @@ fn should_prevent_generalization(constraint: &Type) -> bool {
                 | TsKeywordTypeKind::TsBooleanKeyword,
             ..
         }) => true,
-        Type::Union(Union { ref types, .. }) => types.iter().all(|ty| should_prevent_generalization(&ty)),
+        Type::Union(Union { ref types, .. }) => {
+            types.iter().all(|ty| should_prevent_generalization(&ty))
+        }
         _ => false,
     }
 }

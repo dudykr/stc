@@ -1,13 +1,14 @@
-use crate::{
-    analyzer::{expr::TypeOfMode, Analyzer, Ctx},
-    validator::ValidateWith,
-    ValidationResult,
-};
 use stc_ts_ast_rnode::RTsConstAssertion;
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_type_ops::{generalization::prevent_generalize, tuple_to_array::prevent_tuple_to_array};
 use stc_ts_types::{Type, TypeParamInstantiation};
+
+use crate::{
+    analyzer::{expr::TypeOfMode, Analyzer, Ctx},
+    validator::ValidateWith,
+    ValidationResult,
+};
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -40,8 +41,8 @@ impl Analyzer<'_, '_> {
             return Err(Error::Unimplemented {
                 span,
                 msg: format!(
-                    "Proper error reporting for using const assertion expression in left hand side of an assignment \
-                     expression"
+                    "Proper error reporting for using const assertion expression in left hand \
+                     side of an assignment expression"
                 ),
             });
         }

@@ -4,17 +4,18 @@
 
 extern crate test;
 
-use stc_ts_builtin_types::Lib;
-use stc_ts_env::{Env, ModuleConfig};
-use stc_ts_file_analyzer::env::EnvFactory;
-use stc_ts_module_loader::resolvers::node::NodeResolver;
-use stc_ts_type_checker::Checker;
 use std::{
     hint::black_box,
     path::{Path, PathBuf},
     process::{Command, Stdio},
     sync::Arc,
 };
+
+use stc_ts_builtin_types::Lib;
+use stc_ts_env::{Env, ModuleConfig};
+use stc_ts_file_analyzer::env::EnvFactory;
+use stc_ts_module_loader::resolvers::node::NodeResolver;
+use stc_ts_type_checker::Checker;
 use swc_common::{
     errors::{ColorConfig, Handler},
     FileName,
@@ -30,7 +31,8 @@ fn rxjs(b: &mut Bencher) {
 }
 
 fn clone(git_url: &str, tag: &str) -> PathBuf {
-    let dir = PathBuf::from(env!("OUT_DIR")).join(format!("bench-{}", git_url.split("/").last().unwrap()));
+    let dir = PathBuf::from(env!("OUT_DIR"))
+        .join(format!("bench-{}", git_url.split("/").last().unwrap()));
     if dir.exists() {
         return dir;
     }
@@ -67,7 +69,9 @@ fn run_bench(b: &mut Bencher, path: &Path) {
                     ModuleConfig::None,
                     &Lib::load("es2020.full"),
                 ),
-                TsConfig { ..Default::default() },
+                TsConfig {
+                    ..Default::default()
+                },
                 None,
                 Arc::new(NodeResolver),
             );

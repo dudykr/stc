@@ -1,7 +1,8 @@
-pub use self::metadata::prevent_tuple_to_array;
 use rnode::{Fold, FoldWith};
 use stc_ts_types::{Array, ArrayMetadata, Type};
 use swc_common::TypeEq;
+
+pub use self::metadata::prevent_tuple_to_array;
 
 mod metadata;
 

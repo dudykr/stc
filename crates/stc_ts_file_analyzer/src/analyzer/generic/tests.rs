@@ -1,5 +1,6 @@
-use crate::analyzer::{generic::ExtendsOpts, tests::test_two};
 use swc_common::Spanned;
+
+use crate::analyzer::{generic::ExtendsOpts, tests::test_two};
 
 fn test_extends(l: &str, r: &str, expected: Option<bool>, opts: ExtendsOpts) {
     test_two(l, r, |analyzer, l, r| {

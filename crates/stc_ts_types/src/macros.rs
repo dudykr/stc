@@ -16,11 +16,19 @@ macro_rules! fold_helper {
 #[macro_export]
 macro_rules! visit_helper {
     () => {
-        fn visit_arc(&mut self, ty: &Arc<$crate::Type>, parent: &dyn $crate::TypeNode) -> Arc<$crate::Type> {
+        fn visit_arc(
+            &mut self,
+            ty: &Arc<$crate::Type>,
+            parent: &dyn $crate::TypeNode,
+        ) -> Arc<$crate::Type> {
             self.visit_type(&**ty, parent);
         }
 
-        fn visit_static(&mut self, ty: $crate::Static, parent: &dyn $crate::TypeNode) -> $crate::Static {
+        fn visit_static(
+            &mut self,
+            ty: $crate::Static,
+            parent: &dyn $crate::TypeNode,
+        ) -> $crate::Static {
             self.visit_type(ty.ty, parent);
         }
     };

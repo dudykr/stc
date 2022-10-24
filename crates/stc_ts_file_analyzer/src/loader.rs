@@ -1,9 +1,11 @@
-use crate::ValidationResult;
+use std::sync::Arc;
+
 use auto_impl::auto_impl;
 use stc_ts_types::{ModuleId, ModuleTypeData, Type};
-use std::sync::Arc;
 use swc_atoms::JsWord;
 use swc_common::FileName;
+
+use crate::ValidationResult;
 
 #[derive(Debug, Clone)]
 pub struct ModuleInfo {
@@ -32,7 +34,12 @@ pub trait Load: 'static + Send + Sync {
     ///
     ///
     /// Returned value must be [Type::Arc] of [Type::Module]
-    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> ValidationResult<Type>;
+    fn load_circular_dep(
+        &self,
+        base: ModuleId,
+        dep: ModuleId,
+        partial: &ModuleTypeData,
+    ) -> ValidationResult<Type>;
 
     /// Note: This method is called in parallel.
     ///

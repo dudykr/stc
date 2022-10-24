@@ -1,5 +1,6 @@
-use petgraph::EdgeDirection::Outgoing;
 use std::hash::Hash;
+
+use petgraph::EdgeDirection::Outgoing;
 use swc_common::collections::{AHashMap, AHashSet};
 use swc_fast_graph::digraph::FastDiGraphMap;
 use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
@@ -14,7 +15,10 @@ where
 }
 
 /// Returns `(cycles, graph)`.
-pub(crate) fn to_graph<I>(deps: &Deps<I>, len: usize) -> (Vec<Vec<usize>>, FastDiGraphMap<usize, ()>)
+pub(crate) fn to_graph<I>(
+    deps: &Deps<I>,
+    len: usize,
+) -> (Vec<Vec<usize>>, FastDiGraphMap<usize, ()>)
 where
     I: Eq + Hash,
 {

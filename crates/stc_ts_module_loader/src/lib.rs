@@ -1,7 +1,7 @@
 #![deny(warnings)]
 
-use self::analyzer::find_modules_and_deps;
-use crate::resolvers::typescript::TsResolver;
+use std::{mem::take, sync::Arc};
+
 use anyhow::{anyhow, bail, Error};
 use dashmap::DashMap;
 use fxhash::FxBuildHasher;
@@ -9,7 +9,6 @@ use parking_lot::{Mutex, RwLock};
 use rayon::prelude::*;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
 use stc_utils::panic_ctx;
-use std::{mem::take, sync::Arc};
 use swc_atoms::JsWord;
 use swc_common::{collections::AHashMap, comments::Comments, FileName, SourceMap, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, Module};
@@ -18,6 +17,9 @@ use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_fast_graph::digraph::FastDiGraphMap;
 use swc_graph_analyzer::{DepGraph, GraphAnalyzer};
 use tracing::{debug, error};
+
+use self::analyzer::find_modules_and_deps;
+use crate::resolvers::typescript::TsResolver;
 
 mod analyzer;
 pub mod resolvers;
@@ -79,7 +81,13 @@ where
     C: Comments + Send + Sync,
     R: Resolve,
 {
-    pub fn new(cm: Arc<SourceMap>, comments: C, resolver: R, parser_config: TsConfig, target: EsVersion) -> Self {
+    pub fn new(
+        cm: Arc<SourceMap>,
+        comments: C,
+        resolver: R,
+        parser_config: TsConfig,
+        target: EsVersion,
+    ) -> Self {
         ModuleGraph {
             cm,
             parser_config,
@@ -130,7 +138,11 @@ where
         if !errors.is_empty() {
             let err = anyhow!(
                 "failed load modules:\n{}",
-                errors.iter().map(|s| format!("{:?}", s)).collect::<Vec<_>>().join("\n")
+                errors
+                    .iter()
+                    .map(|s| format!("{:?}", s))
+                    .collect::<Vec<_>>()
+                    .join("\n")
             );
             return Err((module_id, err));
         }
@@ -248,7 +260,11 @@ where
     /// Returns `Ok(None)` if it's already loaded.
     ///
     /// Note that this methods does not modify `self.loaded`.
-    fn load(&self, filename: &Arc<FileName>, resolve_all: bool) -> Result<Option<LoadResult>, Error> {
+    fn load(
+        &self,
+        filename: &Arc<FileName>,
+        resolve_all: bool,
+    ) -> Result<Option<LoadResult>, Error> {
         let module_id = self.id_generator.generate(filename);
 
         if self.loaded.contains_key(&module_id) {
@@ -276,7 +292,10 @@ where
 
         let module = self.load_one_module(filename)?;
 
-        let _panic = panic_ctx!(format!("ModuleGraph.load({}, span = {:?})", filename, module.span));
+        let _panic = panic_ctx!(format!(
+            "ModuleGraph.load({}, span = {:?})",
+            filename, module.span
+        ));
 
         let (declared_modules, deps) = find_modules_and_deps(&self.comments, &module);
 
@@ -346,7 +365,9 @@ where
         }
 
         let module = Arc::new(module);
-        self.parse_cache.lock().insert(filename.clone(), module.clone());
+        self.parse_cache
+            .lock()
+            .insert(filename.clone(), module.clone());
 
         Ok(module)
     }

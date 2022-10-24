@@ -1,20 +1,22 @@
-use crate::{
-    analyzer::{types::NormalizeTypeOpts, Analyzer},
-    ValidationResult,
-};
+use std::borrow::Cow;
+
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
-    Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, ModuleId,
-    PropertySignature, Ref, Type, TypeElement, Union,
+    Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature,
+    ModuleId, PropertySignature, Ref, Type, TypeElement, Union,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, try_cache};
-use std::borrow::Cow;
 use swc_atoms::js_word;
 use swc_common::{Span, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
+
+use crate::{
+    analyzer::{types::NormalizeTypeOpts, Analyzer},
+    ValidationResult,
+};
 
 impl Analyzer<'_, '_> {
     /// Evaluates `keyof` operator.
@@ -29,7 +31,10 @@ impl Analyzer<'_, '_> {
         let _ctx = debug_ctx!(format!("keyof: {}", dump_type_as_string(&self.cm, ty)));
 
         if !self.is_builtin {
-            debug_assert!(!span.is_dummy(), "Cannot perform `keyof` operation with dummy span");
+            debug_assert!(
+                !span.is_dummy(),
+                "Cannot perform `keyof` operation with dummy span"
+            );
         }
 
         let ty = (|| -> ValidationResult<_> {
@@ -67,7 +72,10 @@ impl Analyzer<'_, '_> {
                                 },
                             }),
                         )
-                        .context("tried applying `keyof` to a literal by delegating to keyword type handler")
+                        .context(
+                            "tried applying `keyof` to a literal by delegating to keyword type \
+                             handler",
+                        )
                 }
                 Type::Keyword(KeywordType { kind, .. }) => match kind {
                     TsKeywordTypeKind::TsAnyKeyword => {
@@ -161,29 +169,33 @@ impl Analyzer<'_, '_> {
                 },
 
                 Type::TypeLit(l) => {
-                    return Ok(try_cache!(self.data.cache.keyof_type_lit, ty.clone().into_owned(), {
-                        let mut types = vec![];
-                        for member in &l.members {
-                            match member {
-                                TypeElement::Property(PropertySignature { key, .. })
-                                | TypeElement::Method(MethodSignature { key, .. }) => {
-                                    if !key.is_computed() {
-                                        types.push(key.ty().into_owned());
+                    return Ok(try_cache!(
+                        self.data.cache.keyof_type_lit,
+                        ty.clone().into_owned(),
+                        {
+                            let mut types = vec![];
+                            for member in &l.members {
+                                match member {
+                                    TypeElement::Property(PropertySignature { key, .. })
+                                    | TypeElement::Method(MethodSignature { key, .. }) => {
+                                        if !key.is_computed() {
+                                            types.push(key.ty().into_owned());
+                                        }
                                     }
-                                }
 
-                                TypeElement::Index(i) => {
-                                    // TODO(kdy1): Check if this is correct.
-                                    if let Some(p) = i.params.first() {
-                                        types.push(*p.ty.clone());
+                                    TypeElement::Index(i) => {
+                                        // TODO(kdy1): Check if this is correct.
+                                        if let Some(p) = i.params.first() {
+                                            types.push(*p.ty.clone());
+                                        }
                                     }
-                                }
 
-                                TypeElement::Call(_) | TypeElement::Constructor(_) => {}
+                                    TypeElement::Call(_) | TypeElement::Constructor(_) => {}
+                                }
                             }
+                            Ok(Type::new_union(span, types))
                         }
-                        Ok(Type::new_union(span, types))
-                    }));
+                    ));
                 }
 
                 Type::Class(Class { def, .. }) => {
@@ -232,7 +244,10 @@ impl Analyzer<'_, '_> {
                             &Type::Ref(Ref {
                                 span,
                                 ctxt: ModuleId::builtin(),
-                                type_name: RTsEntityName::Ident(RIdent::new(js_word!("Array"), DUMMY_SP)),
+                                type_name: RTsEntityName::Ident(RIdent::new(
+                                    js_word!("Array"),
+                                    DUMMY_SP,
+                                )),
                                 type_args: None,
                                 metadata: Default::default(),
                             }),
@@ -247,9 +262,9 @@ impl Analyzer<'_, '_> {
                         .map(Type::TypeLit)
                         .unwrap();
 
-                    return self
-                        .keyof(span, &ty)
-                        .context("tried to evaluate `keyof` for type literal created with type_to_type_lit");
+                    return self.keyof(span, &ty).context(
+                        "tried to evaluate `keyof` for type literal created with type_to_type_lit",
+                    );
                 }
 
                 Type::Intersection(i) => {

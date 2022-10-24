@@ -2,6 +2,11 @@
 // Disabled because this is currently broken
 #![cfg(disabled)]
 
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
+
 use rnode::{NodeIdGenerator, RNode, VisitWith};
 use stc_testing::init_tracing;
 use stc_ts_ast_rnode::RModule;
@@ -13,10 +18,6 @@ use stc_ts_file_analyzer::{
 };
 use stc_ts_storage::Single;
 use stc_ts_types::ModuleId;
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
-};
 use swc_common::{input::SourceFileInput, FileName, GLOBALS};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
@@ -27,12 +28,19 @@ fn profile_file(name: &str, path: &Path) {
     testing::run_test2(false, |cm, _handler| {
         let fm = cm.load_file(path).unwrap();
 
-        let env = Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &[Lib::Es5]);
+        let env = Env::simple(
+            Default::default(),
+            EsVersion::latest(),
+            ModuleConfig::None,
+            &[Lib::Es5],
+        );
 
         let mut node_id_gen = NodeIdGenerator::default();
         let mut module = {
             let lexer = Lexer::new(
-                Syntax::Typescript(TsConfig { ..Default::default() }),
+                Syntax::Typescript(TsConfig {
+                    ..Default::default()
+                }),
                 EsVersion::Es2021,
                 SourceFileInput::from(&*fm),
                 None,
@@ -58,7 +66,14 @@ fn profile_file(name: &str, path: &Path) {
         };
 
         {
-            let mut analyzer = Analyzer::root(env, cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(
+                env,
+                cm.clone(),
+                Default::default(),
+                box &mut storage,
+                &NoopLoader,
+                None,
+            );
             module.visit_with(&mut analyzer);
         }
 
@@ -71,6 +86,9 @@ fn profile_file(name: &str, path: &Path) {
 fn profile_csstypes() {
     profile_file(
         "csstype",
-        &PathBuf::new().join("node_modules").join("csstype").join("index.d.ts"),
+        &PathBuf::new()
+            .join("node_modules")
+            .join("csstype")
+            .join("index.d.ts"),
     );
 }

@@ -1,9 +1,10 @@
 #![allow(incomplete_features)]
 #![feature(specialization)]
 
-use crate::{cache_map::CacheMap, cache_mode::CacheMode, key::CacheKey};
 use stc_ts_types::{Id, Mapped, Ref, Type};
 use stc_visit::{Visit, VisitWith};
+
+use crate::{cache_map::CacheMap, cache_mode::CacheMode, key::CacheKey};
 
 pub mod cache_map;
 pub mod cache_mode;

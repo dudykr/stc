@@ -3,6 +3,7 @@ use std::{
     io::Read,
     path::{Path, PathBuf},
 };
+
 use test::{DynTestFn, ShouldPanic::No, TestDesc, TestDescAndFn, TestName, TestType};
 use walkdir::WalkDir;
 
@@ -42,7 +43,11 @@ where
 
         let input = {
             let mut buf = String::new();
-            if File::open(entry.path()).unwrap().read_to_string(&mut buf).is_err() {
+            if File::open(entry.path())
+                .unwrap()
+                .read_to_string(&mut buf)
+                .is_err()
+            {
                 continue;
             }
             buf
@@ -67,7 +72,10 @@ where
                 ignore_message: Default::default(),
             },
             testfn: DynTestFn(box move || {
-                eprintln!("\n\n========== Running test {}\nSource:\n{}\n", file_name, input);
+                eprintln!(
+                    "\n\n========== Running test {}\nSource:\n{}\n",
+                    file_name, input
+                );
 
                 test_fn()
             }),

@@ -1,6 +1,7 @@
+use std::sync::atomic::{AtomicU64, Ordering::SeqCst};
+
 use once_cell::sync::Lazy;
 use stc_visit::Visit;
-use std::sync::atomic::{AtomicU64, Ordering::SeqCst};
 use swc_common::{EqIgnoreSpan, TypeEq};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EqIgnoreSpan, TypeEq, Visit)]

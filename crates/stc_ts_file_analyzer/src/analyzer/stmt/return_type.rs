@@ -1,26 +1,33 @@
-use crate::{
-    analyzer::{assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, util::ResultExt, Analyzer, Ctx},
-    ty::{Array, Type, TypeExt},
-    validator,
-    validator::ValidateWith,
-    ValidationResult,
-};
+use std::{borrow::Cow, mem::take, ops::AddAssign};
+
 use rnode::{Fold, FoldWith, Visit, VisitWith};
-use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RYieldExpr};
+use stc_ts_ast_rnode::{
+    RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RYieldExpr,
+};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
 use stc_ts_types::{
-    CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, ModuleId,
-    Operator, PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
+    CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType,
+    MethodSignature, ModuleId, Operator, PropertySignature, Ref, RefMetadata, TypeElement,
+    TypeParamInstantiation,
 };
 use stc_utils::{
     cache::Freeze,
     ext::{SpanExt, TypeVecExt},
 };
-use std::{borrow::Cow, mem::take, ops::AddAssign};
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::{debug, instrument};
+
+use crate::{
+    analyzer::{
+        assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, util::ResultExt, Analyzer, Ctx,
+    },
+    ty::{Array, Type, TypeExt},
+    validator,
+    validator::ValidateWith,
+    ValidationResult,
+};
 
 #[derive(Debug, Default)]
 pub(in crate::analyzer) struct ReturnValues {
@@ -56,7 +63,10 @@ impl Analyzer<'_, '_> {
 
         debug_assert_eq!(span.ctxt, SyntaxContext::empty());
         debug!("visit_stmts_for_return()");
-        debug_assert!(!self.is_builtin, "builtin: visit_stmts_for_return should not be called");
+        debug_assert!(
+            !self.is_builtin,
+            "builtin: visit_stmts_for_return should not be called"
+        );
 
         let cannot_fallback_to_iterable_iterator = self.rule().strict_null_checks && {
             let mut v = YieldValueUsageFinder::default();
@@ -138,7 +148,10 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            debug!("visit_stmts_for_return: types.len() = {}", values.return_types.len());
+            debug!(
+                "visit_stmts_for_return: types.len() = {}",
+                values.return_types.len()
+            );
 
             let mut actual = Vec::with_capacity(values.return_types.len());
             for mut ty in values.return_types {
@@ -153,7 +166,10 @@ impl Analyzer<'_, '_> {
             if is_generator {
                 let mut types = Vec::with_capacity(values.yield_types.len());
 
-                let is_all_null_or_undefined = values.yield_types.iter().all(|ty| ty.is_null_or_undefined());
+                let is_all_null_or_undefined = values
+                    .yield_types
+                    .iter()
+                    .all(|ty| ty.is_null_or_undefined());
 
                 for ty in values.yield_types {
                     let ty = self.simplify(ty);
@@ -166,7 +182,9 @@ impl Analyzer<'_, '_> {
 
                 if types.is_empty() {
                     if let Some(declared) = self.scope.declared_return_type().cloned() {
-                        if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true) {
+                        if let Ok(el_ty) =
+                            self.get_iterator_element_type(span, Cow::Owned(declared), true)
+                        {
                             types.push(el_ty.into_owned());
                         }
                     }
@@ -297,8 +315,14 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RReturnStmt) {
-        debug_assert!(!self.is_builtin, "builtin: return statement is not supported");
-        debug_assert_ne!(node.span, DUMMY_SP, "return statement should have valid span");
+        debug_assert!(
+            !self.is_builtin,
+            "builtin: return statement is not supported"
+        );
+        debug_assert_ne!(
+            node.span, DUMMY_SP,
+            "return statement should have valid span"
+        );
 
         let mut ty = if let Some(res) = {
             let ctx = Ctx {
@@ -337,7 +361,10 @@ impl Analyzer<'_, '_> {
                         &Type::Ref(Ref {
                             span: node.span,
                             ctxt: ModuleId::builtin(),
-                            type_name: RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), node.span)),
+                            type_name: RTsEntityName::Ident(RIdent::new(
+                                "AsyncGenerator".into(),
+                                node.span,
+                            )),
                             type_args: Some(box TypeParamInstantiation {
                                 span: node.span,
                                 params: vec![Type::any(DUMMY_SP, Default::default()), ty.clone()],
@@ -368,7 +395,10 @@ impl Analyzer<'_, '_> {
                 // Generator
                 (false, true) => {
                     let name = if self.ctx.cannot_fallback_to_iterable_iterator
-                        || self.env.get_global_type(node.span, &"Generator".into()).is_ok()
+                        || self
+                            .env
+                            .get_global_type(node.span, &"Generator".into())
+                            .is_ok()
                     {
                         "Generator"
                     } else {
@@ -473,11 +503,14 @@ impl Analyzer<'_, '_> {
 
             self.scope.return_values.yield_types.push(item_ty);
         } else {
-            self.scope.return_values.yield_types.push(Type::Keyword(KeywordType {
-                span: e.span,
-                kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                metadata: Default::default(),
-            }));
+            self.scope
+                .return_values
+                .yield_types
+                .push(Type::Keyword(KeywordType {
+                    span: e.span,
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    metadata: Default::default(),
+                }));
         }
 
         Ok(Type::any(e.span, Default::default()))
@@ -638,8 +671,14 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                         }
 
                                         match key {
-                                            Key::Normal { span: i_span, sym: key } => {
-                                                debug_assert_eq!(i_span.ctxt, SyntaxContext::empty());
+                                            Key::Normal {
+                                                span: i_span,
+                                                sym: key,
+                                            } => {
+                                                debug_assert_eq!(
+                                                    i_span.ctxt,
+                                                    SyntaxContext::empty()
+                                                );
                                                 let ty = Type::Lit(LitType {
                                                     span: i_span,
                                                     lit: RTsLit::Str(RStr {
@@ -651,7 +690,10 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                                     metadata: Default::default(),
                                                 });
 
-                                                if types.iter().all(|previous| !previous.type_eq(&ty)) {
+                                                if types
+                                                    .iter()
+                                                    .all(|previous| !previous.type_eq(&ty))
+                                                {
                                                     types.push(ty);
                                                 }
                                             }

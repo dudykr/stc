@@ -3,9 +3,10 @@
 #![deny(unreachable_code)]
 #![feature(box_syntax)]
 
+use std::cmp::{max_by, Ordering};
+
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_types::{name::Name, Type};
-use std::cmp::{max_by, Ordering};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Var {}
@@ -217,7 +218,9 @@ impl Ctx {
                     .iter()
                     .zip_longest(b_args.iter())
                     .filter_map(|pair| match pair {
-                        EitherOrBoth::Both(a, b) => Some(self.compare_with_path(TypePath::TypeName, a, b)),
+                        EitherOrBoth::Both(a, b) => {
+                            Some(self.compare_with_path(TypePath::TypeName, a, b))
+                        }
                         _ => None,
                     })
                     .max_by_key(|v| v.len())
@@ -244,13 +247,16 @@ impl Ctx {
                     return_type: b_return_yype,
                 },
             ) => {
-                let ret_path = self.compare_with_path(TypePath::ReturnType, &a_return_yype, &b_return_yype);
+                let ret_path =
+                    self.compare_with_path(TypePath::ReturnType, &a_return_yype, &b_return_yype);
 
                 let params_path = a_parmas
                     .iter()
                     .zip_longest(b_parmas.iter())
                     .filter_map(|pair| match pair {
-                        EitherOrBoth::Both(a, b) => Some(self.compare_with_path(TypePath::TypeName, a, b)),
+                        EitherOrBoth::Both(a, b) => {
+                            Some(self.compare_with_path(TypePath::TypeName, a, b))
+                        }
                         _ => None,
                     })
                     .max_by(max_path)
@@ -272,7 +278,11 @@ impl Ctx {
                 let mut max = vec![];
                 for a in &[a_truthy, a_falsy] {
                     for b in &[b_truthy, b_falsy] {
-                        max = max_by(max, self.compare_with_path(TypePath::Cond, &a, &b), max_path);
+                        max = max_by(
+                            max,
+                            self.compare_with_path(TypePath::Cond, &a, &b),
+                            max_path,
+                        );
                     }
                 }
 
@@ -288,7 +298,11 @@ impl Ctx {
             ) => {
                 let mut max = vec![];
                 for a in &[a_truthy, a_falsy] {
-                    max = max_by(max, self.compare_with_path(TypePath::Cond, &a, &b), max_path);
+                    max = max_by(
+                        max,
+                        self.compare_with_path(TypePath::Cond, &a, &b),
+                        max_path,
+                    );
                 }
 
                 max
@@ -302,7 +316,11 @@ impl Ctx {
             ) => {
                 let mut max = vec![];
                 for b in &[b_truthy, b_falsy] {
-                    max = max_by(max, self.compare_with_path(TypePath::Cond, &a, &b), max_path);
+                    max = max_by(
+                        max,
+                        self.compare_with_path(TypePath::Cond, &a, &b),
+                        max_path,
+                    );
                 }
 
                 max

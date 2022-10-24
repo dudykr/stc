@@ -1,5 +1,6 @@
-use stc_visit::Visit;
 use std::sync::atomic::{AtomicU64, Ordering::SeqCst};
+
+use stc_visit::Visit;
 use swc_common::{EqIgnoreSpan, TypeEq};
 
 /// Used to distinguish private class properties.

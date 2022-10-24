@@ -1,3 +1,33 @@
+use std::{
+    borrow::{Borrow, Cow},
+    collections::hash_map::Entry,
+    hash::Hash,
+    mem::{replace, take},
+    ops::{AddAssign, BitOr, Not},
+};
+
+use fxhash::FxHashMap;
+use rnode::{NodeId, VisitWith};
+use stc_ts_ast_rnode::{
+    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr,
+    RStmt, RSwitchCase, RSwitchStmt,
+};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
+use stc_ts_type_ops::Fix;
+use stc_ts_types::{
+    name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union,
+};
+use stc_ts_utils::MapWithMut;
+use stc_utils::{
+    cache::Freeze,
+    debug_ctx,
+    ext::{SpanExt, TypeVecExt},
+};
+use swc_atoms::JsWord;
+use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
+use swc_ecma_ast::*;
+use tracing::info;
+
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -13,32 +43,6 @@ use crate::{
     validator::ValidateWith,
     ValidationResult,
 };
-use fxhash::FxHashMap;
-use rnode::{NodeId, VisitWith};
-use stc_ts_ast_rnode::{
-    RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase,
-    RSwitchStmt,
-};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
-use stc_ts_type_ops::Fix;
-use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
-use stc_ts_utils::MapWithMut;
-use stc_utils::{
-    cache::Freeze,
-    debug_ctx,
-    ext::{SpanExt, TypeVecExt},
-};
-use std::{
-    borrow::{Borrow, Cow},
-    collections::hash_map::Entry,
-    hash::Hash,
-    mem::{replace, take},
-    ops::{AddAssign, BitOr, Not},
-};
-use swc_atoms::JsWord;
-use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::*;
-use tracing::info;
 
 /// Conditional facts
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -184,6 +188,7 @@ impl Facts {
 
 impl Not for Facts {
     type Output = Self;
+
     #[inline]
     fn not(self) -> Self {
         Facts {
@@ -332,6 +337,7 @@ impl AddAssign<Option<Self>> for CondFacts {
 
 impl BitOr for CondFacts {
     type Output = Self;
+
     fn bitor(self, rhs: Self) -> Self {
         CondFacts {
             facts: CondFacts::or(self.facts, rhs.facts),
@@ -396,13 +402,17 @@ impl Analyzer<'_, '_> {
 
         if let Some(alt) = &stmt.alt {
             self.cur_facts = prev_facts.clone();
-            self.with_child(ScopeKind::Flow, false_facts.clone(), |child: &mut Analyzer| {
-                alt.visit_with(child);
+            self.with_child(
+                ScopeKind::Flow,
+                false_facts.clone(),
+                |child: &mut Analyzer| {
+                    alt.visit_with(child);
 
-                alt_ends_with_unreachable = Some(child.ctx.in_unreachable);
+                    alt_ends_with_unreachable = Some(child.ctx.in_unreachable);
 
-                Ok(())
-            })
+                    Ok(())
+                },
+            )
             .report(&mut self.storage);
         }
 
@@ -427,14 +437,23 @@ impl Analyzer<'_, '_> {
     /// `SafeSubscriber` or downgrade the type, like converting `Subscriber` |
     /// `SafeSubscriber` into `SafeSubscriber`. This behavior is controlled by
     /// the mark applied while handling type facts related to call.
-    fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Type>) -> ValidationResult<Vec<Type>> {
+    fn adjust_ternary_type(
+        &mut self,
+        span: Span,
+        mut types: Vec<Type>,
+    ) -> ValidationResult<Vec<Type>> {
         types.iter_mut().for_each(|ty| {
             // Tuple -> Array
             match ty.normalize_mut() {
                 Type::Tuple(tuple) => {
                     let span = tuple.span;
 
-                    let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
+                    let mut elem_types: Vec<_> = tuple
+                        .elems
+                        .take()
+                        .into_iter()
+                        .map(|elem| *elem.ty)
+                        .collect();
                     elem_types.dedup_type();
                     let elem_type = box Type::union(elem_types);
                     *ty = Type::Array(Array {
@@ -582,7 +601,11 @@ impl Analyzer<'_, '_> {
                 break;
             }
 
-            let span = case.test.as_ref().map(|v| v.span()).unwrap_or_else(|| stmt_span);
+            let span = case
+                .test
+                .as_ref()
+                .map(|v| v.span())
+                .unwrap_or_else(|| stmt_span);
 
             let RSwitchCase { cons, .. } = case;
             let last = i == len - 1;
@@ -737,7 +760,12 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(super) fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> ValidationResult<()> {
+    pub(super) fn try_assign_pat(
+        &mut self,
+        span: Span,
+        lhs: &RPat,
+        ty: &Type,
+    ) -> ValidationResult<()> {
         ty.assert_valid();
 
         self.try_assign_pat_with_opts(span, lhs, ty, Default::default())
@@ -756,7 +784,11 @@ impl Analyzer<'_, '_> {
 
         let is_in_loop = self.scope.is_in_loop_body();
         let orig_ty = self
-            .normalize(Some(ty.span().or_else(|| span)), Cow::Borrowed(ty), Default::default())
+            .normalize(
+                Some(ty.span().or_else(|| span)),
+                Cow::Borrowed(ty),
+                Default::default(),
+            )
             .context("tried to normalize a type to assign it to a pattern")?
             .into_owned()
             .freezed();
@@ -773,10 +805,9 @@ impl Analyzer<'_, '_> {
 
             RPat::Assign(assign) => {
                 // TODO(kdy1): Use type annotation?
-                let res = assign
-                    .right
-                    .validate_with_default(self)
-                    .context("tried to validate type of default expression in an assginment pattern");
+                let res = assign.right.validate_with_default(self).context(
+                    "tried to validate type of default expression in an assginment pattern",
+                );
 
                 self.try_assign_pat_with_opts(span, &assign.left, &ty, opts)
                     .report(&mut self.storage);
@@ -793,7 +824,8 @@ impl Analyzer<'_, '_> {
                 // Verify using immutable references.
                 if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
                     if let Some(mut var_ty) = var_info.ty.clone() {
-                        let _panic_ctx = debug_ctx!(format!("var_ty = {}", dump_type_as_string(&self.cm, &ty)));
+                        let _panic_ctx =
+                            debug_ctx!(format!("var_ty = {}", dump_type_as_string(&self.cm, &ty)));
 
                         var_ty.make_clone_cheap();
 
@@ -828,7 +860,10 @@ impl Analyzer<'_, '_> {
                         let declared_ty = declared_ty.clone();
 
                         let ty = ty.clone();
-                        let ty = self.apply_type_facts_to_type(TypeFacts::NEUndefined | TypeFacts::NENull, ty);
+                        let ty = self.apply_type_facts_to_type(
+                            TypeFacts::NEUndefined | TypeFacts::NENull,
+                            ty,
+                        );
 
                         ty.assert_valid();
 
@@ -836,7 +871,8 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
 
-                        let mut narrowed_ty = self.narrowed_type_of_assignment(span, declared_ty, &ty)?;
+                        let mut narrowed_ty =
+                            self.narrowed_type_of_assignment(span, declared_ty, &ty)?;
                         narrowed_ty.assert_valid();
                         narrowed_ty.make_clone_cheap();
                         actual_ty = Some(narrowed_ty);
@@ -866,7 +902,9 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                let var_info = if let Some(var_info) = self.scope.search_parent(&i.id.clone().into()) {
+                let var_info = if let Some(var_info) =
+                    self.scope.search_parent(&i.id.clone().into())
+                {
                     let actual_ty = actual_ty.unwrap_or_else(|| orig_ty.clone());
                     actual_ty.assert_valid();
                     actual_ty.assert_clone_cheap();
@@ -891,7 +929,9 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return if self.ctx.allow_ref_declaring && self.scope.declaring.contains(&i.id.clone().into()) {
+                    return if self.ctx.allow_ref_declaring
+                        && self.scope.declaring.contains(&i.id.clone().into())
+                    {
                         Ok(())
                     } else {
                         // undefined symbol
@@ -913,7 +953,9 @@ impl Analyzer<'_, '_> {
             RPat::Array(ref arr) => {
                 let ty = self
                     .get_iterator(span, Cow::Borrowed(&ty), Default::default())
-                    .context("tried to convert a type to an iterator to assign with an array pattern")
+                    .context(
+                        "tried to convert a type to an iterator to assign with an array pattern",
+                    )
                     .report(&mut self.storage)
                     .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default())));
                 //
@@ -922,9 +964,11 @@ impl Analyzer<'_, '_> {
                         match elem {
                             RPat::Rest(elem) => {
                                 // Rest element is special.
-                                let type_for_rest_arg = self.get_lefting_elements(None, ty, i).context(
-                                    "tried to get lefting elements of an iterator to assign using a rest pattern",
-                                )?;
+                                let type_for_rest_arg =
+                                    self.get_lefting_elements(None, ty, i).context(
+                                        "tried to get lefting elements of an iterator to assign \
+                                         using a rest pattern",
+                                    )?;
 
                                 self.try_assign_pat_with_opts(
                                     span,
@@ -938,7 +982,10 @@ impl Analyzer<'_, '_> {
                                         ..opts
                                     },
                                 )
-                                .context("tried to assign lefting elements to the arugment of a rest pattern")?;
+                                .context(
+                                    "tried to assign lefting elements to the arugment of a rest \
+                                     pattern",
+                                )?;
                                 break;
                             }
                             _ => {}
@@ -946,7 +993,9 @@ impl Analyzer<'_, '_> {
 
                         let elem_ty = self
                             .get_element_from_iterator(span, Cow::Borrowed(&ty), i)
-                            .context("tried to get an element of type to assign with an array pattern")
+                            .context(
+                                "tried to get an element of type to assign with an array pattern",
+                            )
                             .report(&mut self.storage);
                         if let Some(elem_ty) = elem_ty {
                             self.try_assign_pat_with_opts(span, elem, &elem_ty, opts)
@@ -1027,26 +1076,36 @@ impl Analyzer<'_, '_> {
                                 RPat::Ident(_) => {}
 
                                 RPat::Array(_) => {
-                                    self.storage.report(Error::NotArrayType { span: r.arg.span() });
                                     self.storage
-                                        .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                        .report(Error::NotArrayType { span: r.arg.span() });
+                                    self.storage
+                                        .report(Error::BindingPatNotAllowedInRestPatArg {
+                                            span: r.arg.span(),
+                                        });
                                 }
 
                                 RPat::Object(_) => {
                                     self.storage
-                                        .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                        .report(Error::BindingPatNotAllowedInRestPatArg {
+                                            span: r.arg.span(),
+                                        });
                                 }
 
                                 RPat::Expr(_) => {
                                     self.storage
-                                        .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                        .report(Error::BindingPatNotAllowedInRestPatArg {
+                                            span: r.arg.span(),
+                                        });
                                 }
 
                                 RPat::Invalid(_) => {
                                     self.storage
-                                        .report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
-                                    self.storage
-                                        .report(Error::RestArgMustBeVarOrMemberAccess { span: r.arg.span() });
+                                        .report(Error::BindingPatNotAllowedInRestPatArg {
+                                            span: r.arg.span(),
+                                        });
+                                    self.storage.report(Error::RestArgMustBeVarOrMemberAccess {
+                                        span: r.arg.span(),
+                                    });
                                 }
 
                                 _ => {}
@@ -1074,7 +1133,8 @@ impl Analyzer<'_, '_> {
             RPat::Expr(lhs) => {
                 match &**lhs {
                     RExpr::Lit(..) => {
-                        self.storage.report(Error::InvalidLhsOfAssign { span: lhs.span() });
+                        self.storage
+                            .report(Error::InvalidLhsOfAssign { span: lhs.span() });
                         return Ok(());
                     }
                     _ => {}
@@ -1087,7 +1147,10 @@ impl Analyzer<'_, '_> {
                 if let Some(lhs_ty) = &lhs_ty {
                     self.assign_with_opts(
                         &mut Default::default(),
-                        AssignOpts { span, ..opts.assign },
+                        AssignOpts {
+                            span,
+                            ..opts.assign
+                        },
                         &lhs_ty,
                         &ty,
                     )?;
@@ -1108,7 +1171,13 @@ impl Analyzer<'_, '_> {
         self.cur_facts.insert_var(sym, ty, false);
     }
 
-    pub(super) fn add_deep_type_fact(&mut self, span: Span, name: Name, ty: Type, is_for_true: bool) {
+    pub(super) fn add_deep_type_fact(
+        &mut self,
+        span: Span,
+        name: Name,
+        ty: Type,
+        is_for_true: bool,
+    ) {
         debug_assert!(!self.is_builtin);
 
         ty.assert_valid();
@@ -1153,7 +1222,8 @@ impl Analyzer<'_, '_> {
 
         match src.normalize() {
             Type::Ref(..) => {
-                let src = self.expand_top_ref(src.span(), Cow::Borrowed(src), Default::default())?;
+                let src =
+                    self.expand_top_ref(src.span(), Cow::Borrowed(src), Default::default())?;
                 return self.filter_types_with_property(&src, property, type_facts);
             }
             Type::Union(ty) => {
@@ -1297,7 +1367,12 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RCondExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(
+        &mut self,
+        e: &RCondExpr,
+        mode: TypeOfMode,
+        type_ann: Option<&Type>,
+    ) -> ValidationResult {
         self.record(e);
 
         let RCondExpr {

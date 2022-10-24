@@ -2,10 +2,11 @@
 #![feature(box_syntax)]
 #![feature(test)]
 
+use std::hint::black_box;
+
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_file_analyzer::env::EnvFactory;
-use std::hint::black_box;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::EsVersion;
 
@@ -25,7 +26,12 @@ fn main() {
         }
         libs.sort();
         libs.dedup();
-        let env = Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &libs);
+        let env = Env::simple(
+            Default::default(),
+            EsVersion::latest(),
+            ModuleConfig::None,
+            &libs,
+        );
         let env = black_box(env);
 
         println!("{:?}", env.get_global_type(DUMMY_SP, &"Function".into()));

@@ -8,19 +8,21 @@ extern crate test;
 #[path = "common/mod.rs"]
 mod common;
 
-use self::common::load_fixtures;
+use std::{env, path::Path, sync::Arc};
+
 use serde::Deserialize;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig};
 use stc_ts_file_analyzer::env::EnvFactory;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_type_checker::Checker;
-use std::{env, path::Path, sync::Arc};
 use swc_common::FileName;
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::TsConfig;
 use test::test_main;
 use testing::StdErr;
+
+use self::common::load_fixtures;
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 struct Error {
@@ -48,7 +50,12 @@ fn errors() {
 fn do_test(file_name: &Path) -> Result<(), StdErr> {
     let fname = file_name.display().to_string();
 
-    let (libs, rule, ts_config, target) = (vec![Lib::Es5], Default::default(), Default::default(), EsVersion::Es5);
+    let (libs, rule, ts_config, target) = (
+        vec![Lib::Es5],
+        Default::default(),
+        Default::default(),
+        EsVersion::Es5,
+    );
 
     let res = ::testing::run_test2(false, |cm, handler| {
         let handler = Arc::new(handler);
@@ -80,7 +87,10 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
     });
 
     let err = res.expect_err("should fail, but parsed as");
-    if err.compare_to_file(format!("{}.stderr", file_name.display())).is_err() {
+    if err
+        .compare_to_file(format!("{}.stderr", file_name.display()))
+        .is_err()
+    {
         panic!()
     }
 

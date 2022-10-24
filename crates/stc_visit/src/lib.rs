@@ -1,16 +1,17 @@
 #![allow(incomplete_features)]
 #![feature(specialization)]
 
+use num_bigint::BigInt;
+pub use stc_visit_macros::Visit;
+use swc_atoms::JsWord;
+use swc_common::SyntaxContext;
+
 pub use self::{
     fold::{Fold, FoldWith},
     visit::{Visit, VisitWith},
     visit_mut::{VisitMut, VisitMutWith},
     visitable::Visitable,
 };
-use num_bigint::BigInt;
-pub use stc_visit_macros::Visit;
-use swc_atoms::JsWord;
-use swc_common::SyntaxContext;
 
 mod fold;
 mod visit;

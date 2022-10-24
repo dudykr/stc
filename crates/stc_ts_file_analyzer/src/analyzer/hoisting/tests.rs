@@ -4,7 +4,9 @@ use crate::analyzer::tests::run_test;
 fn assert_order(src: &str, expected: Vec<usize>) {
     run_test(|tester| {
         let module = tester.parse("main.ts", src);
-        let (actual, _) = tester.analyzer.reorder_stmts(&&module.body.iter().collect::<Vec<_>>());
+        let (actual, _) = tester
+            .analyzer
+            .reorder_stmts(&&module.body.iter().collect::<Vec<_>>());
 
         assert_eq!(expected, actual);
     })

@@ -7,6 +7,15 @@
 
 extern crate test;
 
+use std::{
+    env,
+    fs::{self, canonicalize, read_to_string, File},
+    io::Read,
+    path::{Path, PathBuf},
+    process::Command,
+    sync::Arc,
+};
+
 use anyhow::Context;
 use rnode::{NodeIdGenerator, RNode};
 use stc_testing::get_git_root;
@@ -22,17 +31,10 @@ use stc_ts_file_analyzer::{
 use stc_ts_storage::Single;
 use stc_ts_types::module_id;
 use stc_ts_utils::StcComments;
-use std::{
-    env,
-    fs::{self, canonicalize, read_to_string, File},
-    io::Read,
-    path::{Path, PathBuf},
-    process::Command,
-    sync::Arc,
-};
 use swc_common::{input::SourceFileInput, FileName, SyntaxContext, GLOBALS};
 use swc_ecma_ast::{
-    EsVersion, Ident, Module, TsIntersectionType, TsKeywordTypeKind, TsLit, TsLitType, TsType, TsUnionType,
+    EsVersion, Ident, Module, TsIntersectionType, TsKeywordTypeKind, TsLit, TsLitType, TsType,
+    TsUnionType,
 };
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
@@ -48,7 +50,11 @@ fn fixture(input: PathBuf) {
 
 fn do_test(file_name: &Path) -> Result<(), StdErr> {
     if let Ok(test) = env::var("TEST") {
-        if !file_name.to_string_lossy().replace("/", "::").contains(&test) {
+        if !file_name
+            .to_string_lossy()
+            .replace("/", "::")
+            .contains(&test)
+        {
             return Ok(());
         }
     }
@@ -110,7 +116,14 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let mut module = RModule::from_orig(&mut node_id_gen, module);
         let mut mutations;
         {
-            let mut analyzer = Analyzer::root(env, cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(
+                env,
+                cm.clone(),
+                Default::default(),
+                box &mut storage,
+                &NoopLoader,
+                None,
+            );
             GLOBALS.set(stable_env.swc_globals(), || {
                 module.validate_with(&mut analyzer).unwrap();
             });
@@ -250,10 +263,10 @@ fn parse_dts(src: &str) -> Module {
 
 fn get_correct_dts(path: &Path) -> (Arc<String>, Module) {
     testing::run_test2(false, |cm, handler| {
-        let dts_file = path
-            .parent()
-            .unwrap()
-            .join(format!("{}.d.ts", path.file_stem().unwrap().to_string_lossy()));
+        let dts_file = path.parent().unwrap().join(format!(
+            "{}.d.ts",
+            path.file_stem().unwrap().to_string_lossy()
+        ));
 
         if !dts_file.exists() {
             let mut c = Command::new(get_git_root().join("node_modules").join(".bin").join("tsc"));
@@ -352,13 +365,17 @@ impl Normalizer {
         }
 
         types.sort_by(|a, b| match (&**a, &**b) {
-            (&TsType::TsKeywordType(ref a), &TsType::TsKeywordType(ref b)) => kwd_rank(a.kind).cmp(&kwd_rank(b.kind)),
+            (&TsType::TsKeywordType(ref a), &TsType::TsKeywordType(ref b)) => {
+                kwd_rank(a.kind).cmp(&kwd_rank(b.kind))
+            }
             (
                 &TsType::TsLitType(TsLitType {
-                    lit: TsLit::Str(ref a), ..
+                    lit: TsLit::Str(ref a),
+                    ..
                 }),
                 &TsType::TsLitType(TsLitType {
-                    lit: TsLit::Str(ref b), ..
+                    lit: TsLit::Str(ref b),
+                    ..
                 }),
             ) => a.value.cmp(&b.value),
 

@@ -1,3 +1,10 @@
+use std::borrow::Cow;
+
+use stc_ts_errors::{DebugExt, Error};
+use stc_ts_types::{Class, ClassDef, ClassMember, QueryExpr, Type, TypeLitMetadata};
+use swc_common::EqIgnoreSpan;
+use swc_ecma_ast::Accessibility;
+
 use crate::{
     analyzer::{
         assign::{AssignData, AssignOpts},
@@ -5,11 +12,6 @@ use crate::{
     },
     ValidationResult,
 };
-use stc_ts_errors::{DebugExt, Error};
-use stc_ts_types::{Class, ClassDef, ClassMember, QueryExpr, Type, TypeLitMetadata};
-use std::borrow::Cow;
-use swc_common::EqIgnoreSpan;
-use swc_ecma_ast::Accessibility;
 
 impl Analyzer<'_, '_> {
     pub(super) fn assign_to_class_def(
@@ -44,7 +46,11 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !l.is_abstract && rc.is_abstract {
-                    return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
+                    return Err(
+                        Error::CannotAssignAbstractConstructorToNonAbstractConstructor {
+                            span: opts.span,
+                        },
+                    );
                 }
 
                 if !rc.is_abstract {
@@ -88,7 +94,9 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(..) | Type::Interface(..) => {
-                let rhs = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(r))?.unwrap();
+                let rhs = self
+                    .convert_type_to_type_lit(opts.span, Cow::Borrowed(r))?
+                    .unwrap();
 
                 let mut lhs_members = vec![];
                 for lm in &l.body {
@@ -127,7 +135,10 @@ impl Analyzer<'_, '_> {
 
         Err(Error::Unimplemented {
             span: opts.span,
-            msg: format!("Assignment of non-class object to class definition\n{:#?}", r),
+            msg: format!(
+                "Assignment of non-class object to class definition\n{:#?}",
+                r
+            ),
         })
     }
 
@@ -184,9 +195,9 @@ impl Analyzer<'_, '_> {
                     // let p: Parent;
                     // `p = c` is valid
                     if let Some(parent) = &rc.def.super_class {
-                        let parent = self
-                            .instantiate_class(opts.span, &parent)
-                            .context("tried to instanitate class to asssign the super class to a class")?;
+                        let parent = self.instantiate_class(opts.span, &parent).context(
+                            "tried to instanitate class to asssign the super class to a class",
+                        )?;
                         if self.assign_to_class(data, opts, l, &parent).is_ok() {
                             return Ok(());
                         }
@@ -307,7 +318,9 @@ impl Analyzer<'_, '_> {
                                     return Ok(());
                                 }
 
-                                if rm.accessibility == Some(Accessibility::Private) || rm.key.is_private() {
+                                if rm.accessibility == Some(Accessibility::Private)
+                                    || rm.key.is_private()
+                                {
                                     return Err(Error::PrivateMethodIsDifferent { span });
                                 }
 
@@ -355,8 +368,9 @@ impl Analyzer<'_, '_> {
                             {
                                 if let Some(lt) = &lp.value {
                                     if let Some(rt) = &rp.value {
-                                        self.assign_inner(data, &lt, &rt, opts)
-                                            .context("tried to assign a class proeprty to another")?;
+                                        self.assign_inner(data, &lt, &rt, opts).context(
+                                            "tried to assign a class proeprty to another",
+                                        )?;
                                     }
                                 }
 
@@ -364,7 +378,9 @@ impl Analyzer<'_, '_> {
                                     return Ok(());
                                 }
 
-                                if rp.accessibility == Some(Accessibility::Private) || rp.key.is_private() {
+                                if rp.accessibility == Some(Accessibility::Private)
+                                    || rp.key.is_private()
+                                {
                                     return Err(Error::PrivatePropertyIsDifferent { span });
                                 }
 
@@ -384,7 +400,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 if opts.use_missing_fields_for_class {
-                    let err = Error::MissingFields { span, fields: vec![] };
+                    let err = Error::MissingFields {
+                        span,
+                        fields: vec![],
+                    };
                     return Err(Error::Errors {
                         span,
                         errors: vec![err],

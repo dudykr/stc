@@ -1,6 +1,8 @@
 //! Full type checker with dependency support.
 #![feature(box_syntax)]
 
+use std::{mem::take, sync::Arc, time::Instant};
+
 use dashmap::{DashMap, DashSet, SharedValue};
 use fxhash::{FxBuildHasher, FxHashMap};
 use once_cell::sync::OnceCell;
@@ -18,7 +20,6 @@ use stc_ts_storage::{ErrorStore, File, Group, Single};
 use stc_ts_types::{ModuleId, Type};
 use stc_ts_utils::StcComments;
 use stc_utils::{cache::Freeze, early_error, panic_ctx};
-use std::{mem::take, sync::Arc, time::Instant};
 use swc_atoms::JsWord;
 use swc_common::{errors::Handler, FileName, SourceMap, Spanned, DUMMY_SP};
 use swc_ecma_ast::Module;
@@ -121,14 +122,22 @@ impl Checker {
             let id = self.module_graph.load_all(&entry);
 
             let end = Instant::now();
-            info!("Loading of `{}` and dependencies took {:?}", entry, end - start);
+            info!(
+                "Loading of `{}` and dependencies took {:?}",
+                entry,
+                end - start
+            );
 
             let start = Instant::now();
 
             self.analyze_module(None, entry.clone());
 
             let end = Instant::now();
-            info!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
+            info!(
+                "Analysis of `{}` and dependencies took {:?}",
+                entry,
+                end - start
+            );
 
             id.unwrap_or_else(|(id, _)| id)
         })
@@ -179,7 +188,11 @@ impl Checker {
                                     .map(|id| {
                                         let path = self.module_graph.path(id);
                                         let stmt_count = self.module_graph.stmt_count_of(id);
-                                        File { id, path, stmt_count }
+                                        File {
+                                            id,
+                                            path,
+                                            stmt_count,
+                                        }
                                     })
                                     .collect(),
                             ),
@@ -194,7 +207,9 @@ impl Checker {
                             .map(|module| {
                                 RModule::from_orig(
                                     &mut node_id_gen,
-                                    module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark())),
+                                    module.fold_with(&mut ts_resolver(
+                                        self.env.shared().marks().top_level_mark(),
+                                    )),
                                 )
                             })
                             .collect::<Vec<_>>();
@@ -253,7 +268,10 @@ impl Checker {
                                 match res {
                                     Ok(()) => {}
                                     Err(..) => {
-                                        warn!("Duplicated work: `{}`: (type info is already cached)", path);
+                                        warn!(
+                                            "Duplicated work: `{}`: (type info is already cached)",
+                                            path
+                                        );
                                     }
                                 }
                             }
@@ -261,7 +279,11 @@ impl Checker {
                     }
 
                     let lock = self.module_types.read();
-                    return lock.get(&id).map(|cell| cell.get().cloned()).flatten().unwrap();
+                    return lock
+                        .get(&id)
+                        .map(|cell| cell.get().cloned())
+                        .flatten()
+                        .unwrap();
                 }
             }
             info!(
@@ -310,10 +332,9 @@ impl Checker {
             };
 
             let mut node_id_gen = NodeIdGenerator::default();
-            let mut module = self
-                .module_graph
-                .clone_module(id)
-                .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", id, path));
+            let mut module = self.module_graph.clone_module(id).unwrap_or_else(|| {
+                unreachable!("Module graph does not contains {:?}: {}", id, path)
+            });
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
 
             let _panic = panic_ctx!(format!("Span of module = ({:?})", module.span));
@@ -356,7 +377,9 @@ impl Checker {
 
             if early_error() {
                 for err in storage.info.errors {
-                    self.handler.struct_span_err(err.span(), &format!("{:?}", err)).emit();
+                    self.handler
+                        .struct_span_err(err.span(), &format!("{:?}", err))
+                        .emit();
                 }
             } else {
                 let mut errors = self.errors.lock();
@@ -402,7 +425,12 @@ impl Load for Checker {
         }
     }
 
-    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, _partial: &ModuleTypeData) -> ValidationResult {
+    fn load_circular_dep(
+        &self,
+        base: ModuleId,
+        dep: ModuleId,
+        _partial: &ModuleTypeData,
+    ) -> ValidationResult {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 
@@ -416,11 +444,13 @@ impl Load for Checker {
         let dep_path = self.module_graph.path(dep);
 
         if matches!(&*dep_path, FileName::Custom(..)) {
-            let ty = self
-                .declared_modules
-                .read()
-                .iter()
-                .find_map(|(v, ty)| if *v == dep { Some(ty.clone()) } else { None });
+            let ty = self.declared_modules.read().iter().find_map(|(v, ty)| {
+                if *v == dep {
+                    Some(ty.clone())
+                } else {
+                    None
+                }
+            });
 
             if let Some(ty) = ty {
                 return Ok(ty);

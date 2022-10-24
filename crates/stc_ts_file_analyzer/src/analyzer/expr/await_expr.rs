@@ -1,17 +1,19 @@
+use std::borrow::Cow;
+
+use stc_ts_ast_rnode::{RAwaitExpr, RIdent, RTsEntityName};
+use stc_ts_errors::DebugExt;
+use stc_ts_file_analyzer_macros::validator;
+use stc_ts_types::{IdCtx, Key, ModuleId, Ref, Type, TypeParamInstantiation};
+use stc_utils::cache::Freeze;
+use swc_atoms::js_word;
+use swc_common::{Span, SyntaxContext};
+
 use crate::{
     analyzer::{expr::TypeOfMode, Analyzer},
     util::unwrap_ref_with_single_arg,
     validator::ValidateWith,
     ValidationResult,
 };
-use stc_ts_ast_rnode::{RAwaitExpr, RIdent, RTsEntityName};
-use stc_ts_errors::DebugExt;
-use stc_ts_file_analyzer_macros::validator;
-use stc_ts_types::{IdCtx, Key, ModuleId, Ref, Type, TypeParamInstantiation};
-use stc_utils::cache::Freeze;
-use std::borrow::Cow;
-use swc_atoms::js_word;
-use swc_common::{Span, SyntaxContext};
 
 #[validator]
 impl Analyzer<'_, '_> {
@@ -77,7 +79,11 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn get_awaited_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> ValidationResult<Cow<'a, Type>> {
+    pub(crate) fn get_awaited_type<'a>(
+        &mut self,
+        span: Span,
+        ty: Cow<'a, Type>,
+    ) -> ValidationResult<Cow<'a, Type>> {
         if let Some(arg) = unwrap_ref_with_single_arg(&ty, "Promise") {
             return self
                 .get_awaited_type(span, Cow::Borrowed(arg))

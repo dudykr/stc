@@ -1,12 +1,16 @@
-use crate::Id;
-use smallvec::{smallvec, SmallVec};
-use stc_ts_ast_rnode::{RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, RTsEntityName, RTsThisTypeOrIdent};
 use std::{
     convert::{TryFrom, TryInto},
     fmt::{self, Debug, Formatter},
 };
+
+use smallvec::{smallvec, SmallVec};
+use stc_ts_ast_rnode::{
+    RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, RTsEntityName, RTsThisTypeOrIdent,
+};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{iter::IdentifyLast, SyntaxContext};
+
+use crate::Id;
 
 type Inner = SmallVec<[Id; 4]>;
 
@@ -18,6 +22,7 @@ impl Name {
     pub fn push(&mut self, sym: JsWord) {
         self.0.push(Id::word(sym))
     }
+
     pub fn top(&self) -> Id {
         self.0[0].clone()
     }
@@ -133,7 +138,11 @@ impl TryFrom<&'_ RExpr> for Name {
             RExpr::Ident(i) => Ok(i.into()),
             RExpr::Member(m) => m.try_into(),
             RExpr::This(this) => Ok({
-                let this: Id = RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty())).into();
+                let this: Id = RIdent::new(
+                    js_word!("this"),
+                    this.span.with_ctxt(SyntaxContext::empty()),
+                )
+                .into();
 
                 this.into()
             }),

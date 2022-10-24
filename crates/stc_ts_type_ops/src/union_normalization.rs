@@ -1,14 +1,15 @@
+use std::iter::repeat;
+
 use indexmap::IndexSet;
 use rnode::{FoldWith, NodeId, VisitMut, VisitMutWith};
 use rustc_hash::FxHashMap;
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_types::{
-    CallSignature, FnParam, Function, FunctionMetadata, Key, KeywordType, PropertySignature, Type, TypeElement,
-    TypeLit, TypeLitMetadata, TypeParamDecl, Union,
+    CallSignature, FnParam, Function, FunctionMetadata, Key, KeywordType, PropertySignature, Type,
+    TypeElement, TypeLit, TypeLitMetadata, TypeParamDecl, Union,
 };
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
-use std::iter::repeat;
 use swc_atoms::JsWord;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -179,7 +180,9 @@ impl UnionNormalizer {
                                             include_type_params: true,
                                         });
                                     } else {
-                                        new_type_params.entry(i).or_insert_with(|| type_params.clone());
+                                        new_type_params
+                                            .entry(i)
+                                            .or_insert_with(|| type_params.clone());
                                     }
                                 }
 
@@ -189,7 +192,9 @@ impl UnionNormalizer {
                                 for (idx, param) in params.into_iter().enumerate() {
                                     let new_params = new_params.entry(i).or_default();
                                     if new_params.len() <= idx {
-                                        new_params.extend(repeat(vec![]).take(idx + 1 - new_params.len()));
+                                        new_params.extend(
+                                            repeat(vec![]).take(idx + 1 - new_params.len()),
+                                        );
                                     }
 
                                     new_params[idx].push(param);
@@ -202,7 +207,9 @@ impl UnionNormalizer {
                             }
                             _ => {
                                 if extra_members.len() <= type_idx {
-                                    extra_members.extend(repeat(vec![]).take(type_idx + 1 - extra_members.len()));
+                                    extra_members.extend(
+                                        repeat(vec![]).take(type_idx + 1 - extra_members.len()),
+                                    );
                                 }
 
                                 extra_members[type_idx].push(m.clone())

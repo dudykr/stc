@@ -1,13 +1,14 @@
 #![deny(unused)]
 
-use fxhash::FxHashMap;
-use once_cell::sync::Lazy;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use stc_ts_builtin_macro::builtin;
 use std::{
     cmp::Ordering,
     sync::{Arc, RwLock},
 };
+
+use fxhash::FxHashMap;
+use once_cell::sync::Lazy;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use stc_ts_builtin_macro::builtin;
 use swc_atoms::js_word;
 use swc_common::{FileName, FilePathMapping, SourceMap};
 use swc_ecma_ast::*;
@@ -21,7 +22,8 @@ builtin!();
 
 impl Lib {
     fn body(self) -> &'static TsNamespaceDecl {
-        static CACHE: Lazy<RwLock<FxHashMap<Lib, &'static TsNamespaceDecl>>> = Lazy::new(Default::default);
+        static CACHE: Lazy<RwLock<FxHashMap<Lib, &'static TsNamespaceDecl>>> =
+            Lazy::new(Default::default);
 
         {
             let read = CACHE.read().expect("no panic is expected");

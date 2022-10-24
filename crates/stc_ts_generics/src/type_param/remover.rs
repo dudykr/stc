@@ -1,7 +1,8 @@
 use fxhash::FxHashSet;
 use rnode::{Fold, FoldWith};
 use stc_ts_types::{
-    CallSignature, ConstructorSignature, Function, Id, MethodSignature, Type, TypeParam, TypeParamDecl,
+    CallSignature, ConstructorSignature, Function, Id, MethodSignature, Type, TypeParam,
+    TypeParamDecl,
 };
 use swc_common::util::move_map::MoveMap;
 

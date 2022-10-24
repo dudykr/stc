@@ -1,3 +1,9 @@
+use stc_ts_ast_rnode::{RIdent, RTsEntityName};
+use stc_ts_errors::{DebugExt, Error};
+use stc_ts_types::{Array, ArrayMetadata, Ref, Type, TypeElement};
+use swc_atoms::js_word;
+use swc_common::{Spanned, TypeEq};
+
 use crate::{
     analyzer::{
         assign::{AssignData, AssignOpts},
@@ -6,11 +12,6 @@ use crate::{
     util::unwrap_ref_with_single_arg,
     ValidationResult,
 };
-use stc_ts_ast_rnode::{RIdent, RTsEntityName};
-use stc_ts_errors::{DebugExt, Error};
-use stc_ts_types::{Array, ArrayMetadata, Ref, Type, TypeElement};
-use swc_atoms::js_word;
-use swc_common::{Spanned, TypeEq};
 
 impl Analyzer<'_, '_> {
     /// This handles the assignment to builtin types.
@@ -38,14 +39,20 @@ impl Analyzer<'_, '_> {
             Type::Ref(Ref {
                 type_name:
                     RTsEntityName::Ident(RIdent {
-                        sym: js_word!("Array"), ..
+                        sym: js_word!("Array"),
+                        ..
                     }),
                 type_args: Some(type_args),
                 ..
             }) => match r {
                 Type::Array(r) => {
                     if type_args.params.len() == 1 {
-                        return Some(self.assign_inner(data, &type_args.params[0], &r.elem_type, opts));
+                        return Some(self.assign_inner(
+                            data,
+                            &type_args.params[0],
+                            &r.elem_type,
+                            opts,
+                        ));
                     }
                     return Some(Ok(()));
                 }
@@ -53,7 +60,10 @@ impl Analyzer<'_, '_> {
                     if type_args.params.len() == 1 {
                         let mut errors = vec![];
                         for el in &r.elems {
-                            errors.extend(self.assign_inner(data, &type_args.params[0], &el.ty, opts).err());
+                            errors.extend(
+                                self.assign_inner(data, &type_args.params[0], &el.ty, opts)
+                                    .err(),
+                            );
                         }
                         if !errors.is_empty() {
                             return Some(Err(Error::TupleAssignError { span, errors }));
@@ -150,7 +160,10 @@ impl Analyzer<'_, '_> {
                             Type::Array(Array { elem_type, .. }) => {
                                 return Some(
                                     self.assign_inner(data, &type_args.params[0], elem_type, opts)
-                                        .context("tried to assign an array to a readonly array (builtin)"),
+                                        .context(
+                                            "tried to assign an array to a readonly array \
+                                             (builtin)",
+                                        ),
                                 );
                             }
                             _ => {}
@@ -186,7 +199,9 @@ impl Analyzer<'_, '_> {
                     &Type::Array(Array {
                         span: r.span(),
                         elem_type: box r_elem.clone(),
-                        metadata: ArrayMetadata { common: r.metadata() },
+                        metadata: ArrayMetadata {
+                            common: r.metadata(),
+                        },
                     }),
                 ));
             }
@@ -201,7 +216,8 @@ impl Analyzer<'_, '_> {
                 Type::Union(l) => {
                     if l.types.len() == 2
                         && l.types[0].normalize().is_type_param()
-                        && unwrap_ref_with_single_arg(&l.types[1], "PromiseLike").type_eq(&Some(&l.types[0]))
+                        && unwrap_ref_with_single_arg(&l.types[1], "PromiseLike")
+                            .type_eq(&Some(&l.types[0]))
                     {
                         return Some(Ok(()));
                     }
