@@ -454,8 +454,7 @@ impl Analyzer<'_, '_> {
         let should_preserve = types
             .iter()
             .flat_map(|ty| ty.iter_union())
-            .flat_map(|ty| ty.iter_union())
-            .any(|ty| ty.metadata().prevent_converting_to_children);
+            .all(|ty| !ty.metadata().prevent_converting_to_children);
 
         if should_preserve {
             return self.remove_child_types(span, types);
@@ -502,6 +501,11 @@ impl Analyzer<'_, '_> {
 
             new.push(ty.clone());
         }
+        if new.is_empty() {
+            // All types can be merged
+
+            return Ok(types);
+        }
 
         Ok(new)
     }
@@ -510,12 +514,7 @@ impl Analyzer<'_, '_> {
     fn remove_child_types(&mut self, span: Span, types: Vec<Type>) -> ValidationResult<Vec<Type>> {
         let mut new = vec![];
 
-        'outer: for (ai, ty) in types
-            .iter()
-            .flat_map(|ty| ty.iter_union())
-            .flat_map(|ty| ty.iter_union())
-            .enumerate()
-        {
+        'outer: for (ai, ty) in types.iter().flat_map(|ty| ty.iter_union()).enumerate() {
             for (bi, b) in types.iter().enumerate() {
                 if ai == bi {
                     continue;
@@ -531,6 +530,11 @@ impl Analyzer<'_, '_> {
             }
 
             new.push(ty.clone());
+        }
+        if new.is_empty() {
+            // All types can be merged
+
+            return Ok(types);
         }
 
         Ok(new)

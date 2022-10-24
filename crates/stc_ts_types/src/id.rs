@@ -17,6 +17,10 @@ pub struct Id {
 }
 
 impl Id {
+    pub const fn new(sym: JsWord, ctxt: SyntaxContext) -> Self {
+        Self { sym, ctxt }
+    }
+
     pub fn as_str(&self) -> &str {
         &self.sym
     }

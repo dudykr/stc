@@ -137,7 +137,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Handle declaration merging.
-    fn merge_types(&mut self, span: Span, orig: Type, new: Type) -> ValidationResult<Type> {
+    fn merge_declaration_types(&mut self, span: Span, orig: Type, new: Type) -> ValidationResult<Type> {
         debug_assert!(orig.is_clone_cheap());
         debug_assert!(new.is_clone_cheap());
 
@@ -160,7 +160,7 @@ impl Analyzer<'_, '_> {
 
         let orig = orig.next().unwrap().into_owned();
 
-        let new = self.merge_types(new.span(), orig, new)?;
+        let new = self.merge_declaration_types(new.span(), orig, new)?;
         info!(
             "Merging declaration {} with type {}",
             name,

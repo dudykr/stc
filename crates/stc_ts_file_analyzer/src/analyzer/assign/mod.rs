@@ -23,6 +23,8 @@ mod cast;
 mod class;
 mod function;
 mod query;
+#[cfg(test)]
+mod tests;
 mod tpl;
 mod type_el;
 mod unions;
