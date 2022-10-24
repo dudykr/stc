@@ -475,7 +475,7 @@ pub enum Error {
         span: Span,
     },
 
-    /// TS2416
+    /// TS2420
     InvalidImplOfInterface {
         span: Span,
         cause: Box<Error>,
@@ -1668,7 +1668,7 @@ impl Error {
 
             Error::StaticMemberCannotUseTypeParamOfClass { .. } => 2302,
 
-            Error::InvalidImplOfInterface { .. } => 2416,
+            Error::InvalidImplOfInterface { .. } => 2420,
 
             Error::ClassIncorrectlyImplementsInterface { .. } => 2420,
 
