@@ -454,7 +454,6 @@ impl Analyzer<'_, '_> {
         let should_preserve = types
             .iter()
             .flat_map(|ty| ty.iter_union())
-            .flat_map(|ty| ty.iter_union())
             .any(|ty| ty.metadata().prevent_converting_to_children);
 
         if should_preserve {
