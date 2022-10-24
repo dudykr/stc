@@ -513,12 +513,7 @@ impl Analyzer<'_, '_> {
     fn remove_child_types(&mut self, span: Span, types: Vec<Type>) -> ValidationResult<Vec<Type>> {
         let mut new = vec![];
 
-        'outer: for (ai, ty) in types
-            .iter()
-            .flat_map(|ty| ty.iter_union())
-            .flat_map(|ty| ty.iter_union())
-            .enumerate()
-        {
+        'outer: for (ai, ty) in types.iter().flat_map(|ty| ty.iter_union()).enumerate() {
             for (bi, b) in types.iter().enumerate() {
                 if ai == bi {
                     continue;
