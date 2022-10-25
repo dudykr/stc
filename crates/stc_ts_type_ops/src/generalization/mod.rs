@@ -51,7 +51,7 @@ impl Fold<Tuple> for LitGeneralizer {
 
             // Remove types after `...boolean[]`
             tuple.elems.retain(|element| {
-                match element.ty.normalize() {
+                match element.ty.n() {
                     Type::Rest(RestType {
                         ty: box Type::Array(Array { elem_type, .. }),
                         ..

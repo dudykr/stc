@@ -1528,7 +1528,7 @@ impl Analyzer<'_, '_> {
                     if let Some(r) = r {
                         for m in &r.members {
                             match m {
-                                TypeElement::Index(m) => match m.params[0].ty.normalize() {
+                                TypeElement::Index(m) => match m.params[0].ty.n() {
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsNumberKeyword,
@@ -1634,13 +1634,13 @@ impl Analyzer<'_, '_> {
                             })
                             .collect::<Result<Vec<_>, _>>()?;
 
-                        if patched_types.iter().all(|ty| match ty.normalize() {
+                        if patched_types.iter().all(|ty| match ty.n() {
                             Type::EnumVariant(ev) => ev.enum_name == *enum_name,
                             _ => false,
                         }) {
                             if let Ok(Some(lhs)) = self.find_type(self.ctx.module_id, &enum_name) {
                                 for ty in lhs {
-                                    match ty.normalize() {
+                                    match ty.n() {
                                         Type::Enum(e) => {
                                             if e.members.len() == lu.types.len() {
                                                 return Ok(());
@@ -1675,7 +1675,7 @@ impl Analyzer<'_, '_> {
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
-                let normalized = lu.types.iter().map(|ty| ty.normalize()).any(|ty| match ty {
+                let normalized = lu.types.iter().any(|ty| match ty.n() {
                     Type::TypeLit(ty) => ty.metadata.normalized,
                     _ => false,
                 });
@@ -1781,7 +1781,7 @@ impl Analyzer<'_, '_> {
                             // number.
                             if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {
                                 for ty in types {
-                                    match *ty.normalize() {
+                                    match *ty.n() {
                                         Type::Enum(ref e) => {
                                             let is_num = !e.has_str;
                                             if is_num {
@@ -1832,7 +1832,7 @@ impl Analyzer<'_, '_> {
                     TsKeywordTypeKind::TsSymbolKeyword => {
                         //
 
-                        match *rhs.normalize() {
+                        match *rhs.n() {
                             Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                                 ..
@@ -2163,7 +2163,7 @@ impl Analyzer<'_, '_> {
                         let mut errors = vec![];
                         for (l, r) in elems.into_iter().zip(rhs_elems) {
                             for el in elems {
-                                match *r.ty.normalize() {
+                                match *r.ty.n() {
                                     Type::Keyword(KeywordType {
                                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                         ..
