@@ -1679,13 +1679,13 @@ impl Analyzer<'_, '_> {
                 let errors = results.into_iter().map(Result::unwrap_err).collect();
                 let should_use_single_error = normalized
                     || lu.types.iter().all(|ty| {
-                        ty.normalize().is_lit()
-                            || ty.normalize().is_type_lit()
-                            || ty.normalize().is_keyword()
-                            || ty.normalize().is_enum_variant()
-                            || ty.normalize().is_ref_type()
-                            || ty.normalize().is_query()
-                            || ty.normalize().is_function()
+                        ty.is_lit()
+                            || ty.is_type_lit()
+                            || ty.is_keyword()
+                            || ty.is_enum_variant()
+                            || ty.is_ref_type()
+                            || ty.is_query()
+                            || ty.is_fn_type()
                     });
 
                 if should_use_single_error {

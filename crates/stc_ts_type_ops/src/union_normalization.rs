@@ -53,7 +53,7 @@ impl UnionNormalizer {
         let mut return_types = vec![];
 
         for ty in &u.types {
-            match ty.normalize() {
+            match ty.n() {
                 Type::Function(f) => {
                     if new_type_params.is_none() {
                         new_type_params = f.type_params.clone();
@@ -99,7 +99,7 @@ impl UnionNormalizer {
                     }
                     types.dedup_type();
 
-                    let ty = box Type::intersection(DUMMY_SP, types);
+                    let ty = box Type::new_intersection(DUMMY_SP, types);
                     FnParam {
                         span: DUMMY_SP,
                         // TODO
@@ -257,7 +257,7 @@ impl UnionNormalizer {
                         }
                         types.dedup_type();
 
-                        let ty = box Type::intersection(DUMMY_SP, types);
+                        let ty = box Type::new_intersection(DUMMY_SP, types);
                         FnParam {
                             span: DUMMY_SP,
                             // TODO
