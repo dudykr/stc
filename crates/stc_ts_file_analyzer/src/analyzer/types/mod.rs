@@ -1496,14 +1496,17 @@ impl Analyzer<'_, '_> {
                                     let members =
                                         self.merge_type_elements(span, to_type_lit.members)?;
 
-                                    to.type_ann = Some(box Type::TypeLit(TypeLit {
-                                        span,
-                                        members,
-                                        metadata: TypeLitMetadata {
-                                            common: to_type.metadata(),
-                                            ..Default::default()
-                                        },
-                                    }))
+                                    to.type_ann = Some(
+                                        box Type::TypeLit(TypeLit {
+                                            span,
+                                            members,
+                                            metadata: TypeLitMetadata {
+                                                common: to_type.metadata(),
+                                                ..Default::default()
+                                            },
+                                        })
+                                        .cheap(),
+                                    )
                                 }
                                 _ => {}
                             }
