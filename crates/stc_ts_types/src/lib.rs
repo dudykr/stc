@@ -1783,6 +1783,7 @@ impl Type {
     /// Converts this type to foldable type.
     ///
     /// TODO(kdy1): Remove if possible
+    #[deprecated]
     pub fn foldable(mut self) -> Type {
         self.normalize_mut();
         self
