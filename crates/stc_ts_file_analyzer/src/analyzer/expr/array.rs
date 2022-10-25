@@ -79,7 +79,7 @@ impl Analyzer<'_, '_> {
 
                     let ty =
                         expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
-                    match ty.normalize() {
+                    match ty.n() {
                         Type::TypeLit(..) => {
                             if !prefer_tuple {
                                 can_be_tuple = false;

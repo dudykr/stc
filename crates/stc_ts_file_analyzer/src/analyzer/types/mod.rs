@@ -115,9 +115,9 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            if ty.is_arc() {
+            if matches!(&*ty, Type::Arc(..)) {
                 let ty = self
-                    .normalize(span, Cow::Borrowed(ty.normalize()), opts)?
+                    .normalize(span, Cow::Borrowed(ty.n()), opts)?
                     .into_owned();
 
                 return Ok(Cow::Owned(ty));
