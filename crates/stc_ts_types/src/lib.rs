@@ -1530,7 +1530,7 @@ impl Type {
             return;
         }
 
-        match self.normalize_mut() {
+        match self.nm() {
             Type::Operator(ty) => ty.span = span,
 
             Type::Mapped(ty) => ty.span = span,
@@ -1696,7 +1696,7 @@ impl Type {
     }
 
     pub fn is_global_this(&self) -> bool {
-        match self.normalize() {
+        match self.n() {
             Type::Query(QueryType {
                 expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i)),
                 ..
@@ -1785,7 +1785,7 @@ impl Type {
     /// TODO(kdy1): Remove if possible
     #[deprecated]
     pub fn foldable(mut self) -> Type {
-        self.normalize_mut();
+        self.nm();
         self
     }
 
@@ -1829,7 +1829,7 @@ impl Type {
     where
         's: 'c,
     {
-        let ty = self.normalize();
+        let ty = self.n();
         match ty {
             Type::Instance(ty) => ty.ty.normalize_instance(),
             _ => ty,
@@ -1910,7 +1910,7 @@ impl FusedIterator for Iter<'_> {}
 impl Type {
     /// Returns true if `self` is a `string` or a string literal.
     pub fn is_str(&self) -> bool {
-        match self.normalize() {
+        match self.n() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
@@ -1924,7 +1924,7 @@ impl Type {
     }
 
     pub fn is_str_lit(&self) -> bool {
-        match self.normalize() {
+        match self.n() {
             Type::Lit(LitType {
                 lit: RTsLit::Str(..),
                 ..
@@ -1934,7 +1934,7 @@ impl Type {
     }
 
     pub fn is_bool_lit(&self) -> bool {
-        match self.normalize() {
+        match self.n() {
             Type::Lit(LitType {
                 lit: RTsLit::Bool(..),
                 ..
@@ -1944,7 +1944,7 @@ impl Type {
     }
 
     pub fn is_num(&self) -> bool {
-        match self.normalize() {
+        match self.n() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNumberKeyword,
                 ..
@@ -1958,7 +1958,7 @@ impl Type {
     }
 
     pub fn is_num_lit(&self) -> bool {
-        match self.normalize() {
+        match self.n() {
             Type::Lit(LitType {
                 lit: RTsLit::Number(..),
                 ..
@@ -1969,7 +1969,7 @@ impl Type {
 
     /// Returns true if `self` is a `boolean` or a boolean literal.
     pub fn is_bool(&self) -> bool {
-        match self.normalize() {
+        match self.n() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                 ..
