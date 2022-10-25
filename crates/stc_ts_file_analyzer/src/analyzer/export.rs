@@ -514,7 +514,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(data) = self.imports.get(&(ctxt, from)) {
-            match data.normalize() {
+            match data.n() {
                 Type::Module(data) => {
                     if let Some(ty) = data.exports.vars.get(orig.sym()) {
                         did_work = true;
