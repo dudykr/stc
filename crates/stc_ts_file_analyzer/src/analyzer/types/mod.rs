@@ -583,7 +583,7 @@ impl Analyzer<'_, '_> {
         false_type: &Type,
         metadata: ConditionalMetadata,
     ) -> ValidationResult<Option<Type>> {
-        if !check_type.normalize().is_type_param() {
+        if !check_type.is_type_param() {
             return Ok(None);
         }
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -594,7 +594,7 @@ impl Analyzer<'_, '_> {
         let mut false_type =
             self.normalize(Some(span), Cow::Borrowed(false_type), Default::default())?;
 
-        match true_type.normalize() {
+        match true_type.n() {
             Type::Conditional(c) => {
                 if (*c.check_type).type_eq(check_type) {
                     if let Some(ty) = self.reduce_conditional_type(
@@ -614,7 +614,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match false_type.normalize() {
+        match false_type.n() {
             Type::Conditional(c) => {
                 if (*c.check_type).type_eq(check_type) {
                     let mut check_type_constraint = check_type_constraint.clone();
@@ -638,7 +638,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match check_type_constraint.normalize() {
+        match check_type_constraint.n() {
             Type::Union(check_type_union) => {
                 //
                 let can_match = check_type_union.types.iter().any(|check_type_constraint| {
@@ -1102,11 +1102,11 @@ impl Analyzer<'_, '_> {
         if ty.is_type_lit() {
             match ty {
                 Cow::Owned(ty) => {
-                    let t = ty.foldable().expect_type_lit();
+                    let t = ty.expect_type_lit();
                     return Ok(Some(Cow::Owned(t)));
                 }
 
-                Cow::Borrowed(ty) => match ty.normalize() {
+                Cow::Borrowed(ty) => match ty.n() {
                     Type::TypeLit(t) => return Ok(Some(Cow::Borrowed(t))),
                     _ => {
                         unreachable!()
@@ -1149,7 +1149,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        let ty = ty.normalize();
+        let ty = ty.n();
 
         Ok(Some(match ty {
             Type::Lit(ty) => {
@@ -1618,7 +1618,7 @@ impl Analyzer<'_, '_> {
             IntrinsicKind::Uppercase
             | IntrinsicKind::Lowercase
             | IntrinsicKind::Capitalize
-            | IntrinsicKind::Uncapitalize => match arg.params[0].normalize() {
+            | IntrinsicKind::Uncapitalize => match arg.params[0].n() {
                 Type::Lit(LitType {
                     lit: RTsLit::Str(s),
                     ..
@@ -1813,7 +1813,7 @@ impl Analyzer<'_, '_> {
             Err(..) => Cow::Borrowed(excluded),
         };
 
-        match ty.normalize() {
+        match ty.n() {
             Type::Ref(..) => {
                 // We ignore errors.
                 if let Ok(mut expanded_ty) = self
