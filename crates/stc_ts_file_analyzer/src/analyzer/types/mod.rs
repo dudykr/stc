@@ -16,6 +16,7 @@ use stc_ts_types::{
     PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type,
     TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
+use stc_ts_utils::run;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
     debug_ctx,
@@ -1135,8 +1136,8 @@ impl Analyzer<'_, '_> {
                 )
             }
 
-            // TODO(kdy1): Override
             members.extend(t.body);
+            let members = self.merge_type_elements(members)?;
             return Ok(Some(Cow::Owned(TypeLit {
                 span: t.span,
                 members,
@@ -1274,6 +1275,8 @@ impl Analyzer<'_, '_> {
                     members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
                 }
 
+                let members = self.merge_type_elements(members)?;
+
                 Cow::Owned(TypeLit {
                     span: t.span,
                     members,
@@ -1406,6 +1409,15 @@ impl Analyzer<'_, '_> {
                 return Ok(None);
             }
         }))
+    }
+
+    fn merge_type_elements(&mut self, els: Vec<TypeElement>) -> ValidationResult<Vec<TypeElement>> {
+        run(|| {
+            //
+
+            Ok(els)
+        })
+        .with_context(|| format!("tried to merge type elements"))
     }
 
     ///
