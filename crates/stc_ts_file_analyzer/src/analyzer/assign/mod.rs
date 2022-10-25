@@ -444,17 +444,17 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<Cow<'a, Type>> {
         ty.assert_valid();
 
-        let ty = ty.normalize();
+        let ty = ty.n();
 
         match ty {
             Type::Instance(Instance { ty, .. }) => {
                 // Normalize further
-                if ty.normalize().is_ref_type() {
+                if ty.is_ref_type() {
                     let ty = self
                         .normalize_for_assign(span, ty)
                         .context("failed to normalize instance type")?;
 
-                    if ty.normalize().is_keyword() {
+                    if ty.is_keyword() {
                         return Ok(ty);
                     }
                 }
@@ -601,8 +601,8 @@ impl Analyzer<'_, '_> {
             .context("tried to normalize rhs")?;
         rhs.make_clone_cheap();
 
-        let to = to.normalize();
-        let rhs = rhs.normalize();
+        let to = to.n();
+        let rhs = rhs.n();
 
         macro_rules! fail {
             () => {{
@@ -687,18 +687,21 @@ impl Analyzer<'_, '_> {
                     .assign_inner(
                         data,
                         to,
-                        &Type::union(vec![
-                            Type::Keyword(KeywordType {
-                                span,
-                                kind: TsKeywordTypeKind::TsNumberKeyword,
-                                metadata: Default::default(),
-                            }),
-                            Type::Keyword(KeywordType {
-                                span,
-                                kind: TsKeywordTypeKind::TsStringKeyword,
-                                metadata: Default::default(),
-                            }),
-                        ]),
+                        &Type::new_union(
+                            span,
+                            vec![
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    metadata: Default::default(),
+                                }),
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsStringKeyword,
+                                    metadata: Default::default(),
+                                }),
+                            ],
+                        ),
                         opts,
                     )
                     .context("tried to assign enum as `number | string`");
@@ -727,12 +730,12 @@ impl Analyzer<'_, '_> {
         };
 
         match (to, rhs) {
-            (Type::Rest(lr), r) => match lr.ty.normalize() {
+            (Type::Rest(lr), r) => match lr.ty.n() {
                 Type::Array(la) => return self.assign_with_opts(data, opts, &la.elem_type, &r),
                 _ => {}
             },
 
-            (l, Type::Rest(rr)) => match rr.ty.normalize() {
+            (l, Type::Rest(rr)) => match rr.ty.n() {
                 Type::Array(ra) => return self.assign_with_opts(data, opts, &l, &ra.elem_type),
                 _ => {}
             },
@@ -748,7 +751,7 @@ impl Analyzer<'_, '_> {
         }
 
         if opts.allow_assignment_of_param {
-            if rhs.normalize().is_type_param() {
+            if rhs.is_type_param() {
                 return Ok(());
             }
         }
