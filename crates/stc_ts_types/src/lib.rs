@@ -39,7 +39,9 @@ use stc_utils::{
 };
 use stc_visit::{Visit, Visitable};
 use swc_atoms::{js_word, JsWord};
-use swc_common::{EqIgnoreSpan, FromVariant, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
+use swc_common::{
+    util::take::Take, EqIgnoreSpan, FromVariant, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP,
+};
 use swc_ecma_ast::{Accessibility, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use swc_ecma_utils::{
     Value,
@@ -823,6 +825,12 @@ pub enum TypeElement {
     Index(IndexSignature),
 }
 
+impl Take for TypeElement {
+    fn dummy() -> Self {
+        Self::Index(Take::dummy())
+    }
+}
+
 impl TypeElement {
     /// Returns [Some] iff `self` is an element with a normal key.
     pub fn non_computed_key(&self) -> Option<&JsWord> {
@@ -904,6 +912,18 @@ pub struct IndexSignature {
     pub span: Span,
 
     pub is_static: bool,
+}
+
+impl Take for IndexSignature {
+    fn dummy() -> Self {
+        Self {
+            params: Take::dummy(),
+            type_ann: Take::dummy(),
+            readonly: false,
+            span: Take::dummy(),
+            is_static: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
