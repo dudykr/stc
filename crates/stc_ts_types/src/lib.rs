@@ -1171,8 +1171,8 @@ impl Type {
         let mut elements = vec![];
 
         for ty in iter {
-            if ty.normalize().is_union_type() {
-                let types = ty.foldable().union_type().unwrap().types;
+            if ty.is_union_type() {
+                let types = ty.expect_union_type().types;
                 for new in types {
                     if elements.iter().any(|prev: &Type| prev.type_eq(&new)) {
                         continue;
@@ -1792,6 +1792,23 @@ impl Type {
     /// [Type::Arc] is normalized.
     #[deprecated]
     pub fn normalize<'s, 'c>(&'s self) -> &'c Type
+    where
+        's: 'c,
+    {
+        match *self {
+            Type::Arc(ref s) => {
+                //
+                unsafe { transmute::<&'s Type, &'c Type>(&s.ty) }
+            }
+            _ => unsafe {
+                // Shorten lifetimes
+                transmute::<&'s Self, &'c Type>(self)
+            },
+        }
+    }
+
+    /// [Type::Arc] is normalized.
+    pub fn n<'s, 'c>(&'s self) -> &'c Type
     where
         's: 'c,
     {
