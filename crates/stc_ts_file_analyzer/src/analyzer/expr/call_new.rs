@@ -379,7 +379,7 @@ impl Analyzer<'_, '_> {
                 let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
                 obj_type.make_clone_cheap();
 
-                let obj_type = match *obj_type.normalize() {
+                let obj_type = match *obj_type.n() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
@@ -448,7 +448,7 @@ impl Analyzer<'_, '_> {
 
             let mut callee_ty = {
                 let callee_ty = callee.validate_with_default(analyzer)?;
-                match callee_ty.normalize() {
+                match callee_ty.n() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
@@ -466,7 +466,7 @@ impl Analyzer<'_, '_> {
             };
 
             if let Some(type_args) = &type_args {
-                let type_params = match callee_ty.normalize() {
+                let type_params = match callee_ty.n() {
                     Type::Function(f) => f.type_params.as_ref(),
                     _ => None,
                 };
@@ -547,7 +547,7 @@ impl Analyzer<'_, '_> {
         self.scope.this = Some(this.clone());
 
         let res = (|| {
-            match obj_type.normalize() {
+            match obj_type.n() {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsAnyKeyword,
                     ..
@@ -851,7 +851,7 @@ impl Analyzer<'_, '_> {
                 .expand_top_ref(span, Cow::Owned(callee), Default::default())?
                 .into_owned();
 
-            match callee.normalize() {
+            match callee.n() {
                 Type::ClassDef(cls) => {
                     if cls.is_abstract {
                         self.storage
@@ -946,7 +946,7 @@ impl Analyzer<'_, '_> {
                         // TODO(kdy1): Change error message from no callable
                         // property to property exists but not callable.
 
-                        if let Some(prop_ty) = value.as_deref().map(Type::normalize) {
+                        if let Some(prop_ty) = value.as_deref().map(Type::n) {
                             if let Ok(cs) = self.extract_callee_candidates(span, kind, prop_ty) {
                                 candidates.extend(cs);
                             }
@@ -1125,11 +1125,11 @@ impl Analyzer<'_, '_> {
                         .clone()
                         .unwrap_or(box Type::any(m.span(), Default::default()))
                         .clone();
-                    let ty = self
+                    let mut ty = self
                         .normalize(Some(span), Cow::Borrowed(&ty), Default::default())
                         .map(Cow::into_owned)
                         .unwrap_or_else(|_| ty);
-                    let ty = ty.foldable();
+                    ty.nm();
 
                     // TODO(kdy1): PERF
 
@@ -1201,7 +1201,7 @@ impl Analyzer<'_, '_> {
                 .env
                 .get_global_type(span, &js_word!("Object"))
                 .expect("`interface Object` is must");
-            let methods = match i.normalize() {
+            let methods = match i.n() {
                 Type::Interface(i) => &*i.body,
 
                 _ => &[],
@@ -1332,7 +1332,7 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        match ty.normalize() {
+        match ty.n() {
             Type::Ref(..) | Type::Query(..) => {
                 let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
                 return self.extract(
@@ -1358,7 +1358,7 @@ impl Analyzer<'_, '_> {
         );
 
         match kind {
-            ExtractKind::Call => match ty.normalize() {
+            ExtractKind::Call => match ty.n() {
                 Type::Interface(i) if i.name == "Function" => {
                     return Ok(Type::any(span, Default::default()))
                 }
@@ -1368,7 +1368,7 @@ impl Analyzer<'_, '_> {
         }
 
         match kind {
-            ExtractKind::New => match ty.normalize() {
+            ExtractKind::New => match ty.n() {
                 Type::ClassDef(ref cls) => {
                     self.scope.this = Some(Type::Class(Class {
                         span,
@@ -1563,7 +1563,7 @@ impl Analyzer<'_, '_> {
             }};
         }
 
-        match ty.normalize() {
+        match ty.n() {
             Type::Intersection(..) if kind == ExtractKind::New => {
                 // TODO(kdy1): Check if all types has constructor signature
                 return Ok(make_instance_type(self.ctx.module_id, ty.clone()));
@@ -2213,10 +2213,10 @@ impl Analyzer<'_, '_> {
         let mut max_param = Some(params.len());
         for param in params {
             match &param.pat {
-                RPat::Rest(..) => match param.ty.normalize() {
+                RPat::Rest(..) => match param.ty.n() {
                     Type::Tuple(param_ty) => {
                         for elem in &param_ty.elems {
-                            match elem.ty.normalize() {
+                            match elem.ty.n() {
                                 Type::Rest(..) => {
                                     max_param = None;
                                     break;
@@ -3469,9 +3469,9 @@ impl Analyzer<'_, '_> {
                 //     _ => {}
                 // }
 
-                match param.ty.normalize() {
+                match param.ty.n() {
                     Type::Param(..) => {}
-                    Type::Instance(param) if param.ty.normalize().is_type_param() => {}
+                    Type::Instance(param) if param.ty.is_type_param() => {}
                     _ => {
                         if analyzer
                             .assign_with_opts(
