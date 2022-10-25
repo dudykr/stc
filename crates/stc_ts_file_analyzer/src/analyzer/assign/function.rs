@@ -551,7 +551,7 @@ impl Analyzer<'_, '_> {
         r: &Type,
     ) -> ValidationResult<()> {
         let span = opts.span;
-        let r = r.normalize();
+        let r = r.n();
 
         match r {
             Type::Constructor(rc) => {
@@ -720,7 +720,7 @@ impl Analyzer<'_, '_> {
                     .normalize(Some(span), Cow::Borrowed(&l.ty), Default::default())
                     .context("tried to normalize lhs")?;
 
-                match l_ty.normalize() {
+                match l_ty.n() {
                     Type::Array(l_arr) => {
                         if let Ok(()) = self.assign_with_opts(data, opts, &l_arr.elem_type, &r.ty) {
                             return Ok(());

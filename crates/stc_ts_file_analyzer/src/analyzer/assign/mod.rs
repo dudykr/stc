@@ -181,8 +181,8 @@ impl Analyzer<'_, '_> {
         let l = self.expand_top_ref(span, Cow::Borrowed(lhs), Default::default())?;
         let r = self.expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?;
 
-        let lhs = l.normalize();
-        let rhs = r.normalize();
+        let lhs = l.n();
+        let rhs = r.n();
 
         if op == op!("+=") {
             if lhs.is_enum_variant() {
