@@ -120,7 +120,7 @@ impl Analyzer<'_, '_> {
             actual_args = vec![];
             for arg in args {
                 if arg.spread.is_some() {
-                    match arg.ty.normalize() {
+                    match arg.ty.n() {
                         Type::Tuple(Tuple { elems, .. }) => {
                             actual_args.extend(elems.iter().map(|elem| TypeOrSpread {
                                 span: arg.spread.unwrap(),
@@ -152,7 +152,7 @@ impl Analyzer<'_, '_> {
                     self.infer_type(span, &mut inferred, &p.ty, &arg.ty, opts)?;
                 }
             } else {
-                match p.ty.normalize() {
+                match p.ty.n() {
                     Type::Param(param) => {
                         self.infer_type(
                             span,
@@ -492,8 +492,8 @@ impl Analyzer<'_, '_> {
 
         debug_assert!(!span.is_dummy(), "infer_type: `span` should not be dummy");
 
-        let param = param.normalize();
-        let arg = arg.normalize();
+        let param = param.n();
+        let arg = arg.n();
 
         match param {
             Type::Instance(..) => {
@@ -563,7 +563,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match (param.normalize(), arg.normalize()) {
+        match (param.n(), arg.n()) {
             (Type::Union(p), Type::Union(a)) => {
                 self.infer_type_using_union_and_union(
                     span,
@@ -626,7 +626,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        match arg.normalize() {
+        match arg.n() {
             Type::Param(arg) => {
                 if !param.normalize().is_type_param() {
                     self.insert_inferred(span, inferred, &arg, Cow::Borrowed(&param), opts)?;
@@ -636,13 +636,13 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match param.normalize() {
+        match param.n() {
             Type::Param(TypeParam {
                 ref name,
                 ref constraint,
                 ..
             }) => {
-                let constraint = constraint.as_ref().map(|ty| ty.normalize());
+                let constraint = constraint.as_ref().map(|ty| ty.n());
                 if !opts.for_fn_assignment && !self.ctx.skip_identical_while_inferencing {
                     if let Some(prev) = inferred.type_params.get(name).cloned() {
                         let ctx = Ctx {
@@ -688,7 +688,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(constraint) = constraint {
                     if constraint.is_str() || constraint.is_num() {
-                        match arg.normalize() {
+                        match arg.n() {
                             // We use `default`
                             Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) => {
                                 return Ok(())
@@ -823,7 +823,7 @@ impl Analyzer<'_, '_> {
                                 let param_ty = Type::union(e.clone()).cheap();
                                 e.push(arg.clone());
 
-                                match param_ty.normalize() {
+                                match param_ty.n() {
                                     Type::Param(param) => {
                                         self.insert_inferred(
                                             span,
@@ -836,7 +836,7 @@ impl Analyzer<'_, '_> {
                                     _ => {}
                                 }
 
-                                match arg.normalize() {
+                                match arg.n() {
                                     Type::Param(param) => {
                                         self.insert_inferred(
                                             span,
@@ -882,11 +882,11 @@ impl Analyzer<'_, '_> {
                     ..opts
                 };
 
-                match arr.elem_type.normalize() {
+                match arr.elem_type.n() {
                     Type::Param(TypeParam {
                         constraint: Some(constraint),
                         ..
-                    }) => match constraint.normalize() {
+                    }) => match constraint.n() {
                         Type::Operator(Operator {
                             op: TsTypeOperatorOp::KeyOf,
                             ..
@@ -1169,7 +1169,7 @@ impl Analyzer<'_, '_> {
                         },
                     )?;
                     param.make_clone_cheap();
-                    match param.normalize() {
+                    match param.n() {
                         Type::Ref(..) => {
                             dbg!();
 
@@ -1229,7 +1229,7 @@ impl Analyzer<'_, '_> {
                     IndexedAccessType {
                         obj_type: box Type::Intersection(Intersection { types, .. }),
                         ..
-                    } if types.iter().all(|ty| match ty.normalize() {
+                    } if types.iter().all(|ty| match ty.n() {
                         Type::Param(obj_type) => {
                             let current = self.mapped_type_param_name.contains(&obj_type.name);
                             current
@@ -1238,7 +1238,7 @@ impl Analyzer<'_, '_> {
                     }) =>
                     {
                         for ty in types {
-                            match ty.normalize() {
+                            match ty.n() {
                                 Type::Param(obj_type) => {
                                     self.insert_inferred(
                                         span,

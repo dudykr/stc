@@ -398,7 +398,7 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> ValidationResult<()> {
-        let arg = arg.normalize();
+        let arg = arg.n();
 
         match arg {
             Type::Interface(arg) => {
@@ -489,8 +489,8 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> ValidationResult<bool> {
-        let p = param.normalize();
-        let a = arg.normalize();
+        let p = param.n();
+        let a = arg.n();
         match (p, a) {
             (Type::Constructor(..), Type::Class(..)) | (Type::Function(..), Type::Function(..)) => {
                 return Ok(false)
