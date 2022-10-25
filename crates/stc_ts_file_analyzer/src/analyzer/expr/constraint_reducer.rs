@@ -13,7 +13,7 @@ struct ConstraintReducer;
 impl VisitMut<Type> for ConstraintReducer {
     fn visit_mut(&mut self, ty: &mut Type) {
         // TODO(kdy1): PERF
-        ty.normalize_mut();
+        ty.nm();
 
         ty.visit_mut_children_with(self);
 

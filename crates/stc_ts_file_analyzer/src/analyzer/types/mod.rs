@@ -98,7 +98,7 @@ impl Analyzer<'_, '_> {
             let _stack = stack::track(actual_span)?;
             let _context = debug_ctx!(format!("Normalize: {}", dump_type_as_string(&self.cm, &ty)));
 
-            match ty.normalize() {
+            match ty.n() {
                 Type::Lit(..)
                 | Type::TypeLit(..)
                 | Type::Interface(..)
@@ -124,7 +124,7 @@ impl Analyzer<'_, '_> {
             }
 
             if matches!(
-                ty.normalize(),
+                ty.n(),
                 Type::Conditional(..)
                     | Type::Array(..)
                     | Type::IndexedAccessType(..)
@@ -134,7 +134,7 @@ impl Analyzer<'_, '_> {
             }
 
             {
-                match ty.normalize() {
+                match ty.n() {
                     Type::Ref(_) => {
                         let mut new_ty = self
                             .expand_top_ref(
@@ -282,7 +282,7 @@ impl Analyzer<'_, '_> {
                             return Ok(Cow::Owned(ty));
                         }
 
-                        match check_type.normalize() {
+                        match check_type.n() {
                             Type::Param(TypeParam {
                                 name,
                                 constraint: Some(check_type_constraint),
@@ -307,7 +307,7 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
 
-                        match check_type.normalize() {
+                        match check_type.n() {
                             Type::Union(check_type_union) => {
                                 let mut all = true;
                                 let mut types = vec![];

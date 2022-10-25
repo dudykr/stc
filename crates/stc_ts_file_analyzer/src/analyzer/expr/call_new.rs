@@ -1249,7 +1249,7 @@ impl Analyzer<'_, '_> {
                     let arg_ty = self
                         .expand_top_ref(arg.span(), Cow::Borrowed(&arg.ty), Default::default())
                         .context("tried to expand ref to handle a spread argument")?;
-                    match arg_ty.normalize() {
+                    match arg_ty.n() {
                         Type::Tuple(arg_ty) => {
                             new_arg_types.extend(
                                 arg_ty

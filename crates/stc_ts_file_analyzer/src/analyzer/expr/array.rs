@@ -98,8 +98,8 @@ impl Analyzer<'_, '_> {
                     spread: Some(spread),
                     expr,
                 }) => {
-                    let element_type = expr.validate_with_default(self)?;
-                    let element_type = element_type.foldable();
+                    let mut element_type = expr.validate_with_default(self)?;
+                    element_type.nm();
 
                     // TODO(kdy1): PERF
 
@@ -287,7 +287,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Union(u) => {
-                let can_use_undefined = u.types.iter().all(|ty| ty.normalize().is_tuple());
+                let can_use_undefined = u.types.iter().all(|ty| ty.is_tuple());
 
                 let mut types = vec![];
                 let mut errors = vec![];
@@ -379,7 +379,7 @@ impl Analyzer<'_, '_> {
                 Error::NoCallablePropertyWithName { span, .. }
                 | Error::NoSuchProperty { span, .. }
                 | Error::NoSuchPropertyInClass { span, .. } => {
-                    match iterator.normalize() {
+                    match iterator.n() {
                         Type::Union(iterator) => {
                             if iterator.types.iter().all(|ty| ty.normalize().is_tuple()) {
                                 return Error::NoSuchProperty {
@@ -419,7 +419,7 @@ impl Analyzer<'_, '_> {
 
         // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
         if matches!(elem_ty.normalize(), Type::Union(..)) {
-            match elem_ty.normalize_mut() {
+            match elem_ty.nm() {
                 Type::Union(u) => {
                     u.types.retain(|ty| !ty.is_any());
                     if u.types.is_empty() {
@@ -612,8 +612,8 @@ impl Analyzer<'_, '_> {
             },
         )?;
 
-        if iterator.normalize().is_tuple() {
-            let ty = iterator.into_owned().foldable().tuple().unwrap();
+        if iterator.is_tuple() {
+            let ty = iterator.into_owned().expect_tuple();
 
             return Ok(Cow::Owned(Type::Tuple(Tuple {
                 elems: ty.elems.into_iter().skip(start_index).collect(),

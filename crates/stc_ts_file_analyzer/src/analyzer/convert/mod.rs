@@ -1153,7 +1153,7 @@ impl Analyzer<'_, '_> {
                         let key = key.normalize();
                         let key_ty = key.ty();
 
-                        if key_ty.normalize().is_symbol() {
+                        if key_ty.is_symbol() {
                             continue;
                         }
                         if let Some(prev) =
