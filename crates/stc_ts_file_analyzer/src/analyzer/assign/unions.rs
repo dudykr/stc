@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
             Ok(mut r) => {
                 r.make_clone_cheap();
 
-                if r.normalize().is_union_type() {
+                if r.is_union_type() {
                     Some(
                         self.assign_with_opts(data, opts, l, &r)
                             .context("tried to assign to a flattened union to another union"),

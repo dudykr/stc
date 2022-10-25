@@ -26,7 +26,7 @@ impl Analyzer<'_, '_> {
         opts: AssignOpts,
     ) -> ValidationResult<()> {
         let span = opts.span;
-        let r = r.normalize();
+        let r = r.n();
 
         match r {
             Type::Lit(LitType {

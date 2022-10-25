@@ -1596,7 +1596,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match obj.normalize() {
+        match obj.n() {
             Type::This(..) => {
                 let scope = if self.ctx.in_computed_prop_name {
                     self.scope.scope_of_computed_props()

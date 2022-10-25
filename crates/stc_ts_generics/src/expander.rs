@@ -631,7 +631,7 @@ struct GenericChecker<'a> {
 
 impl Visit<Type> for GenericChecker<'_> {
     fn visit(&mut self, ty: &Type) {
-        match ty.normalize() {
+        match ty.n() {
             Type::Param(p) => {
                 if self.params.contains_key(&p.name) {
                     self.found = true;
@@ -653,23 +653,23 @@ struct MappedHandler<'d> {
 
 impl Fold<Type> for MappedHandler<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
-        match ty.normalize() {
-            Type::IndexedAccessType(ty) => match ty.obj_type.normalize() {
+        match ty.n() {
+            Type::IndexedAccessType(ty) => match ty.obj_type.n() {
                 Type::Param(TypeParam {
                     name: obj_param_name,
                     ..
-                }) => match ty.index_type.normalize() {
+                }) => match ty.index_type.n() {
                     Type::Param(TypeParam {
                         name: index_param_name,
                         constraint: Some(index_type_constraint),
                         ..
-                    }) => match index_type_constraint.normalize() {
+                    }) => match index_type_constraint.n() {
                         Type::Operator(
                             operator @ Operator {
                                 op: TsTypeOperatorOp::KeyOf,
                                 ..
                             },
-                        ) => match operator.ty.normalize() {
+                        ) => match operator.ty.n() {
                             Type::Param(constraint_param) => {
                                 if *obj_param_name == constraint_param.name
                                     && *self.param_name == *obj_param_name
@@ -689,7 +689,7 @@ impl Fold<Type> for MappedHandler<'_> {
         }
 
         // TODO(kdy1): PERF
-        ty.normalize_mut();
+        ty.nm();
         ty = ty.fold_children_with(self);
 
         ty

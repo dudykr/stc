@@ -68,7 +68,7 @@ impl Analyzer<'_, '_> {
             let any = box Type::any(span, Default::default());
             let numeric_keyed_ty = numeric_keyed_ty.unwrap_or(&any);
 
-            match *rhs.normalize() {
+            match *rhs.n() {
                 Type::Array(Array { ref elem_type, .. }) => {
                     return self.assign_inner(data, numeric_keyed_ty, elem_type, opts)
                 }
@@ -105,7 +105,7 @@ impl Analyzer<'_, '_> {
         {
             let mut unhandled_rhs = vec![];
 
-            match rhs.normalize() {
+            match rhs.n() {
                 Type::Ref(Ref {
                     type_name:
                         RTsEntityName::Ident(RIdent {
@@ -219,7 +219,7 @@ impl Analyzer<'_, '_> {
                         return Err(Error::SimpleAssignFailed { span, cause: None });
                     }
 
-                    match rhs.normalize() {
+                    match rhs.n() {
                         Type::Array(r_arr) => {
                             //
                             let r_arr = Type::Ref(Ref {
@@ -633,11 +633,7 @@ impl Analyzer<'_, '_> {
                                     op: TsTypeOperatorOp::KeyOf,
                                     ty: r_constraint,
                                     ..
-                                })) = r_mapped
-                                    .type_param
-                                    .constraint
-                                    .as_deref()
-                                    .map(|ty| ty.normalize())
+                                })) = r_mapped.type_param.constraint.as_deref().map(|ty| ty.n())
                                 {
                                     if let Ok(()) = self.assign_with_opts(
                                         data,
@@ -707,7 +703,7 @@ impl Analyzer<'_, '_> {
                         })
                         .context("failed to normalize")?;
 
-                    if rhs.normalize().is_keyword() {
+                    if rhs.is_keyword() {
                         return Err(Error::SimpleAssignFailed { span, cause: None }
                             .context("failed to assign builtin type of a keyword"));
                     }
@@ -763,7 +759,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            match *rhs.normalize() {
+            match *rhs.n() {
                 // Check class members
                 Type::Class(Class {
                     def: box ClassDef { ref body, .. },
@@ -851,7 +847,7 @@ impl Analyzer<'_, '_> {
     ) -> Option<ValidationResult<()>> {
         let span = opts.span;
 
-        match r.normalize() {
+        match r.n() {
             Type::Interface(ri) => {
                 let res: ValidationResult<_> = try {
                     for parent in &ri.extends {
@@ -1133,7 +1129,7 @@ impl Analyzer<'_, '_> {
                                     }
                                     TypeElement::Method(rm) => {
                                         if let Some(lp_ty) = &lp.type_ann {
-                                            if let Type::Function(lp_ty) = lp_ty.normalize() {
+                                            if let Type::Function(lp_ty) = lp_ty.n() {
                                                 self.assign_to_fn_like(
                                                     data,
                                                     opts,
@@ -1230,7 +1226,7 @@ impl Analyzer<'_, '_> {
                                     TypeElement::Property(rp) => {
                                         // Allow assigning property with callable type to methods.
                                         if let Some(rp_ty) = &rp.type_ann {
-                                            if let Type::Function(rf) = rp_ty.normalize() {
+                                            if let Type::Function(rf) = rp_ty.n() {
                                                 self.assign_to_fn_like(
                                                     data,
                                                     opts,
