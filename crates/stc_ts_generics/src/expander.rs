@@ -306,11 +306,11 @@ impl GenericExpander<'_> {
                     Some(box Type::IndexedAccessType(IndexedAccessType {
                         span,
                         readonly,
-                        obj_type,
+                        mut obj_type,
                         index_type,
                         metadata,
                     })) => {
-                        let obj_type = box obj_type.foldable();
+                        obj_type.nm();
                         // TODO(kdy1): PERF
                         match *obj_type {
                             Type::TypeLit(TypeLit {
@@ -364,7 +364,7 @@ impl GenericExpander<'_> {
                             op: TsTypeOperatorOp::KeyOf,
                             ty,
                             ..
-                        }) => match ty.normalize() {
+                        }) => match ty.n() {
                             Type::Keyword(..) if m.optional == None && m.readonly == None => {
                                 return *ty.clone()
                             }
@@ -438,7 +438,7 @@ impl GenericExpander<'_> {
                 let mut ty = ty.fold_with(self);
                 ty.obj_type.fix();
 
-                let key = match ty.index_type.normalize() {
+                let key = match ty.index_type.n() {
                     Type::Lit(LitType {
                         lit: RTsLit::Str(s),
                         ..
@@ -517,7 +517,7 @@ impl Fold<Type> for GenericExpander<'_> {
         ));
 
         let old_fully = self.fully;
-        self.fully |= match ty.normalize() {
+        self.fully |= match ty.n() {
             Type::Mapped(..) => true,
             _ => false,
         };

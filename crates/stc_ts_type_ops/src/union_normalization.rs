@@ -241,7 +241,7 @@ impl UnionNormalizer {
 
             members.push(TypeElement::Call(CallSignature {
                 span: DUMMY_SP,
-                ret_ty: Some(box Type::new_union(ty.span(), return_types)),
+                ret_ty: Some(box Type::new_union(DUMMY_SP, return_types)),
                 type_params,
                 params: new_params
                     .into_iter()
