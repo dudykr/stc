@@ -1428,16 +1428,22 @@ impl Analyzer<'_, '_> {
                         continue;
                     }
 
-                    if let Some(a_key) = a.key() {
-                        if let Some(b_key) = b.key() {
-                            if a.is_property()
-                                && b.is_property()
-                                && merged.iter().all(|(a, b)| *b != bi)
-                                && self.key_matches(span, a_key, b_key, false)
+                    match (a, b) {
+                        (TypeElement::Index(a_index), TypeElement::Index(b_index)) => {
+                            if merged.iter().all(|(a, b)| *b != bi) {
+                                merged.push((ai, bi));
+                            }
+                        }
+
+                        (TypeElement::Property(ap), TypeElement::Property(bp)) => {
+                            if merged.iter().all(|(a, b)| *b != bi)
+                                && self.key_matches(span, &ap.key, &bp.key, false)
                             {
                                 merged.push((ai, bi));
                             }
                         }
+
+                        _ => {}
                     }
                 }
             }
