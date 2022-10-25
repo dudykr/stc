@@ -62,15 +62,6 @@ macro_rules! impl_is {
 }
 
 impl_is!(
-    Array,
-    Array,
-    is_array,
-    as_array,
-    as_array_mut,
-    array,
-    expect_array
-);
-impl_is!(
     This,
     ThisType,
     is_this,
