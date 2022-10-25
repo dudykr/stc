@@ -1423,13 +1423,13 @@ impl Analyzer<'_, '_> {
             let mut merged = vec![];
 
             for (ai, a) in els.iter().enumerate() {
-                if let Some(a_key) = a.key() {
-                    for (bi, b) in els.iter().enumerate() {
-                        if let Some(b_key) = b.key() {
-                            if ai >= bi {
-                                continue;
-                            }
+                for (bi, b) in els.iter().enumerate() {
+                    if ai >= bi {
+                        continue;
+                    }
 
+                    if let Some(a_key) = a.key() {
+                        if let Some(b_key) = b.key() {
                             if a.is_property()
                                 && b.is_property()
                                 && merged.iter().all(|(a, b)| *b != bi)
