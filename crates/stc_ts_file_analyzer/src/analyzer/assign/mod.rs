@@ -1308,6 +1308,17 @@ impl Analyzer<'_, '_> {
                 if errors.iter().any(Result::is_ok) {
                     return Ok(());
                 }
+
+                if let Ok(Some(rhs)) = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(rhs))
+                {
+                    if self
+                        .assign_without_wrapping(data, to, &Type::TypeLit(rhs.into_owned()), opts)
+                        .is_ok()
+                    {
+                        return Ok(());
+                    }
+                }
+
                 let use_single_error = types.iter().all(|ty| ty.normalize().is_interface());
                 let errors = errors.into_iter().map(Result::unwrap_err).collect();
 
