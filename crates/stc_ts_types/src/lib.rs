@@ -260,7 +260,7 @@ assert_eq_size!(Type, [u8; 104]);
 
 impl TypeEq for Type {
     fn type_eq(&self, other: &Self) -> bool {
-        match (self.normalize(), other.normalize()) {
+        match (self.n(), other.n()) {
             (Type::Instance(l), Type::Instance(r)) => l.type_eq(r),
             (Type::StaticThis(l), Type::StaticThis(r)) => l.type_eq(r),
             (Type::This(l), Type::This(r)) => l.type_eq(r),
@@ -1215,8 +1215,8 @@ impl Type {
                 span = span.with_hi(sp.hi());
             }
 
-            if ty.normalize().is_union_type() {
-                let types = ty.foldable().union_type().unwrap().types;
+            if ty.is_union_type() {
+                let types = ty.expect_union_type().types;
                 for new in types {
                     if elements.iter().any(|prev: &Type| prev.type_eq(&new)) {
                         continue;
@@ -1270,7 +1270,7 @@ impl Type {
     }
 
     pub fn contains_void(&self) -> bool {
-        match self.normalize() {
+        match self.n() {
             Type::Instance(ty) => ty.ty.contains_void(),
 
             Type::Keyword(KeywordType {
@@ -1285,7 +1285,7 @@ impl Type {
     }
 
     pub fn is_any(&self) -> bool {
-        match self.normalize() {
+        match self.n() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
@@ -1300,7 +1300,7 @@ impl Type {
     }
 
     pub fn is_unknown(&self) -> bool {
-        match *self.normalize() {
+        match *self.n() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
@@ -1313,7 +1313,7 @@ impl Type {
     }
 
     pub fn contains_undefined(&self) -> bool {
-        match *self.normalize() {
+        match *self.n() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUndefinedKeyword,
                 ..
@@ -1370,7 +1370,7 @@ impl Type {
     }
 
     pub fn is_kwd(&self, k: TsKeywordTypeKind) -> bool {
-        match self.normalize() {
+        match self.n() {
             Type::Instance(ty) => ty.ty.is_kwd(k),
             Type::Keyword(KeywordType { kind, .. }) if *kind == k => true,
             _ => false,
@@ -1435,7 +1435,7 @@ impl Type {
 
 impl Type {
     pub fn metadata(&self) -> CommonTypeMetadata {
-        match self.normalize() {
+        match self.n() {
             Type::Instance(ty) => ty.metadata.common,
             Type::StaticThis(ty) => ty.metadata.common,
             Type::This(ty) => ty.metadata.common,
@@ -1477,7 +1477,7 @@ impl Type {
     }
 
     pub fn metadata_mut(&mut self) -> &mut CommonTypeMetadata {
-        match self.normalize_mut() {
+        match self.nm() {
             Type::Instance(ty) => &mut ty.metadata.common,
             Type::StaticThis(ty) => &mut ty.metadata.common,
             Type::This(ty) => &mut ty.metadata.common,
@@ -1853,10 +1853,26 @@ impl Type {
         self
     }
 
+    /// `Type::Static` is normalized.
+    ///
+    /// TODO(kdy1): Remove if possible
+    #[instrument(skip(self))]
+    pub fn nm(&mut self) -> &mut Type {
+        match self {
+            Type::Arc(Freezed { ty }) => {
+                let ty = Arc::make_mut(ty);
+                *self = replace(ty, Type::any(DUMMY_SP, Default::default()));
+            }
+            _ => {}
+        }
+
+        self
+    }
+
     /// TODO(kdy1): Make this more efficient, and explode subunions.
     pub fn iter_union(&self) -> impl Debug + Iterator<Item = &Type> {
         Iter {
-            ty: self.normalize(),
+            ty: self.n(),
             idx: 0,
         }
     }
