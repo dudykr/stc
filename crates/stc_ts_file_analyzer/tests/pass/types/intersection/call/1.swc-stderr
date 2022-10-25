@@ -1,0 +1,32 @@
+warning: Type
+ --> $DIR/tests/pass/types/intersection/call/1.ts:9:1
+  |
+9 | a('s')
+  | ^
+  |
+  = note: ((x: string) => string & (x: number) => number)
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/call/1.ts:9:1
+  |
+9 | a('s')
+  | ^^^^^^
+  |
+  = note: string
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/call/1.ts:10:1
+   |
+10 | a(1)
+   | ^
+   |
+   = note: ((x: string) => string & (x: number) => number)
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/call/1.ts:10:1
+   |
+10 | a(1)
+   | ^^^^
+   |
+   = note: number
+
