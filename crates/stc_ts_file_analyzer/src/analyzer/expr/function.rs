@@ -36,19 +36,14 @@ impl Analyzer<'_, '_> {
                         ..child.ctx
                     };
 
-                    if let Some(ty) = type_ann.as_ref().map(|ty| ty.normalize()) {
+                    if let Some(ty) = &type_ann {
                         // See functionExpressionContextualTyping1.ts
                         //
                         // If a type annotation of function is union and there are two or more
                         // function types, the type becomes any implicitly.
-                        if ty
-                            .iter_union()
-                            .filter(|ty| ty.normalize().is_function())
-                            .count()
-                            == 1
-                        {
+                        if ty.iter_union().filter(|ty| ty.is_fn_type()).count() == 1 {
                             for ty in ty.iter_union() {
-                                match ty.normalize() {
+                                match ty.n() {
                                     Type::Function(ty) => {
                                         for p in f.params.iter().zip_longest(ty.params.iter()) {
                                             match p {
