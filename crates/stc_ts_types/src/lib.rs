@@ -1197,7 +1197,6 @@ impl Type {
     /// Note:
     ///
     ///  - never types are excluded.
-    #[deprecated(note = "Use `new_union` instead")]
     pub fn union<I: IntoIterator<Item = Self> + Debug>(iter: I) -> Self {
         let _ctx = debug_ctx!(format!("Iterator: {:?}", iter));
 

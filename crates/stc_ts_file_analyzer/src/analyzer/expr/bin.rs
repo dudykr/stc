@@ -1565,7 +1565,7 @@ impl Analyzer<'_, '_> {
             return Ok((name, narrowed));
         }
 
-        let eq_ty = equals_to.normalize();
+        let eq_ty = equals_to.n();
 
         // We create a type fact for `foo` in `if (foo.type === 'bar');`
 

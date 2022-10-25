@@ -1090,7 +1090,7 @@ impl Analyzer<'_, '_> {
                         ));
                     }
 
-                    match prop_ty.normalize() {
+                    match prop_ty.n() {
                         // TODO(kdy1): Only string or number
                         Type::EnumVariant(..) => {
                             matching_elements.extend(type_ann.clone().map(|v| *v));

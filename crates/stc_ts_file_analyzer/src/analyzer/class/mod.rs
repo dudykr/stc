@@ -1765,7 +1765,7 @@ impl Analyzer<'_, '_> {
                                             .types
                                             .iter()
                                             .map(|ty| {
-                                                match ty.normalize() {
+                                                match ty.n() {
                                                     Type::Class(c) => {
                                                         has_class_in_super = true;
                                                         // class A -> typeof A

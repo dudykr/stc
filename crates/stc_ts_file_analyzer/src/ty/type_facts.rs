@@ -326,7 +326,7 @@ impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, ty: Intersection) -> Intersection {
         let mut ty = ty.fold_children_with(self);
 
-        let has_keyword = |kind| ty.types.iter().any(|ty| ty.normalize().is_kwd(kind));
+        let has_keyword = |kind| ty.types.iter().any(|ty| ty.is_kwd(kind));
 
         // TODO(kdy1): Support literal type.
         let has_str = has_keyword(TsKeywordTypeKind::TsStringKeyword);

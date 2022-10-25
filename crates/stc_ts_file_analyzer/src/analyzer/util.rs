@@ -278,7 +278,8 @@ impl Fold<Type> for Generalizer {
 
         let old = self.force;
         self.force = force;
-        ty = ty.foldable().fold_children_with(self);
+        ty.nm();
+        ty = ty.fold_children_with(self);
         self.force = old;
 
         ty.generalize_lit()
