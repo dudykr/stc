@@ -146,13 +146,13 @@ impl Analyzer<'_, '_> {
 
                         if let Some(ref ty) = ty {
                             // TODO(kdy1): Add support for expressions like '' + ''.
-                            match ty.normalize() {
+                            match ty.n() {
                                 _ if is_valid_key => {}
                                 Type::Lit(..) => {}
                                 Type::EnumVariant(..) => {}
                                 _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword)
                                     || ty.is_unique_symbol()
-                                    || ty.normalize().is_symbol() => {}
+                                    || ty.is_symbol() => {}
                                 _ => match mode {
                                     ComputedPropMode::Interface => {
                                         errors.push(Error::TS1169 { span: node.span });
@@ -169,7 +169,7 @@ impl Analyzer<'_, '_> {
             }
 
             if check_for_validity && check_for_symbol_form && is_symbol_access {
-                match ty.normalize() {
+                match ty.n() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
@@ -291,13 +291,13 @@ impl Analyzer<'_, '_> {
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn is_type_valid_for_computed_key(&mut self, span: Span, ty: &Type) -> bool {
-        if ty.metadata().resolved_from_var && ty.normalize().is_lit() {
+        if ty.metadata().resolved_from_var && ty.is_lit() {
             return true;
         }
 
         let ty = ty.clone().generalize_lit();
 
-        match ty.normalize() {
+        match ty.n() {
             Type::Function(..) => return false,
             _ => {}
         }
@@ -311,7 +311,7 @@ impl Analyzer<'_, '_> {
             }
         };
 
-        match ty.normalize() {
+        match ty.n() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
@@ -348,7 +348,7 @@ impl Analyzer<'_, '_> {
                     return true;
                 }
 
-                match ty.normalize() {
+                match ty.n() {
                     Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
                         ..
@@ -529,7 +529,7 @@ impl Analyzer<'_, '_> {
                             child.ctx.in_async = p.function.is_async;
                             child.ctx.in_generator = p.function.is_generator;
 
-                            match method_type_ann.as_ref().map(|ty| ty.normalize()) {
+                            match method_type_ann.as_ref().map(|ty| ty.n()) {
                                 Some(Type::Function(ty)) => {
                                     for p in p.function.params.iter().zip_longest(ty.params.iter())
                                     {

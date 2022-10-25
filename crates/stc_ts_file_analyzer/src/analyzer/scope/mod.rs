@@ -397,7 +397,7 @@ impl Scope<'_> {
 
     pub fn move_types_from_child(&mut self, child: &mut Scope) {
         for (name, ty) in child.types.drain() {
-            if ty.normalize().is_type_param() {
+            if ty.is_type_param() {
                 self.register_type(name, ty, false);
             }
         }
@@ -550,7 +550,7 @@ impl Scope<'_> {
         ty.assert_valid();
 
         let ty = ty.cheap();
-        match ty.normalize() {
+        match ty.n() {
             Type::Param(..) => {
                 // Override type parameter.
 
@@ -763,7 +763,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<Cow<'a, Type>> {
         ty.assert_valid();
 
-        if !ty.normalize().is_ref_type() {
+        if !ty.is_ref_type() {
             return Ok(ty);
         }
 
@@ -820,7 +820,7 @@ impl Analyzer<'_, '_> {
         }
 
         let should_check_for_mixed = !self.is_builtin
-            && match ty.normalize() {
+            && match ty.n() {
                 Type::Param(..) => false,
                 _ => true,
             };
@@ -870,7 +870,7 @@ impl Analyzer<'_, '_> {
         }
 
         if self.ctx.in_global {
-            if !ty.normalize().is_type_param() {
+            if !ty.is_type_param() {
                 self.env.declare_global_type(name.sym().clone(), ty.clone());
             }
         }
@@ -901,7 +901,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            if (self.scope.is_root() || self.scope.is_module()) && !ty.normalize().is_type_param() {
+            if (self.scope.is_root() || self.scope.is_module()) && !ty.is_type_param() {
                 self.storage.store_private_type(
                     self.ctx.module_id,
                     name.clone(),

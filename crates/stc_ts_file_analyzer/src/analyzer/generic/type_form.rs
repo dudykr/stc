@@ -15,7 +15,7 @@ pub(super) enum OldTypeForm {
 
 impl From<&Type> for OldTypeForm {
     fn from(ty: &Type) -> Self {
-        match ty.normalize() {
+        match ty.n() {
             Type::Ref(r) => Self::Ref(r.type_name.clone().into()),
             Type::Array(ty) => Self::Array(box Self::from(&*ty.elem_type)),
             Type::TypeLit(ty) => Self::TypeLit {

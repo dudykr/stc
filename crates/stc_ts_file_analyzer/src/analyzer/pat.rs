@@ -479,7 +479,7 @@ impl Analyzer<'_, '_> {
             let res: Result<_, _> = try {
                 let value_ty = right.validate_with_default(self)?;
 
-                match value_ty.normalize() {
+                match value_ty.n() {
                     Type::Array(..)
                     | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -493,7 +493,7 @@ impl Analyzer<'_, '_> {
             let res: Result<_, _> = try {
                 let ty = type_ann.validate_with(self)?;
 
-                match *ty.normalize() {
+                match *ty.n() {
                     Type::Array(..)
                     | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
