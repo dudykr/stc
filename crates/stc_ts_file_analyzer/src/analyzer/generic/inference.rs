@@ -187,7 +187,7 @@ impl Analyzer<'_, '_> {
             dump_type_as_string(&self.cm, &ty)
         );
 
-        match ty.normalize() {
+        match ty.n() {
             Type::Param(ty) => {
                 if name == ty.name {
                     return Ok(());
@@ -228,7 +228,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                if ty.normalize().is_union_type() {
+                if ty.is_union_type() {
                     *e.get_mut() = InferredType::Union(ty.into_owned().cheap());
                     return Ok(());
                 }

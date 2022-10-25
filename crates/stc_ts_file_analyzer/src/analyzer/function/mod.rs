@@ -416,7 +416,7 @@ impl Analyzer<'_, '_> {
                             for element in elems.iter_mut() {
                                 let span = element.span();
 
-                                match element.ty.normalize() {
+                                match element.ty.n() {
                                     Type::Keyword(KeywordType {
                                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                         ..
@@ -531,7 +531,7 @@ impl Fold<Type> for TypeParamHandler<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
         if let Some(params) = self.params {
             // TODO(kdy1): PERF
-            ty.normalize_mut();
+            ty.nm();
 
             let ty: Type = ty.fold_children_with(self);
 

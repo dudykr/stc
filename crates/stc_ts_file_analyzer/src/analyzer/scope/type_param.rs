@@ -119,7 +119,7 @@ impl VisitMut<Mapped> for TypeParamEscapeHandler<'_, '_, '_> {
 
 impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
-        if !ty.normalize().is_type_param() {
+        if !ty.is_type_param() {
             // Fast path
             let mut v = TypeParamEscapeVisitor {
                 analyzer: self.analyzer,
@@ -133,7 +133,7 @@ impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {
         }
 
         // TODO(kdy1): PERF
-        ty.normalize_mut();
+        ty.nm();
         ty.visit_mut_children_with(self);
 
         match ty {

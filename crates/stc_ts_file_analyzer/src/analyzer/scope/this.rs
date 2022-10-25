@@ -75,7 +75,7 @@ impl VisitMut<Type> for ThisReplacer<'_, '_, '_> {
         }
 
         // TODO(kdy1): PERF
-        ty.normalize_mut();
+        ty.nm();
         ty.visit_mut_children_with(self);
         match ty {
             Type::This(..) => {

@@ -2754,8 +2754,8 @@ impl Expander<'_, '_, '_> {
                         .unwrap();
                 }
 
-                if check_type.normalize().is_class() {
-                    match check_type.normalize_mut() {
+                if check_type.is_class() {
+                    match check_type.nm() {
                         Type::Class(check_type) => match extends_type.normalize() {
                             Type::Constructor(..) => {
                                 return *true_type;

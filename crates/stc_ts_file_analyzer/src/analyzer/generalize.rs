@@ -71,7 +71,7 @@ impl Simplifier<'_> {
 
 impl Fold<Union> for Simplifier<'_> {
     fn fold(&mut self, mut union: Union) -> Union {
-        let should_remove_null_and_undefined = union.types.iter().any(|ty| match ty.normalize() {
+        let should_remove_null_and_undefined = union.types.iter().any(|ty| match ty.n() {
             Type::TypeLit(..) => true,
             Type::Ref(..) => true,
             Type::Function(..) => true,
@@ -90,14 +90,14 @@ impl Fold<Union> for Simplifier<'_> {
             });
         }
 
-        let has_array = union.types.iter().any(|ty| match ty.normalize() {
+        let has_array = union.types.iter().any(|ty| match ty.n() {
             Type::Array(..) => true,
             _ => false,
         });
 
         // Remove empty tuple
         if has_array {
-            union.types.retain(|ty| match ty.normalize() {
+            union.types.retain(|ty| match ty.n() {
                 Type::Tuple(tuple) => !tuple.elems.is_empty(),
                 _ => true,
             });
@@ -112,9 +112,9 @@ impl Fold<Union> for Simplifier<'_> {
 impl Fold<Type> for Simplifier<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
         // TODO(kdy1): PERF
-        ty.normalize_mut();
+        ty.nm();
 
-        match ty.normalize() {
+        match ty.n() {
             Type::Array(Array {
                 elem_type:
                     box Type::IndexedAccessType(IndexedAccessType {
@@ -138,7 +138,7 @@ impl Fold<Type> for Simplifier<'_> {
         }
 
         if self.should_skip_inference(&ty) {
-            match ty.normalize() {
+            match ty.n() {
                 Type::IndexedAccessType(IndexedAccessType {
                     obj_type:
                         box Type::Param(TypeParam {
@@ -246,7 +246,7 @@ impl Fold<Type> for Simplifier<'_> {
                     }
                 };
 
-                match obj_type.normalize() {
+                match obj_type.n() {
                     Type::Interface(i) => {
                         for element in &i.body {
                             match element {
@@ -312,7 +312,7 @@ impl Fold<Type> for Simplifier<'_> {
             }) if is_str_lit_or_union(&constraint) => {
                 let members = constraint
                     .iter_union()
-                    .filter_map(|ty| match ty.normalize() {
+                    .filter_map(|ty| match ty.n() {
                         Type::Lit(LitType {
                             lit: RTsLit::Str(s),
                             ..
@@ -452,7 +452,7 @@ impl Fold<Type> for Simplifier<'_> {
                         ..
                     }),
                 ..
-            }) if obj.types.iter().all(|ty| match ty.normalize() {
+            }) if obj.types.iter().all(|ty| match ty.n() {
                 Type::TypeLit(..) => true,
                 _ => false,
             }) =>
@@ -615,7 +615,7 @@ impl Fold<Type> for Simplifier<'_> {
 
                 for member in &members {
                     for key in constraint.iter_union() {
-                        let key = match key.normalize() {
+                        let key = match key.n() {
                             Type::Lit(LitType {
                                 lit: RTsLit::Str(v),
                                 ..
@@ -766,7 +766,7 @@ impl Fold<Type> for Simplifier<'_> {
                 let mut new_types = keys
                     .types
                     .into_iter()
-                    .map(|key| match key.normalize() {
+                    .map(|key| match key.n() {
                         Type::Lit(LitType {
                             lit: RTsLit::Str(s),
                             ..
