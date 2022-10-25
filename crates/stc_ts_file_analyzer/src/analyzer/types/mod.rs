@@ -1432,6 +1432,7 @@ impl Analyzer<'_, '_> {
 
                             if a.is_property()
                                 && b.is_property()
+                                && merged.iter().all(|(a, b)| *b != bi)
                                 && self.key_matches(span, a_key, b_key, false)
                             {
                                 merged.push((ai, bi));
