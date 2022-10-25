@@ -322,8 +322,8 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> Option<ValidationResult<()>> {
-        let param = param.normalize();
-        let arg = arg.normalize();
+        let param = param.n();
+        let arg = arg.n();
 
         if let Some(elem_type) =
             unwrap_ref_with_single_arg(param, "ReadonlyArray").or_else(|| match param.normalize() {

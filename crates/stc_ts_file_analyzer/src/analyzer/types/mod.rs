@@ -1702,7 +1702,7 @@ impl Analyzer<'_, '_> {
         match type_name {
             RTsEntityName::TsQualifiedName(_) => {
                 if let Ok(var) = self.type_of_var(&l, TypeOfMode::RValue, None) {
-                    if var.normalize().is_module() {
+                    if var.is_module() {
                         return Ok(());
                     }
                 }
@@ -1827,7 +1827,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match excluded.normalize() {
+        match excluded.n() {
             Type::Union(excluded) => {
                 //
                 for excluded in &excluded.types {

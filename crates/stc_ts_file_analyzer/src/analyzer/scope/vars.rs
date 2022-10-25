@@ -97,7 +97,7 @@ impl Analyzer<'_, '_> {
             RPat::Ident(..) => false,
             _ => true,
         } {
-            match ty.as_ref().map(Type::normalize) {
+            match ty.as_ref().map(Type::n) {
                 Some(ty @ Type::Ref(..)) => {
                     let mut ty = self
                         .expand_top_ref(ty.span(), Cow::Borrowed(&ty), Default::default())

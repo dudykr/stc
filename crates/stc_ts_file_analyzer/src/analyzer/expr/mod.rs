@@ -1640,7 +1640,7 @@ impl Analyzer<'_, '_> {
             obj.make_clone_cheap();
         }
 
-        match obj.normalize() {
+        match obj.n() {
             Type::Lit(obj) => {
                 // Even if literal generalization is prevented, it should be
                 // expanded in this case.
@@ -1958,7 +1958,7 @@ impl Analyzer<'_, '_> {
 
                 let has_better_default = !opts.disallow_indexing_class_with_computed
                     && prop.is_computed()
-                    && match prop.ty().normalize() {
+                    && match prop.ty().n() {
                         // newWithSpreadES5.ts contains
                         //
                         //
@@ -2083,7 +2083,7 @@ impl Analyzer<'_, '_> {
 
             Type::Keyword(KeywordType { kind, .. }) if !self.is_builtin => {
                 match prop {
-                    Key::Computed(prop) => match (*kind, prop.ty.normalize()) {
+                    Key::Computed(prop) => match (*kind, prop.ty.n()) {
                         (
                             TsKeywordTypeKind::TsObjectKeyword,
                             Type::Keyword(KeywordType {
@@ -2166,7 +2166,7 @@ impl Analyzer<'_, '_> {
                 let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
 
                 let has_better_default = !opts.disallow_indexing_array_with_string
-                    && match prop.ty().normalize() {
+                    && match prop.ty().n() {
                         // newWithSpreadES5.ts contains
                         //
                         //
@@ -2207,7 +2207,7 @@ impl Analyzer<'_, '_> {
                         if !has_better_default {
                             return Err(err);
                         }
-                        match prop.ty().normalize() {
+                        match prop.ty().n() {
                             // newWithSpreadES5.ts contains
                             //
                             //

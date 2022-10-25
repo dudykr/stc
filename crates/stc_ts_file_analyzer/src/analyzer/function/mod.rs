@@ -150,7 +150,7 @@ impl Analyzer<'_, '_> {
             }
 
             if let Some(ty) = &mut declared_ret_ty {
-                match ty.normalize() {
+                match ty.n() {
                     Type::Ref(..) => {
                         child.prevent_expansion(ty);
                     }
@@ -209,7 +209,7 @@ impl Analyzer<'_, '_> {
                             Default::default(),
                         )?;
 
-                        match declared.normalize() {
+                        match declared.n() {
                             Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
