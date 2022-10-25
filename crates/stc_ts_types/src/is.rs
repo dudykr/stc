@@ -173,11 +173,11 @@ impl_is!(
 impl_is!(
     Union,
     Union,
-    is_union,
-    as_union,
-    as_union_mut,
-    union,
-    expect_union
+    is_union_type,
+    as_union_type,
+    as_union_type_mut,
+    union_type,
+    expect_union_type
 );
 impl_is!(
     Intersection,
