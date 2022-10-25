@@ -1,12 +1,12 @@
 //! This crate exists to reduce compile time.
 //!
 //! The visitor is too slow to compile everytime I make change.
+#![deny(deprecated)]
 #![deny(unused)]
 #![allow(incomplete_features)]
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(specialization)]
-
 use std::{
     self,
     borrow::Cow,
@@ -2457,12 +2457,7 @@ impl Visit<Union> for ValidityChecker {
             return;
         }
 
-        if ty
-            .types
-            .iter()
-            .map(Type::normalize)
-            .any(|t| t.is_union_type())
-        {
+        if ty.types.iter().any(|t| t.is_union_type()) {
             self.valid = false;
             return;
         }

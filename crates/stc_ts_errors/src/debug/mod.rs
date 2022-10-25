@@ -84,7 +84,7 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
     }
     let mut s = String::from_utf8_lossy(&buf).replace("TYPE as", "");
 
-    if t.normalize().is_instance() {
+    if t.is_instance() {
         s = format!("instanceof {}", s)
     }
 
