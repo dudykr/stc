@@ -170,7 +170,7 @@ struct LitChecker {
 
 impl Visit<Type> for LitChecker {
     fn visit(&mut self, ty: &Type) {
-        match ty.normalize() {
+        match ty.n() {
             Type::Lit(LitType { metadata, .. }) => {
                 if metadata.common.prevent_generalization {
                     return;

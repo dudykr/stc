@@ -2143,7 +2143,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 //
-                match *rhs.normalize() {
+                match *rhs.n() {
                     Type::Tuple(Tuple {
                         elems: ref rhs_elems,
                         ..
@@ -2317,7 +2317,7 @@ impl Analyzer<'_, '_> {
                 op: TsTypeOperatorOp::KeyOf,
                 ty,
                 ..
-            }) if ty.normalize().is_type_param() => {
+            }) if ty.is_type_param() => {
                 return self
                     .assign_with_opts(
                         data,
@@ -2439,7 +2439,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Ok(Type::union(keys));
+                return Ok(Type::new_union(span, keys));
             }
             _ => {}
         }
@@ -2511,11 +2511,11 @@ impl Analyzer<'_, '_> {
             // Validate keys
 
             let l_ty = match &l.ty {
-                Some(v) => v.normalize(),
+                Some(v) => v.n(),
                 None => return Ok(()),
             };
 
-            match r.normalize() {
+            match r.n() {
                 Type::Interface(..)
                 | Type::Class(..)
                 | Type::ClassDef(..)
@@ -2624,7 +2624,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         r: &Type,
     ) -> ValidationResult<bool> {
-        match r.normalize() {
+        match r.n() {
             Type::Union(..) => return Ok(true),
             Type::TypeLit(r) => {
                 if r.members.iter().all(|el| match el {

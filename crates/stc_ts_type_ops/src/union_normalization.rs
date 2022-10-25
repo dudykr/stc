@@ -11,7 +11,7 @@ use stc_ts_types::{
 };
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use swc_atoms::JsWord;
-use swc_common::DUMMY_SP;
+use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 
@@ -26,7 +26,7 @@ impl UnionNormalizer {
     fn find_keys(&self, types: &[Type]) -> IndexSet<JsWord> {
         types
             .iter()
-            .filter_map(|ty| match ty.normalize() {
+            .filter_map(|ty| match ty.n() {
                 Type::TypeLit(ty) => Some(&ty.members),
                 _ => None,
             })
@@ -116,7 +116,7 @@ impl UnionNormalizer {
                     }
                 })
                 .collect(),
-            ret_ty: box Type::union(return_types),
+            ret_ty: box Type::new_union(u.span, return_types),
             metadata: FunctionMetadata {
                 common: u.metadata.common,
                 ..Default::default()
@@ -241,7 +241,7 @@ impl UnionNormalizer {
 
             members.push(TypeElement::Call(CallSignature {
                 span: DUMMY_SP,
-                ret_ty: Some(box Type::union(return_types)),
+                ret_ty: Some(box Type::new_union(ty.span(), return_types)),
                 type_params,
                 params: new_params
                     .into_iter()
@@ -378,7 +378,7 @@ impl VisitMut<Union> for UnionNormalizer {
         u.visit_mut_children_with(self);
 
         // If an union does not contains object literals, skip it.
-        if u.types.iter().all(|ty| !ty.normalize().is_type_lit()) {
+        if u.types.iter().all(|ty| !ty.is_type_lit()) {
             return;
         }
 

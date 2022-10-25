@@ -9,10 +9,10 @@ pub struct TupleNormalizer;
 impl VisitMut<Type> for TupleNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
         // TODO(kdy1): PERF
-        ty.normalize_mut();
+        ty.nm();
         ty.visit_mut_children_with(self);
 
-        match ty.normalize() {
+        match ty.n() {
             Type::Tuple(tuple) => {
                 if tuple.metadata.common.prevent_tuple_to_array {
                     return;
@@ -27,9 +27,7 @@ impl VisitMut<Type> for TupleNormalizer {
                 let span = ty.span();
                 let mut types = ty
                     .take()
-                    .foldable()
-                    .tuple()
-                    .unwrap()
+                    .expect_tuple()
                     .elems
                     .into_iter()
                     .map(|elem| *elem.ty)
@@ -43,7 +41,7 @@ impl VisitMut<Type> for TupleNormalizer {
 
                 *ty = Type::Array(Array {
                     span,
-                    elem_type: box Type::union(types),
+                    elem_type: box Type::new_union(span, types),
                     metadata: ArrayMetadata {
                         common: common_metadata,
                         ..Default::default()

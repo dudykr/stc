@@ -299,7 +299,9 @@ impl GenericExpander<'_> {
                 }
 
                 // TODO(kdy1): PERF
-                m.ty = m.ty.map(|v| box v.foldable());
+                if let Some(ty) = &mut m.ty {
+                    ty.nm();
+                }
                 m.ty = match m.ty {
                     Some(box Type::IndexedAccessType(IndexedAccessType {
                         span,
