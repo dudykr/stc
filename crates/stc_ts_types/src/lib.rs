@@ -61,6 +61,7 @@ pub use self::{
 mod convert;
 mod id;
 mod intrinsic;
+mod is;
 pub mod macros;
 mod metadata;
 pub mod module_id;
@@ -1116,7 +1117,7 @@ impl Type {
         let mut tys = vec![];
 
         for ty in iter {
-            if ty.normalize().is_intersection_type() {
+            if ty.is_intersection_type() {
                 tys.extend(ty.foldable().expect_intersection_type().types);
             } else {
                 tys.push(ty);
