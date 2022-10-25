@@ -1,0 +1,96 @@
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:13:1
+   |
+13 | xyz.x.a = "hello";
+   | ^^^
+   |
+   = note: (X & Y & Z)
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:13:1
+   |
+13 | xyz.x.a = "hello";
+   | ^^^^^
+   |
+   = note: (A & B & C)
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:13:1
+   |
+13 | xyz.x.a = "hello";
+   | ^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:13:1
+   |
+13 | xyz.x.a = "hello";
+   | ^^^^^^^^^^^^^^^^^
+   |
+   = note: "hello"
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:14:1
+   |
+14 | xyz.x.b = "hello";
+   | ^^^
+   |
+   = note: (X & Y & Z)
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:14:1
+   |
+14 | xyz.x.b = "hello";
+   | ^^^^^
+   |
+   = note: (A & B & C)
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:14:1
+   |
+14 | xyz.x.b = "hello";
+   | ^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:14:1
+   |
+14 | xyz.x.b = "hello";
+   | ^^^^^^^^^^^^^^^^^
+   |
+   = note: "hello"
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:15:1
+   |
+15 | xyz.x.c = "hello";
+   | ^^^
+   |
+   = note: (X & Y & Z)
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:15:1
+   |
+15 | xyz.x.c = "hello";
+   | ^^^^^
+   |
+   = note: (A & B & C)
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:15:1
+   |
+15 | xyz.x.c = "hello";
+   | ^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/1.ts:15:1
+   |
+15 | xyz.x.c = "hello";
+   | ^^^^^^^^^^^^^^^^^
+   |
+   = note: "hello"
+
