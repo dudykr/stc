@@ -801,7 +801,7 @@ impl Analyzer<'_, '_> {
                             contains_infer = true;
                         }
                         // We use type param instead of reference type if possible.
-                        match ty.normalize() {
+                        match ty.n() {
                             Type::Param(..) => return Ok(ty.into_owned()),
                             _ => {}
                         }

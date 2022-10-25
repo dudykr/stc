@@ -1901,7 +1901,7 @@ impl Analyzer<'_, '_> {
             .context("tried to normalize to extract callee")?;
 
         // TODO(kdy1): Check if signature match.
-        match callee.normalize() {
+        match callee.n() {
             Type::Intersection(i) => {
                 let candidates = i
                     .types
@@ -2091,7 +2091,7 @@ impl Analyzer<'_, '_> {
 
         dbg!();
 
-        match callee.normalize() {
+        match callee.n() {
             Type::ClassDef(cls) if kind == ExtractKind::New => {
                 let ret_ty = self.get_return_type(
                     span,
@@ -2487,7 +2487,7 @@ impl Analyzer<'_, '_> {
 
             if type_ann.is_none() && self.ctx.reevaluating_call_or_new {
                 for at in spread_arg_types {
-                    match at.ty.normalize() {
+                    match at.ty.n() {
                         Type::Function(Function {
                             type_params: Some(type_params),
                             ..
@@ -2742,7 +2742,7 @@ impl Analyzer<'_, '_> {
                 new_arg_types = vec![];
                 for arg in &new_args {
                     if arg.spread.is_some() {
-                        match arg.ty.normalize() {
+                        match arg.ty.n() {
                             Type::Tuple(arg_ty) => {
                                 new_arg_types.extend(
                                     arg_ty.elems.iter().map(|element| &element.ty).cloned().map(
@@ -3061,7 +3061,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
 
-                            match param_ty.normalize() {
+                            match param_ty.n() {
                                 Type::Array(arr) => {
                                     // We should change type if the parameter is a rest parameter.
                                     let res = self.assign(
@@ -3298,7 +3298,7 @@ impl Analyzer<'_, '_> {
                     _ => {
                         if let Some(v) = self.extends(span, Default::default(), &orig_ty, &new_ty) {
                             if v {
-                                match orig_ty.normalize() {
+                                match orig_ty.n() {
                                     Type::ClassDef(def) => {
                                         return Ok(Type::Class(Class {
                                             span,
@@ -3694,7 +3694,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                             Type::Alias(Alias { ty: aliased_ty, .. }) => {
                                 let mut types = vec![];
 
-                                match &type_args.params[0].normalize() {
+                                match &type_args.params[0].n() {
                                     Type::Union(type_arg) => {
                                         for ty in &type_arg.types {
                                             types.push(Type::Ref(Ref {

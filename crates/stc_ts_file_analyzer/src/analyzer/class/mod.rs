@@ -2537,7 +2537,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> ValidationResult {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        Ok(match ty.normalize() {
+        Ok(match ty.n() {
             Type::ClassDef(def) => Type::Class(Class {
                 span,
                 def: box def.clone(),

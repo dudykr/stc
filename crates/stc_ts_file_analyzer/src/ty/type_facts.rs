@@ -109,9 +109,9 @@ impl Analyzer<'_, '_> {
             });
 
             // TODO(kdy1): PERF
-            match ty.normalize_mut() {
+            match ty.nm() {
                 Type::Union(u) => {
-                    let has_fn = u.types.iter().any(|ty| match ty.normalize() {
+                    let has_fn = u.types.iter().any(|ty| match ty.n() {
                         Type::Function(..) => true,
                         _ => false,
                     });
@@ -161,7 +161,7 @@ impl TypeFactsHandler<'_, '_, '_> {
             return true;
         };
 
-        match ty.normalize() {
+        match ty.n() {
             Type::Interface(..) | Type::TypeLit(..) | Type::Class(..) => return false,
             _ => {}
         }
@@ -443,7 +443,7 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
 
         // TODO(kdy1): Don't do anything if type fact is none.
 
-        match ty.normalize() {
+        match ty.n() {
             Type::Lit(LitType {
                 span,
                 lit: RTsLit::Bool(v),

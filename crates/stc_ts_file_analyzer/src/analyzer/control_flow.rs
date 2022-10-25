@@ -794,7 +794,7 @@ impl Analyzer<'_, '_> {
             .freezed();
         let _panic_ctx = debug_ctx!(format!("ty = {}", dump_type_as_string(&self.cm, &orig_ty)));
 
-        let ty = orig_ty.normalize();
+        let ty = orig_ty.n();
 
         ty.assert_valid();
 
@@ -917,7 +917,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     if let Some(types) = self.find_type(self.ctx.module_id, &i.id.clone().into())? {
                         for ty in types {
-                            match ty.normalize() {
+                            match ty.n() {
                                 Type::Module(..) => {
                                     return Err(Error::NotVariable {
                                         span: i.id.span,
@@ -1220,7 +1220,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<Type> {
         src.assert_valid();
 
-        match src.normalize() {
+        match src.n() {
             Type::Ref(..) => {
                 let src =
                     self.expand_top_ref(src.span(), Cow::Borrowed(src), Default::default())?;
@@ -1326,7 +1326,7 @@ impl Analyzer<'_, '_> {
         let obj = self.type_of_var(&id, TypeOfMode::RValue, None)?;
         let obj = self.expand_top_ref(ty.span(), Cow::Owned(obj), Default::default())?;
 
-        match obj.normalize() {
+        match obj.n() {
             Type::Union(u) => {
                 if ids.len() == 2 {
                     let mut new_obj_types = vec![];

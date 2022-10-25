@@ -2005,7 +2005,7 @@ pub(super) fn extract_name_for_assignment(e: &RExpr, is_exact_eq: bool) -> Optio
 }
 
 fn is_str_like_for_addition(t: &Type) -> bool {
-    match t.normalize() {
+    match t.n() {
         Type::Lit(LitType {
             lit: RTsLit::Str(..),
             ..

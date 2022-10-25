@@ -24,7 +24,7 @@ impl Analyzer<'_, '_> {
             .map(|ty| {
                 // If type annotation is Promise<T>, we use PromiseLike<T> as the annotation.
 
-                match ty.normalize() {
+                match ty.n() {
                     Type::Ref(Ref {
                         type_name:
                             RTsEntityName::Ident(RIdent {

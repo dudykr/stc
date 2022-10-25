@@ -2081,12 +2081,12 @@ impl Expander<'_, '_, '_> {
                             }
                         }
                         // We should expand alias again.
-                        let is_alias = match t.normalize() {
+                        let is_alias = match t.n() {
                             Type::Alias(..) => true,
                             _ => false,
                         };
 
-                        match t.normalize() {
+                        match t.n() {
                             Type::Intersection(..) => return Ok(Some(t.into_owned().clone())),
 
                             // Result of type expansion should not be Ref unless really required.
@@ -2344,13 +2344,14 @@ impl Expander<'_, '_, '_> {
         match ty {
             Type::Keyword(..) | Type::Lit(..) => return ty,
             Type::Arc(..) => {
+                ty.nm();
                 // TODO(kdy1): PERF
-                return ty.foldable().fold_with(self);
+                return ty.fold_with(self);
             }
             _ => {}
         }
 
-        if ty.normalize().is_ref_type() {
+        if ty.is_ref_type() {
             ty.make_clone_cheap();
         }
 

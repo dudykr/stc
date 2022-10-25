@@ -2464,7 +2464,7 @@ impl Analyzer<'_, '_> {
 
                         if v as usize >= elems.len() {
                             match elems.last() {
-                                Some(elem) => match elem.ty.normalize() {
+                                Some(elem) => match elem.ty.n() {
                                     Type::Rest(rest_ty) => {
                                         // debug_assert!(rest_ty.ty.is_clone_cheap());
                                         return Ok(*rest_ty.ty.clone());
@@ -2684,13 +2684,13 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::any(span, Default::default()));
                     }
 
-                    if this.normalize().is_this() {
+                    if this.is_this() {
                         unreachable!("this() should not be `this`")
                     }
 
-                    match this.normalize() {
+                    match this.n() {
                         Type::Instance(ty) => {
-                            if ty.ty.normalize().is_this() {
+                            if ty.ty.is_this() {
                                 unreachable!("this() should not be `this`")
                             }
                         }
