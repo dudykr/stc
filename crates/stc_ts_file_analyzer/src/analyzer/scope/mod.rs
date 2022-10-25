@@ -609,15 +609,9 @@ impl Scope<'_> {
                     return;
                 };
 
-                if prev.normalize().is_intersection_type() {
-                    match prev.normalize_mut() {
-                        Type::Intersection(prev) => {
-                            prev.types.push(ty);
-                        }
-                        _ => {
-                            unreachable!()
-                        }
-                    }
+                if let Some(i) = prev.as_intersection_mut() {
+                    i.types.push(ty);
+
                     prev.fix();
                     prev.make_cheap();
                 } else {
@@ -1269,7 +1263,7 @@ impl Analyzer<'_, '_> {
             }
             src.extend(ty.into_iter().map(Cow::into_owned));
             return Some(ItemRef::Owned(
-                vec![Type::intersection(DUMMY_SP, src).fixed().cheap()].into_iter(),
+                vec![Type::new_intersection(DUMMY_SP, src).fixed().cheap()].into_iter(),
             ));
         }
 
