@@ -1280,7 +1280,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 // Deny assigning null to class. (not instance)
 
-                match *to.normalize() {
+                match *to.n() {
                     Type::Class(..) | Type::Function(..) => fail!(),
                     _ => {}
                 }
@@ -1438,7 +1438,7 @@ impl Analyzer<'_, '_> {
                             },
                         );
                     }
-                    None => match to.normalize() {
+                    None => match to.n() {
                         Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => {
                             return Ok(())
                         }
@@ -1446,7 +1446,7 @@ impl Analyzer<'_, '_> {
                     },
                 }
 
-                match to.normalize() {
+                match to.n() {
                     Type::Union(..) => {}
                     _ => {
                         fail!()
@@ -1586,13 +1586,13 @@ impl Analyzer<'_, '_> {
             Type::Union(lu) => {
                 // true | false = boolean
                 if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
-                    if lu.types.iter().any(|ty| match ty.normalize() {
+                    if lu.types.iter().any(|ty| match ty.n() {
                         Type::Lit(LitType {
                             lit: RTsLit::Bool(RBool { value: true, .. }),
                             ..
                         }) => true,
                         _ => false,
-                    }) && lu.types.iter().any(|ty| match ty.normalize() {
+                    }) && lu.types.iter().any(|ty| match ty.n() {
                         Type::Lit(LitType {
                             lit: RTsLit::Bool(RBool { value: false, .. }),
                             ..
