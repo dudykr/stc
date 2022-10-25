@@ -350,7 +350,7 @@ impl Analyzer<'_, '_> {
             return Ok(None);
         }
 
-        match ty.normalize() {
+        match ty.n() {
             Type::TypeLit(ty) => {
                 let mut keys = vec![];
                 for m in &ty.members {
@@ -507,7 +507,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Tuple(..) | Type::Array(..) => return Ok(None),
 
-            Type::Mapped(m) => match m.type_param.constraint.as_deref().map(|ty| ty.normalize()) {
+            Type::Mapped(m) => match m.type_param.constraint.as_deref().map(|ty| ty.n()) {
                 Some(Type::Operator(Operator {
                     op: TsTypeOperatorOp::KeyOf,
                     ty,
@@ -628,7 +628,7 @@ impl VisitMut<Type> for IndexedAccessTypeReplacer<'_> {
         match ty {
             Type::IndexedAccessType(n) => {
                 if (&*n.obj_type).type_eq(self.obj)
-                    && match n.index_type.normalize() {
+                    && match n.index_type.n() {
                         Type::Param(index) => *self.key == index.name,
                         _ => false,
                     }

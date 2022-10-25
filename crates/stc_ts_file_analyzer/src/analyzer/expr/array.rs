@@ -275,7 +275,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        match iterator.normalize() {
+        match iterator.n() {
             Type::Ref(..) => {
                 let iterator = self
                     .expand_top_ref(span, iterator, Default::default())
@@ -381,7 +381,7 @@ impl Analyzer<'_, '_> {
                 | Error::NoSuchPropertyInClass { span, .. } => {
                     match iterator.n() {
                         Type::Union(iterator) => {
-                            if iterator.types.iter().all(|ty| ty.normalize().is_tuple()) {
+                            if iterator.types.iter().all(|ty| ty.is_tuple()) {
                                 return Error::NoSuchProperty {
                                     span,
                                     obj: None,
@@ -418,7 +418,7 @@ impl Analyzer<'_, '_> {
             )?;
 
         // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
-        if matches!(elem_ty.normalize(), Type::Union(..)) {
+        if matches!(elem_ty.n(), Type::Union(..)) {
             match elem_ty.nm() {
                 Type::Union(u) => {
                     u.types.retain(|ty| !ty.is_any());
@@ -575,8 +575,8 @@ impl Analyzer<'_, '_> {
             )?;
 
         // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
-        if matches!(elem_ty.normalize(), Type::Union(..)) {
-            match elem_ty.normalize_mut() {
+        if matches!(elem_ty.n(), Type::Union(..)) {
+            match elem_ty.nm() {
                 Type::Union(u) => {
                     u.types.retain(|ty| !ty.is_any());
                     if u.types.is_empty() {
@@ -621,7 +621,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        match iterator.normalize() {
+        match iterator.n() {
             // TODO
             Type::TypeLit(_) => {}
 
@@ -709,7 +709,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            match ty.normalize() {
+            match ty.n() {
                 Type::Ref(..) => {
                     let ty = self.expand_top_ref(span, ty, Default::default())?;
                     return self.get_iterator(span, ty, opts);
@@ -857,7 +857,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        match iterator.normalize() {
+        match iterator.n() {
             Type::Array(arr) => return Ok(Cow::Owned(*arr.elem_type.clone())),
             Type::Tuple(tuple) => {
                 if tuple.elems.is_empty() {

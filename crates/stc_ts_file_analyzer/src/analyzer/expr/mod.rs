@@ -2741,8 +2741,8 @@ impl Analyzer<'_, '_> {
                 }
                 // Exclude accesses to type params.
                 if new.len() >= 2 {
-                    new.retain(|prop_ty| match prop_ty.normalize() {
-                        Type::IndexedAccessType(iat) => match iat.obj_type.normalize() {
+                    new.retain(|prop_ty| match prop_ty.n() {
+                        Type::IndexedAccessType(iat) => match iat.obj_type.n() {
                             Type::Param(..) => false,
                             _ => true,
                         },
