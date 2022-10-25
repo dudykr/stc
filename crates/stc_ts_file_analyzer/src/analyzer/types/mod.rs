@@ -1488,7 +1488,8 @@ impl Analyzer<'_, '_> {
                     if let Some(from_type) = from.type_ann {
                         let to_type_lit =
                             self.convert_type_to_type_lit(span, Cow::Borrowed(to_type))?;
-                        let from = self.convert_type_to_type_lit(span, Cow::Owned(*from_type))?;
+                        let from =
+                            self.convert_type_to_type_lit(span, Cow::Borrowed(&from_type))?;
 
                         match (to_type_lit, from) {
                             (Some(to_type_lit), Some(from)) => {
@@ -1510,7 +1511,17 @@ impl Analyzer<'_, '_> {
                                     .cheap(),
                                 )
                             }
-                            _ => {}
+                            _ => {
+                                to.type_ann = Some(
+                                    box Type::Intersection(Intersection {
+                                        span: to_type.span(),
+                                        types: vec![*to_type.clone(), *from_type],
+                                        metadata: Default::default(),
+                                    })
+                                    .fixed()
+                                    .cheap(),
+                                );
+                            }
                         }
                     }
                 }
