@@ -166,16 +166,16 @@ impl GenericExpander<'_> {
 
                 match &m.type_param.constraint {
                     Some(constraint) => {
-                        match constraint.normalize() {
+                        match constraint.n() {
                             Type::Operator(
                                 operator @ Operator {
                                     op: TsTypeOperatorOp::KeyOf,
                                     ..
                                 },
-                            ) => match operator.ty.normalize() {
+                            ) => match operator.ty.n() {
                                 Type::Param(param) if self.params.contains_key(&param.name) => {
                                     let ty = self.params.get(&param.name).unwrap();
-                                    match ty.normalize() {
+                                    match ty.n() {
                                         Type::TypeLit(ty)
                                             if ty.members.iter().all(|element| match element {
                                                 TypeElement::Property(..)

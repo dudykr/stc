@@ -52,16 +52,16 @@ impl Analyzer<'_, '_> {
 
             if cfg!(feature = "fastpath")
                 && l_params.len() == 1
-                && l_params[0].ty.normalize().is_type_param()
+                && l_params[0].ty.is_type_param()
                 && l_params[0].ty.span().is_dummy()
             {
                 if let Some(l_ret_ty) = l_ret_ty {
                     if let Some(r_ret_ty) = unwrap_ref_with_single_arg(&r_ret_ty, "Promise") {
-                        match l_ret_ty.normalize() {
+                        match l_ret_ty.n() {
                             Type::Union(l_ret_ty) => {
                                 // Exact match
                                 if l_ret_ty.types.len() == 4
-                                    && l_ret_ty.types[0].normalize().is_type_param()
+                                    && l_ret_ty.types[0].is_type_param()
                                     && unwrap_ref_with_single_arg(&l_ret_ty.types[1], "PromiseLike")
                                         .type_eq(&Some(&l_ret_ty.types[0]))
                                     && l_ret_ty.types[2]
@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
 
             macro_rules! check {
                 ($pat:ident) => {{
-                    let l_pos = l_params.iter().position(|p| match p.ty.normalize() {
+                    let l_pos = l_params.iter().position(|p| match p.ty.n() {
                         Type::TypeLit(ty) => {
                             ty.members
                                 .iter()
@@ -109,7 +109,7 @@ impl Analyzer<'_, '_> {
                     });
 
                     if let Some(l_pos) = l_pos {
-                        let count = match l_params[l_pos].ty.normalize() {
+                        let count = match l_params[l_pos].ty.n() {
                             Type::TypeLit(ty) => ty
                                 .members
                                 .iter()
