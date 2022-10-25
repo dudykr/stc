@@ -123,7 +123,7 @@ impl AddAssign for ModuleTypeData {
 }
 
 /// This type is expected to stored in a [Box], like `Vec<Type>`.
-#[derive(Debug, PartialEq, Spanned, FromVariant, Is, EqIgnoreSpan, Visit)]
+#[derive(Debug, PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit)]
 pub enum Type {
     Instance(Instance),
     StaticThis(StaticThis),
@@ -1792,6 +1792,7 @@ impl Type {
     }
 
     /// [Type::Arc] is normalized.
+    #[deprecated]
     pub fn normalize<'s, 'c>(&'s self) -> &'c Type
     where
         's: 'c,
