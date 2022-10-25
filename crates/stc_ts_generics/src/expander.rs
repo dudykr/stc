@@ -37,7 +37,7 @@ pub struct GenericExpander<'a> {
 }
 
 impl GenericExpander<'_> {
-    fn fold_type(&mut self, ty: Type) -> Type {
+    fn fold_type(&mut self, mut ty: Type) -> Type {
         let span = ty.span();
 
         {
@@ -51,7 +51,7 @@ impl GenericExpander<'_> {
             }
         }
 
-        match ty.normalize() {
+        match ty.n() {
             Type::StaticThis(..) | Type::Intrinsic(..) | Type::Symbol(..) => return ty,
 
             Type::Param(param) => {
@@ -76,7 +76,7 @@ impl GenericExpander<'_> {
             _ => {}
         }
 
-        let ty = ty.foldable();
+        ty.nm();
 
         match ty {
             Type::Ref(Ref {
