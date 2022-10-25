@@ -135,29 +135,24 @@ pub enum Type {
     Predicate(Predicate),
     IndexedAccessType(IndexedAccessType),
 
-    #[is(name = "ref_type")]
     Ref(Ref),
     TypeLit(TypeLit),
     Keyword(KeywordType),
     Conditional(Conditional),
     Tuple(Tuple),
     Array(Array),
-    #[is(name = "union_type")]
     Union(Union),
-    #[is(name = "intersection_type")]
     Intersection(Intersection),
     Function(Function),
     Constructor(Constructor),
 
     Operator(Operator),
 
-    #[is(name = "type_param")]
     Param(TypeParam),
     EnumVariant(EnumVariant),
 
     Interface(Interface),
 
-    #[is(name = "enum_type")]
     Enum(Enum),
 
     Mapped(Mapped),
@@ -1201,6 +1196,7 @@ impl Type {
     /// Note:
     ///
     ///  - never types are excluded.
+    #[deprecated(note = "Use `new_union` instead")]
     pub fn union<I: IntoIterator<Item = Self> + Debug>(iter: I) -> Self {
         let _ctx = debug_ctx!(format!("Iterator: {:?}", iter));
 
@@ -1825,6 +1821,7 @@ impl Type {
     ///
     /// TODO(kdy1): Remove if possible
     #[instrument(skip(self))]
+    #[deprecated]
     pub fn normalize_mut(&mut self) -> &mut Type {
         match self {
             Type::Arc(Freezed { ty }) => {
