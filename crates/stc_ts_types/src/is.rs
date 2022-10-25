@@ -342,3 +342,12 @@ impl_is!(
     intrinsic,
     expect_intrinsic
 );
+impl_is!(
+    Instance,
+    Instance,
+    is_instance,
+    as_instance,
+    as_instance_mut,
+    instance,
+    expect_instance
+);
