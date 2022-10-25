@@ -94,7 +94,7 @@ impl Analyzer<'_, '_> {
 
             macro_rules! check {
                 ($pat:ident) => {{
-                    let l_pos = l_params.iter().position(|p| match p.ty.n() {
+                    let l_pos = l_params.iter().position(|p| match p.ty.normalize() {
                         Type::TypeLit(ty) => {
                             ty.members
                                 .iter()
@@ -109,7 +109,7 @@ impl Analyzer<'_, '_> {
                     });
 
                     if let Some(l_pos) = l_pos {
-                        let count = match l_params[l_pos].ty.n() {
+                        let count = match l_params[l_pos].ty.normalize() {
                             Type::TypeLit(ty) => ty
                                 .members
                                 .iter()
@@ -129,7 +129,7 @@ impl Analyzer<'_, '_> {
                             .collect_vec();
 
                         for (el_idx, new_params) in vec.iter_mut().enumerate() {
-                            match new_params[l_pos].ty.nm() {
+                            match new_params[l_pos].ty.normalize_mut() {
                                 Type::TypeLit(ty) => {
                                     let mut call_idx = 0;
                                     ty.members.retain(|el| match el {

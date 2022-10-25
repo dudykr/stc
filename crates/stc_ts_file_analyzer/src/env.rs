@@ -148,7 +148,7 @@ pub trait BuiltInGen: Sized {
                                 assert!(!data.types.is_empty() || !data.vars.is_empty());
 
                                 match types.entry(id.clone()) {
-                                    Entry::Occupied(mut e) => match e.get_mut().mn() {
+                                    Entry::Occupied(mut e) => match e.get_mut().normalize_mut() {
                                         Type::Module(module) => {
                                             //
                                             module.exports.types.extend(data.types);

@@ -2039,7 +2039,7 @@ impl Expander<'_, '_, '_> {
         macro_rules! verify {
             ($ty:expr) => {{
                 if cfg!(debug_assertions) {
-                    match $ty.n() {
+                    match $ty.normalize() {
                         Type::Ref(ref s) => unreachable!("ref: {:?}", s),
                         _ => {}
                     }
