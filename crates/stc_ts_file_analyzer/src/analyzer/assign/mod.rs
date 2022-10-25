@@ -1085,21 +1085,21 @@ impl Analyzer<'_, '_> {
                 return Err(Error::InvalidLValue { span: e.span });
             }
 
-            Type::Intersection(ref i) => {
+            Type::Intersection(ref li) => {
                 let mut errors = vec![];
 
                 // TODO(kdy1): Optimize unknown rhs handling
 
-                let is_str = i.types.iter().any(|ty| ty.is_str());
-                let is_num = i.types.iter().any(|ty| ty.is_num());
-                let is_bool = i.types.iter().any(|ty| ty.is_bool());
+                let is_str = li.types.iter().any(|ty| ty.is_str());
+                let is_num = li.types.iter().any(|ty| ty.is_num());
+                let is_bool = li.types.iter().any(|ty| ty.is_bool());
 
                 // LHS is never.
                 if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
                     return Ok(());
                 }
 
-                for ty in &i.types {
+                for ty in &li.types {
                     match self
                         .assign_with_opts(
                             data,
@@ -1120,7 +1120,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let left_contains_object = i
+                let left_contains_object = li
                     .types
                     .iter()
                     .any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
@@ -1308,6 +1308,17 @@ impl Analyzer<'_, '_> {
                 if errors.iter().any(Result::is_ok) {
                     return Ok(());
                 }
+
+                if let Ok(Some(rhs)) = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(rhs))
+                {
+                    if self
+                        .assign_without_wrapping(data, to, &Type::TypeLit(rhs.into_owned()), opts)
+                        .is_ok()
+                    {
+                        return Ok(());
+                    }
+                }
+
                 let use_single_error = types.iter().all(|ty| ty.normalize().is_interface());
                 let errors = errors.into_iter().map(Result::unwrap_err).collect();
 

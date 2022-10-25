@@ -619,7 +619,7 @@ impl Analyzer<'_, '_> {
 
                     if types.is_empty() {
                         if kind == ExtractKind::Call {
-                            return Err(Error::NoCallabelPropertyWithName {
+                            return Err(Error::NoCallablePropertyWithName {
                                 span,
                                 obj: box obj_type.clone(),
                                 key: box prop.clone(),
@@ -816,7 +816,7 @@ impl Analyzer<'_, '_> {
             match obj_type.normalize() {
                 Type::Class(..) => {
                     return Err(match kind {
-                        ExtractKind::Call => Error::NoCallabelPropertyWithName {
+                        ExtractKind::Call => Error::NoCallablePropertyWithName {
                             span,
                             obj: box obj_type.clone(),
                             key: box prop.clone(),
@@ -844,7 +844,7 @@ impl Analyzer<'_, '_> {
                     IdCtx::Var,
                     Default::default(),
                 )
-                .context("tried to sccess property to call it")?;
+                .context("tried to access property to call it")?;
 
             let callee_before_expanding = dump_type_as_string(&self.cm, &callee);
             let callee = self
@@ -874,12 +874,12 @@ impl Analyzer<'_, '_> {
                 type_ann,
             )
             .convert_err(|err| match err {
-                Error::NoCallSignature { span, .. } => Error::NoCallabelPropertyWithName {
+                Error::NoCallSignature { span, .. } => Error::NoCallablePropertyWithName {
                     span,
                     obj: box obj_type.clone(),
                     key: box prop.clone(),
                 },
-                Error::NoNewSignature { span, .. } => Error::NoCallabelPropertyWithName {
+                Error::NoNewSignature { span, .. } => Error::NoCallablePropertyWithName {
                     span,
                     obj: box obj_type.clone(),
                     key: box prop.clone(),
@@ -1739,6 +1739,35 @@ impl Analyzer<'_, '_> {
                 .into());
             }
 
+            Type::Intersection(i) => {
+                // For intersection, we should select one element which matches
+                // the signature
+
+                let mut candidates = vec![];
+
+                for ty in i.types.iter() {
+                    candidates.extend(self.extract_callee_candidates(span, kind, ty).context(
+                        "tried to extract callable candidates from an intersection type",
+                    )?);
+                }
+
+                if let Some(v) = self.select_and_invoke(
+                    span,
+                    kind,
+                    expr,
+                    &candidates,
+                    type_args,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                    type_ann,
+                )? {
+                    return Ok(v);
+                }
+
+                ret_err!()
+            }
+
             _ => ret_err!(),
         }
     }
@@ -1820,11 +1849,13 @@ impl Analyzer<'_, '_> {
             ExtractKind::Call => Err(Error::NoCallSignature {
                 span,
                 callee: box callee_ty.clone(),
-            }),
+            }
+            .context("failed to select the element to invoke")),
             ExtractKind::New => Err(Error::NoNewSignature {
                 span,
                 callee: box callee_ty.clone(),
-            }),
+            }
+            .context("failed to select the element to invoke")),
         }
     }
 
@@ -2081,16 +2112,17 @@ impl Analyzer<'_, '_> {
         }
 
         return Err(if kind == ExtractKind::Call {
-            print_backtrace();
             Error::NoCallSignature {
                 span,
                 callee: box callee,
             }
+            .context("tried to calculate return type")
         } else {
             Error::NoNewSignature {
                 span,
                 callee: box callee,
             }
+            .context("tried to calculate return type")
         });
     }
 

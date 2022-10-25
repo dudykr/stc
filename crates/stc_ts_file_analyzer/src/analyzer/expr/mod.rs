@@ -2759,8 +2759,13 @@ impl Analyzer<'_, '_> {
 
                 new.dedup_type();
 
-                let mut ty = Type::union(new);
-                ty.respan(span);
+                let ty = Type::Intersection(Intersection {
+                    span,
+                    types: new,
+                    metadata: Default::default(),
+                })
+                .fixed();
+                // ty.respan(span);
                 return Ok(ty);
             }
 

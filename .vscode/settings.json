@@ -50,4 +50,6 @@
     "rnode"
   ],
   "rust-analyzer.checkOnSave.command": "check",
+  "debug.allowBreakpointsEverywhere": true,
+  "rust-analyzer.debug.openDebugPane": true,
 }
