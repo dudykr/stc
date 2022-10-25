@@ -558,8 +558,8 @@ impl Scope<'_> {
                     Entry::Occupied(mut e) => {
                         let prev = e.get_mut();
 
-                        if prev.normalize().is_type_param() {
-                            match ty.normalize() {
+                        if prev.is_type_param() {
+                            match ty.n() {
                                 Type::Param(TypeParam {
                                     constraint: None,
                                     default: None,
@@ -570,25 +570,18 @@ impl Scope<'_> {
 
                             *prev = ty;
                             return;
-                        } else if prev.normalize().is_intersection_type() {
-                            match prev.normalize_mut() {
-                                Type::Intersection(prev) => {
-                                    if let Some(index) =
-                                        prev.types.iter().position(|v| match v.normalize() {
-                                            Type::Param(..) => true,
-                                            _ => false,
-                                        })
-                                    {
-                                        prev.types.remove(index);
-                                    }
-
-                                    prev.types.push(ty);
-                                    prev.fix();
-                                }
-                                _ => {
-                                    unreachable!()
-                                }
+                        } else if let Some(prev_i) = prev.as_intersection_mut() {
+                            if let Some(index) =
+                                prev_i.types.iter().position(|v| match v.normalize() {
+                                    Type::Param(..) => true,
+                                    _ => false,
+                                })
+                            {
+                                prev_i.types.remove(index);
                             }
+
+                            prev_i.types.push(ty);
+                            prev_i.fix();
 
                             prev.make_cheap();
                         }

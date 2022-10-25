@@ -436,7 +436,7 @@ impl Analyzer<'_, '_> {
         r: &Type,
     ) -> ValidationResult<()> {
         let span = opts.span;
-        let r = r.normalize();
+        let r = r.n();
 
         match r {
             // var fnr2: () => any = fnReturn2();

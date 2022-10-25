@@ -369,7 +369,7 @@ impl UnionNormalizer {
 impl VisitMut<Type> for UnionNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
         // TODO(kdy1): PERF
-        ty.normalize_mut();
+        ty.nm();
 
         ty.visit_mut_children_with(self);
 
