@@ -1,2 +1,3 @@
 recursiveTypes
 namedTupleMembers.ts
+typeGuardOfFormInstanceOfOnInterface.ts
