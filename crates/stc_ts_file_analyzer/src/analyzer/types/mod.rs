@@ -1411,9 +1411,36 @@ impl Analyzer<'_, '_> {
         }))
     }
 
-    fn merge_type_elements(&mut self, els: Vec<TypeElement>) -> ValidationResult<Vec<TypeElement>> {
+    fn merge_type_elements(
+        &mut self,
+        span: Span,
+        els: Vec<TypeElement>,
+    ) -> ValidationResult<Vec<TypeElement>> {
         run(|| {
-            //
+            // As merging is not common, we optimize it by creating a new vector only if
+            // there's a conflict
+
+            let mut merged = vec![];
+
+            for (ai, a) in els.iter().enumerate() {
+                if let Some(a_key) = a.key() {
+                    for (bi, b) in els.iter().enumerate() {
+                        if let Some(b_key) = b.key() {
+                            if ai == bi {
+                                continue;
+                            }
+
+                            if self.key_matches(span, a_key, b_key, false) {
+                                merged.push((ai, bi));
+                            }
+                        }
+                    }
+                }
+            }
+
+            if merged.is_empty() {
+                return Ok(els);
+            }
 
             Ok(els)
         })
