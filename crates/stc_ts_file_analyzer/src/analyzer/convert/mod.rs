@@ -45,7 +45,7 @@ use crate::{
     util::contains_infer_type,
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 mod interface;
@@ -54,7 +54,7 @@ mod interface;
 /// topological order.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &RTsTypeParamDecl) -> ValidationResult<TypeParamDecl> {
+    fn validate(&mut self, decl: &RTsTypeParamDecl) -> VResult<TypeParamDecl> {
         self.record(decl);
 
         if self.is_builtin {
@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &RTsTypeParam) -> ValidationResult<TypeParam> {
+    fn validate(&mut self, p: &RTsTypeParam) -> VResult<TypeParam> {
         self.record(p);
 
         let ctx = Ctx {
@@ -187,7 +187,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline]
-    fn validate(&mut self, ann: &RTsTypeAnn) -> ValidationResult {
+    fn validate(&mut self, ann: &RTsTypeAnn) -> VResult {
         self.record(ann);
 
         let ctx = Ctx {
@@ -201,7 +201,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &RTsTypeAliasDecl) -> ValidationResult<Type> {
+    fn validate(&mut self, d: &RTsTypeAliasDecl) -> VResult<Type> {
         self.record(d);
         let span = d.span;
 
@@ -209,7 +209,7 @@ impl Analyzer<'_, '_> {
             self.with_child(
                 ScopeKind::Flow,
                 Default::default(),
-                |child: &mut Analyzer| -> ValidationResult<_> {
+                |child: &mut Analyzer| -> VResult<_> {
                     let type_params = try_opt!(d.type_params.validate_with(child)).map(Box::new);
 
                     let mut ty = match &*d.type_ann {
@@ -288,11 +288,11 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &RTsInterfaceDecl) -> ValidationResult {
+    fn validate(&mut self, d: &RTsInterfaceDecl) -> VResult {
         let ty = self.with_child(
             ScopeKind::Flow,
             Default::default(),
-            |child: &mut Analyzer| -> ValidationResult<_> {
+            |child: &mut Analyzer| -> VResult<_> {
                 match &*d.id.sym {
                     "any" | "void" | "never" | "string" | "number" | "boolean" | "null"
                     | "undefined" | "symbol" => {
@@ -340,7 +340,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RTsInterfaceBody) -> ValidationResult<Vec<TypeElement>> {
+    fn validate(&mut self, node: &RTsInterfaceBody) -> VResult<Vec<TypeElement>> {
         let ctx = Ctx {
             computed_prop_mode: ComputedPropMode::Interface,
             ..self.ctx
@@ -356,7 +356,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, lit: &RTsTypeLit) -> ValidationResult<TypeLit> {
+    fn validate(&mut self, lit: &RTsTypeLit) -> VResult<TypeLit> {
         let members = lit.members.validate_with(self)?;
 
         self.report_error_for_duplicate_type_elements(&members);
@@ -375,7 +375,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RTsTypeElement) -> ValidationResult<TypeElement> {
+    fn validate(&mut self, e: &RTsTypeElement) -> VResult<TypeElement> {
         Ok(match e {
             RTsTypeElement::TsCallSignatureDecl(d) => TypeElement::Call(d.validate_with(self)?),
             RTsTypeElement::TsConstructSignatureDecl(d) => {
@@ -396,10 +396,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        d: &RTsConstructSignatureDecl,
-    ) -> ValidationResult<ConstructorSignature> {
+    fn validate(&mut self, d: &RTsConstructSignatureDecl) -> VResult<ConstructorSignature> {
         let type_params = try_opt!(d.type_params.validate_with(self));
         Ok(ConstructorSignature {
             accessibility: None,
@@ -413,7 +410,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &RTsCallSignatureDecl) -> ValidationResult<CallSignature> {
+    fn validate(&mut self, d: &RTsCallSignatureDecl) -> VResult<CallSignature> {
         let type_params = try_opt!(d.type_params.validate_with(self));
         let params: Vec<FnParam> = d.params.validate_with(self)?;
         let ret_ty = try_opt!(d.type_ann.validate_with(self)).map(Box::new);
@@ -431,7 +428,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &RTsMethodSignature) -> ValidationResult<MethodSignature> {
+    fn validate(&mut self, d: &RTsMethodSignature) -> VResult<MethodSignature> {
         self.with_child(ScopeKind::Fn, Default::default(), |child: &mut Analyzer| {
             let type_params = try_opt!(d.type_params.validate_with(child));
 
@@ -461,7 +458,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &RTsIndexSignature) -> ValidationResult<IndexSignature> {
+    fn validate(&mut self, d: &RTsIndexSignature) -> VResult<IndexSignature> {
         Ok(IndexSignature {
             span: d.span,
             params: d.params.validate_with(self)?,
@@ -474,7 +471,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &RTsPropertySignature) -> ValidationResult<PropertySignature> {
+    fn validate(&mut self, d: &RTsPropertySignature) -> VResult<PropertySignature> {
         let type_params = try_opt!(d.type_params.validate_with(self));
 
         let key = self.validate_key(&d.key, d.computed)?;
@@ -541,7 +538,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RTsExprWithTypeArgs) -> ValidationResult<TsExpr> {
+    fn validate(&mut self, e: &RTsExprWithTypeArgs) -> VResult<TsExpr> {
         Ok(TsExpr {
             span: e.span,
             expr: e.expr.clone(),
@@ -552,10 +549,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        i: &RTsTypeParamInstantiation,
-    ) -> ValidationResult<TypeParamInstantiation> {
+    fn validate(&mut self, i: &RTsTypeParamInstantiation) -> VResult<TypeParamInstantiation> {
         let params = {
             let ctx = Ctx {
                 in_actual_type: true,
@@ -573,7 +567,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsTupleType) -> ValidationResult<Tuple> {
+    fn validate(&mut self, t: &RTsTupleType) -> VResult<Tuple> {
         let marks = self.marks();
 
         let span = t.span;
@@ -594,7 +588,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RTsTupleElement) -> ValidationResult<TupleElement> {
+    fn validate(&mut self, node: &RTsTupleElement) -> VResult<TupleElement> {
         Ok(TupleElement {
             span: node.span,
             label: node.label.clone(),
@@ -606,7 +600,7 @@ impl Analyzer<'_, '_> {
 /// Order of evaluation is important to handle infer types correctly.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsConditionalType) -> ValidationResult<Conditional> {
+    fn validate(&mut self, t: &RTsConditionalType) -> VResult<Conditional> {
         let check_type = box t.check_type.validate_with(self)?;
         let extends_type = box t.extends_type.validate_with(self)?;
         let true_type = box t.true_type.validate_with(self)?;
@@ -625,7 +619,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &RTsMappedType) -> ValidationResult<Mapped> {
+    fn validate(&mut self, ty: &RTsMappedType) -> VResult<Mapped> {
         let type_param = ty.type_param.validate_with(self)?;
 
         Ok(Mapped {
@@ -642,7 +636,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &RTsTypeOperator) -> ValidationResult<Operator> {
+    fn validate(&mut self, ty: &RTsTypeOperator) -> VResult<Operator> {
         Ok(Operator {
             span: ty.span,
             op: ty.op,
@@ -654,7 +648,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RTsArrayType) -> ValidationResult<Array> {
+    fn validate(&mut self, node: &RTsArrayType) -> VResult<Array> {
         Ok(Array {
             span: node.span,
             elem_type: box node.elem_type.validate_with(self)?,
@@ -665,7 +659,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, u: &RTsUnionType) -> ValidationResult<Union> {
+    fn validate(&mut self, u: &RTsUnionType) -> VResult<Union> {
         let mut types = u.types.validate_with(self)?;
 
         types.dedup_type();
@@ -680,7 +674,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, u: &RTsIntersectionType) -> ValidationResult<Intersection> {
+    fn validate(&mut self, u: &RTsIntersectionType) -> VResult<Intersection> {
         Ok(Intersection {
             span: u.span,
             types: u.types.validate_with(self)?,
@@ -691,7 +685,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsFnType) -> ValidationResult<stc_ts_types::Function> {
+    fn validate(&mut self, t: &RTsFnType) -> VResult<stc_ts_types::Function> {
         let ctx = Ctx {
             in_ts_fn_type: true,
             ..self.ctx
@@ -740,7 +734,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsConstructorType) -> ValidationResult<stc_ts_types::Constructor> {
+    fn validate(&mut self, t: &RTsConstructorType) -> VResult<stc_ts_types::Constructor> {
         let type_params = try_opt!(t.type_params.validate_with(self));
 
         for param in &t.params {
@@ -760,14 +754,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsParenthesizedType) -> ValidationResult {
+    fn validate(&mut self, t: &RTsParenthesizedType) -> VResult {
         t.type_ann.validate_with(self)
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsTypeRef) -> ValidationResult {
+    fn validate(&mut self, t: &RTsTypeRef) -> VResult {
         self.record(t);
 
         let span = t.span;
@@ -861,7 +855,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsInferType) -> ValidationResult<InferType> {
+    fn validate(&mut self, t: &RTsInferType) -> VResult<InferType> {
         self.record(t);
 
         Ok(InferType {
@@ -880,7 +874,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsImportType) -> ValidationResult<ImportType> {
+    fn validate(&mut self, t: &RTsImportType) -> VResult<ImportType> {
         self.record(t);
 
         Ok(ImportType {
@@ -895,7 +889,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsTypeQueryExpr) -> ValidationResult<QueryExpr> {
+    fn validate(&mut self, t: &RTsTypeQueryExpr) -> VResult<QueryExpr> {
         self.record(t);
 
         let span = t.span();
@@ -909,7 +903,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsRestType) -> ValidationResult<RestType> {
+    fn validate(&mut self, t: &RTsRestType) -> VResult<RestType> {
         self.record(t);
 
         Ok(RestType {
@@ -922,7 +916,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsOptionalType) -> ValidationResult<OptionalType> {
+    fn validate(&mut self, t: &RTsOptionalType) -> VResult<OptionalType> {
         self.record(t);
 
         Ok(OptionalType {
@@ -935,7 +929,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsTypeQuery) -> ValidationResult<QueryType> {
+    fn validate(&mut self, t: &RTsTypeQuery) -> VResult<QueryType> {
         self.record(t);
 
         Ok(QueryType {
@@ -948,7 +942,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsTypePredicate) -> ValidationResult<Predicate> {
+    fn validate(&mut self, t: &RTsTypePredicate) -> VResult<Predicate> {
         self.record(t);
         let mut ty = try_opt!(t.type_ann.validate_with(self)).map(Box::new);
         match &mut ty {
@@ -970,7 +964,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsIndexedAccessType) -> ValidationResult<Type> {
+    fn validate(&mut self, t: &RTsIndexedAccessType) -> VResult<Type> {
         self.record(t);
         let span = t.span;
 
@@ -1013,7 +1007,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsTplLitType) -> ValidationResult<TplType> {
+    fn validate(&mut self, t: &RTsTplLitType) -> VResult<TplType> {
         let types = t
             .types
             .iter()
@@ -1031,7 +1025,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &RTsType) -> ValidationResult {
+    fn validate(&mut self, ty: &RTsType) -> VResult {
         self.record(ty);
 
         let _ctx = debug_ctx!(format!("validate\nTsType: {:?}", ty));

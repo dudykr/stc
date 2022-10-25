@@ -49,7 +49,7 @@ use crate::{
     ty::{self, Alias, Interface, Ref, Tuple, Type, TypeExt, TypeLit, Union},
     type_facts::TypeFacts,
     util::contains_infer_type,
-    ValidationResult,
+    VResult,
 };
 
 mod this;
@@ -691,12 +691,7 @@ impl Scope<'_> {
 
 impl Analyzer<'_, '_> {
     /// Overrides a variable. Used for updating types.
-    pub(super) fn override_var(
-        &mut self,
-        kind: VarKind,
-        name: Id,
-        ty: Type,
-    ) -> ValidationResult<()> {
+    pub(super) fn override_var(&mut self, kind: VarKind, name: Id, ty: Type) -> VResult<()> {
         self.declare_var(ty.span(), kind, name, Some(ty), None, true, true, true)?;
 
         Ok(())
@@ -714,7 +709,7 @@ impl Analyzer<'_, '_> {
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> ValidationResult {
+    pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> VResult {
         if !self.is_builtin {
             debug_assert_ne!(
                 span, DUMMY_SP,
@@ -748,7 +743,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> ValidationResult {
+    pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> VResult {
         let type_params = take(&mut self.scope.type_params);
         let res = self.expand_type_params(&type_params, ty, Default::default());
         self.scope.type_params = type_params;
@@ -762,7 +757,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: Cow<'a, Type>,
         opts: ExpandOpts,
-    ) -> ValidationResult<Cow<'a, Type>> {
+    ) -> VResult<Cow<'a, Type>> {
         ty.assert_valid();
 
         if !ty.is_ref_type() {
@@ -936,7 +931,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub fn declare_vars(&mut self, kind: VarKind, pat: &RPat) -> ValidationResult<()> {
+    pub fn declare_vars(&mut self, kind: VarKind, pat: &RPat) -> VResult<()> {
         self.declare_vars_inner_with_ty(kind, pat, None, None, None)
     }
 
@@ -948,11 +943,11 @@ impl Analyzer<'_, '_> {
         ty: Option<Type>,
         actual_ty: Option<Type>,
         default_ty: Option<Type>,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty, default_ty)
     }
 
-    pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> ValidationResult {
+    pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> VResult {
         if !self.is_builtin {
             debug_assert!(
                 !span.is_dummy(),
@@ -1161,11 +1156,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[instrument(skip(self))]
-    pub fn find_type(
-        &self,
-        target: ModuleId,
-        name: &Id,
-    ) -> ValidationResult<Option<ItemRef<Type>>> {
+    pub fn find_type(&self, target: ModuleId, name: &Id) -> VResult<Option<ItemRef<Type>>> {
         if target == self.ctx.module_id || target.is_builtin() {
             if let Some(v) = self.find_local_type(name) {
                 return Ok(Some(v));
@@ -1284,16 +1275,16 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Restore this(?)
-    pub(super) fn mark_var_as_truthy(&mut self, name: Id) -> ValidationResult<()> {
+    pub(super) fn mark_var_as_truthy(&mut self, name: Id) -> VResult<()> {
         self.modify_var(name, |var| {
             // var.ty = var.ty.take().map(|ty| ty.remove_falsy());
             Ok(())
         })
     }
 
-    fn modify_var<F, Ret>(&mut self, name: Id, op: F) -> ValidationResult<Ret>
+    fn modify_var<F, Ret>(&mut self, name: Id, op: F) -> VResult<Ret>
     where
-        F: FnOnce(&mut VarInfo) -> ValidationResult<Ret>,
+        F: FnOnce(&mut VarInfo) -> VResult<Ret>,
     {
         let var = self.find_var(&name);
         let ty = var.and_then(|var| var.ty.clone());
@@ -1326,7 +1317,7 @@ impl Analyzer<'_, '_> {
         initialized: bool,
         allow_multiple: bool,
         is_override: bool,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let marks = self.marks();
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -1655,12 +1646,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns [Err] if overload is wrong.
-    fn validate_fn_overloads(
-        &mut self,
-        span: Span,
-        orig: &Type,
-        new: &Type,
-    ) -> ValidationResult<()> {
+    fn validate_fn_overloads(&mut self, span: Span, orig: &Type, new: &Type) -> VResult<()> {
         // We validates using the signature of implementing function.
         // TODO(kdy1): Validate using last element, when there's a no function decl with
         // body.
@@ -1703,7 +1689,7 @@ impl Analyzer<'_, '_> {
         ty: Type,
         actual_ty: Option<Type>,
         default_ty: Option<Type>,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         match pat {
             RPat::Assign(..)
             | RPat::Ident(..)
@@ -2035,7 +2021,7 @@ impl Expander<'_, '_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         was_top_level: bool,
         trying_primitive_expansion: bool,
-    ) -> ValidationResult<Option<Type>> {
+    ) -> VResult<Option<Type>> {
         macro_rules! verify {
             ($ty:expr) => {{
                 if cfg!(debug_assertions) {
@@ -2299,7 +2285,7 @@ impl Expander<'_, '_, '_> {
     }
 
     #[instrument(name = "Expander.expand_ref", skip(self, r, was_top_level))]
-    fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> ValidationResult<Option<Type>> {
+    fn expand_ref(&mut self, r: Ref, was_top_level: bool) -> VResult<Option<Type>> {
         let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
 
         let Ref {
@@ -2425,7 +2411,7 @@ impl Expander<'_, '_, '_> {
         self.expand_top_level = false;
 
         // Start handling type expansion.
-        let res: ValidationResult<()> = try {
+        let res: VResult<()> = try {
             if contains_infer_type(&ty) {
                 // TODO(kdy1): PERF
                 match ty.normalize_mut() {
@@ -2513,7 +2499,7 @@ impl Expander<'_, '_, '_> {
             _ => ty.fold_children_with(self),
         };
 
-        let res: ValidationResult = try {
+        let res: VResult = try {
             match ty.normalize() {
                 Type::Ref(r) => {
                     let ty = self.expand_ref(r.clone(), was_top_level)?;

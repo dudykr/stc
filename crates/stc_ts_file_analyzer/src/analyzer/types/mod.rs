@@ -32,7 +32,7 @@ use crate::{
     analyzer::{expr::TypeOfMode, generic::ExtendsOpts, scope::ExpandOpts, Analyzer, Ctx},
     type_facts::TypeFacts,
     util::unwrap_ref_with_single_arg,
-    ValidationResult,
+    VResult,
 };
 
 mod index_signature;
@@ -74,7 +74,7 @@ impl Analyzer<'_, '_> {
         span: Option<Span>,
         mut ty: Cow<'a, Type>,
         opts: NormalizeTypeOpts,
-    ) -> ValidationResult<Cow<'a, Type>> {
+    ) -> VResult<Cow<'a, Type>> {
         let _tracing = if cfg!(debug_assertions) {
             let ty_str = dump_type_as_string(&self.cm, &ty);
 
@@ -582,7 +582,7 @@ impl Analyzer<'_, '_> {
         true_type: &Type,
         false_type: &Type,
         metadata: ConditionalMetadata,
-    ) -> ValidationResult<Option<Type>> {
+    ) -> VResult<Option<Type>> {
         if !check_type.is_type_param() {
             return Ok(None);
         }
@@ -689,11 +689,7 @@ impl Analyzer<'_, '_> {
     }
 
     // This is part of normalization.
-    fn instantiate_for_normalization(
-        &mut self,
-        span: Option<Span>,
-        ty: &Type,
-    ) -> ValidationResult<Type> {
+    fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type) -> VResult<Type> {
         let mut ty = self.normalize(
             span,
             Cow::Borrowed(ty),
@@ -767,7 +763,7 @@ impl Analyzer<'_, '_> {
                 let elems = ty
                     .elems
                     .into_iter()
-                    .map(|e| -> ValidationResult<_> {
+                    .map(|e| -> VResult<_> {
                         let ty = box self.instantiate_for_normalization(span, &e.ty)?;
                         Ok(TupleElement { ty, ..e })
                     })
@@ -784,7 +780,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ty: &Type,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let ty = self
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize to see if it can be undefined")?;
@@ -845,7 +841,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[instrument(skip(self, span, ty))]
-    pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type) -> ValidationResult<bool> {
+    pub(crate) fn can_be_undefined(&mut self, span: Span, ty: &Type) -> VResult<bool> {
         let ty = self
             .normalize(Some(span), Cow::Borrowed(ty), Default::default())
             .context("tried to normalize to see if it can be undefined")?;
@@ -886,7 +882,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ty: Option<&'a Type>,
-    ) -> ValidationResult<Option<Cow<'a, Type>>> {
+    ) -> VResult<Option<Cow<'a, Type>>> {
         let ty = match ty {
             Some(v) => v,
             None => return Ok(None),
@@ -899,10 +895,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[instrument(skip(self, def))]
-    pub(crate) fn create_prototype_of_class_def(
-        &mut self,
-        def: &ClassDef,
-    ) -> ValidationResult<TypeLit> {
+    pub(crate) fn create_prototype_of_class_def(&mut self, def: &ClassDef) -> VResult<TypeLit> {
         let mut members = vec![];
 
         let type_params = def.type_params.as_ref().map(|decl| {
@@ -1026,7 +1019,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         excluded: &[&ClassMember],
         ty: &Type,
-    ) -> ValidationResult<Option<Vec<ClassMember>>> {
+    ) -> VResult<Option<Vec<ClassMember>>> {
         if self.is_builtin {
             return Ok(None);
         }
@@ -1089,7 +1082,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ty: Cow<'a, Type>,
-    ) -> ValidationResult<Option<Cow<'a, TypeLit>>> {
+    ) -> VResult<Option<Cow<'a, TypeLit>>> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let _ctx = debug_ctx!(format!("type_to_type_lit: {:?}", ty));
@@ -1416,7 +1409,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         mut els: Vec<TypeElement>,
-    ) -> ValidationResult<Vec<TypeElement>> {
+    ) -> VResult<Vec<TypeElement>> {
         run(|| {
             // As merging is not common, we optimize it by creating a new vector only if
             // there's a conflict
@@ -1482,7 +1475,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         to: &mut TypeElement,
         from: TypeElement,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         run(|| match (to, from) {
             (TypeElement::Property(to), TypeElement::Property(from)) => {
                 if let Some(to_type) = &to.type_ann {
@@ -1607,11 +1600,7 @@ impl Analyzer<'_, '_> {
         v
     }
 
-    pub(crate) fn expand_intrinsic_types(
-        &mut self,
-        span: Span,
-        ty: &Intrinsic,
-    ) -> ValidationResult {
+    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> VResult {
         let arg = &ty.type_args;
 
         match ty.kind {
@@ -1682,7 +1671,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         type_name: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
@@ -1734,7 +1723,7 @@ impl Analyzer<'_, '_> {
         &self,
         member: &ClassMember,
         static_mode: bool,
-    ) -> ValidationResult<Option<TypeElement>> {
+    ) -> VResult<Option<TypeElement>> {
         Ok(Some(match member {
             ClassMember::Constructor(c) => TypeElement::Constructor(c.clone()),
             ClassMember::Method(m) => {

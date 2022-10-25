@@ -12,7 +12,7 @@ use tracing::debug;
 use crate::{
     analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer, Ctx},
     ty::Type,
-    ValidationResult,
+    VResult,
 };
 
 /// All fields default to false.
@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         type_params: &TypeParamDecl,
         type_args: &TypeParamInstantiation,
-    ) -> ValidationResult<FxHashMap<Id, Type>> {
+    ) -> VResult<FxHashMap<Id, Type>> {
         let mut params = FxHashMap::default();
 
         for (idx, param) in type_params.params.iter().enumerate() {
@@ -88,7 +88,7 @@ impl Analyzer<'_, '_> {
         params: &FxHashMap<Id, Type>,
         ty: T,
         opts: ExpandGenericOpts,
-    ) -> ValidationResult<T>
+    ) -> VResult<T>
     where
         T: for<'aa> FoldWith<GenericExpander<'aa>> + Fix,
     {

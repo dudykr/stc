@@ -4,7 +4,7 @@ use stc_ts_types::{LitType, TplType, Type};
 
 use crate::{
     analyzer::{assign::AssignOpts, Analyzer},
-    ValidationResult,
+    VResult,
 };
 
 impl Analyzer<'_, '_> {
@@ -19,12 +19,7 @@ impl Analyzer<'_, '_> {
     /// orders.
     ///
     /// After splitting, we can check if each element is assignable.
-    pub(crate) fn assign_to_tpl(
-        &mut self,
-        l: &TplType,
-        r: &Type,
-        opts: AssignOpts,
-    ) -> ValidationResult<()> {
+    pub(crate) fn assign_to_tpl(&mut self, l: &TplType, r: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         let r = r.normalize();
 

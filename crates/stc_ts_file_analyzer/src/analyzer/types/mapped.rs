@@ -16,7 +16,7 @@ use tracing::{debug, error, instrument};
 
 use crate::{
     analyzer::{types::NormalizeTypeOpts, Analyzer},
-    ValidationResult,
+    VResult,
 };
 
 impl Analyzer<'_, '_> {
@@ -30,11 +30,7 @@ impl Analyzer<'_, '_> {
     ///
     /// TODO(kdy1): Handle index signatures.
     #[instrument(name = "expand_mapped", skip(self, span, m))]
-    pub(crate) fn expand_mapped(
-        &mut self,
-        span: Span,
-        m: &Mapped,
-    ) -> ValidationResult<Option<Type>> {
+    pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
         let orig = dump_type_as_string(
             &self.cm,
             &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())),
@@ -54,7 +50,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    fn expand_mapped_inner(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
+    fn expand_mapped_inner(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
         match m.type_param.constraint.as_deref().map(|v| v.normalize()) {
             Some(Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
@@ -85,7 +81,7 @@ impl Analyzer<'_, '_> {
                 if let Some(keys) = keys {
                     let members = keys
                         .into_iter()
-                        .map(|key| -> ValidationResult<_> {
+                        .map(|key| -> VResult<_> {
                             match key {
                                 PropertyName::Key(key) => {
                                     let ty = match &m.ty {
@@ -207,7 +203,7 @@ impl Analyzer<'_, '_> {
                     if let Some(keys) = self.convert_type_to_keys(span, constraint)? {
                         let members = keys
                             .into_iter()
-                            .map(|key| -> ValidationResult<_> {
+                            .map(|key| -> VResult<_> {
                                 let ty = match &m.ty {
                                     Some(mapped_ty) => self
                                         .expand_key_in_mapped(
@@ -258,7 +254,7 @@ impl Analyzer<'_, '_> {
         mapped_type_param: Id,
         mapped_ty: &Type,
         key: &Key,
-    ) -> ValidationResult<Type> {
+    ) -> VResult<Type> {
         let mapped_ty = mapped_ty.clone();
         let mut type_params = HashMap::default();
         type_params.insert(mapped_type_param, key.ty().into_owned().cheap());
@@ -268,11 +264,7 @@ impl Analyzer<'_, '_> {
     /// Evaluate a type and convert it to keys.
     ///
     /// Used for types like `'foo' | 'bar'` or alias of them.
-    fn convert_type_to_keys(
-        &mut self,
-        span: Span,
-        ty: &Type,
-    ) -> ValidationResult<Option<Vec<Key>>> {
+    fn convert_type_to_keys(&mut self, span: Span, ty: &Type) -> VResult<Option<Vec<Key>>> {
         let ty = ty.normalize();
 
         match ty {
@@ -334,7 +326,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ty: &Type,
-    ) -> ValidationResult<Option<Vec<PropertyName>>> {
+    ) -> VResult<Option<Vec<PropertyName>>> {
         let ty = self
             .normalize(
                 None,
@@ -436,9 +428,7 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> ValidationResult<_> {
-                        self.get_property_names_for_mapped_type(span, &ty)
-                    })
+                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, &ty) })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 if keys_types.is_empty() {
@@ -477,9 +467,7 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> ValidationResult<_> {
-                        self.get_property_names_for_mapped_type(span, &ty)
-                    })
+                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, &ty) })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 let mut result: Vec<PropertyName> = vec![];
@@ -536,7 +524,7 @@ impl Analyzer<'_, '_> {
         ty: Type,
         optional: Option<TruePlusMinus>,
         readonly: Option<TruePlusMinus>,
-    ) -> ValidationResult<Type> {
+    ) -> VResult<Type> {
         let type_lit = self
             .convert_type_to_type_lit(span, Cow::Borrowed(&ty))?
             .map(Cow::into_owned);

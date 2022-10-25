@@ -17,7 +17,7 @@ use tracing::{debug, error, info, span, Level};
 use crate::{
     analyzer::{types::NormalizeTypeOpts, Analyzer},
     ty::TypeExt,
-    ValidationResult,
+    VResult,
 };
 
 mod builtin;
@@ -156,7 +156,7 @@ pub struct AssignData {
 impl Analyzer<'_, '_> {
     /// Denies `null` and `undefined`. This method does not check for elements
     /// of union.
-    pub(crate) fn deny_null_or_undefined(&mut self, span: Span, ty: &Type) -> ValidationResult<()> {
+    pub(crate) fn deny_null_or_undefined(&mut self, span: Span, ty: &Type) -> VResult<()> {
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
             return Err(Error::ObjectIsPossiblyUndefined { span });
         }
@@ -175,7 +175,7 @@ impl Analyzer<'_, '_> {
         op: AssignOp,
         lhs: &Type,
         rhs: &Type,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         debug_assert_ne!(op, op!("="));
 
         let l = self.expand_top_ref(span, Cow::Borrowed(lhs), Default::default())?;
@@ -378,7 +378,7 @@ impl Analyzer<'_, '_> {
         data: &mut AssignData,
         left: &Type,
         right: &Type,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         self.assign_with_opts(
             data,
             AssignOpts {
@@ -397,7 +397,7 @@ impl Analyzer<'_, '_> {
         opts: AssignOpts,
         left: &Type,
         right: &Type,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
@@ -437,11 +437,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    fn normalize_for_assign<'a>(
-        &mut self,
-        span: Span,
-        ty: &'a Type,
-    ) -> ValidationResult<Cow<'a, Type>> {
+    fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type) -> VResult<Cow<'a, Type>> {
         ty.assert_valid();
 
         let ty = ty.normalize();
@@ -513,7 +509,7 @@ impl Analyzer<'_, '_> {
         left: &Type,
         right: &Type,
         opts: AssignOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         left.assert_valid();
         right.assert_valid();
 
@@ -562,7 +558,7 @@ impl Analyzer<'_, '_> {
         to: &Type,
         rhs: &Type,
         opts: AssignOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let span = opts.span;
 
         if !self.is_builtin && span.is_dummy() {
@@ -1548,7 +1544,7 @@ impl Analyzer<'_, '_> {
 
                     // Try to assign by converting rhs to an iterable.
                     if opts.allow_iterable_on_rhs {
-                        let res: ValidationResult<_> = try {
+                        let res: VResult<_> = try {
                             let r = self
                                 .get_iterator(span, Cow::Borrowed(&rhs), Default::default())
                                 .context(
@@ -2384,7 +2380,7 @@ impl Analyzer<'_, '_> {
         to: &Intrinsic,
         r: &Type,
         opts: AssignOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         match to.kind {
             IntrinsicKind::Uppercase => {}
             IntrinsicKind::Lowercase => {}
@@ -2401,7 +2397,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[context("tried to extract keys")]
-    fn extract_keys(&mut self, span: Span, ty: &Type) -> ValidationResult {
+    fn extract_keys(&mut self, span: Span, ty: &Type) -> VResult {
         let ty = self.normalize(
             Some(span),
             Cow::Borrowed(&ty),
@@ -2469,7 +2465,7 @@ impl Analyzer<'_, '_> {
         opts: AssignOpts,
         keys: &Type,
         rhs: &Type,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let keys = keys.normalize();
         let rhs = rhs.normalize();
 
@@ -2494,7 +2490,7 @@ impl Analyzer<'_, '_> {
         opts: AssignOpts,
         l: &Mapped,
         r: &Type,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let span = opts.span;
         let mut r = self
             .normalize(
@@ -2507,7 +2503,7 @@ impl Analyzer<'_, '_> {
             .context("tried to normalize rhs of assignment (to a mapped type)")?;
         r.make_clone_cheap();
 
-        let res: ValidationResult<_> = try {
+        let res: VResult<_> = try {
             // Validate keys
 
             let l_ty = match &l.ty {
@@ -2619,11 +2615,7 @@ impl Analyzer<'_, '_> {
     /// Returns true for `A | B | | C = A | B` and simillar cases.
     ///
     /// Should be called iff lhs is a union type.
-    fn should_use_special_union_assignment(
-        &mut self,
-        span: Span,
-        r: &Type,
-    ) -> ValidationResult<bool> {
+    fn should_use_special_union_assignment(&mut self, span: Span, r: &Type) -> VResult<bool> {
         match r.normalize() {
             Type::Union(..) => return Ok(true),
             Type::TypeLit(r) => {
@@ -2648,7 +2640,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): I'm not sure about this.
-    fn variance(&mut self, ty: &Conditional) -> ValidationResult<Variance> {
+    fn variance(&mut self, ty: &Conditional) -> VResult<Variance> {
         let convariant = self.is_covariant(&ty.check_type, &ty.true_type)?
             || self.is_covariant(&ty.check_type, &ty.false_type)?;
 
@@ -2662,15 +2654,11 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn is_covariant(&mut self, check_type: &Type, output_type: &Type) -> ValidationResult<bool> {
+    fn is_covariant(&mut self, check_type: &Type, output_type: &Type) -> VResult<bool> {
         Ok(check_type.type_eq(output_type))
     }
 
-    fn is_contravariant(
-        &mut self,
-        check_type: &Type,
-        output_type: &Type,
-    ) -> ValidationResult<bool> {
+    fn is_contravariant(&mut self, check_type: &Type, output_type: &Type) -> VResult<bool> {
         match output_type.normalize() {
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,

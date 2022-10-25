@@ -15,7 +15,7 @@ use swc_ecma_ast::TsKeywordTypeKind;
 
 use crate::{
     analyzer::{types::NormalizeTypeOpts, Analyzer},
-    ValidationResult,
+    VResult,
 };
 
 impl Analyzer<'_, '_> {
@@ -25,7 +25,7 @@ impl Analyzer<'_, '_> {
     ///
     /// ## `ty`
     /// Should be operand of `keyof`.
-    pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> ValidationResult<Type> {
+    pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let _ctx = debug_ctx!(format!("keyof: {}", dump_type_as_string(&self.cm, ty)));
@@ -37,7 +37,7 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        let ty = (|| -> ValidationResult<_> {
+        let ty = (|| -> VResult<_> {
             let mut ty = self
                 .normalize(
                     Some(span),

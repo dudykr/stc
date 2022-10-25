@@ -11,12 +11,12 @@ use crate::{
     analyzer::{expr::TypeOfMode, util::ResultExt, Analyzer},
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RUpdateExpr) -> ValidationResult {
+    fn validate(&mut self, e: &RUpdateExpr) -> VResult {
         let span = e.span;
 
         match &*e.arg {
@@ -131,7 +131,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn is_update_operand_valid(&mut self, arg: &Type) -> ValidationResult<bool> {
+    fn is_update_operand_valid(&mut self, arg: &Type) -> VResult<bool> {
         let ty = self.normalize(Some(arg.span()), Cow::Borrowed(arg), Default::default())?;
 
         if ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword)

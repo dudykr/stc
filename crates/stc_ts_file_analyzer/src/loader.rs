@@ -5,7 +5,7 @@ use stc_ts_types::{ModuleId, ModuleTypeData, Type};
 use swc_atoms::JsWord;
 use swc_common::FileName;
 
-use crate::ValidationResult;
+use crate::VResult;
 
 #[derive(Debug, Clone)]
 pub struct ModuleInfo {
@@ -39,12 +39,12 @@ pub trait Load: 'static + Send + Sync {
         base: ModuleId,
         dep: ModuleId,
         partial: &ModuleTypeData,
-    ) -> ValidationResult<Type>;
+    ) -> VResult<Type>;
 
     /// Note: This method is called in parallel.
     ///
     /// Returned value must be [Type::Arc] of [Type::Module]
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult<Type>;
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult<Type>;
 
     /// `module` should be [Type::Arc] of [Type::Module].
     fn declare_module(&self, name: &JsWord, module: Type);

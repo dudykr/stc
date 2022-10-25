@@ -4,11 +4,11 @@ use stc_ts_types::{QueryExpr, QueryType, Type};
 
 use crate::{
     analyzer::{scope::VarInfo, Analyzer},
-    ValidationResult,
+    VResult,
 };
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn expand_return_type_of_fn(&mut self, ret_ty: &mut Type) -> ValidationResult<()> {
+    pub(crate) fn expand_return_type_of_fn(&mut self, ret_ty: &mut Type) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }

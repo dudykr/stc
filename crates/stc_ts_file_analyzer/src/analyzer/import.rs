@@ -15,7 +15,7 @@ use swc_common::{comments::Comments, Span, Spanned};
 use crate::{
     analyzer::{scope::VarKind, util::ResultExt, Analyzer},
     loader::ModuleInfo,
-    validator, DepInfo, ValidationResult,
+    validator, DepInfo, VResult,
 };
 
 impl Analyzer<'_, '_> {
@@ -47,7 +47,7 @@ impl Analyzer<'_, '_> {
         (dep_id, data)
     }
 
-    pub(super) fn find_imported_var(&self, id: &Id) -> ValidationResult<Option<Type>> {
+    pub(super) fn find_imported_var(&self, id: &Id) -> VResult<Option<Type>> {
         if let Some(ModuleInfo { module_id, data }) = self.imports_by_id.get(&id) {
             match data.normalize() {
                 Type::Module(data) => {
@@ -71,7 +71,7 @@ impl Analyzer<'_, '_> {
         ctxt: ModuleId,
         dep_module_id: ModuleId,
         ty: Type,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         self.imports.entry((ctxt, dep_module_id)).or_insert(ty);
 
         Ok(())

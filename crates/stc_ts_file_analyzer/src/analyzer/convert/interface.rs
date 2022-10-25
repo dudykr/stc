@@ -7,7 +7,7 @@ use swc_common::{Span, TypeEq, DUMMY_SP};
 
 use crate::{
     analyzer::{assign::AssignOpts, Analyzer},
-    ValidationResult,
+    VResult,
 };
 
 impl Analyzer<'_, '_> {
@@ -26,7 +26,7 @@ impl Analyzer<'_, '_> {
         }
 
         for p in parent.iter() {
-            let res: ValidationResult<()> = try {
+            let res: VResult<()> = try {
                 let parent = self.type_of_ts_entity_name(
                     span,
                     self.ctx.module_id,
@@ -87,7 +87,7 @@ impl Analyzer<'_, '_> {
         }
 
         for (i, p1) in parent.iter().enumerate() {
-            let res: ValidationResult<()> = try {
+            let res: VResult<()> = try {
                 let p1_type = self
                     .type_of_ts_entity_name(
                         span,

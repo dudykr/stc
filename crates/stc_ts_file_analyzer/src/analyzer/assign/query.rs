@@ -6,7 +6,7 @@ use crate::{
         assign::{AssignData, AssignOpts},
         Analyzer,
     },
-    ValidationResult,
+    VResult,
 };
 
 impl Analyzer<'_, '_> {
@@ -16,7 +16,7 @@ impl Analyzer<'_, '_> {
         opts: AssignOpts,
         to: &QueryType,
         rhs: &Type,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let rhs = rhs.normalize();
 
         match &*to.expr {
@@ -39,7 +39,7 @@ impl Analyzer<'_, '_> {
         opts: AssignOpts,
         to: &Type,
         rhs: &QueryType,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let to = to.normalize();
 
         match &*rhs.expr {

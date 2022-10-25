@@ -26,7 +26,7 @@ use crate::{
     ty::{MethodSignature, Operator, PropertySignature, Type, TypeElement, TypeExt},
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -42,7 +42,7 @@ pub(super) enum ComputedPropMode {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RPropName) -> ValidationResult<Key> {
+    fn validate(&mut self, node: &RPropName) -> VResult<Key> {
         self.record(node);
 
         match node {
@@ -63,7 +63,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, n: &RPrivateName) -> ValidationResult<PrivateName> {
+    fn validate(&mut self, n: &RPrivateName) -> VResult<PrivateName> {
         Ok(PrivateName {
             span: n.span,
             id: n.id.clone().into(),
@@ -73,7 +73,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RComputedPropName) -> ValidationResult<Key> {
+    fn validate(&mut self, node: &RComputedPropName) -> VResult<Key> {
         self.record(node);
         let ctx = Ctx {
             in_computed_prop_name: true,
@@ -219,11 +219,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        prop: &RProp,
-        object_type: Option<&Type>,
-    ) -> ValidationResult<TypeElement> {
+    fn validate(&mut self, prop: &RProp, object_type: Option<&Type>) -> VResult<TypeElement> {
         self.record(prop);
 
         let ctx = Ctx {
@@ -374,7 +370,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         prop: &RProp,
         object_type: Option<&Type>,
-    ) -> ValidationResult<TypeElement> {
+    ) -> VResult<TypeElement> {
         let computed = match prop {
             RProp::KeyValue(ref kv) => match &kv.key {
                 RPropName::Computed(c) => {
@@ -476,7 +472,7 @@ impl Analyzer<'_, '_> {
                     ScopeKind::Method { is_static: false },
                     Default::default(),
                     {
-                        |child: &mut Analyzer| -> ValidationResult<_> {
+                        |child: &mut Analyzer| -> VResult<_> {
                             child.ctx.pat_mode = PatMode::Decl;
                             let param = param.validate_with(child)?;
 
@@ -525,7 +521,7 @@ impl Analyzer<'_, '_> {
                     ScopeKind::Method { is_static: false },
                     Default::default(),
                     {
-                        |child: &mut Analyzer| -> ValidationResult<_> {
+                        |child: &mut Analyzer| -> VResult<_> {
                             child.ctx.in_async = p.function.is_async;
                             child.ctx.in_generator = p.function.is_generator;
 
@@ -635,7 +631,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, n: &RGetterProp) -> ValidationResult<TypeElement> {
+    fn validate(&mut self, n: &RGetterProp) -> VResult<TypeElement> {
         self.record(n);
 
         let key = n.key.validate_with(self)?;

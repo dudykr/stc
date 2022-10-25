@@ -10,7 +10,7 @@ use crate::{
         Analyzer,
     },
     util::unwrap_ref_with_single_arg,
-    ValidationResult,
+    VResult,
 };
 
 impl Analyzer<'_, '_> {
@@ -25,7 +25,7 @@ impl Analyzer<'_, '_> {
         opts: AssignOpts,
         l: &Type,
         r: &Type,
-    ) -> Option<ValidationResult<()>> {
+    ) -> Option<VResult<()>> {
         let span = opts.span;
         let l = l.normalize();
         let r = r.normalize();

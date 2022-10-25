@@ -5,11 +5,11 @@ use stc_ts_types::Type;
 use swc_atoms::js_word;
 use swc_common::Spanned;
 
-use crate::{analyzer::Analyzer, ValidationResult};
+use crate::{analyzer::Analyzer, VResult};
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RMetaPropExpr) -> ValidationResult {
+    fn validate(&mut self, e: &RMetaPropExpr) -> VResult {
         match (&e.meta, &e.prop) {
             (
                 RIdent {

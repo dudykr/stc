@@ -18,7 +18,7 @@ use crate::{
     analyzer::{generic::is_literals, scope::ExpandOpts, Analyzer, Ctx},
     ty,
     ty::Type,
-    ValidationResult,
+    VResult,
 };
 
 impl Analyzer<'_, '_> {
@@ -42,7 +42,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         callee: &Type,
         elements: &[TypeElement],
-    ) -> ValidationResult<Type> {
+    ) -> VResult<Type> {
         for member in elements {
             match member {
                 TypeElement::Constructor(c) => {
@@ -88,7 +88,7 @@ impl Analyzer<'_, '_> {
 
     /// TODO(kdy1): Use Cow
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> ValidationResult {
+    pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> VResult {
         let ty = ty.normalize();
 
         let span = span.with_ctxt(SyntaxContext::empty());

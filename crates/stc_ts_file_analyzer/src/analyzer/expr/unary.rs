@@ -12,12 +12,12 @@ use crate::{
     ty::Type,
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RUnaryExpr) -> ValidationResult {
+    fn validate(&mut self, e: &RUnaryExpr) -> VResult {
         let RUnaryExpr { span, op, arg, .. } = e;
         let span = *span;
 
@@ -203,7 +203,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn validate_delete_operand(&mut self, arg: &RExpr) -> ValidationResult<()> {
+    fn validate_delete_operand(&mut self, arg: &RExpr) -> VResult<()> {
         let span = arg.span();
 
         match &*arg {

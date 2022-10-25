@@ -7,7 +7,7 @@ use stc_ts_types::{Type, TypeParamInstantiation};
 use crate::{
     analyzer::{expr::TypeOfMode, Analyzer, Ctx},
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[validator]
@@ -18,7 +18,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    ) -> VResult {
         let span = expr.span;
 
         if mode == TypeOfMode::RValue {

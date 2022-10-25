@@ -32,7 +32,7 @@ use crate::{
     util::{should_instantiate_type_ann, RemoveTypes},
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[validator]
@@ -351,7 +351,7 @@ impl Analyzer<'_, '_> {
                         let value_ty = get_value_ty!(None);
 
                         // infer type from value.
-                        let ty = (|| -> ValidationResult<_> {
+                        let ty = (|| -> VResult<_> {
                             match value_ty.normalize() {
                                 Type::TypeLit(..) | Type::Function(..) | Type::Query(..) => {
                                     if let Some(m) = &mut self.mutations {
@@ -685,7 +685,7 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
 
-                        let var_ty = (|| -> ValidationResult<_> {
+                        let var_ty = (|| -> VResult<_> {
                             match ty.normalize() {
                                 Type::EnumVariant(ref v) => {
                                     if let Some(..) =

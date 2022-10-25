@@ -46,7 +46,7 @@ use crate::{
     },
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -61,7 +61,7 @@ pub(crate) struct CallOpts {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RExprOrSpread) -> ValidationResult<TypeOrSpread> {
+    fn validate(&mut self, node: &RExprOrSpread) -> VResult<TypeOrSpread> {
         let span = node.span();
         Ok(TypeOrSpread {
             span,
@@ -73,7 +73,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RCallExpr, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(&mut self, e: &RCallExpr, type_ann: Option<&Type>) -> VResult {
         self.record(e);
 
         let RCallExpr {
@@ -132,7 +132,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RNewExpr, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(&mut self, e: &RNewExpr, type_ann: Option<&Type>) -> VResult {
         self.record(e);
 
         let RNewExpr {
@@ -168,7 +168,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RTaggedTpl) -> ValidationResult {
+    fn validate(&mut self, e: &RTaggedTpl) -> VResult {
         let span = e.span;
 
         let tpl_str_arg = {
@@ -243,7 +243,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         type_args: Option<&RTsTypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    ) -> VResult {
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
 
         let marks = self.marks();
@@ -538,7 +538,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
         opts: CallOpts,
-    ) -> ValidationResult {
+    ) -> VResult {
         obj_type.assert_valid();
 
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -914,7 +914,7 @@ impl Analyzer<'_, '_> {
         c: &ClassDef,
         prop: &Key,
         is_static_call: bool,
-    ) -> ValidationResult<Vec<CallCandidate>> {
+    ) -> VResult<Vec<CallCandidate>> {
         let mut candidates: Vec<CallCandidate> = vec![];
         for member in c.body.iter() {
             match member {
@@ -976,7 +976,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
         opts: CallOpts,
-    ) -> ValidationResult<Option<Type>> {
+    ) -> VResult<Option<Type>> {
         let candidates = {
             // TODO(kdy1): Deduplicate.
             // This is duplicated intentionally because of regresions.
@@ -1180,7 +1180,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
         opts: CallOpts,
-    ) -> ValidationResult {
+    ) -> VResult {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         // Candidates of the method call.
@@ -1239,7 +1239,7 @@ impl Analyzer<'_, '_> {
     fn spread_args<'a>(
         &mut self,
         arg_types: &'a [TypeOrSpread],
-    ) -> ValidationResult<Cow<'a, [TypeOrSpread]>> {
+    ) -> VResult<Cow<'a, [TypeOrSpread]>> {
         let mut new_arg_types;
 
         if arg_types.iter().any(|arg| arg.spread.is_some()) {
@@ -1325,7 +1325,7 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
         opts: CallOpts,
-    ) -> ValidationResult {
+    ) -> VResult {
         if !self.is_builtin {
             ty.assert_valid();
         }
@@ -1788,7 +1788,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    ) -> VResult {
         let callee_span = callee_ty.span();
 
         let candidates = members
@@ -1869,7 +1869,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    ) -> VResult {
         self.get_return_type(
             span,
             ExtractKind::Call,
@@ -1893,7 +1893,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         kind: ExtractKind,
         callee: &Type,
-    ) -> ValidationResult<Vec<CallCandidate>> {
+    ) -> VResult<Vec<CallCandidate>> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let callee = self
@@ -2063,7 +2063,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    ) -> VResult {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let has_spread = arg_types.len() != spread_arg_types.len();
@@ -2133,7 +2133,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         /// Count required parameter count.
         fn count_required_pat(p: &RPat) -> usize {
             match p {
@@ -2330,7 +2330,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
-    ) -> ValidationResult<Option<Type>> {
+    ) -> VResult<Option<Type>> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let mut callable = candidates
@@ -2447,7 +2447,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    ) -> VResult {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         // TODO(kdy1): Optimize by skipping clone if `this type` is not used.
@@ -2535,7 +2535,7 @@ impl Analyzer<'_, '_> {
             let params = if let Some(map) = &inferred_from_return_type {
                 expanded_params = params
                     .into_iter()
-                    .map(|v| -> ValidationResult<_> {
+                    .map(|v| -> VResult<_> {
                         let ty = box self.expand_type_params(&map, *v.ty, Default::default())?;
 
                         Ok(FnParam { ty, ..v })
@@ -2575,7 +2575,7 @@ impl Analyzer<'_, '_> {
 
             let expanded_param_types = params
                 .into_iter()
-                .map(|v| -> ValidationResult<_> {
+                .map(|v| -> VResult<_> {
                     let ty =
                         box self.expand_type_params(&inferred.types, *v.ty, Default::default())?;
 
@@ -2622,7 +2622,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let mut patch_arg = |idx: usize, pat: &RPat| -> ValidationResult<()> {
+                let mut patch_arg = |idx: usize, pat: &RPat| -> VResult<()> {
                     if actual_params.len() <= idx {
                         return Ok(());
                     }
@@ -3251,12 +3251,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn narrow_type_with_predicate(
-        &mut self,
-        span: Span,
-        orig_ty: &Type,
-        new_ty: Type,
-    ) -> ValidationResult {
+    fn narrow_type_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let orig_ty = self
@@ -3384,7 +3379,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         type_params: Option<&[TypeParam]>,
         type_args: Option<&TypeParamInstantiation>,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         if let Some(type_params) = type_params {
             if let Some(type_args) = type_args {
                 // TODO(kdy1): Handle defaults of the type parameter (Change to range)

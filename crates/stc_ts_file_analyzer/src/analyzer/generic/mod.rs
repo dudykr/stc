@@ -36,7 +36,7 @@ use crate::{
     analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer, Ctx},
     ty::TypeExt,
     util::{unwrap_ref_with_single_arg, RemoveTypes},
-    ValidationResult,
+    VResult,
 };
 
 mod expander;
@@ -87,7 +87,7 @@ impl Analyzer<'_, '_> {
         args: &[TypeOrSpread],
         default_ty: Option<&Type>,
         opts: InferTypeOpts,
-    ) -> ValidationResult<InferTypeResult> {
+    ) -> VResult<InferTypeResult> {
         warn!(
             "infer_arg_types: {:?}",
             type_params
@@ -330,7 +330,7 @@ impl Analyzer<'_, '_> {
         base: &Type,
         concrete: &Type,
         opts: InferTypeOpts,
-    ) -> ValidationResult<FxHashMap<Id, Type>> {
+    ) -> VResult<FxHashMap<Id, Type>> {
         let mut inferred = InferData::default();
         self.infer_type(span, &mut inferred, base, concrete, opts)?;
         let map = self.finalize_inference(inferred);
@@ -419,7 +419,7 @@ impl Analyzer<'_, '_> {
         param: &Type,
         arg: &Type,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
@@ -463,7 +463,7 @@ impl Analyzer<'_, '_> {
         param: &Type,
         arg: &Type,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
@@ -1491,7 +1491,7 @@ impl Analyzer<'_, '_> {
         param: &Mapped,
         arg: &Type,
         opts: InferTypeOpts,
-    ) -> ValidationResult<bool> {
+    ) -> VResult<bool> {
         match arg.normalize() {
             Type::Ref(arg) => {
                 let ctx = Ctx {
@@ -2345,7 +2345,7 @@ impl Analyzer<'_, '_> {
         param: &Tuple,
         arg: &Tuple,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         for item in param
             .elems
             .iter()
@@ -2371,7 +2371,7 @@ impl Analyzer<'_, '_> {
         param: &FnParam,
         arg: &FnParam,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         self.infer_type(
             span,
             inferred,
@@ -2392,7 +2392,7 @@ impl Analyzer<'_, '_> {
         params: &[FnParam],
         args: &[FnParam],
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         for (param, arg) in params.iter().zip(args) {
             self.infer_type_of_fn_param(span, inferred, param, arg, opts)?
         }
@@ -2425,7 +2425,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         inferred: &mut InferData,
         arg_type_params: &TypeParamDecl,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         info!("rename_inferred");
         struct Renamer<'a> {
             fixed: &'a FxHashMap<Id, Type>,
@@ -2494,7 +2494,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         mut ty: Type,
         type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    ) -> VResult {
         if self.is_builtin {
             return Ok(ty);
         }
