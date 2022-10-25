@@ -218,11 +218,11 @@ impl_is!(
 impl_is!(
     Param,
     TypeParam,
-    is_param,
-    as_param,
-    as_param_mut,
-    param,
-    expect_param
+    is_type_param,
+    as_type_param,
+    as_type_param_mut,
+    type_param,
+    expect_type_param
 );
 impl_is!(
     EnumVariant,
