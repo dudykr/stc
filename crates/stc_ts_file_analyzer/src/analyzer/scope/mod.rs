@@ -1109,8 +1109,8 @@ impl Analyzer<'_, '_> {
                 ty.assert_clone_cheap();
 
                 if let Some(ref excludes) = self.scope.facts.excludes.get(&name) {
-                    if ty.normalize().is_union_type() {
-                        match ty.normalize_mut() {
+                    if ty.is_union_type() {
+                        match ty.nm() {
                             Type::Union(ty::Union { ref mut types, .. }) => {
                                 for ty in types {
                                     let span = (*ty).span();
@@ -1171,7 +1171,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ModuleInfo { data, .. }) = self.imports_by_id.get(name) {
-            match data.normalize() {
+            match data.n() {
                 Type::Module(data) => {
                     if let Some(types) = data.exports.types.get(name.sym()) {
                         let types = types.clone();
@@ -1189,7 +1189,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(data) = self.imports.get(&(self.ctx.module_id, target)) {
-            match data.normalize() {
+            match data.n() {
                 Type::Module(data) => {
                     if let Some(types) = data.exports.types.get(name.sym()) {
                         let types = types.clone();
@@ -1540,7 +1540,7 @@ impl Analyzer<'_, '_> {
 
                 v.ty = if let Some(ty) = ty {
                     Some(if let Some(var_ty) = v.ty {
-                        match ty.normalize() {
+                        match ty.n() {
                             Type::Union(..) => {
                                 // TODO(kdy1): Check if all types are query or
                                 // function
@@ -1552,7 +1552,7 @@ impl Analyzer<'_, '_> {
                             _ => {
                                 let generalized_var_ty = var_ty.clone().generalize_lit();
 
-                                match var_ty.normalize() {
+                                match var_ty.n() {
                                     // Allow overriding query type.
                                     Type::Query(..) => {}
                                     // Allow overloading query type.
@@ -1667,7 +1667,7 @@ impl Analyzer<'_, '_> {
         }
 
         for orig in orig.iter_union() {
-            match orig.normalize() {
+            match orig.n() {
                 Type::Function(..) => {
                     self.assign_with_opts(
                         &mut Default::default(),
@@ -2037,7 +2037,7 @@ impl Expander<'_, '_, '_> {
         macro_rules! verify {
             ($ty:expr) => {{
                 if cfg!(debug_assertions) {
-                    match $ty.normalize() {
+                    match $ty.n() {
                         Type::Ref(ref s) => unreachable!("ref: {:?}", s),
                         _ => {}
                     }
@@ -2190,7 +2190,7 @@ impl Expander<'_, '_, '_> {
                                     return Ok(Some(ty));
                                 }
 
-                                match ty.normalize() {
+                                match ty.n() {
                                     Type::Interface(..)
                                         if !trying_primitive_expansion && was_top_level =>
                                     {
@@ -2199,7 +2199,7 @@ impl Expander<'_, '_, '_> {
                                     _ => {}
                                 }
 
-                                match ty.normalize() {
+                                match ty.n() {
                                     Type::Alias(..) => {
                                         self.expand_top_level = true;
                                     }
@@ -2512,7 +2512,7 @@ impl Expander<'_, '_, '_> {
         };
 
         let res: ValidationResult = try {
-            match ty.normalize() {
+            match ty.n() {
                 Type::Ref(r) => {
                     let ty = self.expand_ref(r.clone(), was_top_level)?;
 
@@ -2604,7 +2604,7 @@ impl Expander<'_, '_, '_> {
                                         let (unwrapped, ty) = unwrap_type(&ty);
                                         let mut ty = ty;
                                         if unwrapped {
-                                            match ty.normalize() {
+                                            match ty.n() {
                                                 Type::Tuple(Tuple { elems, .. }) => {
                                                     ty = *elems[idx].ty.clone()
                                                 }
@@ -2756,7 +2756,7 @@ impl Expander<'_, '_, '_> {
 
                 if check_type.is_class() {
                     match check_type.nm() {
-                        Type::Class(check_type) => match extends_type.normalize() {
+                        Type::Class(check_type) => match extends_type.n() {
                             Type::Constructor(..) => {
                                 return *true_type;
                             }
