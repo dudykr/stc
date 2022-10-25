@@ -2608,7 +2608,7 @@ impl Analyzer<'_, '_> {
                     &arg_ty.ty,
                 );
 
-                let (type_param_decl, actual_params) = match param.ty.normalize() {
+                let (type_param_decl, actual_params) = match param.ty.n() {
                     Type::Function(f) => (&f.type_params, &f.params),
                     _ => {
                         new_args.push(arg_ty.clone());
@@ -2979,7 +2979,7 @@ impl Analyzer<'_, '_> {
                             //      or
                             //   arg: (true, 'str', 10)
                             if arg.spread.is_none() {
-                                match param_ty.normalize() {
+                                match param_ty.n() {
                                     Type::Tuple(param_ty) if !param_ty.elems.is_empty() => {
                                         let res = self
                                             .assign_with_opts(
@@ -3143,7 +3143,7 @@ impl Analyzer<'_, '_> {
                         }
                     } else {
                         let allow_unknown_rhs = arg.ty.metadata().resolved_from_var
-                            || match arg.ty.normalize() {
+                            || match arg.ty.n() {
                                 Type::TypeLit(..) => false,
                                 _ => true,
                             };
@@ -3215,10 +3215,10 @@ impl Analyzer<'_, '_> {
     /// should make type of `subscriber` `SafeSubscriber`, not `Subscriber`.
     /// I (kdy1) don't know why.
     fn add_call_facts(&mut self, params: &[FnParam], args: &[RExprOrSpread], ret_ty: &mut Type) {
-        match ret_ty.normalize() {
+        match ret_ty.n() {
             Type::Predicate(p) => {
                 let ty = match &p.ty {
-                    Some(v) => v.normalize(),
+                    Some(v) => v.n(),
                     None => return,
                 };
 
@@ -3269,7 +3269,7 @@ impl Analyzer<'_, '_> {
             .freezed();
 
         let use_simple_intersection = (|| {
-            match (orig_ty.normalize(), new_ty.normalize()) {
+            match (orig_ty.n(), new_ty.n()) {
                 (Type::Interface(orig), Type::Interface(new)) => {
                     if orig.extends.is_empty() && new.extends.is_empty() {
                         return true;
@@ -3289,10 +3289,10 @@ impl Analyzer<'_, '_> {
             }));
         }
 
-        match new_ty.normalize() {
+        match new_ty.n() {
             Type::Keyword(..) | Type::Lit(..) => {}
             _ => {
-                match orig_ty.normalize() {
+                match orig_ty.n() {
                     Type::Union(..) | Type::Interface(..) => {}
 
                     _ => {
@@ -3343,7 +3343,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match new_ty.normalize() {
+        match new_ty.n() {
             Type::ClassDef(def) => {
                 return Ok(Type::Class(Class {
                     span,
@@ -3359,7 +3359,7 @@ impl Analyzer<'_, '_> {
 
     #[extra_validator]
     fn store_call_fact_for_var(&mut self, span: Span, var_name: Id, new_ty: &Type) {
-        match new_ty.normalize() {
+        match new_ty.n() {
             Type::Keyword(..) | Type::Lit(..) => {}
             _ => {
                 if let Some(previous_types) = self
@@ -3680,7 +3680,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 type_args: Some(type_args),
                 metadata,
             }) if type_args.params.len() == 1
-                && type_args.params.iter().any(|ty| match ty.normalize() {
+                && type_args.params.iter().any(|ty| match ty.n() {
                     Type::Union(..) => true,
                     _ => false,
                 }) =>
