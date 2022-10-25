@@ -1430,7 +1430,10 @@ impl Analyzer<'_, '_> {
                                 continue;
                             }
 
-                            if self.key_matches(span, a_key, b_key, false) {
+                            if a.is_property()
+                                && b.is_property()
+                                && self.key_matches(span, a_key, b_key, false)
+                            {
                                 merged.push((ai, bi));
                             }
                         }
