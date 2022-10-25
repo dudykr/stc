@@ -80,7 +80,7 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        match obj.normalize() {
+        match obj.n() {
             Type::Union(u) => {
                 for ty in u.types.iter() {
                     if self.is_obj_optional(ty)? {

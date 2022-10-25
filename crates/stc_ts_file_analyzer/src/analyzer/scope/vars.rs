@@ -421,7 +421,7 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Object(obj) => {
-                let should_use_no_such_property = match ty.as_ref().map(Type::normalize) {
+                let should_use_no_such_property = match ty.as_ref().map(Type::n) {
                     Some(Type::TypeLit(..)) => false,
                     _ => true,
                 };
@@ -762,7 +762,7 @@ impl Analyzer<'_, '_> {
                 return Ok(ty.into_owned());
             }
 
-            match ty.normalize() {
+            match ty.n() {
                 Type::TypeLit(lit) => {
                     let mut new_members = vec![];
                     'outer: for m in &lit.members {

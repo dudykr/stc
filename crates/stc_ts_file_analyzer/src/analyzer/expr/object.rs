@@ -75,7 +75,7 @@ impl Analyzer<'_, '_> {
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn validate_type_literals(&mut self, ty: &Type, is_type_ann: bool) {
-        match ty.normalize() {
+        match ty.n() {
             Type::Union(ty) => {
                 for ty in &ty.types {
                     self.validate_type_literals(ty, is_type_ann);
@@ -183,7 +183,7 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        match to.normalize() {
+        match to.n() {
             Type::Function(..) => {
                 // objectSpead.ts says
                 //
@@ -209,7 +209,7 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        match rhs.normalize() {
+        match rhs.n() {
             Type::Ref(..) => {
                 let rhs = self
                     .expand_top_ref(rhs.span(), Cow::Owned(rhs), Default::default())?

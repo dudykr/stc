@@ -3706,7 +3706,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(types) = self.find_type(ctxt, &i.into())? {
                     for ty in types {
-                        match ty.normalize() {
+                        match ty.n() {
                             Type::Namespace(_)
                             | Type::Module(_)
                             | Type::Instance(..)
@@ -3735,7 +3735,7 @@ impl Analyzer<'_, '_> {
                                 let mut ty = ty.into_owned().clone();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
-                                    match ty.normalize() {
+                                    match ty.n() {
                                         Type::Interface(Interface {
                                             type_params: Some(type_params),
                                             ..
@@ -4032,7 +4032,7 @@ impl Analyzer<'_, '_> {
 
     fn prefer_tuple(&mut self, type_ann: Option<&Type>) -> bool {
         let ty = match type_ann {
-            Some(ty) => ty.normalize(),
+            Some(ty) => ty.n(),
             None => return false,
         };
 
@@ -4158,7 +4158,7 @@ impl Analyzer<'_, '_> {
                 if el.params.is_empty() {
                     return false;
                 }
-                match el.params[0].ty.normalize() {
+                match el.params[0].ty.n() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..

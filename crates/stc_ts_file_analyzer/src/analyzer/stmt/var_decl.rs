@@ -408,7 +408,7 @@ impl Analyzer<'_, '_> {
                             }
                             ty.assert_valid();
                             ty.make_clone_cheap();
-                            ty = match ty.normalize() {
+                            ty = match ty.n() {
                                 Type::Function(f) => {
                                     let ret_ty = box f.ret_ty.clone().generalize_lit();
                                     Type::Function(stc_ts_types::Function {
@@ -426,7 +426,7 @@ impl Analyzer<'_, '_> {
                             dump_type_as_string(&self.cm, &ty)
                         );
 
-                        match ty.normalize() {
+                        match ty.n() {
                             Type::Ref(..) => {
                                 let ctx = Ctx {
                                     preserve_ref: true,
@@ -453,7 +453,7 @@ impl Analyzer<'_, '_> {
                                 let ty = ty.clone();
 
                                 // Normalize unresolved parameters
-                                let ty = match ty.normalize() {
+                                let ty = match ty.n() {
                                     Type::Param(TypeParam {
                                         constraint: Some(ty),
                                         ..
@@ -461,7 +461,7 @@ impl Analyzer<'_, '_> {
                                     _ => ty,
                                 };
 
-                                let ty = match ty.normalize() {
+                                let ty = match ty.n() {
                                     // `err is Error` => boolean
                                     Type::Predicate(..) => Type::Keyword(KeywordType {
                                         span,
@@ -602,7 +602,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
-                        match ty.normalize() {
+                        match ty.n() {
                             Type::Ref(..) => {}
                             _ => {
                                 let ctx = Ctx {
@@ -630,7 +630,7 @@ impl Analyzer<'_, '_> {
                                 for (i, element) in elems.iter_mut().enumerate() {
                                     let span = element.span();
 
-                                    match *element.ty.normalize() {
+                                    match *element.ty.n() {
                                         Type::Keyword(KeywordType {
                                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                             ..
