@@ -707,7 +707,8 @@ impl Analyzer<'_, '_> {
         let actual_span = ty.span();
 
         // TODO(kdy1): PERF
-        let ty = ty.into_owned().foldable();
+        let mut ty = ty.into_owned();
+        ty.nm();
 
         Ok(match ty {
             // For self-references in classes, we preserve `instanceof` type.
@@ -1030,7 +1031,7 @@ impl Analyzer<'_, '_> {
             return Ok(None);
         }
 
-        let ty = ty.normalize();
+        let ty = ty.n();
         match ty {
             Type::ClassDef(c) => {
                 let mut members = c
@@ -1098,7 +1099,7 @@ impl Analyzer<'_, '_> {
             "type_to_type_lit: `span` should not be dummy"
         );
 
-        if ty.normalize().is_type_lit() {
+        if ty.is_type_lit() {
             match ty {
                 Cow::Owned(ty) => {
                     let t = ty.foldable().expect_type_lit();
@@ -1114,8 +1115,8 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if ty.normalize().is_interface() {
-            let t = ty.into_owned().foldable().expect_interface();
+        if ty.is_interface() {
+            let t = ty.into_owned().expect_interface();
             let mut members = vec![];
 
             for parent in &t.extends {
@@ -1562,12 +1563,12 @@ impl Analyzer<'_, '_> {
             return self.normalize_promise_arg(&arg);
         }
 
-        match arg.normalize() {
+        match arg.n() {
             Type::Union(u) => {
                 // Part of `Promise<T | PromiseLike<T>> => Promise<T>`
                 if u.types.len() == 2 {
-                    let first = u.types[0].normalize();
-                    let second = u.types[1].normalize();
+                    let first = u.types[0].n();
+                    let second = u.types[1].n();
 
                     if let Some(second_arg) = unwrap_ref_with_single_arg(&second, "PromiseLike") {
                         if second_arg.type_eq(first) {

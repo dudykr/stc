@@ -38,7 +38,7 @@ impl Analyzer<'_, '_> {
                     .freezed();
 
                 if matches!(
-                    parent.normalize(),
+                    parent.n(),
                     Type::Mapped(..)
                         | Type::Tuple(..)
                         | Type::Function(..)
