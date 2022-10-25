@@ -279,7 +279,7 @@ impl Analyzer<'_, '_> {
             && !self.ctx.ignore_errors
             && self.ctx.in_class_with_super
             && c.body.is_some()
-            && match super_class.map(Type::normalize) {
+            && match super_class.map(Type::n) {
                 Some(Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
                     ..

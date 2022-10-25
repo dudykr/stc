@@ -266,7 +266,7 @@ impl Merge for Type {
 
         let l = replace(self, Type::never(l_span, Default::default()));
 
-        *self = Type::union(vec![l, r]);
+        *self = Type::new_union(l_span, vec![l, r]);
     }
 }
 
@@ -299,13 +299,13 @@ impl AddAssign for CondFacts {
         for (k, v) in rhs.vars {
             match self.vars.entry(k) {
                 Entry::Occupied(mut e) => {
-                    match e.get_mut().normalize_mut() {
+                    match e.get_mut().nm() {
                         Type::Union(u) => {
                             u.types.push(v);
                         }
                         prev => {
                             let prev = prev.take();
-                            *e.get_mut() = Type::union(vec![prev, v]).cheap();
+                            *e.get_mut() = Type::new_union(DUMMY_SP, vec![prev, v]).cheap();
                         }
                     };
                     e.get_mut().make_clone_cheap();
