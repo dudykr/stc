@@ -168,7 +168,7 @@ impl TypeStore for Single<'_> {
             .exports
             .private_types
             .get(&id)
-            .map(|types| Type::intersection(DUMMY_SP, types.iter().cloned()).freezed());
+            .map(|types| Type::new_intersection(DUMMY_SP, types.iter().cloned()).freezed());
 
         match ty {
             Some(ty) => return Some(ty),
@@ -336,7 +336,7 @@ impl TypeStore for Group<'_> {
             .get(&ctxt)?
             .private_types
             .get(&id)
-            .map(|types| Type::intersection(DUMMY_SP, types.iter().cloned()));
+            .map(|types| Type::new_intersection(DUMMY_SP, types.iter().cloned()));
         match ty {
             Some(ty) => Some(ty),
             None => self.parent?.get_local_type(ctxt, id),
@@ -453,7 +453,7 @@ impl TypeStore for Builtin {
             Entry::Occupied(entry) => {
                 let (id, prev_ty) = entry.remove_entry();
                 self.vars
-                    .insert(id, Type::intersection(DUMMY_SP, vec![prev_ty, ty]));
+                    .insert(id, Type::new_intersection(DUMMY_SP, vec![prev_ty, ty]));
             }
             Entry::Vacant(entry) => {
                 entry.insert(ty);
@@ -467,7 +467,7 @@ impl TypeStore for Builtin {
 
     fn get_local_type(&self, _ctxt: ModuleId, id: Id) -> Option<Type> {
         let types = self.types.get(id.sym()).cloned()?;
-        Some(Type::intersection(DUMMY_SP, types))
+        Some(Type::new_intersection(DUMMY_SP, types))
     }
 
     fn get_local_var(&self, _ctxt: ModuleId, id: Id) -> Option<Type> {

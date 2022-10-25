@@ -36,15 +36,15 @@ impl UnionNormalizer {
     }
 
     fn normalize_fn_types(&mut self, ty: &mut Type) {
-        if !ty.normalize().is_union_type() {
+        if !ty.is_union_type() {
             return;
         }
         ty.make_clone_cheap();
-        let u = match ty.normalize_mut() {
-            Type::Union(u) => u,
-            _ => return,
+        let u = match ty.as_union_type_mut() {
+            Some(v) => v,
+            None => return,
         };
-        if u.types.iter().any(|ty| !ty.normalize().is_function()) {
+        if u.types.iter().any(|ty| !ty.is_fn_type()) {
             return;
         }
 
