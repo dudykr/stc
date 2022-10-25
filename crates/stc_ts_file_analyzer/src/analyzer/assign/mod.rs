@@ -1024,7 +1024,7 @@ impl Analyzer<'_, '_> {
                     _ => unreachable!(),
                 };
 
-                match rhs.normalize() {
+                match rhs.n() {
                     Type::Lit(LitType {
                         lit: RTsLit::Number(..),
                         ..
@@ -1073,7 +1073,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(items) = items {
                     for e in items {
-                        match e.normalize() {
+                        match e.n() {
                             Type::Enum(e) => {
                                 if e.members.len() == 1 {
                                     return Ok(());
@@ -1127,7 +1127,7 @@ impl Analyzer<'_, '_> {
                     .types
                     .iter()
                     .any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
-                let rhs_requires_unknown_property_check = match rhs.normalize() {
+                let rhs_requires_unknown_property_check = match rhs.n() {
                     Type::Keyword(..) => false,
                     _ => true,
                 };
@@ -1196,7 +1196,7 @@ impl Analyzer<'_, '_> {
                     .context("tried to assign a type to a class definition")
             }
 
-            Type::Lit(ref lhs) => match rhs.normalize() {
+            Type::Lit(ref lhs) => match rhs.n() {
                 Type::Lit(rhs) if lhs.eq_ignore_span(&rhs) => return Ok(()),
                 Type::Ref(..) | Type::Query(..) | Type::Param(..) => {
                     // We should expand ref. We expand it with the match
@@ -1213,7 +1213,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(e) = e {
                         for e in e {
-                            match e.normalize() {
+                            match e.n() {
                                 Type::Enum(e) => {
                                     if e.members.len() == 1 {
                                         return Ok(());
@@ -1322,7 +1322,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let use_single_error = types.iter().all(|ty| ty.normalize().is_interface());
+                let use_single_error = types.iter().all(|ty| ty.is_interface());
                 let errors = errors.into_iter().map(Result::unwrap_err).collect();
 
                 if use_single_error {
@@ -1416,7 +1416,7 @@ impl Analyzer<'_, '_> {
                             return Ok(());
                         }
                         match constraint.as_deref() {
-                            Some(constraint) if constraint.normalize().is_type_param() => {}
+                            Some(constraint) if constraint.is_type_param() => {}
                             _ => {
                                 fail!()
                             }

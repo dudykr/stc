@@ -124,7 +124,7 @@ impl TypeStore for Single<'_> {
                 self.info
                     .exports
                     .private_vars
-                    .insert(id, Type::union(vec![prev_ty, ty]).freezed());
+                    .insert(id, Type::new_union(DUMMY_SP, vec![prev_ty, ty]).freezed());
             }
             Entry::Vacant(e) => {
                 e.insert(ty);
@@ -299,7 +299,8 @@ impl TypeStore for Group<'_> {
         match map.private_vars.entry(id) {
             Entry::Occupied(e) => {
                 let (id, prev_ty) = e.remove_entry();
-                map.private_vars.insert(id, Type::union(vec![prev_ty, ty]));
+                map.private_vars
+                    .insert(id, Type::new_union(DUMMY_SP, vec![prev_ty, ty]));
             }
             Entry::Vacant(e) => {
                 e.insert(ty);
