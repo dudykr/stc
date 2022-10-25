@@ -126,16 +126,16 @@ impl UnionNormalizer {
 
     /// TODO(kdy1): Add type parameters.
     fn normalize_call_signatures(&self, ty: &mut Type) {
-        if !ty.normalize().is_union_type() {
+        if !ty.is_union_type() {
             return;
         }
         ty.make_clone_cheap();
 
-        let u = match ty.normalize_mut() {
-            Type::Union(u) => u,
+        let u = match ty.as_union_type_mut() {
+            Some(u) => u,
             _ => return,
         };
-        if u.types.iter().any(|ty| !ty.normalize().is_type_lit()) {
+        if u.types.iter().any(|ty| !ty.is_type_lit()) {
             return;
         }
         let mut inexact = false;
@@ -147,7 +147,7 @@ impl UnionNormalizer {
         let mut extra_members = vec![];
         //
         for (type_idx, ty) in u.types.iter().enumerate() {
-            match ty.normalize() {
+            match ty.n() {
                 Type::TypeLit(ty) => {
                     inexact |= ty.metadata.inexact;
                     prev_specified |= ty.metadata.specified;

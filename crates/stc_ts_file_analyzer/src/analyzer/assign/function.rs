@@ -129,7 +129,7 @@ impl Analyzer<'_, '_> {
                             .collect_vec();
 
                         for (el_idx, new_params) in vec.iter_mut().enumerate() {
-                            match new_params[l_pos].ty.normalize_mut() {
+                            match new_params[l_pos].ty.nm() {
                                 Type::TypeLit(ty) => {
                                     let mut call_idx = 0;
                                     ty.members.retain(|el| match el {
