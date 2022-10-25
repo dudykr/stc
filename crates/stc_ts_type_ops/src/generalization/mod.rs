@@ -84,7 +84,7 @@ impl Fold<Type> for LitGeneralizer {
             }
         }
 
-        ty.normalize_mut();
+        ty.nm();
 
         match &ty {
             Type::IndexedAccessType(IndexedAccessType { index_type, .. })

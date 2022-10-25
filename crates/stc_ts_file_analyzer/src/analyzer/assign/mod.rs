@@ -2278,7 +2278,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 if let Some(types) = self.find_type(*ctxt, enum_name)? {
                     for ty in types {
-                        if let Type::Enum(ref e) = ty.normalize() {
+                        if let Type::Enum(ref e) = ty.n() {
                             match to {
                                 Type::Interface(..) | Type::TypeLit(..) => {}
                                 _ => {
@@ -2411,7 +2411,7 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         )?;
-        let ty = ty.normalize();
+        let ty = ty.n();
 
         match ty {
             Type::TypeLit(ty) => {
@@ -2470,8 +2470,8 @@ impl Analyzer<'_, '_> {
         keys: &Type,
         rhs: &Type,
     ) -> ValidationResult<()> {
-        let keys = keys.normalize();
-        let rhs = rhs.normalize();
+        let keys = keys.n();
+        let rhs = rhs.n();
 
         let mut rhs_keys = self.extract_keys(opts.span, &rhs)?;
         rhs_keys.make_clone_cheap();
@@ -2671,7 +2671,7 @@ impl Analyzer<'_, '_> {
         check_type: &Type,
         output_type: &Type,
     ) -> ValidationResult<bool> {
-        match output_type.normalize() {
+        match output_type.n() {
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ty,
