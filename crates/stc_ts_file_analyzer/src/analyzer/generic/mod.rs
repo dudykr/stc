@@ -2507,7 +2507,7 @@ impl Analyzer<'_, '_> {
             dump_type_as_string(&self.cm, &ty)
         );
 
-        if ty.normalize().is_intersection_type() {
+        if ty.is_intersection() {
             return Ok(ty);
         }
 

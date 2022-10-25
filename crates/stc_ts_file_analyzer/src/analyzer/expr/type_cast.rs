@@ -373,7 +373,7 @@ impl Analyzer<'_, '_> {
         }
 
         // TODO(kdy1): More check
-        if from.is_function() && to.is_function() {
+        if from.is_fn_type() && to.is_fn_type() {
             return Ok(false);
         }
 
