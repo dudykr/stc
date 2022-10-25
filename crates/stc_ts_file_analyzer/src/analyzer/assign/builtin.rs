@@ -27,8 +27,8 @@ impl Analyzer<'_, '_> {
         r: &Type,
     ) -> Option<ValidationResult<()>> {
         let span = opts.span;
-        let l = l.n();
-        let r = r.n();
+        let l = l.normalize();
+        let r = r.normalize();
 
         match l {
             Type::Ref(Ref {
@@ -212,7 +212,7 @@ impl Analyzer<'_, '_> {
             //
             // lhs: (TResult1#0#0 | PromiseLike<TResult1>);
             // rhs: Promise<boolean>
-            match l.n() {
+            match l.normalize() {
                 Type::Union(l) => {
                     if l.types.len() == 2
                         && l.types[0].is_type_param()
@@ -227,7 +227,7 @@ impl Analyzer<'_, '_> {
         }
 
         if cfg!(feature = "fastpath") {
-            match l.n() {
+            match l.normalize() {
                 Type::Union(l) => {
                     if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
                         // Fast path for

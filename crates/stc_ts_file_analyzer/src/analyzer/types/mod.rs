@@ -98,7 +98,7 @@ impl Analyzer<'_, '_> {
             let _stack = stack::track(actual_span)?;
             let _context = debug_ctx!(format!("Normalize: {}", dump_type_as_string(&self.cm, &ty)));
 
-            match ty.n() {
+            match ty.normalize() {
                 Type::Lit(..)
                 | Type::TypeLit(..)
                 | Type::Interface(..)
@@ -117,14 +117,14 @@ impl Analyzer<'_, '_> {
 
             if matches!(&*ty, Type::Arc(..)) {
                 let ty = self
-                    .normalize(span, Cow::Borrowed(ty.n()), opts)?
+                    .normalize(span, Cow::Borrowed(ty.normalize()), opts)?
                     .into_owned();
 
                 return Ok(Cow::Owned(ty));
             }
 
             if matches!(
-                ty.n(),
+                ty.normalize(),
                 Type::Conditional(..)
                     | Type::Array(..)
                     | Type::IndexedAccessType(..)
@@ -134,7 +134,7 @@ impl Analyzer<'_, '_> {
             }
 
             {
-                match ty.n() {
+                match ty.normalize() {
                     Type::Ref(_) => {
                         let mut new_ty = self
                             .expand_top_ref(
@@ -282,7 +282,7 @@ impl Analyzer<'_, '_> {
                             return Ok(Cow::Owned(ty));
                         }
 
-                        match check_type.n() {
+                        match check_type.normalize() {
                             Type::Param(TypeParam {
                                 name,
                                 constraint: Some(check_type_constraint),
@@ -307,7 +307,7 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
 
-                        match check_type.n() {
+                        match check_type.normalize() {
                             Type::Union(check_type_union) => {
                                 let mut all = true;
                                 let mut types = vec![];
@@ -368,7 +368,7 @@ impl Analyzer<'_, '_> {
                                 //
                                 // We removes `undefined` from parents of T.
 
-                                match check_type_constraint.n() {
+                                match check_type_constraint.normalize() {
                                     Type::Union(check_type_union) => {
                                         let mut all = true;
                                         let mut types = vec![];
@@ -517,13 +517,15 @@ impl Analyzer<'_, '_> {
                                 dump_type_as_string(&self.cm, &prop_ty)
                             ));
 
-                            match prop_ty.n() {
-                                Type::IndexedAccessType(prop_ty) => match prop_ty.index_type.n() {
-                                    Type::Param(..) => {}
-                                    _ => {
-                                        panic!("{:?}", prop_ty);
+                            match prop_ty.normalize() {
+                                Type::IndexedAccessType(prop_ty) => {
+                                    match prop_ty.index_type.normalize() {
+                                        Type::Param(..) => {}
+                                        _ => {
+                                            panic!("{:?}", prop_ty);
+                                        }
                                     }
-                                },
+                                }
                                 _ => {}
                             }
 
@@ -592,7 +594,7 @@ impl Analyzer<'_, '_> {
         let mut false_type =
             self.normalize(Some(span), Cow::Borrowed(false_type), Default::default())?;
 
-        match true_type.n() {
+        match true_type.normalize() {
             Type::Conditional(c) => {
                 if (*c.check_type).type_eq(check_type) {
                     if let Some(ty) = self.reduce_conditional_type(
@@ -612,7 +614,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match false_type.n() {
+        match false_type.normalize() {
             Type::Conditional(c) => {
                 if (*c.check_type).type_eq(check_type) {
                     let mut check_type_constraint = check_type_constraint.clone();
@@ -636,7 +638,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match check_type_constraint.n() {
+        match check_type_constraint.normalize() {
             Type::Union(check_type_union) => {
                 //
                 let can_match = check_type_union.types.iter().any(|check_type_constraint| {
@@ -706,7 +708,7 @@ impl Analyzer<'_, '_> {
 
         // TODO(kdy1): PERF
         let mut ty = ty.into_owned();
-        ty.nm();
+        ty.normalize_mut();
 
         Ok(match ty {
             // For self-references in classes, we preserve `instanceof` type.
@@ -1029,7 +1031,7 @@ impl Analyzer<'_, '_> {
             return Ok(None);
         }
 
-        let ty = ty.n();
+        let ty = ty.normalize();
         match ty {
             Type::ClassDef(c) => {
                 let mut members = c
@@ -1104,7 +1106,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Some(Cow::Owned(t)));
                 }
 
-                Cow::Borrowed(ty) => match ty.n() {
+                Cow::Borrowed(ty) => match ty.normalize() {
                     Type::TypeLit(t) => return Ok(Some(Cow::Borrowed(t))),
                     _ => {
                         unreachable!()
@@ -1147,7 +1149,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        let ty = ty.n();
+        let ty = ty.normalize();
 
         Ok(Some(match ty {
             Type::Lit(ty) => {
@@ -1561,12 +1563,12 @@ impl Analyzer<'_, '_> {
             return self.normalize_promise_arg(&arg);
         }
 
-        match arg.n() {
+        match arg.normalize() {
             Type::Union(u) => {
                 // Part of `Promise<T | PromiseLike<T>> => Promise<T>`
                 if u.types.len() == 2 {
-                    let first = u.types[0].n();
-                    let second = u.types[1].n();
+                    let first = u.types[0].normalize();
+                    let second = u.types[1].normalize();
 
                     if let Some(second_arg) = unwrap_ref_with_single_arg(&second, "PromiseLike") {
                         if second_arg.type_eq(first) {
@@ -1616,7 +1618,7 @@ impl Analyzer<'_, '_> {
             IntrinsicKind::Uppercase
             | IntrinsicKind::Lowercase
             | IntrinsicKind::Capitalize
-            | IntrinsicKind::Uncapitalize => match arg.params[0].n() {
+            | IntrinsicKind::Uncapitalize => match arg.params[0].normalize() {
                 Type::Lit(LitType {
                     lit: RTsLit::Str(s),
                     ..
@@ -1811,7 +1813,7 @@ impl Analyzer<'_, '_> {
             Err(..) => Cow::Borrowed(excluded),
         };
 
-        match ty.n() {
+        match ty.normalize() {
             Type::Ref(..) => {
                 // We ignore errors.
                 if let Ok(mut expanded_ty) = self
@@ -1826,7 +1828,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match excluded.n() {
+        match excluded.normalize() {
             Type::Union(excluded) => {
                 //
                 for excluded in &excluded.types {

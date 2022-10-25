@@ -17,7 +17,7 @@ impl Analyzer<'_, '_> {
         to: &QueryType,
         rhs: &Type,
     ) -> ValidationResult<()> {
-        let rhs = rhs.n();
+        let rhs = rhs.normalize();
 
         match &*to.expr {
             QueryExpr::TsEntityName(e) => {
@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
         to: &Type,
         rhs: &QueryType,
     ) -> ValidationResult<()> {
-        let to = to.n();
+        let to = to.normalize();
 
         match &*rhs.expr {
             QueryExpr::TsEntityName(e) => {

@@ -146,7 +146,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(ref ty) = ty {
                             // TODO(kdy1): Add support for expressions like '' + ''.
-                            match ty.n() {
+                            match ty.normalize() {
                                 _ if is_valid_key => {}
                                 Type::Lit(..) => {}
                                 Type::EnumVariant(..) => {}
@@ -169,7 +169,7 @@ impl Analyzer<'_, '_> {
             }
 
             if check_for_validity && check_for_symbol_form && is_symbol_access {
-                match ty.n() {
+                match ty.normalize() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
@@ -297,7 +297,7 @@ impl Analyzer<'_, '_> {
 
         let ty = ty.clone().generalize_lit();
 
-        match ty.n() {
+        match ty.normalize() {
             Type::Function(..) => return false,
             _ => {}
         }
@@ -311,7 +311,7 @@ impl Analyzer<'_, '_> {
             }
         };
 
-        match ty.n() {
+        match ty.normalize() {
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
@@ -348,7 +348,7 @@ impl Analyzer<'_, '_> {
                     return true;
                 }
 
-                match ty.n() {
+                match ty.normalize() {
                     Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
                         ..
@@ -529,7 +529,7 @@ impl Analyzer<'_, '_> {
                             child.ctx.in_async = p.function.is_async;
                             child.ctx.in_generator = p.function.is_generator;
 
-                            match method_type_ann.as_ref().map(|ty| ty.n()) {
+                            match method_type_ann.as_ref().map(|ty| ty.normalize()) {
                                 Some(Type::Function(ty)) => {
                                     for p in p.function.params.iter().zip_longest(ty.params.iter())
                                     {

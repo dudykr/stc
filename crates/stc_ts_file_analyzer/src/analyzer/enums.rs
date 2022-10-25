@@ -488,7 +488,7 @@ impl Analyzer<'_, '_> {
         lhs: &RPat,
         rhs_ty: &Type,
     ) {
-        match rhs_ty.n() {
+        match rhs_ty.normalize() {
             // Report an error for `a = G` where G is name of the const enum itself.
             Type::Enum(ref e) if e.is_const => {
                 self.storage.report(Error::InvalidUseOfConstEnum { span });
@@ -566,7 +566,7 @@ impl Analyzer<'_, '_> {
     /// const a = o[e]
     /// ```
     pub(super) fn expand_enum(&mut self, ty: Type) -> ValidationResult {
-        let e = match ty.n() {
+        let e = match ty.normalize() {
             Type::Enum(e) => e,
             _ => return Ok(ty),
         };
@@ -600,12 +600,12 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn expand_enum_variant(&self, ty: Type) -> ValidationResult {
-        match ty.n() {
+        match ty.normalize() {
             Type::EnumVariant(ref ev) => {
                 if let Some(variant_name) = &ev.name {
                     if let Some(types) = self.find_type(ev.ctxt, &ev.enum_name)? {
                         for ty in types {
-                            if let Type::Enum(Enum { members, .. }) = ty.n() {
+                            if let Type::Enum(Enum { members, .. }) = ty.normalize() {
                                 if let Some(v) = members.iter().find(|m| match m.id {
                                     RTsEnumMemberId::Ident(RIdent { ref sym, .. })
                                     | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {

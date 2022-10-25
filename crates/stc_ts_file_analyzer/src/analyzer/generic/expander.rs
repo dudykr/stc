@@ -118,8 +118,8 @@ impl Analyzer<'_, '_> {
         child: &Type,
         parent: &Type,
     ) -> Option<bool> {
-        let child = child.n();
-        let parent = parent.n();
+        let child = child.normalize();
+        let parent = parent.normalize();
 
         if child.is_any() {
             return Some(true);
@@ -171,7 +171,7 @@ impl Analyzer<'_, '_> {
                     )
                     .unwrap()
                     .freezed();
-                match child.n() {
+                match child.normalize() {
                     Type::Ref(..) => return None,
                     _ => {}
                 }
@@ -226,7 +226,7 @@ impl Analyzer<'_, '_> {
                         },
                     )
                     .unwrap();
-                match parent.n() {
+                match parent.normalize() {
                     Type::Ref(..) => return None,
                     _ => {}
                 }

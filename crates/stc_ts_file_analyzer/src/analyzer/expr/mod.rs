@@ -821,7 +821,7 @@ impl Analyzer<'_, '_> {
         key_ty: &Type,
         allow_union: bool,
     ) -> bool {
-        let key_ty = key_ty.n();
+        let key_ty = key_ty.normalize();
 
         if declared.ty().type_eq(key_ty) {
             return true;
@@ -842,7 +842,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 if let Ok(Some(types)) = self.find_type(self.ctx.module_id, enum_name) {
                     for ty in types {
-                        match ty.n() {
+                        match ty.normalize() {
                             Type::Enum(e) => {
                                 let e = e.clone();
                                 return self.check_if_type_matches_key(
@@ -1090,7 +1090,7 @@ impl Analyzer<'_, '_> {
                         ));
                     }
 
-                    match prop_ty.n() {
+                    match prop_ty.normalize() {
                         // TODO(kdy1): Only string or number
                         Type::EnumVariant(..) => {
                             matching_elements.extend(type_ann.clone().map(|v| *v));
@@ -1158,12 +1158,12 @@ impl Analyzer<'_, '_> {
 
         // Try some easier assignments.
         if prop.is_computed() {
-            if match obj.n() {
+            if match obj.normalize() {
                 Type::Tuple(..) => true,
                 _ => false,
             } {
                 // See if key is number.
-                match prop.ty().n() {
+                match prop.ty().normalize() {
                     Type::Lit(LitType {
                         lit: RTsLit::Number(prop),
                         ..
@@ -1182,7 +1182,7 @@ impl Analyzer<'_, '_> {
             }
 
             // See if key is string.
-            match prop.ty().n() {
+            match prop.ty().normalize() {
                 Type::Lit(LitType {
                     lit: RTsLit::Str(prop),
                     ..
@@ -1210,7 +1210,7 @@ impl Analyzer<'_, '_> {
                         return Ok(ty);
                     }
 
-                    match obj.n() {
+                    match obj.normalize() {
                         Type::Enum(..) | Type::Symbol(..) => return res,
                         _ => {}
                     }
@@ -1237,7 +1237,7 @@ impl Analyzer<'_, '_> {
                 Type::Param(TypeParam {
                     constraint: Some(constraint),
                     ..
-                }) if opts.for_validation_of_indexed_access_type => match constraint.n() {
+                }) if opts.for_validation_of_indexed_access_type => match constraint.normalize() {
                     Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
                         ty: constraint_ty,
@@ -1596,7 +1596,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match obj.n() {
+        match obj.normalize() {
             Type::This(..) => {
                 let scope = if self.ctx.in_computed_prop_name {
                     self.scope.scope_of_computed_props()
@@ -1623,7 +1623,7 @@ impl Analyzer<'_, '_> {
             preserve_params: true,
             ..self.ctx
         };
-        let mut obj = match obj.n() {
+        let mut obj = match obj.normalize() {
             Type::Conditional(..) | Type::Instance(..) => {
                 self.normalize(None, Cow::Borrowed(obj), Default::default())?
             }
@@ -1640,7 +1640,7 @@ impl Analyzer<'_, '_> {
             obj.make_clone_cheap();
         }
 
-        match obj.n() {
+        match obj.normalize() {
             Type::Lit(obj) => {
                 // Even if literal generalization is prevented, it should be
                 // expanded in this case.
@@ -1806,7 +1806,7 @@ impl Analyzer<'_, '_> {
                 Some(types) => {
                     //
                     for ty in types {
-                        match ty.n() {
+                        match ty.normalize() {
                             Type::Enum(ref e) => {
                                 for v in e.members.iter() {
                                     if match *v.val {
@@ -1958,7 +1958,7 @@ impl Analyzer<'_, '_> {
 
                 let has_better_default = !opts.disallow_indexing_class_with_computed
                     && prop.is_computed()
-                    && match prop.ty().n() {
+                    && match prop.ty().normalize() {
                         // newWithSpreadES5.ts contains
                         //
                         //
@@ -2083,7 +2083,7 @@ impl Analyzer<'_, '_> {
 
             Type::Keyword(KeywordType { kind, .. }) if !self.is_builtin => {
                 match prop {
-                    Key::Computed(prop) => match (*kind, prop.ty.n()) {
+                    Key::Computed(prop) => match (*kind, prop.ty.normalize()) {
                         (
                             TsKeywordTypeKind::TsObjectKeyword,
                             Type::Keyword(KeywordType {
@@ -2146,7 +2146,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Key::Computed(prop) = prop {
-                    match prop.ty.n() {
+                    match prop.ty.normalize() {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsNumberKeyword,
                             ..
@@ -2166,7 +2166,7 @@ impl Analyzer<'_, '_> {
                 let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
 
                 let has_better_default = !opts.disallow_indexing_array_with_string
-                    && match prop.ty().n() {
+                    && match prop.ty().normalize() {
                         // newWithSpreadES5.ts contains
                         //
                         //
@@ -2207,7 +2207,7 @@ impl Analyzer<'_, '_> {
                         if !has_better_default {
                             return Err(err);
                         }
-                        match prop.ty().n() {
+                        match prop.ty().normalize() {
                             // newWithSpreadES5.ts contains
                             //
                             //
@@ -2464,7 +2464,7 @@ impl Analyzer<'_, '_> {
 
                         if v as usize >= elems.len() {
                             match elems.last() {
-                                Some(elem) => match elem.ty.n() {
+                                Some(elem) => match elem.ty.normalize() {
                                     Type::Rest(rest_ty) => {
                                         // debug_assert!(rest_ty.ty.is_clone_cheap());
                                         return Ok(*rest_ty.ty.clone());
@@ -2688,7 +2688,7 @@ impl Analyzer<'_, '_> {
                         unreachable!("this() should not be `this`")
                     }
 
-                    match this.n() {
+                    match this.normalize() {
                         Type::Instance(ty) => {
                             if ty.ty.is_this() {
                                 unreachable!("this() should not be `this`")
@@ -2741,8 +2741,8 @@ impl Analyzer<'_, '_> {
                 }
                 // Exclude accesses to type params.
                 if new.len() >= 2 {
-                    new.retain(|prop_ty| match prop_ty.n() {
-                        Type::IndexedAccessType(iat) => match iat.obj_type.n() {
+                    new.retain(|prop_ty| match prop_ty.normalize() {
+                        Type::IndexedAccessType(iat) => match iat.obj_type.normalize() {
                             Type::Param(..) => false,
                             _ => true,
                         },
@@ -2776,7 +2776,7 @@ impl Analyzer<'_, '_> {
                 // If type of prop is equal to the type of index signature, it's
                 // index access.
 
-                match constraint.as_ref().map(Type::n) {
+                match constraint.as_ref().map(Type::normalize) {
                     Some(Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
                         ty: box Type::Array(..),
@@ -2833,7 +2833,7 @@ impl Analyzer<'_, '_> {
                     return self.access_property(span, obj, prop, type_mode, id_ctx, opts);
                 }
 
-                match constraint.as_ref().map(Type::n) {
+                match constraint.as_ref().map(Type::normalize) {
                     Some(Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
                         ty,
@@ -2874,7 +2874,7 @@ impl Analyzer<'_, '_> {
 
             Type::Ref(r) => {
                 if let Key::Computed(computed) = prop {
-                    match obj.n() {
+                    match obj.normalize() {
                         Type::Param(..) => {
                             let index_type = computed.ty.clone();
 
@@ -3065,9 +3065,9 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        match ty.n() {
+        match ty.normalize() {
             Type::Union(ref union_ty) => {
-                let is_all_fn = union_ty.types.iter().all(|v| match v.n() {
+                let is_all_fn = union_ty.types.iter().all(|v| match v.normalize() {
                     Type::Function(f) => true,
                     _ => false,
                 });
@@ -3093,7 +3093,7 @@ impl Analyzer<'_, '_> {
         ty: Type,
         type_args: &TypeParamInstantiation,
     ) -> ValidationResult<Type> {
-        match ty.n() {
+        match ty.normalize() {
             Type::Interface(Interface { type_params, .. })
             | Type::Alias(Alias { type_params, .. })
             | Type::Class(Class {
@@ -3205,13 +3205,13 @@ impl Analyzer<'_, '_> {
 
         // TODO(kdy1): Change return type of type_of_raw_var to Option and inject module
         // from here.
-        match ty.n() {
+        match ty.normalize() {
             Type::Module(..) => {
                 need_intersection = false;
             }
             Type::Intersection(i) => {
                 for ty in &i.types {
-                    match ty.n() {
+                    match ty.normalize() {
                         Type::Module(..) => {
                             need_intersection = false;
                             break;
@@ -3226,7 +3226,7 @@ impl Analyzer<'_, '_> {
         if let TypeOfMode::LValue = type_mode {
             if let Some(types) = self.find_type(self.ctx.module_id, &id)? {
                 for ty in types {
-                    match ty.n() {
+                    match ty.normalize() {
                         Type::Module(..) => return Err(Error::NotVariable { span, left: span }),
                         _ => {}
                     }
@@ -3239,13 +3239,13 @@ impl Analyzer<'_, '_> {
                 for ty in types {
                     debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
-                    match ty.n() {
+                    match ty.normalize() {
                         Type::Module(..) => modules.push(ty.clone().into_owned()),
                         Type::Intersection(intersection) => {
                             for ty in &intersection.types {
                                 debug_assert!(ty.is_clone_cheap());
 
-                                match ty.n() {
+                                match ty.normalize() {
                                     Type::Module(..) => modules.push(ty.clone()),
                                     _ => {}
                                 }
@@ -3305,7 +3305,7 @@ impl Analyzer<'_, '_> {
             let ty = self.find_type(self.ctx.module_id, &cur_module)?;
             if let Some(ty) = ty {
                 for ty in ty {
-                    match ty.n() {
+                    match ty.normalize() {
                         Type::Module(module) => {
                             //
                             if let Some(var_ty) = module.exports.vars.get(&i.sym).cloned() {
@@ -3591,7 +3591,7 @@ impl Analyzer<'_, '_> {
                 debug_assert!(ty.is_clone_cheap());
                 ty.assert_valid();
 
-                match ty.n() {
+                match ty.normalize() {
                     Type::Module(..) => return Ok(ty.clone().into_owned()),
                     _ => {}
                 }
@@ -3706,7 +3706,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(types) = self.find_type(ctxt, &i.into())? {
                     for ty in types {
-                        match ty.n() {
+                        match ty.normalize() {
                             Type::Namespace(_)
                             | Type::Module(_)
                             | Type::Instance(..)
@@ -3735,7 +3735,7 @@ impl Analyzer<'_, '_> {
                                 let mut ty = ty.into_owned().clone();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
-                                    match ty.n() {
+                                    match ty.normalize() {
                                         Type::Interface(Interface {
                                             type_params: Some(type_params),
                                             ..
@@ -4032,7 +4032,7 @@ impl Analyzer<'_, '_> {
 
     fn prefer_tuple(&mut self, type_ann: Option<&Type>) -> bool {
         let ty = match type_ann {
-            Some(ty) => ty.n(),
+            Some(ty) => ty.normalize(),
             None => return false,
         };
 
@@ -4158,7 +4158,7 @@ impl Analyzer<'_, '_> {
                 if el.params.is_empty() {
                     return false;
                 }
-                match el.params[0].ty.n() {
+                match el.params[0].ty.normalize() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..

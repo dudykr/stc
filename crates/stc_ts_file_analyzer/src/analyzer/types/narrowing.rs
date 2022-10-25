@@ -31,7 +31,7 @@ impl Analyzer<'_, '_> {
             .context("tried to normalize decalred type")?;
         actual.make_clone_cheap();
 
-        match actual.n() {
+        match actual.normalize() {
             Type::Union(actual) => {
                 let mut new_types = vec![];
                 for actual in &actual.types {
@@ -67,7 +67,7 @@ impl Analyzer<'_, '_> {
         }
 
         let mut declared = declared.into_owned();
-        declared.nm();
+        declared.normalize_mut();
         // TODO(kdy1): PERF
 
         match declared {

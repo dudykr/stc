@@ -187,7 +187,7 @@ impl Analyzer<'_, '_> {
             dump_type_as_string(&self.cm, &ty)
         );
 
-        match ty.n() {
+        match ty.normalize() {
             Type::Param(ty) => {
                 if name == ty.name {
                     return Ok(());
@@ -322,11 +322,11 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> Option<ValidationResult<()>> {
-        let param = param.n();
-        let arg = arg.n();
+        let param = param.normalize();
+        let arg = arg.normalize();
 
         if let Some(elem_type) =
-            unwrap_ref_with_single_arg(param, "ReadonlyArray").or_else(|| match param.n() {
+            unwrap_ref_with_single_arg(param, "ReadonlyArray").or_else(|| match param.normalize() {
                 Type::Interface(Interface { name, body, .. }) => {
                     if name == "ReadonlyArray" {
                         body.iter()
@@ -398,7 +398,7 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> ValidationResult<()> {
-        let arg = arg.n();
+        let arg = arg.normalize();
 
         match arg {
             Type::Interface(arg) => {
@@ -489,8 +489,8 @@ impl Analyzer<'_, '_> {
         arg: &Type,
         opts: InferTypeOpts,
     ) -> ValidationResult<bool> {
-        let p = param.n();
-        let a = arg.n();
+        let p = param.normalize();
+        let a = arg.normalize();
         match (p, a) {
             (Type::Constructor(..), Type::Class(..)) | (Type::Function(..), Type::Function(..)) => {
                 return Ok(false)
@@ -836,8 +836,8 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        match ty.n() {
-            Type::Tuple(..) => match ty.nm() {
+        match ty.normalize() {
+            Type::Tuple(..) => match ty.normalize_mut() {
                 Type::Tuple(ty) => {
                     for elem in ty.elems.iter_mut() {
                         self.replace_null_or_undefined_while_defaulting_to_any(&mut elem.ty);
@@ -884,7 +884,7 @@ impl Analyzer<'_, '_> {
 }
 
 fn should_prevent_generalization(constraint: &Type) -> bool {
-    match constraint.n() {
+    match constraint.normalize() {
         Type::Lit(LitType {
             lit: RTsLit::Str(..) | RTsLit::Number(..) | RTsLit::Bool(..),
             ..

@@ -132,7 +132,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        match orig.n() {
+        match orig.normalize() {
             Type::Union(ref rt) => {
                 let castable = rt.types.iter().any(|v| casted.type_eq(v));
 
@@ -144,10 +144,10 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match casted.n() {
+        match casted.normalize() {
             Type::Tuple(ref lt) => {
                 //
-                match orig.n() {
+                match orig.normalize() {
                     Type::Tuple(ref rt) => {
                         //
                         if lt.elems.len() != rt.elems.len() {
@@ -190,7 +190,7 @@ impl Analyzer<'_, '_> {
 
             Type::Array(ref lt) => {
                 //
-                match orig.n() {
+                match orig.normalize() {
                     Type::Tuple(ref rt) => {
                         if rt.elems[0].ty.type_eq(&lt.elem_type) {
                             return Ok(());
@@ -208,10 +208,10 @@ impl Analyzer<'_, '_> {
 
         // self.assign(&casted_ty, &orig_ty, span)?;
 
-        match casted.n() {
+        match casted.normalize() {
             Type::Tuple(ref rt) => {
                 //
-                match orig.n() {
+                match orig.normalize() {
                     Type::Tuple(ref lt) => {}
                     _ => {}
                 }
@@ -257,8 +257,8 @@ impl Analyzer<'_, '_> {
         r: &Type,
         opts: CastableOpts,
     ) -> ValidationResult<bool> {
-        let l = l.n();
-        let r = r.n();
+        let l = l.normalize();
+        let r = r.normalize();
 
         if l.type_eq(r) {
             return Ok(true);
@@ -279,8 +279,8 @@ impl Analyzer<'_, '_> {
         to: &Type,
         opts: CastableOpts,
     ) -> ValidationResult<bool> {
-        let from = from.n();
-        let to = to.n();
+        let from = from.normalize();
+        let to = to.normalize();
 
         // Overlaps with all types.
         if from.is_any()

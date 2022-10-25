@@ -407,7 +407,7 @@ impl Analyzer<'_, '_> {
         let (dep, data) = self.get_imported_items(span, &node.src.value);
 
         if ctxt != dep {
-            match data.n() {
+            match data.normalize() {
                 Type::Module(data) => {
                     for (id, ty) in data.exports.vars.iter() {
                         self.storage.reexport_var(span, dep, id.clone(), ty.clone());
@@ -514,7 +514,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(data) = self.imports.get(&(ctxt, from)) {
-            match data.n() {
+            match data.normalize() {
                 Type::Module(data) => {
                     if let Some(ty) = data.exports.vars.get(orig.sym()) {
                         did_work = true;

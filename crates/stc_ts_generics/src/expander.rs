@@ -51,7 +51,7 @@ impl GenericExpander<'_> {
             }
         }
 
-        match ty.n() {
+        match ty.normalize() {
             Type::StaticThis(..) | Type::Intrinsic(..) | Type::Symbol(..) => return ty,
 
             Type::Param(param) => {
@@ -76,7 +76,7 @@ impl GenericExpander<'_> {
             _ => {}
         }
 
-        ty.nm();
+        ty.normalize_mut();
 
         match ty {
             Type::Ref(Ref {
@@ -166,16 +166,16 @@ impl GenericExpander<'_> {
 
                 match &m.type_param.constraint {
                     Some(constraint) => {
-                        match constraint.n() {
+                        match constraint.normalize() {
                             Type::Operator(
                                 operator @ Operator {
                                     op: TsTypeOperatorOp::KeyOf,
                                     ..
                                 },
-                            ) => match operator.ty.n() {
+                            ) => match operator.ty.normalize() {
                                 Type::Param(param) if self.params.contains_key(&param.name) => {
                                     let ty = self.params.get(&param.name).unwrap();
-                                    match ty.n() {
+                                    match ty.normalize() {
                                         Type::TypeLit(ty)
                                             if ty.members.iter().all(|element| match element {
                                                 TypeElement::Property(..)
@@ -300,7 +300,7 @@ impl GenericExpander<'_> {
 
                 // TODO(kdy1): PERF
                 if let Some(ty) = &mut m.ty {
-                    ty.nm();
+                    ty.normalize_mut();
                 }
                 m.ty = match m.ty {
                     Some(box Type::IndexedAccessType(IndexedAccessType {
@@ -310,7 +310,7 @@ impl GenericExpander<'_> {
                         index_type,
                         metadata,
                     })) => {
-                        obj_type.nm();
+                        obj_type.normalize_mut();
                         // TODO(kdy1): PERF
                         match *obj_type {
                             Type::TypeLit(TypeLit {
@@ -364,7 +364,7 @@ impl GenericExpander<'_> {
                             op: TsTypeOperatorOp::KeyOf,
                             ty,
                             ..
-                        }) => match ty.n() {
+                        }) => match ty.normalize() {
                             Type::Keyword(..) if m.optional == None && m.readonly == None => {
                                 return *ty.clone()
                             }
@@ -438,7 +438,7 @@ impl GenericExpander<'_> {
                 let mut ty = ty.fold_with(self);
                 ty.obj_type.fix();
 
-                let key = match ty.index_type.n() {
+                let key = match ty.index_type.normalize() {
                     Type::Lit(LitType {
                         lit: RTsLit::Str(s),
                         ..
@@ -517,7 +517,7 @@ impl Fold<Type> for GenericExpander<'_> {
         ));
 
         let old_fully = self.fully;
-        self.fully |= match ty.n() {
+        self.fully |= match ty.normalize() {
             Type::Mapped(..) => true,
             _ => false,
         };
@@ -631,7 +631,7 @@ struct GenericChecker<'a> {
 
 impl Visit<Type> for GenericChecker<'_> {
     fn visit(&mut self, ty: &Type) {
-        match ty.n() {
+        match ty.normalize() {
             Type::Param(p) => {
                 if self.params.contains_key(&p.name) {
                     self.found = true;
@@ -653,23 +653,23 @@ struct MappedHandler<'d> {
 
 impl Fold<Type> for MappedHandler<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
-        match ty.n() {
-            Type::IndexedAccessType(ty) => match ty.obj_type.n() {
+        match ty.normalize() {
+            Type::IndexedAccessType(ty) => match ty.obj_type.normalize() {
                 Type::Param(TypeParam {
                     name: obj_param_name,
                     ..
-                }) => match ty.index_type.n() {
+                }) => match ty.index_type.normalize() {
                     Type::Param(TypeParam {
                         name: index_param_name,
                         constraint: Some(index_type_constraint),
                         ..
-                    }) => match index_type_constraint.n() {
+                    }) => match index_type_constraint.normalize() {
                         Type::Operator(
                             operator @ Operator {
                                 op: TsTypeOperatorOp::KeyOf,
                                 ..
                             },
-                        ) => match operator.ty.n() {
+                        ) => match operator.ty.normalize() {
                             Type::Param(constraint_param) => {
                                 if *obj_param_name == constraint_param.name
                                     && *self.param_name == *obj_param_name
@@ -689,7 +689,7 @@ impl Fold<Type> for MappedHandler<'_> {
         }
 
         // TODO(kdy1): PERF
-        ty.nm();
+        ty.normalize_mut();
         ty = ty.fold_children_with(self);
 
         ty

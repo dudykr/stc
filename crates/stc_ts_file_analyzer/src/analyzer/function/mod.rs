@@ -150,7 +150,7 @@ impl Analyzer<'_, '_> {
             }
 
             if let Some(ty) = &mut declared_ret_ty {
-                match ty.n() {
+                match ty.normalize() {
                     Type::Ref(..) => {
                         child.prevent_expansion(ty);
                     }
@@ -209,7 +209,7 @@ impl Analyzer<'_, '_> {
                             Default::default(),
                         )?;
 
-                        match declared.n() {
+                        match declared.normalize() {
                             Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsAnyKeyword,
                                 ..
@@ -352,7 +352,7 @@ impl Analyzer<'_, '_> {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
 
-            match type_ann.as_ref().map(|ty| ty.n()) {
+            match type_ann.as_ref().map(|ty| ty.normalize()) {
                 Some(Type::Function(ty)) => {
                     for p in f.params.iter().zip_longest(ty.params.iter()) {
                         match p {
@@ -416,7 +416,7 @@ impl Analyzer<'_, '_> {
                             for element in elems.iter_mut() {
                                 let span = element.span();
 
-                                match element.ty.n() {
+                                match element.ty.normalize() {
                                     Type::Keyword(KeywordType {
                                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                         ..
@@ -531,7 +531,7 @@ impl Fold<Type> for TypeParamHandler<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
         if let Some(params) = self.params {
             // TODO(kdy1): PERF
-            ty.nm();
+            ty.normalize_mut();
 
             let ty: Type = ty.fold_children_with(self);
 

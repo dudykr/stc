@@ -97,7 +97,7 @@ impl Analyzer<'_, '_> {
             RPat::Ident(..) => false,
             _ => true,
         } {
-            match ty.as_ref().map(Type::n) {
+            match ty.as_ref().map(Type::normalize) {
                 Some(ty @ Type::Ref(..)) => {
                     let mut ty = self
                         .expand_top_ref(ty.span(), Cow::Borrowed(&ty), Default::default())
@@ -421,7 +421,7 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Object(obj) => {
-                let should_use_no_such_property = match ty.as_ref().map(Type::n) {
+                let should_use_no_such_property = match ty.as_ref().map(Type::normalize) {
                     Some(Type::TypeLit(..)) => false,
                     _ => true,
                 };
@@ -762,7 +762,7 @@ impl Analyzer<'_, '_> {
                 return Ok(ty.into_owned());
             }
 
-            match ty.n() {
+            match ty.normalize() {
                 Type::TypeLit(lit) => {
                     let mut new_members = vec![];
                     'outer: for m in &lit.members {

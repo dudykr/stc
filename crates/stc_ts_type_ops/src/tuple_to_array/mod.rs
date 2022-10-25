@@ -11,7 +11,7 @@ pub struct TupleToArray;
 impl Fold<Type> for TupleToArray {
     fn fold(&mut self, mut ty: Type) -> Type {
         // TODO(kdy1): PERF
-        ty.nm();
+        ty.normalize_mut();
         let ty = ty.fold_children_with(self);
 
         match ty {

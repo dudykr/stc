@@ -14,10 +14,10 @@ impl Fold<Type> for TypeParamReplacer {
     fn fold(&mut self, mut ty: Type) -> Type {
         ty = ty.fold_children_with(self);
 
-        match ty.n() {
+        match ty.normalize() {
             Type::Param(ref param) => {
                 if let Some(mapped) = self.inferred.get(&param.name) {
-                    match mapped.n() {
+                    match mapped.normalize() {
                         Type::Param(..) if !self.include_type_params => return ty,
                         _ => {}
                     }

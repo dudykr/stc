@@ -181,8 +181,8 @@ impl Analyzer<'_, '_> {
         let l = self.expand_top_ref(span, Cow::Borrowed(lhs), Default::default())?;
         let r = self.expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?;
 
-        let lhs = l.n();
-        let rhs = r.n();
+        let lhs = l.normalize();
+        let rhs = r.normalize();
 
         if op == op!("+=") {
             if lhs.is_enum_variant() {
@@ -444,7 +444,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<Cow<'a, Type>> {
         ty.assert_valid();
 
-        let ty = ty.n();
+        let ty = ty.normalize();
 
         match ty {
             Type::Instance(Instance { ty, .. }) => {
@@ -601,8 +601,8 @@ impl Analyzer<'_, '_> {
             .context("tried to normalize rhs")?;
         rhs.make_clone_cheap();
 
-        let to = to.n();
-        let rhs = rhs.n();
+        let to = to.normalize();
+        let rhs = rhs.normalize();
 
         macro_rules! fail {
             () => {{
@@ -730,12 +730,12 @@ impl Analyzer<'_, '_> {
         };
 
         match (to, rhs) {
-            (Type::Rest(lr), r) => match lr.ty.n() {
+            (Type::Rest(lr), r) => match lr.ty.normalize() {
                 Type::Array(la) => return self.assign_with_opts(data, opts, &la.elem_type, &r),
                 _ => {}
             },
 
-            (l, Type::Rest(rr)) => match rr.ty.n() {
+            (l, Type::Rest(rr)) => match rr.ty.normalize() {
                 Type::Array(ra) => return self.assign_with_opts(data, opts, &l, &ra.elem_type),
                 _ => {}
             },
@@ -1024,7 +1024,7 @@ impl Analyzer<'_, '_> {
                     _ => unreachable!(),
                 };
 
-                match rhs.n() {
+                match rhs.normalize() {
                     Type::Lit(LitType {
                         lit: RTsLit::Number(..),
                         ..
@@ -1073,7 +1073,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(items) = items {
                     for e in items {
-                        match e.n() {
+                        match e.normalize() {
                             Type::Enum(e) => {
                                 if e.members.len() == 1 {
                                     return Ok(());
@@ -1127,7 +1127,7 @@ impl Analyzer<'_, '_> {
                     .types
                     .iter()
                     .any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
-                let rhs_requires_unknown_property_check = match rhs.n() {
+                let rhs_requires_unknown_property_check = match rhs.normalize() {
                     Type::Keyword(..) => false,
                     _ => true,
                 };
@@ -1196,7 +1196,7 @@ impl Analyzer<'_, '_> {
                     .context("tried to assign a type to a class definition")
             }
 
-            Type::Lit(ref lhs) => match rhs.n() {
+            Type::Lit(ref lhs) => match rhs.normalize() {
                 Type::Lit(rhs) if lhs.eq_ignore_span(&rhs) => return Ok(()),
                 Type::Ref(..) | Type::Query(..) | Type::Param(..) => {
                     // We should expand ref. We expand it with the match
@@ -1213,7 +1213,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(e) = e {
                         for e in e {
-                            match e.n() {
+                            match e.normalize() {
                                 Type::Enum(e) => {
                                     if e.members.len() == 1 {
                                         return Ok(());
@@ -1280,7 +1280,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 // Deny assigning null to class. (not instance)
 
-                match *to.n() {
+                match *to.normalize() {
                     Type::Class(..) | Type::Function(..) => fail!(),
                     _ => {}
                 }
@@ -1438,7 +1438,7 @@ impl Analyzer<'_, '_> {
                             },
                         );
                     }
-                    None => match to.n() {
+                    None => match to.normalize() {
                         Type::TypeLit(TypeLit { ref members, .. }) if members.is_empty() => {
                             return Ok(())
                         }
@@ -1446,7 +1446,7 @@ impl Analyzer<'_, '_> {
                     },
                 }
 
-                match to.n() {
+                match to.normalize() {
                     Type::Union(..) => {}
                     _ => {
                         fail!()
@@ -1528,7 +1528,7 @@ impl Analyzer<'_, '_> {
                     if let Some(r) = r {
                         for m in &r.members {
                             match m {
-                                TypeElement::Index(m) => match m.params[0].ty.n() {
+                                TypeElement::Index(m) => match m.params[0].ty.normalize() {
                                     Type::Keyword(KeywordType {
                                         span,
                                         kind: TsKeywordTypeKind::TsNumberKeyword,
@@ -1586,13 +1586,13 @@ impl Analyzer<'_, '_> {
             Type::Union(lu) => {
                 // true | false = boolean
                 if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
-                    if lu.types.iter().any(|ty| match ty.n() {
+                    if lu.types.iter().any(|ty| match ty.normalize() {
                         Type::Lit(LitType {
                             lit: RTsLit::Bool(RBool { value: true, .. }),
                             ..
                         }) => true,
                         _ => false,
-                    }) && lu.types.iter().any(|ty| match ty.n() {
+                    }) && lu.types.iter().any(|ty| match ty.normalize() {
                         Type::Lit(LitType {
                             lit: RTsLit::Bool(RBool { value: false, .. }),
                             ..
@@ -1634,13 +1634,13 @@ impl Analyzer<'_, '_> {
                             })
                             .collect::<Result<Vec<_>, _>>()?;
 
-                        if patched_types.iter().all(|ty| match ty.n() {
+                        if patched_types.iter().all(|ty| match ty.normalize() {
                             Type::EnumVariant(ev) => ev.enum_name == *enum_name,
                             _ => false,
                         }) {
                             if let Ok(Some(lhs)) = self.find_type(self.ctx.module_id, &enum_name) {
                                 for ty in lhs {
-                                    match ty.n() {
+                                    match ty.normalize() {
                                         Type::Enum(e) => {
                                             if e.members.len() == lu.types.len() {
                                                 return Ok(());
@@ -1675,7 +1675,7 @@ impl Analyzer<'_, '_> {
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
-                let normalized = lu.types.iter().any(|ty| match ty.n() {
+                let normalized = lu.types.iter().any(|ty| match ty.normalize() {
                     Type::TypeLit(ty) => ty.metadata.normalized,
                     _ => false,
                 });
@@ -1781,7 +1781,7 @@ impl Analyzer<'_, '_> {
                             // number.
                             if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {
                                 for ty in types {
-                                    match *ty.n() {
+                                    match *ty.normalize() {
                                         Type::Enum(ref e) => {
                                             let is_num = !e.has_str;
                                             if is_num {
@@ -1832,7 +1832,7 @@ impl Analyzer<'_, '_> {
                     TsKeywordTypeKind::TsSymbolKeyword => {
                         //
 
-                        match *rhs.n() {
+                        match *rhs.normalize() {
                             Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsSymbolKeyword,
                                 ..
@@ -2143,7 +2143,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 //
-                match *rhs.n() {
+                match *rhs.normalize() {
                     Type::Tuple(Tuple {
                         elems: ref rhs_elems,
                         ..
@@ -2163,7 +2163,7 @@ impl Analyzer<'_, '_> {
                         let mut errors = vec![];
                         for (l, r) in elems.into_iter().zip(rhs_elems) {
                             for el in elems {
-                                match *r.ty.n() {
+                                match *r.ty.normalize() {
                                     Type::Keyword(KeywordType {
                                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                         ..
@@ -2278,7 +2278,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 if let Some(types) = self.find_type(*ctxt, enum_name)? {
                     for ty in types {
-                        if let Type::Enum(ref e) = ty.n() {
+                        if let Type::Enum(ref e) = ty.normalize() {
                             match to {
                                 Type::Interface(..) | Type::TypeLit(..) => {}
                                 _ => {
@@ -2411,7 +2411,7 @@ impl Analyzer<'_, '_> {
                 ..Default::default()
             },
         )?;
-        let ty = ty.n();
+        let ty = ty.normalize();
 
         match ty {
             Type::TypeLit(ty) => {
@@ -2470,8 +2470,8 @@ impl Analyzer<'_, '_> {
         keys: &Type,
         rhs: &Type,
     ) -> ValidationResult<()> {
-        let keys = keys.n();
-        let rhs = rhs.n();
+        let keys = keys.normalize();
+        let rhs = rhs.normalize();
 
         let mut rhs_keys = self.extract_keys(opts.span, &rhs)?;
         rhs_keys.make_clone_cheap();
@@ -2511,11 +2511,11 @@ impl Analyzer<'_, '_> {
             // Validate keys
 
             let l_ty = match &l.ty {
-                Some(v) => v.n(),
+                Some(v) => v.normalize(),
                 None => return Ok(()),
             };
 
-            match r.n() {
+            match r.normalize() {
                 Type::Interface(..)
                 | Type::Class(..)
                 | Type::ClassDef(..)
@@ -2624,7 +2624,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         r: &Type,
     ) -> ValidationResult<bool> {
-        match r.n() {
+        match r.normalize() {
             Type::Union(..) => return Ok(true),
             Type::TypeLit(r) => {
                 if r.members.iter().all(|el| match el {
@@ -2671,7 +2671,7 @@ impl Analyzer<'_, '_> {
         check_type: &Type,
         output_type: &Type,
     ) -> ValidationResult<bool> {
-        match output_type.n() {
+        match output_type.normalize() {
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ty,

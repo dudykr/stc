@@ -26,7 +26,7 @@ impl UnionNormalizer {
     fn find_keys(&self, types: &[Type]) -> IndexSet<JsWord> {
         types
             .iter()
-            .filter_map(|ty| match ty.n() {
+            .filter_map(|ty| match ty.normalize() {
                 Type::TypeLit(ty) => Some(&ty.members),
                 _ => None,
             })
@@ -53,7 +53,7 @@ impl UnionNormalizer {
         let mut return_types = vec![];
 
         for ty in &u.types {
-            match ty.n() {
+            match ty.normalize() {
                 Type::Function(f) => {
                     if new_type_params.is_none() {
                         new_type_params = f.type_params.clone();
@@ -147,7 +147,7 @@ impl UnionNormalizer {
         let mut extra_members = vec![];
         //
         for (type_idx, ty) in u.types.iter().enumerate() {
-            match ty.n() {
+            match ty.normalize() {
                 Type::TypeLit(ty) => {
                     inexact |= ty.metadata.inexact;
                     prev_specified |= ty.metadata.specified;
@@ -314,7 +314,7 @@ impl UnionNormalizer {
 
         let keys = self.find_keys(&u.types);
 
-        let inexact = u.types.iter().any(|ty| match ty.n() {
+        let inexact = u.types.iter().any(|ty| match ty.normalize() {
             Type::TypeLit(ty) => ty.metadata.inexact,
             _ => false,
         });
@@ -364,7 +364,7 @@ impl UnionNormalizer {
 impl VisitMut<Type> for UnionNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
         // TODO(kdy1): PERF
-        ty.nm();
+        ty.normalize_mut();
 
         ty.visit_mut_children_with(self);
 

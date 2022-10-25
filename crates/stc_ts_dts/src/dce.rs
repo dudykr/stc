@@ -405,13 +405,13 @@ pub fn get_used(info: &ModuleTypeData) -> FxHashSet<Id> {
 
     for (sym, v) in info.private_vars.iter() {
         used.insert(sym.clone());
-        track(&mut used, v.n());
+        track(&mut used, v.normalize());
     }
 
     for (sym, types) in info.private_types.iter() {
         used.insert(sym.clone());
         for ty in types {
-            track(&mut used, ty.n());
+            track(&mut used, ty.normalize());
         }
     }
 

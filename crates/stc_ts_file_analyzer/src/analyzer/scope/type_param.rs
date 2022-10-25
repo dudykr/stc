@@ -133,7 +133,7 @@ impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {
         }
 
         // TODO(kdy1): PERF
-        ty.nm();
+        ty.normalize_mut();
         ty.visit_mut_children_with(self);
 
         match ty {

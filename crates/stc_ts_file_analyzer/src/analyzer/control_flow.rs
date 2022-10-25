@@ -299,7 +299,7 @@ impl AddAssign for CondFacts {
         for (k, v) in rhs.vars {
             match self.vars.entry(k) {
                 Entry::Occupied(mut e) => {
-                    match e.get_mut().nm() {
+                    match e.get_mut().normalize_mut() {
                         Type::Union(u) => {
                             u.types.push(v);
                         }
@@ -484,7 +484,7 @@ impl Analyzer<'_, '_> {
 
     fn downcast_types(&mut self, span: Span, types: Vec<Type>) -> ValidationResult<Vec<Type>> {
         fn need_work(ty: &Type) -> bool {
-            match ty.n() {
+            match ty.normalize() {
                 Type::Lit(..)
                 | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
@@ -794,7 +794,7 @@ impl Analyzer<'_, '_> {
             .freezed();
         let _panic_ctx = debug_ctx!(format!("ty = {}", dump_type_as_string(&self.cm, &orig_ty)));
 
-        let ty = orig_ty.n();
+        let ty = orig_ty.normalize();
 
         ty.assert_valid();
 
@@ -917,7 +917,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     if let Some(types) = self.find_type(self.ctx.module_id, &i.id.clone().into())? {
                         for ty in types {
-                            match ty.n() {
+                            match ty.normalize() {
                                 Type::Module(..) => {
                                     return Err(Error::NotVariable {
                                         span: i.id.span,
@@ -1220,7 +1220,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<Type> {
         src.assert_valid();
 
-        match src.n() {
+        match src.normalize() {
             Type::Ref(..) => {
                 let src =
                     self.expand_top_ref(src.span(), Cow::Borrowed(src), Default::default())?;
@@ -1326,7 +1326,7 @@ impl Analyzer<'_, '_> {
         let obj = self.type_of_var(&id, TypeOfMode::RValue, None)?;
         let obj = self.expand_top_ref(ty.span(), Cow::Owned(obj), Default::default())?;
 
-        match obj.n() {
+        match obj.normalize() {
             Type::Union(u) => {
                 if ids.len() == 2 {
                     let mut new_obj_types = vec![];

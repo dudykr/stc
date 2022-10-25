@@ -43,7 +43,7 @@ impl Analyzer<'_, '_> {
                         // function types, the type becomes any implicitly.
                         if ty.iter_union().filter(|ty| ty.is_fn_type()).count() == 1 {
                             for ty in ty.iter_union() {
-                                match ty.n() {
+                                match ty.normalize() {
                                     Type::Function(ty) => {
                                         for p in f.params.iter().zip_longest(ty.params.iter()) {
                                             match p {
@@ -135,7 +135,7 @@ impl Analyzer<'_, '_> {
                 let inferred_return_type = inferred_return_type.map(|mut ty| {
                     match &mut ty {
                         Type::Union(ty) => {
-                            ty.types.retain(|ty| match ty.n() {
+                            ty.types.retain(|ty| match ty.normalize() {
                                 Type::Keyword(KeywordType {
                                     kind: TsKeywordTypeKind::TsVoidKeyword,
                                     ..

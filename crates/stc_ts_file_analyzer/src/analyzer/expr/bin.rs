@@ -273,8 +273,8 @@ impl Analyzer<'_, '_> {
 
                 // Try narrowing type
                 let c = Comparator {
-                    left: (&**left, lt.n()),
-                    right: (&**right, rt.n()),
+                    left: (&**left, lt.normalize()),
+                    right: (&**right, rt.normalize()),
                 };
 
                 if !self.is_valid_for_switch_case(span, &lt, &rt)? {
@@ -596,8 +596,8 @@ impl Analyzer<'_, '_> {
                 no_unknown!();
 
                 if op == op!("**") {
-                    let lt = lt.n();
-                    let rt = rt.n();
+                    let lt = lt.normalize();
+                    let rt = rt.normalize();
 
                     self.report_possibly_null_or_undefined(lt.span(), &lt)
                         .report(&mut self.storage);
@@ -743,7 +743,7 @@ impl Analyzer<'_, '_> {
                     return Ok(lt);
                 }
 
-                match lt.n() {
+                match lt.normalize() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
@@ -1015,8 +1015,8 @@ impl Analyzer<'_, '_> {
         disc_ty: &Type,
         case_ty: &Type,
     ) -> ValidationResult<bool> {
-        let disc_ty = disc_ty.n();
-        let case_ty = case_ty.n();
+        let disc_ty = disc_ty.normalize();
+        let case_ty = case_ty.normalize();
 
         if disc_ty.type_eq(case_ty) {
             return Ok(true);
@@ -1081,7 +1081,7 @@ impl Analyzer<'_, '_> {
         ty: Cow<Type>,
         orig_ty: &Type,
     ) -> ValidationResult {
-        let orig_ty = orig_ty.n();
+        let orig_ty = orig_ty.normalize();
 
         match orig_ty {
             Type::Ref(..) | Type::Query(..) => {
@@ -1118,7 +1118,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match ty.n() {
+        match ty.normalize() {
             Type::ClassDef(ty) => {
                 return self.narrow_with_instanceof(
                     span,
@@ -1143,7 +1143,7 @@ impl Analyzer<'_, '_> {
             &ty,
         ) {
             if v {
-                match orig_ty.n() {
+                match orig_ty.normalize() {
                     Type::ClassDef(def) => {
                         return Ok(Type::Class(Class {
                             span,
@@ -1155,7 +1155,7 @@ impl Analyzer<'_, '_> {
                 }
                 return Ok(orig_ty.clone());
             } else {
-                match (orig_ty, ty.n()) {
+                match (orig_ty, ty.normalize()) {
                     (Type::Interface(..), Type::Interface(..)) => return Ok(ty.into_owned()),
                     _ => {}
                 }
@@ -1181,7 +1181,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match ty.n() {
+        match ty.normalize() {
             Type::ClassDef(def) => {
                 return Ok(Type::Class(Class {
                     span,
@@ -1204,8 +1204,8 @@ impl Analyzer<'_, '_> {
     ) {
         let marks = self.marks();
 
-        let l = l.n();
-        let r = r.n();
+        let l = l.normalize();
+        let r = r.normalize();
 
         match (l, r) {
             (Type::Ref(..), _) => {
@@ -1276,8 +1276,8 @@ impl Analyzer<'_, '_> {
     }
 
     fn can_compare_relatively(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
-        let l = l.n();
-        let r = r.n();
+        let l = l.normalize();
+        let r = r.normalize();
 
         if l.type_eq(r) {
             return Ok(true);
@@ -1412,7 +1412,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_valid_lhs_of_instanceof(&mut self, span: Span, ty: &Type) -> bool {
-        let ty = ty.n();
+        let ty = ty.normalize();
 
         match ty {
             ty if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) => true,
@@ -1447,7 +1447,7 @@ impl Analyzer<'_, '_> {
         }
 
         // TODO(kdy1): We should assign this to builtin interface `Function`.
-        match ty.n() {
+        match ty.normalize() {
             // Error
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
@@ -1565,7 +1565,7 @@ impl Analyzer<'_, '_> {
             return Ok((name, narrowed));
         }
 
-        let eq_ty = equals_to.n();
+        let eq_ty = equals_to.normalize();
 
         // We create a type fact for `foo` in `if (foo.type === 'bar');`
 
@@ -1586,7 +1586,7 @@ impl Analyzer<'_, '_> {
             .expand_top_ref(span, Cow::Owned(ty), Default::default())?
             .into_owned();
 
-        match ty.n() {
+        match ty.normalize() {
             Type::Union(u) => {
                 let mut candidates = vec![];
                 for ty in &u.types {
@@ -1606,7 +1606,7 @@ impl Analyzer<'_, '_> {
                                 Cow::Owned(prop_ty),
                                 Default::default(),
                             )?;
-                            let possible = match prop_ty.n() {
+                            let possible = match prop_ty.normalize() {
                                 // Type parameters might have same value.
                                 Type::Param(..) => true,
                                 _ => prop_ty.type_eq(equals_to),
@@ -1698,8 +1698,8 @@ impl Analyzer<'_, '_> {
         let ls = lt.span();
         let rs = rt.span();
 
-        let lt = lt.n();
-        let rt = rt.n();
+        let lt = lt.normalize();
+        let rt = rt.normalize();
 
         let mut errors = Errors::default();
 
@@ -1709,7 +1709,7 @@ impl Analyzer<'_, '_> {
                 // validation of types is required to compute type of the
                 // expression.
             }
-            op!("||") | op!("&&") => match lt.n() {
+            op!("||") | op!("&&") => match lt.normalize() {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
@@ -1735,7 +1735,7 @@ impl Analyzer<'_, '_> {
                         return;
                     }
 
-                    match ty.n() {
+                    match ty.normalize() {
                         Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
@@ -1763,7 +1763,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 if (op == op!("&") || op == op!("^") || op == op!("|"))
-                    && match lt.n() {
+                    && match lt.normalize() {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsBooleanKeyword,
                             ..
@@ -1774,7 +1774,7 @@ impl Analyzer<'_, '_> {
                         }) => true,
                         _ => false,
                     }
-                    && match rt.n() {
+                    && match rt.normalize() {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsBooleanKeyword,
                             ..
@@ -1794,7 +1794,7 @@ impl Analyzer<'_, '_> {
             }
 
             op!("in") => {
-                match lt.n() {
+                match lt.normalize() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
@@ -1817,7 +1817,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                match rt.n() {
+                match rt.normalize() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
@@ -1848,7 +1848,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_valid_lhs_of_in(&mut self, ty: &Type) -> bool {
-        let ty = ty.n();
+        let ty = ty.normalize();
 
         match ty {
             Type::Ref(..) => {
@@ -1909,7 +1909,7 @@ impl Analyzer<'_, '_> {
             return true;
         }
 
-        match ty.n() {
+        match ty.normalize() {
             Type::Ref(..) => {
                 if let Ok(ty) =
                     self.expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default())
@@ -2005,7 +2005,7 @@ pub(super) fn extract_name_for_assignment(e: &RExpr, is_exact_eq: bool) -> Optio
 }
 
 fn is_str_like_for_addition(t: &Type) -> bool {
-    match t.n() {
+    match t.normalize() {
         Type::Lit(LitType {
             lit: RTsLit::Str(..),
             ..

@@ -26,7 +26,7 @@ pub struct PreventComplexSimplification;
 impl VisitMut<Type> for PreventComplexSimplification {
     fn visit_mut(&mut self, ty: &mut Type) {
         // TODO(kdy1): PERF
-        ty.nm();
+        ty.normalize_mut();
         ty.metadata_mut().prevent_complex_simplification = true;
 
         ty.visit_mut_children_with(self);

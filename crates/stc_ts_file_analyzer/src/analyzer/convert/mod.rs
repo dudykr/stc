@@ -169,7 +169,7 @@ impl Analyzer<'_, '_> {
 
                 debug_assert_eq!(types.len(), 1, "Types: {:?}", types);
 
-                match types[0].n() {
+                match types[0].normalize() {
                     Type::Param(p) => {
                         assert!(p.constraint.is_some(), "should store contraint");
                     }
@@ -801,7 +801,7 @@ impl Analyzer<'_, '_> {
                             contains_infer = true;
                         }
                         // We use type param instead of reference type if possible.
-                        match ty.n() {
+                        match ty.normalize() {
                             Type::Param(..) => return Ok(ty.into_owned()),
                             _ => {}
                         }

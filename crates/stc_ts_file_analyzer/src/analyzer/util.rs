@@ -89,7 +89,7 @@ impl Analyzer<'_, '_> {
     /// TODO(kdy1): Use Cow
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> ValidationResult {
-        let ty = ty.n();
+        let ty = ty.normalize();
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
@@ -112,7 +112,7 @@ impl Analyzer<'_, '_> {
                 };
                 let ty = self.with_ctx(ctx).expand(
                     span,
-                    ty.n().clone(),
+                    ty.normalize().clone(),
                     ExpandOpts {
                         full: true,
                         expand_union: false,
@@ -120,7 +120,7 @@ impl Analyzer<'_, '_> {
                     },
                 )?;
 
-                match ty.n() {
+                match ty.normalize() {
                     Type::Ref(..) => return Ok(ty.clone()),
                     _ => return self.make_instance(span, &ty),
                 }
@@ -169,7 +169,7 @@ impl Analyzer<'_, '_> {
 pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
     let span = ty.span();
 
-    match ty.n() {
+    match ty.normalize() {
         Type::Tuple(Tuple {
             ref elems,
             span,
@@ -257,7 +257,7 @@ impl Fold<stc_ts_types::Function> for Generalizer {
 
 impl Fold<Type> for Generalizer {
     fn fold(&mut self, mut ty: Type) -> Type {
-        match ty.n() {
+        match ty.normalize() {
             Type::IndexedAccessType(IndexedAccessType { index_type, .. })
                 if is_str_lit_or_union(&index_type) =>
             {
@@ -271,14 +271,14 @@ impl Fold<Type> for Generalizer {
             }
         }
 
-        let force = match ty.n() {
+        let force = match ty.normalize() {
             Type::TypeLit(..) => true,
             _ => false,
         };
 
         let old = self.force;
         self.force = force;
-        ty.nm();
+        ty.normalize_mut();
         ty = ty.fold_children_with(self);
         self.force = old;
 

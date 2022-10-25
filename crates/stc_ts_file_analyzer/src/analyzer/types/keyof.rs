@@ -49,11 +49,11 @@ impl Analyzer<'_, '_> {
                 )
                 .context("tried to normalize")?;
 
-            if matches!(ty.n(), Type::TypeLit(..)) {
+            if matches!(ty.normalize(), Type::TypeLit(..)) {
                 ty.make_clone_cheap()
             }
 
-            match ty.n() {
+            match ty.normalize() {
                 Type::Lit(ty) => {
                     return self
                         .keyof(

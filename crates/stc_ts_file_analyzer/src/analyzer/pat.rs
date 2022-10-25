@@ -356,8 +356,8 @@ impl Analyzer<'_, '_> {
                     let ty = ty.unwrap_or_else(|| {
                         let mut ty = default_value_ty.generalize_lit().foldable();
 
-                        if matches!(ty.n(), Type::Tuple(..)) {
-                            ty.nm();
+                        if matches!(ty.normalize(), Type::Tuple(..)) {
+                            ty.normalize_mut();
                             match ty {
                                 Type::Tuple(tuple) => {
                                     let mut types = tuple
@@ -479,7 +479,7 @@ impl Analyzer<'_, '_> {
             let res: Result<_, _> = try {
                 let value_ty = right.validate_with_default(self)?;
 
-                match value_ty.n() {
+                match value_ty.normalize() {
                     Type::Array(..)
                     | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -493,7 +493,7 @@ impl Analyzer<'_, '_> {
             let res: Result<_, _> = try {
                 let ty = type_ann.validate_with(self)?;
 
-                match *ty.n() {
+                match *ty.normalize() {
                     Type::Array(..)
                     | Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,

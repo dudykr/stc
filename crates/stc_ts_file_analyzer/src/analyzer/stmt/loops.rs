@@ -216,7 +216,7 @@ impl Analyzer<'_, '_> {
                 },
             )
             .context("tried to normalize a type to handle a for-in loop")?;
-        let rhs = rhs.n();
+        let rhs = rhs.normalize();
 
         if rhs.is_kwd(TsKeywordTypeKind::TsObjectKeyword) || rhs.is_array() || rhs.is_tuple() {
             return Ok(Type::Keyword(KeywordType {
@@ -229,7 +229,7 @@ impl Analyzer<'_, '_> {
             }));
         }
 
-        match rhs.n() {
+        match rhs.normalize() {
             Type::Mapped(m) => {
                 // { [P in keyof K]: T[P]; }
                 // =>
@@ -239,7 +239,7 @@ impl Analyzer<'_, '_> {
                         op: TsTypeOperatorOp::KeyOf,
                         ..
                     }),
-                ) = m.type_param.constraint.as_deref().map(|ty| ty.n())
+                ) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
                 {
                     // Extract<keyof T
                     return Ok(Type::Ref(Ref {

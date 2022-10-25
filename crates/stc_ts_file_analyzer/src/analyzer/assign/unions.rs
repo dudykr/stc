@@ -60,7 +60,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<Type> {
         let ty = self.normalize(Some(span), ty, Default::default())?;
 
-        match ty.n() {
+        match ty.normalize() {
             Type::Tuple(ty) => {
                 let mut tuple = Type::Tuple(Tuple {
                     elems: Default::default(),
@@ -203,7 +203,7 @@ impl Analyzer<'_, '_> {
             .normalize(Some(span), Cow::Borrowed(t), Default::default())
             .ok()?;
 
-        match t.n() {
+        match t.normalize() {
             Type::Keyword(KeywordType {
                 span,
                 metadata,

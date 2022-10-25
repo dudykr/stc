@@ -79,7 +79,7 @@ impl Analyzer<'_, '_> {
 
                     let ty =
                         expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
-                    match ty.n() {
+                    match ty.normalize() {
                         Type::TypeLit(..) => {
                             if !prefer_tuple {
                                 can_be_tuple = false;
@@ -99,7 +99,7 @@ impl Analyzer<'_, '_> {
                     expr,
                 }) => {
                     let mut element_type = expr.validate_with_default(self)?;
-                    element_type.nm();
+                    element_type.normalize_mut();
 
                     // TODO(kdy1): PERF
 
@@ -275,7 +275,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        match iterator.n() {
+        match iterator.normalize() {
             Type::Ref(..) => {
                 let iterator = self
                     .expand_top_ref(span, iterator, Default::default())
@@ -379,7 +379,7 @@ impl Analyzer<'_, '_> {
                 Error::NoCallablePropertyWithName { span, .. }
                 | Error::NoSuchProperty { span, .. }
                 | Error::NoSuchPropertyInClass { span, .. } => {
-                    match iterator.n() {
+                    match iterator.normalize() {
                         Type::Union(iterator) => {
                             if iterator.types.iter().all(|ty| ty.is_tuple()) {
                                 return Error::NoSuchProperty {
@@ -418,8 +418,8 @@ impl Analyzer<'_, '_> {
             )?;
 
         // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
-        if matches!(elem_ty.n(), Type::Union(..)) {
-            match elem_ty.nm() {
+        if matches!(elem_ty.normalize(), Type::Union(..)) {
+            match elem_ty.normalize_mut() {
                 Type::Union(u) => {
                     u.types.retain(|ty| !ty.is_any());
                     if u.types.is_empty() {
@@ -575,8 +575,8 @@ impl Analyzer<'_, '_> {
             )?;
 
         // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
-        if matches!(elem_ty.n(), Type::Union(..)) {
-            match elem_ty.nm() {
+        if matches!(elem_ty.normalize(), Type::Union(..)) {
+            match elem_ty.normalize_mut() {
                 Type::Union(u) => {
                     u.types.retain(|ty| !ty.is_any());
                     if u.types.is_empty() {
@@ -621,7 +621,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        match iterator.n() {
+        match iterator.normalize() {
             // TODO
             Type::TypeLit(_) => {}
 
@@ -660,7 +660,7 @@ impl Analyzer<'_, '_> {
 
         let iterator = iterator?;
 
-        match iterator.n() {
+        match iterator.normalize() {
             Type::Class(..) => {
                 if let Ok(return_prop_ty) = self.access_property(
                     span,
@@ -709,7 +709,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            match ty.n() {
+            match ty.normalize() {
                 Type::Ref(..) => {
                     let ty = self.expand_top_ref(span, ty, Default::default())?;
                     return self.get_iterator(span, ty, opts);
@@ -857,7 +857,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        match iterator.n() {
+        match iterator.normalize() {
             Type::Array(arr) => return Ok(Cow::Owned(*arr.elem_type.clone())),
             Type::Tuple(tuple) => {
                 if tuple.elems.is_empty() {

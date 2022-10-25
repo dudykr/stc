@@ -46,7 +46,7 @@ where
 }
 
 pub(crate) fn is_str_or_union(t: &Type) -> bool {
-    match t.n() {
+    match t.normalize() {
         Type::Lit(LitType {
             lit: RTsLit::Str(..),
             ..
@@ -71,8 +71,8 @@ pub(crate) trait RemoveTypes {
 
 impl RemoveTypes for Type {
     fn remove_falsy(mut self) -> Type {
-        if matches!(self.n(), Type::Union(..) | Type::Intersection(..)) {
-            self.nm();
+        if matches!(self.normalize(), Type::Union(..) | Type::Intersection(..)) {
+            self.normalize_mut();
         }
 
         match self {
@@ -111,8 +111,8 @@ impl RemoveTypes for Type {
     }
 
     fn remove_truthy(mut self) -> Type {
-        if matches!(self.n(), Type::Union(..) | Type::Intersection(..)) {
-            self.nm();
+        if matches!(self.normalize(), Type::Union(..) | Type::Intersection(..)) {
+            self.normalize_mut();
         }
 
         match self {
@@ -310,7 +310,7 @@ where
 }
 
 pub(crate) fn should_instantiate_type_ann(ty: &Type) -> bool {
-    let ty = ty.n();
+    let ty = ty.normalize();
 
     match ty {
         Type::Ref(Ref {
@@ -328,7 +328,7 @@ pub(crate) fn unwrap_ref_with_single_arg<'a>(
     ty: &'a Type,
     wanted_ref_name: &str,
 ) -> Option<&'a Type> {
-    match ty.n() {
+    match ty.normalize() {
         Type::Ref(Ref {
             type_name: RTsEntityName::Ident(n),
             type_args: Some(type_args),

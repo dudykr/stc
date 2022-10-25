@@ -57,7 +57,7 @@ impl Analyzer<'_, '_> {
             {
                 if let Some(l_ret_ty) = l_ret_ty {
                     if let Some(r_ret_ty) = unwrap_ref_with_single_arg(&r_ret_ty, "Promise") {
-                        match l_ret_ty.n() {
+                        match l_ret_ty.normalize() {
                             Type::Union(l_ret_ty) => {
                                 // Exact match
                                 if l_ret_ty.types.len() == 4
@@ -436,7 +436,7 @@ impl Analyzer<'_, '_> {
         r: &Type,
     ) -> ValidationResult<()> {
         let span = opts.span;
-        let r = r.n();
+        let r = r.normalize();
 
         match r {
             // var fnr2: () => any = fnReturn2();
@@ -551,7 +551,7 @@ impl Analyzer<'_, '_> {
         r: &Type,
     ) -> ValidationResult<()> {
         let span = opts.span;
-        let r = r.n();
+        let r = r.normalize();
 
         match r {
             Type::Constructor(rc) => {
@@ -720,7 +720,7 @@ impl Analyzer<'_, '_> {
                     .normalize(Some(span), Cow::Borrowed(&l.ty), Default::default())
                     .context("tried to normalize lhs")?;
 
-                match l_ty.n() {
+                match l_ty.normalize() {
                     Type::Array(l_arr) => {
                         if let Ok(()) = self.assign_with_opts(data, opts, &l_arr.elem_type, &r.ty) {
                             return Ok(());

@@ -21,7 +21,7 @@ impl Analyzer<'_, '_> {
         l: &ClassDef,
         r: &Type,
     ) -> ValidationResult<()> {
-        let r = r.n();
+        let r = r.normalize();
 
         match r {
             Type::Ref(..) => {
@@ -151,7 +151,7 @@ impl Analyzer<'_, '_> {
     ) -> ValidationResult<()> {
         // debug_assert!(!span.is_dummy());
 
-        let r = r.n();
+        let r = r.normalize();
 
         match r {
             Type::Ref(..) => {

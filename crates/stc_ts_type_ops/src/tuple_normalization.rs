@@ -9,10 +9,10 @@ pub struct TupleNormalizer;
 impl VisitMut<Type> for TupleNormalizer {
     fn visit_mut(&mut self, ty: &mut Type) {
         // TODO(kdy1): PERF
-        ty.nm();
+        ty.normalize_mut();
         ty.visit_mut_children_with(self);
 
-        match ty.n() {
+        match ty.normalize() {
             Type::Tuple(tuple) => {
                 if tuple.metadata.common.prevent_tuple_to_array {
                     return;

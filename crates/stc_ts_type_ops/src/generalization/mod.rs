@@ -51,7 +51,7 @@ impl Fold<Tuple> for LitGeneralizer {
 
             // Remove types after `...boolean[]`
             tuple.elems.retain(|element| {
-                match element.ty.n() {
+                match element.ty.normalize() {
                     Type::Rest(RestType {
                         ty: box Type::Array(Array { elem_type, .. }),
                         ..
@@ -84,7 +84,7 @@ impl Fold<Type> for LitGeneralizer {
             }
         }
 
-        ty.nm();
+        ty.normalize_mut();
 
         match &ty {
             Type::IndexedAccessType(IndexedAccessType { index_type, .. })
@@ -170,7 +170,7 @@ struct LitChecker {
 
 impl Visit<Type> for LitChecker {
     fn visit(&mut self, ty: &Type) {
-        match ty.n() {
+        match ty.normalize() {
             Type::Lit(LitType { metadata, .. }) => {
                 if metadata.common.prevent_generalization {
                     return;

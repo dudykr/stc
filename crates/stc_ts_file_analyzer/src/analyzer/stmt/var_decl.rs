@@ -352,7 +352,7 @@ impl Analyzer<'_, '_> {
 
                         // infer type from value.
                         let ty = (|| -> ValidationResult<_> {
-                            match value_ty.n() {
+                            match value_ty.normalize() {
                                 Type::TypeLit(..) | Type::Function(..) | Type::Query(..) => {
                                     if let Some(m) = &mut self.mutations {
                                         m.for_var_decls.entry(v.node_id).or_default().remove_init =
@@ -408,7 +408,7 @@ impl Analyzer<'_, '_> {
                             }
                             ty.assert_valid();
                             ty.make_clone_cheap();
-                            ty = match ty.n() {
+                            ty = match ty.normalize() {
                                 Type::Function(f) => {
                                     let ret_ty = box f.ret_ty.clone().generalize_lit();
                                     Type::Function(stc_ts_types::Function {
@@ -426,7 +426,7 @@ impl Analyzer<'_, '_> {
                             dump_type_as_string(&self.cm, &ty)
                         );
 
-                        match ty.n() {
+                        match ty.normalize() {
                             Type::Ref(..) => {
                                 let ctx = Ctx {
                                     preserve_ref: true,
@@ -453,7 +453,7 @@ impl Analyzer<'_, '_> {
                                 let ty = ty.clone();
 
                                 // Normalize unresolved parameters
-                                let ty = match ty.n() {
+                                let ty = match ty.normalize() {
                                     Type::Param(TypeParam {
                                         constraint: Some(ty),
                                         ..
@@ -461,7 +461,7 @@ impl Analyzer<'_, '_> {
                                     _ => ty,
                                 };
 
-                                let ty = match ty.n() {
+                                let ty = match ty.normalize() {
                                     // `err is Error` => boolean
                                     Type::Predicate(..) => Type::Keyword(KeywordType {
                                         span,
@@ -602,7 +602,7 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                         }
-                        match ty.n() {
+                        match ty.normalize() {
                             Type::Ref(..) => {}
                             _ => {
                                 let ctx = Ctx {
@@ -630,7 +630,7 @@ impl Analyzer<'_, '_> {
                                 for (i, element) in elems.iter_mut().enumerate() {
                                     let span = element.span();
 
-                                    match *element.ty.n() {
+                                    match *element.ty.normalize() {
                                         Type::Keyword(KeywordType {
                                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                             ..
@@ -686,7 +686,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         let var_ty = (|| -> ValidationResult<_> {
-                            match ty.n() {
+                            match ty.normalize() {
                                 Type::EnumVariant(ref v) => {
                                     if let Some(..) =
                                         self.find_type(self.ctx.module_id, &v.enum_name)?

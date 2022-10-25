@@ -24,7 +24,7 @@ impl Analyzer<'_, '_> {
             .map(|ty| {
                 // If type annotation is Promise<T>, we use PromiseLike<T> as the annotation.
 
-                match ty.n() {
+                match ty.normalize() {
                     Type::Ref(Ref {
                         type_name:
                             RTsEntityName::Ident(RIdent {
@@ -105,7 +105,7 @@ impl Analyzer<'_, '_> {
             )
             .ok()
             .and_then(|then_ty| {
-                match then_ty.n() {
+                match then_ty.normalize() {
                     Type::Function(f) => {
                         // Default type of the first type parameter is awaited type.
                         if let Some(type_params) = &f.type_params {

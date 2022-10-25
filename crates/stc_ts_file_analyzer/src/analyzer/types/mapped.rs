@@ -55,13 +55,13 @@ impl Analyzer<'_, '_> {
     }
 
     fn expand_mapped_inner(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
-        match m.type_param.constraint.as_deref().map(|v| v.n()) {
+        match m.type_param.constraint.as_deref().map(|v| v.normalize()) {
             Some(Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ty,
                 ..
             })) => {
-                if let Some(mapped_ty) = m.ty.as_deref().map(Type::n) {
+                if let Some(mapped_ty) = m.ty.as_deref().map(Type::normalize) {
                     // Special case, but many usages can be handled with this check.
                     if (&**ty).type_eq(&mapped_ty) {
                         let new_type = self
@@ -273,7 +273,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: &Type,
     ) -> ValidationResult<Option<Vec<Key>>> {
-        let ty = ty.n();
+        let ty = ty.normalize();
 
         match ty {
             Type::Ref(..) => {
@@ -350,7 +350,7 @@ impl Analyzer<'_, '_> {
             return Ok(None);
         }
 
-        match ty.n() {
+        match ty.normalize() {
             Type::TypeLit(ty) => {
                 let mut keys = vec![];
                 for m in &ty.members {
@@ -507,7 +507,7 @@ impl Analyzer<'_, '_> {
             }
             Type::Tuple(..) | Type::Array(..) => return Ok(None),
 
-            Type::Mapped(m) => match m.type_param.constraint.as_deref().map(|ty| ty.n()) {
+            Type::Mapped(m) => match m.type_param.constraint.as_deref().map(|ty| ty.normalize()) {
                 Some(Type::Operator(Operator {
                     op: TsTypeOperatorOp::KeyOf,
                     ty,
@@ -588,7 +588,7 @@ impl Visit<Conditional> for IndexedAccessTypeFinder<'_> {
 impl Visit<IndexedAccessType> for IndexedAccessTypeFinder<'_> {
     fn visit(&mut self, n: &IndexedAccessType) {
         if (&*n.obj_type).type_eq(self.obj)
-            && match n.index_type.n() {
+            && match n.index_type.normalize() {
                 Type::Param(index) => *self.key == index.name,
                 _ => false,
             }
@@ -623,12 +623,12 @@ impl VisitMut<Type> for IndexedAccessTypeReplacer<'_> {
         }
 
         // TODO(kdy1): PERF
-        ty.nm();
+        ty.normalize_mut();
 
         match ty {
             Type::IndexedAccessType(n) => {
                 if (&*n.obj_type).type_eq(self.obj)
-                    && match n.index_type.n() {
+                    && match n.index_type.normalize() {
                         Type::Param(index) => *self.key == index.name,
                         _ => false,
                     }

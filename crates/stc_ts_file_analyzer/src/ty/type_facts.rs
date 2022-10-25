@@ -109,9 +109,9 @@ impl Analyzer<'_, '_> {
             });
 
             // TODO(kdy1): PERF
-            match ty.nm() {
+            match ty.normalize_mut() {
                 Type::Union(u) => {
-                    let has_fn = u.types.iter().any(|ty| match ty.n() {
+                    let has_fn = u.types.iter().any(|ty| match ty.normalize() {
                         Type::Function(..) => true,
                         _ => false,
                     });
@@ -161,7 +161,7 @@ impl TypeFactsHandler<'_, '_, '_> {
             return true;
         };
 
-        match ty.n() {
+        match ty.normalize() {
             Type::Interface(..) | Type::TypeLit(..) | Type::Class(..) => return false,
             _ => {}
         }
@@ -368,7 +368,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
         u.types.retain(|v| !v.is_never());
 
         if self.facts.contains(TypeFacts::TypeofNEFunction) {
-            u.types.retain(|ty| match ty.n() {
+            u.types.retain(|ty| match ty.normalize() {
                 Type::Function(..) => false,
                 _ => true,
             });
@@ -379,7 +379,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
                 || self.facts.contains(TypeFacts::TypeofEQBoolean)
                 || self.facts.contains(TypeFacts::TypeofEQNumber)
             {
-                u.types.retain(|ty| match ty.n() {
+                u.types.retain(|ty| match ty.normalize() {
                     Type::Lit(LitType {
                         lit: RTsLit::Str(..),
                         ..
@@ -443,7 +443,7 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
 
         // TODO(kdy1): Don't do anything if type fact is none.
 
-        match ty.n() {
+        match ty.normalize() {
             Type::Lit(LitType {
                 span,
                 lit: RTsLit::Bool(v),
@@ -489,7 +489,7 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             }
         }
 
-        match ty.n() {
+        match ty.normalize() {
             Type::Class(..) | Type::ClassDef(..) | Type::TypeLit(..)
                 if self.facts.contains(TypeFacts::TypeofNEObject) =>
             {
@@ -506,7 +506,7 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
 
         // TODO(kdy1): PERF
 
-        ty.nm();
+        ty.normalize_mut();
         ty = ty.fold_children_with(self);
 
         match ty {

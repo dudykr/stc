@@ -82,7 +82,7 @@ pub fn apply_mapped_flags(
 }
 
 pub fn is_str_lit_or_union(t: &Type) -> bool {
-    match t.n() {
+    match t.normalize() {
         Type::Lit(LitType {
             lit: RTsLit::Str(..),
             ..

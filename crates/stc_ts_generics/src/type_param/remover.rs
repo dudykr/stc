@@ -94,7 +94,7 @@ impl Fold<Function> for TypeParamRemover<'_> {
 
 impl Fold<Type> for TypeParamRemover<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
-        ty.nm();
+        ty.normalize_mut();
         ty.fold_children_with(self)
     }
 }

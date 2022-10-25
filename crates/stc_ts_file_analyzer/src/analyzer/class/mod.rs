@@ -279,7 +279,7 @@ impl Analyzer<'_, '_> {
             && !self.ctx.ignore_errors
             && self.ctx.in_class_with_super
             && c.body.is_some()
-            && match super_class.map(Type::n) {
+            && match super_class.map(Type::normalize) {
                 Some(Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
@@ -1388,7 +1388,7 @@ impl Analyzer<'_, '_> {
             }
         };
 
-        match *ty.n() {
+        match *ty.normalize() {
             Type::Lit(..) => {}
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::Unique,
@@ -1540,7 +1540,7 @@ impl Analyzer<'_, '_> {
         let mut new_members = vec![];
 
         let res: ValidationResult<()> = try {
-            match super_ty.n() {
+            match super_ty.normalize() {
                 Type::ClassDef(sc) => {
                     'outer: for sm in &sc.body {
                         match sm {
@@ -1727,7 +1727,7 @@ impl Analyzer<'_, '_> {
                                 (TypeOfMode::RValue, super_type_params.as_ref(), None),
                             )?;
 
-                            child.validate_with(|a| match super_ty.n() {
+                            child.validate_with(|a| match super_ty.normalize() {
                                 Type::Lit(..)
                                 | Type::Keyword(KeywordType {
                                     kind: TsKeywordTypeKind::TsStringKeyword,
@@ -1746,7 +1746,7 @@ impl Analyzer<'_, '_> {
                                 _ => Ok(()),
                             });
 
-                            match super_ty.n() {
+                            match super_ty.normalize() {
                                 // We should handle mixin
                                 Type::Intersection(i) if need_base_class => {
                                     let mut has_class_in_super = false;
@@ -1765,7 +1765,7 @@ impl Analyzer<'_, '_> {
                                             .types
                                             .iter()
                                             .map(|ty| {
-                                                match ty.n() {
+                                                match ty.normalize() {
                                                     Type::Class(c) => {
                                                         has_class_in_super = true;
                                                         // class A -> typeof A
@@ -1922,7 +1922,7 @@ impl Analyzer<'_, '_> {
                     c.body.iter().for_each(|v| match v {
                         RClassMember::Method(method) => match &method.key {
                             RPropName::Computed(c) => match c.validate_with(child) {
-                                Ok(Key::Computed(ComputedKey { ty, .. })) => match ty.n() {
+                                Ok(Key::Computed(ComputedKey { ty, .. })) => match ty.normalize() {
                                     Type::EnumVariant(e) => {
                                         //
                                         if let Some(m) = &mut child.mutations {
@@ -2507,7 +2507,7 @@ impl Analyzer<'_, '_> {
         }
 
         let res: ValidationResult<_> = try {
-            match ty.n() {
+            match ty.normalize() {
                 Type::Ref(Ref {
                     type_name: RTsEntityName::Ident(i),
                     ..
@@ -2523,7 +2523,7 @@ impl Analyzer<'_, '_> {
 
             let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
 
-            match ty.n() {
+            match ty.normalize() {
                 Type::Function(..) => Err(Error::NotConstructorType { span: ty.span() })?,
 
                 _ => {}
@@ -2537,7 +2537,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> ValidationResult {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        Ok(match ty.n() {
+        Ok(match ty.normalize() {
             Type::ClassDef(def) => Type::Class(Class {
                 span,
                 def: box def.clone(),

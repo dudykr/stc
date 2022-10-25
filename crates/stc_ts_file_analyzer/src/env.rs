@@ -209,7 +209,7 @@ pub trait BuiltInGen: Sized {
                                     .expect_interface();
 
                                 match types.entry(i.id.sym.clone()) {
-                                    Entry::Occupied(mut e) => match e.get_mut().nm() {
+                                    Entry::Occupied(mut e) => match e.get_mut().normalize_mut() {
                                         Type::Interface(ref mut v) => {
                                             v.body.extend(body.body);
                                         }
