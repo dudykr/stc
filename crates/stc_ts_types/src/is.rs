@@ -1,4 +1,5 @@
 //! Smarter version of `derive(Is)`
+#![allow(deprecated)]
 
 use crate::*;
 
