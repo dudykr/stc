@@ -1482,50 +1482,61 @@ impl Analyzer<'_, '_> {
         to: &mut TypeElement,
         from: TypeElement,
     ) -> ValidationResult<()> {
-        run(|| {
-            debug_assert!(to.key().is_some());
-            debug_assert!(from.key().is_some());
+        run(|| match (to, from) {
+            (TypeElement::Property(to), TypeElement::Property(from)) => {
+                if let Some(to_type) = &to.type_ann {
+                    if let Some(from_type) = from.type_ann {
+                        let to_type_lit =
+                            self.convert_type_to_type_lit(span, Cow::Borrowed(to_type))?;
+                        let from = self.convert_type_to_type_lit(span, Cow::Owned(*from_type))?;
 
-            match (to, from) {
-                (TypeElement::Property(to), TypeElement::Property(from)) => {
-                    if let Some(to_type) = &to.type_ann {
-                        if let Some(from_type) = from.type_ann {
-                            let to_type_lit =
-                                self.convert_type_to_type_lit(span, Cow::Borrowed(to_type))?;
-                            let from =
-                                self.convert_type_to_type_lit(span, Cow::Owned(*from_type))?;
+                        match (to_type_lit, from) {
+                            (Some(to_type_lit), Some(from)) => {
+                                let mut to_type_lit = to_type_lit.into_owned();
+                                to_type_lit.members.extend(from.into_owned().members);
 
-                            match (to_type_lit, from) {
-                                (Some(to_type_lit), Some(from)) => {
-                                    let mut to_type_lit = to_type_lit.into_owned();
-                                    to_type_lit.members.extend(from.into_owned().members);
+                                let members =
+                                    self.merge_type_elements(span, to_type_lit.members)?;
 
-                                    let members =
-                                        self.merge_type_elements(span, to_type_lit.members)?;
-
-                                    to.type_ann = Some(
-                                        box Type::TypeLit(TypeLit {
-                                            span,
-                                            members,
-                                            metadata: TypeLitMetadata {
-                                                common: to_type.metadata(),
-                                                ..Default::default()
-                                            },
-                                        })
-                                        .cheap(),
-                                    )
-                                }
-                                _ => {}
+                                to.type_ann = Some(
+                                    box Type::TypeLit(TypeLit {
+                                        span,
+                                        members,
+                                        metadata: TypeLitMetadata {
+                                            common: to_type.metadata(),
+                                            ..Default::default()
+                                        },
+                                    })
+                                    .cheap(),
+                                )
                             }
+                            _ => {}
                         }
                     }
-
-                    Ok(())
                 }
 
-                (to, from) => {
-                    todo!("merge_type_element: {:?} and {:?}", to, from)
+                Ok(())
+            }
+
+            (TypeElement::Index(to), TypeElement::Index(from)) => {
+                if let Some(to_type) = &to.type_ann {
+                    if let Some(from_type) = from.type_ann {
+                        to.type_ann = Some(
+                            box Type::Intersection(Intersection {
+                                span: to_type.span(),
+                                types: vec![*to_type.clone(), *from_type],
+                                metadata: Default::default(),
+                            })
+                            .cheap(),
+                        );
+                    }
                 }
+
+                Ok(())
+            }
+
+            (to, from) => {
+                todo!("merge_type_element: {:?} and {:?}", to, from)
             }
         })
         .context("tried to merge a type element")
