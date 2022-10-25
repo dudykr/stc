@@ -29,7 +29,7 @@ use crate::{
     type_facts::TypeFacts,
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -46,7 +46,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    ) -> VResult {
         let marks = self.marks();
 
         let span = arr.span;
@@ -98,8 +98,8 @@ impl Analyzer<'_, '_> {
                     spread: Some(spread),
                     expr,
                 }) => {
-                    let element_type = expr.validate_with_default(self)?;
-                    let element_type = element_type.foldable();
+                    let mut element_type = expr.validate_with_default(self)?;
+                    element_type.normalize_mut();
 
                     // TODO(kdy1): PERF
 
@@ -258,7 +258,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         iterator: Cow<'a, Type>,
         n: usize,
-    ) -> ValidationResult<Cow<'a, Type>> {
+    ) -> VResult<Cow<'a, Type>> {
         debug!(
             "Caculating element type of an iterator ({})",
             dump_type_as_string(&self.cm, &iterator)
@@ -287,7 +287,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Union(u) => {
-                let can_use_undefined = u.types.iter().all(|ty| ty.normalize().is_tuple());
+                let can_use_undefined = u.types.iter().all(|ty| ty.is_tuple());
 
                 let mut types = vec![];
                 let mut errors = vec![];
@@ -381,7 +381,7 @@ impl Analyzer<'_, '_> {
                 | Error::NoSuchPropertyInClass { span, .. } => {
                     match iterator.normalize() {
                         Type::Union(iterator) => {
-                            if iterator.types.iter().all(|ty| ty.normalize().is_tuple()) {
+                            if iterator.types.iter().all(|ty| ty.is_tuple()) {
                                 return Error::NoSuchProperty {
                                     span,
                                     obj: None,
@@ -445,7 +445,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ty: Cow<'a, Type>,
-    ) -> ValidationResult<Cow<'a, Type>> {
+    ) -> VResult<Cow<'a, Type>> {
         let ty = self
             .normalize(Some(span), ty, Default::default())
             .context("tried to normalize type to calculate element type of an async iterator")?;
@@ -549,7 +549,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         iterator_result: Cow<'a, Type>,
-    ) -> ValidationResult<Cow<'a, Type>> {
+    ) -> VResult<Cow<'a, Type>> {
         let mut elem_ty = self
             .access_property(
                 span,
@@ -603,7 +603,7 @@ impl Analyzer<'_, '_> {
         span: Option<Span>,
         iterator: Cow<'a, Type>,
         start_index: usize,
-    ) -> ValidationResult<Cow<'a, Type>> {
+    ) -> VResult<Cow<'a, Type>> {
         let iterator = self.normalize(
             span,
             iterator,
@@ -612,8 +612,8 @@ impl Analyzer<'_, '_> {
             },
         )?;
 
-        if iterator.normalize().is_tuple() {
-            let ty = iterator.into_owned().foldable().tuple().unwrap();
+        if iterator.is_tuple() {
+            let ty = iterator.into_owned().expect_tuple();
 
             return Ok(Cow::Owned(Type::Tuple(Tuple {
                 elems: ty.elems.into_iter().skip(start_index).collect(),
@@ -643,7 +643,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: Cow<'a, Type>,
         opts: GetIteratorOpts,
-    ) -> ValidationResult<Cow<'a, Type>> {
+    ) -> VResult<Cow<'a, Type>> {
         let start = Instant::now();
         let iterator = self
             .get_iterator_inner(span, ty, opts)
@@ -673,7 +673,7 @@ impl Analyzer<'_, '_> {
                     IdCtx::Var,
                     Default::default(),
                 ) {
-                    if !return_prop_ty.normalize().is_function() {
+                    if !return_prop_ty.is_fn_type() {
                         self.storage
                             .report(Error::ReturnPropertyOfIteratorMustBeMethod { span })
                     }
@@ -690,7 +690,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: Cow<'a, Type>,
         opts: GetIteratorOpts,
-    ) -> ValidationResult<Cow<'a, Type>> {
+    ) -> VResult<Cow<'a, Type>> {
         let ty_str = dump_type_as_string(&self.cm, &ty);
         debug!("[exprs/array] get_iterator({})", ty_str);
         ty.assert_valid();
@@ -700,7 +700,7 @@ impl Analyzer<'_, '_> {
             .context("tried to normalize type to get iterator")?;
         ty.make_clone_cheap();
 
-        let res: ValidationResult<_> = (|| {
+        let res: VResult<_> = (|| {
             if ty.is_str() {
                 if !opts.disallow_str {
                     return Ok(ty);
@@ -830,7 +830,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: Cow<'a, Type>,
         try_next_value: bool,
-    ) -> ValidationResult<Cow<'a, Type>> {
+    ) -> VResult<Cow<'a, Type>> {
         let ty_str = dump_type_as_string(&self.cm, &ty);
 
         if try_next_value {
@@ -939,7 +939,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         iterator: Cow<Type>,
-    ) -> ValidationResult<Type> {
+    ) -> VResult<Type> {
         let next_ret_ty = self
             .call_property(
                 span,

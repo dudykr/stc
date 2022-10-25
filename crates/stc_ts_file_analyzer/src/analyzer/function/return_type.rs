@@ -4,11 +4,11 @@ use stc_ts_types::{QueryExpr, QueryType, Type};
 
 use crate::{
     analyzer::{scope::VarInfo, Analyzer},
-    ValidationResult,
+    VResult,
 };
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn expand_return_type_of_fn(&mut self, ret_ty: &mut Type) -> ValidationResult<()> {
+    pub(crate) fn expand_return_type_of_fn(&mut self, ret_ty: &mut Type) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
@@ -29,7 +29,7 @@ impl VisitMut<Type> for FnReturnTypeHandler<'_, '_, '_> {
 
         ret_ty.visit_mut_children_with(self);
 
-        if ret_ty.normalize().is_query() {
+        if ret_ty.is_query() {
             match ret_ty.normalize_mut() {
                 Type::Query(QueryType {
                     expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(var_name)),

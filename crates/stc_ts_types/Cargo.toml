@@ -14,6 +14,7 @@ profile = []
 dashmap = "3"
 fxhash = "0.2.1"
 is-macro = "0.1.7"
+new_debug_unreachable = "1.0.4"
 num-bigint = {version = "0.2", features = ["serde"]}
 num-traits = "0.2.12"
 once_cell = "1.8.0"

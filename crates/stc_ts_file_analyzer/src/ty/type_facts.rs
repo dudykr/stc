@@ -326,7 +326,7 @@ impl Fold<Intersection> for TypeFactsHandler<'_, '_, '_> {
     fn fold(&mut self, ty: Intersection) -> Intersection {
         let mut ty = ty.fold_children_with(self);
 
-        let has_keyword = |kind| ty.types.iter().any(|ty| ty.normalize().is_kwd(kind));
+        let has_keyword = |kind| ty.types.iter().any(|ty| ty.is_kwd(kind));
 
         // TODO(kdy1): Support literal type.
         let has_str = has_keyword(TsKeywordTypeKind::TsStringKeyword);
@@ -474,12 +474,12 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
         }
 
         if !span.is_dummy() {
-            if ty.normalize().is_ref_type() {
+            if ty.is_ref_type() {
                 if let Ok(ty) =
                     self.analyzer
                         .expand_top_ref(ty.span(), Cow::Borrowed(&ty), Default::default())
                 {
-                    if ty.normalize().is_ref_type() {
+                    if ty.is_ref_type() {
                         return ty.into_owned();
                     }
                     return ty.into_owned().fold_with(self);
@@ -506,7 +506,7 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
 
         // TODO(kdy1): PERF
 
-        ty = ty.foldable();
+        ty.normalize_mut();
         ty = ty.fold_children_with(self);
 
         match ty {

@@ -89,7 +89,7 @@ impl Env {
             Ok(prev_ty) => {
                 self.global_types.lock().insert(
                     name,
-                    Type::intersection(DUMMY_SP, vec![prev_ty, ty])
+                    Type::new_intersection(DUMMY_SP, vec![prev_ty, ty])
                         .fixed()
                         .cheap(),
                 );

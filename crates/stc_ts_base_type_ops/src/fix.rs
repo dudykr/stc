@@ -80,8 +80,8 @@ impl VisitMut<Union> for Fixer {
                 continue;
             }
 
-            if ty.normalize().is_union_type() {
-                let u = ty.foldable().union_type().unwrap();
+            if ty.is_union_type() {
+                let u = ty.expect_union_type();
                 for ty in u.types {
                     if new.iter().any(|stored| stored.type_eq(&ty)) {
                         continue;
@@ -110,8 +110,8 @@ impl VisitMut<Intersection> for Fixer {
                 continue;
             }
 
-            if ty.normalize().is_intersection_type() {
-                let i = ty.foldable().intersection_type().unwrap();
+            if ty.is_intersection() {
+                let i = ty.expect_intersection();
                 for ty in i.types {
                     if new.iter().any(|stored| stored.type_eq(&ty)) {
                         continue;
@@ -129,7 +129,7 @@ impl VisitMut<Intersection> for Fixer {
 
 impl Fixer {
     fn fix_type(&mut self, ty: &mut Type) {
-        if ty.is_arc() {
+        if matches!(ty, Type::Arc(..)) {
             return;
         }
 

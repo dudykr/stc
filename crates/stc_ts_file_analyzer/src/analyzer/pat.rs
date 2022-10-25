@@ -27,7 +27,7 @@ use crate::{
     util::should_instantiate_type_ann,
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -50,7 +50,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(crate) fn default_type_for_pat(&mut self, pat: &RPat) -> ValidationResult<Type> {
+    pub(crate) fn default_type_for_pat(&mut self, pat: &RPat) -> VResult<Type> {
         let span = pat.span();
         match pat {
             RPat::Array(arr) => {
@@ -74,7 +74,7 @@ impl Analyzer<'_, '_> {
                                 ty: box ty,
                             })
                         })
-                        .collect::<ValidationResult<_>>()?,
+                        .collect::<VResult<_>>()?,
                     metadata: Default::default(),
                 }));
             }
@@ -155,7 +155,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RParam) -> ValidationResult<ty::FnParam> {
+    fn validate(&mut self, node: &RParam) -> VResult<ty::FnParam> {
         node.decorators.visit_with(self);
 
         self.default_any_pat(&node.pat);
@@ -170,7 +170,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &RPat) -> ValidationResult<ty::FnParam> {
+    fn validate(&mut self, p: &RPat) -> VResult<ty::FnParam> {
         self.record(p);
         if !self.is_builtin {
             debug_assert_ne!(p.span(), DUMMY_SP, "A pattern should have a valid span");
@@ -330,7 +330,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let res = (|| -> ValidationResult<()> {
+        let res = (|| -> VResult<()> {
             if let RPat::Assign(assign_pat) = p {
                 // Handle default value
                 if let Some(default_value_ty) = default_value_ty.clone() {
@@ -357,7 +357,8 @@ impl Analyzer<'_, '_> {
                         let mut ty = default_value_ty.generalize_lit().foldable();
 
                         if matches!(ty.normalize(), Type::Tuple(..)) {
-                            match ty.foldable() {
+                            ty.normalize_mut();
+                            match ty {
                                 Type::Tuple(tuple) => {
                                     let mut types = tuple
                                         .elems

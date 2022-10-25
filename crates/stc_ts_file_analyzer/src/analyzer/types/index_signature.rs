@@ -5,7 +5,7 @@ use stc_ts_types::{ClassDef, ClassMember, IndexSignature, Type};
 use stc_utils::ext::ValueExt;
 use swc_common::Span;
 
-use crate::{analyzer::Analyzer, ValidationResult};
+use crate::{analyzer::Analyzer, VResult};
 
 impl Analyzer<'_, '_> {
     /// Get [IndexSignature] from `ty`, if there's one.
@@ -13,8 +13,8 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ty: &Type,
-    ) -> ValidationResult<Option<IndexSignature>> {
-        (|| -> ValidationResult<_> {
+    ) -> VResult<Option<IndexSignature>> {
+        (|| -> VResult<_> {
             let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
 
             // TODO(kdy1): Support type literals and interfaces.
@@ -36,7 +36,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         class: &ClassDef,
-    ) -> ValidationResult<Option<IndexSignature>> {
+    ) -> VResult<Option<IndexSignature>> {
         for member in &class.body {
             match member {
                 ClassMember::IndexSignature(i) => return i.clone().as_some().as_ok(),

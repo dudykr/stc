@@ -41,7 +41,7 @@ use crate::{
     util::EndsWithRet,
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 /// Conditional facts
@@ -87,7 +87,7 @@ impl CondFacts {
             if !ty.is_union_type() {
                 debug_assert!(
                     ty.is_clone_cheap(),
-                    "ty.is_clone_cheap() shoulf be true:\n{:?}",
+                    "ty.is_clone_cheap() should be true:\n{:?}",
                     &self.vars
                 );
             }
@@ -266,7 +266,7 @@ impl Merge for Type {
 
         let l = replace(self, Type::never(l_span, Default::default()));
 
-        *self = Type::union(vec![l, r]);
+        *self = Type::new_union(l_span, vec![l, r]);
     }
 }
 
@@ -305,7 +305,7 @@ impl AddAssign for CondFacts {
                         }
                         prev => {
                             let prev = prev.take();
-                            *e.get_mut() = Type::union(vec![prev, v]).cheap();
+                            *e.get_mut() = Type::new_union(DUMMY_SP, vec![prev, v]).cheap();
                         }
                     };
                     e.get_mut().make_clone_cheap();
@@ -350,7 +350,7 @@ impl BitOr for CondFacts {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, stmt: &RIfStmt) -> ValidationResult<()> {
+    fn validate(&mut self, stmt: &RIfStmt) -> VResult<()> {
         let prev_facts = self.cur_facts.take();
         prev_facts.assert_clone_cheap();
 
@@ -437,11 +437,7 @@ impl Analyzer<'_, '_> {
     /// `SafeSubscriber` or downgrade the type, like converting `Subscriber` |
     /// `SafeSubscriber` into `SafeSubscriber`. This behavior is controlled by
     /// the mark applied while handling type facts related to call.
-    fn adjust_ternary_type(
-        &mut self,
-        span: Span,
-        mut types: Vec<Type>,
-    ) -> ValidationResult<Vec<Type>> {
+    fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Type>) -> VResult<Vec<Type>> {
         types.iter_mut().for_each(|ty| {
             // Tuple -> Array
             match ty.normalize_mut() {
@@ -455,7 +451,7 @@ impl Analyzer<'_, '_> {
                         .map(|elem| *elem.ty)
                         .collect();
                     elem_types.dedup_type();
-                    let elem_type = box Type::union(elem_types);
+                    let elem_type = box Type::new_union(DUMMY_SP, elem_types);
                     *ty = Type::Array(Array {
                         span,
                         elem_type,
@@ -482,7 +478,7 @@ impl Analyzer<'_, '_> {
         self.downcast_types(span, types)
     }
 
-    fn downcast_types(&mut self, span: Span, types: Vec<Type>) -> ValidationResult<Vec<Type>> {
+    fn downcast_types(&mut self, span: Span, types: Vec<Type>) -> VResult<Vec<Type>> {
         fn need_work(ty: &Type) -> bool {
             match ty.normalize() {
                 Type::Lit(..)
@@ -530,7 +526,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Remove `SafeSubscriber` from `Subscriber` | `SafeSubscriber`.
-    fn remove_child_types(&mut self, span: Span, types: Vec<Type>) -> ValidationResult<Vec<Type>> {
+    fn remove_child_types(&mut self, span: Span, types: Vec<Type>) -> VResult<Vec<Type>> {
         let mut new = vec![];
 
         'outer: for (ai, ty) in types.iter().flat_map(|ty| ty.iter_union()).enumerate() {
@@ -562,7 +558,7 @@ impl Analyzer<'_, '_> {
     /// Returns the type of discriminant.
     ///
     /// TODO(kdy1): Implement this.
-    fn report_errors_for_incomparable_switch_cases(&mut self, s: &RSwitchStmt) -> ValidationResult {
+    fn report_errors_for_incomparable_switch_cases(&mut self, s: &RSwitchStmt) -> VResult {
         let discriminant_ty = s.discriminant.validate_with_default(self)?;
         for case in &s.cases {
             if let Some(test) = &case.test {
@@ -580,7 +576,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, stmt: &RSwitchStmt) -> ValidationResult<()> {
+    fn validate(&mut self, stmt: &RSwitchStmt) -> VResult<()> {
         self.record(stmt);
 
         let discriminant_ty = self
@@ -709,7 +705,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn try_assign(&mut self, span: Span, op: AssignOp, lhs: &RPatOrExpr, ty: &Type) {
         ty.assert_valid();
 
-        let res: ValidationResult<()> = try {
+        let res: VResult<()> = try {
             match *lhs {
                 RPatOrExpr::Expr(ref expr) | RPatOrExpr::Pat(box RPat::Expr(ref expr)) => {
                     let lhs_ty = expr.validate_with_args(self, (TypeOfMode::LValue, None, None));
@@ -760,12 +756,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(super) fn try_assign_pat(
-        &mut self,
-        span: Span,
-        lhs: &RPat,
-        ty: &Type,
-    ) -> ValidationResult<()> {
+    pub(super) fn try_assign_pat(&mut self, span: Span, lhs: &RPat, ty: &Type) -> VResult<()> {
         ty.assert_valid();
 
         self.try_assign_pat_with_opts(span, lhs, ty, Default::default())
@@ -777,7 +768,7 @@ impl Analyzer<'_, '_> {
         lhs: &RPat,
         ty: &Type,
         opts: PatAssignOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         ty.assert_valid();
 
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -806,7 +797,7 @@ impl Analyzer<'_, '_> {
             RPat::Assign(assign) => {
                 // TODO(kdy1): Use type annotation?
                 let res = assign.right.validate_with_default(self).context(
-                    "tried to validate type of default expression in an assginment pattern",
+                    "tried to validate type of default expression in an assignment pattern",
                 );
 
                 self.try_assign_pat_with_opts(span, &assign.left, &ty, opts)
@@ -1217,7 +1208,7 @@ impl Analyzer<'_, '_> {
         src: &Type,
         property: &JsWord,
         type_facts: Option<TypeFacts>,
-    ) -> ValidationResult<Type> {
+    ) -> VResult<Type> {
         src.assert_valid();
 
         match src.normalize() {
@@ -1311,7 +1302,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         name: &Name,
         ty: &Type,
-    ) -> ValidationResult<Option<(Name, Type)>> {
+    ) -> VResult<Option<(Name, Type)>> {
         ty.assert_valid();
 
         if name.len() == 1 {
@@ -1367,12 +1358,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        e: &RCondExpr,
-        mode: TypeOfMode,
-        type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    fn validate(&mut self, e: &RCondExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
         self.record(e);
 
         let RCondExpr {

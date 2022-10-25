@@ -18,7 +18,7 @@ use crate::{
     ty::Type,
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[validator]
@@ -295,7 +295,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Exports a variable.
-    fn export_expr(&mut self, name: Id, item_node_id: NodeId, e: &RExpr) -> ValidationResult<()> {
+    fn export_expr(&mut self, name: Id, item_node_id: NodeId, e: &RExpr) -> VResult<()> {
         self.report_errors_for_duplicated_exports_of_var(e.span(), name.sym().clone());
 
         let ty = e.validate_with_default(self)?.freezed();

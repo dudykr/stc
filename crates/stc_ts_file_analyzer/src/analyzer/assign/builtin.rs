@@ -10,7 +10,7 @@ use crate::{
         Analyzer,
     },
     util::unwrap_ref_with_single_arg,
-    ValidationResult,
+    VResult,
 };
 
 impl Analyzer<'_, '_> {
@@ -25,7 +25,7 @@ impl Analyzer<'_, '_> {
         opts: AssignOpts,
         l: &Type,
         r: &Type,
-    ) -> Option<ValidationResult<()>> {
+    ) -> Option<VResult<()>> {
         let span = opts.span;
         let l = l.normalize();
         let r = r.normalize();
@@ -215,7 +215,7 @@ impl Analyzer<'_, '_> {
             match l.normalize() {
                 Type::Union(l) => {
                     if l.types.len() == 2
-                        && l.types[0].normalize().is_type_param()
+                        && l.types[0].is_type_param()
                         && unwrap_ref_with_single_arg(&l.types[1], "PromiseLike")
                             .type_eq(&Some(&l.types[0]))
                     {

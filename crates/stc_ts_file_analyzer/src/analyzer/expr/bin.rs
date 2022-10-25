@@ -36,12 +36,12 @@ use crate::{
     util::RemoveTypes,
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> VResult {
         let RBinExpr {
             span,
             op,
@@ -139,7 +139,7 @@ impl Analyzer<'_, '_> {
             .with_child(
                 ScopeKind::Flow,
                 true_facts_for_rhs.clone(),
-                |child: &mut Analyzer| -> ValidationResult<_> {
+                |child: &mut Analyzer| -> VResult<_> {
                     child.ctx.should_store_truthy_for_access = false;
 
                     let truthy_lt;
@@ -400,7 +400,7 @@ impl Analyzer<'_, '_> {
                             narrowed_ty.assert_valid();
 
                             // TODO(kdy1): Maybe we need to check for intersection or union
-                            if orig_ty.normalize().is_type_param() {
+                            if orig_ty.is_type_param() {
                                 self.cur_facts.true_facts.vars.insert(
                                     Name::from(i),
                                     Type::Intersection(Intersection {
@@ -664,7 +664,7 @@ impl Analyzer<'_, '_> {
                 no_unknown!();
 
                 let mut check_for_invalid_operand = |ty: &Type| {
-                    let res: ValidationResult<_> = try {
+                    let res: VResult<_> = try {
                         self.deny_null_or_undefined(ty.span(), ty)?;
                     };
                     res.report(&mut self.storage);
@@ -829,7 +829,7 @@ impl Analyzer<'_, '_> {
         l: &RExpr,
         r: &RExpr,
         is_eq: bool,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         if !self.ctx.in_cond {
             return Ok(());
         }
@@ -919,7 +919,7 @@ impl Analyzer<'_, '_> {
         r: &RExpr,
         lt: &Type,
         rt: &Type,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         /// Convert expression to names.
         ///
         /// This may return multiple names if there are optional chaining
@@ -1014,7 +1014,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         disc_ty: &Type,
         case_ty: &Type,
-    ) -> ValidationResult<bool> {
+    ) -> VResult<bool> {
         let disc_ty = disc_ty.normalize();
         let case_ty = case_ty.normalize();
 
@@ -1027,7 +1027,7 @@ impl Analyzer<'_, '_> {
         }
 
         if self.ctx.in_switch_case_test {
-            if disc_ty.is_intersection_type() {
+            if disc_ty.is_intersection() {
                 return Ok(true);
             }
         }
@@ -1075,12 +1075,7 @@ impl Analyzer<'_, '_> {
     /// If we apply `instanceof C` to `v`, `v` becomes `T`.
     /// Note that `C extends D` and `D extends C` are true because both of `C`
     /// and `D` are empty classes.
-    fn narrow_with_instanceof(
-        &mut self,
-        span: Span,
-        ty: Cow<Type>,
-        orig_ty: &Type,
-    ) -> ValidationResult {
+    fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult {
         let orig_ty = orig_ty.normalize();
 
         match orig_ty {
@@ -1113,7 +1108,7 @@ impl Analyzer<'_, '_> {
             || orig_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword)
             || orig_ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword)
         {
-            if ty.normalize().is_interface() {
+            if ty.is_interface() {
                 return Ok(Type::never(span, Default::default()));
             }
         }
@@ -1275,7 +1270,7 @@ impl Analyzer<'_, '_> {
         });
     }
 
-    fn can_compare_relatively(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
+    fn can_compare_relatively(&mut self, span: Span, l: &Type, r: &Type) -> VResult<bool> {
         let l = l.normalize();
         let r = r.normalize();
 
@@ -1353,7 +1348,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         l: &[TypeElement],
         r: &[TypeElement],
-    ) -> ValidationResult<Option<bool>> {
+    ) -> VResult<Option<bool>> {
         for lm in l {
             for rm in r {
                 match (lm, rm) {
@@ -1548,7 +1543,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         name: Name,
         equals_to: &Type,
-    ) -> ValidationResult<(Name, Type)> {
+    ) -> VResult<(Name, Type)> {
         let span = equals_to.span();
 
         let mut id: RIdent = name.as_ids()[0].clone().into();
@@ -1628,14 +1623,14 @@ impl Analyzer<'_, '_> {
         Ok((name, eq_ty.clone()))
     }
 
-    /// Returns new type of the variable after comparision with `===`.
+    /// Returns new type of the variable after comparison with `===`.
     ///
     /// # Parameters
     ///
     /// ## orig_ty
     ///
     /// Original type of the variable.
-    fn narrow_with_equality(&mut self, orig_ty: &Type, equals_to: &Type) -> ValidationResult<Type> {
+    fn narrow_with_equality(&mut self, orig_ty: &Type, equals_to: &Type) -> VResult<Type> {
         let span = equals_to.span();
 
         if orig_ty.type_eq(&equals_to) {
@@ -1939,7 +1934,7 @@ impl Analyzer<'_, '_> {
 
     #[extra_validator]
     fn report_errors_for_mixed_nullish_coalescing(&mut self, e: &RBinExpr) {
-        fn search(span: Span, op: BinaryOp, operand: &RExpr) -> ValidationResult<()> {
+        fn search(span: Span, op: BinaryOp, operand: &RExpr) -> VResult<()> {
             if op == op!("??") {
                 match operand {
                     RExpr::Bin(bin) => {

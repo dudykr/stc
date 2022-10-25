@@ -10,7 +10,7 @@ use crate::{
         assign::{AssignData, AssignOpts},
         Analyzer,
     },
-    ValidationResult,
+    VResult,
 };
 
 impl Analyzer<'_, '_> {
@@ -20,7 +20,7 @@ impl Analyzer<'_, '_> {
         opts: AssignOpts,
         l: &ClassDef,
         r: &Type,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let r = r.normalize();
 
         match r {
@@ -148,7 +148,7 @@ impl Analyzer<'_, '_> {
         opts: AssignOpts,
         l: &Class,
         r: &Type,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         // debug_assert!(!span.is_dummy());
 
         let r = r.normalize();
@@ -291,7 +291,7 @@ impl Analyzer<'_, '_> {
         opts: AssignOpts,
         l: &ClassMember,
         r: &[ClassMember],
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let span = opts.span;
 
         match l {

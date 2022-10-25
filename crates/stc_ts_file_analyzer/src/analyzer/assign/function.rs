@@ -21,7 +21,7 @@ use crate::{
         Analyzer,
     },
     util::unwrap_ref_with_single_arg,
-    ValidationResult,
+    VResult,
 };
 
 /// Methods to handle assignment to function types and constructor types.
@@ -38,7 +38,7 @@ impl Analyzer<'_, '_> {
         r_type_params: Option<&TypeParamDecl>,
         r_params: &[FnParam],
         r_ret_ty: Option<&Type>,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let span = opts.span.with_ctxt(SyntaxContext::empty());
 
         if let Some(r_ret_ty) = r_ret_ty {
@@ -52,7 +52,7 @@ impl Analyzer<'_, '_> {
 
             if cfg!(feature = "fastpath")
                 && l_params.len() == 1
-                && l_params[0].ty.normalize().is_type_param()
+                && l_params[0].ty.is_type_param()
                 && l_params[0].ty.span().is_dummy()
             {
                 if let Some(l_ret_ty) = l_ret_ty {
@@ -61,7 +61,7 @@ impl Analyzer<'_, '_> {
                             Type::Union(l_ret_ty) => {
                                 // Exact match
                                 if l_ret_ty.types.len() == 4
-                                    && l_ret_ty.types[0].normalize().is_type_param()
+                                    && l_ret_ty.types[0].is_type_param()
                                     && unwrap_ref_with_single_arg(&l_ret_ty.types[1], "PromiseLike")
                                         .type_eq(&Some(&l_ret_ty.types[0]))
                                     && l_ret_ty.types[2]
@@ -434,7 +434,7 @@ impl Analyzer<'_, '_> {
         lt: &Type,
         l: &Function,
         r: &Type,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let span = opts.span;
         let r = r.normalize();
 
@@ -549,7 +549,7 @@ impl Analyzer<'_, '_> {
         lt: &Type,
         l: &Constructor,
         r: &Type,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let span = opts.span;
         let r = r.normalize();
 
@@ -696,7 +696,7 @@ impl Analyzer<'_, '_> {
         l: &FnParam,
         r: &FnParam,
         opts: AssignOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let span = opts.span;
         debug_assert!(
             !opts.span.is_dummy(),
@@ -812,7 +812,7 @@ impl Analyzer<'_, '_> {
         opts: AssignOpts,
         l: &[FnParam],
         r: &[FnParam],
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let span = opts.span;
 
         let li = l.iter().filter(|p| match p.pat {

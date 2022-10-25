@@ -11,12 +11,12 @@ use crate::{
     ty::TypeExt,
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, f: &RArrowExpr, type_ann: Option<&Type>) -> ValidationResult<Function> {
+    fn validate(&mut self, f: &RArrowExpr, type_ann: Option<&Type>) -> VResult<Function> {
         self.record(f);
 
         let marks = self.marks();
@@ -36,17 +36,12 @@ impl Analyzer<'_, '_> {
                         ..child.ctx
                     };
 
-                    if let Some(ty) = type_ann.as_ref().map(|ty| ty.normalize()) {
+                    if let Some(ty) = &type_ann {
                         // See functionExpressionContextualTyping1.ts
                         //
                         // If a type annotation of function is union and there are two or more
                         // function types, the type becomes any implicitly.
-                        if ty
-                            .iter_union()
-                            .filter(|ty| ty.normalize().is_function())
-                            .count()
-                            == 1
-                        {
+                        if ty.iter_union().filter(|ty| ty.is_fn_type()).count() == 1 {
                             for ty in ty.iter_union() {
                                 match ty.normalize() {
                                     Type::Function(ty) => {

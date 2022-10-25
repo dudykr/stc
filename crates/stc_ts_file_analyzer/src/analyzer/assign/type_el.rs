@@ -22,7 +22,7 @@ use crate::{
         util::ResultExt,
         Analyzer,
     },
-    ValidationResult,
+    VResult,
 };
 
 impl Analyzer<'_, '_> {
@@ -43,7 +43,7 @@ impl Analyzer<'_, '_> {
         lhs: &[TypeElement],
         rhs: &Type,
         lhs_metadata: TypeLitMetadata,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let span = opts.span.with_ctxt(SyntaxContext::empty());
         // debug_assert!(!span.is_dummy());
 
@@ -707,7 +707,7 @@ impl Analyzer<'_, '_> {
                         })
                         .context("failed to normalize")?;
 
-                    if rhs.normalize().is_keyword() {
+                    if rhs.is_keyword() {
                         return Err(Error::SimpleAssignFailed { span, cause: None }
                             .context("failed to assign builtin type of a keyword"));
                     }
@@ -848,12 +848,12 @@ impl Analyzer<'_, '_> {
         l: &Type,
         r: &Type,
         opts: AssignOpts,
-    ) -> Option<ValidationResult<()>> {
+    ) -> Option<VResult<()>> {
         let span = opts.span;
 
         match r.normalize() {
             Type::Interface(ri) => {
-                let res: ValidationResult<_> = try {
+                let res: VResult<_> = try {
                     for parent in &ri.extends {
                         let parent = self.type_of_ts_entity_name(
                             span,
@@ -897,7 +897,7 @@ impl Analyzer<'_, '_> {
         lhs: &[TypeElement],
         lhs_metadata: TypeLitMetadata,
         rhs: &[TypeElement],
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let span = opts.span;
 
         let mut errors = vec![];
@@ -1047,7 +1047,7 @@ impl Analyzer<'_, '_> {
         lms: &[&TypeElement],
         lhs_metadata: TypeLitMetadata,
         rhs_members: &[TypeElement],
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         debug_assert!(!lms.is_empty());
 
         let span = opts.span.with_ctxt(SyntaxContext::empty());

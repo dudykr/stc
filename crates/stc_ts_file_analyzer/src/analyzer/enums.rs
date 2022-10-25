@@ -16,7 +16,7 @@ use swc_ecma_ast::*;
 use crate::{
     analyzer::{scope::VarKind, util::ResultExt, Analyzer},
     ty::{Enum, EnumMember, Type},
-    validator, ValidationResult,
+    validator, VResult,
 };
 
 /// Value does not contain RTsLit::Bool
@@ -39,7 +39,7 @@ type EnumValues = FxHashMap<JsWord, RTsLit>;
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline(never)]
-    fn validate(&mut self, e: &RTsEnumDecl) -> ValidationResult<Enum> {
+    fn validate(&mut self, e: &RTsEnumDecl) -> VResult<Enum> {
         for m in &e.members {
             self.validate_with(|a| a.validate_enum_memeber_name(&m.id));
         }
@@ -194,7 +194,7 @@ impl Evaluator<'_> {
         span: Span,
         default: Option<f64>,
         init: Option<&RExpr>,
-    ) -> ValidationResult<RTsLit> {
+    ) -> VResult<RTsLit> {
         if let Some(expr) = init {
             match expr {
                 RExpr::Lit(RLit::Str(s)) => return Ok(RTsLit::Str(s.clone())),
@@ -354,7 +354,7 @@ impl Evaluator<'_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn validate_enum_memeber_name(&mut self, e: &RTsEnumMemberId) -> ValidationResult<()> {
+    fn validate_enum_memeber_name(&mut self, e: &RTsEnumMemberId) -> VResult<()> {
         match e {
             RTsEnumMemberId::Ident(i) => {}
             RTsEnumMemberId::Str(s) => {
@@ -384,7 +384,7 @@ impl Analyzer<'_, '_> {
     /// };
     /// var e: typeof E1;
     /// ```
-    pub(super) fn enum_to_type_lit(&mut self, e: &Enum) -> ValidationResult<TypeLit> {
+    pub(super) fn enum_to_type_lit(&mut self, e: &Enum) -> VResult<TypeLit> {
         let mut members = vec![];
 
         for m in &e.members {
@@ -565,7 +565,7 @@ impl Analyzer<'_, '_> {
     /// declare const e: E;
     /// const a = o[e]
     /// ```
-    pub(super) fn expand_enum(&mut self, ty: Type) -> ValidationResult {
+    pub(super) fn expand_enum(&mut self, ty: Type) -> VResult {
         let e = match ty.normalize() {
             Type::Enum(e) => e,
             _ => return Ok(ty),
@@ -599,7 +599,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_enum_variant(&self, ty: Type) -> ValidationResult {
+    pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult {
         match ty.normalize() {
             Type::EnumVariant(ref ev) => {
                 if let Some(variant_name) = &ev.name {

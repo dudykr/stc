@@ -39,7 +39,7 @@ where
     T: VisitWith<TypeFinder>,
 {
     fn check(ty: &Type) -> bool {
-        ty.normalize().is_infer() || ty.metadata().contains_infer_type
+        ty.is_infer() || ty.metadata().contains_infer_type
     }
 
     TypeFinder::find(n, check)

@@ -25,7 +25,7 @@ use crate::{
         Analyzer, Ctx,
     },
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 /// The kind of binding.
@@ -71,7 +71,7 @@ impl Analyzer<'_, '_> {
         actual: Option<Type>,
         default: Option<Type>,
         opts: DeclareVarsOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         if let Some(ty) = &ty {
             ty.assert_valid();
             if !self.is_builtin {
@@ -268,7 +268,7 @@ impl Analyzer<'_, '_> {
                         if let Some(elem) = elem {
                             let elem_ty = ty
                                 .as_ref()
-                                .try_map(|ty| -> ValidationResult<_> {
+                                .try_map(|ty| -> VResult<_> {
                                     Ok(self
                                         .get_element_from_iterator(span, Cow::Borrowed(&ty), idx)
                                         .with_context(|| {
@@ -739,15 +739,10 @@ impl Analyzer<'_, '_> {
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(crate) fn exclude_props(
-        &mut self,
-        span: Span,
-        ty: &Type,
-        keys: &[Key],
-    ) -> ValidationResult<Type> {
+    pub(crate) fn exclude_props(&mut self, span: Span, ty: &Type, keys: &[Key]) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let ty = (|| -> ValidationResult<_> {
+        let ty = (|| -> VResult<_> {
             let mut ty = self.normalize(
                 None,
                 Cow::Borrowed(ty),
@@ -887,7 +882,7 @@ impl Analyzer<'_, '_> {
         ty: Option<Type>,
         actual_ty: Option<Type>,
         default_ty: Option<Type>,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let marks = self.marks();
 
         let span = ty

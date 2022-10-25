@@ -37,7 +37,7 @@ pub struct GenericExpander<'a> {
 }
 
 impl GenericExpander<'_> {
-    fn fold_type(&mut self, ty: Type) -> Type {
+    fn fold_type(&mut self, mut ty: Type) -> Type {
         let span = ty.span();
 
         {
@@ -76,7 +76,7 @@ impl GenericExpander<'_> {
             _ => {}
         }
 
-        let ty = ty.foldable();
+        ty.normalize_mut();
 
         match ty {
             Type::Ref(Ref {
@@ -299,16 +299,18 @@ impl GenericExpander<'_> {
                 }
 
                 // TODO(kdy1): PERF
-                m.ty = m.ty.map(|v| box v.foldable());
+                if let Some(ty) = &mut m.ty {
+                    ty.normalize_mut();
+                }
                 m.ty = match m.ty {
                     Some(box Type::IndexedAccessType(IndexedAccessType {
                         span,
                         readonly,
-                        obj_type,
+                        mut obj_type,
                         index_type,
                         metadata,
                     })) => {
-                        let obj_type = box obj_type.foldable();
+                        obj_type.normalize_mut();
                         // TODO(kdy1): PERF
                         match *obj_type {
                             Type::TypeLit(TypeLit {

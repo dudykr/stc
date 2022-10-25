@@ -8,7 +8,7 @@ use swc_common::{Span, Spanned};
 
 use crate::{
     analyzer::{assign::AssignOpts, Analyzer},
-    ValidationResult,
+    VResult,
 };
 
 impl Analyzer<'_, '_> {
@@ -17,7 +17,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         declared: Type,
         actual: &Type,
-    ) -> ValidationResult {
+    ) -> VResult {
         declared.assert_valid();
         actual.assert_valid();
 
@@ -66,7 +66,8 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        let declared = declared.into_owned().foldable();
+        let mut declared = declared.into_owned();
+        declared.normalize_mut();
         // TODO(kdy1): PERF
 
         match declared {

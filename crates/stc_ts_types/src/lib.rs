@@ -1,12 +1,12 @@
 //! This crate exists to reduce compile time.
 //!
 //! The visitor is too slow to compile everytime I make change.
+#![deny(deprecated)]
 #![deny(unused)]
 #![allow(incomplete_features)]
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(specialization)]
-
 use std::{
     self,
     borrow::Cow,
@@ -61,6 +61,7 @@ pub use self::{
 mod convert;
 mod id;
 mod intrinsic;
+mod is;
 pub mod macros;
 mod metadata;
 pub mod module_id;
@@ -123,7 +124,7 @@ impl AddAssign for ModuleTypeData {
 }
 
 /// This type is expected to stored in a [Box], like `Vec<Type>`.
-#[derive(Debug, PartialEq, Spanned, FromVariant, Is, EqIgnoreSpan, Visit)]
+#[derive(Debug, PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit)]
 pub enum Type {
     Instance(Instance),
     StaticThis(StaticThis),
@@ -135,29 +136,24 @@ pub enum Type {
     Predicate(Predicate),
     IndexedAccessType(IndexedAccessType),
 
-    #[is(name = "ref_type")]
     Ref(Ref),
     TypeLit(TypeLit),
     Keyword(KeywordType),
     Conditional(Conditional),
     Tuple(Tuple),
     Array(Array),
-    #[is(name = "union_type")]
     Union(Union),
-    #[is(name = "intersection_type")]
     Intersection(Intersection),
     Function(Function),
     Constructor(Constructor),
 
     Operator(Operator),
 
-    #[is(name = "type_param")]
     Param(TypeParam),
     EnumVariant(EnumVariant),
 
     Interface(Interface),
 
-    #[is(name = "enum_type")]
     Enum(Enum),
 
     Mapped(Mapped),
@@ -1114,15 +1110,15 @@ impl Type {
         self.visit_with(&mut AssertCloneCheap);
     }
 
-    pub fn intersection<I>(span: Span, iter: I) -> Self
+    pub fn new_intersection<I>(span: Span, iter: I) -> Self
     where
         I: IntoIterator<Item = Type>,
     {
         let mut tys = vec![];
 
         for ty in iter {
-            if ty.normalize().is_intersection_type() {
-                tys.extend(ty.foldable().expect_intersection_type().types);
+            if ty.is_intersection() {
+                tys.extend(ty.expect_intersection().types);
             } else {
                 tys.push(ty);
             }
@@ -1175,8 +1171,8 @@ impl Type {
         let mut elements = vec![];
 
         for ty in iter {
-            if ty.normalize().is_union_type() {
-                let types = ty.foldable().union_type().unwrap().types;
+            if ty.is_union_type() {
+                let types = ty.expect_union_type().types;
                 for new in types {
                     if elements.iter().any(|prev: &Type| prev.type_eq(&new)) {
                         continue;
@@ -1218,8 +1214,8 @@ impl Type {
                 span = span.with_hi(sp.hi());
             }
 
-            if ty.normalize().is_union_type() {
-                let types = ty.foldable().union_type().unwrap().types;
+            if ty.is_union_type() {
+                let types = ty.expect_union_type().types;
                 for new in types {
                     if elements.iter().any(|prev: &Type| prev.type_eq(&new)) {
                         continue;
@@ -1654,7 +1650,7 @@ impl Visit<Union> for AssertValid {
         ty.assert_valid();
 
         for item in ty.types.iter() {
-            if item.normalize().is_union_type() {
+            if item.is_union_type() {
                 unreachable!("[INVALID_TYPE]: A union type should not have a union item")
             }
         }
@@ -1672,7 +1668,7 @@ impl Visit<Intersection> for AssertValid {
         ty.assert_valid();
 
         for item in ty.types.iter() {
-            if item.normalize().is_intersection_type() {
+            if item.is_intersection() {
                 unreachable!(
                     "[INVALID_TYPE]: An intersection type should not have an intersection item"
                 )
@@ -1786,6 +1782,7 @@ impl Type {
     /// Converts this type to foldable type.
     ///
     /// TODO(kdy1): Remove if possible
+    #[deprecated]
     pub fn foldable(mut self) -> Type {
         self.normalize_mut();
         self
@@ -2430,7 +2427,7 @@ pub struct ValidityChecker {
 impl Visit<Type> for ValidityChecker {
     fn visit(&mut self, ty: &Type) {
         // Freezed types are valid.
-        if ty.is_arc() {
+        if matches!(ty, Type::Arc(..)) {
             return;
         }
 
@@ -2457,12 +2454,7 @@ impl Visit<Union> for ValidityChecker {
             return;
         }
 
-        if ty
-            .types
-            .iter()
-            .map(Type::normalize)
-            .any(|t| t.is_union_type())
-        {
+        if ty.types.iter().any(|t| t.is_union_type()) {
             self.valid = false;
             return;
         }
@@ -2490,12 +2482,7 @@ impl Visit<Intersection> for ValidityChecker {
             return;
         }
 
-        if ty
-            .types
-            .iter()
-            .map(Type::normalize)
-            .any(|t| t.is_intersection_type())
-        {
+        if ty.types.iter().any(|t| t.is_intersection()) {
             self.valid = false;
             return;
         }

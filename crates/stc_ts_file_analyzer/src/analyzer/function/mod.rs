@@ -23,14 +23,14 @@ use crate::{
     ty::{FnParam, Tuple, Type, TypeParam},
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 mod return_type;
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, f: &RFunction, name: Option<&RIdent>) -> ValidationResult<ty::Function> {
+    fn validate(&mut self, f: &RFunction, name: Option<&RIdent>) -> VResult<ty::Function> {
         self.record(f);
 
         let marks = self.marks();
@@ -106,7 +106,7 @@ impl Analyzer<'_, '_> {
             if !child.is_builtin {
                 params = params
                     .into_iter()
-                    .map(|param: FnParam| -> ValidationResult<_> {
+                    .map(|param: FnParam| -> VResult<_> {
                         let ty = box child.expand(param.span, *param.ty, Default::default())?;
                         Ok(FnParam { ty, ..param })
                     })
@@ -274,7 +274,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn fn_to_type_element(&mut self, f: &Function) -> ValidationResult<TypeElement> {
+    pub(crate) fn fn_to_type_element(&mut self, f: &Function) -> VResult<TypeElement> {
         Ok(TypeElement::Call(CallSignature {
             span: f.span.with_ctxt(SyntaxContext::empty()),
             params: f.params.clone(),
@@ -287,7 +287,7 @@ impl Analyzer<'_, '_> {
     ///
     /// If the referred type has default type parameter, we have to include it
     /// in function type of output (.d.ts)
-    fn qualify_ref_type_args(&mut self, span: Span, mut ty: Ref) -> ValidationResult<Ref> {
+    fn qualify_ref_type_args(&mut self, span: Span, mut ty: Ref) -> VResult<Ref> {
         let actual_ty = self.type_of_ts_entity_name(
             span,
             self.ctx.module_id,
@@ -470,7 +470,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &RParamOrTsParamProp) -> ValidationResult<FnParam> {
+    fn validate(&mut self, p: &RParamOrTsParamProp) -> VResult<FnParam> {
         match p {
             RParamOrTsParamProp::TsParamProp(p) => p.validate_with(self),
             RParamOrTsParamProp::Param(p) => p.validate_with(self),
@@ -518,7 +518,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     /// NOTE: This method **should not call f.fold_children_with(self)**
-    fn validate(&mut self, f: &RFnExpr, type_ann: Option<&Type>) -> ValidationResult<Type> {
+    fn validate(&mut self, f: &RFnExpr, type_ann: Option<&Type>) -> VResult<Type> {
         Ok(self.visit_fn(f.ident.as_ref(), &f.function, type_ann))
     }
 }

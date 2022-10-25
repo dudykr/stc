@@ -12,12 +12,12 @@ use crate::{
     util::RemoveTypes,
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &ROptChainExpr, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(&mut self, node: &ROptChainExpr, type_ann: Option<&Type>) -> VResult {
         let span = node.span;
 
         match &*node.expr {
@@ -73,7 +73,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(super) fn is_obj_optional(&mut self, obj: &Type) -> ValidationResult<bool> {
+    pub(super) fn is_obj_optional(&mut self, obj: &Type) -> VResult<bool> {
         if obj.is_kwd(TsKeywordTypeKind::TsNullKeyword)
             || obj.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
         {

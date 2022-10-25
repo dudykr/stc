@@ -25,7 +25,7 @@ use crate::{
     util::is_str_or_union,
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[derive(Clone, Copy)]
@@ -39,11 +39,7 @@ impl Analyzer<'_, '_> {
     /// But actually we don't report errors
     ///
     /// If type does not change due to a loop, we evaluate
-    fn validate_loop_body_with_scope(
-        &mut self,
-        test: Option<&RExpr>,
-        body: &RStmt,
-    ) -> ValidationResult<()> {
+    fn validate_loop_body_with_scope(&mut self, test: Option<&RExpr>, body: &RStmt) -> VResult<()> {
         let mut orig_facts = self.cur_facts.take();
 
         let mut prev_facts = orig_facts.true_facts.take();
@@ -159,7 +155,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         e: &RVarDeclOrPat,
         kind: ForHeadKind,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         match e {
             RVarDeclOrPat::VarDecl(v) => {
                 if v.decls.len() >= 1 {
@@ -172,11 +168,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn validate_lhs_of_for_in_of_loop_pat(
-        &mut self,
-        p: &RPat,
-        kind: ForHeadKind,
-    ) -> ValidationResult<()> {
+    fn validate_lhs_of_for_in_of_loop_pat(&mut self, p: &RPat, kind: ForHeadKind) -> VResult<()> {
         match p {
             RPat::Object(..) | RPat::Array(..) => match kind {
                 ForHeadKind::In => {
@@ -189,11 +181,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn validate_lhs_of_for_in_of_loop_expr(
-        &mut self,
-        e: &RExpr,
-        kind: ForHeadKind,
-    ) -> ValidationResult<()> {
+    fn validate_lhs_of_for_in_of_loop_expr(&mut self, e: &RExpr, kind: ForHeadKind) -> VResult<()> {
         match e {
             RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) => Ok(()),
             // We use different error code for this.
@@ -205,7 +193,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn get_element_type_of_for_in(&mut self, rhs: &Type) -> ValidationResult {
+    fn get_element_type_of_for_in(&mut self, rhs: &Type) -> VResult {
         let rhs = self
             .normalize(
                 None,
@@ -306,7 +294,7 @@ impl Analyzer<'_, '_> {
         self.with_child(
             ScopeKind::Flow,
             Default::default(),
-            |child: &mut Analyzer| -> ValidationResult<()> {
+            |child: &mut Analyzer| -> VResult<()> {
                 // Error should not be `no such var` if it's used in rhs.
                 let created_vars: Vec<Id> = match left {
                     RVarDeclOrPat::VarDecl(v) => find_ids_in_pat(&v.decls),

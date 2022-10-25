@@ -26,7 +26,7 @@ use crate::{
     ty::{Array, Type, TypeExt},
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[derive(Debug, Default)]
@@ -78,7 +78,7 @@ impl Analyzer<'_, '_> {
 
         // let mut old_ret_tys = self.scope.return_types.take();
 
-        let mut ret_ty = (|| -> ValidationResult<_> {
+        let mut ret_ty = (|| -> VResult<_> {
             let mut values: ReturnValues = {
                 let ctx = Ctx {
                     preserve_ref: true,
@@ -451,7 +451,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RYieldExpr) -> ValidationResult {
+    fn validate(&mut self, e: &RYieldExpr) -> VResult {
         let span = e.span;
 
         if let Some(res) = e.arg.validate_with_default(self) {

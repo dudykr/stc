@@ -17,7 +17,7 @@ use crate::{
         assign::{AssignData, AssignOpts},
         Analyzer,
     },
-    ValidationResult,
+    VResult,
 };
 
 impl Analyzer<'_, '_> {
@@ -33,14 +33,14 @@ impl Analyzer<'_, '_> {
         l: &Type,
         r: &Type,
         opts: AssignOpts,
-    ) -> Option<ValidationResult<()>> {
+    ) -> Option<VResult<()>> {
         let r_res = self.flatten_unions_for_assignment(opts.span, Cow::Borrowed(r));
 
         match r_res {
             Ok(mut r) => {
                 r.make_clone_cheap();
 
-                if r.normalize().is_union_type() {
+                if r.is_union_type() {
                     Some(
                         self.assign_with_opts(data, opts, l, &r)
                             .context("tried to assign to a flattened union to another union"),
@@ -53,11 +53,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn flatten_unions_for_assignment(
-        &mut self,
-        span: Span,
-        ty: Cow<Type>,
-    ) -> ValidationResult<Type> {
+    fn flatten_unions_for_assignment(&mut self, span: Span, ty: Cow<Type>) -> VResult<Type> {
         let ty = self.normalize(Some(span), ty, Default::default())?;
 
         match ty.normalize() {
@@ -97,7 +93,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         to: &mut Type,
         el: &TypeElement,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         match el {
             TypeElement::Property(el) => {
                 if let Some(el_ty) = &el.type_ann {
@@ -155,7 +151,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         to: &mut Type,
         el: &TupleElement,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         if let Some(el_ty) = self.expand_union_for_assignment(span, &el.ty) {
             let mut to_types = (0..el_ty.types.len()).map(|_| to.clone()).collect_vec();
 

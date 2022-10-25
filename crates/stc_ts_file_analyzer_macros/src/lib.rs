@@ -206,7 +206,7 @@ pub fn validator(
         let ret_ty = match ret_ty {
             ReturnType::Type(_, ty) => &**ty,
             ReturnType::Default => {
-                default_ty = q!((crate::ValidationResult<()>)).parse();
+                default_ty = q!((crate::VResult<()>)).parse();
                 &default_ty
             }
         };

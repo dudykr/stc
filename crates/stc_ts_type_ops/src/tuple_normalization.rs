@@ -27,9 +27,7 @@ impl VisitMut<Type> for TupleNormalizer {
                 let span = ty.span();
                 let mut types = ty
                     .take()
-                    .foldable()
-                    .tuple()
-                    .unwrap()
+                    .expect_tuple()
                     .elems
                     .into_iter()
                     .map(|elem| *elem.ty)
@@ -43,7 +41,7 @@ impl VisitMut<Type> for TupleNormalizer {
 
                 *ty = Type::Array(Array {
                     span,
-                    elem_type: box Type::union(types),
+                    elem_type: box Type::new_union(span, types),
                     metadata: ArrayMetadata {
                         common: common_metadata,
                         ..Default::default()

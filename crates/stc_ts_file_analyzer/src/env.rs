@@ -206,7 +206,6 @@ pub trait BuiltInGen: Sized {
                                     .clone()
                                     .validate_with(&mut analyzer)
                                     .expect("builtin: failed to parse interface body")
-                                    .foldable()
                                     .expect_interface();
 
                                 match types.entry(i.id.sym.clone()) {

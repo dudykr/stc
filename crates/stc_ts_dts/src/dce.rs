@@ -39,7 +39,7 @@ impl DceForDts<'_> {
                 );
             }
 
-            types.iter().filter_map(|ty| pred(ty.normalize())).next()
+            types.iter().filter_map(|ty| pred(ty)).next()
         } else {
             None
         }

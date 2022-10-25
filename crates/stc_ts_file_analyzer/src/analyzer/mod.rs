@@ -38,7 +38,7 @@ use crate::{
     ty::Type,
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 macro_rules! try_opt {
@@ -351,7 +351,7 @@ fn make_module_ty(span: Span, name: RTsModuleName, exports: ModuleTypeData) -> t
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RScript) -> ValidationResult<ty::Module> {
+    fn validate(&mut self, node: &RScript) -> VResult<ty::Module> {
         let span = node.span;
 
         let (errors, data) = {
@@ -571,9 +571,9 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         kind: ScopeKind,
         facts: CondFacts,
         op: F,
-    ) -> ValidationResult<Ret>
+    ) -> VResult<Ret>
     where
-        F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> ValidationResult<Ret>,
+        F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> VResult<Ret>,
     {
         self.with_child_with_hook(kind, facts, op, |_| {})
     }
@@ -588,9 +588,9 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         facts: CondFacts,
         op: F,
         hook: H,
-    ) -> ValidationResult<Ret>
+    ) -> VResult<Ret>
     where
-        F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> ValidationResult<Ret>,
+        F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> VResult<Ret>,
         H: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>),
     {
         let ctx = self.ctx;
@@ -688,7 +688,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
 
     fn validate_with<F>(&mut self, op: F)
     where
-        F: FnOnce(&mut Analyzer) -> ValidationResult<()>,
+        F: FnOnce(&mut Analyzer) -> VResult<()>,
     {
         let res = op(self);
         match res {
@@ -759,11 +759,11 @@ impl Load for NoopLoader {
         base: ModuleId,
         dep: ModuleId,
         partial: &ModuleTypeData,
-    ) -> ValidationResult {
+    ) -> VResult {
         unreachable!()
     }
 
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult {
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult {
         unreachable!()
     }
 
@@ -963,7 +963,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &RTsModuleBlock) -> ValidationResult<()> {
+    fn validate(&mut self, decl: &RTsModuleBlock) -> VResult<()> {
         let body = decl.body.iter().collect();
         self.validate_stmts_with_hoisting(&body);
 
@@ -973,7 +973,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &RTsNamespaceDecl) -> ValidationResult {
+    fn validate(&mut self, decl: &RTsNamespaceDecl) -> VResult {
         let is_builtin = self.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;
@@ -1007,7 +1007,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &RTsModuleDecl) -> ValidationResult<Option<Type>> {
+    fn validate(&mut self, decl: &RTsModuleDecl) -> VResult<Option<Type>> {
         let is_builtin = self.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;

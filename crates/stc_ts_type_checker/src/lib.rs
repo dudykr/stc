@@ -13,7 +13,7 @@ use stc_ts_dts::{apply_mutations, cleanup_module_for_dts};
 use stc_ts_env::Env;
 use stc_ts_errors::{debug::debugger::Debugger, Error};
 use stc_ts_file_analyzer::{
-    analyzer::Analyzer, loader::Load, validator::ValidateWith, ModuleTypeData, ValidationResult,
+    analyzer::Analyzer, loader::Load, validator::ValidateWith, ModuleTypeData, VResult,
 };
 use stc_ts_module_loader::ModuleGraph;
 use stc_ts_storage::{ErrorStore, File, Group, Single};
@@ -430,7 +430,7 @@ impl Load for Checker {
         base: ModuleId,
         dep: ModuleId,
         _partial: &ModuleTypeData,
-    ) -> ValidationResult {
+    ) -> VResult {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 
@@ -439,7 +439,7 @@ impl Load for Checker {
         return Ok(data);
     }
 
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> ValidationResult {
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 

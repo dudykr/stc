@@ -64,7 +64,8 @@ impl Fold<Function> for TypeParamRenamer {
 
 impl Fold<Type> for TypeParamRenamer {
     fn fold(&mut self, mut ty: Type) -> Type {
-        ty = ty.foldable().fold_children_with(self);
+        ty.normalize_mut();
+        ty = ty.fold_children_with(self);
 
         match ty.normalize() {
             Type::Param(ref param) => {

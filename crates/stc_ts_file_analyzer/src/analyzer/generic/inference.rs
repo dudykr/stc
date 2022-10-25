@@ -27,7 +27,7 @@ use crate::{
     },
     ty::TypeExt,
     util::unwrap_ref_with_single_arg,
-    ValidationResult,
+    VResult,
 };
 
 /// # Default
@@ -70,7 +70,7 @@ impl Analyzer<'_, '_> {
         arg_ty: &Type,
         arg: &Union,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         // Check 'form's of type.
         //
         // `Promise<T> | T` and `Promise<void> | void` have same 'form'.
@@ -105,7 +105,7 @@ impl Analyzer<'_, '_> {
         param: &Union,
         arg: &Type,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let type_forms = param.types.iter().map(TypeForm::from).collect_vec();
         let arg_form = TypeForm::from(arg);
 
@@ -144,7 +144,7 @@ impl Analyzer<'_, '_> {
         tp: &TypeParam,
         ty: Cow<Type>,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         self.insert_inferred_raw(span, inferred, tp.name.clone(), ty, opts)
     }
 
@@ -178,7 +178,7 @@ impl Analyzer<'_, '_> {
         name: Id,
         ty: Cow<Type>,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let marks = self.marks();
 
         info!(
@@ -228,7 +228,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                if ty.normalize().is_union_type() {
+                if ty.is_union_type() {
                     *e.get_mut() = InferredType::Union(ty.into_owned().cheap());
                     return Ok(());
                 }
@@ -285,7 +285,7 @@ impl Analyzer<'_, '_> {
         param: &Type,
         arg: &Type,
         opts: InferTypeOpts,
-    ) -> ValidationResult<FxHashMap<Id, Type>> {
+    ) -> VResult<FxHashMap<Id, Type>> {
         if cfg!(debug_assertions) {
             // Assertion for deep clone
             let _ = type_params.clone();
@@ -321,7 +321,7 @@ impl Analyzer<'_, '_> {
         param: &Type,
         arg: &Type,
         opts: InferTypeOpts,
-    ) -> Option<ValidationResult<()>> {
+    ) -> Option<VResult<()>> {
         let param = param.normalize();
         let arg = arg.normalize();
 
@@ -397,7 +397,7 @@ impl Analyzer<'_, '_> {
         param: &Interface,
         arg: &Type,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let arg = arg.normalize();
 
         match arg {
@@ -450,7 +450,7 @@ impl Analyzer<'_, '_> {
         param: &Interface,
         arg: &Interface,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         self.infer_type_using_type_elements_and_type_elements(
             span,
             inferred,
@@ -470,7 +470,7 @@ impl Analyzer<'_, '_> {
         param: &TypeLit,
         arg: &TypeLit,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         self.infer_type_using_type_elements_and_type_elements(
             span,
             inferred,
@@ -488,7 +488,7 @@ impl Analyzer<'_, '_> {
         param: &Type,
         arg: &Type,
         opts: InferTypeOpts,
-    ) -> ValidationResult<bool> {
+    ) -> VResult<bool> {
         let p = param.normalize();
         let a = arg.normalize();
         match (p, a) {
@@ -520,7 +520,7 @@ impl Analyzer<'_, '_> {
         param: &[TypeElement],
         arg: &[TypeElement],
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         for p in param {
             for a in arg {
                 let opts = match p {
@@ -715,7 +715,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 error!(
-                    "unimplemented: type infernce: type element:\nParam = {:#?}\nArg = {:#?}",
+                    "unimplemented: type inference: type element:\nParam = {:#?}\nArg = {:#?}",
                     p, a
                 );
             }
@@ -731,7 +731,7 @@ impl Analyzer<'_, '_> {
         param: &Operator,
         arg: &Type,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         match param.op {
             TsTypeOperatorOp::KeyOf => {}
             TsTypeOperatorOp::Unique => {}
@@ -754,7 +754,7 @@ impl Analyzer<'_, '_> {
         param: &Class,
         arg: &Class,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         self.infer_types_using_class_def(span, inferred, &param.def, &arg.def, opts)
     }
 
@@ -765,7 +765,7 @@ impl Analyzer<'_, '_> {
         param: &ClassDef,
         arg: &ClassDef,
         opts: InferTypeOpts,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         for pm in &param.body {
             for am in &arg.body {
                 match (pm, am) {

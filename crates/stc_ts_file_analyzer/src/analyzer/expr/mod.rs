@@ -54,7 +54,7 @@ use crate::{
     util::RemoveTypes,
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 mod array;
@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    ) -> VResult {
         self.record(e);
 
         let _stack = stack::start(64);
@@ -117,7 +117,7 @@ impl Analyzer<'_, '_> {
             _ => false,
         };
 
-        let mut ty = (|| -> ValidationResult {
+        let mut ty = (|| -> VResult {
             match e {
                 RExpr::TaggedTpl(e) => e.validate_with(self),
 
@@ -397,7 +397,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RExprOrSuper) -> ValidationResult {
+    fn validate(&mut self, e: &RExprOrSuper) -> VResult {
         match e {
             RExprOrSuper::Expr(e) => e.validate_with_default(self),
             RExprOrSuper::Super(s) => Ok(Type::any(s.span, Default::default())),
@@ -407,24 +407,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        e: &RParenExpr,
-        mode: TypeOfMode,
-        type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    fn validate(&mut self, e: &RParenExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
         e.expr.validate_with_args(self, (mode, None, type_ann))
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        e: &RAssignExpr,
-        mode: TypeOfMode,
-        type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    fn validate(&mut self, e: &RAssignExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
         let ctx = Ctx {
             pat_mode: PatMode::Assign,
             ..self.ctx
@@ -589,12 +579,7 @@ pub(crate) struct AccessPropertyOpts {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        e: &RSeqExpr,
-        mode: TypeOfMode,
-        type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    fn validate(&mut self, e: &RSeqExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
         let RSeqExpr {
             span, ref exprs, ..
         } = *e;
@@ -694,7 +679,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> ValidationResult<Key> {
+    pub(crate) fn validate_key(&mut self, prop: &RExpr, computed: bool) -> VResult<Key> {
         if computed {
             prop.validate_with_default(self)
                 .and_then(|ty| {
@@ -903,7 +888,7 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         members: &[TypeElement],
         opts: AccessPropertyOpts,
-    ) -> ValidationResult<Option<Type>> {
+    ) -> VResult<Option<Type>> {
         let mut matching_elements = vec![];
         for el in members.iter() {
             if let Some(key) = el.key() {
@@ -1137,7 +1122,7 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
         opts: AccessPropertyOpts,
-    ) -> ValidationResult {
+    ) -> VResult {
         if !self.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
         }
@@ -1259,16 +1244,15 @@ impl Analyzer<'_, '_> {
         let obj_str = dump_type_as_string(&self.cm, &obj);
 
         // We use child scope to store type parameters.
-        let mut res =
-            self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> ValidationResult<_> {
-                let mut ty = analyzer
-                    .access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?
-                    .fixed();
-                ty.assert_valid();
-                ty = analyzer.expand_type_params_using_scope(ty)?;
-                ty.assert_valid();
-                Ok(ty)
-            });
+        let mut res = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> VResult<_> {
+            let mut ty = analyzer
+                .access_property_inner(span, obj, prop, type_mode, id_ctx, opts)?
+                .fixed();
+            ty.assert_valid();
+            ty = analyzer.expand_type_params_using_scope(ty)?;
+            ty.assert_valid();
+            Ok(ty)
+        });
 
         if !self.is_builtin {
             res = res.with_context(|| {
@@ -1320,7 +1304,7 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
         opts: AccessPropertyOpts,
-    ) -> ValidationResult {
+    ) -> VResult {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy());
 
@@ -1337,11 +1321,11 @@ impl Analyzer<'_, '_> {
         let computed = prop.is_computed();
 
         if computed && !opts.dont_validate_type_of_computed_prop {
-            let res: ValidationResult<_> = try {
+            let res: VResult<_> = try {
                 let key_ty = prop.ty();
                 let key_ty = self.normalize(Some(span), key_ty, Default::default())?;
 
-                if key_ty.normalize().is_function() || key_ty.normalize().is_constructor() {
+                if key_ty.is_fn_type() || key_ty.is_constructor() {
                     Err(Error::CannotUseTypeAsIndexIndex { span })?
                 }
             };
@@ -1604,7 +1588,7 @@ impl Analyzer<'_, '_> {
                     Some(&self.scope)
                 };
                 if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
-                    if this.normalize().is_this() {
+                    if this.is_this() {
                         unreachable!("this() should not be `this`")
                     }
 
@@ -1887,7 +1871,7 @@ impl Analyzer<'_, '_> {
                             if self.key_matches(span, &mtd.key, prop, false) {
                                 if mtd.is_abstract {
                                     self.storage
-                                        .report(Error::CannotAccessAbstractMemeber { span });
+                                        .report(Error::CannotAccessAbstractMember { span });
                                     return Ok(Type::any(span, Default::default()));
                                 }
 
@@ -2384,7 +2368,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let is_all_tuple = types.iter().all(|ty| ty.normalize().is_tuple());
+                let is_all_tuple = types.iter().all(|ty| ty.is_tuple());
                 let use_undefined_for_tuple_index_error = opts.use_undefined_for_tuple_index_error
                     || (type_mode == TypeOfMode::LValue && is_all_tuple);
 
@@ -2513,7 +2497,7 @@ impl Analyzer<'_, '_> {
                         sym: js_word!("length"),
                         ..
                     } => {
-                        if elems.iter().any(|el| el.ty.normalize().is_rest()) {
+                        if elems.iter().any(|el| el.ty.is_rest()) {
                             return Ok(Type::Keyword(KeywordType {
                                 span,
                                 kind: TsKeywordTypeKind::TsNumberKeyword,
@@ -2657,7 +2641,7 @@ impl Analyzer<'_, '_> {
                         if let Key::Normal { sym, .. } = prop {
                             if let Some(types) = exports.types.get(sym) {
                                 for ty in types.iter() {
-                                    if ty.normalize().is_module() {
+                                    if ty.is_module() {
                                         return Ok(ty.clone());
                                     }
                                 }
@@ -2684,13 +2668,13 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::any(span, Default::default()));
                     }
 
-                    if this.normalize().is_this() {
+                    if this.is_this() {
                         unreachable!("this() should not be `this`")
                     }
 
                     match this.normalize() {
                         Type::Instance(ty) => {
-                            if ty.ty.normalize().is_this() {
+                            if ty.ty.is_this() {
                                 unreachable!("this() should not be `this`")
                             }
                         }
@@ -3092,7 +3076,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: Type,
         type_args: &TypeParamInstantiation,
-    ) -> ValidationResult<Type> {
+    ) -> VResult<Type> {
         match ty.normalize() {
             Type::Interface(Interface { type_params, .. })
             | Type::Alias(Alias { type_params, .. })
@@ -3126,7 +3110,7 @@ impl Analyzer<'_, '_> {
         name: &[Id],
         type_mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
-    ) -> ValidationResult {
+    ) -> VResult {
         assert!(name.len() > 0, "Cannot determine type of empty name");
 
         let mut id: RIdent = name[0].clone().into();
@@ -3175,7 +3159,7 @@ impl Analyzer<'_, '_> {
         i: &RIdent,
         type_mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
-    ) -> ValidationResult {
+    ) -> VResult {
         let span = i.span();
         let id: Id = i.into();
         let name: Name = i.into();
@@ -3193,9 +3177,7 @@ impl Analyzer<'_, '_> {
 
         let mut modules = vec![];
         let mut ty = self.type_of_raw_var(i, type_mode)?;
-        if type_mode == TypeOfMode::LValue
-            && (ty.normalize().is_class_def() || ty.normalize().is_enum_type())
-        {
+        if type_mode == TypeOfMode::LValue && (ty.is_class_def() || ty.is_enum_type()) {
             return Err(Error::NotVariable { span, left: span });
         }
         ty.assert_valid();
@@ -3298,7 +3280,7 @@ impl Analyzer<'_, '_> {
 
     /// Returned type does not reflects conditional type facts. (like Truthy /
     /// exclusion)
-    fn type_of_raw_var(&mut self, i: &RIdent, type_mode: TypeOfMode) -> ValidationResult {
+    fn type_of_raw_var(&mut self, i: &RIdent, type_mode: TypeOfMode) -> VResult {
         info!("({}) type_of_raw_var({})", self.scope.depth(), Id::from(i));
 
         // See documentation on Analyzer.cur_module_name to understand what we are doing
@@ -3667,7 +3649,7 @@ impl Analyzer<'_, '_> {
         ctxt: ModuleId,
         n: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
-    ) -> ValidationResult {
+    ) -> VResult {
         self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
     }
 
@@ -3678,7 +3660,7 @@ impl Analyzer<'_, '_> {
         ctxt: ModuleId,
         n: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
-    ) -> ValidationResult {
+    ) -> VResult {
         let span = span.with_ctxt(SyntaxContext::empty());
         {
             let res = self.report_error_for_unresolve_type(span, &n, type_args);
@@ -3863,11 +3845,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Expand type arguments if provided.
-    fn type_of_member_expr(
-        &mut self,
-        expr: &RMemberExpr,
-        type_mode: TypeOfMode,
-    ) -> ValidationResult {
+    fn type_of_member_expr(&mut self, expr: &RMemberExpr, type_mode: TypeOfMode) -> VResult {
         let RMemberExpr {
             ref obj,
             computed,
@@ -4096,7 +4074,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         is_super_call: bool,
     ) {
-        let res: ValidationResult<_> = try {
+        let res: VResult<_> = try {
             if !self.ctx.in_class_with_super && self.ctx.super_references_super_class {
                 Err(Error::SuperInClassWithoutSuper { span })?
             }
@@ -4186,7 +4164,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RTpl) -> ValidationResult {
+    fn validate(&mut self, e: &RTpl) -> VResult {
         e.exprs.visit_with(self);
 
         if e.exprs.is_empty() {

@@ -17,12 +17,12 @@ use tracing::debug;
 use crate::{
     analyzer::{Analyzer, ScopeKind},
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &RObjectLit, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(&mut self, node: &RObjectLit, type_ann: Option<&Type>) -> VResult {
         let type_ann = self.expand_type_ann(node.span, type_ann)?;
         debug_assert_eq!(node.span.ctxt, SyntaxContext::empty());
 
@@ -121,7 +121,7 @@ impl Analyzer<'_, '_> {
         to: Type,
         prop: &RPropOrSpread,
         object_type: Option<&Type>,
-    ) -> ValidationResult {
+    ) -> VResult {
         match prop {
             RPropOrSpread::Spread(RSpreadElement { expr, .. }) => {
                 let prop_ty: Type = expr.validate_with_default(self)?.freezed();
@@ -178,7 +178,7 @@ impl Analyzer<'_, '_> {
     /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
     /// number } | { a: number, c: number }`
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    fn append_type(&mut self, to: Type, mut rhs: Type) -> ValidationResult<Type> {
+    fn append_type(&mut self, to: Type, mut rhs: Type) -> VResult<Type> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
@@ -281,7 +281,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> ValidationResult {
+    fn append_type_element(&mut self, to: Type, rhs: TypeElement) -> VResult {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }

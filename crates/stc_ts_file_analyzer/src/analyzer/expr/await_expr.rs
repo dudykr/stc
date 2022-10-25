@@ -12,12 +12,12 @@ use crate::{
     analyzer::{expr::TypeOfMode, Analyzer},
     util::unwrap_ref_with_single_arg,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RAwaitExpr, type_ann: Option<&Type>) -> ValidationResult {
+    fn validate(&mut self, e: &RAwaitExpr, type_ann: Option<&Type>) -> VResult {
         let span = e.span;
 
         let arg_type_ann = type_ann
@@ -58,7 +58,7 @@ impl Analyzer<'_, '_> {
                 })
             });
 
-        self.with(|a: &mut Analyzer| -> ValidationResult<_> {
+        self.with(|a: &mut Analyzer| -> VResult<_> {
             let mut arg_ty = e
                 .arg
                 .validate_with_args(a, (TypeOfMode::RValue, None, arg_type_ann.as_ref()))
@@ -83,7 +83,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ty: Cow<'a, Type>,
-    ) -> ValidationResult<Cow<'a, Type>> {
+    ) -> VResult<Cow<'a, Type>> {
         if let Some(arg) = unwrap_ref_with_single_arg(&ty, "Promise") {
             return self
                 .get_awaited_type(span, Cow::Borrowed(arg))

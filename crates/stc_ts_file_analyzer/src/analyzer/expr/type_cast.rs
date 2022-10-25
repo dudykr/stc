@@ -19,7 +19,7 @@ use crate::{
     util::is_str_or_union,
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    ) -> VResult {
         // We don't apply type annotation because it can corrupt type checking.
         let mut casted_ty = e.type_ann.validate_with(self)?;
         casted_ty.make_clone_cheap();
@@ -61,7 +61,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> ValidationResult {
+    ) -> VResult {
         if e.node_id.is_invalid() {
             return e.type_ann.validate_with(self);
         }
@@ -90,12 +90,7 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// results in error.
-    fn validate_type_cast(
-        &mut self,
-        span: Span,
-        orig_ty: Type,
-        casted_ty: Type,
-    ) -> ValidationResult {
+    fn validate_type_cast(&mut self, span: Span, orig_ty: Type, casted_ty: Type) -> VResult {
         let mut orig_ty = self.expand(
             span,
             orig_ty,
@@ -120,12 +115,7 @@ impl Analyzer<'_, '_> {
         Ok(casted_ty)
     }
 
-    fn validate_type_cast_inner(
-        &mut self,
-        span: Span,
-        orig: &Type,
-        casted: &Type,
-    ) -> ValidationResult<()> {
+    fn validate_type_cast_inner(&mut self, span: Span, orig: &Type, casted: &Type) -> VResult<()> {
         // I don't know why this is valid, but `stringLiteralsWithTypeAssertions01.ts`
         // has some tests for this.
         if is_str_or_union(&orig) && casted.is_str() {
@@ -256,7 +246,7 @@ impl Analyzer<'_, '_> {
         l: &Type,
         r: &Type,
         opts: CastableOpts,
-    ) -> ValidationResult<bool> {
+    ) -> VResult<bool> {
         let l = l.normalize();
         let r = r.normalize();
 
@@ -278,7 +268,7 @@ impl Analyzer<'_, '_> {
         from: &Type,
         to: &Type,
         opts: CastableOpts,
-    ) -> ValidationResult<bool> {
+    ) -> VResult<bool> {
         let from = from.normalize();
         let to = to.normalize();
 
@@ -373,7 +363,7 @@ impl Analyzer<'_, '_> {
         }
 
         // TODO(kdy1): More check
-        if from.is_function() && to.is_function() {
+        if from.is_fn_type() && to.is_fn_type() {
             return Ok(false);
         }
 

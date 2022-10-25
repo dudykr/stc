@@ -11,7 +11,7 @@ use stc_ts_types::{
 };
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use swc_atoms::JsWord;
-use swc_common::DUMMY_SP;
+use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 
@@ -36,15 +36,15 @@ impl UnionNormalizer {
     }
 
     fn normalize_fn_types(&mut self, ty: &mut Type) {
-        if !ty.normalize().is_union_type() {
+        if !ty.is_union_type() {
             return;
         }
         ty.make_clone_cheap();
-        let u = match ty.normalize_mut() {
-            Type::Union(u) => u,
-            _ => return,
+        let u = match ty.as_union_type_mut() {
+            Some(v) => v,
+            None => return,
         };
-        if u.types.iter().any(|ty| !ty.normalize().is_function()) {
+        if u.types.iter().any(|ty| !ty.is_fn_type()) {
             return;
         }
 
@@ -99,7 +99,7 @@ impl UnionNormalizer {
                     }
                     types.dedup_type();
 
-                    let ty = box Type::intersection(DUMMY_SP, types);
+                    let ty = box Type::new_intersection(DUMMY_SP, types);
                     FnParam {
                         span: DUMMY_SP,
                         // TODO
@@ -116,7 +116,7 @@ impl UnionNormalizer {
                     }
                 })
                 .collect(),
-            ret_ty: box Type::union(return_types),
+            ret_ty: box Type::new_union(u.span, return_types),
             metadata: FunctionMetadata {
                 common: u.metadata.common,
                 ..Default::default()
@@ -126,16 +126,16 @@ impl UnionNormalizer {
 
     /// TODO(kdy1): Add type parameters.
     fn normalize_call_signatures(&self, ty: &mut Type) {
-        if !ty.normalize().is_union_type() {
+        if !ty.is_union_type() {
             return;
         }
         ty.make_clone_cheap();
 
-        let u = match ty.normalize_mut() {
-            Type::Union(u) => u,
+        let u = match ty.as_union_type_mut() {
+            Some(u) => u,
             _ => return,
         };
-        if u.types.iter().any(|ty| !ty.normalize().is_type_lit()) {
+        if u.types.iter().any(|ty| !ty.is_type_lit()) {
             return;
         }
         let mut inexact = false;
@@ -241,7 +241,7 @@ impl UnionNormalizer {
 
             members.push(TypeElement::Call(CallSignature {
                 span: DUMMY_SP,
-                ret_ty: Some(box Type::union(return_types)),
+                ret_ty: Some(box Type::new_union(DUMMY_SP, return_types)),
                 type_params,
                 params: new_params
                     .into_iter()
@@ -257,7 +257,7 @@ impl UnionNormalizer {
                         }
                         types.dedup_type();
 
-                        let ty = box Type::intersection(DUMMY_SP, types);
+                        let ty = box Type::new_intersection(DUMMY_SP, types);
                         FnParam {
                             span: DUMMY_SP,
                             // TODO
@@ -321,45 +321,40 @@ impl UnionNormalizer {
 
         // Add properties.
         for ty in u.types.iter_mut() {
-            if matches!(ty.normalize(), Type::TypeLit(..)) {
-                match ty.normalize_mut() {
-                    Type::TypeLit(ty) => {
-                        ty.metadata.inexact |= inexact;
-                        ty.metadata.normalized = true;
+            if let Some(ty) = ty.as_type_lit_mut() {
+                ty.metadata.inexact |= inexact;
+                ty.metadata.normalized = true;
 
-                        for key in &keys {
-                            let has_key = ty.members.iter().any(|member| {
-                                if let Some(member_key) = member.non_computed_key() {
-                                    *key == *member_key
-                                } else {
-                                    false
-                                }
-                            });
-
-                            if !has_key {
-                                ty.members.push(TypeElement::Property(PropertySignature {
-                                    span: DUMMY_SP,
-                                    accessibility: None,
-                                    readonly: false,
-                                    key: Key::Normal {
-                                        span: DUMMY_SP,
-                                        sym: key.clone(),
-                                    },
-                                    optional: true,
-                                    params: Default::default(),
-                                    type_ann: Some(box Type::Keyword(KeywordType {
-                                        span: DUMMY_SP,
-                                        kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
-                                        metadata: Default::default(),
-                                    })),
-                                    type_params: Default::default(),
-                                    metadata: Default::default(),
-                                    accessor: Default::default(),
-                                }))
-                            }
+                for key in &keys {
+                    let has_key = ty.members.iter().any(|member| {
+                        if let Some(member_key) = member.non_computed_key() {
+                            *key == *member_key
+                        } else {
+                            false
                         }
+                    });
+
+                    if !has_key {
+                        ty.members.push(TypeElement::Property(PropertySignature {
+                            span: DUMMY_SP,
+                            accessibility: None,
+                            readonly: false,
+                            key: Key::Normal {
+                                span: DUMMY_SP,
+                                sym: key.clone(),
+                            },
+                            optional: true,
+                            params: Default::default(),
+                            type_ann: Some(box Type::Keyword(KeywordType {
+                                span: DUMMY_SP,
+                                kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
+                                metadata: Default::default(),
+                            })),
+                            type_params: Default::default(),
+                            metadata: Default::default(),
+                            accessor: Default::default(),
+                        }))
                     }
-                    _ => {}
                 }
             }
         }
@@ -383,7 +378,7 @@ impl VisitMut<Union> for UnionNormalizer {
         u.visit_mut_children_with(self);
 
         // If an union does not contains object literals, skip it.
-        if u.types.iter().all(|ty| !ty.normalize().is_type_lit()) {
+        if u.types.iter().all(|ty| !ty.is_type_lit()) {
             return;
         }
 

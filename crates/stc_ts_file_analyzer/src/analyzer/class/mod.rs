@@ -44,7 +44,7 @@ use crate::{
     ty::TypeExt,
     validator,
     validator::ValidateWith,
-    ValidationResult,
+    VResult,
 };
 
 mod order;
@@ -66,7 +66,7 @@ impl Analyzer<'_, '_> {
         is_static: bool,
         type_ann: &Option<RTsTypeAnn>,
         value: &Option<Box<RExpr>>,
-    ) -> ValidationResult<Option<Type>> {
+    ) -> VResult<Option<Type>> {
         let mut ty = try_opt!(type_ann.validate_with(self));
         let mut value_ty = {
             let ctx = Ctx {
@@ -149,7 +149,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &RClassProp) -> ValidationResult<ClassProperty> {
+    fn validate(&mut self, p: &RClassProp) -> VResult<ClassProperty> {
         let marks = self.marks();
         self.record(p);
 
@@ -219,7 +219,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &RPrivateProp) -> ValidationResult<ClassProperty> {
+    fn validate(&mut self, p: &RPrivateProp) -> VResult<ClassProperty> {
         match p.key.id.sym {
             js_word!("constructor") => {
                 self.storage.report(Error::ConstructorIsKeyword {
@@ -270,7 +270,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         c: &RConstructor,
         super_class: Option<&Type>,
-    ) -> ValidationResult<ConstructorSignature> {
+    ) -> VResult<ConstructorSignature> {
         self.record(c);
 
         let c_span = c.span();
@@ -395,7 +395,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &RTsParamProp) -> ValidationResult<FnParam> {
+    fn validate(&mut self, p: &RTsParamProp) -> VResult<FnParam> {
         if self.ctx.in_declare {
             match p.param {
                 RTsParamPropParam::Assign(..) => self
@@ -480,7 +480,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, p: &RTsFnParam) -> ValidationResult<FnParam> {
+    fn validate(&mut self, p: &RTsFnParam) -> VResult<FnParam> {
         self.record(p);
 
         let span = p.span();
@@ -538,7 +538,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RPrivateMethod) -> ValidationResult<ClassMember> {
+    fn validate(&mut self, c: &RPrivateMethod) -> VResult<ClassMember> {
         match c.key.id.sym {
             js_word!("constructor") => {
                 self.storage.report(Error::ConstructorIsKeyword {
@@ -565,7 +565,7 @@ impl Analyzer<'_, '_> {
                 is_static: c.is_static,
             },
             Default::default(),
-            |child: &mut Analyzer| -> ValidationResult<_> {
+            |child: &mut Analyzer| -> VResult<_> {
                 let type_params = try_opt!(c.function.type_params.validate_with(child));
                 if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter)
                     && type_params.is_some()
@@ -648,7 +648,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClassMethod) -> ValidationResult<ClassMember> {
+    fn validate(&mut self, c: &RClassMethod) -> VResult<ClassMember> {
         self.record(c);
 
         let marks = self.marks();
@@ -663,7 +663,7 @@ impl Analyzer<'_, '_> {
                 is_static: c.is_static,
             },
             Default::default(),
-            |child: &mut Analyzer| -> ValidationResult<_> {
+            |child: &mut Analyzer| -> VResult<_> {
                 child.ctx.in_declare |= c.function.body.is_none();
                 child.ctx.in_async |= c.function.is_async;
                 child.ctx.in_generator |= c.function.is_generator;
@@ -839,7 +839,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, m: &RClassMember) -> ValidationResult<Option<ClassMember>> {
+    fn validate(&mut self, m: &RClassMember) -> VResult<Option<ClassMember>> {
         Ok(match m {
             RClassMember::PrivateMethod(m) => Some(m.validate_with(self).map(From::from)?),
             RClassMember::PrivateProp(m) => Some(m.validate_with(self).map(From::from)?),
@@ -874,7 +874,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn report_errors_for_duplicate_class_members(&mut self, c: &RClass) -> ValidationResult<()> {
+    fn report_errors_for_duplicate_class_members(&mut self, c: &RClass) -> VResult<()> {
         fn normalize_prop_name(p: &RPropName) -> Cow<RPropName> {
             match p {
                 RPropName::Num(v) => Cow::Owned(RPropName::Ident(RIdent::new(
@@ -990,10 +990,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn report_errors_for_statics_mixed_with_instances(
-        &mut self,
-        c: &RClass,
-    ) -> ValidationResult<()> {
+    fn report_errors_for_statics_mixed_with_instances(&mut self, c: &RClass) -> VResult<()> {
         if self.ctx.in_declare {
             return Ok(());
         }
@@ -1070,7 +1067,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         c: &RClass,
         declare: bool,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         if self.ctx.in_declare || self.is_builtin {
             return Ok(());
         }
@@ -1437,7 +1434,7 @@ impl Analyzer<'_, '_> {
         });
 
         for parent in &*class.implements {
-            let res: ValidationResult<_> = try {
+            let res: VResult<_> = try {
                 let parent = self.type_of_ts_entity_name(
                     parent.span(),
                     self.ctx.module_id,
@@ -1539,7 +1536,7 @@ impl Analyzer<'_, '_> {
         let mut errors = Errors::default();
         let mut new_members = vec![];
 
-        let res: ValidationResult<()> = try {
+        let res: VResult<()> = try {
             match super_ty.normalize() {
                 Type::ClassDef(sc) => {
                     'outer: for sm in &sc.body {
@@ -1648,7 +1645,7 @@ impl Analyzer<'_, '_> {
 /// 5. Others, using dependency graph.
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClass) -> ValidationResult<ClassDef> {
+    fn validate(&mut self, c: &RClass) -> VResult<ClassDef> {
         self.record(c);
 
         let marks = self.marks();
@@ -1694,7 +1691,7 @@ impl Analyzer<'_, '_> {
         let c = self.with_child(
             ScopeKind::Class,
             Default::default(),
-            |child: &mut Analyzer| -> ValidationResult<_> {
+            |child: &mut Analyzer| -> VResult<_> {
                 child.ctx.super_references_super_class = true;
                 child.ctx.in_class_with_super = c.super_class.is_some();
 
@@ -2248,7 +2245,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClassExpr) -> ValidationResult<()> {
+    fn validate(&mut self, c: &RClassExpr) -> VResult<()> {
         self.scope.this_class_name = c.ident.as_ref().map(|v| v.into());
         let ty = match c.class.validate_with(self) {
             Ok(ty) => ty.into(),
@@ -2299,7 +2296,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, c: &RClassDecl) -> ValidationResult<()> {
+    fn validate(&mut self, c: &RClassDecl) -> VResult<()> {
         self.record(c);
 
         let ctx = Ctx {
@@ -2407,7 +2404,7 @@ impl Analyzer<'_, '_> {
     fn report_errors_for_class_member_incompatible_with_index_signature(
         &mut self,
         class: &ClassDef,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         let index = match self
             .get_index_signature_from_class(class.span, class)
             .context("tried to get index signature from a class")?
@@ -2476,7 +2473,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         ambient: &[ConstructorSignature],
         cons_with_body: Option<&ConstructorSignature>,
-    ) -> ValidationResult<()> {
+    ) -> VResult<()> {
         if let Some(i) = cons_with_body {
             for ambient in ambient {
                 self.assign_to_fn_like(
@@ -2506,7 +2503,7 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        let res: ValidationResult<_> = try {
+        let res: VResult<_> = try {
             match ty.normalize() {
                 Type::Ref(Ref {
                     type_name: RTsEntityName::Ident(i),
@@ -2534,7 +2531,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Instantate fully
-    pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> ValidationResult {
+    pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> VResult {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         Ok(match ty.normalize() {

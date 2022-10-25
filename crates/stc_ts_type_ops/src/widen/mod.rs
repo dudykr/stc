@@ -42,7 +42,7 @@ impl Fold<Type> for Widen {
                     types.push(*element.ty);
                 }
 
-                let elem_type = box Type::union(types);
+                let elem_type = box Type::new_union(span, types);
                 return Type::Array(Array {
                     span,
                     elem_type,

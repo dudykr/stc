@@ -9,13 +9,10 @@ use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned};
 use tracing::info;
 
-use crate::{analyzer::Analyzer, ValidationResult};
+use crate::{analyzer::Analyzer, VResult};
 
 impl Analyzer<'_, '_> {
-    fn type_element_to_class_member(
-        &mut self,
-        el: &TypeElement,
-    ) -> ValidationResult<Option<ClassMember>> {
+    fn type_element_to_class_member(&mut self, el: &TypeElement) -> VResult<Option<ClassMember>> {
         match el {
             TypeElement::Call(_) => Ok(None),
             TypeElement::Constructor(c) => Ok(Some(ClassMember::Constructor(c.clone()))),
@@ -51,7 +48,7 @@ impl Analyzer<'_, '_> {
 
     /// Handle declaration merging. This method is used to avoid implementing
     /// same logic twice.
-    fn merge_from_to(&mut self, span: Span, a: Type, b: Type) -> ValidationResult<Option<Type>> {
+    fn merge_from_to(&mut self, span: Span, a: Type, b: Type) -> VResult<Option<Type>> {
         if self.is_builtin {
             return Ok(None);
         }
@@ -147,12 +144,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Handle declaration merging.
-    fn merge_declaration_types(
-        &mut self,
-        span: Span,
-        orig: Type,
-        new: Type,
-    ) -> ValidationResult<Type> {
+    fn merge_declaration_types(&mut self, span: Span, orig: Type, new: Type) -> VResult<Type> {
         debug_assert!(orig.is_clone_cheap());
         debug_assert!(new.is_clone_cheap());
 
@@ -166,11 +158,7 @@ impl Analyzer<'_, '_> {
         Ok(new)
     }
 
-    pub(crate) fn merge_decl_with_name(
-        &mut self,
-        name: Id,
-        new: Type,
-    ) -> ValidationResult<(Type, bool)> {
+    pub(crate) fn merge_decl_with_name(&mut self, name: Id, new: Type) -> VResult<(Type, bool)> {
         let orig = self.find_type(self.ctx.module_id, &name)?;
         let mut orig = match orig {
             Some(v) => v,
