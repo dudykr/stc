@@ -2252,6 +2252,7 @@ dependencies = [
  "fxhash",
  "rnode",
  "stc_ts_ast_rnode",
+ "stc_ts_errors",
  "stc_ts_types",
  "swc_atoms",
  "swc_common",
