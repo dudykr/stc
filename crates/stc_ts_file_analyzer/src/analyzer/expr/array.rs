@@ -660,7 +660,7 @@ impl Analyzer<'_, '_> {
 
         let iterator = iterator?;
 
-        match iterator.normalize() {
+        match iterator.n() {
             Type::Class(..) => {
                 if let Ok(return_prop_ty) = self.access_property(
                     span,
@@ -673,7 +673,7 @@ impl Analyzer<'_, '_> {
                     IdCtx::Var,
                     Default::default(),
                 ) {
-                    if !return_prop_ty.normalize().is_function() {
+                    if !return_prop_ty.is_fn_type() {
                         self.storage
                             .report(Error::ReturnPropertyOfIteratorMustBeMethod { span })
                     }

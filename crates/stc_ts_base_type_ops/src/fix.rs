@@ -80,8 +80,8 @@ impl VisitMut<Union> for Fixer {
                 continue;
             }
 
-            if ty.normalize().is_union_type() {
-                let u = ty.foldable().union_type().unwrap();
+            if ty.is_union_type() {
+                let u = ty.expect_union_type();
                 for ty in u.types {
                     if new.iter().any(|stored| stored.type_eq(&ty)) {
                         continue;
@@ -141,7 +141,7 @@ impl Fixer {
             return;
         }
 
-        ty.normalize_mut();
+        ty.nm();
         ty.visit_mut_children_with(self);
 
         match ty {

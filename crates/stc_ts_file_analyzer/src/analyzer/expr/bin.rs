@@ -1027,7 +1027,7 @@ impl Analyzer<'_, '_> {
         }
 
         if self.ctx.in_switch_case_test {
-            if disc_ty.is_intersection_type() {
+            if disc_ty.is_intersection() {
                 return Ok(true);
             }
         }
