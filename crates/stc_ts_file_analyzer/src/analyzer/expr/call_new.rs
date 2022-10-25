@@ -1739,6 +1739,11 @@ impl Analyzer<'_, '_> {
                 .into());
             }
 
+            Type::Intersection(ty) => {
+                // For intersection, we should select one element which matches
+                // the signature
+            }
+
             _ => ret_err!(),
         }
     }
