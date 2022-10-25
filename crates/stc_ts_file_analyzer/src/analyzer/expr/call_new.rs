@@ -1739,9 +1739,33 @@ impl Analyzer<'_, '_> {
                 .into());
             }
 
-            Type::Intersection(ty) => {
+            Type::Intersection(i) => {
                 // For intersection, we should select one element which matches
                 // the signature
+
+                let mut candidates = vec![];
+
+                for ty in i.types.iter() {
+                    candidates.extend(self.extract_callee_candidates(span, kind, ty).context(
+                        "tried to extract callable candidates from an intersection type",
+                    )?);
+                }
+
+                if let Some(v) = self.select_and_invoke(
+                    span,
+                    kind,
+                    expr,
+                    &candidates,
+                    type_args,
+                    args,
+                    arg_types,
+                    spread_arg_types,
+                    type_ann,
+                )? {
+                    return Ok(v);
+                }
+
+                ret_err!()
             }
 
             _ => ret_err!(),
