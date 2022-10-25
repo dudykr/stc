@@ -376,7 +376,7 @@ impl Analyzer<'_, '_> {
                         ty.fix();
                         ty.assert_valid();
 
-                        if !(self.ctx.var_kind == VarDeclKind::Const && ty.normalize().is_lit())
+                        if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit())
                             && match v.name {
                                 RPat::Array(_) | RPat::Object(..) => false,
                                 _ => true,

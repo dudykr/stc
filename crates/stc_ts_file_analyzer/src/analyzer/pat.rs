@@ -356,8 +356,9 @@ impl Analyzer<'_, '_> {
                     let ty = ty.unwrap_or_else(|| {
                         let mut ty = default_value_ty.generalize_lit().foldable();
 
-                        if matches!(ty.normalize(), Type::Tuple(..)) {
-                            match ty.foldable() {
+                        if matches!(ty.n(), Type::Tuple(..)) {
+                            ty.nm();
+                            match ty {
                                 Type::Tuple(tuple) => {
                                     let mut types = tuple
                                         .elems

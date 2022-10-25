@@ -148,7 +148,7 @@ pub trait BuiltInGen: Sized {
                                 assert!(!data.types.is_empty() || !data.vars.is_empty());
 
                                 match types.entry(id.clone()) {
-                                    Entry::Occupied(mut e) => match e.get_mut().normalize_mut() {
+                                    Entry::Occupied(mut e) => match e.get_mut().mn() {
                                         Type::Module(module) => {
                                             //
                                             module.exports.types.extend(data.types);
@@ -206,11 +206,10 @@ pub trait BuiltInGen: Sized {
                                     .clone()
                                     .validate_with(&mut analyzer)
                                     .expect("builtin: failed to parse interface body")
-                                    .foldable()
                                     .expect_interface();
 
                                 match types.entry(i.id.sym.clone()) {
-                                    Entry::Occupied(mut e) => match e.get_mut().normalize_mut() {
+                                    Entry::Occupied(mut e) => match e.get_mut().nm() {
                                         Type::Interface(ref mut v) => {
                                             v.body.extend(body.body);
                                         }

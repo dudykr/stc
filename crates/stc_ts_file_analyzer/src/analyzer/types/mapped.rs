@@ -588,7 +588,7 @@ impl Visit<Conditional> for IndexedAccessTypeFinder<'_> {
 impl Visit<IndexedAccessType> for IndexedAccessTypeFinder<'_> {
     fn visit(&mut self, n: &IndexedAccessType) {
         if (&*n.obj_type).type_eq(self.obj)
-            && match n.index_type.normalize() {
+            && match n.index_type.n() {
                 Type::Param(index) => *self.key == index.name,
                 _ => false,
             }
@@ -623,7 +623,7 @@ impl VisitMut<Type> for IndexedAccessTypeReplacer<'_> {
         }
 
         // TODO(kdy1): PERF
-        ty.normalize_mut();
+        ty.nm();
 
         match ty {
             Type::IndexedAccessType(n) => {

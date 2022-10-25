@@ -23,7 +23,7 @@ impl Analyzer<'_, '_> {
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn may_generalize(&self, ty: &Type) -> bool {
         trace!("may_generalize({:?})", ty);
-        match ty.normalize() {
+        match ty.n() {
             Type::Function(f) => {
                 if !self.may_generalize(&f.ret_ty) {
                     return false;

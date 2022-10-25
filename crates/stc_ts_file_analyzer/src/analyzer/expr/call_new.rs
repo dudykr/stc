@@ -3108,7 +3108,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     if arg.spread.is_some() {
-                        match arg.ty.normalize() {
+                        match arg.ty.n() {
                             Type::Array(arg) => {
                                 // We should change type if the parameter is a rest parameter.
                                 if let Ok(()) = self.assign(

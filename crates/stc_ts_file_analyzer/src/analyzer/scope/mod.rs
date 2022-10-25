@@ -1067,7 +1067,7 @@ impl Analyzer<'_, '_> {
             {
                 // Improted variables
                 if let Some(info) = self.imports_by_id.get(name) {
-                    match info.data.normalize() {
+                    match info.data.n() {
                         Type::Module(data) => {
                             if let Some(var_ty) = data.exports.vars.get(name.sym()) {
                                 if cfg!(debug_assertions) {
