@@ -1110,15 +1110,15 @@ impl Type {
         self.visit_with(&mut AssertCloneCheap);
     }
 
-    pub fn intersection<I>(span: Span, iter: I) -> Self
+    pub fn new_intersection<I>(span: Span, iter: I) -> Self
     where
         I: IntoIterator<Item = Type>,
     {
         let mut tys = vec![];
 
         for ty in iter {
-            if ty.is_intersection_type() {
-                tys.extend(ty.foldable().expect_intersection_type().types);
+            if ty.is_intersection() {
+                tys.extend(ty.expect_intersection().types);
             } else {
                 tys.push(ty);
             }
@@ -1651,7 +1651,7 @@ impl Visit<Union> for AssertValid {
         ty.assert_valid();
 
         for item in ty.types.iter() {
-            if item.normalize().is_union_type() {
+            if item.is_union_type() {
                 unreachable!("[INVALID_TYPE]: A union type should not have a union item")
             }
         }
@@ -1669,7 +1669,7 @@ impl Visit<Intersection> for AssertValid {
         ty.assert_valid();
 
         for item in ty.types.iter() {
-            if item.normalize().is_intersection_type() {
+            if item.is_intersection() {
                 unreachable!(
                     "[INVALID_TYPE]: An intersection type should not have an intersection item"
                 )
@@ -2430,7 +2430,7 @@ pub struct ValidityChecker {
 impl Visit<Type> for ValidityChecker {
     fn visit(&mut self, ty: &Type) {
         // Freezed types are valid.
-        if ty.is_arc() {
+        if matches!(ty, Type::Arc(..)) {
             return;
         }
 
@@ -2490,12 +2490,7 @@ impl Visit<Intersection> for ValidityChecker {
             return;
         }
 
-        if ty
-            .types
-            .iter()
-            .map(Type::normalize)
-            .any(|t| t.is_intersection_type())
-        {
+        if ty.types.iter().any(|t| t.is_intersection()) {
             self.valid = false;
             return;
         }

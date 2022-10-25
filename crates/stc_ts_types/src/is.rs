@@ -53,7 +53,7 @@ macro_rules! impl_is {
             /// # Panics
             ///
             /// Panics if the underlying type is not the required variant.
-            pub fn $expect_name(mut self) -> $type_name {
+            pub fn $expect_name(self) -> $type_name {
                 self.$opt_name()
                     .expect(concat!("expected ", stringify!($variant)))
             }
