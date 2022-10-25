@@ -1,6 +1,8 @@
 //! Smarter version of `derive(Is)`
 #![allow(deprecated)]
 
+use debug_unreachable::debug_unreachable;
+
 use crate::*;
 
 macro_rules! impl_is {
@@ -14,6 +16,21 @@ macro_rules! impl_is {
                 match self.normalize() {
                     Type::$variant(ty) => Some(ty),
                     _ => None,
+                }
+            }
+
+            /// This method normalizes the type **only if** the underlying type is the
+            /// required variant.
+            pub fn $as_mut_name(&mut self) -> Option<&mut $type_name> {
+                if self.$is_name() {
+                    match self.normalize_mut() {
+                        Type::$variant(ty) => Some(ty),
+                        _ => unsafe {
+                            debug_unreachable!("`$is_name` is true, so this branch is unreachable")
+                        },
+                    }
+                } else {
+                    None
                 }
             }
         }
