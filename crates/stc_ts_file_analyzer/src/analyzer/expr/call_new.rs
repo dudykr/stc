@@ -3555,7 +3555,7 @@ impl Fold<Type> for ReturnTypeGeneralizer<'_, '_, '_> {
         }
 
         // TODO(kdy1): PERF
-        ty.normalize_mut();
+        ty.nm();
 
         ty = ty.fold_children_with(self);
 
@@ -3575,7 +3575,7 @@ struct ReturnTypeSimplifier<'a, 'b, 'c> {
 impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
     fn visit_mut(&mut self, ty: &mut Type) {
         // TODO(kdy1): PERF
-        ty.normalize_mut();
+        ty.nm();
 
         ty.visit_mut_children_with(self);
 

@@ -686,7 +686,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         let var_ty = (|| -> ValidationResult<_> {
-                            match ty.normalize() {
+                            match ty.n() {
                                 Type::EnumVariant(ref v) => {
                                     if let Some(..) =
                                         self.find_type(self.ctx.module_id, &v.enum_name)?

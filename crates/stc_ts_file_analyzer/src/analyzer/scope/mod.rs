@@ -2325,7 +2325,7 @@ impl Expander<'_, '_, '_> {
         if let Some(ty) = &mut ty {
             ty.reposition(r_span);
 
-            if let Type::Enum(e) = ty.normalize() {
+            if let Type::Enum(e) = ty.n() {
                 return Ok(Some(Type::EnumVariant(EnumVariant {
                     span,
                     ctxt,
@@ -2391,7 +2391,7 @@ impl Expander<'_, '_, '_> {
             if !self.analyzer.ctx.ignore_expand_prevention_for_all
                 && !(self.expand_top_level && self.analyzer.ctx.ignore_expand_prevention_for_top)
             {
-                match ty.normalize() {
+                match ty.n() {
                     Type::Ref(r) => {
                         // Expand type arguments if it should be expanded
                         if contains_infer_type(&r.type_args) {
