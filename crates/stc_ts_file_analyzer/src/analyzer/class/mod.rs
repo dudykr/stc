@@ -2507,7 +2507,7 @@ impl Analyzer<'_, '_> {
         }
 
         let res: ValidationResult<_> = try {
-            match ty.normalize() {
+            match ty.n() {
                 Type::Ref(Ref {
                     type_name: RTsEntityName::Ident(i),
                     ..
@@ -2523,7 +2523,7 @@ impl Analyzer<'_, '_> {
 
             let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
 
-            match ty.normalize() {
+            match ty.n() {
                 Type::Function(..) => Err(Error::NotConstructorType { span: ty.span() })?,
 
                 _ => {}

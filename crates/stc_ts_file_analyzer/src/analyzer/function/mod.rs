@@ -352,7 +352,7 @@ impl Analyzer<'_, '_> {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
 
-            match type_ann.as_ref().map(|ty| ty.normalize()) {
+            match type_ann.as_ref().map(|ty| ty.n()) {
                 Some(Type::Function(ty)) => {
                     for p in f.params.iter().zip_longest(ty.params.iter()) {
                         match p {

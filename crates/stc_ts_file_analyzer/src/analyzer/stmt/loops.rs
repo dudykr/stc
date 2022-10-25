@@ -229,7 +229,7 @@ impl Analyzer<'_, '_> {
             }));
         }
 
-        match rhs.normalize() {
+        match rhs.n() {
             Type::Mapped(m) => {
                 // { [P in keyof K]: T[P]; }
                 // =>

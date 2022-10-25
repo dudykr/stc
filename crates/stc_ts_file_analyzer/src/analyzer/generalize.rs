@@ -379,7 +379,7 @@ impl Fold<Type> for Simplifier<'_> {
                     }),
                 metadata,
                 ..
-            }) if obj.types.iter().all(|ty| match ty.normalize() {
+            }) if obj.types.iter().all(|ty| match ty.n() {
                 Type::TypeLit(..) => true,
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUnknownKeyword,
@@ -391,7 +391,7 @@ impl Fold<Type> for Simplifier<'_> {
                 let inexact = obj
                     .types
                     .iter()
-                    .filter_map(|ty| match ty.normalize() {
+                    .filter_map(|ty| match ty.n() {
                         Type::TypeLit(ty) => Some(ty),
                         _ => None,
                     })

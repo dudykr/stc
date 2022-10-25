@@ -571,12 +571,10 @@ impl Scope<'_> {
                             *prev = ty;
                             return;
                         } else if let Some(prev_i) = prev.as_intersection_mut() {
-                            if let Some(index) =
-                                prev_i.types.iter().position(|v| match v.normalize() {
-                                    Type::Param(..) => true,
-                                    _ => false,
-                                })
-                            {
+                            if let Some(index) = prev_i.types.iter().position(|v| match v.n() {
+                                Type::Param(..) => true,
+                                _ => false,
+                            }) {
                                 prev_i.types.remove(index);
                             }
 
