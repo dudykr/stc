@@ -368,7 +368,7 @@ impl Analyzer<'_, '_> {
                                 //
                                 // We removes `undefined` from parents of T.
 
-                                match check_type_constraint.normalize() {
+                                match check_type_constraint.n() {
                                     Type::Union(check_type_union) => {
                                         let mut all = true;
                                         let mut types = vec![];
@@ -445,7 +445,7 @@ impl Analyzer<'_, '_> {
                                         )));
                                     }
 
-                                    if expanded_ty.normalize().is_query() {
+                                    if expanded_ty.is_query() {
                                         panic!(
                                             "normalize: resolve_typeof returned a query type: {}",
                                             dump_type_as_string(&self.cm, &expanded_ty)
@@ -517,15 +517,13 @@ impl Analyzer<'_, '_> {
                                 dump_type_as_string(&self.cm, &prop_ty)
                             ));
 
-                            match prop_ty.normalize() {
-                                Type::IndexedAccessType(prop_ty) => {
-                                    match prop_ty.index_type.normalize() {
-                                        Type::Param(..) => {}
-                                        _ => {
-                                            panic!("{:?}", prop_ty);
-                                        }
+                            match prop_ty.n() {
+                                Type::IndexedAccessType(prop_ty) => match prop_ty.index_type.n() {
+                                    Type::Param(..) => {}
+                                    _ => {
+                                        panic!("{:?}", prop_ty);
                                     }
-                                }
+                                },
                                 _ => {}
                             }
 

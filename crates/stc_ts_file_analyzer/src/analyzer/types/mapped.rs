@@ -55,13 +55,13 @@ impl Analyzer<'_, '_> {
     }
 
     fn expand_mapped_inner(&mut self, span: Span, m: &Mapped) -> ValidationResult<Option<Type>> {
-        match m.type_param.constraint.as_deref().map(|v| v.normalize()) {
+        match m.type_param.constraint.as_deref().map(|v| v.n()) {
             Some(Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ty,
                 ..
             })) => {
-                if let Some(mapped_ty) = m.ty.as_deref().map(Type::normalize) {
+                if let Some(mapped_ty) = m.ty.as_deref().map(Type::n) {
                     // Special case, but many usages can be handled with this check.
                     if (&**ty).type_eq(&mapped_ty) {
                         let new_type = self
@@ -273,7 +273,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         ty: &Type,
     ) -> ValidationResult<Option<Vec<Key>>> {
-        let ty = ty.normalize();
+        let ty = ty.n();
 
         match ty {
             Type::Ref(..) => {

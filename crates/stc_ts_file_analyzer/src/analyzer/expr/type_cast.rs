@@ -279,8 +279,8 @@ impl Analyzer<'_, '_> {
         to: &Type,
         opts: CastableOpts,
     ) -> ValidationResult<bool> {
-        let from = from.normalize();
-        let to = to.normalize();
+        let from = from.n();
+        let to = to.n();
 
         // Overlaps with all types.
         if from.is_any()

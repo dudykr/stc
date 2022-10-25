@@ -135,7 +135,7 @@ impl Analyzer<'_, '_> {
                 let inferred_return_type = inferred_return_type.map(|mut ty| {
                     match &mut ty {
                         Type::Union(ty) => {
-                            ty.types.retain(|ty| match ty.normalize() {
+                            ty.types.retain(|ty| match ty.n() {
                                 Type::Keyword(KeywordType {
                                     kind: TsKeywordTypeKind::TsVoidKeyword,
                                     ..

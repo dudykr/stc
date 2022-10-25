@@ -821,7 +821,7 @@ impl Analyzer<'_, '_> {
         key_ty: &Type,
         allow_union: bool,
     ) -> bool {
-        let key_ty = key_ty.normalize();
+        let key_ty = key_ty.n();
 
         if declared.ty().type_eq(key_ty) {
             return true;
@@ -842,7 +842,7 @@ impl Analyzer<'_, '_> {
             }) => {
                 if let Ok(Some(types)) = self.find_type(self.ctx.module_id, enum_name) {
                     for ty in types {
-                        match ty.normalize() {
+                        match ty.n() {
                             Type::Enum(e) => {
                                 let e = e.clone();
                                 return self.check_if_type_matches_key(
