@@ -1709,7 +1709,7 @@ impl Analyzer<'_, '_> {
                 // validation of types is required to compute type of the
                 // expression.
             }
-            op!("||") | op!("&&") => match lt.normalize() {
+            op!("||") | op!("&&") => match lt.n() {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
@@ -1735,7 +1735,7 @@ impl Analyzer<'_, '_> {
                         return;
                     }
 
-                    match ty.normalize() {
+                    match ty.n() {
                         Type::Keyword(KeywordType {
                             span,
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
@@ -1763,7 +1763,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 if (op == op!("&") || op == op!("^") || op == op!("|"))
-                    && match lt.normalize() {
+                    && match lt.n() {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsBooleanKeyword,
                             ..
@@ -1774,7 +1774,7 @@ impl Analyzer<'_, '_> {
                         }) => true,
                         _ => false,
                     }
-                    && match rt.normalize() {
+                    && match rt.n() {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsBooleanKeyword,
                             ..
@@ -1794,7 +1794,7 @@ impl Analyzer<'_, '_> {
             }
 
             op!("in") => {
-                match lt.normalize() {
+                match lt.n() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
@@ -1817,7 +1817,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                match rt.normalize() {
+                match rt.n() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
@@ -1848,7 +1848,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_valid_lhs_of_in(&mut self, ty: &Type) -> bool {
-        let ty = ty.normalize();
+        let ty = ty.n();
 
         match ty {
             Type::Ref(..) => {
@@ -1909,7 +1909,7 @@ impl Analyzer<'_, '_> {
             return true;
         }
 
-        match ty.normalize() {
+        match ty.n() {
             Type::Ref(..) => {
                 if let Ok(ty) =
                     self.expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default())
