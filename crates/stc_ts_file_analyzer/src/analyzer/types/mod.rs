@@ -24,7 +24,7 @@ use stc_utils::{
     stack,
 };
 use swc_atoms::js_word;
-use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
+use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, instrument, span, Level};
 
@@ -1137,7 +1137,7 @@ impl Analyzer<'_, '_> {
             }
 
             members.extend(t.body);
-            let members = self.merge_type_elements(members)?;
+            let members = self.merge_type_elements(span, members)?;
             return Ok(Some(Cow::Owned(TypeLit {
                 span: t.span,
                 members,
@@ -1275,7 +1275,7 @@ impl Analyzer<'_, '_> {
                     members.extend(opt.into_iter().map(Cow::into_owned).flat_map(|v| v.members));
                 }
 
-                let members = self.merge_type_elements(members)?;
+                let members = self.merge_type_elements(span, members)?;
 
                 Cow::Owned(TypeLit {
                     span: t.span,
@@ -1414,7 +1414,7 @@ impl Analyzer<'_, '_> {
     fn merge_type_elements(
         &mut self,
         span: Span,
-        els: Vec<TypeElement>,
+        mut els: Vec<TypeElement>,
     ) -> ValidationResult<Vec<TypeElement>> {
         run(|| {
             // As merging is not common, we optimize it by creating a new vector only if
@@ -1426,7 +1426,7 @@ impl Analyzer<'_, '_> {
                 if let Some(a_key) = a.key() {
                     for (bi, b) in els.iter().enumerate() {
                         if let Some(b_key) = b.key() {
-                            if ai == bi {
+                            if ai >= bi {
                                 continue;
                             }
 
@@ -1442,9 +1442,71 @@ impl Analyzer<'_, '_> {
                 return Ok(els);
             }
 
-            Ok(els)
+            // For (ai, bi) in `merged`, we can assume ai < bi because we only store in that
+            // case
+            for (ai, bi) in merged.iter().copied() {
+                let b = els[bi].take();
+                self.merge_type_element(span, &mut els[ai], b)?;
+            }
+
+            let new = els
+                .into_iter()
+                .enumerate()
+                .filter_map(|(i, el)| {
+                    if merged.iter().any(|(ai, bi)| *bi == i) {
+                        None
+                    } else {
+                        Some(el)
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            Ok(new)
         })
         .with_context(|| format!("tried to merge type elements"))
+    }
+
+    fn merge_type_element(
+        &mut self,
+        span: Span,
+        to: &mut TypeElement,
+        from: TypeElement,
+    ) -> ValidationResult<()> {
+        run(|| {
+            debug_assert!(to.key().is_some());
+            debug_assert!(from.key().is_some());
+
+            match (to, from) {
+                (TypeElement::Property(to), TypeElement::Property(from)) => {
+                    if let Some(to_type) = &to.type_ann {
+                        if let Some(from_type) = from.type_ann {
+                            let to = self.convert_type_to_type_lit(span, Cow::Borrowed(to_type))?;
+                            let from =
+                                self.convert_type_to_type_lit(span, Cow::Owned(*from_type))?;
+
+                            match (to, from) {
+                                (Some(to), Some(from)) => {
+                                    let mut to = to.into_owned();
+                                    to.members.extend(from.into_owned().members);
+
+                                    let members = self.merge_type_elements(span, to.members)?;
+                                }
+                                _ => {
+                                    todo!()
+                                }
+                            }
+                        }
+                    }
+
+                    Ok(())
+                }
+
+                (to, from) => {
+                    todo!("merge_type_element: {:?} and {:?}", to, from)
+                }
+            }
+        })
+        .context("tried to merge a type element")
     }
 
     ///
