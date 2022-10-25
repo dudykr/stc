@@ -1483,20 +1483,29 @@ impl Analyzer<'_, '_> {
                 (TypeElement::Property(to), TypeElement::Property(from)) => {
                     if let Some(to_type) = &to.type_ann {
                         if let Some(from_type) = from.type_ann {
-                            let to = self.convert_type_to_type_lit(span, Cow::Borrowed(to_type))?;
+                            let to_type_lit =
+                                self.convert_type_to_type_lit(span, Cow::Borrowed(to_type))?;
                             let from =
                                 self.convert_type_to_type_lit(span, Cow::Owned(*from_type))?;
 
-                            match (to, from) {
-                                (Some(to), Some(from)) => {
-                                    let mut to = to.into_owned();
-                                    to.members.extend(from.into_owned().members);
+                            match (to_type_lit, from) {
+                                (Some(to_type_lit), Some(from)) => {
+                                    let mut to_type_lit = to_type_lit.into_owned();
+                                    to_type_lit.members.extend(from.into_owned().members);
 
-                                    let members = self.merge_type_elements(span, to.members)?;
+                                    let members =
+                                        self.merge_type_elements(span, to_type_lit.members)?;
+
+                                    to.type_ann = Some(box Type::TypeLit(TypeLit {
+                                        span,
+                                        members,
+                                        metadata: TypeLitMetadata {
+                                            common: to_type.metadata(),
+                                            ..Default::default()
+                                        },
+                                    }))
                                 }
-                                _ => {
-                                    todo!()
-                                }
+                                _ => {}
                             }
                         }
                     }
