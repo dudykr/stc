@@ -105,7 +105,7 @@ impl Analyzer<'_, '_> {
             )
             .ok()
             .and_then(|then_ty| {
-                match then_ty.normalize() {
+                match then_ty.n() {
                     Type::Function(f) => {
                         // Default type of the first type parameter is awaited type.
                         if let Some(type_params) = &f.type_params {

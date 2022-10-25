@@ -172,7 +172,7 @@ pub enum Error {
     },
 
     /// TS2513
-    CannotAccessAbstractMemeber {
+    CannotAccessAbstractMember {
         span: Span,
     },
 
@@ -1807,7 +1807,7 @@ impl Error {
 
             Error::OperatorCannotBeAppliedToTypes { .. } => 2365,
 
-            Error::CannotAccessAbstractMemeber { .. } => 2513,
+            Error::CannotAccessAbstractMember { .. } => 2513,
 
             Error::SuperNotCalled { .. } => 2377,
 

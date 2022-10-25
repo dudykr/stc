@@ -273,8 +273,8 @@ impl Analyzer<'_, '_> {
 
                 // Try narrowing type
                 let c = Comparator {
-                    left: (&**left, lt.normalize()),
-                    right: (&**right, rt.normalize()),
+                    left: (&**left, lt.n()),
+                    right: (&**right, rt.n()),
                 };
 
                 if !self.is_valid_for_switch_case(span, &lt, &rt)? {
@@ -400,7 +400,7 @@ impl Analyzer<'_, '_> {
                             narrowed_ty.assert_valid();
 
                             // TODO(kdy1): Maybe we need to check for intersection or union
-                            if orig_ty.normalize().is_type_param() {
+                            if orig_ty.is_type_param() {
                                 self.cur_facts.true_facts.vars.insert(
                                     Name::from(i),
                                     Type::Intersection(Intersection {
@@ -596,8 +596,8 @@ impl Analyzer<'_, '_> {
                 no_unknown!();
 
                 if op == op!("**") {
-                    let lt = lt.normalize();
-                    let rt = rt.normalize();
+                    let lt = lt.n();
+                    let rt = rt.n();
 
                     self.report_possibly_null_or_undefined(lt.span(), &lt)
                         .report(&mut self.storage);
@@ -743,7 +743,7 @@ impl Analyzer<'_, '_> {
                     return Ok(lt);
                 }
 
-                match lt.normalize() {
+                match lt.n() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
@@ -1015,8 +1015,8 @@ impl Analyzer<'_, '_> {
         disc_ty: &Type,
         case_ty: &Type,
     ) -> ValidationResult<bool> {
-        let disc_ty = disc_ty.normalize();
-        let case_ty = case_ty.normalize();
+        let disc_ty = disc_ty.n();
+        let case_ty = case_ty.n();
 
         if disc_ty.type_eq(case_ty) {
             return Ok(true);
@@ -1081,7 +1081,7 @@ impl Analyzer<'_, '_> {
         ty: Cow<Type>,
         orig_ty: &Type,
     ) -> ValidationResult {
-        let orig_ty = orig_ty.normalize();
+        let orig_ty = orig_ty.n();
 
         match orig_ty {
             Type::Ref(..) | Type::Query(..) => {
@@ -1113,12 +1113,12 @@ impl Analyzer<'_, '_> {
             || orig_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword)
             || orig_ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword)
         {
-            if ty.normalize().is_interface() {
+            if ty.is_interface() {
                 return Ok(Type::never(span, Default::default()));
             }
         }
 
-        match ty.normalize() {
+        match ty.n() {
             Type::ClassDef(ty) => {
                 return self.narrow_with_instanceof(
                     span,
@@ -1143,7 +1143,7 @@ impl Analyzer<'_, '_> {
             &ty,
         ) {
             if v {
-                match orig_ty.normalize() {
+                match orig_ty.n() {
                     Type::ClassDef(def) => {
                         return Ok(Type::Class(Class {
                             span,
@@ -1155,7 +1155,7 @@ impl Analyzer<'_, '_> {
                 }
                 return Ok(orig_ty.clone());
             } else {
-                match (orig_ty, ty.normalize()) {
+                match (orig_ty, ty.n()) {
                     (Type::Interface(..), Type::Interface(..)) => return Ok(ty.into_owned()),
                     _ => {}
                 }
@@ -1181,7 +1181,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match ty.normalize() {
+        match ty.n() {
             Type::ClassDef(def) => {
                 return Ok(Type::Class(Class {
                     span,
@@ -1204,8 +1204,8 @@ impl Analyzer<'_, '_> {
     ) {
         let marks = self.marks();
 
-        let l = l.normalize();
-        let r = r.normalize();
+        let l = l.n();
+        let r = r.n();
 
         match (l, r) {
             (Type::Ref(..), _) => {
@@ -1276,8 +1276,8 @@ impl Analyzer<'_, '_> {
     }
 
     fn can_compare_relatively(&mut self, span: Span, l: &Type, r: &Type) -> ValidationResult<bool> {
-        let l = l.normalize();
-        let r = r.normalize();
+        let l = l.n();
+        let r = r.n();
 
         if l.type_eq(r) {
             return Ok(true);
@@ -1412,7 +1412,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_valid_lhs_of_instanceof(&mut self, span: Span, ty: &Type) -> bool {
-        let ty = ty.normalize();
+        let ty = ty.n();
 
         match ty {
             ty if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) => true,
@@ -1447,7 +1447,7 @@ impl Analyzer<'_, '_> {
         }
 
         // TODO(kdy1): We should assign this to builtin interface `Function`.
-        match ty.normalize() {
+        match ty.n() {
             // Error
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
@@ -1586,7 +1586,7 @@ impl Analyzer<'_, '_> {
             .expand_top_ref(span, Cow::Owned(ty), Default::default())?
             .into_owned();
 
-        match ty.normalize() {
+        match ty.n() {
             Type::Union(u) => {
                 let mut candidates = vec![];
                 for ty in &u.types {
@@ -1606,7 +1606,7 @@ impl Analyzer<'_, '_> {
                                 Cow::Owned(prop_ty),
                                 Default::default(),
                             )?;
-                            let possible = match prop_ty.normalize() {
+                            let possible = match prop_ty.n() {
                                 // Type parameters might have same value.
                                 Type::Param(..) => true,
                                 _ => prop_ty.type_eq(equals_to),
@@ -1628,7 +1628,7 @@ impl Analyzer<'_, '_> {
         Ok((name, eq_ty.clone()))
     }
 
-    /// Returns new type of the variable after comparision with `===`.
+    /// Returns new type of the variable after comparison with `===`.
     ///
     /// # Parameters
     ///
@@ -1698,8 +1698,8 @@ impl Analyzer<'_, '_> {
         let ls = lt.span();
         let rs = rt.span();
 
-        let lt = lt.normalize();
-        let rt = rt.normalize();
+        let lt = lt.n();
+        let rt = rt.n();
 
         let mut errors = Errors::default();
 

@@ -87,7 +87,7 @@ impl CondFacts {
             if !ty.is_union_type() {
                 debug_assert!(
                     ty.is_clone_cheap(),
-                    "ty.is_clone_cheap() shoulf be true:\n{:?}",
+                    "ty.is_clone_cheap() should be true:\n{:?}",
                     &self.vars
                 );
             }
@@ -806,7 +806,7 @@ impl Analyzer<'_, '_> {
             RPat::Assign(assign) => {
                 // TODO(kdy1): Use type annotation?
                 let res = assign.right.validate_with_default(self).context(
-                    "tried to validate type of default expression in an assginment pattern",
+                    "tried to validate type of default expression in an assignment pattern",
                 );
 
                 self.try_assign_pat_with_opts(span, &assign.left, &ty, opts)

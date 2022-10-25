@@ -326,7 +326,7 @@ impl Analyzer<'_, '_> {
         let arg = arg.n();
 
         if let Some(elem_type) =
-            unwrap_ref_with_single_arg(param, "ReadonlyArray").or_else(|| match param.normalize() {
+            unwrap_ref_with_single_arg(param, "ReadonlyArray").or_else(|| match param.n() {
                 Type::Interface(Interface { name, body, .. }) => {
                     if name == "ReadonlyArray" {
                         body.iter()
@@ -715,7 +715,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 error!(
-                    "unimplemented: type infernce: type element:\nParam = {:#?}\nArg = {:#?}",
+                    "unimplemented: type inference: type element:\nParam = {:#?}\nArg = {:#?}",
                     p, a
                 );
             }
@@ -836,8 +836,8 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        match ty.normalize() {
-            Type::Tuple(..) => match ty.normalize_mut() {
+        match ty.n() {
+            Type::Tuple(..) => match ty.nm() {
                 Type::Tuple(ty) => {
                     for elem in ty.elems.iter_mut() {
                         self.replace_null_or_undefined_while_defaulting_to_any(&mut elem.ty);

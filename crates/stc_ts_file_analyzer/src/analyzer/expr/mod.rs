@@ -1237,7 +1237,7 @@ impl Analyzer<'_, '_> {
                 Type::Param(TypeParam {
                     constraint: Some(constraint),
                     ..
-                }) if opts.for_validation_of_indexed_access_type => match constraint.normalize() {
+                }) if opts.for_validation_of_indexed_access_type => match constraint.n() {
                     Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
                         ty: constraint_ty,
@@ -1604,7 +1604,7 @@ impl Analyzer<'_, '_> {
                     Some(&self.scope)
                 };
                 if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
-                    if this.normalize().is_this() {
+                    if this.is_this() {
                         unreachable!("this() should not be `this`")
                     }
 
@@ -1623,7 +1623,7 @@ impl Analyzer<'_, '_> {
             preserve_params: true,
             ..self.ctx
         };
-        let mut obj = match obj.normalize() {
+        let mut obj = match obj.n() {
             Type::Conditional(..) | Type::Instance(..) => {
                 self.normalize(None, Cow::Borrowed(obj), Default::default())?
             }
@@ -1887,7 +1887,7 @@ impl Analyzer<'_, '_> {
                             if self.key_matches(span, &mtd.key, prop, false) {
                                 if mtd.is_abstract {
                                     self.storage
-                                        .report(Error::CannotAccessAbstractMemeber { span });
+                                        .report(Error::CannotAccessAbstractMember { span });
                                     return Ok(Type::any(span, Default::default()));
                                 }
 

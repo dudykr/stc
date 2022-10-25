@@ -779,7 +779,7 @@ impl Analyzer<'_, '_> {
             }
 
             // Handle methods from `Object`.
-            match obj_type.normalize() {
+            match obj_type.n() {
                 Type::Interface(Interface { name, .. }) if *name.sym() == js_word!("Object") => {}
                 _ => {
                     let obj_res = self.call_property(
@@ -813,7 +813,7 @@ impl Analyzer<'_, '_> {
             }
 
             // Use proper error.
-            match obj_type.normalize() {
+            match obj_type.n() {
                 Type::Class(..) => {
                     return Err(match kind {
                         ExtractKind::Call => Error::NoCallablePropertyWithName {

@@ -2617,7 +2617,7 @@ struct TypeParamInliner<'a> {
 impl VisitMut<Type> for TypeParamInliner<'_> {
     fn visit_mut(&mut self, ty: &mut Type) {
         // TODO(kdy1): PERF
-        ty.normalize_mut();
+        ty.nm();
 
         ty.visit_mut_children_with(self);
 
@@ -2835,8 +2835,8 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
 
     match v {
         TruePlusMinus::True => {
-            if element_ty.normalize().is_optional() {
-                match element_ty.normalize_mut() {
+            if element_ty.is_optional() {
+                match element_ty.nm() {
                     Type::Optional(ty) => {
                         let ty = ty.ty.take();
                         let ty = ty.remove_falsy();
@@ -2853,7 +2853,7 @@ fn handle_optional_for_element(element_ty: &mut Type, optional: Option<TruePlusM
                 *element_ty = new_ty;
             }
         }
-        TruePlusMinus::Plus => match element_ty.normalize() {
+        TruePlusMinus::Plus => match element_ty.n() {
             Type::Optional(ty) => {}
             _ => {
                 let ty = box element_ty.take();
