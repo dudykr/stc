@@ -1527,6 +1527,7 @@ impl Analyzer<'_, '_> {
                                 types: vec![*to_type.clone(), *from_type],
                                 metadata: Default::default(),
                             })
+                            .fixed()
                             .cheap(),
                         );
                     }
