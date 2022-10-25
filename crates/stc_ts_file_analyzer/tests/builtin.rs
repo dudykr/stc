@@ -41,7 +41,7 @@ pub fn builtin() {
                     .get_global_type(DUMMY_SP, &"Function".into())
                     .expect("failed to get global type Function");
 
-                let function = f.foldable().interface().unwrap();
+                let function = f.expect_interface();
                 assert_eq!(function.extends, vec![]);
 
                 for member in &function.body {
@@ -89,7 +89,7 @@ pub fn intl() {
                     .get_global_type(DUMMY_SP, &"Intl".into())
                     .expect("failed to get global type Intl");
 
-                let i = intl.foldable().module().unwrap();
+                let i = intl.expect_module();
                 let type_names = i.exports.types.iter().map(|v| v.0).collect::<Vec<_>>();
                 eprintln!("Type names: {:?}", type_names);
                 assert!(i.exports.types.contains_key(&"NumberFormatOptions".into()));

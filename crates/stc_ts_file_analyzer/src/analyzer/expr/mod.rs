@@ -1163,7 +1163,7 @@ impl Analyzer<'_, '_> {
                 _ => false,
             } {
                 // See if key is number.
-                match prop.ty().normalize() {
+                match prop.ty().n() {
                     Type::Lit(LitType {
                         lit: RTsLit::Number(prop),
                         ..

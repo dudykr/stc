@@ -368,7 +368,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
         u.types.retain(|v| !v.is_never());
 
         if self.facts.contains(TypeFacts::TypeofNEFunction) {
-            u.types.retain(|ty| match ty.normalize() {
+            u.types.retain(|ty| match ty.n() {
                 Type::Function(..) => false,
                 _ => true,
             });
@@ -379,7 +379,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
                 || self.facts.contains(TypeFacts::TypeofEQBoolean)
                 || self.facts.contains(TypeFacts::TypeofEQNumber)
             {
-                u.types.retain(|ty| match ty.normalize() {
+                u.types.retain(|ty| match ty.n() {
                     Type::Lit(LitType {
                         lit: RTsLit::Str(..),
                         ..
@@ -474,12 +474,12 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
         }
 
         if !span.is_dummy() {
-            if ty.normalize().is_ref_type() {
+            if ty.is_ref_type() {
                 if let Ok(ty) =
                     self.analyzer
                         .expand_top_ref(ty.span(), Cow::Borrowed(&ty), Default::default())
                 {
-                    if ty.normalize().is_ref_type() {
+                    if ty.is_ref_type() {
                         return ty.into_owned();
                     }
                     return ty.into_owned().fold_with(self);
@@ -489,7 +489,7 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
             }
         }
 
-        match ty.normalize() {
+        match ty.n() {
             Type::Class(..) | Type::ClassDef(..) | Type::TypeLit(..)
                 if self.facts.contains(TypeFacts::TypeofNEObject) =>
             {
@@ -506,7 +506,7 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
 
         // TODO(kdy1): PERF
 
-        ty = ty.foldable();
+        ty.nm();
         ty = ty.fold_children_with(self);
 
         match ty {

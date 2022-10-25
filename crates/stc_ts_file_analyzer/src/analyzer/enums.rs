@@ -600,12 +600,12 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn expand_enum_variant(&self, ty: Type) -> ValidationResult {
-        match ty.normalize() {
+        match ty.n() {
             Type::EnumVariant(ref ev) => {
                 if let Some(variant_name) = &ev.name {
                     if let Some(types) = self.find_type(ev.ctxt, &ev.enum_name)? {
                         for ty in types {
-                            if let Type::Enum(Enum { members, .. }) = ty.normalize() {
+                            if let Type::Enum(Enum { members, .. }) = ty.n() {
                                 if let Some(v) = members.iter().find(|m| match m.id {
                                     RTsEnumMemberId::Ident(RIdent { ref sym, .. })
                                     | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {

@@ -310,7 +310,7 @@ where
 }
 
 pub(crate) fn should_instantiate_type_ann(ty: &Type) -> bool {
-    let ty = ty.normalize();
+    let ty = ty.n();
 
     match ty {
         Type::Ref(Ref {
@@ -328,7 +328,7 @@ pub(crate) fn unwrap_ref_with_single_arg<'a>(
     ty: &'a Type,
     wanted_ref_name: &str,
 ) -> Option<&'a Type> {
-    match ty.normalize() {
+    match ty.n() {
         Type::Ref(Ref {
             type_name: RTsEntityName::Ident(n),
             type_args: Some(type_args),
