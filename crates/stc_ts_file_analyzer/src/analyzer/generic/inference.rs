@@ -884,7 +884,7 @@ impl Analyzer<'_, '_> {
 }
 
 fn should_prevent_generalization(constraint: &Type) -> bool {
-    match constraint.normalize() {
+    match constraint.n() {
         Type::Lit(LitType {
             lit: RTsLit::Str(..) | RTsLit::Number(..) | RTsLit::Bool(..),
             ..

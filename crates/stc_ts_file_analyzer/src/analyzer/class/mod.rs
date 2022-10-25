@@ -1388,7 +1388,7 @@ impl Analyzer<'_, '_> {
             }
         };
 
-        match *ty.normalize() {
+        match *ty.n() {
             Type::Lit(..) => {}
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::Unique,
@@ -1540,7 +1540,7 @@ impl Analyzer<'_, '_> {
         let mut new_members = vec![];
 
         let res: ValidationResult<()> = try {
-            match super_ty.normalize() {
+            match super_ty.n() {
                 Type::ClassDef(sc) => {
                     'outer: for sm in &sc.body {
                         match sm {
@@ -1727,7 +1727,7 @@ impl Analyzer<'_, '_> {
                                 (TypeOfMode::RValue, super_type_params.as_ref(), None),
                             )?;
 
-                            child.validate_with(|a| match super_ty.normalize() {
+                            child.validate_with(|a| match super_ty.n() {
                                 Type::Lit(..)
                                 | Type::Keyword(KeywordType {
                                     kind: TsKeywordTypeKind::TsStringKeyword,
@@ -1746,7 +1746,7 @@ impl Analyzer<'_, '_> {
                                 _ => Ok(()),
                             });
 
-                            match super_ty.normalize() {
+                            match super_ty.n() {
                                 // We should handle mixin
                                 Type::Intersection(i) if need_base_class => {
                                     let mut has_class_in_super = false;
@@ -1922,7 +1922,7 @@ impl Analyzer<'_, '_> {
                     c.body.iter().for_each(|v| match v {
                         RClassMember::Method(method) => match &method.key {
                             RPropName::Computed(c) => match c.validate_with(child) {
-                                Ok(Key::Computed(ComputedKey { ty, .. })) => match ty.normalize() {
+                                Ok(Key::Computed(ComputedKey { ty, .. })) => match ty.n() {
                                     Type::EnumVariant(e) => {
                                         //
                                         if let Some(m) = &mut child.mutations {

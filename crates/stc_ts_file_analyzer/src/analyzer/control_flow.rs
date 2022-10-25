@@ -455,7 +455,7 @@ impl Analyzer<'_, '_> {
                         .map(|elem| *elem.ty)
                         .collect();
                     elem_types.dedup_type();
-                    let elem_type = box Type::union(elem_types);
+                    let elem_type = box Type::new_union(DUMMY_SP, elem_types);
                     *ty = Type::Array(Array {
                         span,
                         elem_type,
@@ -484,7 +484,7 @@ impl Analyzer<'_, '_> {
 
     fn downcast_types(&mut self, span: Span, types: Vec<Type>) -> ValidationResult<Vec<Type>> {
         fn need_work(ty: &Type) -> bool {
-            match ty.normalize() {
+            match ty.n() {
                 Type::Lit(..)
                 | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,

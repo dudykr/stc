@@ -71,8 +71,8 @@ pub(crate) trait RemoveTypes {
 
 impl RemoveTypes for Type {
     fn remove_falsy(mut self) -> Type {
-        if matches!(self.normalize(), Type::Union(..) | Type::Intersection(..)) {
-            self.normalize_mut();
+        if matches!(self.n(), Type::Union(..) | Type::Intersection(..)) {
+            self.nm();
         }
 
         match self {

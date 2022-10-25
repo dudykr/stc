@@ -230,7 +230,7 @@ impl Fold<Type> for Simplifier<'_> {
                     )
                     .unwrap();
 
-                let s = match index_type.normalize() {
+                let s = match index_type.n() {
                     Type::Lit(LitType {
                         lit: RTsLit::Str(s),
                         ..

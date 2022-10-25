@@ -3690,7 +3690,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                     type_args.make_clone_cheap();
 
                     for stored_ty in types {
-                        match stored_ty.normalize() {
+                        match stored_ty.n() {
                             Type::Alias(Alias { ty: aliased_ty, .. }) => {
                                 let mut types = vec![];
 
