@@ -303,14 +303,10 @@ fn pass_only(input: PathBuf) {
 // This invokes `tsc` to get expected result.
 #[fixture("tests/tsc/**/*.ts")]
 fn compare(input: PathBuf) {
-    let (actual, tsc_result) = join(
-        || {
-            let mut actual = validate(&input);
-            actual.sort();
-            actual
-        },
-        || invoke_tsc(&input),
-    );
+    let mut actual = validate(&input);
+    actual.sort();
+
+    let tsc_result = invoke_tsc(&input);
 
     let mut expected = tsc_result
         .into_iter()
