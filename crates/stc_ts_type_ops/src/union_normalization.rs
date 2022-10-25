@@ -314,52 +314,47 @@ impl UnionNormalizer {
 
         let keys = self.find_keys(&u.types);
 
-        let inexact = u.types.iter().any(|ty| match ty.normalize() {
+        let inexact = u.types.iter().any(|ty| match ty.n() {
             Type::TypeLit(ty) => ty.metadata.inexact,
             _ => false,
         });
 
         // Add properties.
         for ty in u.types.iter_mut() {
-            if matches!(ty.normalize(), Type::TypeLit(..)) {
-                match ty.normalize_mut() {
-                    Type::TypeLit(ty) => {
-                        ty.metadata.inexact |= inexact;
-                        ty.metadata.normalized = true;
+            if let Some(ty) = ty.as_type_lit_mut() {
+                ty.metadata.inexact |= inexact;
+                ty.metadata.normalized = true;
 
-                        for key in &keys {
-                            let has_key = ty.members.iter().any(|member| {
-                                if let Some(member_key) = member.non_computed_key() {
-                                    *key == *member_key
-                                } else {
-                                    false
-                                }
-                            });
-
-                            if !has_key {
-                                ty.members.push(TypeElement::Property(PropertySignature {
-                                    span: DUMMY_SP,
-                                    accessibility: None,
-                                    readonly: false,
-                                    key: Key::Normal {
-                                        span: DUMMY_SP,
-                                        sym: key.clone(),
-                                    },
-                                    optional: true,
-                                    params: Default::default(),
-                                    type_ann: Some(box Type::Keyword(KeywordType {
-                                        span: DUMMY_SP,
-                                        kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
-                                        metadata: Default::default(),
-                                    })),
-                                    type_params: Default::default(),
-                                    metadata: Default::default(),
-                                    accessor: Default::default(),
-                                }))
-                            }
+                for key in &keys {
+                    let has_key = ty.members.iter().any(|member| {
+                        if let Some(member_key) = member.non_computed_key() {
+                            *key == *member_key
+                        } else {
+                            false
                         }
+                    });
+
+                    if !has_key {
+                        ty.members.push(TypeElement::Property(PropertySignature {
+                            span: DUMMY_SP,
+                            accessibility: None,
+                            readonly: false,
+                            key: Key::Normal {
+                                span: DUMMY_SP,
+                                sym: key.clone(),
+                            },
+                            optional: true,
+                            params: Default::default(),
+                            type_ann: Some(box Type::Keyword(KeywordType {
+                                span: DUMMY_SP,
+                                kind: swc_ecma_ast::TsKeywordTypeKind::TsUndefinedKeyword,
+                                metadata: Default::default(),
+                            })),
+                            type_params: Default::default(),
+                            metadata: Default::default(),
+                            accessor: Default::default(),
+                        }))
                     }
-                    _ => {}
                 }
             }
         }
