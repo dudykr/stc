@@ -119,9 +119,8 @@ impl Visit<RMemberExpr> for MethodAnalyzer {
         e.obj.visit_with(self);
         e.prop.visit_with(self);
 
-        match &e.obj {
-            RExprOrSuper::Super(_) => {}
-            RExprOrSuper::Expr(box RExpr::This(..)) => {
+        match &*e.obj {
+            RExpr::This(..) => {
                 // We detects this.#foo and this.foo
                 match &*e.prop {
                     RExpr::Ident(i) => {
