@@ -236,9 +236,9 @@ impl Analyzer<'_, '_> {
             value,
             is_static: p.is_static,
             accessibility: p.accessibility,
-            is_abstract: p.is_abstract,
             is_optional: p.is_optional,
             readonly: p.readonly,
+            is_abstract: false,
             definite: p.definite,
             accessor: Default::default(),
         })
@@ -827,7 +827,7 @@ impl Analyzer<'_, '_> {
                 RClassMember::Method(
                     m @ RClassMethod {
                         kind: MethodKind::Method,
-                        function: RFunction { body: Some(..), .. },
+                        function: box RFunction { body: Some(..), .. },
                         ..
                     },
                 ) => {
@@ -835,7 +835,7 @@ impl Analyzer<'_, '_> {
                 }
                 RClassMember::PrivateMethod(
                     m @ RPrivateMethod {
-                        function: RFunction { body: Some(..), .. },
+                        function: box RFunction { body: Some(..), .. },
                         ..
                     },
                 ) => {
@@ -843,8 +843,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 RClassMember::ClassProp(RClassProp {
-                    computed: false,
-                    key: box RExpr::Ident(key),
+                    key: RPropName::Ident(key),
                     is_static,
                     ..
                 }) => {
@@ -855,16 +854,15 @@ impl Analyzer<'_, '_> {
                 RClassMember::ClassProp(m) => {
                     is_props.insert(keys.len());
 
-                    let key = match &*m.key {
-                        RExpr::Lit(RLit::Num(v)) => Cow::Owned(RPropName::Ident(RIdent::new(
+                    let key = match &m.key {
+                        RPropName::Computed(RComputedPropName {
+                            expr: box RExpr::Lit(RLit::Num(v)),
+                            ..
+                        }) => Cow::Owned(RPropName::Ident(RIdent::new(
                             v.value.to_string().into(),
                             v.span.with_ctxt(SyntaxContext::empty()),
                         ))),
-                        _ => Cow::Owned(RPropName::Computed(RComputedPropName {
-                            node_id: NodeId::invalid(),
-                            span: DUMMY_SP,
-                            expr: m.key.clone(),
-                        })),
+                        _ => Cow::Borrowed(&m.key),
                     };
                     keys.push((key, m.is_static));
                 }
@@ -1691,7 +1689,7 @@ impl Analyzer<'_, '_> {
                                         )));
                                     } else {
                                         child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(
-                                            RTsTypeAliasDecl {
+                                            box RTsTypeAliasDecl {
                                                 node_id: NodeId::invalid(),
                                                 span: DUMMY_SP,
                                                 declare: false,
@@ -1875,6 +1873,121 @@ impl Analyzer<'_, '_> {
                                     let is_optional = match p.param {
                                         RTsParamPropParam::Ident(_) => false,
                                         RTsParamPropParam::Assign(_) => true,
+                // Handle nodes in order described above
+                let body = {
+                    let mut declared_static_keys = vec![];
+                    let mut declared_instance_keys = vec![];
+
+                    // Handle static properties
+                    for (index, node) in c.body.iter().enumerate() {
+                        match node {
+                            RClassMember::ClassProp(RClassProp {
+                                is_static: true, ..
+                            })
+                            | RClassMember::PrivateProp(RPrivateProp {
+                                is_static: true, ..
+                            }) => {
+                                let m = node.validate_with(child)?;
+                                if let Some(member) = m {
+                                    // Check for duplicate property names.
+                                    if let Some(key) = member.key() {
+                                        // TODO(kdy1): Use better logic for testing key equality
+                                        if declared_static_keys
+                                            .iter()
+                                            .any(|prev: &Key| prev.type_eq(&*key))
+                                        {
+                                            child.storage.report(Error::DuplicateProperty {
+                                                span: key.span(),
+                                            })
+                                        }
+                                        declared_static_keys.push(key.into_owned());
+                                    }
+
+                                    let member = member.fold_with(&mut LitGeneralizer {});
+                                    child.scope.this_class_members.push((index, member));
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    // Handle ts parameter properties
+                    for (index, constructor) in
+                        c.body
+                            .iter()
+                            .enumerate()
+                            .filter_map(|(i, member)| match member {
+                                RClassMember::Constructor(c) => Some((i, c)),
+                                _ => None,
+                            })
+                    {
+                        for param in &constructor.params {
+                            match param {
+                                RParamOrTsParamProp::TsParamProp(p) => {
+                                    if p.accessibility == Some(Accessibility::Private) {
+                                        let is_optional = match p.param {
+                                            RTsParamPropParam::Ident(_) => false,
+                                            RTsParamPropParam::Assign(_) => true,
+                                        };
+                                        let mut key = match &p.param {
+                                            RTsParamPropParam::Assign(RAssignPat {
+                                                left: box RPat::Ident(key),
+                                                ..
+                                            })
+                                            | RTsParamPropParam::Ident(key) => key.clone(),
+                                            _ => unreachable!(
+                                                "TypeScript parameter property with pattern other \
+                                                 than an identifier"
+                                            ),
+                                        };
+                                        key.type_ann = None;
+                                        let key = box RExpr::Ident(key.id);
+                                        additional_members.push(RClassMember::ClassProp(
+                                            RClassProp {
+                                                node_id: NodeId::invalid(),
+                                                span: p.span,
+                                                key,
+                                                value: None,
+                                                is_static: false,
+                                                accessibility: Some(Accessibility::Private),
+                                                is_abstract: false,
+                                                is_optional,
+                                                readonly: p.readonly,
+                                                definite: false,
+                                                type_ann: None,
+                                                decorators: Default::default(),
+                                                declare: false,
+                                                is_override: false,
+                                            },
+                                        ));
+                                    }
+
+                                    let (i, ty) = match &p.param {
+                                        RTsParamPropParam::Ident(i) => {
+                                            let ty = i.type_ann.clone();
+                                            let ty = try_opt!(ty.validate_with(child));
+                                            (i, ty)
+                                        }
+                                        RTsParamPropParam::Assign(RAssignPat {
+                                            span,
+                                            left: box RPat::Ident(i),
+                                            type_ann,
+                                            right,
+                                            ..
+                                        }) => {
+                                            let ty =
+                                                type_ann.clone().or_else(|| i.type_ann.clone());
+                                            let mut ty = try_opt!(ty.validate_with(child));
+                                            if ty.is_none() {
+                                                ty = Some(
+                                                    right
+                                                        .validate_with_default(child)?
+                                                        .generalize_lit(),
+                                                );
+                                            }
+                                            (i, ty)
+                                        }
+                                        _ => unreachable!(),
                                     };
                                     let mut key = match &p.param {
                                         RTsParamPropParam::Assign(RAssignPat {

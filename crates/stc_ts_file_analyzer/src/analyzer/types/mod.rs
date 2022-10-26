@@ -1274,6 +1274,7 @@ impl Analyzer<'_, '_> {
                         key: Key::Num(RNumber {
                             span: e.span,
                             value: idx as f64,
+                            raw: None,
                         }),
                         optional: false,
                         params: Default::default(),
@@ -1582,6 +1583,15 @@ impl Analyzer<'_, '_> {
                             },
                         }));
                     }
+                            value: new_val.into(),
+                            raw: None,
+                        }),
+                        metadata: LitTypeMetadata {
+                            common: arg.params[0].metadata(),
+                            ..Default::default()
+                        },
+                    }));
+                }
 
                     _ => {}
                 }

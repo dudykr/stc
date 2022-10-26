@@ -102,7 +102,7 @@ pub trait BuiltInGen: Sized {
                     RModuleItem::ModuleDecl(ref md) => unreachable!("ModuleDecl: {:#?}", md),
                     RModuleItem::Stmt(ref mut stmt) => {
                         match *stmt {
-                            RStmt::Decl(RDecl::Var(RVarDecl { ref decls, .. })) => {
+                            RStmt::Decl(RDecl::Var(box RVarDecl { ref decls, .. })) => {
                                 assert_eq!(decls.len(), 1);
                                 stmt.visit_with(&mut analyzer);
                             }
