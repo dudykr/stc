@@ -6,8 +6,12 @@ use stc_ts_ast_rnode::{
     RBlockStmt, RClassDecl, RClassMember, RClassMethod, RClassProp, RDecl, REmptyStmt, RExpr, RFnDecl, RFunction, RInvalid, RLit,
     RModuleDecl, RModuleItem, RPat, RPropName, RStmt, RTsEnumDecl, RTsEnumMember, RTsKeywordType, RTsModuleDecl, RTsType, RTsTypeAliasDecl,
     RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RBlockStmt, RClassDecl, RClassMember, RClassMethod, RClassProp, RDecl, REmptyStmt, RExpr,
+    RFnDecl, RFunction, RInvalid, RLit, RModuleDecl, RModuleItem, RPat, RStmt, RTsEnumDecl,
+    RTsEnumMember, RTsKeywordType, RTsModuleDecl, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl,
+    RVarDeclarator,
 };
-use stc_ts_types::{rprop_name_to_expr, Id, ModuleTypeData, Type};
+use stc_ts_types::{Id, ModuleTypeData, Type};
 use stc_ts_utils::{MapWithMut, PatExt};
 use swc_common::{Spanned, DUMMY_SP};
 use swc_ecma_ast::*;

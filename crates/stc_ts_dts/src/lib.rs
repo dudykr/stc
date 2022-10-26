@@ -13,7 +13,7 @@ use stc_ts_ast_rnode::{
     RTsInterfaceDecl, RTsKeywordType, RTsModuleDecl, RTsParamProp, RTsParamPropParam, RTsPropertySignature, RTsType, RTsTypeAliasDecl,
     RTsTypeAnn, RVarDecl, RVarDeclarator,
     RArrayPat, RAssignPat, RBlockStmt, RClass, RClassDecl, RClassMember, RClassProp, RDecl,
-    RExportDecl, RExportDefaultExpr, RExpr, RFnDecl, RIdent, RImportDecl, RImportSpecifier, RLit,
+    RExportDecl, RExportDefaultExpr, RExpr, RFnDecl, RIdent, RImportDecl, RImportSpecifier,
     RMemberExpr, RModuleDecl, RModuleItem, RNamedExport, RParamOrTsParamProp, RPat, RPrivateName,
     RPrivateProp, RPropName, RStmt, RTsEntityName, RTsEnumDecl, RTsIndexSignature,
     RTsInterfaceDecl, RTsKeywordType, RTsModuleDecl, RTsParamProp, RTsParamPropParam,

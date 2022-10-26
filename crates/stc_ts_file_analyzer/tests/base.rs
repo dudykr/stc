@@ -25,7 +25,7 @@ use stc_ts_utils::StcComments;
 use swc_common::{errors::DiagnosticId, input::SourceFileInput, FileName, GLOBALS};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
-use swc_ecma_transforms::resolver::ts_resolver;
+use swc_ecma_transforms::resolver;
 use swc_ecma_visit::FoldWith;
 use testing::{fixture, NormalizedOutput, Tester};
 use tracing::Level;
@@ -82,7 +82,11 @@ fn validate(input: &Path) -> Vec<StcError> {
                 parser.parse_module().unwrap()
             };
             module = GLOBALS.set(env.shared().swc_globals(), || {
-                module.fold_with(&mut ts_resolver(env.shared().marks().top_level_mark()))
+                module.fold_with(&mut resolver(
+                    env.shared().marks().unresolved_mark(),
+                    env.shared().marks().top_level_mark(),
+                    true,
+                ))
             });
             let module = RModule::from_orig(&mut node_id_gen, module);
 
@@ -169,7 +173,11 @@ fn errors(input: PathBuf) {
             parser.parse_module().unwrap()
         };
         module = GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut ts_resolver(env.shared().marks().top_level_mark()))
+            module.fold_with(&mut resolver(
+                env.shared().marks().unresolved_mark(),
+                env.shared().marks().top_level_mark(),
+                true,
+            ))
         });
         let module = RModule::from_orig(&mut node_id_gen, module);
 
@@ -235,7 +243,11 @@ fn pass_only(input: PathBuf) {
             parser.parse_module().unwrap()
         };
         module = GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut ts_resolver(env.shared().marks().top_level_mark()))
+            module.fold_with(&mut resolver(
+                env.shared().marks().unresolved_mark(),
+                env.shared().marks().top_level_mark(),
+                true,
+            ))
         });
         let module = RModule::from_orig(&mut node_id_gen, module);
 
@@ -403,7 +415,11 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
             let mut parser = Parser::new_from(lexer);
             let module = parser.parse_module().unwrap();
             let module = GLOBALS.set(stable_env.swc_globals(), || {
-                module.fold_with(&mut ts_resolver(stable_env.marks().top_level_mark()))
+                module.fold_with(&mut resolver(
+                    stable_env.marks().unresolved_mark(),
+                    stable_env.marks().top_level_mark(),
+                    true,
+                ))
             });
             let module = RModule::from_orig(&mut node_id_gen, module);
             {
