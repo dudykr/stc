@@ -67,8 +67,8 @@ define_rnode!({
         pub body: Vec<ClassMember>,
         pub super_class: Option<Box<Expr>>,
         pub is_abstract: bool,
-        pub type_params: Option<TsTypeParamDecl>,
-        pub super_type_params: Option<TsTypeParamInstantiation>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
+        pub super_type_params: Option<Box<TsTypeParamInstantiation>>,
         pub implements: Vec<TsExprWithTypeArgs>,
     }
 
@@ -119,7 +119,7 @@ define_rnode!({
     pub struct ClassMethod {
         pub span: Span,
         pub key: PropName,
-        pub function: Function,
+        pub function: Box<Function>,
         #[not_spanned]
         pub kind: MethodKind,
         pub is_static: bool,
@@ -132,7 +132,7 @@ define_rnode!({
     pub struct PrivateMethod {
         pub span: Span,
         pub key: PrivateName,
-        pub function: Function,
+        pub function: Box<Function>,
         #[not_spanned]
         pub kind: MethodKind,
         pub is_static: bool,
@@ -301,7 +301,13 @@ define_rnode!({
         pub span: Span,
         pub callee: Callee,
         pub args: Vec<ExprOrSpread>,
-        pub type_args: Option<TsTypeParamInstantiation>,
+        pub type_args: Option<Box<TsTypeParamInstantiation>>,
+    }
+    pub struct Super {
+        pub span: Span,
+    }
+    pub struct Import {
+        pub span: Span,
     }
     pub enum Callee {
         Expr(Box<Expr>),
@@ -312,7 +318,7 @@ define_rnode!({
         pub span: Span,
         pub callee: Box<Expr>,
         pub args: Option<Vec<ExprOrSpread>>,
-        pub type_args: Option<TsTypeParamInstantiation>,
+        pub type_args: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct SeqExpr {
         pub span: Span,
