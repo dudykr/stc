@@ -85,10 +85,10 @@ impl Analyzer<'_, '_> {
         let is_symbol_access = match *node.expr {
             RExpr::Member(RMemberExpr {
                 obj:
-                    RExprOrSuper::Expr(box RExpr::Ident(RIdent {
+                    box RExpr::Ident(RIdent {
                         sym: js_word!("Symbol"),
                         ..
-                    })),
+                    }),
                 ..
             }) => true,
             _ => false,
