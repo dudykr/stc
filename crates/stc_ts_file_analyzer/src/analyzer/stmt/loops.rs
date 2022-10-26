@@ -305,6 +305,30 @@ impl Analyzer<'_, '_> {
                                 }
                                 ForHeadKind::Of { .. } => {
                                     child.storage.report(Error::TypeAnnOnLhsOfForOfLoops { span: decls[0].span });
+                child.ctx.allow_ref_declaring = match left {
+                    RVarDeclOrPat::VarDecl(box RVarDecl {
+                        kind: VarDeclKind::Var,
+                        ..
+                    }) => true,
+                    _ => false,
+                };
+
+                // Type annotation on lhs of for in/of loops is invalid.
+                match left {
+                    RVarDeclOrPat::VarDecl(box RVarDecl { decls, .. }) => {
+                        if decls.len() >= 1 {
+                            if decls[0].name.get_ty().is_some() {
+                                match kind {
+                                    ForHeadKind::In => {
+                                        child.storage.report(Error::TypeAnnOnLhsOfForInLoops {
+                                            span: decls[0].span,
+                                        });
+                                    }
+                                    ForHeadKind::Of { .. } => {
+                                        child.storage.report(Error::TypeAnnOnLhsOfForOfLoops {
+                                            span: decls[0].span,
+                                        });
+                                    }
                                 }
                             }
                         }

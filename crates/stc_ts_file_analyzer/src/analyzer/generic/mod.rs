@@ -1484,6 +1484,20 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                     })),
+                                    Key::Normal { span: i_span, sym } => {
+                                        key_types.push(Type::Lit(LitType {
+                                            span: param.span,
+                                            lit: RTsLit::Str(RStr {
+                                                span: *i_span,
+                                                value: sym.clone(),
+                                                raw: None,
+                                            }),
+                                            metadata: LitTypeMetadata {
+                                                common: param.metadata.common,
+                                                ..Default::default()
+                                            },
+                                        }))
+                                    }
                                     Key::Num(n) => {
                                         key_types.push(Type::Lit(LitType {
                                             span: param.span,
@@ -1732,6 +1746,26 @@ impl Analyzer<'_, '_> {
                                                     ..Default::default()
                                                 },
                                             })),
+                                    let key_ty =
+                                        arg.members.iter().filter_map(|element| match element {
+                                            TypeElement::Property(p) => match &p.key {
+                                                Key::Normal {
+                                                    span: i_span,
+                                                    sym: i_sym,
+                                                } => Some(Type::Lit(LitType {
+                                                    span: param.span,
+                                                    lit: RTsLit::Str(RStr {
+                                                        span: *i_span,
+                                                        value: i_sym.clone(),
+                                                        raw: None,
+                                                    }),
+                                                    metadata: LitTypeMetadata {
+                                                        common: param.metadata.common,
+                                                        ..Default::default()
+                                                    },
+                                                })),
+                                                _ => None,
+                                            }, // TODO(kdy1): Handle method element
                                             _ => None,
                                         }, // TODO(kdy1): Handle method element
                                         _ => None,

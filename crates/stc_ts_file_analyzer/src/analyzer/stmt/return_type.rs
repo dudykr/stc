@@ -663,8 +663,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                                     lit: RTsLit::Str(RStr {
                                                         span: i_span,
                                                         value: key.clone(),
-                                                        has_escape: false,
-                                                        kind: Default::default(),
+                                                        raw: None,
                                                     }),
                                                     metadata: Default::default(),
                                                 });

@@ -2369,7 +2369,7 @@ impl Expander<'_, '_, '_> {
             _ => ty.fold_children_with(self),
         };
 
-        let res: VResult = try {
+        let res: VResult<Type> = try {
             match ty.normalize() {
                 Type::Ref(r) => {
                     let ty = self.expand_ref(r.clone(), was_top_level)?;

@@ -1941,7 +1941,7 @@ impl Analyzer<'_, '_> {
                                             ),
                                         };
                                         key.type_ann = None;
-                                        let key = box RExpr::Ident(key.id);
+                                        let key = RPropName::Ident(key.id);
                                         additional_members.push(RClassMember::ClassProp(
                                             RClassProp {
                                                 node_id: NodeId::invalid(),
