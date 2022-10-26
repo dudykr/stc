@@ -28,6 +28,22 @@ impl RExpr {
     }
 }
 
+impl From<Atom> for RStr {
+    fn from(v: Atom) -> Self {
+        Self {
+            value: (&*v).into(),
+            span: Default::default(),
+            raw: None,
+        }
+    }
+}
+
+impl From<Atom> for RLit {
+    fn from(v: Atom) -> Self {
+        Self::Str(v.into())
+    }
+}
+
 /// Impl `TypeEq` using `EqIgnoreSpan`
 macro_rules! type_eq {
     ($T:ty) => {
