@@ -1,7 +1,7 @@
 use fxhash::{FxHashMap, FxHashSet};
 use petgraph::graphmap::DiGraphMap;
 use rnode::{Visit, VisitWith};
-use stc_ts_ast_rnode::{RClassMember, RExpr, RMemberExpr};
+use stc_ts_ast_rnode::{RClassMember, RExpr, RMemberExpr, RMemberProp};
 use stc_ts_types::{rprop_name_to_expr, Id};
 
 use crate::{
@@ -123,11 +123,15 @@ impl Visit<RMemberExpr> for MethodAnalyzer {
             RExpr::This(..) => {
                 // We detects this.#foo and this.foo
                 match &e.prop {
-                    RExpr::Ident(i) => {
+                    RMemberProp::Ident(i) => {
                         self.result.depends_on.insert(Key::Id(i.into()));
                     }
                     RExpr::PrivateName(i) => {
                         self.result.depends_on.insert(Key::Private(i.id.clone().into()));
+                    RMemberProp::PrivateName(i) => {
+                        self.result
+                            .depends_on
+                            .insert(Key::Private(i.id.clone().into()));
                     }
                     _ => {}
                 }
