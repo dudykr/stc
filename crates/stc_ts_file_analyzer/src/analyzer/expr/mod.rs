@@ -3415,8 +3415,8 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match *n {
-            RExpr::Ident(ref i) => {
+        match n {
+            RExpr::Ident(i) => {
                 if i.sym == js_word!("Array") {
                     if let Some(type_args) = type_args {
                         // TODO(kdy1): Validate number of args.
