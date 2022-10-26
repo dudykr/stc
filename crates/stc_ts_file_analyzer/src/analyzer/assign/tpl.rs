@@ -32,8 +32,8 @@ impl Analyzer<'_, '_> {
                 let mut positions = vec![];
 
                 for item in &l.quasis {
-                    let q = &item.cooked.as_ref().unwrap().value;
-                    match r.value[start..].find(&**q) {
+                    let q = &item.cooked.as_ref().unwrap();
+                    match r.value[start..].find(&***q) {
                         Some(pos) => {
                             positions.push(pos);
                             start += pos + 1;
