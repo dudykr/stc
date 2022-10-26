@@ -101,10 +101,8 @@ define_rnode!({
         pub type_ann: Option<Box<TsTypeAnn>>,
         pub is_static: bool,
         pub decorators: Vec<Decorator>,
-        pub computed: bool,
         #[not_spanned]
         pub accessibility: Option<Accessibility>,
-        pub is_abstract: bool,
         pub is_optional: bool,
         pub readonly: bool,
         pub definite: bool,
@@ -536,7 +534,7 @@ define_rnode!({
     pub struct BigInt {
         pub span: Span,
         #[not_spanned]
-        pub value: Box<BigIntValue>,
+        pub value: BigIntValue,
 
         pub raw: Option<Atom>,
     }
@@ -745,13 +743,13 @@ define_rnode!({
     pub struct GetterProp {
         pub span: Span,
         pub key: PropName,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
         pub body: Option<BlockStmt>,
     }
     pub struct SetterProp {
         pub span: Span,
         pub key: PropName,
-        pub param: Pat,
+        pub param: Box<Pat>,
         pub body: Option<BlockStmt>,
     }
     pub struct MethodProp {
@@ -911,6 +909,8 @@ define_rnode!({
         pub name: Ident,
         pub constraint: Option<Box<TsType>>,
         pub default: Option<Box<TsType>>,
+        pub is_in: bool,
+        pub is_out: bool,
     }
     pub struct TsTypeParamInstantiation {
         pub span: Span,
