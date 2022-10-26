@@ -1251,6 +1251,11 @@ impl Analyzer<'_, '_> {
                 obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent {
                     sym: js_word!("Symbol"), ..
                 })),
+                obj:
+                    box RExpr::Ident(RIdent {
+                        sym: js_word!("Symbol"),
+                        ..
+                    }),
                 ..
             }) => true,
             _ => false,
@@ -2274,7 +2279,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Instantate fully
-    pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> VResult {
+    pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         Ok(match ty.normalize() {

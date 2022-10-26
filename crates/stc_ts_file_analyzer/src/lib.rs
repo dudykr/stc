@@ -35,7 +35,7 @@ pub mod util;
 pub mod validator;
 
 /// Validation result
-pub type VResult<T = Type> = Result<T, Error>;
+pub type VResult<T> = Result<T, Error>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct DepInfo {
