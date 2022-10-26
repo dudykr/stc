@@ -82,7 +82,7 @@ impl VisitMut<RFunction> for Operator<'_> {
 
         if let Some(FunctionMut { ret_ty }) = self.mutations.for_fns.remove(&f.node_id) {
             if let Some(ret_ty) = ret_ty {
-                f.return_type = Some(ret_ty.into())
+                f.return_type = Some(box ret_ty.into())
             }
         }
     }
@@ -160,7 +160,7 @@ impl VisitMut<RArrayPat> for Operator<'_> {
 
         if let Some(PatMut { ty, optional }) = self.mutations.for_pats.remove(&arr.node_id) {
             if let Some(ty) = ty {
-                arr.type_ann = Some(ty.into())
+                arr.type_ann = Some(box ty.into())
             }
             if let Some(optional) = optional {
                 arr.optional = optional;
