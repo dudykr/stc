@@ -1287,7 +1287,7 @@ pub enum Error {
     DebugContext(DebugContext),
 }
 
-assert_eq_size!(Error, [u8; 88]);
+assert_eq_size!(Error, [u8; 72]);
 
 impl Error {
     pub fn convert<F>(self, op: F) -> Self
