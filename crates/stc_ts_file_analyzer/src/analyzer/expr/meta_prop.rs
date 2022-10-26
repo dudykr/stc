@@ -21,7 +21,7 @@ impl Analyzer<'_, '_> {
                     self.storage.report(Error::InvalidUsageOfNewTarget { span: e.span() })
                 }
 
-                return Ok(Type::any(e.meta.span, Default::default()));
+                return Ok(Type::any(e.span, Default::default()));
             }
 
             _ => {

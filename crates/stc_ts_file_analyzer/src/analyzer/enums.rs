@@ -242,6 +242,7 @@ impl Evaluator<'_> {
                                     op!("~") => (!(v as i32)) as f64,
                                     _ => Err(Error::InvalidEnumInit { span })?,
                                 },
+                                raw: None,
                             }))
                         }
                         RTsLit::Str(_) => {}
@@ -262,6 +263,11 @@ impl Evaluator<'_> {
         } else {
             if let Some(value) = default {
                 return Ok(RTsLit::Number(RNumber { span, value: value as _ }));
+                return Ok(RTsLit::Number(RNumber {
+                    span,
+                    value: value as _,
+                    raw: None,
+                }));
             }
         }
 
@@ -293,25 +299,23 @@ impl Evaluator<'_> {
                         op!(">>>") => ((l.round() as u64) >> (r.round() as u64)) as _,
                         _ => Err(Error::InvalidEnumInit { span })?,
                     },
+                    raw: None,
                 })
             }
             (RTsLit::Str(l), RTsLit::Str(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
-                has_escape: l.has_escape || r.has_escape,
-                kind: Default::default(),
+                raw: None,
             }),
             (RTsLit::Number(l), RTsLit::Str(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
-                has_escape: r.has_escape,
-                kind: Default::default(),
+                raw: None,
             }),
             (RTsLit::Str(l), RTsLit::Number(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
-                has_escape: l.has_escape,
-                kind: Default::default(),
+                raw: None,
             }),
             _ => Err(Error::InvalidEnumInit { span })?,
         })

@@ -122,7 +122,7 @@ impl Visit<RMemberExpr> for MethodAnalyzer {
         match &*e.obj {
             RExpr::This(..) => {
                 // We detects this.#foo and this.foo
-                match &*e.prop {
+                match &e.prop {
                     RExpr::Ident(i) => {
                         self.result.depends_on.insert(Key::Id(i.into()));
                     }
