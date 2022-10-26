@@ -3395,7 +3395,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ctxt: ModuleId,
-        n: &RTsEntityName,
+        n: &RExpr,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -3411,7 +3411,7 @@ impl Analyzer<'_, '_> {
         }
 
         match *n {
-            RTsEntityName::Ident(ref i) => {
+            RExpr::Ident(ref i) => {
                 if i.sym == js_word!("Array") {
                     if let Some(type_args) = type_args {
                         // TODO(kdy1): Validate number of args.
