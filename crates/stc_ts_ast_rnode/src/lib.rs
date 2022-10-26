@@ -413,7 +413,7 @@ define_rnode!({
     pub struct BindingIdent {
         #[span]
         pub id: Ident,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
     }
 
     pub struct PrivateName {
@@ -488,8 +488,8 @@ define_rnode!({
     }
     pub struct JSXText {
         pub span: Span,
-        pub value: JsWord,
-        pub raw: JsWord,
+        pub value: Atom,
+        pub raw: Atom,
     }
     pub struct JSXElement {
         pub span: Span,
@@ -534,7 +534,7 @@ define_rnode!({
     pub struct BigInt {
         pub span: Span,
         #[not_spanned]
-        pub value: BigIntValue,
+        pub value: Box<BigIntValue>,
 
         pub raw: Option<Atom>,
     }
@@ -564,6 +564,8 @@ define_rnode!({
     pub struct Number {
         pub span: Span,
         pub value: f64,
+
+        pub raw: Option<Atom>,
     }
     pub enum Program {
         Module(Module),
@@ -682,25 +684,25 @@ define_rnode!({
         pub span: Span,
         pub elems: Vec<Option<Pat>>,
         pub optional: bool,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
     }
     pub struct ObjectPat {
         pub span: Span,
         pub props: Vec<ObjectPatProp>,
         pub optional: bool,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
     }
     pub struct AssignPat {
         pub span: Span,
         pub left: Box<Pat>,
         pub right: Box<Expr>,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
     }
     pub struct RestPat {
         pub span: Span,
         pub dot3_token: Span,
         pub arg: Box<Pat>,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
     }
     pub enum ObjectPatProp {
         KeyValue(KeyValuePatProp),
@@ -1107,7 +1109,7 @@ define_rnode!({
     pub struct TsTupleElement {
         pub span: Span,
         pub label: Option<Pat>,
-        pub ty: TsType,
+        pub ty: Box<TsType>,
     }
 
     pub struct TsOptionalType {
@@ -1189,7 +1191,7 @@ define_rnode!({
         pub span: Span,
         pub id: Ident,
         pub declare: bool,
-        pub type_params: Option<TsTypeParamDecl>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
         pub extends: Vec<TsExprWithTypeArgs>,
         pub body: TsInterfaceBody,
     }
