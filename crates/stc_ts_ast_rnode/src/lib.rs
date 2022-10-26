@@ -326,8 +326,8 @@ define_rnode!({
         pub body: BlockStmtOrExpr,
         pub is_async: bool,
         pub is_generator: bool,
-        pub type_params: Option<TsTypeParamDecl>,
-        pub return_type: Option<TsTypeAnn>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
+        pub return_type: Option<Box<TsTypeAnn>>,
     }
     pub struct YieldExpr {
         pub span: Span,
@@ -351,13 +351,13 @@ define_rnode!({
         pub span: Span,
         pub tag: Box<Expr>,
         pub tpl: Tpl,
-        pub type_params: Option<TsTypeParamInstantiation>,
+        pub type_params: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct TplElement {
         pub span: Span,
         pub tail: bool,
-        pub cooked: Option<Str>,
-        pub raw: Str,
+        pub cooked: Option<Atom>,
+        pub raw: Atom,
     }
     pub struct ParenExpr {
         pub span: Span,
@@ -382,7 +382,17 @@ define_rnode!({
     pub struct OptChainExpr {
         pub span: Span,
         pub question_dot_token: Span,
-        pub expr: Box<Expr>,
+        pub base: OptChainBase,
+    }
+    pub enum OptChainBase {
+        Member(MemberExpr),
+        Call(OptCall),
+    }
+    pub struct OptCall {
+        pub span: Span,
+        pub callee: Box<Expr>,
+        pub args: Vec<ExprOrSpread>,
+        pub type_args: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct Function {
         pub params: Vec<Param>,
@@ -391,8 +401,8 @@ define_rnode!({
         pub body: Option<BlockStmt>,
         pub is_generator: bool,
         pub is_async: bool,
-        pub type_params: Option<TsTypeParamDecl>,
-        pub return_type: Option<TsTypeAnn>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
+        pub return_type: Option<Box<TsTypeAnn>>,
     }
     pub struct Param {
         pub span: Span,
@@ -534,7 +544,7 @@ define_rnode!({
     pub struct BigInt {
         pub span: Span,
         #[not_spanned]
-        pub value: BigIntValue,
+        pub value: Box<BigIntValue>,
 
         pub raw: Option<Atom>,
     }
