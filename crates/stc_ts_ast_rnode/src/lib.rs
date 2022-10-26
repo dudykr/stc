@@ -1,6 +1,6 @@
 use num_bigint::BigInt as BigIntValue;
 use rnode::{define_rnode, NodeId};
-use swc_atoms::{js_word, JsWord};
+use swc_atoms::{js_word, Atom, JsWord};
 use swc_common::{EqIgnoreSpan, Span, TypeEq};
 use swc_ecma_ast::*;
 
@@ -160,22 +160,22 @@ define_rnode!({
         Class(ClassDecl),
         Fn(FnDecl),
         Var(Box<VarDecl>),
-        TsInterface(TsInterfaceDecl),
-        TsTypeAlias(TsTypeAliasDecl),
-        TsEnum(TsEnumDecl),
-        TsModule(TsModuleDecl),
+        TsInterface(Box<TsInterfaceDecl>),
+        TsTypeAlias(Box<TsTypeAliasDecl>),
+        TsEnum(Box<TsEnumDecl>),
+        TsModule(Box<TsModuleDecl>),
     }
     pub struct FnDecl {
         pub ident: Ident,
         pub declare: bool,
         #[span]
-        pub function: Function,
+        pub function: Box<Function>,
     }
     pub struct ClassDecl {
         pub ident: Ident,
         pub declare: bool,
         #[span]
-        pub class: Class,
+        pub class: Box<Class>,
     }
     pub struct VarDecl {
         pub span: Span,
@@ -287,7 +287,7 @@ define_rnode!({
     }
     pub struct MemberExpr {
         pub span: Span,
-        pub obj: ExprOrSuper,
+        pub obj: Box<Expr>,
         pub prop: Box<Expr>,
         pub computed: bool,
     }
@@ -299,7 +299,7 @@ define_rnode!({
     }
     pub struct CallExpr {
         pub span: Span,
-        pub callee: ExprOrSuper,
+        pub callee: Callee,
         pub args: Vec<ExprOrSpread>,
         pub type_args: Option<TsTypeParamInstantiation>,
     }
@@ -358,13 +358,7 @@ define_rnode!({
         pub span: Span,
         pub expr: Box<Expr>,
     }
-    pub enum ExprOrSuper {
-        Super(Super),
-        Expr(Box<Expr>),
-    }
-    pub struct Super {
-        pub span: Span,
-    }
+
     #[skip_node_id]
     pub struct ExprOrSpread {
         pub spread: Option<Span>,
@@ -541,8 +535,8 @@ define_rnode!({
     pub struct Str {
         pub span: Span,
         pub value: JsWord,
-        pub has_escape: bool,
-        pub kind: StrKind,
+
+        pub raw: Option<Atom>,
     }
     #[skip_node_id]
     pub struct Bool {
@@ -1199,13 +1193,13 @@ define_rnode!({
     pub struct TsExprWithTypeArgs {
         pub span: Span,
         pub expr: TsEntityName,
-        pub type_args: Option<TsTypeParamInstantiation>,
+        pub type_args: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct TsTypeAliasDecl {
         pub span: Span,
         pub declare: bool,
         pub id: Ident,
-        pub type_params: Option<TsTypeParamDecl>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
         pub type_ann: Box<TsType>,
     }
     pub struct TsEnumDecl {
