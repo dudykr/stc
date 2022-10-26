@@ -1,4 +1,6 @@
-use stc_ts_ast_rnode::{RExpr, RExprOrSuper, RMemberExpr, ROptChainBase, ROptChainExpr};
+use stc_ts_ast_rnode::{
+    RCallExpr, RExpr, RExprOrSuper, RMemberExpr, ROptCall, ROptChainBase, ROptChainExpr,
+};
 use stc_ts_errors::DebugExt;
 use stc_ts_types::Type;
 use stc_utils::ext::TypeVecExt;
@@ -58,17 +60,29 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            ROptChainBase::Call(ce) => {
-                let ty = ce.validate_with_args(self, type_ann)?;
+            ROptChainBase::Call(ce) => ce.validate_with_args(self, type_ann),
 
-                Ok(Type::union(vec![
-                    Type::undefined(span, Default::default()),
-                    ty,
-                ]))
-            }
-
-            _ => unreachable!("Onvalid optional chaining expression found",),
+            _ => unreachable!("Invalid optional chaining expression found",),
         }
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, e: &ROptCall, type_ann: Option<&Type>) -> VResult<Type> {
+        let ty = RCallExpr {
+            node_id: e.node_id,
+            span: e.span,
+            callee: stc_ts_ast_rnode::RCallee::Expr(e.callee.clone()),
+            args: e.args.clone(),
+            type_args: e.type_args.c,
+        }
+        .validate_with_args(self, type_ann)?;
+
+        Ok(Type::union(vec![
+            Type::undefined(e.span, Default::default()),
+            ty,
+        ]))
     }
 }
 
