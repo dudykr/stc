@@ -24,6 +24,9 @@ use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
     Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam, Id, Intersection,
     Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
+    Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey,
+    ConstructorSignature, FnParam, Id, Intersection, Key, KeywordType, Method, Operator,
+    OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
 };
 use stc_utils::{cache::Freeze, AHashSet};
 use swc_atoms::js_word;
@@ -1621,6 +1624,31 @@ impl Analyzer<'_, '_> {
                                                                     common: c.metadata.common,
                                                                     ..Default::default()
                                                                 },
+                                    let super_ty = box Type::Intersection(Intersection {
+                                        types: i
+                                            .types
+                                            .iter()
+                                            .map(|ty| {
+                                                match ty.normalize() {
+                                                    Type::Class(c) => {
+                                                        has_class_in_super = true;
+                                                        // class A -> typeof A
+                                                        return c
+                                                            .def
+                                                            .name
+                                                            .as_ref()
+                                                            .map(|id| {
+                                                                Type::Query(QueryType {
+                                                                    span: c.span,
+                                                                    expr:
+                                                                        box QueryExpr::TsEntityName(
+                                                                            id.clone().into(),
+                                                                        ),
+                                                                    metadata: QueryTypeMetadata {
+                                                                        common: c.metadata.common,
+                                                                        ..Default::default()
+                                                                    },
+                                                                })
                                                             })
                                                         })
                                                         .expect("Super class should be named");
