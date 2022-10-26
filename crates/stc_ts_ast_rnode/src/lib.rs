@@ -98,7 +98,7 @@ define_rnode!({
         pub span: Span,
         pub key: PrivateName,
         pub value: Option<Box<Expr>>,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
         pub is_static: bool,
         pub decorators: Vec<Decorator>,
         pub computed: bool,
@@ -592,9 +592,9 @@ define_rnode!({
         ExportDefaultDecl(ExportDefaultDecl),
         ExportDefaultExpr(ExportDefaultExpr),
         ExportAll(ExportAll),
-        TsImportEquals(TsImportEqualsDecl),
-        TsExportAssignment(TsExportAssignment),
-        TsNamespaceExport(TsNamespaceExportDecl),
+        TsImportEquals(Box<TsImportEqualsDecl>),
+        TsExportAssignment(Box<TsExportAssignment>),
+        TsNamespaceExport(Box<TsNamespaceExportDecl>),
     }
     pub struct ExportDefaultExpr {
         pub span: Span,
@@ -1066,13 +1066,13 @@ define_rnode!({
     pub struct TsTypeRef {
         pub span: Span,
         pub type_name: TsEntityName,
-        pub type_params: Option<TsTypeParamInstantiation>,
+        pub type_params: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct TsTypePredicate {
         pub span: Span,
         pub asserts: bool,
         pub param_name: TsThisTypeOrIdent,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
     }
     pub enum TsThisTypeOrIdent {
         TsThisType(TsThisType),
@@ -1090,7 +1090,7 @@ define_rnode!({
         pub span: Span,
         pub arg: Str,
         pub qualifier: Option<TsEntityName>,
-        pub type_args: Option<TsTypeParamInstantiation>,
+        pub type_args: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct TsTypeLit {
         pub span: Span,
