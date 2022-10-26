@@ -565,7 +565,7 @@ impl Analyzer<'_, '_> {
     /// declare const e: E;
     /// const a = o[e]
     /// ```
-    pub(super) fn expand_enum(&mut self, ty: Type) -> VResult {
+    pub(super) fn expand_enum(&mut self, ty: Type) -> VResult<Type> {
         let e = match ty.normalize() {
             Type::Enum(e) => e,
             _ => return Ok(ty),
@@ -599,7 +599,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult {
+    pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult<Type> {
         match ty.normalize() {
             Type::EnumVariant(ref ev) => {
                 if let Some(variant_name) = &ev.name {

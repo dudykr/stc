@@ -17,7 +17,7 @@ use crate::{
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RAwaitExpr, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RAwaitExpr, type_ann: Option<&Type>) -> VResult<Type> {
         let span = e.span;
 
         let arg_type_ann = type_ann

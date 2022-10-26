@@ -187,7 +187,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline]
-    fn validate(&mut self, ann: &RTsTypeAnn) -> VResult {
+    fn validate(&mut self, ann: &RTsTypeAnn) -> VResult<Type> {
         self.record(ann);
 
         let ctx = Ctx {
@@ -288,7 +288,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &RTsInterfaceDecl) -> VResult {
+    fn validate(&mut self, d: &RTsInterfaceDecl) -> VResult<Type> {
         let ty = self.with_child(
             ScopeKind::Flow,
             Default::default(),
@@ -754,14 +754,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsParenthesizedType) -> VResult {
+    fn validate(&mut self, t: &RTsParenthesizedType) -> VResult<Type> {
         t.type_ann.validate_with(self)
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsTypeRef) -> VResult {
+    fn validate(&mut self, t: &RTsTypeRef) -> VResult<Type> {
         self.record(t);
 
         let span = t.span;
@@ -1025,7 +1025,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &RTsType) -> VResult {
+    fn validate(&mut self, ty: &RTsType) -> VResult<Type> {
         self.record(ty);
 
         let _ctx = debug_ctx!(format!("validate\nTsType: {:?}", ty));
