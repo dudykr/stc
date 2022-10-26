@@ -88,6 +88,11 @@ impl Analyzer<'_, '_> {
                 obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent {
                     sym: js_word!("Symbol"), ..
                 })),
+                obj:
+                    box RExpr::Ident(RIdent {
+                        sym: js_word!("Symbol"),
+                        ..
+                    }),
                 ..
             }) => true,
             _ => false,
