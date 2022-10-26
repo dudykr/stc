@@ -87,10 +87,8 @@ impl Tester<'_, '_> {
                 Syntax::Typescript(TsConfig {
                     tsx: false,
                     decorators: true,
-                    dynamic_import: true,
                     dts: false,
                     no_early_errors: false,
-                    import_assertions: false,
                 }),
                 EsVersion::latest(),
                 StringInput::from(&*fm),

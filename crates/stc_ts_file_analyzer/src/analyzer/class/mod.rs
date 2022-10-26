@@ -64,7 +64,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         readonly: bool,
         is_static: bool,
-        type_ann: &Option<RTsTypeAnn>,
+        type_ann: &Option<Box<RTsTypeAnn>>,
         value: &Option<Box<RExpr>>,
     ) -> VResult<Option<Type>> {
         let mut ty = try_opt!(type_ann.validate_with(self));
@@ -153,9 +153,9 @@ impl Analyzer<'_, '_> {
         let marks = self.marks();
         self.record(p);
 
-        if !p.computed && p.is_static {
-            match &*p.key {
-                RExpr::Ident(i) => {
+        if p.is_static {
+            match &p.key {
+                RPropName::Ident(i) => {
                     if &*i.sym == "prototype" {
                         self.storage
                             .report(Error::StaticPropertyCannotBeNamedPrototype { span: i.span })
@@ -166,8 +166,8 @@ impl Analyzer<'_, '_> {
         }
 
         // Verify key if key is computed
-        if p.computed {
-            self.validate_computed_prop_key(p.span, &p.key);
+        if let RPropName::Computed(key) = &p.key {
+            self.validate_computed_prop_key(p.span, &key.expr);
         }
 
         let value = self
@@ -1796,7 +1796,7 @@ impl Analyzer<'_, '_> {
 
                                     if has_class_in_super {
                                         child.prepend_stmts.push(RStmt::Decl(RDecl::Var(
-                                            RVarDecl {
+                                            box RVarDecl {
                                                 node_id: NodeId::invalid(),
                                                 span: DUMMY_SP,
                                                 kind: VarDeclKind::Const,
@@ -1806,7 +1806,7 @@ impl Analyzer<'_, '_> {
                                                     span: i.span,
                                                     name: RPat::Ident(RBindingIdent {
                                                         node_id: NodeId::invalid(),
-                                                        type_ann: Some(RTsTypeAnn {
+                                                        type_ann: Some(box RTsTypeAnn {
                                                             node_id: NodeId::invalid(),
                                                             span: DUMMY_SP,
                                                             type_ann: box super_ty.into(),
