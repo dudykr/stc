@@ -193,7 +193,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn get_element_type_of_for_in(&mut self, rhs: &Type) -> VResult {
+    fn get_element_type_of_for_in(&mut self, rhs: &Type) -> VResult<Type> {
         let rhs = self
             .normalize(
                 None,

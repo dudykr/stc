@@ -2494,7 +2494,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         mut ty: Type,
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         if self.is_builtin {
             return Ok(ty);
         }

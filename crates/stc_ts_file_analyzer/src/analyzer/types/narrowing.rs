@@ -17,7 +17,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         declared: Type,
         actual: &Type,
-    ) -> VResult {
+    ) -> VResult<Type> {
         declared.assert_valid();
         actual.assert_valid();
 

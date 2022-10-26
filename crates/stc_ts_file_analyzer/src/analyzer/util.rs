@@ -88,7 +88,7 @@ impl Analyzer<'_, '_> {
 
     /// TODO(kdy1): Use Cow
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> VResult {
+    pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let ty = ty.normalize();
 
         let span = span.with_ctxt(SyntaxContext::empty());

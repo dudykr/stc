@@ -1600,7 +1600,7 @@ impl Analyzer<'_, '_> {
         v
     }
 
-    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> VResult {
+    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> VResult<Type> {
         let arg = &ty.type_args;
 
         match ty.kind {

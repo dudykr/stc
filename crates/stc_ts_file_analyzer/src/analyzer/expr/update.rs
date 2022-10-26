@@ -16,7 +16,7 @@ use crate::{
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RUpdateExpr) -> VResult {
+    fn validate(&mut self, e: &RUpdateExpr) -> VResult<Type> {
         let span = e.span;
 
         match &*e.arg {

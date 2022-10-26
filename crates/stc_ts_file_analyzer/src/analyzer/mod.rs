@@ -973,7 +973,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &RTsNamespaceDecl) -> VResult {
+    fn validate(&mut self, decl: &RTsNamespaceDecl) -> VResult<Type> {
         let is_builtin = self.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;
