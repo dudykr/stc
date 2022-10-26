@@ -11,8 +11,9 @@ use stc_ts_ast_rnode::{
     RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit,
     RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
     RArrayPat, RBindingIdent, RCallExpr, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid,
-    RLit, RMemberExpr, RNewExpr, RObjectPat, RPat, RPropName, RStr, RTaggedTpl, RTsAsExpr,
-    RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
+    RLit, RMemberExpr, RMemberProp, RNewExpr, RObjectPat, RPat, RPropName, RStr, RTaggedTpl,
+    RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation,
+    RTsTypeRef,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
@@ -127,6 +128,17 @@ impl Analyzer<'_, '_> {
                 type_ann.as_deref(),
             )
         })
+                analyzer.extract_call_new_expr_member(
+                    span,
+                    ReevalMode::Call(e),
+                    callee,
+                    ExtractKind::Call,
+                    args,
+                    type_args.as_deref(),
+                    type_ann.as_deref(),
+                )
+            },
+        )
     }
 }
 
@@ -356,7 +368,7 @@ impl Analyzer<'_, '_> {
             // Use general callee validation.
             RExpr::Member(RMemberExpr {
                 prop:
-                    RPropName::Computed(RComputedPropName {
+                    RMemberProp::Computed(RComputedPropName {
                         expr: box RExpr::Lit(RLit::Num(..)),
                         ..
                     }),
