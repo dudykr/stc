@@ -1,6 +1,6 @@
 use num_bigint::BigInt as BigIntValue;
 use rnode::{define_rnode, NodeId};
-use swc_atoms::{js_word, Atom, JsWord};
+use swc_atoms::{Atom, JsWord};
 use swc_common::{EqIgnoreSpan, Span, TypeEq};
 use swc_ecma_ast::*;
 
@@ -19,16 +19,7 @@ impl RExpr {
     pub fn is_new_target(&self) -> bool {
         match self {
             RExpr::MetaProp(RMetaPropExpr {
-                meta:
-                    RIdent {
-                        sym: js_word!("new"),
-                        ..
-                    },
-                prop:
-                    RIdent {
-                        sym: js_word!("target"),
-                        ..
-                    },
+                kind: MetaPropKind::NewTarget,
                 ..
             }) => true,
             _ => false,
@@ -339,10 +330,8 @@ define_rnode!({
         pub delegate: bool,
     }
     pub struct MetaPropExpr {
-        #[span(lo)]
-        pub meta: Ident,
-        #[span(hi)]
-        pub prop: Ident,
+        pub span: Span,
+        pub kind: MetaPropKind,
     }
     pub struct AwaitExpr {
         pub span: Span,
