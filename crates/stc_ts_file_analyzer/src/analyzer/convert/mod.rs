@@ -832,8 +832,12 @@ impl Analyzer<'_, '_> {
             }
 
             if !reported_type_not_found {
-                self.report_error_for_unresolve_type(t.span, &t.type_name, type_args.as_deref())
-                    .report(&mut self.storage);
+                self.report_error_for_unresolve_type(
+                    t.span,
+                    &t.type_name.clone().into(),
+                    type_args.as_deref(),
+                )
+                .report(&mut self.storage);
             }
         }
 
