@@ -1,7 +1,7 @@
 use fxhash::{FxHashMap, FxHashSet};
 use petgraph::graphmap::DiGraphMap;
 use rnode::{Visit, VisitWith};
-use stc_ts_ast_rnode::{RClassMember, RExpr, RExprOrSuper, RMemberExpr};
+use stc_ts_ast_rnode::{RClassMember, RExpr, RMemberExpr};
 use stc_ts_types::{rprop_name_to_expr, Id};
 
 use crate::{
@@ -123,9 +123,7 @@ struct MethodAnalyzer {
 impl Visit<RMemberExpr> for MethodAnalyzer {
     fn visit(&mut self, e: &RMemberExpr) {
         e.obj.visit_with(self);
-        if e.computed {
-            e.prop.visit_with(self);
-        }
+        e.prop.visit_with(self);
 
         match &e.obj {
             RExprOrSuper::Super(_) => {}
