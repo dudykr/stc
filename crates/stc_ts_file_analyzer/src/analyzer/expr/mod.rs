@@ -14,9 +14,8 @@ use stc_ts_ast_rnode::{
     RNumber, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperPropExpr, RThisExpr, RTpl,
     RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
     RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr,
-    RMemberProp, RNull, RNumber, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper,
-    RSuperPropExpr, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr,
-    RUnaryExpr,
+    RMemberProp, RNull, RNumber, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuperPropExpr,
+    RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
