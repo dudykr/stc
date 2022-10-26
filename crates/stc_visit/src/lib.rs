@@ -75,5 +75,4 @@ noop!(swc_ecma_ast::Accessibility);
 noop!(swc_ecma_ast::AssignOp);
 noop!(swc_ecma_ast::VarDeclKind);
 noop!(swc_ecma_ast::MethodKind);
-noop!(swc_ecma_ast::StrKind);
 noop!(swc_ecma_ast::UpdateOp);
