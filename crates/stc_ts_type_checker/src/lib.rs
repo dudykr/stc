@@ -25,7 +25,7 @@ use swc_common::{errors::Handler, FileName, SourceMap, Spanned, DUMMY_SP};
 use swc_ecma_ast::Module;
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::TsConfig;
-use swc_ecma_transforms::resolver::ts_resolver;
+use swc_ecma_transforms::resolver;
 use swc_ecma_visit::FoldWith;
 use tracing::{info, warn};
 
@@ -207,8 +207,10 @@ impl Checker {
                             .map(|module| {
                                 RModule::from_orig(
                                     &mut node_id_gen,
-                                    module.fold_with(&mut ts_resolver(
+                                    module.fold_with(&mut resolver(
+                                        self.env.shared().marks().unresolved_mark(),
                                         self.env.shared().marks().top_level_mark(),
+                                        true,
                                     )),
                                 )
                             })
@@ -256,8 +258,7 @@ impl Checker {
                                     name: RTsModuleName::Str(RStr {
                                         span: DUMMY_SP,
                                         value: format!("{:?}", module_id).into(),
-                                        has_escape: false,
-                                        kind: Default::default(),
+                                        raw: None,
                                     }),
                                     exports: box data,
                                     metadata: Default::default(),
@@ -335,7 +336,11 @@ impl Checker {
             let mut module = self.module_graph.clone_module(id).unwrap_or_else(|| {
                 unreachable!("Module graph does not contains {:?}: {}", id, path)
             });
-            module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
+            module = module.fold_with(&mut resolver(
+                self.env.shared().marks().unresolved_mark(),
+                self.env.shared().marks().top_level_mark(),
+                true,
+            ));
 
             let _panic = panic_ctx!(format!("Span of module = ({:?})", module.span));
 
@@ -391,8 +396,7 @@ impl Checker {
                 name: RTsModuleName::Str(RStr {
                     span: DUMMY_SP,
                     value: format!("{:?}", id).into(),
-                    has_escape: false,
-                    kind: Default::default(),
+                    raw: None,
                 }),
                 exports: box storage.info.exports,
                 metadata: Default::default(),
@@ -430,7 +434,7 @@ impl Load for Checker {
         base: ModuleId,
         dep: ModuleId,
         _partial: &ModuleTypeData,
-    ) -> VResult {
+    ) -> VResult<Type> {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 
@@ -439,7 +443,7 @@ impl Load for Checker {
         return Ok(data);
     }
 
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult {
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult<Type> {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 

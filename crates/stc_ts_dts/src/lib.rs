@@ -8,7 +8,7 @@ use fxhash::FxHashSet;
 use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RAssignPat, RBlockStmt, RClass, RClassDecl, RClassMember, RClassProp, RDecl,
-    RExportDecl, RExportDefaultExpr, RExpr, RFnDecl, RIdent, RImportDecl, RImportSpecifier, RLit,
+    RExportDecl, RExportDefaultExpr, RExpr, RFnDecl, RIdent, RImportDecl, RImportSpecifier,
     RMemberExpr, RModuleDecl, RModuleItem, RNamedExport, RParamOrTsParamProp, RPat, RPrivateName,
     RPrivateProp, RPropName, RStmt, RTsEntityName, RTsEnumDecl, RTsIndexSignature,
     RTsInterfaceDecl, RTsKeywordType, RTsModuleDecl, RTsParamProp, RTsParamPropParam,
