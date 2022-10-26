@@ -48,6 +48,12 @@ impl From<Atom> for RLit {
     }
 }
 
+impl From<Atom> for RTsLit {
+    fn from(v: Atom) -> Self {
+        Self::Str(v.into())
+    }
+}
+
 /// Impl `TypeEq` using `EqIgnoreSpan`
 macro_rules! type_eq {
     ($T:ty) => {
