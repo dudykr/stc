@@ -319,6 +319,11 @@ impl Analyzer<'_, '_> {
                         span,
                         &iterator,
                         &Key::Num(RNumber { span, value: n as _ }),
+                        &Key::Num(RNumber {
+                            span,
+                            value: n as _,
+                            raw: None,
+                        }),
                         TypeOfMode::RValue,
                         IdCtx::Var,
                         Default::default(),
