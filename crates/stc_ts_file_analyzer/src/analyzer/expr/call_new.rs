@@ -5,9 +5,9 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RBindingIdent, RCallExpr, RExpr, RExprOrSpread, RIdent, RInvalid, RLit, RMemberExpr,
-    RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit,
-    RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
+    RArrayPat, RBindingIdent, RCallExpr, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid,
+    RLit, RMemberExpr, RNewExpr, RObjectPat, RPat, RPropName, RStr, RTaggedTpl, RTsAsExpr,
+    RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
@@ -158,7 +158,7 @@ impl Analyzer<'_, '_> {
                     callee,
                     ExtractKind::New,
                     args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
-                    type_args.as_ref(),
+                    type_args.as_deref(),
                     type_ann.as_deref(),
                 )
             },
@@ -211,7 +211,7 @@ impl Analyzer<'_, '_> {
                     &e.tag,
                     ExtractKind::Call,
                     args.as_ref(),
-                    e.type_params.as_ref(),
+                    e.type_params.as_deref(),
                     Default::default(),
                 )
             },
@@ -351,8 +351,10 @@ impl Analyzer<'_, '_> {
 
             // Use general callee validation.
             RExpr::Member(RMemberExpr {
-                prop: box RExpr::Lit(RLit::Num(..)),
-                computed: true,
+                prop:
+                    RPropName::Computed(RComputedPropName {
+                        expr: box RExpr::Lit(RLit::Num(..)),
+                    }),
                 ..
             }) => {}
 
