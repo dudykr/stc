@@ -291,7 +291,7 @@ impl Analyzer<'_, '_> {
         let actual_ty = self.type_of_ts_entity_name(
             span,
             self.ctx.module_id,
-            &ty.type_name,
+            &ty.type_name.clone().into(),
             ty.type_args.as_deref(),
         )?;
 
