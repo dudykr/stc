@@ -297,6 +297,11 @@ define_rnode!({
         pub args: Vec<ExprOrSpread>,
         pub type_args: Option<TsTypeParamInstantiation>,
     }
+    pub enum Callee {
+        Expr(Box<Expr>),
+        Super(Super),
+        Import(Import),
+    }
     pub struct NewExpr {
         pub span: Span,
         pub callee: Box<Expr>,
@@ -524,6 +529,8 @@ define_rnode!({
         pub span: Span,
         #[not_spanned]
         pub value: BigIntValue,
+
+        pub raw: Option<Atom>,
     }
     #[skip_node_id]
     pub struct Str {
@@ -1186,7 +1193,7 @@ define_rnode!({
     }
     pub struct TsExprWithTypeArgs {
         pub span: Span,
-        pub expr: TsEntityName,
+        pub expr: Box<Expr>,
         pub type_args: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct TsTypeAliasDecl {
