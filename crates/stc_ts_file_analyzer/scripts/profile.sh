@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
 set -eu
 
-# Start jaeger
-docker run -d -p6831:6831/udp -p6832:6832/udp -p16686:16686 jaegertracing/all-in-one:latest || true
+export RUST_LOG=off
+export CARGO_MANIFEST_DIR="$(pwd)"
 
-
-
-export RUST_LOG=trace,swc_common=off,swc_ecma_parser=off
-
-cargo test --test perf --release --features profile $@ -- --nocapture
+cargo profile instruments -t time --lib --release --features tracing/release_max_level_off > /dev/null
