@@ -75,7 +75,7 @@ impl Analyzer<'_, '_> {
             span: e.span,
             callee: stc_ts_ast_rnode::RCallee::Expr(e.callee.clone()),
             args: e.args.clone(),
-            type_args: e.type_args.c,
+            type_args: e.type_args.clone(),
         }
         .validate_with_args(self, type_ann)?;
 
