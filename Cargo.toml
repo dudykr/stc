@@ -15,7 +15,7 @@ no-threading = [
 ]
 
 [dependencies]
-anyhow = "1"
+anyhow = "1.0.66"
 env_logger = "0.9.0"
 log = "0.4.14"
 rayon = "1"
@@ -26,12 +26,12 @@ stc_ts_module_loader = {path = "./crates/stc_ts_module_loader"}
 stc_ts_type_checker = {path = "./crates/stc_ts_type_checker"}
 stc_utils = {path = "./crates/stc_utils"}
 structopt = "0.3.20"
-swc_common = {version = "0.14.6", features = ["tty-emitter"]}
-swc_ecma_ast = "0.58.0"
-swc_ecma_parser = "0.78.5"
-swc_node_base = "0.5.7"
+swc_common = { version = "0.29.10", features = ["tty-emitter"] }
+swc_ecma_ast = "0.94.14"
+swc_ecma_parser = "0.122.20"
+swc_node_base = "0.5.8"
 tokio = "1.7.1"
-tracing = {version = "0.1.26", features = ["release_max_level_off"]}
+tracing = { version = "0.1.37", features = ["release_max_level_off"] }
 tracing-subscriber = {version = "0.2.19", features = ["env-filter"]}
 
 [profile.release]
