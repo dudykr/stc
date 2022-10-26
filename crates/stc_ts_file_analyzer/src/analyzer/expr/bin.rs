@@ -5,8 +5,8 @@ use std::{
 };
 
 use stc_ts_ast_rnode::{
-    RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainExpr,
-    RPat, RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
+    RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase,
+    ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -848,7 +848,7 @@ impl Analyzer<'_, '_> {
                 info!("cond_facts: typeof {:?}", name);
                 match r {
                     RExpr::Tpl(RTpl { quasis, .. }) if quasis.len() == 1 => {
-                        let value = &quasis[0].cooked.as_ref()?.value;
+                        let value = &quasis[0].cooked.as_ref()?;
                         Some((
                             name,
                             if is_eq {
@@ -927,7 +927,7 @@ impl Analyzer<'_, '_> {
         fn non_undefined_names(e: &RExpr) -> Vec<Name> {
             match e {
                 RExpr::OptChain(ROptChainExpr {
-                    expr: box RExpr::Member(me),
+                    base: ROptChainBase::Member(me),
                     ..
                 }) => {
                     let mut names = non_undefined_names(&me.obj);

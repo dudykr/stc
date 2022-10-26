@@ -8,9 +8,10 @@ use std::{
 use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RNull,
-    RNumber, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperPropExpr, RThisExpr, RTpl,
-    RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
+    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr,
+    RMemberProp, RNull, RNumber, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper,
+    RSuperPropExpr, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr,
+    RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
@@ -3860,6 +3861,7 @@ impl Analyzer<'_, '_> {
             span,
             ..
         } = *expr;
+        let computed = matches!(prop, RMemberProp::Computed(..));
 
         let name: Option<Name> = expr.try_into().ok();
 
