@@ -1004,12 +1004,12 @@ define_rnode!({
         pub computed: bool,
         pub optional: bool,
         pub params: Vec<TsFnParam>,
-        pub type_ann: Option<TsTypeAnn>,
-        pub type_params: Option<TsTypeParamDecl>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
     }
     pub struct TsIndexSignature {
         pub params: Vec<TsFnParam>,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
         pub readonly: bool,
         pub span: Span,
         pub is_static: bool,
@@ -1059,14 +1059,14 @@ define_rnode!({
     pub struct TsFnType {
         pub span: Span,
         pub params: Vec<TsFnParam>,
-        pub type_params: Option<TsTypeParamDecl>,
-        pub type_ann: TsTypeAnn,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
+        pub type_ann: Box<TsTypeAnn>,
     }
     pub struct TsConstructorType {
         pub span: Span,
         pub params: Vec<TsFnParam>,
-        pub type_params: Option<TsTypeParamDecl>,
-        pub type_ann: TsTypeAnn,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
+        pub type_ann: Box<TsTypeAnn>,
         pub is_abstract: bool,
     }
     pub struct TsTypeRef {
