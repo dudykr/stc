@@ -186,11 +186,11 @@ pub struct ArrayMetadata {
 impl_traits!(ArrayMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct QueryTypeMetdata {
+pub struct QueryTypeMetadata {
     pub common: CommonTypeMetadata,
 }
 
-impl_traits!(QueryTypeMetdata);
+impl_traits!(QueryTypeMetadata);
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct InferTypeMetadata {

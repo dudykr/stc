@@ -132,7 +132,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RNewExpr, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RNewExpr, type_ann: Option<&Type>) -> VResult<Type> {
         self.record(e);
 
         let RNewExpr {
@@ -168,7 +168,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RTaggedTpl) -> VResult {
+    fn validate(&mut self, e: &RTaggedTpl) -> VResult<Type> {
         let span = e.span;
 
         let tpl_str_arg = {
@@ -243,7 +243,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         type_args: Option<&RTsTypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
 
         let marks = self.marks();
@@ -357,7 +357,7 @@ impl Analyzer<'_, '_> {
             }) => {}
 
             RExpr::Member(RMemberExpr {
-                obj: RExprOrSuper::Expr(ref obj),
+                ref obj,
                 ref prop,
                 computed,
                 ..
@@ -538,7 +538,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
         opts: CallOpts,
-    ) -> VResult {
+    ) -> VResult<Type> {
         obj_type.assert_valid();
 
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -1180,7 +1180,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
         opts: CallOpts,
-    ) -> VResult {
+    ) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         // Candidates of the method call.
@@ -1325,7 +1325,7 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
         opts: CallOpts,
-    ) -> VResult {
+    ) -> VResult<Type> {
         if !self.is_builtin {
             ty.assert_valid();
         }
@@ -1788,7 +1788,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         let callee_span = callee_ty.span();
 
         let candidates = members
@@ -1869,7 +1869,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         self.get_return_type(
             span,
             ExtractKind::Call,
@@ -2063,7 +2063,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let has_spread = arg_types.len() != spread_arg_types.len();
@@ -2447,7 +2447,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         // TODO(kdy1): Optimize by skipping clone if `this type` is not used.
@@ -3251,7 +3251,12 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn narrow_type_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult {
+    fn narrow_type_with_predicate(
+        &mut self,
+        span: Span,
+        orig_ty: &Type,
+        new_ty: Type,
+    ) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let orig_ty = self

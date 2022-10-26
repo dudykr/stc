@@ -23,7 +23,7 @@ pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata,
     ComputedKey, Id, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method,
-    ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType, QueryTypeMetdata,
+    ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType, QueryTypeMetadata,
     StaticThis, ThisType,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
@@ -103,7 +103,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         self.record(e);
 
         let _stack = stack::start(64);
@@ -397,24 +397,24 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RExprOrSuper) -> VResult {
-        match e {
-            RExprOrSuper::Expr(e) => e.validate_with_default(self),
-            RExprOrSuper::Super(s) => Ok(Type::any(s.span, Default::default())),
-        }
-    }
-}
-
-#[validator]
-impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RParenExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
+    fn validate(
+        &mut self,
+        e: &RParenExpr,
+        mode: TypeOfMode,
+        type_ann: Option<&Type>,
+    ) -> VResult<Type> {
         e.expr.validate_with_args(self, (mode, None, type_ann))
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RAssignExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
+    fn validate(
+        &mut self,
+        e: &RAssignExpr,
+        mode: TypeOfMode,
+        type_ann: Option<&Type>,
+    ) -> VResult<Type> {
         let ctx = Ctx {
             pat_mode: PatMode::Assign,
             ..self.ctx
@@ -579,7 +579,12 @@ pub(crate) struct AccessPropertyOpts {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RSeqExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
+    fn validate(
+        &mut self,
+        e: &RSeqExpr,
+        mode: TypeOfMode,
+        type_ann: Option<&Type>,
+    ) -> VResult<Type> {
         let RSeqExpr {
             span, ref exprs, ..
         } = *e;
@@ -1122,7 +1127,7 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
         opts: AccessPropertyOpts,
-    ) -> VResult {
+    ) -> VResult<Type> {
         if !self.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
         }
@@ -1304,7 +1309,7 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
         opts: AccessPropertyOpts,
-    ) -> VResult {
+    ) -> VResult<Type> {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy());
 
@@ -3110,7 +3115,7 @@ impl Analyzer<'_, '_> {
         name: &[Id],
         type_mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         assert!(name.len() > 0, "Cannot determine type of empty name");
 
         let mut id: RIdent = name[0].clone().into();
@@ -3159,7 +3164,7 @@ impl Analyzer<'_, '_> {
         i: &RIdent,
         type_mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         let span = i.span();
         let id: Id = i.into();
         let name: Name = i.into();
@@ -3280,7 +3285,7 @@ impl Analyzer<'_, '_> {
 
     /// Returned type does not reflects conditional type facts. (like Truthy /
     /// exclusion)
-    fn type_of_raw_var(&mut self, i: &RIdent, type_mode: TypeOfMode) -> VResult {
+    fn type_of_raw_var(&mut self, i: &RIdent, type_mode: TypeOfMode) -> VResult<Type> {
         info!("({}) type_of_raw_var({})", self.scope.depth(), Id::from(i));
 
         // See documentation on Analyzer.cur_module_name to understand what we are doing
@@ -3609,7 +3614,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::Query(QueryType {
                         span,
                         expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
-                        metadata: QueryTypeMetdata {
+                        metadata: QueryTypeMetadata {
                             common: CommonTypeMetadata {
                                 resolved_from_var: true,
                                 ..Default::default()
@@ -3649,7 +3654,7 @@ impl Analyzer<'_, '_> {
         ctxt: ModuleId,
         n: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
     }
 
@@ -3660,7 +3665,7 @@ impl Analyzer<'_, '_> {
         ctxt: ModuleId,
         n: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
         {
             let res = self.report_error_for_unresolve_type(span, &n, type_args);
@@ -3845,7 +3850,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Expand type arguments if provided.
-    fn type_of_member_expr(&mut self, expr: &RMemberExpr, type_mode: TypeOfMode) -> VResult {
+    fn type_of_member_expr(&mut self, expr: &RMemberExpr, type_mode: TypeOfMode) -> VResult<Type> {
         let RMemberExpr {
             ref obj,
             computed,
@@ -4164,7 +4169,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RTpl) -> VResult {
+    fn validate(&mut self, e: &RTpl) -> VResult<Type> {
         e.exprs.visit_with(self);
 
         if e.exprs.is_empty() {
