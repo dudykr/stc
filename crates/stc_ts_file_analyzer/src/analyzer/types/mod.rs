@@ -1924,9 +1924,10 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(crate) fn left(t: &RTsEntityName) -> &RIdent {
+pub(crate) fn left(t: &RExpr) -> &RIdent {
     match t {
-        RTsEntityName::TsQualifiedName(t) => left(&t.left),
-        RTsEntityName::Ident(i) => i,
+        RExpr::Ident(i) => i,
+        RExpr::Member(m) => left(&m.obj),
+        _ => todo!("left: {:?}", t),
     }
 }
