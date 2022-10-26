@@ -398,7 +398,7 @@ impl From<RPrivateName> for PrivateName {
     }
 }
 
-assert_eq_size!(Key, [u8; 56]);
+assert_eq_size!(Key, [u8; 40]);
 
 impl Key {
     pub fn ty(&self) -> Cow<Type> {
@@ -409,8 +409,7 @@ impl Key {
                 lit: RTsLit::Str(RStr {
                     span: *span,
                     value: sym.clone(),
-                    has_escape: false,
-                    kind: Default::default(),
+                    raw: None,
                 }),
                 metadata: Default::default(),
             })),
