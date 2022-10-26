@@ -80,12 +80,11 @@ define_rnode!({
 
     pub struct ClassProp {
         pub span: Span,
-        pub key: Box<Expr>,
+        pub key: PropName,
         pub value: Option<Box<Expr>>,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
         pub is_static: bool,
         pub decorators: Vec<Decorator>,
-        pub computed: bool,
         #[not_spanned]
         pub accessibility: Option<Accessibility>,
         pub is_abstract: bool,
@@ -266,12 +265,12 @@ define_rnode!({
     pub struct FnExpr {
         pub ident: Option<Ident>,
         #[span]
-        pub function: Function,
+        pub function: Box<Function>,
     }
     pub struct ClassExpr {
         pub ident: Option<Ident>,
         #[span]
-        pub class: Class,
+        pub class: Box<Class>,
     }
     pub struct AssignExpr {
         pub span: Span,
@@ -283,8 +282,12 @@ define_rnode!({
     pub struct MemberExpr {
         pub span: Span,
         pub obj: Box<Expr>,
-        pub prop: Box<Expr>,
-        pub computed: bool,
+        pub prop: MemberProp,
+    }
+    pub enum MemberProp {
+        Ident(Ident),
+        PrivateName(PrivateName),
+        Computed(ComputedPropName),
     }
     pub struct CondExpr {
         pub span: Span,
@@ -460,7 +463,7 @@ define_rnode!({
         pub span: Span,
         pub attrs: Vec<JSXAttrOrSpread>,
         pub self_closing: bool,
-        pub type_args: Option<TsTypeParamInstantiation>,
+        pub type_args: Option<Box<TsTypeParamInstantiation>>,
     }
     pub enum JSXAttrOrSpread {
         JSXAttr(JSXAttr),
@@ -592,8 +595,8 @@ define_rnode!({
         ExportDefaultExpr(ExportDefaultExpr),
         ExportAll(ExportAll),
         TsImportEquals(Box<TsImportEqualsDecl>),
-        TsExportAssignment(Box<TsExportAssignment>),
-        TsNamespaceExport(Box<TsNamespaceExportDecl>),
+        TsExportAssignment(TsExportAssignment),
+        TsNamespaceExport(TsNamespaceExportDecl),
     }
     pub struct ExportDefaultExpr {
         pub span: Span,
@@ -629,7 +632,7 @@ define_rnode!({
     pub enum DefaultDecl {
         Class(ClassExpr),
         Fn(FnExpr),
-        TsInterfaceDecl(TsInterfaceDecl),
+        TsInterfaceDecl(Box<TsInterfaceDecl>),
     }
     pub enum ImportSpecifier {
         Named(ImportNamedSpecifier),
