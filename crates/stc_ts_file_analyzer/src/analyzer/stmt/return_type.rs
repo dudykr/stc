@@ -428,7 +428,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RYieldExpr) -> VResult {
+    fn validate(&mut self, e: &RYieldExpr) -> VResult<Type> {
         let span = e.span;
 
         if let Some(res) = e.arg.validate_with_default(self) {
