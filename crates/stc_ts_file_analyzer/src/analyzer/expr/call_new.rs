@@ -385,6 +385,15 @@ impl Analyzer<'_, '_> {
 
                 // Validate object
                 let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
+                let computed = matches!(prop, RMemberProp::Computed(..));
+                let prop = self.validate_key(
+                    &*match prop {
+                        RMemberProp::Ident(i) => Cow::Owned(RExpr::Ident(i.clone())),
+                        RMemberProp::PrivateName(i) => Cow::Owned(RExpr::PrivateName(i.clone())),
+                        RMemberProp::Computed(e) => Cow::Borrowed(&*e.expr),
+                    },
+                    computed,
+                )?;
                 {
                     // Handle toString()
 

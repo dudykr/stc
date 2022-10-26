@@ -3936,6 +3936,13 @@ impl Analyzer<'_, '_> {
             return Ok(Type::Lit(LitType {
                 span: e.span,
                 lit: RTsLit::Str(e.quasis[0].cooked.clone().unwrap_or_else(|| e.quasis[0].raw.clone())),
+                lit: RTsLit::Str(
+                    e.quasis[0]
+                        .cooked
+                        .clone()
+                        .unwrap_or_else(|| e.quasis[0].raw.clone())
+                        .into(),
+                ),
                 metadata: Default::default(),
             }));
         }
