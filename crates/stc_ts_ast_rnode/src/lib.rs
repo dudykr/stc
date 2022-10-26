@@ -557,8 +557,8 @@ define_rnode!({
     #[skip_node_id]
     pub struct Regex {
         pub span: Span,
-        pub exp: JsWord,
-        pub flags: JsWord,
+        pub exp: Atom,
+        pub flags: Atom,
     }
     #[skip_node_id]
     pub struct Number {
@@ -1087,6 +1087,7 @@ define_rnode!({
     pub struct TsTypeQuery {
         pub span: Span,
         pub expr_name: TsTypeQueryExpr,
+        pub type_args: Option<Box<TsTypeParamInstantiation>>,
     }
     pub enum TsTypeQueryExpr {
         TsEntityName(TsEntityName),
