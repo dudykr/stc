@@ -1,8 +1,9 @@
-use num_bigint::BigInt as BigIntValue;
 use rnode::{define_rnode, NodeId};
 use swc_atoms::{Atom, JsWord};
 use swc_common::{EqIgnoreSpan, Span, TypeEq};
 use swc_ecma_ast::*;
+
+type BigIntValue = Box<num_bigint::BigInt>;
 
 impl RIdent {
     pub const fn new(sym: JsWord, span: Span) -> Self {
@@ -193,6 +194,7 @@ define_rnode!({
         Bin(BinExpr),
         Assign(AssignExpr),
         Member(MemberExpr),
+        SuperProp(SuperPropExpr),
         Cond(CondExpr),
         Call(CallExpr),
         New(NewExpr),
@@ -216,6 +218,8 @@ define_rnode!({
         TsConstAssertion(TsConstAssertion),
         TsNonNull(TsNonNullExpr),
         TsAs(TsAsExpr),
+        TsInstantiation(TsInstantiation),
+        TsSatisfaction(TsSatisfactionExpr),
         PrivateName(PrivateName),
         OptChain(OptChainExpr),
         Invalid(Invalid),
@@ -544,7 +548,7 @@ define_rnode!({
     pub struct BigInt {
         pub span: Span,
         #[not_spanned]
-        pub value: Box<BigIntValue>,
+        pub value: BigIntValue,
 
         pub raw: Option<Atom>,
     }
@@ -1316,5 +1320,28 @@ define_rnode!({
     pub struct StaticBlock {
         pub span: Span,
         pub body: BlockStmt,
+    }
+
+    pub struct TsInstantiation {
+        pub span: Span,
+        pub expr: Box<Expr>,
+        pub type_args: Box<TsTypeParamInstantiation>,
+    }
+
+    pub struct TsSatisfactionExpr {
+        pub span: Span,
+        pub expr: Box<Expr>,
+        pub type_ann: Box<TsType>,
+    }
+
+    pub struct SuperPropExpr {
+        pub span: Span,
+        pub obj: Super,
+        pub prop: SuperProp,
+    }
+
+    pub enum SuperProp {
+        Ident(Ident),
+        Computed(ComputedPropName),
     }
 });
