@@ -1669,7 +1669,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn report_error_for_unresolve_type(
         &mut self,
         span: Span,
-        type_name: &RTsEntityName,
+        type_name: &RExpr,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<()> {
         if self.is_builtin {
