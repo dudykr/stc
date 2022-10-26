@@ -5,7 +5,6 @@ use std::{
 
 use rnode::NodeId;
 use serde::{Deserialize, Serialize};
-use stc_ts_ast_rnode::{RIdent, RTsEntityName};
 use stc_ts_ast_rnode::{RIdent, RModuleExportName, RTsEntityName};
 use stc_visit::Visit;
 use swc_atoms::JsWord;

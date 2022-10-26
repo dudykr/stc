@@ -22,10 +22,6 @@ impl RExpr {
     pub fn is_new_target(&self) -> bool {
         match self {
             RExpr::MetaProp(RMetaPropExpr {
-                meta: RIdent { sym: js_word!("new"), .. },
-                prop: RIdent {
-                    sym: js_word!("target"), ..
-                },
                 kind: MetaPropKind::NewTarget,
                 ..
             }) => true,
@@ -257,7 +253,7 @@ define_rnode!({
         TsNonNull(TsNonNullExpr),
         TsAs(TsAsExpr),
         TsInstantiation(TsInstantiation),
-        TsSatisfaction(TsSatisfactionExpr),
+        TsSatisfies(TsSatisfiesExpr),
         PrivateName(PrivateName),
         OptChain(OptChainExpr),
         Invalid(Invalid),
@@ -1366,7 +1362,7 @@ define_rnode!({
         pub type_args: Box<TsTypeParamInstantiation>,
     }
 
-    pub struct TsSatisfactionExpr {
+    pub struct TsSatisfiesExpr {
         pub span: Span,
         pub expr: Box<Expr>,
         pub type_ann: Box<TsType>,

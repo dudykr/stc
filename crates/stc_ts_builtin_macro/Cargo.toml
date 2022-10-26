@@ -12,8 +12,8 @@ proc-macro = true
 Inflector = "0.11"
 pmutil = "0.5.1"
 proc-macro2 = "1"
-swc_common = "0.29.10"
-swc_ecma_parser = "0.122.20"
+swc_common = "0.29.13"
+swc_ecma_parser = "0.122.25"
 swc_macros_common = "0.3.6"
 
 [dependencies.syn]

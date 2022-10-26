@@ -6,10 +6,6 @@ use stc_ts_ast_rnode::{
     RBlockStmt, RClassDecl, RClassMember, RClassMethod, RClassProp, RDecl, REmptyStmt, RExpr, RFnDecl, RFunction, RInvalid, RLit,
     RModuleDecl, RModuleItem, RPat, RPropName, RStmt, RTsEnumDecl, RTsEnumMember, RTsKeywordType, RTsModuleDecl, RTsType, RTsTypeAliasDecl,
     RTsTypeAnn, RVarDecl, RVarDeclarator,
-    RBlockStmt, RClassDecl, RClassMember, RClassMethod, RClassProp, RDecl, REmptyStmt, RExpr,
-    RFnDecl, RFunction, RInvalid, RLit, RModuleDecl, RModuleItem, RPat, RStmt, RTsEnumDecl,
-    RTsEnumMember, RTsKeywordType, RTsModuleDecl, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl,
-    RVarDeclarator,
 };
 use stc_ts_types::{Id, ModuleTypeData, Type};
 use stc_ts_utils::{MapWithMut, PatExt};
@@ -162,10 +158,7 @@ impl VisitMut<RFnDecl> for DceForDts<'_> {
         }
 
         node.function.return_type = self.get_mapped(&node.ident.clone().into(), |ty| match ty {
-            Type::Function(stc_ts_types::Function { ref ret_ty, .. }) => Some(RTsTypeAnn::from((**ret_ty).clone())),
-            Type::Function(stc_ts_types::Function { ref ret_ty, .. }) => {
-                Some(box RTsTypeAnn::from((**ret_ty).clone()))
-            }
+            Type::Function(stc_ts_types::Function { ref ret_ty, .. }) => Some(box RTsTypeAnn::from((**ret_ty).clone())),
             _ => None,
         });
     }

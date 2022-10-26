@@ -8,6 +8,6 @@ version = "0.1.0"
 [dependencies]
 num-bigint = "0.4.3"
 stc_visit_macros = {path = "../stc_visit_macros"}
-swc_atoms = "0.4.23"
-swc_common = "0.29.10"
-swc_ecma_ast = "0.94.14"
+swc_atoms = "0.4.24"
+swc_common = "0.29.13"
+swc_ecma_ast = "0.94.18"

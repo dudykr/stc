@@ -13,11 +13,11 @@ rnode = {path = "../rnode/"}
 stc_testing = {path = "../stc_testing"}
 stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
 stc_ts_types = {path = "../stc_ts_types"}
-swc_atoms = "0.4.23"
-swc_common = "0.29.10"
-swc_ecma_ast = "0.94.14"
-swc_ecma_codegen = "0.127.24"
-swc_ecma_parser = "0.122.20"
-swc_ecma_transforms = "0.198.27"
-swc_ecma_utils = "0.105.25"
-swc_ecma_visit = "0.80.14"
+swc_atoms = "0.4.24"
+swc_common = "0.29.13"
+swc_ecma_ast = "0.94.18"
+swc_ecma_codegen = "0.127.30"
+swc_ecma_parser = "0.122.25"
+swc_ecma_transforms = "0.198.42"
+swc_ecma_utils = "0.105.30"
+swc_ecma_visit = "0.80.18"

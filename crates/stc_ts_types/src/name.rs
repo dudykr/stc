@@ -4,11 +4,7 @@ use std::{
 };
 
 use smallvec::{smallvec, SmallVec};
-use stc_ts_ast_rnode::{RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, RTsEntityName, RTsThisTypeOrIdent};
-use stc_ts_ast_rnode::{
-    RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, RTsEntityName,
-    RTsThisTypeOrIdent,
-};
+use stc_ts_ast_rnode::{RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, RTsEntityName, RTsThisTypeOrIdent};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{iter::IdentifyLast, SyntaxContext};
 

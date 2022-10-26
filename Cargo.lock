@@ -2295,6 +2295,7 @@ dependencies = [
  "swc_ecma_visit",
  "swc_visit",
  "tracing",
+ "triomphe",
 ]
 
 [[package]]
