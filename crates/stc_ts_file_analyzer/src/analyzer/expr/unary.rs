@@ -1,4 +1,6 @@
-use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RMemberExpr, RNumber, RStr, RTsLit, RUnaryExpr};
+use stc_ts_ast_rnode::{
+    RBigInt, RBool, RExpr, RMemberExpr, RMemberProp, RNumber, RStr, RTsLit, RUnaryExpr,
+};
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
 use swc_atoms::js_word;
@@ -205,9 +207,8 @@ impl Analyzer<'_, '_> {
 
         match &*arg {
             RExpr::Member(RMemberExpr {
-                obj: RExprOrSuper::Expr(box RExpr::This(..)),
-                computed: false,
-                prop: box RExpr::PrivateName(..),
+                obj: box RExpr::This(..),
+                prop: RMemberProp::PrivateName(..),
                 ..
             }) => Err(Error::CannotDeletePrivateProperty { span }),
 
