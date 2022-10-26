@@ -237,7 +237,7 @@ impl PatExt for RPat {
             | RPat::Rest(RRestPat {
                 ref mut type_ann, ..
             }) => {
-                *type_ann = ty.map(|type_ann| RTsTypeAnn {
+                *type_ann = ty.map(|type_ann| box RTsTypeAnn {
                     node_id: NodeId::invalid(),
                     span: type_ann.span(),
                     type_ann,
