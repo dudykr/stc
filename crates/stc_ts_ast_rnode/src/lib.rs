@@ -603,21 +603,21 @@ define_rnode!({
     pub struct ImportDecl {
         pub span: Span,
         pub specifiers: Vec<ImportSpecifier>,
-        pub src: Str,
+        pub src: Box<Str>,
         pub type_only: bool,
-        pub asserts: Option<ObjectLit>,
+        pub asserts: Option<Box<ObjectLit>>,
     }
     pub struct ExportAll {
         pub span: Span,
-        pub src: Str,
-        pub asserts: Option<ObjectLit>,
+        pub src: Box<Str>,
+        pub asserts: Option<Box<ObjectLit>>,
     }
     pub struct NamedExport {
         pub span: Span,
         pub specifiers: Vec<ExportSpecifier>,
-        pub src: Option<Str>,
+        pub src: Option<Box<Str>>,
         pub type_only: bool,
-        pub asserts: Option<ObjectLit>,
+        pub asserts: Option<Box<ObjectLit>>,
     }
     pub struct ExportDefaultDecl {
         pub span: Span,
@@ -644,7 +644,7 @@ define_rnode!({
     pub struct ImportNamedSpecifier {
         pub span: Span,
         pub local: Ident,
-        pub imported: Option<Ident>,
+        pub imported: Option<ModuleExportName>,
         pub is_type_only: bool,
     }
     pub enum ExportSpecifier {
@@ -654,7 +654,7 @@ define_rnode!({
     }
     pub struct ExportNamespaceSpecifier {
         pub span: Span,
-        pub name: Ident,
+        pub name: ModuleExportName,
     }
     pub struct ExportDefaultSpecifier {
         #[span]
@@ -662,9 +662,13 @@ define_rnode!({
     }
     pub struct ExportNamedSpecifier {
         pub span: Span,
-        pub orig: Ident,
-        pub exported: Option<Ident>,
+        pub orig: ModuleExportName,
+        pub exported: Option<ModuleExportName>,
         pub is_type_only: bool,
+    }
+    pub enum ModuleExportName {
+        Ident(Ident),
+        Str(Str),
     }
 
     pub enum Pat {
