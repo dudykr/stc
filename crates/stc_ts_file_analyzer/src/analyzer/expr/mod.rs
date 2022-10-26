@@ -3630,7 +3630,14 @@ impl Analyzer<'_, '_> {
         self.storage.report_all(errors);
 
         let mut prop = self
-            .validate_key(prop, computed)
+            .validate_key(
+                &*match prop {
+                    RMemberProp::Ident(i) => Cow::Owned(RExpr::Ident(i.clone())),
+                    RMemberProp::PrivateName(i) => Cow::Owned(RExpr::PrivateName(i.clone())),
+                    RMemberProp::Computed(e) => Cow::Borrowed(&*e.expr),
+                },
+                computed,
+            )
             .report(&mut self.storage)
             .unwrap_or_else(|| {
                 let span = prop.span().with_ctxt(SyntaxContext::empty());

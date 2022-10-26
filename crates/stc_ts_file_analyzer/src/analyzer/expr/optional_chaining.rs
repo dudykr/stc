@@ -117,10 +117,7 @@ impl Analyzer<'_, '_> {
 pub(crate) fn is_obj_opt_chaining(obj: &RExpr) -> bool {
     match obj {
         RExpr::OptChain(..) => true,
-        RExpr::Member(RMemberExpr {
-            obj: RExprOrSuper::Expr(obj),
-            ..
-        }) => is_obj_opt_chaining(&obj),
+        RExpr::Member(RMemberExpr { obj, .. }) => is_obj_opt_chaining(&obj),
         _ => false,
     }
 }
