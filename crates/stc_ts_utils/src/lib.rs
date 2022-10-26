@@ -216,6 +216,22 @@ impl PatExt for RPat {
             | RPat::Object(RObjectPat { ref mut type_ann, .. })
             | RPat::Rest(RRestPat { ref mut type_ann, .. }) => {
                 *type_ann = ty.map(|type_ann| RTsTypeAnn {
+            RPat::Array(RArrayPat {
+                ref mut type_ann, ..
+            })
+            | RPat::Assign(RAssignPat {
+                ref mut type_ann, ..
+            })
+            | RPat::Ident(RBindingIdent {
+                ref mut type_ann, ..
+            })
+            | RPat::Object(RObjectPat {
+                ref mut type_ann, ..
+            })
+            | RPat::Rest(RRestPat {
+                ref mut type_ann, ..
+            }) => {
+                *type_ann = ty.map(|type_ann| box RTsTypeAnn {
                     node_id: NodeId::invalid(),
                     span: type_ann.span(),
                     type_ann,
