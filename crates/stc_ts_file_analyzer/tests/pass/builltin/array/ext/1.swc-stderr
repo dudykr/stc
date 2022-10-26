@@ -1,26 +1,29 @@
-warning: Type
- --> $DIR/tests/pass/builltin/array/ext/1.ts:8:25
-  |
-8 | let x = a.equalsShallow(b);
-  |                         ^
-  |
-  = note: (((string | number))[] | null[] | undefined[] | {
-          }[])
 
-warning: Type
- --> $DIR/tests/pass/builltin/array/ext/1.ts:8:9
-  |
-8 | let x = a.equalsShallow(b);
-  |         ^
-  |
-  = note: (((string | number))[] | null[] | undefined[] | {
-          }[])
+  x Type
+   ,-[$DIR/tests/pass/builltin/array/ext/1.ts:8:1]
+ 8 | let x = a.equalsShallow(b);
+   :                         ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/builltin/array/ext/1.ts:8:9
-  |
-8 | let x = a.equalsShallow(b);
-  |         ^^^^^^^^^^^^^^^^^^
-  |
-  = note: boolean
+Error: 
+  > (((string | number))[] | null[] | undefined[] | {
+  | }[])
 
+  x Type
+   ,-[$DIR/tests/pass/builltin/array/ext/1.ts:8:1]
+ 8 | let x = a.equalsShallow(b);
+   :         ^
+   `----
+
+Error: 
+  > (((string | number))[] | null[] | undefined[] | {
+  | }[])
+
+  x Type
+   ,-[$DIR/tests/pass/builltin/array/ext/1.ts:8:1]
+ 8 | let x = a.equalsShallow(b);
+   :         ^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean

@@ -1,132 +1,148 @@
-warning: Type
- --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:4:21
-  |
-4 |     let { ...r0 } = obj;
-  |                     ^^^
-  |
-  = note: T
 
-warning: Type
- --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:5:28
-  |
-5 |     let { a: a1, ...r1 } = obj;
-  |                            ^^^
-  |
-  = note: T
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:4:5]
+ 4 | let { ...r0 } = obj;
+   :                 ^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:6:35
-  |
-6 |     let { a: a2, b: b2, ...r2 } = obj;
-  |                                   ^^^
-  |
-  = note: T
+Error: 
+  > T
 
-warning: Type
- --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:7:30
-  |
-7 |     let { 'a': a3, ...r3 } = obj;
-  |                              ^^^
-  |
-  = note: T
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:5:5]
+ 5 | let { a: a1, ...r1 } = obj;
+   :                        ^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:8:32
-  |
-8 |     let { ['a']: a4, ...r4 } = obj;
-  |                                ^^^
-  |
-  = note: T
+Error: 
+  > T
 
-warning: Type
- --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:9:30
-  |
-9 |     let { [a]: a5, ...r5 } = obj;
-  |                              ^^^
-  |
-  = note: T
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:6:5]
+ 6 | let { a: a2, b: b2, ...r2 } = obj;
+   :                               ^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:9:12
-  |
-9 |     let { [a]: a5, ...r5 } = obj;
-  |            ^
-  |
-  = note: 'a'
+Error: 
+  > T
 
-warning: Type
-  --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:11:5
-   |
-11 |     r0;
-   |     ^^
-   |
-   = note: T
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:7:5]
+ 7 | let { 'a': a3, ...r3 } = obj;
+   :                          ^^^
+   `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:12:5
-   |
-12 |     a1;
-   |     ^^
-   |
-   = note: string
+Error: 
+  > T
 
-warning: Type
-  --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:13:5
-   |
-13 |     r1;
-   |     ^^
-   |
-   = note: {
-               [P in keyof T extends "a" ? never : keyof T]: T[P];
-           }
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:8:5]
+ 8 | let { ['a']: a4, ...r4 } = obj;
+   :                            ^^^
+   `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:14:5
-   |
-14 |     a2;
-   |     ^^
-   |
-   = note: string
+Error: 
+  > T
 
-warning: Type
-  --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:15:5
-   |
-15 |     b2;
-   |     ^^
-   |
-   = note: number
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:9:5]
+ 9 | let { [a]: a5, ...r5 } = obj;
+   :                          ^^^
+   `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:16:5
-   |
-16 |     b2;
-   |     ^^
-   |
-   = note: number
+Error: 
+  > T
 
-warning: Type
-  --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:17:5
-   |
-17 |     r3;
-   |     ^^
-   |
-   = note: {
-               [P in keyof T extends "a" ? never : keyof T]: T[P];
-           }
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:9:5]
+ 9 | let { [a]: a5, ...r5 } = obj;
+   :        ^
+   `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:18:5
-   |
-18 |     r4;
-   |     ^^
-   |
-   = note: T
+Error: 
+  > 'a'
 
-warning: Type
-  --> $DIR/tests/pass/exprs/assign/objectPat/1.ts:19:5
-   |
-19 |     r5;
-   |     ^^
-   |
-   = note: T
+  x Type
+    ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:11:5]
+ 11 | r0;
+    : ^^
+    `----
 
+Error: 
+  > T
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:12:5]
+ 12 | a1;
+    : ^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:13:5]
+ 13 | r1;
+    : ^^
+    `----
+
+Error: 
+  > {
+  |     [P in keyof T extends "a" ? never : keyof T]: T[P];
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:14:5]
+ 14 | a2;
+    : ^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:15:5]
+ 15 | b2;
+    : ^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:16:5]
+ 16 | b2;
+    : ^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:17:5]
+ 17 | r3;
+    : ^^
+    `----
+
+Error: 
+  > {
+  |     [P in keyof T extends "a" ? never : keyof T]: T[P];
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:18:5]
+ 18 | r4;
+    : ^^
+    `----
+
+Error: 
+  > T
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/assign/objectPat/1.ts:19:5]
+ 19 | r5;
+    : ^^
+    `----
+
+Error: 
+  > T

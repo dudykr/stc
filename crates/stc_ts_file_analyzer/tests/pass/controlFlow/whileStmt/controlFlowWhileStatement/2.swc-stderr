@@ -1,48 +1,54 @@
-warning: Type
- --> $DIR/tests/pass/controlFlow/whileStmt/controlFlowWhileStatement/2.ts:2:1
-  |
-2 | x = "";
-  | ^^^^^^
-  |
-  = note: ""
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/whileStmt/controlFlowWhileStatement/2.ts:3:12
-  |
-3 | while (x = x.length) {
-  |            ^
-  |
-  = note: string
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/whileStmt/controlFlowWhileStatement/2.ts:2:1]
+ 2 | x = "";
+   : ^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/whileStmt/controlFlowWhileStatement/2.ts:3:12
-  |
-3 | while (x = x.length) {
-  |            ^^^^^^^^
-  |
-  = note: number
+Error: 
+  > ""
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/whileStmt/controlFlowWhileStatement/2.ts:3:8
-  |
-3 | while (x = x.length) {
-  |        ^^^^^^^^^^^^
-  |
-  = note: number
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/whileStmt/controlFlowWhileStatement/2.ts:3:1]
+ 3 | while (x = x.length) {
+   :            ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/whileStmt/controlFlowWhileStatement/2.ts:4:5
-  |
-4 |     x; // number
-  |     ^
-  |
-  = note: number
+Error: 
+  > string
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/whileStmt/controlFlowWhileStatement/2.ts:5:5
-  |
-5 |     x = "";
-  |     ^^^^^^
-  |
-  = note: ""
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/whileStmt/controlFlowWhileStatement/2.ts:3:1]
+ 3 | while (x = x.length) {
+   :            ^^^^^^^^
+   `----
 
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/whileStmt/controlFlowWhileStatement/2.ts:3:1]
+ 3 | while (x = x.length) {
+   :        ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/whileStmt/controlFlowWhileStatement/2.ts:4:5]
+ 4 | x; // number
+   : ^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/whileStmt/controlFlowWhileStatement/2.ts:5:5]
+ 5 | x = "";
+   : ^^^^^^
+   `----
+
+Error: 
+  > ""

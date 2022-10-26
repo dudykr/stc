@@ -1,59 +1,66 @@
-warning: Type
- --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:10
-  |
-6 | if ((o = fn()).done) {
-  |          ^^
-  |
-  = note: () => D
 
-warning: Type
- --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:10
-  |
-6 | if ((o = fn()).done) {
-  |          ^^^^
-  |
-  = note: D
+  x Type
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:1]
+ 6 | if ((o = fn()).done) {
+   :          ^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:6
-  |
-6 | if ((o = fn()).done) {
-  |      ^^^^^^^^
-  |
-  = note: D
+Error: 
+  > () => D
 
-warning: Type
- --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:5
-  |
-6 | if ((o = fn()).done) {
-  |     ^^^^^^^^^^
-  |
-  = note: D
+  x Type
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:1]
+ 6 | if ((o = fn()).done) {
+   :          ^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:5
-  |
-6 | if ((o = fn()).done) {
-  |     ^^^^^^^^^^^^^^^
-  |
-  = note: (true | false)
+Error: 
+  > D
 
-warning: Type
- --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:7:18
-  |
-7 |     const y: 1 = o.value;
-  |                  ^
-  |
-  = note: {
-              done: true;
-              value: 1;
-          }
+  x Type
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:1]
+ 6 | if ((o = fn()).done) {
+   :      ^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:7:18
-  |
-7 |     const y: 1 = o.value;
-  |                  ^^^^^^^
-  |
-  = note: 1
+Error: 
+  > D
 
+  x Type
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:1]
+ 6 | if ((o = fn()).done) {
+   :     ^^^^^^^^^^
+   `----
+
+Error: 
+  > D
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:6:1]
+ 6 | if ((o = fn()).done) {
+   :     ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (true | false)
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:7:5]
+ 7 | const y: 1 = o.value;
+   :              ^
+   `----
+
+Error: 
+  > {
+  |     done: true;
+  |     value: 1;
+  | }
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/seq-2.ts:7:5]
+ 7 | const y: 1 = o.value;
+   :              ^^^^^^^
+   `----
+
+Error: 
+  > 1

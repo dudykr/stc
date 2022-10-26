@@ -1,23 +1,23 @@
-warning: Type
- --> $DIR/tests/pass/types/unique/symbol/uniqueSymbolsDeclarationsErrors/1.ts:7:16
-  |
-7 |         return p;
-  |                ^
-  |
-  = note: unique symbol
 
-warning: Type
- --> $DIR/tests/pass/types/unique/symbol/uniqueSymbolsDeclarationsErrors/1.ts:5:20
-  |
-5 |   export const obj = {
-  |  ____________________^
-6 | |     method2(p: I["readonlyType"]): I["readonlyType"] {
-7 | |         return p;
-8 | |     }
-9 | | };
-  | |_^
-  |
-  = note: {
-              method2(p: I["readonlyType"]): I["readonlyType"];
-          }
+  x Type
+   ,-[$DIR/tests/pass/types/unique/symbol/uniqueSymbolsDeclarationsErrors/1.ts:7:9]
+ 7 | return p;
+   :        ^
+   `----
 
+Error: 
+  > unique symbol
+
+  x Type
+   ,-[$DIR/tests/pass/types/unique/symbol/uniqueSymbolsDeclarationsErrors/1.ts:5:1]
+ 5 | ,-> export const obj = {
+ 6 | |       method2(p: I["readonlyType"]): I["readonlyType"] {
+ 7 | |           return p;
+ 8 | |       }
+ 9 | `-> };
+   `----
+
+Error: 
+  > {
+  |     method2(p: I["readonlyType"]): I["readonlyType"];
+  | }

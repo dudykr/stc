@@ -1,8 +1,9 @@
-warning: Type
- --> $DIR/tests/pass/variance/contravariance/1.ts:6:20
-  |
-6 | let func2: Func2 = func1;  // Ok
-  |                    ^^^^^
-  |
-  = note: (x: (string | number)) => number
 
+  x Type
+   ,-[$DIR/tests/pass/variance/contravariance/1.ts:6:1]
+ 6 | let func2: Func2 = func1;  // Ok
+   :                    ^^^^^
+   `----
+
+Error: 
+  > (x: (string | number)) => number

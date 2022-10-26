@@ -1,24 +1,27 @@
-warning: Type
- --> $DIR/tests/pass/types/enums/object/values.ts:2:36
-  |
-2 | export var values5 = Object.values(E);                     // any[]
-  |                                    ^
-  |
-  = note: E
 
-warning: Type
- --> $DIR/tests/pass/types/enums/object/values.ts:2:22
-  |
-2 | export var values5 = Object.values(E);                     // any[]
-  |                      ^^^^^^
-  |
-  = note: ObjectConstructor
+  x Type
+   ,-[$DIR/tests/pass/types/enums/object/values.ts:2:1]
+ 2 | export var values5 = Object.values(E);                     // any[]
+   :                                    ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/enums/object/values.ts:2:22
-  |
-2 | export var values5 = Object.values(E);                     // any[]
-  |                      ^^^^^^^^^^^^^^^^
-  |
-  = note: ((E.A | E.B | string))[]
+Error: 
+  > E
 
+  x Type
+   ,-[$DIR/tests/pass/types/enums/object/values.ts:2:1]
+ 2 | export var values5 = Object.values(E);                     // any[]
+   :                      ^^^^^^
+   `----
+
+Error: 
+  > ObjectConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/types/enums/object/values.ts:2:1]
+ 2 | export var values5 = Object.values(E);                     // any[]
+   :                      ^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > ((E.A | E.B | string))[]

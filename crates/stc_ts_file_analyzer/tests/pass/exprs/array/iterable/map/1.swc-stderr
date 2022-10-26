@@ -1,40 +1,45 @@
-warning: Type
- --> $DIR/tests/pass/exprs/array/iterable/map/1.ts:1:29
-  |
-1 | export const map = new Map([["", true], ["hello", true]])
-  |                             ^^^^^^^^^^
-  |
-  = note: ["", true]
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/iterable/map/1.ts:1:41
-  |
-1 | export const map = new Map([["", true], ["hello", true]])
-  |                                         ^^^^^^^^^^^^^^^
-  |
-  = note: ["hello", true]
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/iterable/map/1.ts:1:1]
+ 1 | export const map = new Map([["", true], ["hello", true]])
+   :                             ^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/iterable/map/1.ts:1:28
-  |
-1 | export const map = new Map([["", true], ["hello", true]])
-  |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: [["", true], ["hello", true]]
+Error: 
+  > ["", true]
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/iterable/map/1.ts:1:24
-  |
-1 | export const map = new Map([["", true], ["hello", true]])
-  |                        ^^^
-  |
-  = note: MapConstructor
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/iterable/map/1.ts:1:1]
+ 1 | export const map = new Map([["", true], ["hello", true]])
+   :                                         ^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/iterable/map/1.ts:1:20
-  |
-1 | export const map = new Map([["", true], ["hello", true]])
-  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: Map<string, boolean>
+Error: 
+  > ["hello", true]
 
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/iterable/map/1.ts:1:1]
+ 1 | export const map = new Map([["", true], ["hello", true]])
+   :                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > [["", true], ["hello", true]]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/iterable/map/1.ts:1:1]
+ 1 | export const map = new Map([["", true], ["hello", true]])
+   :                        ^^^
+   `----
+
+Error: 
+  > MapConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/iterable/map/1.ts:1:1]
+ 1 | export const map = new Map([["", true], ["hello", true]])
+   :                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Map<string, boolean>

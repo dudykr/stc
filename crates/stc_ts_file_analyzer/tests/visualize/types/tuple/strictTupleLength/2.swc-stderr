@@ -1,16 +1,18 @@
-warning: Type
- --> $DIR/tests/visualize/types/tuple/strictTupleLength/2.ts:4:6
-  |
-4 | t1 = arr; // error with or without strict
-  |      ^^^
-  |
-  = note: number[]
 
-warning: Type
- --> $DIR/tests/visualize/types/tuple/strictTupleLength/2.ts:4:1
-  |
-4 | t1 = arr; // error with or without strict
-  | ^^^^^^^^
-  |
-  = note: number[]
+  x Type
+   ,-[$DIR/tests/visualize/types/tuple/strictTupleLength/2.ts:4:1]
+ 4 | t1 = arr; // error with or without strict
+   :      ^^^
+   `----
 
+Error: 
+  > number[]
+
+  x Type
+   ,-[$DIR/tests/visualize/types/tuple/strictTupleLength/2.ts:4:1]
+ 4 | t1 = arr; // error with or without strict
+   : ^^^^^^^^
+   `----
+
+Error: 
+  > number[]

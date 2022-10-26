@@ -1,72 +1,81 @@
-warning: Type
- --> $DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:47
-  |
-2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
-  |                                               ^^^^^^
-  |
-  = note: [9, 8]
 
-warning: Type
- --> $DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:47
-  |
-2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
-  |                                               ^^^^^^^^^^^^^^^
-  |
-  = note: [9, 8]
+  x Type
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:1]
+ 2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
+   :                                               ^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:46
-  |
-2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
-  |                                              ^^^^^^^^^^^^^^^^^
-  |
-  = note: [[9, 8]]
+Error: 
+  > [9, 8]
 
-warning: Type
- --> $DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:31
-  |
-2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
-  |                               ^
-  |
-  = note: 0
+  x Type
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:1]
+ 2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
+   :                                               ^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:27
-  |
-2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
-  |                           ^^^^^^
-  |
-  = note: [9, 0]
+Error: 
+  > [9, 8]
 
-warning: Type
- --> $DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:27
-  |
-2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
-  |                           ^^^^^^^^^^^^^^^
-  |
-  = note: [9, 0]
+  x Type
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:1]
+ 2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
+   :                                              ^^^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:12
-  |
-2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
-  |            ^^^^^
-  |
-  = note: 1
+Error: 
+  > [[9, 8]]
 
-warning: Type
- --> $DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:11
-  |
-2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
-  |           ^^^^^^^
-  |
-  = note: 1
+  x Type
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:1]
+ 2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
+   :                               ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:3:19
-  |
-3 | const bb: 0 | 8 = b;
-  |                   ^
-  |
-  = note: (8 | 0)
+Error: 
+  > 0
 
+  x Type
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:1]
+ 2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
+   :                           ^^^^^^
+   `----
+
+Error: 
+  > [9, 0]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:1]
+ 2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
+   :                           ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > [9, 0]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:1]
+ 2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
+   :            ^^^^^
+   `----
+
+Error: 
+  > 1
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:2:1]
+ 2 | const [{ [(a = 1)]: b } = [9, a] as const] = [[9, 8] as const];
+   :           ^^^^^^^
+   `----
+
+Error: 
+  > 1
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/constAssertion/controlFLowBindingPatternOrder/1.ts:3:1]
+ 3 | const bb: 0 | 8 = b;
+   :                   ^
+   `----
+
+Error: 
+  > (8 | 0)

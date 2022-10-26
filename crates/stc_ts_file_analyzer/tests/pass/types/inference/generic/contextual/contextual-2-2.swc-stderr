@@ -1,32 +1,36 @@
-warning: Type
-  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:51
-   |
-12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
-   |                                                   ^^^^
-   |
-   = note: <T>(a: T) => T[]
 
-warning: Type
-  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:57
-   |
-12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
-   |                                                         ^^^
-   |
-   = note: <V>(x: V) => Box<V>
+  x Type
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:1]
+ 12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
+    :                                                   ^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:43
-   |
-12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
-   |                                           ^^^^^^^
-   |
-   = note: <A, B, C>(f: (a: A) => B, g: (b: B) => C) => (a: A) => C
+Error: 
+  > <T>(a: T) => T[]
 
-warning: Type
-  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:43
-   |
-12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
-   |                                           ^^^^^^^^^^^^^^^^^^
-   |
-   = note: <A>(a: A) => Box<A[]>
+  x Type
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:1]
+ 12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
+    :                                                         ^^^
+    `----
 
+Error: 
+  > <V>(x: V) => Box<V>
+
+  x Type
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:1]
+ 12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
+    :                                           ^^^^^^^
+    `----
+
+Error: 
+  > <A, B, C>(f: (a: A) => B, g: (b: B) => C) => (a: A) => C
+
+  x Type
+    ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-2-2.ts:12:1]
+ 12 | export const f11: <T>(x: T) => Box<T[]> = compose(list, box);
+    :                                           ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > <A>(a: A) => Box<A[]>

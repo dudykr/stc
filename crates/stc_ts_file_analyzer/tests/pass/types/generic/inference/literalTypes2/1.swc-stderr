@@ -1,112 +1,126 @@
-warning: Type
- --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:3:13
-  |
-3 |     return [x];
-  |             ^
-  |
-  = note: T
 
-warning: Type
- --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:3:12
-  |
-3 |     return [x];
-  |            ^^^
-  |
-  = note: [T]
+  x Type
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:3:5]
+ 3 | return [x];
+   :         ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:7:18
-  |
-7 |     let result = a.slice();
-  |                  ^
-  |
-  = note: T[]
+Error: 
+  > T
 
-warning: Type
- --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:7:18
-  |
-7 |     let result = a.slice();
-  |                  ^^^^^^^^^
-  |
-  = note: T[]
+  x Type
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:3:5]
+ 3 | return [x];
+   :        ^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:8:17
-  |
-8 |     result.push(x);
-  |                 ^
-  |
-  = note: T
+Error: 
+  > [T]
 
-warning: Type
- --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:8:5
-  |
-8 |     result.push(x);
-  |     ^^^^^^
-  |
-  = note: T[]
+  x Type
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:7:5]
+ 7 | let result = a.slice();
+   :              ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:8:5
-  |
-8 |     result.push(x);
-  |     ^^^^^^^^^^^^^^
-  |
-  = note: number
+Error: 
+  > T[]
 
-warning: Type
- --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:9:12
-  |
-9 |     return result;
-  |            ^^^^^^
-  |
-  = note: T[]
+  x Type
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:7:5]
+ 7 | let result = a.slice();
+   :              ^^^^^^^^^
+   `----
 
-warning: Type
-  --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:14:10
-   |
-14 | let aa = makeArray<Bit>(0);
-   |          ^^^^^^^^^
-   |
-   = note: <T>(x: T) => T[]
+Error: 
+  > T[]
 
-warning: Type
-  --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:14:10
-   |
-14 | let aa = makeArray<Bit>(0);
-   |          ^^^^^^^^^^^^^^^^^
-   |
-   = note: Bit[]
+  x Type
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:8:5]
+ 8 | result.push(x);
+   :             ^
+   `----
 
-warning: Type
-  --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:13
-   |
-15 | aa = append(aa, 1);
-   |             ^^
-   |
-   = note: ((0 | 1))[]
+Error: 
+  > T
 
-warning: Type
-  --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:6
-   |
-15 | aa = append(aa, 1);
-   |      ^^^^^^
-   |
-   = note: <T>(a: T[], x: T) => T[]
+  x Type
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:8:5]
+ 8 | result.push(x);
+   : ^^^^^^
+   `----
 
-warning: Type
-  --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:6
-   |
-15 | aa = append(aa, 1);
-   |      ^^^^^^^^^^^^^
-   |
-   = note: ((0 | 1))[]
+Error: 
+  > T[]
 
-warning: Type
-  --> $DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:1
-   |
-15 | aa = append(aa, 1);
-   | ^^^^^^^^^^^^^^^^^^
-   |
-   = note: ((0 | 1))[]
+  x Type
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:8:5]
+ 8 | result.push(x);
+   : ^^^^^^^^^^^^^^
+   `----
 
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:9:5]
+ 9 | return result;
+   :        ^^^^^^
+   `----
+
+Error: 
+  > T[]
+
+  x Type
+    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:14:1]
+ 14 | let aa = makeArray<Bit>(0);
+    :          ^^^^^^^^^
+    `----
+
+Error: 
+  > <T>(x: T) => T[]
+
+  x Type
+    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:14:1]
+ 14 | let aa = makeArray<Bit>(0);
+    :          ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > Bit[]
+
+  x Type
+    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:1]
+ 15 | aa = append(aa, 1);
+    :             ^^
+    `----
+
+Error: 
+  > ((0 | 1))[]
+
+  x Type
+    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:1]
+ 15 | aa = append(aa, 1);
+    :      ^^^^^^
+    `----
+
+Error: 
+  > <T>(a: T[], x: T) => T[]
+
+  x Type
+    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:1]
+ 15 | aa = append(aa, 1);
+    :      ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > ((0 | 1))[]
+
+  x Type
+    ,-[$DIR/tests/pass/types/generic/inference/literalTypes2/1.ts:15:1]
+ 15 | aa = append(aa, 1);
+    : ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > ((0 | 1))[]
