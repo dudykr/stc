@@ -149,3 +149,12 @@ impl From<RModuleExportName> for Id {
         }
     }
 }
+
+impl From<&'_ RModuleExportName> for Id {
+    fn from(v: &RModuleExportName) -> Self {
+        match v {
+            RModuleExportName::Ident(i) => i.into(),
+            RModuleExportName::Str(s) => Id::word(s.value.clone()),
+        }
+    }
+}
