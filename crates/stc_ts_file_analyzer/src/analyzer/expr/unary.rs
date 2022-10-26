@@ -1,6 +1,4 @@
-use stc_ts_ast_rnode::{
-    RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, RStr, RTsLit, RUnaryExpr,
-};
+use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RMemberExpr, RNumber, RStr, RTsLit, RUnaryExpr};
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
 use swc_atoms::js_word;
@@ -102,8 +100,7 @@ impl Analyzer<'_, '_> {
                             lit: RTsLit::Str(RStr {
                                 span,
                                 value,
-                                has_escape: false,
-                                kind: Default::default(),
+                                raw: None,
                             }),
                             metadata: Default::default(),
                         })
