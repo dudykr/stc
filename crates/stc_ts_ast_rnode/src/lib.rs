@@ -1,6 +1,8 @@
+#![feature(box_syntax)]
+
 use rnode::{define_rnode, NodeId};
 use swc_atoms::{Atom, JsWord};
-use swc_common::{EqIgnoreSpan, Span, TypeEq};
+use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
 
 type BigIntValue = Box<num_bigint::BigInt>;
@@ -28,6 +30,20 @@ impl RExpr {
                 ..
             }) => true,
             _ => false,
+        }
+    }
+}
+
+impl From<RTsEntityName> for RExpr {
+    fn from(v: RTsEntityName) -> Self {
+        match v {
+            RTsEntityName::Ident(v) => RExpr::Ident(v),
+            RTsEntityName::TsQualifiedName(v) => RExpr::Member(RMemberExpr {
+                node_id: NodeId::invalid(),
+                span: v.span(),
+                obj: box v.left.into(),
+                prop: RMemberProp::Ident(v.right),
+            }),
         }
     }
 }
