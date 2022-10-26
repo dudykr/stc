@@ -504,6 +504,7 @@ impl Fold<Type> for Simplifier<'_> {
                     lit: RTsLit::Number(RNumber {
                         span,
                         value: tuple.elems.len() as _,
+                        raw: None,
                     }),
                     metadata: LitTypeMetadata {
                         common: CommonTypeMetadata {

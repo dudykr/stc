@@ -1,8 +1,8 @@
 use rayon::prelude::*;
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RCallExpr, RExportAll, RExpr, RExprOrSuper, RImportDecl, RImportSpecifier, RLit, RModuleItem,
-    RNamedExport, RStr, RTsExternalModuleRef,
+    RCallExpr, RExportAll, RExpr, RImportDecl, RImportSpecifier, RLit, RModuleItem, RNamedExport,
+    RStr, RTsExternalModuleRef,
 };
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;

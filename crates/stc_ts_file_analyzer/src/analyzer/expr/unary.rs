@@ -302,7 +302,7 @@ fn negate(ty: Type) -> Type {
             RTsLit::Tpl(ref v) => {
                 return Type::Lit(LitType {
                     lit: RTsLit::Bool(RBool {
-                        value: v.quasis.iter().next().as_ref().unwrap().raw.value != js_word!(""),
+                        value: !v.quasis.iter().next().as_ref().unwrap().raw.is_empty(),
                         span: v.span,
                     }),
                     span,
@@ -312,8 +312,9 @@ fn negate(ty: Type) -> Type {
             RTsLit::BigInt(ref v) => {
                 return Type::Lit(LitType {
                     lit: RTsLit::BigInt(RBigInt {
-                        value: -v.value.clone(),
+                        value: box -(*v.value.clone()),
                         span: v.span,
+                        raw: None,
                     }),
                     span,
                     metadata,

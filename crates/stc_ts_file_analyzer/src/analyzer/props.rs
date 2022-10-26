@@ -3,8 +3,7 @@ use std::borrow::Cow;
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RComputedPropName, RExpr, RExprOrSuper, RGetterProp, RIdent, RMemberExpr, RPrivateName, RProp,
-    RPropName,
+    RComputedPropName, RExpr, RGetterProp, RIdent, RMemberExpr, RPrivateName, RProp, RPropName,
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
