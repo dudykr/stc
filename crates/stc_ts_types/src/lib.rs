@@ -853,7 +853,7 @@ pub struct TypeParamDecl {
 pub struct TsExpr {
     pub span: Span,
     #[use_eq_ignore_span]
-    pub expr: RTsEntityName,
+    pub expr: Box<RExpr>,
     pub type_args: Option<Box<TypeParamInstantiation>>,
 }
 
