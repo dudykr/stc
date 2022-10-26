@@ -255,9 +255,9 @@ impl Analyzer<'_, '_> {
             value,
             is_static: p.is_static,
             accessibility: p.accessibility,
-            is_abstract: p.is_abstract,
             is_optional: p.is_optional,
             readonly: p.readonly,
+            is_abstract: false,
             definite: p.definite,
             accessor: Default::default(),
         })
@@ -895,7 +895,7 @@ impl Analyzer<'_, '_> {
                 RClassMember::Method(
                     m @ RClassMethod {
                         kind: MethodKind::Method,
-                        function: RFunction { body: Some(..), .. },
+                        function: box RFunction { body: Some(..), .. },
                         ..
                     },
                 ) => {
@@ -903,7 +903,7 @@ impl Analyzer<'_, '_> {
                 }
                 RClassMember::PrivateMethod(
                     m @ RPrivateMethod {
-                        function: RFunction { body: Some(..), .. },
+                        function: box RFunction { body: Some(..), .. },
                         ..
                     },
                 ) => {
@@ -911,8 +911,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 RClassMember::ClassProp(RClassProp {
-                    computed: false,
-                    key: box RExpr::Ident(key),
+                    key: RPropName::Ident(key),
                     is_static,
                     ..
                 }) => {
@@ -923,16 +922,15 @@ impl Analyzer<'_, '_> {
                 RClassMember::ClassProp(m) => {
                     is_props.insert(keys.len());
 
-                    let key = match &*m.key {
-                        RExpr::Lit(RLit::Num(v)) => Cow::Owned(RPropName::Ident(RIdent::new(
+                    let key = match &m.key {
+                        RPropName::Computed(RComputedPropName {
+                            expr: box RExpr::Lit(RLit::Num(v)),
+                            ..
+                        }) => Cow::Owned(RPropName::Ident(RIdent::new(
                             v.value.to_string().into(),
                             v.span.with_ctxt(SyntaxContext::empty()),
                         ))),
-                        _ => Cow::Owned(RPropName::Computed(RComputedPropName {
-                            node_id: NodeId::invalid(),
-                            span: DUMMY_SP,
-                            expr: m.key.clone(),
-                        })),
+                        _ => Cow::Borrowed(&m.key),
                     };
                     keys.push((key, m.is_static));
                 }
@@ -1820,7 +1818,7 @@ impl Analyzer<'_, '_> {
                                         )));
                                     } else {
                                         child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(
-                                            RTsTypeAliasDecl {
+                                            box RTsTypeAliasDecl {
                                                 node_id: NodeId::invalid(),
                                                 span: DUMMY_SP,
                                                 declare: false,
@@ -2016,7 +2014,6 @@ impl Analyzer<'_, '_> {
                                                 key,
                                                 value: None,
                                                 is_static: false,
-                                                computed: false,
                                                 accessibility: Some(Accessibility::Private),
                                                 is_abstract: false,
                                                 is_optional,

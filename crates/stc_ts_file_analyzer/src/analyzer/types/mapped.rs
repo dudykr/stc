@@ -288,7 +288,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Some(vec![Key::Normal {
                         span: t.span,
                         sym: match &t.quasis[0].cooked {
-                            Some(v) => v.value.clone(),
+                            Some(v) => v.clone(),
                             _ => return Ok(None),
                         },
                     }]))

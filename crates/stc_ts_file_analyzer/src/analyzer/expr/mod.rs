@@ -2016,8 +2016,7 @@ impl Analyzer<'_, '_> {
                         lit: RTsLit::Str(RStr {
                             span: *span,
                             value: sym.clone(),
-                            has_escape: false,
-                            kind: Default::default(),
+                            raw: None,
                         }),
                         metadata: Default::default(),
                     }),
