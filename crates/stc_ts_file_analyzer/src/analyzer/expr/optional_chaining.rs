@@ -1,5 +1,7 @@
+use std::borrow::Cow;
+
 use stc_ts_ast_rnode::{
-    RCallExpr, RExpr, RExprOrSuper, RMemberExpr, ROptCall, ROptChainBase, ROptChainExpr,
+    RCallExpr, RExpr, RMemberExpr, RMemberProp, ROptCall, ROptChainBase, ROptChainExpr,
 };
 use stc_ts_errors::DebugExt;
 use stc_ts_types::Type;
@@ -24,8 +26,17 @@ impl Analyzer<'_, '_> {
 
         match &node.base {
             ROptChainBase::Member(me) => {
-                let prop = self.validate_key(&me.prop, me.computed)?;
-                let obj = me.obj.validate_with(self)?;
+                let computed = matches!(me.prop, RMemberProp::Computed(_));
+
+                let prop = self.validate_key(
+                    &*match &me.prop {
+                        RMemberProp::Ident(i) => Cow::Owned(RExpr::Ident(i.clone())),
+                        RMemberProp::PrivateName(i) => Cow::Owned(RExpr::PrivateName(i.clone())),
+                        RMemberProp::Computed(e) => Cow::Borrowed(&*e.expr),
+                    },
+                    computed,
+                )?;
+                let obj = me.obj.validate_with_default(self)?;
 
                 let is_obj_optional = self.is_obj_optional(&obj)?;
 

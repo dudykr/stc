@@ -363,7 +363,15 @@ impl Analyzer<'_, '_> {
             RExpr::Member(RMemberExpr {
                 ref obj, ref prop, ..
             }) => {
-                let prop = self.validate_key(prop, computed)?;
+                let computed = matches!(prop, RMemberProp::Computed(..));
+                let prop = self.validate_key(
+                    &*match prop {
+                        RMemberProp::Ident(i) => Cow::Owned(RExpr::Ident(i.clone())),
+                        RMemberProp::PrivateName(i) => Cow::Owned(RExpr::PrivateName(i.clone())),
+                        RMemberProp::Computed(e) => Cow::Borrowed(&*e.expr),
+                    },
+                    computed,
+                )?;
                 {
                     // Handle toString()
 

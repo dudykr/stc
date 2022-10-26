@@ -4241,7 +4241,8 @@ impl Analyzer<'_, '_> {
                     e.quasis[0]
                         .cooked
                         .clone()
-                        .unwrap_or_else(|| e.quasis[0].raw.clone()),
+                        .unwrap_or_else(|| e.quasis[0].raw.clone())
+                        .into(),
                 ),
                 metadata: Default::default(),
             }));
