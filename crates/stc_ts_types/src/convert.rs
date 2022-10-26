@@ -566,6 +566,8 @@ impl From<ClassDef> for RTsTypeQuery {
             expr_name: RTsTypeQueryExpr::TsEntityName(RTsEntityName::Ident(
                 c.name.unwrap_or_else(|| Id::word("anonymous class".into())).into(),
             )),
+            // TODO
+            type_args: None,
         }
     }
 }
