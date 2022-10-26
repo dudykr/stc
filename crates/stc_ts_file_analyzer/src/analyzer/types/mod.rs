@@ -1715,6 +1715,7 @@ impl Analyzer<'_, '_> {
                 ctxt: self.ctx.module_id,
                 type_args: type_args.cloned().map(Box::new),
             }),
+            _ => Ok(()),
         }
     }
 
