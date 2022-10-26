@@ -3533,8 +3533,12 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 }))
             }
-            RTsEntityName::TsQualifiedName(ref qname) => {
-                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &qname.left, None)?;
+            RExpr::Member(RMemberExpr {
+                obj,
+                prop: RMemberProp::Ident(prop),
+                ..
+            }) => {
+                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &qname.obj, None)?;
                 obj_ty.assert_valid();
 
                 let ctx = Ctx {
@@ -3557,8 +3561,8 @@ impl Analyzer<'_, '_> {
                     span,
                     &obj_ty,
                     &Key::Normal {
-                        span: qname.right.span,
-                        sym: qname.right.sym.clone(),
+                        span: prop.span,
+                        sym: prop.sym.clone(),
                     },
                     TypeOfMode::RValue,
                     IdCtx::Type,
@@ -3566,6 +3570,7 @@ impl Analyzer<'_, '_> {
                 )
                 .context("tried to resolve type from a ts entity name")
             }
+            _ => todo!("type_of_ts_entity_name: {:?}", n),
         }
     }
 
