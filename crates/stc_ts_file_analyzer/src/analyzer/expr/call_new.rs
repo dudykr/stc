@@ -6,8 +6,9 @@ use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RBindingIdent, RCallExpr, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid,
-    RLit, RMemberExpr, RNewExpr, RObjectPat, RPat, RPropName, RStr, RTaggedTpl, RTsAsExpr,
-    RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
+    RLit, RMemberExpr, RMemberProp, RNewExpr, RObjectPat, RPat, RPropName, RStr, RTaggedTpl,
+    RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation,
+    RTsTypeRef,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
@@ -122,7 +123,7 @@ impl Analyzer<'_, '_> {
                     callee,
                     ExtractKind::Call,
                     args,
-                    type_args.as_ref(),
+                    type_args.as_deref(),
                     type_ann.as_deref(),
                 )
             },
@@ -352,7 +353,7 @@ impl Analyzer<'_, '_> {
             // Use general callee validation.
             RExpr::Member(RMemberExpr {
                 prop:
-                    RPropName::Computed(RComputedPropName {
+                    RMemberProp::Computed(RComputedPropName {
                         expr: box RExpr::Lit(RLit::Num(..)),
                         ..
                     }),
