@@ -1,4 +1,4 @@
-use stc_ts_ast_rnode::{RIdent, RTsEntityName};
+use stc_ts_ast_rnode::{RExpr, RIdent, RTsEntityName};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Array, ArrayMetadata, Ref, Type, TypeElement};
 use swc_atoms::js_word;
@@ -117,8 +117,8 @@ impl Analyzer<'_, '_> {
                     }
 
                     for parent in &ri.extends {
-                        match parent.expr {
-                            RTsEntityName::Ident(RIdent {
+                        match *parent.expr {
+                            RExpr::Ident(RIdent {
                                 sym: js_word!("Function"),
                                 ..
                             }) => return Some(Ok(())),
