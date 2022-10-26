@@ -42,5 +42,7 @@
     ],
     "ignorePaths": [
         "target"
+        "fxhash",
+        "smallvec"
     ]
 }
