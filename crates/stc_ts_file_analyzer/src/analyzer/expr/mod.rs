@@ -2703,7 +2703,12 @@ impl Analyzer<'_, '_> {
                 expr: box QueryExpr::TsEntityName(name),
                 ..
             }) => {
-                let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, name, None)?;
+                let obj = self.type_of_ts_entity_name(
+                    span,
+                    self.ctx.module_id,
+                    &name.clone().into(),
+                    None,
+                )?;
                 return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
             }
 
@@ -3538,7 +3543,7 @@ impl Analyzer<'_, '_> {
                 prop: RMemberProp::Ident(prop),
                 ..
             }) => {
-                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &qname.obj, None)?;
+                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &obj, None)?;
                 obj_ty.assert_valid();
 
                 let ctx = Ctx {
