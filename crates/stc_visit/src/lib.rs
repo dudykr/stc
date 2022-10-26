@@ -76,3 +76,4 @@ noop!(swc_ecma_ast::AssignOp);
 noop!(swc_ecma_ast::VarDeclKind);
 noop!(swc_ecma_ast::MethodKind);
 noop!(swc_ecma_ast::UpdateOp);
+noop!(swc_ecma_ast::MetaPropKind);
