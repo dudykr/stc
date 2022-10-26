@@ -1,8 +1,8 @@
 use rayon::prelude::*;
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RCallExpr, RExportAll, RExpr, RImportDecl, RImportSpecifier, RLit, RModuleItem, RNamedExport,
-    RStr, RTsExternalModuleRef,
+    RCallExpr, RCallee, RExportAll, RExpr, RImportDecl, RImportSpecifier, RLit, RModuleItem,
+    RNamedExport, RStr, RTsExternalModuleRef,
 };
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -365,7 +365,7 @@ where
         let span = expr.span();
 
         match expr.callee {
-            RExprOrSuper::Expr(box RExpr::Ident(ref i)) if i.sym == js_word!("require") => {
+            RCallee::Expr(box RExpr::Ident(ref i)) if i.sym == js_word!("require") => {
                 let src = expr
                     .args
                     .iter()
