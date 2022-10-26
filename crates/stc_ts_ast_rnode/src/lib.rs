@@ -572,12 +572,12 @@ define_rnode!({
     pub struct Module {
         pub span: Span,
         pub body: Vec<ModuleItem>,
-        pub shebang: Option<JsWord>,
+        pub shebang: Option<Atom>,
     }
     pub struct Script {
         pub span: Span,
         pub body: Vec<Stmt>,
-        pub shebang: Option<JsWord>,
+        pub shebang: Option<Atom>,
     }
     pub enum ModuleItem {
         ModuleDecl(ModuleDecl),
@@ -754,7 +754,7 @@ define_rnode!({
         #[span(lo)]
         pub key: PropName,
         #[span(hi)]
-        pub function: Function,
+        pub function: Box<Function>,
     }
     pub enum PropName {
         Ident(Ident),
@@ -783,7 +783,7 @@ define_rnode!({
         If(IfStmt),
         Switch(SwitchStmt),
         Throw(ThrowStmt),
-        Try(TryStmt),
+        Try(Box<TryStmt>),
         While(WhileStmt),
         DoWhile(DoWhileStmt),
         For(ForStmt),
@@ -888,7 +888,7 @@ define_rnode!({
     }
     pub enum VarDeclOrPat {
         VarDecl(Box<VarDecl>),
-        Pat(Pat),
+        Pat(Box<Pat>),
     }
     pub enum VarDeclOrExpr {
         VarDecl(Box<VarDecl>),
@@ -950,14 +950,14 @@ define_rnode!({
     pub struct TsCallSignatureDecl {
         pub span: Span,
         pub params: Vec<TsFnParam>,
-        pub type_ann: Option<TsTypeAnn>,
-        pub type_params: Option<TsTypeParamDecl>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
     }
     pub struct TsConstructSignatureDecl {
         pub span: Span,
         pub params: Vec<TsFnParam>,
-        pub type_ann: Option<TsTypeAnn>,
-        pub type_params: Option<TsTypeParamDecl>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
     }
     pub struct TsPropertySignature {
         pub span: Span,
@@ -967,8 +967,8 @@ define_rnode!({
         pub optional: bool,
         pub init: Option<Box<Expr>>,
         pub params: Vec<TsFnParam>,
-        pub type_ann: Option<TsTypeAnn>,
-        pub type_params: Option<TsTypeParamDecl>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
     }
 
     pub struct TsGetterSignature {
@@ -977,7 +977,7 @@ define_rnode!({
         pub key: Box<Expr>,
         pub computed: bool,
         pub optional: bool,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
     }
 
     pub struct TsSetterSignature {
