@@ -2308,6 +2308,7 @@ impl Analyzer<'_, '_> {
                             lit: RTsLit::Number(RNumber {
                                 span,
                                 value: elems.len() as _,
+                                raw: None,
                             }),
                             metadata: Default::default(),
                         }));
