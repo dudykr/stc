@@ -122,7 +122,11 @@ where
             parser.parse_module().unwrap()
         };
         module = swc_common::GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut ts_resolver(env.shared().marks().top_level_mark()))
+            module.fold_with(&mut resolver(
+                env.shared().marks().unresolved_mark(),
+                env.shared().marks().top_level_mark(),
+                true,
+            ))
         });
         let span = module.span;
         let module = RModule::from_orig(&mut node_id_gen, module);
