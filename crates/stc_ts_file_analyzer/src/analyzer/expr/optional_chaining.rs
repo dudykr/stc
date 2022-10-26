@@ -1,4 +1,4 @@
-use stc_ts_ast_rnode::{RExpr, RExprOrSuper, RMemberExpr, ROptChainExpr};
+use stc_ts_ast_rnode::{RExpr, RExprOrSuper, RMemberExpr, ROptChainBase, ROptChainExpr};
 use stc_ts_errors::DebugExt;
 use stc_ts_types::Type;
 use stc_utils::ext::TypeVecExt;
@@ -20,8 +20,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &ROptChainExpr, type_ann: Option<&Type>) -> VResult<Type> {
         let span = node.span;
 
-        match &*node.expr {
-            RExpr::Member(me) => {
+        match &node.base {
+            ROptChainBase::Member(me) => {
                 let prop = self.validate_key(&me.prop, me.computed)?;
                 let obj = me.obj.validate_with(self)?;
 
@@ -49,7 +49,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            RExpr::Call(ce) => {
+            ROptChainBase::Call(ce) => {
                 let ty = ce.validate_with_args(self, type_ann)?;
 
                 Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))

@@ -11,9 +11,8 @@ use stc_ts_ast_rnode::{
     RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit,
     RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
     RArrayPat, RBindingIdent, RCallExpr, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid,
-    RLit, RMemberExpr, RMemberProp, RNewExpr, RObjectPat, RPat, RPropName, RStr, RTaggedTpl,
-    RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation,
-    RTsTypeRef,
+    RLit, RMemberExpr, RMemberProp, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr,
+    RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
@@ -376,10 +375,7 @@ impl Analyzer<'_, '_> {
             }) => {}
 
             RExpr::Member(RMemberExpr {
-                ref obj,
-                ref prop,
-                computed,
-                ..
+                ref obj, ref prop, ..
             }) => {
                 let prop = self.validate_key(prop, computed)?;
 
