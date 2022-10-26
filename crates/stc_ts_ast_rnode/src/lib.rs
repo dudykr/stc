@@ -153,7 +153,7 @@ define_rnode!({
     pub enum Decl {
         Class(ClassDecl),
         Fn(FnDecl),
-        Var(VarDecl),
+        Var(Box<VarDecl>),
         TsInterface(TsInterfaceDecl),
         TsTypeAlias(TsTypeAliasDecl),
         TsEnum(TsEnumDecl),
@@ -880,11 +880,11 @@ define_rnode!({
         pub body: BlockStmt,
     }
     pub enum VarDeclOrPat {
-        VarDecl(VarDecl),
+        VarDecl(Box<VarDecl>),
         Pat(Pat),
     }
     pub enum VarDeclOrExpr {
-        VarDecl(VarDecl),
+        VarDecl(Box<VarDecl>),
         Expr(Box<Expr>),
     }
     pub struct TsTypeAnn {
