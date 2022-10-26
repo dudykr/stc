@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use rnode::{FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RCallExpr, RExpr, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsTypeAssertion,
+    RArrayPat, RCallExpr, RCallee, RExpr, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsTypeAssertion,
     RVarDecl, RVarDeclarator,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
@@ -172,7 +172,7 @@ impl Analyzer<'_, '_> {
                 let is_symbol_call = match &**init {
                     RExpr::Call(RCallExpr {
                         callee:
-                            RExprOrSuper::Expr(box RExpr::Ident(RIdent {
+                            RCallee::Expr(box RExpr::Ident(RIdent {
                                 sym: js_word!("Symbol"),
                                 ..
                             })),
