@@ -358,6 +358,7 @@ impl Analyzer<'_, '_> {
                 prop:
                     RPropName::Computed(RComputedPropName {
                         expr: box RExpr::Lit(RLit::Num(..)),
+                        ..
                     }),
                 ..
             }) => {}
