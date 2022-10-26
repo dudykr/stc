@@ -33,7 +33,10 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
     let mut buf = vec![];
     {
         let mut emitter = Emitter {
-            cfg: swc_ecma_codegen::Config { minify: false },
+            cfg: swc_ecma_codegen::Config {
+                minify: false,
+                ..Default::default()
+            },
             cm: cm.clone(),
             comments: None,
             wr: box JsWriter::new(cm.clone(), "\n", &mut buf, None),
