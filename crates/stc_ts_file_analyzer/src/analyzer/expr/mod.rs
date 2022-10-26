@@ -9,8 +9,9 @@ use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr,
-    RMemberProp, RNull, RNumber, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuperPropExpr,
-    RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
+    RMemberProp, RNull, RNumber, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuperProp,
+    RSuperPropExpr, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr,
+    RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
@@ -4008,15 +4009,7 @@ impl Analyzer<'_, '_> {
             ..
         } = *expr;
 
-        let name: Option<Name> = expr.try_into().ok();
-
-        if let TypeOfMode::RValue = type_mode {
-            if let Some(name) = &name {
-                if let Some(ty) = self.scope.get_type_from_name(name) {
-                    return Ok(ty);
-                }
-            }
-        }
+        let computed = matches!(prop, RSuperProp::Computed(..));
 
         let mut errors = Errors::default();
 
@@ -4073,14 +4066,6 @@ impl Analyzer<'_, '_> {
             .context(
                 "tried to access property of an object to calculate type of a member expression",
             )?;
-
-        if !self.is_builtin {
-            if let Some(name) = name {
-                ty = self.apply_type_facts(&name, ty);
-
-                self.exclude_types_using_fact(span, &name, &mut ty);
-            }
-        }
 
         let ty = if computed {
             ty
