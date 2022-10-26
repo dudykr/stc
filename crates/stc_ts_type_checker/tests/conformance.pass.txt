@@ -148,7 +148,6 @@ classes/classDeclarations/classAbstractKeyword/classAbstractOverrideWithAbstract
 classes/classDeclarations/classAbstractKeyword/classAbstractSingleLineDecl.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractSuperCalls.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractUsingAbstractMethod1.ts
-classes/classDeclarations/classAndInterfaceMerge.d.ts
 classes/classDeclarations/classAndInterfaceWithSameName.ts
 classes/classDeclarations/classBody/classWithEmptyBody.ts
 classes/classDeclarations/classExtendingBuiltinType.ts
@@ -1561,7 +1560,6 @@ parser/ecmascript5/ClassDeclarations/parserClassDeclaration23.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration24.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration25.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration26.ts
-parser/ecmascript5/ClassDeclarations/parserClassDeclaration7.d.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration8.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration9.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclarationIndexSignature1.ts
@@ -1576,7 +1574,6 @@ parser/ecmascript5/EnumDeclarations/parserEnum3.ts
 parser/ecmascript5/EnumDeclarations/parserEnum6.ts
 parser/ecmascript5/EnumDeclarations/parserEnum7.ts
 parser/ecmascript5/EnumDeclarations/parserEnumDeclaration1.ts
-parser/ecmascript5/EnumDeclarations/parserEnumDeclaration2.d.ts
 parser/ecmascript5/EnumDeclarations/parserEnumDeclaration3.ts
 parser/ecmascript5/EnumDeclarations/parserEnumDeclaration5.ts
 parser/ecmascript5/EnumDeclarations/parserEnumDeclaration6.ts
@@ -1614,7 +1611,6 @@ parser/ecmascript5/Expressions/parserUnaryExpression3.ts
 parser/ecmascript5/Expressions/parserUnaryExpression4.ts
 parser/ecmascript5/Expressions/parserUnaryExpression6.ts
 parser/ecmascript5/Expressions/parserUnaryExpression7.ts
-parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration1.d.ts
 parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration3.ts
 parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration4.ts
 parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration5.ts
@@ -1684,7 +1680,6 @@ parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration10.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration11.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration12.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration2.ts
-parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration3.d.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration4.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration6.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration7.ts
@@ -1719,7 +1714,6 @@ parser/ecmascript5/Protected/Protected3.ts
 parser/ecmascript5/Protected/Protected5.ts
 parser/ecmascript5/Protected/Protected8.ts
 parser/ecmascript5/Protected/Protected9.ts
-parser/ecmascript5/RSymbols/ES5SymbolType1.ts
 parser/ecmascript5/RegressionTests/parser509546.ts
 parser/ecmascript5/RegressionTests/parser509546_1.ts
 parser/ecmascript5/RegressionTests/parser509546_2.ts
@@ -1819,7 +1813,6 @@ parser/ecmascript5/VariableDeclarations/parserVariableDeclaration1.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration11.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration2.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration3.ts
-parser/ecmascript5/VariableDeclarations/parserVariableDeclaration4.d.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration7.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration9.ts
 parser/ecmascript5/parserAdditiveExpression1.ts
@@ -1864,7 +1857,6 @@ parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName4.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName40.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName41.ts
 parser/ecmascript6/ComputedPropertyNames/parserComputedPropertyName6.ts
-parser/ecmascript6/Iterators/parserForOfStatement1
 parser/ecmascript6/Iterators/parserForOfStatement10.ts
 parser/ecmascript6/Iterators/parserForOfStatement11.ts
 parser/ecmascript6/Iterators/parserForOfStatement12.ts
@@ -1925,7 +1917,6 @@ statements/continueStatements/doWhileContinueStatements.ts
 statements/continueStatements/forContinueStatements.ts
 statements/continueStatements/forInContinueStatements.ts
 statements/continueStatements/whileContinueStatements.ts
-statements/foSymbols/ES5SymbolType1.ts
 statements/for-inStatements/for-inStatementsArray.ts
 statements/for-inStatements/for-inStatementsDestructuring.ts
 statements/for-inStatements/for-inStatementsDestructuring3.ts
@@ -1979,7 +1970,6 @@ statements/for-ofStatements/ES5For-ofTypeCheck7.ts
 statements/for-ofStatements/ES5For-ofTypeCheck8.ts
 statements/for-ofStatements/ES5For-ofTypeCheck9.ts
 statements/for-ofStatements/ES5for-of32.ts
-statements/for-ofStatements/ESSymbols/ES5SymbolType1.ts
 statements/forStatements/forStatements.ts
 statements/ifDoWhileStatements/ifDoWhileStatements.ts
 statements/returnStatements/returnStatements.ts
@@ -2360,14 +2350,6 @@ types/typeRelationships/comparable/switchCaseWithUnionTypes01.ts
 types/typeRelationships/comparable/typeAssertionsWithUnionTypes01.ts
 types/typeRelationships/instanceOf/narrowingConstrainedTypeVariable.ts
 types/typeRelationships/instanceOf/narrowingGenericTypeFromInstanceof01.ts
-types/typeRelationships/recursiveTypes/arrayLiteralsWithRecursiveGenerics.ts
-types/typeRelationships/recursiveTypes/infiniteExpansionThroughInstantiation2.ts
-types/typeRelationships/recursiveTypes/infiniteExpansionThroughTypeInference.ts
-types/typeRelationships/recursiveTypes/nominalSubtypeCheckOfTypeParameter.ts
-types/typeRelationships/recursiveTypes/nominalSubtypeCheckOfTypeParameter2.ts
-types/typeRelationships/recursiveTypes/objectTypeWithRecursiveWrappedProperty.ts
-types/typeRelationships/recursiveTypes/objectTypeWithRecursiveWrappedProperty2.ts
-types/typeRelationships/recursiveTypes/recursiveTypeInGenericConstraint.ts
 types/typeRelationships/subtypesAndSuperTypes/nullIsSubtypeOfEverythingButUndefined.ts
 types/typeRelationships/subtypesAndSuperTypes/stringLiteralTypeIsSubtypeOfString.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypesOfAny.ts
