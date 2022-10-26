@@ -4,11 +4,16 @@ use tracing::info;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Marks {
     pub(crate) top_level_mark: Mark,
+    pub(crate) unresolved_mark: Mark,
 }
 
 impl Marks {
     pub fn top_level_mark(self) -> Mark {
         self.top_level_mark
+    }
+
+    pub fn unresolved_mark(self) -> Mark {
+        self.unresolved_mark
     }
 
     pub fn new(globals: &Globals) -> Self {
@@ -24,6 +29,7 @@ impl Marks {
 
         swc_common::GLOBALS.set(globals, || Self {
             top_level_mark: m("top level"),
+            unresolved_mark: m("unresolved"),
         })
     }
 }

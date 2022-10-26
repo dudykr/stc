@@ -15,7 +15,7 @@ use stc_utils::stack;
 use swc_common::{input::SourceFileInput, FileName, SourceMap, SyntaxContext};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
-use swc_ecma_transforms::resolver::ts_resolver;
+use swc_ecma_transforms::resolver;
 use swc_ecma_visit::FoldWith;
 use testing::StdErr;
 use tracing::Level;
@@ -96,10 +96,11 @@ impl Tester<'_, '_> {
             );
             let mut parser = Parser::new_from(lexer);
 
-            let module = parser
-                .parse_module()
-                .unwrap()
-                .fold_with(&mut ts_resolver(MARKS.top_level_mark()));
+            let module = parser.parse_module().unwrap().fold_with(&mut resolver(
+                MARKS.unresolved_mark(),
+                MARKS.top_level_mark(),
+                true,
+            ));
 
             RModule::from_orig(&mut NodeIdGenerator::invalid(), module)
         })
