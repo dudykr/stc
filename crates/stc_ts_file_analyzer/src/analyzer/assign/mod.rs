@@ -2424,9 +2424,8 @@ impl Analyzer<'_, '_> {
                                 span: *span,
                                 lit: RTsLit::Str(RStr {
                                     span: *span,
-                                    has_escape: false,
-                                    kind: Default::default(),
                                     value: key.clone(),
+                                    raw: None,
                                 }),
                                 metadata: Default::default(),
                             }));

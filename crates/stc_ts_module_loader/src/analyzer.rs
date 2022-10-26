@@ -1,6 +1,6 @@
 use stc_ts_utils::imports::find_imports_in_comments;
 use swc_atoms::JsWord;
-use swc_common::{comments::Comments, Span, Spanned, DUMMY_SP};
+use swc_common::{comments::Comments, Span, Spanned};
 use swc_ecma_ast::*;
 use swc_ecma_visit::{Visit, VisitWith};
 
@@ -14,7 +14,7 @@ where
         deps: Default::default(),
     };
 
-    m.visit_with(&Invalid { span: DUMMY_SP }, &mut v);
+    m.visit_with(&mut v);
 
     (v.declared_modules, v.deps)
 }

@@ -125,7 +125,7 @@ impl VisitMut<RVarDeclarator> for DceForDts<'_> {
             RPat::Ident(ref mut i) => {
                 if i.type_ann.is_none() {
                     if let Some(ty) = self.info.private_vars.get(&i.id.clone().into()) {
-                        i.type_ann = Some(RTsTypeAnn {
+                        i.type_ann = Some(box RTsTypeAnn {
                             node_id: NodeId::invalid(),
                             span: DUMMY_SP,
                             type_ann: box ty.clone().into(),
@@ -165,7 +165,7 @@ impl VisitMut<RFnDecl> for DceForDts<'_> {
 
         node.function.return_type = self.get_mapped(&node.ident.clone().into(), |ty| match ty {
             Type::Function(stc_ts_types::Function { ref ret_ty, .. }) => {
-                Some(RTsTypeAnn::from((**ret_ty).clone()))
+                Some(box RTsTypeAnn::from((**ret_ty).clone()))
             }
             _ => None,
         });
@@ -280,11 +280,7 @@ impl VisitMut<RClassMember> for DceForDts<'_> {
                     node_id: NodeId::invalid(),
                     span: *span,
                     declare: false,
-                    computed: match key {
-                        RPropName::Computed(..) => true,
-                        _ => false,
-                    },
-                    key: box rprop_name_to_expr(key.take()),
+                    key: key.take(),
                     value: None,
                     type_ann: None,
                     is_static: *is_static,

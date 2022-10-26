@@ -8,12 +8,11 @@ use fxhash::FxHashSet;
 use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RAssignPat, RBlockStmt, RClass, RClassDecl, RClassMember, RClassProp, RDecl,
-    RExportDecl, RExportDefaultExpr, RExpr, RExprOrSuper, RFnDecl, RIdent, RImportDecl,
-    RImportSpecifier, RLit, RMemberExpr, RModuleDecl, RModuleItem, RNamedExport,
-    RParamOrTsParamProp, RPat, RPrivateName, RPrivateProp, RPropName, RStmt, RTsEntityName,
-    RTsEnumDecl, RTsIndexSignature, RTsInterfaceDecl, RTsKeywordType, RTsModuleDecl, RTsParamProp,
-    RTsParamPropParam, RTsPropertySignature, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl,
-    RVarDeclarator,
+    RExportDecl, RExportDefaultExpr, RExpr, RFnDecl, RIdent, RImportDecl, RImportSpecifier, RLit,
+    RMemberExpr, RModuleDecl, RModuleItem, RNamedExport, RParamOrTsParamProp, RPat, RPrivateName,
+    RPrivateProp, RPropName, RStmt, RTsEntityName, RTsEnumDecl, RTsIndexSignature,
+    RTsInterfaceDecl, RTsKeywordType, RTsModuleDecl, RTsParamProp, RTsParamPropParam,
+    RTsPropertySignature, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_types::{Id, ModuleTypeData};
 use stc_ts_utils::{find_ids_in_pat, MapWithMut};
@@ -100,9 +99,9 @@ impl Visit<RDecl> for TypeUsageCollector {
                     match decl {
                         RDecl::Class(RClassDecl { ident, .. })
                         | RDecl::Fn(RFnDecl { ident, .. })
-                        | RDecl::TsInterface(RTsInterfaceDecl { id: ident, .. })
-                        | RDecl::TsTypeAlias(RTsTypeAliasDecl { id: ident, .. })
-                        | RDecl::TsEnum(RTsEnumDecl { id: ident, .. }) => {
+                        | RDecl::TsInterface(box RTsInterfaceDecl { id: ident, .. })
+                        | RDecl::TsTypeAlias(box RTsTypeAliasDecl { id: ident, .. })
+                        | RDecl::TsEnum(box RTsEnumDecl { id: ident, .. }) => {
                             if !self.used_types.contains(&ident.into()) {
                                 return;
                             }
@@ -155,11 +154,7 @@ impl Visit<RClass> for TypeUsageCollector {
         fn left_most(e: &RExpr) -> Option<Id> {
             match e {
                 RExpr::Ident(i) => return Some(i.into()),
-                RExpr::Member(RMemberExpr {
-                    obj: RExprOrSuper::Expr(e),
-                    computed: false,
-                    ..
-                }) => return left_most(&e),
+                RExpr::Member(RMemberExpr { obj, .. }) => return left_most(&obj),
                 _ => None,
             }
         }
@@ -206,28 +201,15 @@ impl VisitMut<RClassMember> for Dts {
         match m {
             RClassMember::Method(method) => {
                 if let Some(Accessibility::Private) = method.accessibility {
-                    let computed = match method.key {
-                        RPropName::Computed(..) => true,
-                        _ => false,
-                    };
                     // Converts a private method to a private property without type.
                     *m = RClassMember::ClassProp(RClassProp {
                         node_id: NodeId::invalid(),
                         span: method.span,
-                        key: match &method.key {
-                            RPropName::Ident(i) => box RExpr::Ident(i.clone()),
-                            RPropName::Str(s) => {
-                                box RExpr::Ident(RIdent::new(s.value.clone(), s.span))
-                            }
-                            RPropName::Num(n) => box RExpr::Lit(RLit::Num(n.clone())),
-                            RPropName::Computed(e) => e.expr.clone(),
-                            RPropName::BigInt(n) => box RExpr::Lit(RLit::BigInt(n.clone())),
-                        },
+                        key: method.key.clone(),
                         value: None,
                         type_ann: None,
                         is_static: method.is_static,
                         decorators: Default::default(),
-                        computed,
                         accessibility: Some(Accessibility::Private),
                         is_abstract: false,
                         is_optional: method.is_optional,
@@ -249,7 +231,7 @@ impl VisitMut<RClassMember> for Dts {
 impl VisitMut<RTsPropertySignature> for Dts {
     fn visit_mut(&mut self, ps: &mut RTsPropertySignature) {
         if ps.type_ann.is_none() {
-            ps.type_ann = Some(RTsTypeAnn {
+            ps.type_ann = Some(box RTsTypeAnn {
                 node_id: NodeId::invalid(),
                 span: DUMMY_SP,
                 type_ann: box RTsType::TsKeywordType(RTsKeywordType {
@@ -272,7 +254,7 @@ impl VisitMut<Vec<RVarDeclarator>> for Dts {
                     span,
                     elems,
                     type_ann:
-                        Some(RTsTypeAnn {
+                        Some(box RTsTypeAnn {
                             type_ann: box RTsType::TsTupleType(..),
                             ..
                         }),
@@ -376,9 +358,9 @@ impl VisitMut<Vec<RModuleItem>> for Dts {
                 RModuleItem::Stmt(RStmt::Decl(decl)) => match decl {
                     RDecl::Class(RClassDecl { ident, .. })
                     | RDecl::Fn(RFnDecl { ident, .. })
-                    | RDecl::TsEnum(RTsEnumDecl { id: ident, .. })
-                    | RDecl::TsTypeAlias(RTsTypeAliasDecl { id: ident, .. })
-                    | RDecl::TsInterface(RTsInterfaceDecl { id: ident, .. }) => {
+                    | RDecl::TsEnum(box RTsEnumDecl { id: ident, .. })
+                    | RDecl::TsTypeAlias(box RTsTypeAliasDecl { id: ident, .. })
+                    | RDecl::TsInterface(box RTsInterfaceDecl { id: ident, .. }) => {
                         self.used_types.contains(&Id::from(ident))
                     }
                     // Handled by `visit_mut_var_decl`
@@ -524,14 +506,14 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                                             node_id: NodeId::invalid(),
                                             span: Default::default(),
                                             declare: false,
-                                            key: box match &p.param {
+                                            key: match &p.param {
                                                 RTsParamPropParam::Ident(p) => {
-                                                    RExpr::Ident(p.id.clone())
+                                                    RPropName::Ident(p.id.clone())
                                                 }
                                                 RTsParamPropParam::Assign(p) => match &p.left {
                                                     //
                                                     box RPat::Ident(i) => {
-                                                        RExpr::Ident(i.id.clone())
+                                                        RPropName::Ident(i.id.clone())
                                                     }
                                                     _ => unreachable!(
                                                         "binding pattern in property initializer"
@@ -542,7 +524,6 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                                             type_ann: None,
                                             is_static: false,
                                             decorators: vec![],
-                                            computed: false,
                                             accessibility: p.accessibility,
                                             is_abstract: false,
                                             is_optional: false,
@@ -612,9 +593,7 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                         type_ann: None,
                         is_static: false,
                         decorators: Default::default(),
-                        computed: false,
                         accessibility: None,
-                        is_abstract: false,
                         is_optional: false,
                         readonly: false,
                         definite: false,
@@ -635,7 +614,7 @@ impl VisitMut<RTsIndexSignature> for Dts {
         sig.visit_mut_children_with(self);
 
         if sig.type_ann.is_none() {
-            sig.type_ann = Some(RTsTypeAnn {
+            sig.type_ann = Some(box RTsTypeAnn {
                 node_id: NodeId::invalid(),
                 span: DUMMY_SP,
                 type_ann: box RTsType::TsKeywordType(RTsKeywordType {

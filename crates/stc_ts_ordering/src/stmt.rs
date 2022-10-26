@@ -2,8 +2,8 @@
 
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RBindingIdent, RDecl, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RModuleDecl,
-    RModuleItem, RProp, RStmt, RTsEntityName, RTsExprWithTypeArgs, RTsIndexSignature,
+    RBindingIdent, RDecl, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RMemberProp,
+    RModuleDecl, RModuleItem, RProp, RStmt, RTsEntityName, RTsExprWithTypeArgs, RTsIndexSignature,
     RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl, RVarDeclOrExpr, RVarDeclOrPat,
     RVarDeclarator,
 };
@@ -135,7 +135,7 @@ fn ids_declared_by_decl(d: &RDecl) -> AHashMap<TypedId, AHashSet<TypedId>> {
             );
             return map;
         }
-        RDecl::TsModule(RTsModuleDecl {
+        RDecl::TsModule(box RTsModuleDecl {
             id: RTsModuleName::Ident(i),
             ..
         }) => {
@@ -265,7 +265,7 @@ impl Visit<RMemberExpr> for DepAnalyzer {
     fn visit(&mut self, node: &RMemberExpr) {
         node.obj.visit_with(self);
 
-        if node.computed {
+        if matches!(node.prop, RMemberProp::Computed(..)) {
             node.prop.visit_with(self);
         }
     }
@@ -321,7 +321,7 @@ impl Visit<RTsExprWithTypeArgs> for DepAnalyzer {
     fn visit(&mut self, e: &RTsExprWithTypeArgs) {
         e.visit_children_with(self);
 
-        let id = left(&e.expr);
+        let id = left_of_expr(&e.expr);
         self.used.insert(TypedId {
             kind: IdCtx::Type,
             id: id.into(),
@@ -350,5 +350,13 @@ fn left(t: &RTsEntityName) -> &RIdent {
     match t {
         RTsEntityName::TsQualifiedName(q) => left(&q.left),
         RTsEntityName::Ident(i) => i,
+    }
+}
+
+fn left_of_expr(e: &RExpr) -> &RIdent {
+    match e {
+        RExpr::Ident(i) => i,
+        RExpr::Member(m) => left_of_expr(&m.obj),
+        _ => unreachable!(),
     }
 }
