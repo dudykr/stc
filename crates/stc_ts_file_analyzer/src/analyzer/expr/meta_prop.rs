@@ -9,7 +9,7 @@ use crate::{analyzer::Analyzer, VResult};
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RMetaPropExpr) -> VResult {
+    fn validate(&mut self, e: &RMetaPropExpr) -> VResult<Type> {
         match (&e.meta, &e.prop) {
             (
                 RIdent {

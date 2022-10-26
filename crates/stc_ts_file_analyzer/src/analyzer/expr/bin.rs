@@ -5,8 +5,8 @@ use std::{
 };
 
 use stc_ts_ast_rnode::{
-    RBinExpr, RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, ROptChainExpr, RPat, RPatOrExpr,
-    RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
+    RBinExpr, RExpr, RIdent, RLit, RMemberExpr, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
+    RTsEntityName, RTsLit, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -41,7 +41,7 @@ use crate::{
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> VResult<Type> {
         let RBinExpr {
             span,
             op,
@@ -927,34 +927,17 @@ impl Analyzer<'_, '_> {
         fn non_undefined_names(e: &RExpr) -> Vec<Name> {
             match e {
                 RExpr::OptChain(ROptChainExpr {
-                    expr:
-                        box RExpr::Member(
-                            e @ RMemberExpr {
-                                obj: RExprOrSuper::Expr(..),
-                                ..
-                            },
-                        ),
+                    expr: box RExpr::Member(me),
                     ..
                 }) => {
-                    let mut names = non_undefined_names(match &e.obj {
-                        RExprOrSuper::Super(_) => unreachable!(),
-                        RExprOrSuper::Expr(v) => &v,
-                    });
+                    let mut names = non_undefined_names(&me.obj);
 
                     names.extend(e.try_into().ok());
                     names
                 }
 
-                RExpr::Member(
-                    e @ RMemberExpr {
-                        obj: RExprOrSuper::Expr(..),
-                        ..
-                    },
-                ) => {
-                    let mut names = non_undefined_names(match &e.obj {
-                        RExprOrSuper::Super(_) => unreachable!(),
-                        RExprOrSuper::Expr(v) => &v,
-                    });
+                RExpr::Member(e) => {
+                    let mut names = non_undefined_names(&e.obj);
 
                     names.extend(e.try_into().ok());
                     names
@@ -1075,7 +1058,12 @@ impl Analyzer<'_, '_> {
     /// If we apply `instanceof C` to `v`, `v` becomes `T`.
     /// Note that `C extends D` and `D extends C` are true because both of `C`
     /// and `D` are empty classes.
-    fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult {
+    fn narrow_with_instanceof(
+        &mut self,
+        span: Span,
+        ty: Cow<Type>,
+        orig_ty: &Type,
+    ) -> VResult<Type> {
         let orig_ty = orig_ty.normalize();
 
         match orig_ty {
@@ -1979,7 +1967,7 @@ pub(super) fn extract_name_for_assignment(e: &RExpr, is_exact_eq: bool) -> Optio
             },
         },
         RExpr::Member(RMemberExpr {
-            obj: RExprOrSuper::Expr(obj),
+            obj,
             prop,
             computed,
             ..
