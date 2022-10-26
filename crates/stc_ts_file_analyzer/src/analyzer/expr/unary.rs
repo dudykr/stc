@@ -120,7 +120,12 @@ impl Analyzer<'_, '_> {
                 if let Some(arg) = &arg {
                     match arg.normalize() {
                         Type::Lit(LitType {
-                            lit: RTsLit::Number(RNumber { span, value }),
+                            lit:
+                                RTsLit::Number(RNumber {
+                                    span,
+                                    value,
+                                    raw: None,
+                                }),
                             ..
                         }) => {
                             let span = *span;
@@ -130,6 +135,12 @@ impl Analyzer<'_, '_> {
                                 lit: RTsLit::Number(RNumber {
                                     span,
                                     value: if *op == op!(unary, "-") { -(*value) } else { *value },
+                                    value: if *op == op!(unary, "-") {
+                                        -(*value)
+                                    } else {
+                                        *value
+                                    },
+                                    raw: None,
                                 }),
                                 metadata: Default::default(),
                             }));

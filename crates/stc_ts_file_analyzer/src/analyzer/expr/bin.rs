@@ -9,6 +9,8 @@ use stc_ts_ast_rnode::{
     RUnaryExpr,
     RBinExpr, RExpr, RIdent, RLit, RMemberExpr, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
     RTsEntityName, RTsLit, RUnaryExpr,
+    RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainExpr,
+    RPat, RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -1825,17 +1827,15 @@ pub(super) fn extract_name_for_assignment(e: &RExpr, is_exact_eq: bool) -> Optio
                 _ => None,
             },
         },
-        RExpr::Member(RMemberExpr {
-            obj,
-            prop,
-            computed,
-            ..
-        }) => {
+        RExpr::Member(RMemberExpr { obj, prop, .. }) => {
             let mut name = extract_name_for_assignment(obj, is_exact_eq)?;
 
-            name.push(match &**prop {
-                RExpr::Ident(i) if !*computed => i.sym.clone(),
-                RExpr::Lit(RLit::Str(s)) if *computed => s.value.clone(),
+            name.push(match prop {
+                RMemberProp::Ident(i) => i.sym.clone(),
+                RMemberProp::Computed(RComputedPropName {
+                    expr: box RExpr::Lit(RLit::Str(s)),
+                    ..
+                }) => s.value.clone(),
                 _ => return None,
             });
 
