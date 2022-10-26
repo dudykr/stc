@@ -9,6 +9,6 @@ version = "0.1.0"
 
 [dependencies]
 stc_visit = {path = "../stc_visit"}
-swc_common = "0.14.6"
-tracing = "0.1.26"
+swc_common = "0.29.10"
+tracing = "0.1.37"
 triomphe = "0.1.3"
