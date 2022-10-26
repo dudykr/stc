@@ -576,6 +576,8 @@ impl From<ClassDef> for RTsTypeQuery {
                     .unwrap_or_else(|| Id::word("anonymous class".into()))
                     .into(),
             )),
+            // TODO
+            type_args: None,
         }
     }
 }

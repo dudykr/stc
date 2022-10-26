@@ -1,6 +1,6 @@
 //! This crate exists to reduce compile time.
 //!
-//! The visitor is too slow to compile everytime I make change.
+//! The visitor is too slow to compile every time I make change.
 #![deny(deprecated)]
 #![deny(unused)]
 #![allow(incomplete_features)]
@@ -578,7 +578,7 @@ pub struct ImportType {
     pub metadata: ImportTypeMetadata,
 }
 
-assert_eq_size!(ImportType, [u8; 88]);
+assert_eq_size!(ImportType, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Namespace {
@@ -597,7 +597,7 @@ pub struct Module {
     pub metadata: ModuleTypeMetadata,
 }
 
-assert_eq_size!(Module, [u8; 64]);
+assert_eq_size!(Module, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Enum {
@@ -2276,9 +2276,9 @@ impl Type {
             Type::Lit(ty) => Known(match &ty.lit {
                 RTsLit::Number(v) => v.value != 0.0,
                 RTsLit::Str(v) => v.value != *"",
-                RTsLit::Tpl(v) => v.quasis.first().unwrap().raw.value != *"",
+                RTsLit::Tpl(v) => v.quasis.first().unwrap().raw != *"",
                 RTsLit::Bool(v) => v.value,
-                RTsLit::BigInt(v) => v.value != BigInt::zero(),
+                RTsLit::BigInt(v) => *v.value != BigInt::zero(),
             }),
             Type::Keyword(KeywordType { kind, .. }) => Known(match kind {
                 TsKeywordTypeKind::TsNeverKeyword
