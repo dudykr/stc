@@ -5,9 +5,10 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RBindingIdent, RCallExpr, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid,
-    RLit, RMemberExpr, RMemberProp, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr,
-    RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
+    RArrayPat, RBindingIdent, RCallExpr, RCallee, RComputedPropName, RExpr, RExprOrSpread, RIdent,
+    RInvalid, RLit, RMemberExpr, RMemberProp, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl,
+    RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation,
+    RTsTypeRef,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
@@ -88,7 +89,7 @@ impl Analyzer<'_, '_> {
         type_ann.make_clone_cheap();
 
         let callee = match callee {
-            RExprOrSuper::Super(..) => {
+            RCallee::Super(..) => {
                 self.report_error_for_super_refs_without_supers(span, true);
                 self.report_error_for_super_reference_in_compute_keys(span, true);
 
@@ -103,7 +104,7 @@ impl Analyzer<'_, '_> {
 
                 return Ok(Type::any(span, Default::default()));
             }
-            RExprOrSuper::Expr(callee) => callee,
+            RCallee::Expr(callee) => callee,
         };
 
         let is_callee_iife = is_fn_expr(&callee);

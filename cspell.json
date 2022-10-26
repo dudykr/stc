@@ -1,5 +1,6 @@
 {
     "words": [
-        "fxhash"
+        "fxhash",
+        "smallvec"
     ]
 }
