@@ -344,6 +344,7 @@ impl Analyzer<'_, '_> {
                         &Key::Num(RNumber {
                             span,
                             value: n as _,
+                            raw: None,
                         }),
                         TypeOfMode::RValue,
                         IdCtx::Var,
