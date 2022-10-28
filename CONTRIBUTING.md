@@ -21,3 +21,6 @@ It will print enormous amount of log.
 You should focus on false-positives.
 Each error will contain lots of information required for debugging, with `context:` prefix.
 Read it, and if it's a wrong error, copy in to `./crates/stc_ts_file_analyzer/tests/pass`.
+After then, run `./scripts/check.sh` again.
+It will run the only test you added.
+It will dump type information to a `foo.swc-stderr` file.
