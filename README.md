@@ -18,8 +18,8 @@ This will update passing test count, so you can see if your fix is correct by ch
 
 ### Updating passing test list
 
-You can update the passing test list by invoking `./scripts/check.sh` from `./typescript/stc_ts_type_checker`.
+You can update the passing test list by invoking `./scripts/check.sh` from `./crates/stc_ts_type_checker`.
 
 ### Updating performance stats
 
-You can run `./scripts/release-time.sh` from `./typescript/stc_ts_type_checker` to update timing stats file.
+You can run `./scripts/release-time.sh` from `./crates/stc_ts_type_checker` to update timing stats file.
