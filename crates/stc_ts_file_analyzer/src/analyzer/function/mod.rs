@@ -3,7 +3,8 @@ use std::borrow::Cow;
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith};
 use stc_ts_ast_rnode::{
-    RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName,
+    RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParam, RParamOrTsParamProp, RPat,
+    RTsEntityName,
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_type_ops::Fix;
@@ -62,6 +63,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Move this to parser
                 let mut has_optional = false;
                 for p in &f.params {
+                    validate_parameter_name(child, &p, f.is_async, f.is_generator);
                     if has_optional {
                         match p.pat {
                             RPat::Ident(RBindingIdent {
@@ -475,6 +477,25 @@ impl Analyzer<'_, '_> {
             RParamOrTsParamProp::TsParamProp(p) => p.validate_with(self),
             RParamOrTsParamProp::Param(p) => p.validate_with(self),
         }
+    }
+}
+
+// Check for reserved words used as identifiers (yield, await, etc.)
+//
+// TODO(@littledivy): Generalize this to work regardless of 'function' context.
+fn validate_parameter_name(ctx: &mut Analyzer, p: &RParam, is_async: bool, is_generator: bool) {
+    match &p.pat {
+        RPat::Ident(ident) => {
+            if is_async && ident.id.sym == *"await" {
+                ctx.storage
+                    .report(Error::ExpectedIdentifierReservedKeyword { span: p.span() });
+            }
+            if is_generator && ident.id.sym == *"yield" {
+                ctx.storage
+                    .report(Error::ExpectedIdentifierReservedKeyword { span: p.span() });
+            }
+        }
+        _ => {}
     }
 }
 
