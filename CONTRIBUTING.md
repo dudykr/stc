@@ -14,5 +14,10 @@ Basically all work starts from `./crates/stc_ts_type_checker`.
 **Note: This is what we are focusing on, and want help for.**
 
 As this part is the most important task for now, this is the first item in this document.
+
 First, you should find a erroneous test case.
 Typically, you can find one by running `./scripts/check.sh` from `./crates/stc_ts_type_checker`.
+It will print enormous amount of log.
+You should focus on false-positives.
+Each error will contain lots of information required for debugging, with `context:` prefix.
+Read it, and if it's a wrong error, copy in to `./crates/stc_ts_file_analyzer/tests/pass`.
