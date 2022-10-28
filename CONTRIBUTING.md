@@ -27,4 +27,5 @@ Typically we use `foo/1.ts` for `foo.ts` from a conformance test suite.
 After then, run `./scripts/check.sh` again.
 It will run the only test you added.
 It will dump type information to a `foo.swc-stderr` file.
-Look at it, and if it's wrong
+Look at it, and if it's wrong, adjust the Rust source code, and run `./scripts/check.sh` to verify if your fix is correct.
+If you are done, please file a pull request on GitHub.
