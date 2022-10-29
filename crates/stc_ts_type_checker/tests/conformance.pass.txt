@@ -2448,6 +2448,7 @@ types/typeRelationships/typeInference/genericContextualTypes1.ts
 types/typeRelationships/typeInference/genericFunctionParameters.ts
 types/typeRelationships/typeInference/keyofInferenceIntersectsResults.ts
 types/typeRelationships/typeInference/unionAndIntersectionInference2.ts
+types/typeRelationships/typeInference/unionAndIntersectionInference3.ts
 types/typeRelationships/widenedTypes/arrayLiteralWidened.ts
 types/typeRelationships/widenedTypes/initializersWidened.ts
 types/typeRelationships/widenedTypes/objectLiteralWidened.ts
