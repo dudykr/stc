@@ -2305,9 +2305,15 @@ impl Analyzer<'_, '_> {
                 });
             }
 
+            // function foo(a) {}
+            // foo(1, 2, 3)
+            //        ^^^^
             let span = args
                 .get(min_param)
-                .map(|arg| arg.expr.span())
+                .map(|arg| match args.last() {
+                    Some(to) => arg.expr.span().to(to.expr.span()),
+                    None => arg.expr.span(),
+                })
                 .unwrap_or(span);
 
             return Err(Error::ExpectedNArgsButGotM {
