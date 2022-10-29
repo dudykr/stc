@@ -114,9 +114,9 @@ impl Analyzer<'_, '_> {
     pub(crate) fn extends(
         &mut self,
         span: Span,
-        opts: ExtendsOpts,
         child: &Type,
         parent: &Type,
+        opts: ExtendsOpts,
     ) -> Option<bool> {
         let child = child.normalize();
         let parent = parent.normalize();
