@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/swc-project/stc/issues"
   },
-  "homepage": "https://swc.rs"
+  "homepage": "https://swc.rs",
+  "dependencies": {
+    "cspell": "^6.13.1"
+  }
 }
