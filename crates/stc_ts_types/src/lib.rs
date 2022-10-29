@@ -1,6 +1,6 @@
 //! This crate exists to reduce compile time.
 //!
-//! The visitor is too slow to compile everytime I make change.
+//! The visitor is too slow to compile every time I make change.
 #![deny(deprecated)]
 #![deny(unused)]
 #![allow(incomplete_features)]
@@ -558,7 +558,7 @@ assert_eq_size!(InferType, [u8; 80]);
 pub struct QueryType {
     pub span: Span,
     pub expr: Box<QueryExpr>,
-    pub metadata: QueryTypeMetdata,
+    pub metadata: QueryTypeMetadata,
 }
 
 assert_eq_size!(QueryType, [u8; 32]);

@@ -5,6 +5,7 @@
         "ctxt",
         "dashmap",
         "dejavu",
+        "elems",
         "fxhash",
         "Hasher",
         "itertools",

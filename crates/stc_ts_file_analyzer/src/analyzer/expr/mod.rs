@@ -23,7 +23,7 @@ pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata,
     ComputedKey, Id, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method,
-    ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType, QueryTypeMetdata,
+    ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType, QueryTypeMetadata,
     StaticThis, ThisType,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
@@ -3609,7 +3609,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::Query(QueryType {
                         span,
                         expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(i.clone())),
-                        metadata: QueryTypeMetdata {
+                        metadata: QueryTypeMetadata {
                             common: CommonTypeMetadata {
                                 resolved_from_var: true,
                                 ..Default::default()
