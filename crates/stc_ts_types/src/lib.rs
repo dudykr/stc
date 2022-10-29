@@ -132,7 +132,10 @@ impl AddAssign for ModuleTypeData {
 /// When required, you can use `normalize_mut()` or `foldable()` to get mutable
 /// version.
 ///
-/// To enforce this, deep cloning is not allowed by default
+/// To enforce this, deep cloning is not allowed by default. If you want to
+/// clone deeply, you have to clone this type in a closure passed to
+/// [`ALLOW_DEEP_CLONE`]. But this is not recommended, and should be avoided for
+/// performance.
 #[derive(Debug, PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit)]
 pub enum Type {
     Instance(Instance),
