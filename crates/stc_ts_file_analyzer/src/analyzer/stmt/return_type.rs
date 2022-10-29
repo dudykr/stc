@@ -304,6 +304,7 @@ impl Analyzer<'_, '_> {
                     &declared,
                     ret_ty,
                 )
+                .context("tried to assign return type")
                 .report(&mut self.storage);
             }
         }
