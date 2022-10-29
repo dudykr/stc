@@ -125,12 +125,22 @@ impl AddAssign for ModuleTypeData {
 
 /// A TypeScript type.
 ///
+/// # Invariants
+///
+///  - [Type::Union] cannot have a single element.
+///  - [Type::Intersection] cannot have a single element.
+///
+///  - [Type::Union] cannot have [Type::Union] as a element,
+///  - [Type::Intersection] cannot have [Type::Intersection] as a element,
+///
 /// # Clone
 ///
 /// To reduce memory usage, this type should be `freeze()`-ed.
 /// Freezed type is immutable, and it's cheap to clone.
 /// When required, you can use `normalize_mut()` or `foldable()` to get mutable
 /// version.
+///
+/// **Note**: You have to call `normalize()` while pattern matching.
 ///
 /// To enforce this, deep cloning is not allowed by default. If you want to
 /// clone deeply, you have to clone this type in a closure passed to
