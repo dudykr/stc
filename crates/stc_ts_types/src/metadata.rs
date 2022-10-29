@@ -384,8 +384,8 @@ pub struct TypeLitMetadata {
     /// let e4 = f({ a: 2 }, data); // error
     /// ```
     ///
-    /// because tsc selects type of `data` instead of a normalized type ltieral
-    /// union if one of inferred type literal is `specifiead`.
+    /// because tsc selects type of `data` instead of a normalized type literal
+    /// union if one of inferred type literal is `specified`.
     pub specified: bool,
 }
 
@@ -395,7 +395,7 @@ impl_traits!(TypeLitMetadata);
 pub struct TypeElMetadata {
     /// If `true`, it means the element has a default value.
     ///
-    /// While assignment, missing property error will not occurr by the element
+    /// While assignment, missing property error will not occur by the element
     /// with this flag set to `true`.
     pub has_default: bool,
 }
