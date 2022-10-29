@@ -550,7 +550,7 @@ pub enum Error {
     /// TS2356
     TypeInvalidForUpdateArg {
         span: Span,
-        /// Type of the arugment.
+        /// Type of the arguments.
         ty: Box<Type>,
     },
 
@@ -1422,7 +1422,7 @@ impl Error {
             // const.
             2448 => 2372,
 
-            // ===== ===== ===== For convinience ===== ===== =====
+            // ===== ===== ===== For convenience ===== ===== =====
 
             // TS2461: Not an array type.
             // TS2488: Need Symbol.iterator
