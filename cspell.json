@@ -1,9 +1,12 @@
 {
     "words": [
+        "ahash",
         "fxhash",
         "pmutil",
+        "qself",
         "rustc",
-        "rustfmt"
+        "rustfmt",
+        "Hasher"
     ],
     "ignorePaths": [
         "target"
