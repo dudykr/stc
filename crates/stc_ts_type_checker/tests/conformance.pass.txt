@@ -278,6 +278,7 @@ controlFlow/controlFlowBinaryAndExpression.ts
 controlFlow/controlFlowBindingPatternOrder.ts
 controlFlow/controlFlowCommaOperator.ts
 controlFlow/controlFlowConditionalExpression.ts
+controlFlow/controlFlowDeleteOperator.ts
 controlFlow/controlFlowDestructuringDeclaration.ts
 controlFlow/controlFlowDoWhileStatement.ts
 controlFlow/controlFlowElementAccess.ts
