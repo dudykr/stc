@@ -363,6 +363,9 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let prop = self.validate_key(prop, computed)?;
+
+                // Validate object
+                let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
                 {
                     // Handle toString()
 
@@ -376,7 +379,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Handle member expression
-                let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
                 obj_type.make_clone_cheap();
 
                 let obj_type = match *obj_type.normalize() {
