@@ -3291,7 +3291,7 @@ impl Analyzer<'_, '_> {
                     Type::Union(..) | Type::Interface(..) => {}
 
                     _ => {
-                        if let Some(v) = self.extends(span, Default::default(), &orig_ty, &new_ty) {
+                        if let Some(v) = self.extends(span, &orig_ty, &new_ty, Default::default()) {
                             if v {
                                 match orig_ty.normalize() {
                                     Type::ClassDef(def) => {

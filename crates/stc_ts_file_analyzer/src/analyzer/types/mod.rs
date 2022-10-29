@@ -269,7 +269,7 @@ impl Analyzer<'_, '_> {
                         extends_type.make_clone_cheap();
 
                         if let Some(v) =
-                            self.extends(ty.span(), Default::default(), &check_type, &extends_type)
+                            self.extends(ty.span(), &check_type, &extends_type, Default::default())
                         {
                             let ty = if v { &c.true_type } else { &c.false_type };
                             // TODO(kdy1): Optimize
