@@ -138,7 +138,7 @@ pub enum Error {
     },
 
     /// TS2564
-    ClassPropNotInistalized {
+    ClassPropNotInitialized {
         span: Span,
     },
 
@@ -1825,7 +1825,7 @@ impl Error {
 
             Error::DefinedWitHAccessorInSuper { .. } => 2610,
 
-            Error::ClassPropNotInistalized { .. } => 2564,
+            Error::ClassPropNotInitialized { .. } => 2564,
 
             Error::VarMayNotBeInitialized { .. } => 2454,
 

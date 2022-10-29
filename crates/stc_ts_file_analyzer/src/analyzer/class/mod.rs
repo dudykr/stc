@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
                             )
                             .is_err()
                         {
-                            self.storage.report(Error::ClassPropNotInistalized { span })
+                            self.storage.report(Error::ClassPropNotInitialized { span })
                         }
                     }
                 }

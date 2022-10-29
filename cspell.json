@@ -12,7 +12,9 @@
         "elems",
         "fxhash",
         "Hasher",
+        "impls",
         "indexmap",
+        "inflector",
         "itertools",
         "keyof",
         "opentelemetry",
@@ -26,6 +28,7 @@
         "rustfmt",
         "smallvec",
         "structopt",
+        "subpat",
         "triomphe",
         "Uncapitalize"
     ],

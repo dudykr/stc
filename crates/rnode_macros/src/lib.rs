@@ -47,7 +47,7 @@ pub fn define_rnode(module: proc_macro::TokenStream) -> proc_macro::TokenStream 
                 }
                 _ => {}
             },
-            _ => unreachable!("Sttm other than item in rnode definition"),
+            _ => unreachable!("Stmt other than item in rnode definition"),
         }
     }
 
@@ -676,7 +676,7 @@ fn handle_field(
     if arc && ref_cell {
         panic!(
             "#[arc] and #[ref_cell] cannot be applied to same field because #[arc] implies \
-             Rc<Refell<T>>"
+             Rc<RefCell<T>>"
         )
     }
 
