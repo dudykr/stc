@@ -969,7 +969,7 @@ pub struct Array {
 assert_eq_size!(Array, [u8; 32]);
 
 /// a | b
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Union {
     pub span: Span,
     pub types: Vec<Type>,
@@ -977,6 +977,23 @@ pub struct Union {
 }
 
 assert_eq_size!(Union, [u8; 48]);
+
+impl Debug for Union {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(")?;
+
+        for (i, ty) in self.types.iter().enumerate() {
+            if i != 0 {
+                write!(f, " | ")?;
+            }
+            write!(f, "{:?}", ty)?;
+        }
+
+        write!(f, ")")?;
+
+        Ok(())
+    }
+}
 
 impl Union {
     pub fn assert_valid(&self) {
@@ -1019,7 +1036,7 @@ pub struct FnParam {
 }
 
 /// a & b
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Intersection {
     pub span: Span,
     pub types: Vec<Type>,
@@ -1027,6 +1044,23 @@ pub struct Intersection {
 }
 
 assert_eq_size!(Intersection, [u8; 48]);
+
+impl Debug for Intersection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(")?;
+
+        for (i, ty) in self.types.iter().enumerate() {
+            if i != 0 {
+                write!(f, " & ")?;
+            }
+            write!(f, "{:?}", ty)?;
+        }
+
+        write!(f, ")")?;
+
+        Ok(())
+    }
+}
 
 impl Intersection {
     pub fn assert_valid(&self) {
