@@ -1180,11 +1180,33 @@ impl Type {
         let ty = match types.len() {
             0 => Type::never(span, Default::default()),
             1 => types.into_iter().next().unwrap(),
-            _ => Type::Union(Union {
-                span,
-                types,
-                metadata: Default::default(),
-            }),
+            _ => {
+                if types.iter().any(|t| t.is_union_type()) {
+                    let mut elements = vec![];
+
+                    for ty in types {
+                        if ty.is_union_type() {
+                            let types = ty.expect_union_type().types;
+                            for new in types {
+                                elements.push(new)
+                            }
+                        } else {
+                            elements.push(ty)
+                        }
+                    }
+                    return Type::Union(Union {
+                        span,
+                        types: elements,
+                        metadata: Default::default(),
+                    });
+                }
+
+                Type::Union(Union {
+                    span,
+                    types,
+                    metadata: Default::default(),
+                })
+            }
         };
         ty.assert_valid();
         ty
