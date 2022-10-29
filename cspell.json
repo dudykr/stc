@@ -2,11 +2,13 @@
     "words": [
         "ahash",
         "fxhash",
+        "Hasher",
         "pmutil",
         "qself",
+        "rnode",
         "rustc",
         "rustfmt",
-        "Hasher"
+        "smallvec"
     ],
     "ignorePaths": [
         "target"
