@@ -314,9 +314,9 @@ impl Analyzer<'_, '_> {
                                 for check_type in &check_type_union.types {
                                     let res = self.extends(
                                         ty.span(),
-                                        Default::default(),
                                         &check_type,
                                         &extends_type,
+                                        Default::default(),
                                     );
                                     if let Some(v) = res {
                                         if v {
@@ -375,9 +375,9 @@ impl Analyzer<'_, '_> {
                                         for check_type in &check_type_union.types {
                                             let res = self.extends(
                                                 ty.span(),
-                                                Default::default(),
                                                 &check_type,
                                                 &extends_type,
+                                                Default::default(),
                                             );
                                             if let Some(v) = res {
                                                 if v {
@@ -644,9 +644,9 @@ impl Analyzer<'_, '_> {
                 let can_match = check_type_union.types.iter().any(|check_type_constraint| {
                     self.extends(
                         span,
-                        Default::default(),
                         check_type_constraint,
                         extends_type,
+                        Default::default(),
                     )
                     .unwrap_or(true)
                 });
@@ -659,11 +659,11 @@ impl Analyzer<'_, '_> {
                 //
                 if let Some(extends) = self.extends(
                     span,
+                    &check_type_constraint,
+                    extends_type,
                     ExtendsOpts {
                         ..Default::default()
                     },
-                    &check_type_constraint,
-                    extends_type,
                 ) {
                     if extends {
                         return Ok(Some(true_type.into_owned()));
