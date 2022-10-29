@@ -1,0 +1,19 @@
+warning: Type
+ --> $DIR/tests/pass/types/union/unionAndIntersectionInference3/1.ts:7:9
+  |
+7 |   throw com;
+  |         ^^^
+  |
+  = note: () => (Iterator<S, U, R> | AsyncIterator<S, U, R>)
+
+warning: Type
+ --> $DIR/tests/pass/types/union/unionAndIntersectionInference3/1.ts:6:98
+  |
+6 |   export const g: <U, R, S>(com: () => Iterator<S, U, R> | AsyncIterator<S, U, R>) => Promise<U> = async <U, R, S>(com: () => Iterator<S, U, R> | AsyncIterator<S, U, R>): Promise<U> => {
+  |  __________________________________________________________________________________________________^
+7 | |   throw com;
+8 | | };
+  | |_^
+  |
+  = note: <U, R, S>(com: () => (Iterator<S, U, R> | AsyncIterator<S, U, R>)) => Promise<U>
+

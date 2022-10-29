@@ -7,7 +7,7 @@ use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 use crate::{
-    analyzer::{pat::PatMode, Analyzer, Ctx, ScopeKind},
+    analyzer::{assign::AssignOpts, pat::PatMode, Analyzer, Ctx, ScopeKind},
     ty::TypeExt,
     validator,
     validator::ValidateWith,
@@ -152,7 +152,16 @@ impl Analyzer<'_, '_> {
                 if let Some(ref declared) = declared_ret_ty {
                     let span = inferred_return_type.span();
                     if let Some(ref inferred) = inferred_return_type {
-                        child.assign(span, &mut Default::default(), declared, inferred)?;
+                        child.assign_with_opts(
+                            &mut Default::default(),
+                            AssignOpts {
+                                span,
+                                allow_assignment_of_void: Some(true),
+                                ..Default::default()
+                            },
+                            declared,
+                            inferred,
+                        )?;
                     }
                 }
 

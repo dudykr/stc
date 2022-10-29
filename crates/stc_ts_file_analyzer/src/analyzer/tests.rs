@@ -209,6 +209,8 @@ fn get_env() -> Env {
 
     Env::simple(
         Rule {
+            strict_null_checks: true,
+            strict_function_types: true,
             ..Default::default()
         },
         EsVersion::latest(),

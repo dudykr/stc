@@ -378,6 +378,13 @@ impl Analyzer<'_, '_> {
             _ => (r_params, r_ret_ty),
         };
 
+        // TypeScript functions are bivariant if strict_function_types is false.
+        if !self.env.rule().strict_function_types {
+            if self.assign_params(data, opts, &l_params, &r_params).is_ok() {
+                return Ok(());
+            }
+        }
+
         // () => void
         //
         // is assignable to
@@ -386,7 +393,7 @@ impl Analyzer<'_, '_> {
         //
         // So we check for length first.
         if r_params.len() != 0 {
-            self.assign_params(data, opts, l_params, &r_params)
+            self.assign_params(data, opts, &r_params, l_params)
                 .context(
                     "tried to assign parameters of a function to parameters of another function",
                 )?;
@@ -740,29 +747,9 @@ impl Analyzer<'_, '_> {
         l_ty.make_clone_cheap();
         r_ty.make_clone_cheap();
 
-        let reverse = !opts.for_overload
-            && match (l_ty.normalize_instance(), r_ty.normalize_instance()) {
-                (Type::Union(..), Type::Union(..)) => false,
-
-                (Type::Function(..), Type::Function(..)) => false,
-
-                (
-                    Type::Function(..) | Type::Constructor(..) | Type::Class(..),
-                    Type::TypeLit(..) | Type::Interface(..),
-                ) => false,
-
-                (_, Type::Union(..)) => true,
-
-                _ => true,
-            };
-
-        let res = if reverse {
-            self.assign_with_opts(data, AssignOpts { ..opts }, &r_ty, &l_ty)
-                .context("tried to assign the type of a parameter to another (reversed)")
-        } else {
-            self.assign_with_opts(data, AssignOpts { ..opts }, &l_ty, &r_ty)
-                .context("tried to assign the type of a parameter to another")
-        };
+        let res = self
+            .assign_with_opts(data, AssignOpts { ..opts }, &l_ty, &r_ty)
+            .context("tried to assign the type of a parameter to another");
 
         res.convert_err(|err| match &err {
             Error::MissingFields { span, .. } => Error::SimpleAssignFailed {

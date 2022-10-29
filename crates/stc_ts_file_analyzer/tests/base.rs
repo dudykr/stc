@@ -48,6 +48,7 @@ fn get_env() -> Env {
 
     Env::simple(
         Rule {
+            strict_function_types: true,
             ..Default::default()
         },
         EsVersion::latest(),
