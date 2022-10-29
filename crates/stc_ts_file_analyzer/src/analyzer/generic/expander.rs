@@ -140,7 +140,7 @@ impl Analyzer<'_, '_> {
                 constraint: Some(child),
                 ..
             }) => {
-                if let Some(v) = self.extends(span, opts, child, parent) {
+                if let Some(v) = self.extends(span, child, parent, opts) {
                     return Some(v);
                 }
             }
