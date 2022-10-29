@@ -363,6 +363,9 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 let prop = self.validate_key(prop, computed)?;
+
+                // Validate object
+                let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
                 {
                     // Handle toString()
 
@@ -376,7 +379,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Handle member expression
-                let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
                 obj_type.make_clone_cheap();
 
                 let obj_type = match *obj_type.normalize() {
@@ -3297,7 +3299,7 @@ impl Analyzer<'_, '_> {
                     Type::Union(..) | Type::Interface(..) => {}
 
                     _ => {
-                        if let Some(v) = self.extends(span, Default::default(), &orig_ty, &new_ty) {
+                        if let Some(v) = self.extends(span, &orig_ty, &new_ty, Default::default()) {
                             if v {
                                 match orig_ty.normalize() {
                                     Type::ClassDef(def) => {
@@ -3321,7 +3323,7 @@ impl Analyzer<'_, '_> {
 
                 let mut upcasted = false;
                 for ty in orig_ty.iter_union().flat_map(|ty| ty.iter_union()) {
-                    match self.extends(span, Default::default(), &new_ty, &ty) {
+                    match self.extends(span, &new_ty, &ty, Default::default()) {
                         Some(true) => {
                             upcasted = true;
                             new_types.push(ty.clone());

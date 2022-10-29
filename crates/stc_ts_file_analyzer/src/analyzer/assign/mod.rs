@@ -84,6 +84,8 @@ pub(crate) struct AssignOpts {
 
     /// If `true`, assignment will success if rhs is `void`.
     /// [None] means `false`.
+    ///
+    /// This is [Option] because it's required.
     pub allow_assignment_of_void: Option<bool>,
 
     /// If `true`, assignment will success if lhs is `void`.

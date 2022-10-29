@@ -4,7 +4,7 @@ use crate::analyzer::{generic::ExtendsOpts, tests::test_two};
 
 fn test_extends(l: &str, r: &str, expected: Option<bool>, opts: ExtendsOpts) {
     test_two(l, r, |analyzer, l, r| {
-        let res = analyzer.extends(l.span(), opts, &l, &r);
+        let res = analyzer.extends(l.span(), &l, &r, opts);
 
         assert_eq!(res, expected);
     });

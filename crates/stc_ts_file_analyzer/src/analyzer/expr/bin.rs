@@ -1130,12 +1130,12 @@ impl Analyzer<'_, '_> {
 
         if let Some(v) = self.extends(
             span,
+            orig_ty,
+            &ty,
             ExtendsOpts {
                 disallow_different_classes: true,
                 ..Default::default()
             },
-            orig_ty,
-            &ty,
         ) {
             if v {
                 match orig_ty.normalize() {

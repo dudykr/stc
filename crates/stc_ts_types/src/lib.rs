@@ -1,6 +1,6 @@
 //! This crate exists to reduce compile time.
 //!
-//! The visitor is too slow to compile everytime I make change.
+//! The visitor is too slow to compile every time I make change.
 #![deny(deprecated)]
 #![deny(unused)]
 #![allow(incomplete_features)]
@@ -123,7 +123,32 @@ impl AddAssign for ModuleTypeData {
     }
 }
 
-/// This type is expected to stored in a [Box], like `Vec<Type>`.
+/// A TypeScript type.
+///
+/// # Invariants
+///
+///  - [Type::Union] cannot have a single element.
+///  - [Type::Intersection] cannot have a single element.
+///
+///  - [Type::Union] cannot have [Type::Union] as a element,
+///  - [Type::Intersection] cannot have [Type::Intersection] as a element,
+///
+/// [`Type::assert_valid`] can be used to ensure invariants.
+/// Note that this is noop in release build.
+///
+/// # Clone
+///
+/// To reduce memory usage, this type should be `freeze()`-ed.
+/// Freezed type is immutable, and it's cheap to clone.
+/// When required, you can use `normalize_mut()` or `foldable()` to get mutable
+/// version.
+///
+/// **Note**: You have to call `normalize()` while pattern matching.
+///
+/// To enforce this, deep cloning is not allowed by default. If you want to
+/// clone deeply, you have to clone this type in a closure passed to
+/// [`ALLOW_DEEP_CLONE`]. But this is not recommended, and should be avoided for
+/// performance.
 #[derive(Debug, PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit)]
 pub enum Type {
     Instance(Instance),
@@ -558,7 +583,7 @@ assert_eq_size!(InferType, [u8; 80]);
 pub struct QueryType {
     pub span: Span,
     pub expr: Box<QueryExpr>,
-    pub metadata: QueryTypeMetdata,
+    pub metadata: QueryTypeMetadata,
 }
 
 assert_eq_size!(QueryType, [u8; 32]);
@@ -1155,11 +1180,33 @@ impl Type {
         let ty = match types.len() {
             0 => Type::never(span, Default::default()),
             1 => types.into_iter().next().unwrap(),
-            _ => Type::Union(Union {
-                span,
-                types,
-                metadata: Default::default(),
-            }),
+            _ => {
+                if types.iter().any(|t| t.is_union_type()) {
+                    let mut elements = vec![];
+
+                    for ty in types {
+                        if ty.is_union_type() {
+                            let types = ty.expect_union_type().types;
+                            for new in types {
+                                elements.push(new)
+                            }
+                        } else {
+                            elements.push(ty)
+                        }
+                    }
+                    return Type::Union(Union {
+                        span,
+                        types: elements,
+                        metadata: Default::default(),
+                    });
+                }
+
+                Type::Union(Union {
+                    span,
+                    types,
+                    metadata: Default::default(),
+                })
+            }
         };
         ty.assert_valid();
         ty

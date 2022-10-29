@@ -42,8 +42,8 @@ struct ModuleRecord {
 /// 5. Build a dependency graph.
 ///
 ///
-/// Double-loaidng is required because we have to handle all `declare module`
-/// statements to get all depen`dencies resolved.
+/// Double-loading is required because we have to handle all `declare module`
+/// statements to get all dependencies resolved.
 pub struct ModuleGraph<C, R>
 where
     C: Comments + Send + Sync,

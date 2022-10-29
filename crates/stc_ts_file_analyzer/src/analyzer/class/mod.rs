@@ -21,7 +21,7 @@ use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
     Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey,
     ConstructorSignature, FnParam, Id, Intersection, Key, KeywordType, Method, Operator,
-    OperatorMetadata, QueryExpr, QueryType, QueryTypeMetdata, Ref, TsExpr, Type,
+    OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
 };
 use stc_utils::{cache::Freeze, AHashSet};
 use swc_atoms::js_word;
@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
                             )
                             .is_err()
                         {
-                            self.storage.report(Error::ClassPropNotInistalized { span })
+                            self.storage.report(Error::ClassPropNotInitialized { span })
                         }
                     }
                 }
@@ -1777,7 +1777,7 @@ impl Analyzer<'_, '_> {
                                                                         box QueryExpr::TsEntityName(
                                                                             id.clone().into(),
                                                                         ),
-                                                                    metadata: QueryTypeMetdata {
+                                                                    metadata: QueryTypeMetadata {
                                                                         common: c.metadata.common,
                                                                         ..Default::default()
                                                                     },
@@ -1885,7 +1885,7 @@ impl Analyzer<'_, '_> {
 
                     if constructors_with_body.len() >= 2 {
                         for &span in &constructors_with_body {
-                            child.storage.report(Error::DuplciateConstructor { span })
+                            child.storage.report(Error::DuplicateConstructor { span })
                         }
                     }
 
@@ -2456,9 +2456,9 @@ impl Analyzer<'_, '_> {
                             .ty
                             .is_kwd(TsKeywordTypeKind::TsNumberKeyword)
                         {
-                            Error::ClassMemeberNotCompatibleWithNumericIndexSignature { span }
+                            Error::ClassMemberNotCompatibleWithNumericIndexSignature { span }
                         } else {
-                            Error::ClassMemeberNotCompatibleWithStringIndexSignature { span }
+                            Error::ClassMemberNotCompatibleWithStringIndexSignature { span }
                         }
                     })?;
                 }

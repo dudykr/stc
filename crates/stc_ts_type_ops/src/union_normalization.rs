@@ -165,7 +165,7 @@ impl UnionNormalizer {
 
                                 if let Some(type_params) = type_params {
                                     if let Some(prev) = new_type_params.get(&i) {
-                                        // We replace new type params woth previous type param.
+                                        // We replace new type params with previous type param.
                                         let inferred = prev
                                             .params
                                             .iter()

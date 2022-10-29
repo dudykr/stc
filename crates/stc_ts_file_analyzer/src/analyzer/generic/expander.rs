@@ -55,7 +55,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     unimplemented!(
                         "Reporting errors when type parameter count and type argument count \
-                         difffers\nParams={:#?}\nArgs: {:#?}",
+                         differs\nParams={:#?}\nArgs: {:#?}",
                         type_params,
                         type_args
                     )
@@ -114,9 +114,9 @@ impl Analyzer<'_, '_> {
     pub(crate) fn extends(
         &mut self,
         span: Span,
-        opts: ExtendsOpts,
         child: &Type,
         parent: &Type,
+        opts: ExtendsOpts,
     ) -> Option<bool> {
         let child = child.normalize();
         let parent = parent.normalize();
@@ -140,7 +140,7 @@ impl Analyzer<'_, '_> {
                 constraint: Some(child),
                 ..
             }) => {
-                if let Some(v) = self.extends(span, opts, child, parent) {
+                if let Some(v) = self.extends(span, child, parent, opts) {
                     return Some(v);
                 }
             }
@@ -176,14 +176,14 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                return self.extends(span, opts, &child, parent);
+                return self.extends(span, &child, parent, opts);
             }
 
             Type::Union(child) => {
                 let mut prev = None;
 
                 for child in &child.types {
-                    let res = self.extends(span, opts, child, parent)?;
+                    let res = self.extends(span, child, parent, opts)?;
 
                     match prev {
                         Some(v) => {
@@ -232,7 +232,7 @@ impl Analyzer<'_, '_> {
                 }
                 parent.make_clone_cheap();
 
-                return self.extends(span, opts, child, &parent);
+                return self.extends(span, child, &parent, opts);
             }
             _ => {}
         }
@@ -246,7 +246,7 @@ impl Analyzer<'_, '_> {
                 let mut has_false = false;
 
                 for parent in &parent.types {
-                    let res = self.extends(span, opts, child, parent);
+                    let res = self.extends(span, child, parent, opts);
                     if let Some(true) = res {
                         return Some(true);
                     }
@@ -338,7 +338,7 @@ impl Analyzer<'_, '_> {
                         Type::ClassDef(parent) => {
                             // Check for grand parent
                             if let Some(grand_parent) = &parent.super_class {
-                                if let Some(false) = self.extends(span, opts, child, grand_parent) {
+                                if let Some(false) = self.extends(span, child, grand_parent, opts) {
                                     return Some(false);
                                 }
                             }
@@ -350,7 +350,7 @@ impl Analyzer<'_, '_> {
             Type::Tuple(child_tuple) => match parent {
                 Type::Array(parent_array) => {
                     if child_tuple.elems.iter().all(|child_element| {
-                        self.extends(span, opts, &child_element.ty, &parent_array.elem_type)
+                        self.extends(span, &child_element.ty, &parent_array.elem_type, opts)
                             == Some(true)
                     }) {
                         return Some(true);
