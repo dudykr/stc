@@ -4,6 +4,7 @@
         "ctxt",
         "fxhash",
         "Hasher",
+        "opentelemetry",
         "pmutil",
         "qself",
         "rnode",
