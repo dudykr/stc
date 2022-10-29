@@ -219,7 +219,7 @@ pub fn validator(
                 ContextType: &context_types,
                 body: &mtd.block,
                 node_pat: &node_pat.unwrap(),
-                conext_pats: &context_pats,
+                context_pats: &context_pats,
             },
             {
                 impl<'context> crate::validator::Validate<'context, NodeType> for VisitorType {
@@ -227,7 +227,7 @@ pub fn validator(
                     type Output = ReturnType;
 
                     fn validate(&mut self, node_pat: &NodeType, ctxt: Self::Context) -> ReturnType {
-                        let (conext_pats) = ctxt;
+                        let (context_pats) = ctxt;
 
                         let ret = {
                             let _tracing_guard = tracing::span!(

@@ -6,7 +6,7 @@ use syn::{
 };
 
 /// Note: This generates `FoldWith`, `VisitWith` and `VisitMutWith` although
-/// it's `#[deive(Visit)]`
+/// it's `#[derive(Visit)]`
 #[proc_macro_derive(Visit, attributes(visit))]
 pub fn derive(item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse::<DeriveInput>(item).unwrap();

@@ -817,7 +817,7 @@ impl From<Intrinsic> for RTsKeywordType {
     }
 }
 
-/// This function shoulod be used for keys.
+/// This function should be used for keys.
 pub fn rprop_name_to_expr(p: RPropName) -> RExpr {
     match p {
         RPropName::Ident(i) => RExpr::Ident(i),

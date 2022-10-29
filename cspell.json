@@ -1,5 +1,42 @@
 {
     "words": [
-        "fxhash"
+        "ahash",
+        "bitflags",
+        "codegen",
+        "concat",
+        "cond",
+        "ctxt",
+        "dashmap",
+        "dedup",
+        "dejavu",
+        "deps",
+        "elems",
+        "fastpath",
+        "fxhash",
+        "Hasher",
+        "impls",
+        "indexmap",
+        "inflector",
+        "itertools",
+        "keyof",
+        "opentelemetry",
+        "pmutil",
+        "qself",
+        "quasis",
+        "Redeclared",
+        "renamer",
+        "respan",
+        "rnode",
+        "rustc",
+        "rustfmt",
+        "rvalue",
+        "smallvec",
+        "structopt",
+        "subpat",
+        "triomphe",
+        "Uncapitalize"
+    ],
+    "ignorePaths": [
+        "target"
     ]
 }

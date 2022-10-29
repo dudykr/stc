@@ -10,7 +10,7 @@ pub fn get_git_root() -> PathBuf {
             .arg("rev-parse")
             .arg("--show-toplevel")
             .output()
-            .expect("failed to get root git direcrtory");
+            .expect("failed to get root git directory");
 
         assert!(output.status.success());
         String::from_utf8_lossy(&output.stdout)
@@ -64,7 +64,7 @@ pub fn init_tracing(name: String) -> tracing::subscriber::DefaultGuard {
         let tracer = opentelemetry_jaeger::new_pipeline()
             .with_service_name(name)
             .install_simple()
-            .expect("failed to create open telemtry pipeline");
+            .expect("failed to create open telemetry pipeline");
 
         // Create a tracing subscriber with the configured tracer
         let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);

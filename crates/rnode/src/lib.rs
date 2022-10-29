@@ -58,7 +58,7 @@ impl<V: ?Sized> FoldWith<V> for NodeId {
 
 #[derive(Debug)]
 pub struct NodeIdGenerator {
-    /// If the stored value is zero, it's an invalid id genertor.
+    /// If the stored value is zero, it's an invalid id generator.
     inner: u32,
 }
 
@@ -149,7 +149,7 @@ where
     }
 }
 
-/// Helper for derive macro. Do **not** implement this manullay.
+/// Helper for derive macro. Do **not** implement this manually.
 pub trait IntoRNode<R> {
     fn into_rnode(self, g: &mut NodeIdGenerator) -> R;
 }

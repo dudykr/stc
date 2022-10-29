@@ -340,8 +340,8 @@ fn invoke_tsc(input: &Path) -> Vec<TscError> {
 
 /// If `for_error` is false, this function will run as type dump mode.
 fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
-    let fname = file_name.display().to_string();
-    println!("{}", fname);
+    let filename = file_name.display().to_string();
+    println!("{}", filename);
 
     let res = testing::Tester::new()
         .print_errors(|cm, handler| -> Result<(), _> {
@@ -414,7 +414,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
 
             let lexer = Lexer::new(
                 Syntax::Typescript(TsConfig {
-                    tsx: fname.contains("tsx"),
+                    tsx: filename.contains("tsx"),
                     decorators: true,
                     ..Default::default()
                 }),

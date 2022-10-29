@@ -3293,7 +3293,7 @@ impl Analyzer<'_, '_> {
                     Type::Union(..) | Type::Interface(..) => {}
 
                     _ => {
-                        if let Some(v) = self.extends(span, Default::default(), &orig_ty, &new_ty) {
+                        if let Some(v) = self.extends(span, &orig_ty, &new_ty, Default::default()) {
                             if v {
                                 match orig_ty.normalize() {
                                     Type::ClassDef(def) => {
@@ -3317,7 +3317,7 @@ impl Analyzer<'_, '_> {
 
                 let mut upcasted = false;
                 for ty in orig_ty.iter_union().flat_map(|ty| ty.iter_union()) {
-                    match self.extends(span, Default::default(), &new_ty, &ty) {
+                    match self.extends(span, &new_ty, &ty, Default::default()) {
                         Some(true) => {
                             upcasted = true;
                             new_types.push(ty.clone());
