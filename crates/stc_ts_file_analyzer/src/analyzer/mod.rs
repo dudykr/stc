@@ -844,6 +844,8 @@ impl Analyzer<'_, '_> {
                 self.report_error_for_wrong_top_level_ambient_fns(&m.body);
             }
 
+            self.report_error_for_wrong_yield(&m.body);
+
             if self.is_builtin {
                 m.body.visit_children_with(self);
             } else {

@@ -23,6 +23,7 @@ mod loops;
 pub(crate) mod return_type;
 mod try_catch;
 mod var_decl;
+mod r#yield;
 
 #[validator]
 impl Analyzer<'_, '_> {

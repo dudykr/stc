@@ -5,7 +5,7 @@ use stc_ts_ast_rnode::{
     RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RYieldExpr,
 };
 use stc_ts_errors::{DebugExt, Error};
-use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
+use stc_ts_simple_ast_validations::yield_finder::YieldValueUsageFinder;
 use stc_ts_types::{
     CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType,
     MethodSignature, ModuleId, Operator, PropertySignature, Ref, RefMetadata, TypeElement,

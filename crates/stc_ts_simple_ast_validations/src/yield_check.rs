@@ -1,43 +1,53 @@
 use rnode::{Visit, VisitWith};
-use stc_ts_ast_rnode::{RArrowExpr, RAssignExpr, RExpr, RFunction, RVarDeclarator};
+use stc_ts_ast_rnode::{RIdent, RArrowExpr, RAssignExpr, RExpr, RFunction, RVarDeclarator};
+use stc_ts_errors::Error;
+use stc_ts_storage::Storage;
+use swc_common::Spanned;
 
-#[derive(Default)]
-pub struct YieldValueUsageFinder {
-    pub found: bool,
+pub struct YieldCheck<'a, 'b> {
+    pub in_generator: bool,
+    pub errors: &'a mut Storage<'b>,
 }
 
-impl Visit<RAssignExpr> for YieldValueUsageFinder {
-    fn visit(&mut self, e: &RAssignExpr) {
+impl Visit<RExpr> for YieldCheck<'_, '_> {
+    fn visit(&mut self, e: &RExpr) {
         e.visit_children_with(self);
 
-        match &*e.right {
+        match &*e {
             RExpr::Yield(..) => {
-                self.found = true;
+                if !self.in_generator {
+                    self.errors.report(Error::TS1212 { span: e.span() })
+                }
+            }
+            RExpr::Ident(RIdent { ref sym, .. }) if sym == "yield" => {
+                if !self.in_generator {
+                    self.errors.report(Error::TS1212 { span: e.span() })
+                }
             }
             _ => {}
         }
     }
 }
 
-impl Visit<RVarDeclarator> for YieldValueUsageFinder {
-    fn visit(&mut self, v: &RVarDeclarator) {
-        v.visit_children_with(self);
+impl Visit<RArrowExpr> for YieldCheck<'_, '_> {
+    fn visit(&mut self, f: &RArrowExpr) {
+        f.params.visit_with(self);
 
-        match v.init.as_deref() {
-            Some(RExpr::Yield(..)) => {
-                self.found = true;
-            }
-            _ => {}
-        }
+        let old = self.in_generator;
+        self.in_generator = f.is_generator;
+        f.body.visit_with(self);
+        self.in_generator = old;
     }
 }
 
-/// noop
-impl Visit<RArrowExpr> for YieldValueUsageFinder {
-    fn visit(&mut self, _: &RArrowExpr) {}
-}
+impl Visit<RFunction> for YieldCheck<'_, '_> {
+    fn visit(&mut self, f: &RFunction) {
+        f.decorators.visit_with(self);
+        f.params.visit_with(self);
 
-/// noop
-impl Visit<RFunction> for YieldValueUsageFinder {
-    fn visit(&mut self, _: &RFunction) {}
+        let old = self.in_generator;
+        self.in_generator = f.is_generator;
+        f.body.visit_with(self);
+        self.in_generator = old;
+    }
 }
