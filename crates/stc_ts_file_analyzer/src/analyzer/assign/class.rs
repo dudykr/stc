@@ -196,7 +196,7 @@ impl Analyzer<'_, '_> {
                     // `p = c` is valid
                     if let Some(parent) = &rc.def.super_class {
                         let parent = self.instantiate_class(opts.span, &parent).context(
-                            "tried to instanitate class to asssign the super class to a class",
+                            "tried to instantiated class to assign the super class to a class",
                         )?;
                         if self.assign_to_class(data, opts, l, &parent).is_ok() {
                             return Ok(());
@@ -308,8 +308,8 @@ impl Analyzer<'_, '_> {
                 }
             }
             ClassMember::Method(lm) => {
-                for rmember in r {
-                    match rmember {
+                for r_member in r {
+                    match r_member {
                         ClassMember::Constructor(_) => {}
                         ClassMember::Method(rm) => {
                             //
@@ -417,7 +417,7 @@ impl Analyzer<'_, '_> {
 
         Err(Error::Unimplemented {
             span: opts.span,
-            msg: format!("fine-grained class assignment to lhs memeber: {:#?}", l),
+            msg: format!("fine-grained class assignment to lhs member: {:#?}", l),
         })
     }
 }
