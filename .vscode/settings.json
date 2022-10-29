@@ -44,11 +44,6 @@
     "workbench.action.debug.start",
     "workbench.action.debug.run"
   ],
-  "cSpell.words": [
-    "dedup",
-    "itertools",
-    "rnode"
-  ],
   "rust-analyzer.checkOnSave.command": "check",
   "debug.allowBreakpointsEverywhere": true,
   "rust-analyzer.debug.openDebugPane": true,
