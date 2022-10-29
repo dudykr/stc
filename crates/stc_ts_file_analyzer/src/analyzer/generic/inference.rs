@@ -6,7 +6,10 @@ use std::{
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, dump_type_map},
+    DebugExt,
+};
 use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
 use stc_ts_type_ops::generalization::prevent_generalize;
@@ -16,7 +19,7 @@ use stc_ts_types::{
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 use crate::{
     analyzer::{
@@ -296,6 +299,10 @@ impl Analyzer<'_, '_> {
             .context("tried to infer type using two type")?;
 
         let map = self.finalize_inference(inferred);
+
+        if cfg!(debug_assertions) {
+            debug!("Inferred types: \n{}", dump_type_map(&self.cm, &map.types));
+        }
 
         Ok(map.types)
     }
