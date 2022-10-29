@@ -286,13 +286,13 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                 Fields::Unit => return vec![],
             }
         }
-        _ => unreachable!("Item other than sturct or enum in rnode definition"),
+        _ => unreachable!("Item other than struct or enum in rnode definition"),
     }
 
     gen
 }
 
-/// Cretes `(from_orig_arm, to_orig_arm)`
+/// Creates `(from_orig_arm, to_orig_arm)`
 fn handle_enum_variant_fields(
     nodes_to_convert: &[String],
     enum_name: Option<&Ident>,
@@ -449,7 +449,7 @@ fn skip_node_id(attrs: &[Attribute]) -> bool {
     attrs.iter().any(|attr| attr.path.is_ident("skip_node_id"))
 }
 
-/// Cretes `(from_orig_arm, to_orig_arm)`
+/// Creates `(from_orig_arm, to_orig_arm)`
 fn handle_struct_fields(
     attrs: &[Attribute],
     nodes_to_convert: &[String],

@@ -1,6 +1,7 @@
 {
     "words": [
         "ahash",
+        "ctxt",
         "fxhash",
         "Hasher",
         "pmutil",
@@ -8,7 +9,8 @@
         "rnode",
         "rustc",
         "rustfmt",
-        "smallvec"
+        "smallvec",
+        "triomphe"
     ],
     "ignorePaths": [
         "target"
