@@ -570,7 +570,7 @@ impl Debug for Ref {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct InferType {
     pub span: Span,
     pub type_param: TypeParam,
@@ -578,6 +578,12 @@ pub struct InferType {
 }
 
 assert_eq_size!(InferType, [u8; 80]);
+
+impl Debug for InferType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "infer {}", self.type_param.name)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct QueryType {
@@ -775,12 +781,18 @@ pub struct Tuple {
 
 assert_eq_size!(Tuple, [u8; 48]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TupleElement {
     pub span: Span,
     #[not_type]
     pub label: Option<RPat>,
     pub ty: Box<Type>,
+}
+
+impl Debug for TupleElement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}: {:?}", self.label, self.ty)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
