@@ -133,6 +133,9 @@ impl AddAssign for ModuleTypeData {
 ///  - [Type::Union] cannot have [Type::Union] as a element,
 ///  - [Type::Intersection] cannot have [Type::Intersection] as a element,
 ///
+/// [`Type::assert_valid`] can be used to ensure invariants.
+/// Note that this is noop in release build.
+///
 /// # Clone
 ///
 /// To reduce memory usage, this type should be `freeze()`-ed.
