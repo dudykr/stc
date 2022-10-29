@@ -1119,6 +1119,7 @@ es6/yieldExpressions/generatorTypeCheck55.ts
 es6/yieldExpressions/generatorTypeCheck56.ts
 es6/yieldExpressions/generatorTypeCheck6.ts
 es6/yieldExpressions/generatorTypeCheck60.ts
+es6/yieldExpressions/generatorTypeCheck62.ts
 es6/yieldExpressions/generatorTypeCheck7.ts
 es6/yieldExpressions/generatorTypeCheck8.ts
 es6/yieldExpressions/generatorTypeCheck9.ts
@@ -2430,6 +2431,7 @@ types/typeRelationships/typeInference/genericCallWithConstraintsTypeArgumentInfe
 types/typeRelationships/typeInference/genericCallWithFunctionTypedArguments3.ts
 types/typeRelationships/typeInference/genericCallWithFunctionTypedArguments4.ts
 types/typeRelationships/typeInference/genericCallWithFunctionTypedArguments5.ts
+types/typeRelationships/typeInference/genericCallWithGenericSignatureArguments.ts
 types/typeRelationships/typeInference/genericCallWithObjectLiteralArgs.ts
 types/typeRelationships/typeInference/genericCallWithObjectTypeArgs.ts
 types/typeRelationships/typeInference/genericCallWithObjectTypeArgs2.ts
