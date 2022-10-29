@@ -254,7 +254,7 @@ impl Analyzer<'_, '_> {
 
     /// Exports a type.
     ///
-    /// `scope.regsiter_type` should be called before calling this method.
+    /// `scope.register_type` should be called before calling this method.
     ///
     ///
     /// Note: We don't freeze types at here because doing so may prevent proper
