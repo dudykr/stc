@@ -123,7 +123,32 @@ impl AddAssign for ModuleTypeData {
     }
 }
 
-/// This type is expected to stored in a [Box], like `Vec<Type>`.
+/// A TypeScript type.
+///
+/// # Invariants
+///
+///  - [Type::Union] cannot have a single element.
+///  - [Type::Intersection] cannot have a single element.
+///
+///  - [Type::Union] cannot have [Type::Union] as a element,
+///  - [Type::Intersection] cannot have [Type::Intersection] as a element,
+///
+/// [`Type::assert_valid`] can be used to ensure invariants.
+/// Note that this is noop in release build.
+///
+/// # Clone
+///
+/// To reduce memory usage, this type should be `freeze()`-ed.
+/// Freezed type is immutable, and it's cheap to clone.
+/// When required, you can use `normalize_mut()` or `foldable()` to get mutable
+/// version.
+///
+/// **Note**: You have to call `normalize()` while pattern matching.
+///
+/// To enforce this, deep cloning is not allowed by default. If you want to
+/// clone deeply, you have to clone this type in a closure passed to
+/// [`ALLOW_DEEP_CLONE`]. But this is not recommended, and should be avoided for
+/// performance.
 #[derive(Debug, PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit)]
 pub enum Type {
     Instance(Instance),
