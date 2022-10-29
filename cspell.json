@@ -1,6 +1,9 @@
 {
     "words": [
-        "fxhash"
+        "fxhash",
+        "pmutil",
+        "rustc",
+        "rustfmt"
     ],
     "ignorePaths": [
         "target"

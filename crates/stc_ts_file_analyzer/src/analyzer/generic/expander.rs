@@ -55,7 +55,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     unimplemented!(
                         "Reporting errors when type parameter count and type argument count \
-                         difffers\nParams={:#?}\nArgs: {:#?}",
+                         differs\nParams={:#?}\nArgs: {:#?}",
                         type_params,
                         type_args
                     )

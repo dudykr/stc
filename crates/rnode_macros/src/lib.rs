@@ -23,7 +23,7 @@ use syn::{
 /// Don't inject `node_id`.
 ///
 ///
-/// # Fields atributes
+/// # Fields attributes
 ///
 /// ## `#[arc]`
 ///
@@ -61,7 +61,7 @@ pub fn define_rnode(module: proc_macro::TokenStream) -> proc_macro::TokenStream 
                     tts.push_tokens(&i);
                 }
             }
-            _ => unreachable!("Sttm other than item in rnode definition"),
+            _ => unreachable!("Stmt other than item in rnode definition"),
         }
     }
 
