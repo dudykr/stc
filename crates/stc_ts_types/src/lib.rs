@@ -123,7 +123,16 @@ impl AddAssign for ModuleTypeData {
     }
 }
 
-/// This type is expected to stored in a [Box], like `Vec<Type>`.
+/// A TypeScript type.
+///
+/// # Clone
+///
+/// To reduce memory usage, this type should be `freeze()`-ed.
+/// Freezed type is immutable, and it's cheap to clone.
+/// When required, you can use `normalize_mut()` or `foldable()` to get mutable
+/// version.
+///
+/// To enforce this, deep cloning is not allowed by default
 #[derive(Debug, PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit)]
 pub enum Type {
     Instance(Instance),
