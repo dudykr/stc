@@ -748,7 +748,7 @@ pub struct Mapped {
 
 assert_eq_size!(Mapped, [u8; 96]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Conditional {
     pub span: Span,
     pub check_type: Box<Type>,
@@ -759,6 +759,16 @@ pub struct Conditional {
 }
 
 assert_eq_size!(Conditional, [u8; 56]);
+
+impl Debug for Conditional {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{:?} extends {:?} ? {:?} : {:?}",
+            self.check_type, self.extends_type, self.true_type, self.false_type
+        )
+    }
+}
 
 /// TODO(kdy1): Remove this and create `keyof`, `unique` and `readonly` types.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
