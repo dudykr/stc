@@ -2,6 +2,7 @@
     "words": [
         "ahash",
         "bitflags",
+        "codegen",
         "concat",
         "cond",
         "ctxt",

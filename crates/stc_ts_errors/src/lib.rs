@@ -187,12 +187,12 @@ pub enum Error {
     },
 
     /// TS2411
-    ClassMemeberNotCompatibleWithStringIndexSignature {
+    ClassMemberNotCompatibleWithStringIndexSignature {
         span: Span,
     },
 
     /// TS2412
-    ClassMemeberNotCompatibleWithNumericIndexSignature {
+    ClassMemberNotCompatibleWithNumericIndexSignature {
         span: Span,
     },
 
@@ -257,7 +257,7 @@ pub enum Error {
     },
 
     /// TS2392
-    DuplciateConstructor {
+    DuplicateConstructor {
         span: Span,
     },
 
@@ -1771,7 +1771,7 @@ impl Error {
 
             Error::ModuleNotFound { .. } => 2307,
 
-            Error::DuplciateConstructor { .. } => 2392,
+            Error::DuplicateConstructor { .. } => 2392,
 
             Error::DuplicateFnImpl { .. } => 2393,
 
@@ -1797,9 +1797,9 @@ impl Error {
 
             Error::AssignFailedBecauseTupleLengthDiffers { .. } => 2322,
 
-            Error::ClassMemeberNotCompatibleWithStringIndexSignature { .. } => 2411,
+            Error::ClassMemberNotCompatibleWithStringIndexSignature { .. } => 2411,
 
-            Error::ClassMemeberNotCompatibleWithNumericIndexSignature { .. } => 2412,
+            Error::ClassMemberNotCompatibleWithNumericIndexSignature { .. } => 2412,
 
             Error::AbstractAndConcreteIsMixed { .. } => 2512,
 

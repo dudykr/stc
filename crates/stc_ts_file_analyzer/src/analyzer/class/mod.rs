@@ -1885,7 +1885,7 @@ impl Analyzer<'_, '_> {
 
                     if constructors_with_body.len() >= 2 {
                         for &span in &constructors_with_body {
-                            child.storage.report(Error::DuplciateConstructor { span })
+                            child.storage.report(Error::DuplicateConstructor { span })
                         }
                     }
 
@@ -2456,9 +2456,9 @@ impl Analyzer<'_, '_> {
                             .ty
                             .is_kwd(TsKeywordTypeKind::TsNumberKeyword)
                         {
-                            Error::ClassMemeberNotCompatibleWithNumericIndexSignature { span }
+                            Error::ClassMemberNotCompatibleWithNumericIndexSignature { span }
                         } else {
-                            Error::ClassMemeberNotCompatibleWithStringIndexSignature { span }
+                            Error::ClassMemberNotCompatibleWithStringIndexSignature { span }
                         }
                     })?;
                 }
