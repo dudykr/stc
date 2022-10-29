@@ -214,7 +214,15 @@ impl Analyzer<'_, '_> {
                 ..
             }) => Err(Error::CannotDeletePrivateProperty { span }),
 
-            RExpr::Member(..) => return Ok(()),
+            RExpr::Member(me) => {
+                if self.rule().strict_null_checks {
+                    let ty = self.type_of_member_expr(me, TypeOfMode::RValue)?;
+                    if !self.can_be_undefined(span, &ty)? {
+                        return Err(Error::DeleteOperandMustBeOptional { span });
+                    }
+                }
+                return Ok(());
+            }
 
             RExpr::Await(..) => Err(Error::InvalidDeleteOperand { span }),
 
