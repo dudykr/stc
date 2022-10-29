@@ -216,6 +216,9 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
 
     if let Ok(errors) = load_expected_errors(&path) {
         for err in errors {
+            if err.code == "TS1318" {
+                continue;
+            }
             if err.code.starts_with("TS1") && err.code.len() == 6 {
                 return None;
             }
