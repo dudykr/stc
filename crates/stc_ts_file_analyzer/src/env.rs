@@ -31,7 +31,7 @@ pub trait BuiltInGen: Sized {
 
         let mut node_id_gen = NodeIdGenerator::default();
 
-        info!("Loading typescript builtins: {:?}", libs);
+        info!("Loading typescript builtin: {:?}", libs);
 
         let modules = stc_ts_builtin_types::load(libs);
 
@@ -55,7 +55,7 @@ pub trait BuiltInGen: Sized {
     where
         I: IntoIterator<Item = RModuleItem>,
     {
-        info!("Merging builtins");
+        info!("Merging builtin");
 
         let start = Instant::now();
 
@@ -112,7 +112,7 @@ pub trait BuiltInGen: Sized {
                                                     .validate_with(analyzer)
                                                     .map(|opt| {
                                                         box opt.expect(
-                                                            "builtin: failed to parse type parmas \
+                                                            "builtin: failed to parse type params \
                                                              of a class",
                                                         )
                                                     }),

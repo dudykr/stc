@@ -1,6 +1,7 @@
 {
     "words": [
         "ahash",
+        "bitflags",
         "concat",
         "cond",
         "ctxt",
