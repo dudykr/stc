@@ -693,6 +693,28 @@ impl Analyzer<'_, '_> {
 
                                 if !e.is_empty() && !opts.append_type_as_union && !is_ok_to_append(&e, arg) {
                                     debug!("Cannot append to `{}` (arg = {})", name, dump_type_as_string(&self.cm, &arg));
+                                if !e.is_empty()
+                                    && !opts.append_type_as_union
+                                    && !is_ok_to_append(&e, arg)
+                                {
+                                    // We have to check if a previous one is a type parameter
+                                    // because we need to infer
+                                    //
+                                    // T2 = T1
+                                    // T2 = string
+                                    //
+                                    // in order as
+                                    //
+                                    // T1 = T2 = string
+                                    // T2 = string
+
+                                    // TODO check
+
+                                    debug!(
+                                        "Cannot append to `{}` (arg = {})",
+                                        name,
+                                        dump_type_as_string(&self.cm, &arg)
+                                    );
 
                                     inferred.errored.insert(name.clone());
                                     return Ok(());
