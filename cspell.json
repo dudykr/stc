@@ -2,22 +2,31 @@
     "words": [
         "ahash",
         "concat",
+        "cond",
         "ctxt",
         "dashmap",
+        "dedup",
         "dejavu",
+        "deps",
         "elems",
         "fxhash",
         "Hasher",
+        "indexmap",
         "itertools",
+        "keyof",
         "opentelemetry",
         "pmutil",
         "qself",
         "quasis",
+        "renamer",
+        "respan",
         "rnode",
         "rustc",
         "rustfmt",
         "smallvec",
-        "triomphe"
+        "structopt",
+        "triomphe",
+        "Uncapitalize"
     ],
     "ignorePaths": [
         "target"
