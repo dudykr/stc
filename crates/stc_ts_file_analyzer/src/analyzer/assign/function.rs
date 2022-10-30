@@ -393,10 +393,9 @@ impl Analyzer<'_, '_> {
         //
         // So we check for length first.
         if r_params.len() != 0 {
-            self.assign_params(data, opts, &r_params, l_params)
-                .context(
-                    "tried to assign parameters of a function to parameters of another function",
-                )?;
+            self.assign_params(data, opts, l_params, r_params).context(
+                "tried to assign parameters of a function to parameters of another function",
+            )?;
         }
 
         if let Some(l_ret_ty) = l_ret_ty {
@@ -747,9 +746,15 @@ impl Analyzer<'_, '_> {
         l_ty.make_clone_cheap();
         r_ty.make_clone_cheap();
 
-        let res = self
-            .assign_with_opts(data, AssignOpts { ..opts }, &l_ty, &r_ty)
-            .context("tried to assign the type of a parameter to another");
+        let res = if opts.for_overload {
+            self.assign_with_opts(data, AssignOpts { ..opts }, &l_ty, &r_ty)
+                .context("tried to assign the type of a parameter to another")
+        } else {
+            self.assign_with_opts(data, AssignOpts { ..opts }, &r_ty, &l_ty)
+                .context(
+                    "tried to assign the type of a parameter to another (reversed due to variance)",
+                )
+        };
 
         res.convert_err(|err| match &err {
             Error::MissingFields { span, .. } => Error::SimpleAssignFailed {
