@@ -1712,6 +1712,7 @@ parser/ecmascript5/RegressionTests/parser509546_1.ts
 parser/ecmascript5/RegressionTests/parser509546_2.ts
 parser/ecmascript5/RegressionTests/parser509677.ts
 parser/ecmascript5/RegressionTests/parser509693.ts
+parser/ecmascript5/RegressionTests/parser536727.ts
 parser/ecmascript5/RegressionTests/parser579071.ts
 parser/ecmascript5/RegressionTests/parser596700.ts
 parser/ecmascript5/RegressionTests/parser630933.ts
@@ -2194,6 +2195,7 @@ types/stringLiteral/stringLiteralTypesOverloads01.ts
 types/stringLiteral/stringLiteralTypesOverloads02.ts
 types/stringLiteral/stringLiteralTypesOverloads03.ts
 types/stringLiteral/stringLiteralTypesOverloads04.ts
+types/stringLiteral/stringLiteralTypesOverloads05.ts
 types/stringLiteral/stringLiteralTypesTypePredicates01.ts
 types/stringLiteral/stringLiteralTypesWithTemplateStrings01.ts
 types/stringLiteral/stringLiteralTypesWithTemplateStrings02.ts
@@ -2416,6 +2418,7 @@ types/typeRelationships/typeInference/genericCallWithOverloadedConstructorTypedA
 types/typeRelationships/typeInference/genericCallWithOverloadedFunctionTypedArguments.ts
 types/typeRelationships/typeInference/genericCallWithTupleType.ts
 types/typeRelationships/typeInference/genericClassWithObjectTypeArgsAndConstraints.ts
+types/typeRelationships/typeInference/genericContextualTypes1.ts
 types/typeRelationships/typeInference/genericFunctionParameters.ts
 types/typeRelationships/typeInference/keyofInferenceIntersectsResults.ts
 types/typeRelationships/typeInference/unionAndIntersectionInference2.ts
