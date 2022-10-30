@@ -3,12 +3,13 @@
 use std::sync::Arc;
 
 pub use rnode_macros::define_rnode;
+use serde::{Deserialize, Serialize};
 use stc_visit::Visitable;
 pub use stc_visit::{Fold, FoldWith, Visit, VisitMut, VisitMutWith, VisitWith};
 use swc_common::{EqIgnoreSpan, TypeEq};
 
 /// Alternative for span. This is much more reliable than span.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct NodeId(u32);
 
 /// Always returns `true` as the struct is an alternative for span.
