@@ -23,6 +23,7 @@ use num_bigint::BigInt;
 use num_traits::Zero;
 use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
+use serde::{Deserialize, Serialize};
 use servo_arc::Arc;
 use static_assertions::assert_eq_size;
 use stc_arc_cow::freeze::Freezer;
@@ -149,7 +150,7 @@ impl AddAssign for ModuleTypeData {
 /// clone deeply, you have to clone this type in a closure passed to
 /// [`ALLOW_DEEP_CLONE`]. But this is not recommended, and should be avoided for
 /// performance.
-#[derive(Debug, PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit, Serialize)]
+#[derive(Debug, PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit, Serialize, Deserialize)]
 pub enum Type {
     Instance(Instance),
     StaticThis(StaticThis),
@@ -478,7 +479,7 @@ assert_eq_size!(ComputedKey, [u8; 32]);
 ///     }
 /// }
 /// ```
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Instance {
     pub span: Span,
     pub ty: Box<Type>,
@@ -487,7 +488,7 @@ pub struct Instance {
 
 assert_eq_size!(Instance, [u8; 32]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct LitType {
     pub span: Span,
 

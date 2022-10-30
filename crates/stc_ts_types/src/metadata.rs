@@ -4,6 +4,7 @@
 //! It means, all field should be `false` by default.
 
 use rnode::{FoldWith, VisitMutWith, VisitWith};
+use serde::{Deserialize, Serialize};
 use stc_visit::Visitable;
 use swc_common::{EqIgnoreSpan, TypeEq};
 
@@ -72,7 +73,7 @@ macro_rules! impl_traits {
 }
 
 /// Common metadata shared among [crate::Type]s.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CommonTypeMetadata {
     pub implicit: bool,
 
@@ -325,28 +326,28 @@ pub struct RestTypeMetadata {
 
 impl_traits!(RestTypeMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OptionalTypeMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(OptionalTypeMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NamespaceTypeMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(NamespaceTypeMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ModuleTypeMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(ModuleTypeMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TypeLitMetadata {
     pub common: CommonTypeMetadata,
 
@@ -391,7 +392,7 @@ pub struct TypeLitMetadata {
 
 impl_traits!(TypeLitMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TypeElMetadata {
     /// If `true`, it means the element has a default value.
     ///
