@@ -380,7 +380,7 @@ impl Analyzer<'_, '_> {
 
         // TypeScript functions are bivariant if strict_function_types is false.
         if !self.env.rule().strict_function_types {
-            if self.assign_params(data, opts, &l_params, &r_params).is_ok() {
+            if self.assign_params(data, opts, &r_params, &l_params).is_ok() {
                 return Ok(());
             }
         }
