@@ -120,7 +120,7 @@ impl Analyzer<'_, '_> {
             actual_args = vec![];
             for arg in args {
                 if arg.spread.is_some() {
-                    match arg.ty.normalize() {
+                    match arg.ty.normalize_instance() {
                         Type::Tuple(Tuple { elems, .. }) => {
                             actual_args.extend(elems.iter().map(|elem| TypeOrSpread {
                                 span: arg.spread.unwrap(),
@@ -152,7 +152,7 @@ impl Analyzer<'_, '_> {
                     self.infer_type(span, &mut inferred, &p.ty, &arg.ty, opts)?;
                 }
             } else {
-                match p.ty.normalize() {
+                match p.ty.normalize_instance() {
                     Type::Param(param) => {
                         self.infer_type(
                             span,
