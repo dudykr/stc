@@ -109,217 +109,217 @@ pub struct CommonTypeMetadata {
 
 impl_basic_traits!(CommonTypeMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UnionMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(UnionMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IntersectionMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(IntersectionMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct KeywordTypeMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(KeywordTypeMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LitTypeMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(LitTypeMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TupleMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(TupleMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SymbolMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(SymbolMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct InstanceMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(InstanceMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ThisTypeMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(ThisTypeMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StaticThisMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(StaticThisMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TplTypeMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(TplTypeMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ArrayMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(ArrayMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct QueryTypeMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(QueryTypeMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct InferTypeMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(InferTypeMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ImportTypeMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(ImportTypeMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PredicateMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(PredicateMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IndexedAccessTypeMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(IndexedAccessTypeMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RefMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(RefMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ConditionalMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(ConditionalMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FunctionMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(FunctionMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ConstructorMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(ConstructorMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OperatorMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(OperatorMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MappedMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(MappedMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClassMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(ClassMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClassDefMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(ClassDefMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TypeParamMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(TypeParamMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EnumVariantMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(EnumVariantMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct InterfaceMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(InterfaceMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AliasMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(AliasMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EnumMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(EnumMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IntrinsicMetadata {
     pub common: CommonTypeMetadata,
 }
 
 impl_traits!(IntrinsicMetadata);
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RestTypeMetadata {
     pub common: CommonTypeMetadata,
 }
