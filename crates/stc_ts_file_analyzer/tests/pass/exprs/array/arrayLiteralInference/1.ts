@@ -1,5 +1,4 @@
 //@strict: true
-//@target: es2015
 
 // Repro from #31204
 
