@@ -22,9 +22,9 @@ use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, F
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata,
-    ComputedKey, Id, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method,
-    ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType, QueryTypeMetadata,
-    StaticThis, ThisType,
+    ComputedKey, Id, Instance, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata,
+    Method, ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
+    QueryTypeMetadata, StaticThis, ThisType,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use swc_atoms::js_word;
@@ -1567,7 +1567,14 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    dbg!();
+                    // Prop is private and wasn't a member of this class.
+                    //
+                    // class B extends A {
+                    //   static c(a: A) { a.#prop; }}
+                    // }
+                    if prop.is_private() {
+                        return Err(Error::CannotAccessPrivatePropertyFromOutside { span: *span });
+                    }
 
                     return Err(Error::NoSuchProperty {
                         span: *span,
@@ -3026,6 +3033,10 @@ impl Analyzer<'_, '_> {
                     return Err(Error::ObjectIsPossiblyUndefined { span });
                 }
 
+                return self.access_property(span, &ty, prop, type_mode, id_ctx, opts);
+            }
+
+            Type::Instance(Instance { ty, .. }) => {
                 return self.access_property(span, &ty, prop, type_mode, id_ctx, opts);
             }
 
