@@ -1,0 +1,80 @@
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-1.ts:12:61
+   |
+12 | export const f10: <T>(x: T) => Box<T[]> = compose(a => list(a), b => box(b));
+   |                                                             ^
+   |
+   = note: any
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-1.ts:12:56
+   |
+12 | export const f10: <T>(x: T) => Box<T[]> = compose(a => list(a), b => box(b));
+   |                                                        ^^^^
+   |
+   = note: <T>(a: T) => T[]
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-1.ts:12:56
+   |
+12 | export const f10: <T>(x: T) => Box<T[]> = compose(a => list(a), b => box(b));
+   |                                                        ^^^^^^^
+   |
+   = note: T[]
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-1.ts:12:51
+   |
+12 | export const f10: <T>(x: T) => Box<T[]> = compose(a => list(a), b => box(b));
+   |                                                   ^^^^^^^^^^^^
+   |
+   = note: (a: any) => T[]
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-1.ts:12:74
+   |
+12 | export const f10: <T>(x: T) => Box<T[]> = compose(a => list(a), b => box(b));
+   |                                                                          ^
+   |
+   = note: any
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-1.ts:12:70
+   |
+12 | export const f10: <T>(x: T) => Box<T[]> = compose(a => list(a), b => box(b));
+   |                                                                      ^^^
+   |
+   = note: <V>(x: V) => Box<V>
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-1.ts:12:70
+   |
+12 | export const f10: <T>(x: T) => Box<T[]> = compose(a => list(a), b => box(b));
+   |                                                                      ^^^^^^
+   |
+   = note: Box<V>
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-1.ts:12:65
+   |
+12 | export const f10: <T>(x: T) => Box<T[]> = compose(a => list(a), b => box(b));
+   |                                                                 ^^^^^^^^^^^
+   |
+   = note: (b: any) => Box<V>
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-1.ts:12:43
+   |
+12 | export const f10: <T>(x: T) => Box<T[]> = compose(a => list(a), b => box(b));
+   |                                           ^^^^^^^
+   |
+   = note: <A, B, C>(f: (a: A) => B, g: (b: B) => C) => (a: A) => C
+
+warning: Type
+  --> $DIR/tests/pass/types/inference/generic/contextual/contextual-2-1.ts:12:43
+   |
+12 | export const f10: <T>(x: T) => Box<T[]> = compose(a => list(a), b => box(b));
+   |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: <A, V>(a: A) => Box<V>
+
