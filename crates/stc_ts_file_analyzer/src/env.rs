@@ -38,7 +38,9 @@ pub trait BuiltInGen: Sized {
             format!("{:x}", result)
         };
 
-        let cache_path = Path::new(".stc").join(".builtin-cache").join(&key);
+        let cache_path = Path::new(".stc")
+            .join(".builtin-cache")
+            .join(&format!("{}.json", key));
 
         if cache_path.is_file() {
             let data = std::fs::read(&cache_path).unwrap_or_else(|err| {
