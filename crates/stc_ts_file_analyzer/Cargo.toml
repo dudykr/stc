@@ -32,6 +32,7 @@ rnode = {path = "../rnode"}
 rustc-hash = "1.1.0"
 serde = "1.0.125"
 serde_json = "1.0.87"
+sha1 = "0.10.5"
 smallvec = "1.5.1"
 stc_arc_cow = {path = "../stc_arc_cow"}
 stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
