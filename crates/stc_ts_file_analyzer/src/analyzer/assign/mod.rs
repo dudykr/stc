@@ -58,7 +58,7 @@ pub(crate) struct AssignOpts {
     /// ```
     pub allow_unknown_type: bool,
 
-    /// Allow assignmnet to [Type::Param].
+    /// Allow assignment to [Type::Param].
     pub allow_assignment_to_param: bool,
 
     pub allow_assignment_of_param: bool,

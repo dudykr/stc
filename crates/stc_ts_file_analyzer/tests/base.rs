@@ -386,9 +386,9 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
                 if !line.starts_with("//@") {
                     continue;
                 }
-                let line = &line["//@".len()..];
+                let line = &line["//@".len()..].trim();
                 if line.starts_with("strict:") {
-                    let value = line["strict:".len()..].parse::<bool>().unwrap();
+                    let value = line["strict:".len()..].trim().parse::<bool>().unwrap();
                     rule.strict_function_types = value;
                     rule.strict_null_checks = value;
                     continue;

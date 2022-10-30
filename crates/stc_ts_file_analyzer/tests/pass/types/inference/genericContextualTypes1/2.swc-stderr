@@ -1,0 +1,40 @@
+warning: Type
+ --> $DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:3:78
+  |
+3 | export const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
+  |                                                                              ^
+  |
+  = note: (x: T) => boolean
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:3:69
+  |
+3 | export const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
+  |                                                                     ^
+  |
+  = note: T[]
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:3:69
+  |
+3 | export const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
+  |                                                                     ^^^^^^^^^^^
+  |
+  = note: T[]
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:3:57
+  |
+3 | export const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
+  |                                                         ^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: (a: T[]) => T[]
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/genericContextualTypes1/2.ts:3:28
+  |
+3 | export const arrayFilter = <T>(f: (x: T) => boolean) => (a: T[]) => a.filter(f);
+  |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: <T>(f: (x: T) => boolean) => (a: T[]) => T[]
+

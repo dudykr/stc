@@ -3,6 +3,7 @@
         "ahash",
         "bitflags",
         "bivariant",
+        "castablity",
         "codegen",
         "concat",
         "cond",
