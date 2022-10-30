@@ -803,9 +803,6 @@ es6/spread/iteratorSpreadInCall12.ts
 es6/spread/iteratorSpreadInCall3.ts
 es6/spread/iteratorSpreadInCall4.ts
 es6/spread/iteratorSpreadInCall5.ts
-es6/spread/iteratorSpreadInCall7.ts
-es6/spread/iteratorSpreadInCall8.ts
-es6/spread/iteratorSpreadInCall9.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01_ES6.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes02.ts
