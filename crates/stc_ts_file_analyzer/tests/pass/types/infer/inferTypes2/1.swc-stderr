@@ -1,0 +1,25 @@
+warning: Type
+ --> $DIR/tests/pass/types/infer/inferTypes2/1.ts:3:16
+  |
+3 |     return foo(obj);
+  |                ^^^
+  |
+  = note: T
+
+warning: Type
+ --> $DIR/tests/pass/types/infer/inferTypes2/1.ts:3:12
+  |
+3 |     return foo(obj);
+  |            ^^^
+  |
+  = note: <T>(obj: T) => T extends () => infer P ? P : never
+
+warning: Type
+ --> $DIR/tests/pass/types/infer/inferTypes2/1.ts:3:12
+  |
+3 |     return foo(obj);
+  |            ^^^^^^^^
+  |
+  = note: T extends () => infer P ? {
+          } : never
+

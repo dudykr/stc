@@ -1,0 +1,112 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:1:36
+  |
+1 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                    ^^^^^^^^^
+  |
+  = note: undefined
+
+warning: Type
+ --> $DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:1:35
+  |
+1 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                   ^^^^^^^^^^^
+  |
+  = note: [any]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:1:48
+  |
+1 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                                ^^^^^^^^^
+  |
+  = note: undefined
+
+warning: Type
+ --> $DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:1:61
+  |
+1 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                                             ^^^^^^^^^
+  |
+  = note: undefined
+
+warning: Type
+ --> $DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:1:72
+  |
+1 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                                                        ^^^^^^^^^
+  |
+  = note: undefined
+
+warning: Type
+ --> $DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:1:60
+  |
+1 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                                            ^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: [any, any]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:1:59
+  |
+1 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                                           ^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: [[any, any]]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:1:34
+  |
+1 | function b7([[a], b, [[c, d]]] = [[undefined], undefined, [[undefined, undefined]]]) { }
+  |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: [[any], undefined, [[any, any]]]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:5
+  |
+4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
+  |     ^^^^^^^^^^
+  |
+  = note: ["string"]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:21
+  |
+4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
+  |                     ^^^^^^^^^^^^^
+  |
+  = note: [true, false]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:20
+  |
+4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
+  |                    ^^^^^^^^^^^^^^^
+  |
+  = note: [[true, false]]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:4
+  |
+4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
+  |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: [["string"], 1, [[true, false]]]
+
+warning: Type
+ --> $DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:1
+  |
+4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
+  | ^^
+  |
+  = note: ([[a], b, [[c, d]]]?: ((any[] | any | any[][]))[]) => void
+
+warning: Type
+ --> $DIR/tests/pass/exprs/call/destructuringParameterDeclaration1ES5/4.ts:4:1
+  |
+4 | b7([["string"], 1, [[true, false]]]);    // Shouldn't be an error
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: void
+
