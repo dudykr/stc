@@ -570,7 +570,7 @@ impl Debug for Ref {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct InferType {
     pub span: Span,
     pub type_param: TypeParam,
@@ -578,6 +578,12 @@ pub struct InferType {
 }
 
 assert_eq_size!(InferType, [u8; 80]);
+
+impl Debug for InferType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "infer {}", self.type_param.name)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct QueryType {
@@ -742,7 +748,7 @@ pub struct Mapped {
 
 assert_eq_size!(Mapped, [u8; 96]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Conditional {
     pub span: Span,
     pub check_type: Box<Type>,
@@ -753,6 +759,16 @@ pub struct Conditional {
 }
 
 assert_eq_size!(Conditional, [u8; 56]);
+
+impl Debug for Conditional {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{:?} extends {:?} ? {:?} : {:?}",
+            self.check_type, self.extends_type, self.true_type, self.false_type
+        )
+    }
+}
 
 /// TODO(kdy1): Remove this and create `keyof`, `unique` and `readonly` types.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -775,12 +791,18 @@ pub struct Tuple {
 
 assert_eq_size!(Tuple, [u8; 48]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct TupleElement {
     pub span: Span,
     #[not_type]
     pub label: Option<RPat>,
     pub ty: Box<Type>,
+}
+
+impl Debug for TupleElement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}: {:?}", self.label, self.ty)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
@@ -957,7 +979,7 @@ pub struct Array {
 assert_eq_size!(Array, [u8; 32]);
 
 /// a | b
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Union {
     pub span: Span,
     pub types: Vec<Type>,
@@ -965,6 +987,23 @@ pub struct Union {
 }
 
 assert_eq_size!(Union, [u8; 48]);
+
+impl Debug for Union {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(")?;
+
+        for (i, ty) in self.types.iter().enumerate() {
+            if i != 0 {
+                write!(f, " | ")?;
+            }
+            write!(f, "{:?}", ty)?;
+        }
+
+        write!(f, ")")?;
+
+        Ok(())
+    }
+}
 
 impl Union {
     pub fn assert_valid(&self) {
@@ -1007,7 +1046,7 @@ pub struct FnParam {
 }
 
 /// a & b
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
 pub struct Intersection {
     pub span: Span,
     pub types: Vec<Type>,
@@ -1015,6 +1054,23 @@ pub struct Intersection {
 }
 
 assert_eq_size!(Intersection, [u8; 48]);
+
+impl Debug for Intersection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "(")?;
+
+        for (i, ty) in self.types.iter().enumerate() {
+            if i != 0 {
+                write!(f, " & ")?;
+            }
+            write!(f, "{:?}", ty)?;
+        }
+
+        write!(f, ")")?;
+
+        Ok(())
+    }
+}
 
 impl Intersection {
     pub fn assert_valid(&self) {
