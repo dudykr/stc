@@ -1,5 +1,4 @@
-// @strict: true
-// @declaration: true
+//@strict: true
 
 type Box<T> = { value: T };
 type Boxified<T> = { [P in keyof T]: Box<T[P]> };
