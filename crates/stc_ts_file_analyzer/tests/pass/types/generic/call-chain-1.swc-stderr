@@ -36,7 +36,7 @@ warning: Type
 3 | export const n3: number | undefined = a?.m?.({ x: 12 }); // should be ok
   |                                       ^^^^^^^^^^^^^^^^^
   |
-  = note: (undefined | number)
+  = note: (undefined | 12)
 
 warning: Type
  --> $DIR/tests/pass/types/generic/call-chain-1.ts:4:51
@@ -194,7 +194,7 @@ warning: Type
 8 | t1 = a!.m!({ x: 12 });
   |      ^^^^^^^^^^^^^^^^
   |
-  = note: number
+  = note: 12
 
 warning: Type
  --> $DIR/tests/pass/types/generic/call-chain-1.ts:8:1
@@ -202,5 +202,5 @@ warning: Type
 8 | t1 = a!.m!({ x: 12 });
   | ^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: number
+  = note: 12
 

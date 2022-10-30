@@ -53,6 +53,13 @@ pub(crate) struct InferTypeOpts {
     pub append_type_as_union: bool,
 
     pub skip_union: bool,
+
+    /// If we are inferring a type using another type, we should
+    ///
+    ///  - Prevent generalization of literals.
+    ///
+    /// because literals are present in the another type.
+    pub is_type_ann: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -854,10 +861,13 @@ impl Analyzer<'_, '_> {
         &mut self,
         type_params: &[TypeParam],
         inferred: &mut InferData,
+        is_from_type_ann: bool,
     ) {
         for type_param in type_params {
             match type_param.constraint.as_deref() {
                 Some(Type::Lit(..)) => {}
+
+                _ if is_from_type_ann => {}
 
                 Some(ty) => {
                     if !should_prevent_generalization(ty) {

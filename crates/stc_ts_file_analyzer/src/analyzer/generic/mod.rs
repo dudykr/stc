@@ -311,7 +311,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.prevent_generalization_of_inferred_types(type_params, &mut inferred);
+        self.prevent_generalization_of_inferred_types(type_params, &mut inferred, opts.is_type_ann);
 
         let map = self.finalize_inference(inferred);
 

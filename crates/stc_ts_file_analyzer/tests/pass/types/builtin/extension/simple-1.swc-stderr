@@ -28,7 +28,7 @@ warning: Type
 8 | export var b: string = x.doOtherStuff('hm');
   |                        ^^^^^^^^^^^^^^^^^^^^
   |
-  = note: string
+  = note: 'hm'
 
 warning: Type
  --> $DIR/tests/pass/types/builtin/extension/simple-1.ts:9:24
@@ -60,5 +60,5 @@ warning: Type
 10 | export var d: string = x['doOtherStuff']('hm');
    |                        ^^^^^^^^^^^^^^^^^^^^^^^
    |
-   = note: string
+   = note: 'hm'
 
