@@ -514,10 +514,12 @@ impl Analyzer<'_, '_> {
         data: &mut AssignData,
         left: &Type,
         right: &Type,
-        opts: AssignOpts,
+        mut opts: AssignOpts,
     ) -> VResult<()> {
         left.assert_valid();
         right.assert_valid();
+
+        opts.is_params_of_method_definition = false;
 
         let l = dump_type_as_string(&self.cm, &left);
         let r = dump_type_as_string(&self.cm, &right);
