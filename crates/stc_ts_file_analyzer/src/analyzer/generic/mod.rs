@@ -2879,6 +2879,13 @@ fn is_ok_to_append(prev: &[Type], arg: &Type) -> bool {
         if p.is_bool_lit() && arg.is_bool_lit() {
             return true;
         }
+
+        if p.clone()
+            .generalize_lit()
+            .type_eq(&arg.clone().generalize_lit())
+        {
+            return true;
+        }
     }
 
     false
