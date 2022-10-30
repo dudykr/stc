@@ -7,7 +7,7 @@ use swc_common::Spanned;
 use swc_ecma_ast::TsKeywordTypeKind;
 
 use crate::{
-    analyzer::{assign::AssignOpts, pat::PatMode, Analyzer, Ctx, ScopeKind},
+    analyzer::{assign::AssignOpts, expr::TypeOfMode, pat::PatMode, Analyzer, Ctx, ScopeKind},
     ty::TypeExt,
     validator,
     validator::ValidateWith,
@@ -110,7 +110,10 @@ impl Analyzer<'_, '_> {
                 let inferred_return_type = {
                     match f.body {
                         RBlockStmtOrExpr::Expr(ref e) => Some({
-                            let ty = e.validate_with_default(child)?;
+                            let ty = e.validate_with_args(
+                                child,
+                                (TypeOfMode::RValue, None, declared_ret_ty.as_ref()),
+                            )?;
                             if !child.ctx.in_argument
                                 && f.return_type.is_none()
                                 && type_ann.is_none()
