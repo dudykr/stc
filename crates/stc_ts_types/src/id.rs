@@ -4,6 +4,7 @@ use std::{
 };
 
 use rnode::NodeId;
+use serde::{Deserialize, Serialize};
 use stc_ts_ast_rnode::{RIdent, RTsEntityName};
 use stc_visit::Visit;
 use swc_atoms::JsWord;
@@ -11,7 +12,9 @@ use swc_common::{EqIgnoreSpan, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::Ident;
 use swc_ecma_utils::ident::IdentLike;
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(
+    Clone, PartialEq, Eq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize,
+)]
 pub struct Id {
     sym: JsWord,
     ctxt: SyntaxContext,

@@ -75,7 +75,7 @@ pub enum IdCtx {
     Type,
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ModuleTypeData {
     pub private_vars: FxHashMap<Id, Type>,
     pub vars: FxHashMap<JsWord, Type>,
@@ -571,7 +571,7 @@ impl Debug for Ref {
     }
 }
 
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct InferType {
     pub span: Span,
     pub type_param: TypeParam,
@@ -595,7 +595,18 @@ pub struct QueryType {
 
 assert_eq_size!(QueryType, [u8; 32]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Spanned,
+    FromVariant,
+    EqIgnoreSpan,
+    TypeEq,
+    Visit,
+    Serialize,
+    Deserialize,
+)]
 pub enum QueryExpr {
     TsEntityName(#[use_eq_ignore_span] RTsEntityName),
     Import(ImportType),
@@ -2426,19 +2437,7 @@ pub struct ThisType {
 
 assert_eq_size!(ThisType, [u8; 24]);
 
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Spanned,
-    EqIgnoreSpan,
-    TypeEq,
-    Visit,
-    Serialize,
-    Deserialize,
-    Serialize,
-    Deserialize,
-)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TplType {
     pub span: Span,
 
