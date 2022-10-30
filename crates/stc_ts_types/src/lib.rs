@@ -523,7 +523,7 @@ pub struct Symbol {
     pub metadata: SymbolMetadata,
 }
 
-assert_eq_size!(Symbol, [u8; 32]);
+assert_eq_size!(Symbol, [u8; 48]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct RestType {
