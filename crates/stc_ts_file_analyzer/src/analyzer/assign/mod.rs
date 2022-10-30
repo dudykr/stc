@@ -148,6 +148,9 @@ pub(crate) struct AssignOpts {
     pub infer_type_params_of_left: bool,
 
     pub is_assigning_to_class_members: bool,
+
+    // Method definitions are bivariant (method shorthand)
+    pub is_params_of_method_definition: bool,
 }
 
 #[derive(Default)]
@@ -396,13 +399,14 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_with_opts(
         &mut self,
         data: &mut AssignData,
-        opts: AssignOpts,
+        mut opts: AssignOpts,
         left: &Type,
         right: &Type,
     ) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
+        opts.is_params_of_method_definition = false;
 
         left.assert_valid();
         right.assert_valid();
@@ -510,10 +514,12 @@ impl Analyzer<'_, '_> {
         data: &mut AssignData,
         left: &Type,
         right: &Type,
-        opts: AssignOpts,
+        mut opts: AssignOpts,
     ) -> VResult<()> {
         left.assert_valid();
         right.assert_valid();
+
+        opts.is_params_of_method_definition = false;
 
         let l = dump_type_as_string(&self.cm, &left);
         let r = dump_type_as_string(&self.cm, &right);

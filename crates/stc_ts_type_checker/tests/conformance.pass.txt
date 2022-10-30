@@ -798,13 +798,11 @@ es6/spread/iteratorSpreadInArray5.ts
 es6/spread/iteratorSpreadInArray7.ts
 es6/spread/iteratorSpreadInArray8.ts
 es6/spread/iteratorSpreadInArray9.ts
+es6/spread/iteratorSpreadInCall11.ts
 es6/spread/iteratorSpreadInCall12.ts
 es6/spread/iteratorSpreadInCall3.ts
 es6/spread/iteratorSpreadInCall4.ts
 es6/spread/iteratorSpreadInCall5.ts
-es6/spread/iteratorSpreadInCall7.ts
-es6/spread/iteratorSpreadInCall8.ts
-es6/spread/iteratorSpreadInCall9.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01_ES6.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes02.ts
@@ -1161,6 +1159,7 @@ esnext/logicalAssignment/logicalAssignment10.ts
 esnext/logicalAssignment/logicalAssignment2.ts
 esnext/logicalAssignment/logicalAssignment3.ts
 esnext/logicalAssignment/logicalAssignment9.ts
+expressions/arrayLiterals/arrayLiteralInference.ts
 expressions/arrayLiterals/arrayLiterals2ES5.ts
 expressions/arrayLiterals/arrayLiterals2ES6.ts
 expressions/arrayLiterals/arrayLiterals3.ts
