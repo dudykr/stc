@@ -120,7 +120,7 @@ impl Analyzer<'_, '_> {
             actual_args = vec![];
             for arg in args {
                 if arg.spread.is_some() {
-                    match arg.ty.normalize() {
+                    match arg.ty.normalize_instance() {
                         Type::Tuple(Tuple { elems, .. }) => {
                             actual_args.extend(elems.iter().map(|elem| TypeOrSpread {
                                 span: arg.spread.unwrap(),
@@ -152,7 +152,7 @@ impl Analyzer<'_, '_> {
                     self.infer_type(span, &mut inferred, &p.ty, &arg.ty, opts)?;
                 }
             } else {
-                match p.ty.normalize() {
+                match p.ty.normalize_instance() {
                     Type::Param(param) => {
                         self.infer_type(
                             span,
@@ -311,7 +311,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.prevent_generalization_of_inferred_types(type_params, &mut inferred);
+        self.prevent_generalization_of_inferred_types(type_params, &mut inferred, opts.is_type_ann);
 
         let map = self.finalize_inference(inferred);
 
@@ -2877,6 +2877,13 @@ fn is_ok_to_append(prev: &[Type], arg: &Type) -> bool {
             return true;
         }
         if p.is_bool_lit() && arg.is_bool_lit() {
+            return true;
+        }
+
+        if p.clone()
+            .generalize_lit()
+            .type_eq(&arg.clone().generalize_lit())
+        {
             return true;
         }
     }

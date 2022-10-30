@@ -1,6 +1,6 @@
 [package]
 authors = ["강동윤 <kdy1997.dev@gmail.com>"]
-edition = "2018"
+edition = "2021"
 name = "stc_ts_env"
 publish = false
 version = "0.1.0"
@@ -9,7 +9,7 @@ version = "0.1.0"
 derivative = "2.1.1"
 parking_lot = "0.11.2"
 rustc-hash = "1.1.0"
-serde = "1.0.130"
+serde = {version = "1.0.130", features = ["derive"]}
 stc_ts_errors = {path = "../stc_ts_errors"}
 stc_ts_storage = {path = "../stc_ts_storage"}
 stc_ts_type_ops = {path = "../stc_ts_type_ops"}

@@ -1,6 +1,6 @@
 [package]
 authors = ["강동윤 <kdy1997.dev@gmail.com>"]
-edition = "2018"
+edition = "2021"
 name = "stc_ts_types"
 publish = false
 version = "0.0.0"
@@ -21,7 +21,7 @@ once_cell = "1.8.0"
 parking_lot = "0.11"
 rnode = {path = "../rnode"}
 scoped-tls = "1.0.0"
-servo_arc = "0.1.1"
+serde = {version = "1.0.147", features = ["derive", "rc"]}
 smallvec = "1.6.0"
 static_assertions = "1.1.0"
 stc_arc_cow = {path = "../stc_arc_cow"}
@@ -35,3 +35,4 @@ swc_ecma_utils = "0.52.0"
 swc_ecma_visit = "0.44.0"
 swc_visit = "0.2.5"
 tracing = "0.1.26"
+triomphe = "0.1.8"

@@ -1,9 +1,10 @@
-use std::{collections::hash_map::Entry, sync::Arc, time::Instant};
+use std::{collections::hash_map::Entry, path::Path, sync::Arc, time::Instant};
 
 use dashmap::DashMap;
 use once_cell::sync::{Lazy, OnceCell};
 use rnode::{NodeIdGenerator, RNode, VisitWith};
 use rustc_hash::FxHashMap;
+use sha1::{Digest, Sha1};
 use stc_ts_ast_rnode::{RDecl, RIdent, RModule, RModuleItem, RStmt, RTsModuleName, RVarDecl};
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{BuiltIn, Env, ModuleConfig, Rule, StableEnv};
@@ -27,6 +28,36 @@ pub trait BuiltInGen: Sized {
     fn from_ts_libs(env: &StableEnv, libs: &[Lib]) -> BuiltIn {
         debug_assert_ne!(libs, &[], "No typescript library file is specified");
 
+        // Loading builtin is very slow, so we cache it to a file using serde_json
+
+        let key = {
+            let mut hasher = Sha1::new();
+            hasher.update(format!("{:?}", libs).as_bytes());
+            let result = hasher.finalize();
+
+            format!("{:x}", result)
+        };
+
+        let cache_path = Path::new(".stc")
+            .join(".builtin-cache")
+            .join(&format!("{}.json", key));
+
+        if cache_path.is_file() {
+            let data = std::fs::read(&cache_path).unwrap_or_else(|err| {
+                panic!(
+                    "failed to read builtin cache at {:?}: {:?}",
+                    cache_path, err
+                )
+            });
+            let builtin = serde_json::from_slice(&data).unwrap_or_else(|err| {
+                panic!(
+                    "failed to deserialize builtin cache at {:?}: {:?}",
+                    cache_path, err
+                )
+            });
+            return builtin;
+        }
+
         let _stack = stack::start(300);
 
         let mut node_id_gen = NodeIdGenerator::default();
@@ -44,7 +75,27 @@ pub trait BuiltInGen: Sized {
             .flatten()
             .cloned()
             .map(|orig| RModuleItem::from_orig(&mut node_id_gen, orig));
-        Self::from_module_items(env, iter)
+
+        let builtin = Self::from_module_items(env, iter);
+
+        let json_data = serde_json::to_vec(&builtin)
+            .unwrap_or_else(|err| panic!("failed to serialize builtin cache: {:?}", err));
+
+        std::fs::create_dir_all(cache_path.parent().unwrap()).unwrap_or_else(|err| {
+            panic!(
+                "failed to create directory for builtin cache at {:?}: {:?}",
+                cache_path, err
+            )
+        });
+
+        std::fs::write(&cache_path, &json_data).unwrap_or_else(|err| {
+            panic!(
+                "failed to write builtin cache at {:?}: {:?}",
+                cache_path, err
+            )
+        });
+
+        builtin
     }
 
     fn from_modules(env: &StableEnv, modules: Vec<RModule>) -> BuiltIn {

@@ -64,6 +64,7 @@ noop!(String);
 noop!(SyntaxContext);
 noop!(JsWord);
 noop!(BigInt);
+noop!(&'_ str);
 
 noop!(swc_ecma_ast::TruePlusMinus);
 noop!(swc_ecma_ast::TsTypeOperatorOp);

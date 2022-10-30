@@ -182,6 +182,7 @@ impl Analyzer<'_, '_> {
 
                 if types.is_empty() {
                     if let Some(declared) = self.scope.declared_return_type().cloned() {
+                        // TODO(kdy1): Change this to `get_iterable_element_type`
                         if let Ok(el_ty) =
                             self.get_iterator_element_type(span, Cow::Owned(declared), true)
                         {

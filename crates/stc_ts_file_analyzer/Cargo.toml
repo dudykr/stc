@@ -1,6 +1,6 @@
 [package]
 authors = ["강동윤 <kdy1997.dev@gmail.com>"]
-edition = "2018"
+edition = "2021"
 name = "stc_ts_file_analyzer"
 publish = false
 version = "0.1.0"
@@ -31,6 +31,8 @@ retain_mut = "0.1.1"
 rnode = {path = "../rnode"}
 rustc-hash = "1.1.0"
 serde = "1.0.125"
+serde_json = "1.0.87"
+sha1 = "0.10.5"
 smallvec = "1.5.1"
 stc_arc_cow = {path = "../stc_arc_cow"}
 stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
