@@ -6,8 +6,7 @@ type Boxified<T> = { [P in keyof T]: Box<T[P]> };
 
 declare function unboxify<T>(x: Boxified<T>): T;
 
-declare let x10: [Box<number>, Box<string>, ...Box<boolean>[]];
-export let y10 = unboxify(x10);
+declare let x11: Box<number>[];
+export let y11 = unboxify(x11);
 
-
-y10
+y11
