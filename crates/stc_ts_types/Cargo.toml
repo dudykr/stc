@@ -22,7 +22,6 @@ parking_lot = "0.11"
 rnode = {path = "../rnode"}
 scoped-tls = "1.0.0"
 serde = {version = "1.0.147", features = ["derive", "rc"]}
-servo_arc = "0.1.1"
 smallvec = "1.6.0"
 static_assertions = "1.1.0"
 stc_arc_cow = {path = "../stc_arc_cow"}
@@ -36,3 +35,4 @@ swc_ecma_utils = "0.52.0"
 swc_ecma_visit = "0.44.0"
 swc_visit = "0.2.5"
 tracing = "0.1.26"
+triomphe = "0.1.8"

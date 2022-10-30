@@ -24,7 +24,6 @@ use num_traits::Zero;
 use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
 use serde::{Deserialize, Serialize};
-use servo_arc::Arc;
 use static_assertions::assert_eq_size;
 use stc_arc_cow::freeze::Freezer;
 use stc_ts_ast_rnode::{
@@ -49,6 +48,7 @@ use swc_ecma_utils::{
     Value::{Known, Unknown},
 };
 use tracing::instrument;
+use triomphe::Arc;
 
 use self::type_id::SymbolId;
 pub use self::{
@@ -369,7 +369,9 @@ fn _assert_send_sync() {
     assert::<Symbol>();
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Is, Spanned)]
+#[derive(
+    Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Is, Spanned, Serialize, Deserialize,
+)]
 pub enum Key {
     Computed(ComputedKey),
     Normal { span: Span, sym: JsWord },
@@ -390,7 +392,9 @@ impl Key {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, EqIgnoreSpan, TypeEq, Visit, Spanned)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, EqIgnoreSpan, TypeEq, Visit, Spanned, Serialize, Deserialize,
+)]
 pub struct PrivateName {
     pub span: Span,
     pub id: Id,
@@ -460,7 +464,7 @@ impl PartialEq<str> for Key {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Spanned)]
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Spanned, Serialize, Deserialize)]
 pub struct ComputedKey {
     pub span: Span,
     pub expr: Box<RExpr>,
@@ -693,7 +697,19 @@ pub struct ClassDef {
 
 assert_eq_size!(ClassDef, [u8; 88]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Spanned,
+    FromVariant,
+    EqIgnoreSpan,
+    TypeEq,
+    Visit,
+    Is,
+    Serialize,
+    Deserialize,
+)]
 pub enum ClassMember {
     Constructor(ConstructorSignature),
     Method(Method),
@@ -873,7 +889,19 @@ pub struct TypeParamInstantiation {
     pub params: Vec<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Spanned,
+    FromVariant,
+    EqIgnoreSpan,
+    TypeEq,
+    Visit,
+    Is,
+    Serialize,
+    Deserialize,
+)]
 pub enum TypeElement {
     Call(CallSignature),
     Constructor(ConstructorSignature),
@@ -2507,7 +2535,9 @@ where
 ///
 /// [TypeEq] and [EqIgnoreSpan] always return true because this struct is
 /// metadata.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Visit)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Visit, Serialize, Deserialize,
+)]
 pub struct Accessor {
     pub getter: bool,
     pub setter: bool,
