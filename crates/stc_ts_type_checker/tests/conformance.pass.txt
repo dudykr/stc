@@ -223,6 +223,7 @@ classes/members/privateNames/privateNameField.ts
 classes/members/privateNames/privateNameFieldAccess.ts
 classes/members/privateNames/privateNameFieldAssignment.ts
 classes/members/privateNames/privateNameFieldClassExpression.ts
+classes/members/privateNames/privateNameFieldDerivedClasses.ts
 classes/members/privateNames/privateNameFieldInitializer.ts
 classes/members/privateNames/privateNameFieldUnaryMutation.ts
 classes/members/privateNames/privateNameNestedClassNameConflict.ts
