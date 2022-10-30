@@ -958,9 +958,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.8.0"
+version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "692fcb63b64b1758029e0a96ee63e049ce8c5948587f2f7208df04625e5f6b56"
+checksum = "86f0b0d4bf799edbc74508c1e8bf170ff5f41238e5f8225603ca7caaae2b7860"
 
 [[package]]
 name = "opentelemetry"
@@ -1866,7 +1866,7 @@ dependencies = [
  "swc_ecma_utils",
  "swc_ecma_visit",
  "testing",
- "testing_macros 0.1.2",
+ "testing_macros",
 ]
 
 [[package]]
@@ -2177,7 +2177,7 @@ dependencies = [
  "swc_ecma_utils",
  "swc_ecma_visit",
  "testing",
- "testing_macros 0.1.2",
+ "testing_macros",
  "tracing",
  "walkdir",
 ]
@@ -2665,35 +2665,20 @@ dependencies = [
  "pretty_assertions",
  "regex",
  "swc_common",
- "testing_macros 0.2.1",
+ "testing_macros",
  "tracing",
  "tracing-subscriber",
 ]
 
 [[package]]
 name = "testing_macros"
-version = "0.1.2"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af0db657254b58f853aa702ff37c0c6ae9be40f7bcf22c3b628db7eb5d2d2e22"
+checksum = "e74ff09d2d4d4b7ea140ff67eb7ed8fd35a708e2c327bcde5a25707d66840099"
 dependencies = [
  "anyhow",
  "glob",
- "pmutil",
- "proc-macro2",
- "quote",
- "regex",
- "relative-path",
- "syn",
-]
-
-[[package]]
-name = "testing_macros"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92c96cc628186322f8ba6c3b9368497bb0a99c07da8b3641cf2efc7eb7cb5299"
-dependencies = [
- "anyhow",
- "glob",
+ "once_cell",
  "pmutil",
  "proc-macro2",
  "quote",
