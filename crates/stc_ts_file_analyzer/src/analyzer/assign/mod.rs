@@ -148,6 +148,9 @@ pub(crate) struct AssignOpts {
     pub infer_type_params_of_left: bool,
 
     pub is_assigning_to_class_members: bool,
+
+    // Method definitions are bivariant (method shorthand)
+    pub is_params_of_method_definition: bool,
 }
 
 #[derive(Default)]

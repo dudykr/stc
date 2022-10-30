@@ -379,8 +379,19 @@ impl Analyzer<'_, '_> {
         };
 
         // TypeScript functions are bivariant if strict_function_types is false.
-        if !self.env.rule().strict_function_types {
-            if self.assign_params(data, opts, &r_params, &l_params).is_ok() {
+        if !self.env.rule().strict_function_types || opts.is_params_of_method_definition {
+            if self
+                .assign_params(
+                    data,
+                    AssignOpts {
+                        is_params_of_method_definition: false,
+                        ..opts
+                    },
+                    &r_params,
+                    &l_params,
+                )
+                .is_ok()
+            {
                 return Ok(());
             }
         }
@@ -393,7 +404,16 @@ impl Analyzer<'_, '_> {
         //
         // So we check for length first.
         if r_params.len() != 0 {
-            self.assign_params(data, opts, l_params, r_params).context(
+            self.assign_params(
+                data,
+                AssignOpts {
+                    is_params_of_method_definition: false,
+                    ..opts
+                },
+                l_params,
+                r_params,
+            )
+            .context(
                 "tried to assign parameters of a function to parameters of another function",
             )?;
         }

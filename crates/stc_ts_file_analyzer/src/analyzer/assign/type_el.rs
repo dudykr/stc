@@ -1192,12 +1192,13 @@ impl Analyzer<'_, '_> {
                                 // `foo(a: string) is assignable to foo(a: any)`
                                 TypeElement::Method(ref lm) => match rm {
                                     TypeElement::Method(ref rm) => {
-                                        //
-
                                         let res = self
                                             .assign_to_fn_like(
                                                 data,
-                                                opts,
+                                                AssignOpts {
+                                                    is_params_of_method_definition: true,
+                                                    ..opts
+                                                },
                                                 true,
                                                 lm.type_params.as_ref(),
                                                 &lm.params,
