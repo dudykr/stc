@@ -1,0 +1,64 @@
+warning: Type
+ --> $DIR/tests/pass/types/inference/unionAndIntersectionInference1/1.ts:9:84
+  |
+9 | export const createTestAsync = (): Promise<ITest> => Promise.resolve().then(() => ({ name: 'test' }))
+  |                                                                                    ^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              name: 'test';
+          }
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/unionAndIntersectionInference1/1.ts:9:83
+  |
+9 | export const createTestAsync = (): Promise<ITest> => Promise.resolve().then(() => ({ name: 'test' }))
+  |                                                                                   ^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              name: 'test';
+          }
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/unionAndIntersectionInference1/1.ts:9:77
+  |
+9 | export const createTestAsync = (): Promise<ITest> => Promise.resolve().then(() => ({ name: 'test' }))
+  |                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: () => {
+              name: 'test';
+          }
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/unionAndIntersectionInference1/1.ts:9:54
+  |
+9 | export const createTestAsync = (): Promise<ITest> => Promise.resolve().then(() => ({ name: 'test' }))
+  |                                                      ^^^^^^^
+  |
+  = note: PromiseConstructor
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/unionAndIntersectionInference1/1.ts:9:54
+  |
+9 | export const createTestAsync = (): Promise<ITest> => Promise.resolve().then(() => ({ name: 'test' }))
+  |                                                      ^^^^^^^^^^^^^^^^^
+  |
+  = note: Promise<void>
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/unionAndIntersectionInference1/1.ts:9:54
+  |
+9 | export const createTestAsync = (): Promise<ITest> => Promise.resolve().then(() => ({ name: 'test' }))
+  |                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: Promise<({
+              name: 'test';
+          } | never)>
+
+warning: Type
+ --> $DIR/tests/pass/types/inference/unionAndIntersectionInference1/1.ts:9:32
+  |
+9 | export const createTestAsync = (): Promise<ITest> => Promise.resolve().then(() => ({ name: 'test' }))
+  |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: () => Promise<ITest>
+
