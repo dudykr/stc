@@ -23,7 +23,7 @@ use num_bigint::BigInt;
 use num_traits::Zero;
 use rnode::{FoldWith, VisitMut, VisitMutWith, VisitWith};
 use scoped_tls::scoped_thread_local;
-use servo_arc::Arc;
+use serde::{Deserialize, Serialize};
 use static_assertions::assert_eq_size;
 use stc_arc_cow::freeze::Freezer;
 use stc_ts_ast_rnode::{
@@ -48,6 +48,7 @@ use swc_ecma_utils::{
     Value::{Known, Unknown},
 };
 use tracing::instrument;
+use triomphe::Arc;
 
 use self::type_id::SymbolId;
 pub use self::{
@@ -74,7 +75,7 @@ pub enum IdCtx {
     Type,
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ModuleTypeData {
     pub private_vars: FxHashMap<Id, Type>,
     pub vars: FxHashMap<JsWord, Type>,
@@ -149,7 +150,7 @@ impl AddAssign for ModuleTypeData {
 /// clone deeply, you have to clone this type in a closure passed to
 /// [`ALLOW_DEEP_CLONE`]. But this is not recommended, and should be avoided for
 /// performance.
-#[derive(Debug, PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit)]
+#[derive(Debug, PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit, Serialize, Deserialize)]
 pub enum Type {
     Instance(Instance),
     StaticThis(StaticThis),
@@ -368,7 +369,9 @@ fn _assert_send_sync() {
     assert::<Symbol>();
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Is, Spanned)]
+#[derive(
+    Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Is, Spanned, Serialize, Deserialize,
+)]
 pub enum Key {
     Computed(ComputedKey),
     Normal { span: Span, sym: JsWord },
@@ -389,7 +392,9 @@ impl Key {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, EqIgnoreSpan, TypeEq, Visit, Spanned)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, EqIgnoreSpan, TypeEq, Visit, Spanned, Serialize, Deserialize,
+)]
 pub struct PrivateName {
     pub span: Span,
     pub id: Id,
@@ -459,7 +464,7 @@ impl PartialEq<str> for Key {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Spanned)]
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Spanned, Serialize, Deserialize)]
 pub struct ComputedKey {
     pub span: Span,
     pub expr: Box<RExpr>,
@@ -478,7 +483,7 @@ assert_eq_size!(ComputedKey, [u8; 32]);
 ///     }
 /// }
 /// ```
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Instance {
     pub span: Span,
     pub ty: Box<Type>,
@@ -487,7 +492,7 @@ pub struct Instance {
 
 assert_eq_size!(Instance, [u8; 32]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct LitType {
     pub span: Span,
 
@@ -498,7 +503,7 @@ pub struct LitType {
 
 assert_eq_size!(LitType, [u8; 96]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct KeywordType {
     pub span: Span,
 
@@ -509,16 +514,18 @@ pub struct KeywordType {
 
 assert_eq_size!(KeywordType, [u8; 24]);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize,
+)]
 pub struct Symbol {
     pub span: Span,
     pub id: SymbolId,
     pub metadata: SymbolMetadata,
 }
 
-assert_eq_size!(Symbol, [u8; 32]);
+assert_eq_size!(Symbol, [u8; 48]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct RestType {
     pub span: Span,
     pub ty: Box<Type>,
@@ -527,7 +534,7 @@ pub struct RestType {
 
 assert_eq_size!(RestType, [u8; 32]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct OptionalType {
     pub span: Span,
     pub ty: Box<Type>,
@@ -536,7 +543,7 @@ pub struct OptionalType {
 
 assert_eq_size!(OptionalType, [u8; 32]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct IndexedAccessType {
     pub span: Span,
     pub readonly: bool,
@@ -547,7 +554,7 @@ pub struct IndexedAccessType {
 
 assert_eq_size!(IndexedAccessType, [u8; 40]);
 
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Ref {
     pub span: Span,
     /// Id of the module where the ref is used in.
@@ -570,7 +577,7 @@ impl Debug for Ref {
     }
 }
 
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct InferType {
     pub span: Span,
     pub type_param: TypeParam,
@@ -585,7 +592,7 @@ impl Debug for InferType {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct QueryType {
     pub span: Span,
     pub expr: Box<QueryExpr>,
@@ -594,13 +601,24 @@ pub struct QueryType {
 
 assert_eq_size!(QueryType, [u8; 32]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Spanned,
+    FromVariant,
+    EqIgnoreSpan,
+    TypeEq,
+    Visit,
+    Serialize,
+    Deserialize,
+)]
 pub enum QueryExpr {
     TsEntityName(#[use_eq_ignore_span] RTsEntityName),
     Import(ImportType),
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ImportType {
     pub span: Span,
     pub arg: RStr,
@@ -612,7 +630,7 @@ pub struct ImportType {
 
 assert_eq_size!(ImportType, [u8; 88]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Namespace {
     pub span: Span,
     pub name: Id,
@@ -620,7 +638,7 @@ pub struct Namespace {
     pub metadata: NamespaceTypeMetadata,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Module {
     pub span: Span,
     #[use_eq_ignore_span]
@@ -631,7 +649,7 @@ pub struct Module {
 
 assert_eq_size!(Module, [u8; 64]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Enum {
     pub span: Span,
     pub declare: bool,
@@ -647,7 +665,7 @@ pub struct Enum {
 
 assert_eq_size!(Enum, [u8; 88]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct EnumMember {
     pub span: Span,
     #[use_eq_ignore_span]
@@ -656,7 +674,7 @@ pub struct EnumMember {
     pub val: Box<RExpr>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Class {
     pub span: Span,
     pub def: Box<ClassDef>,
@@ -665,7 +683,7 @@ pub struct Class {
 
 assert_eq_size!(Class, [u8; 32]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ClassDef {
     pub span: Span,
     pub is_abstract: bool,
@@ -679,7 +697,19 @@ pub struct ClassDef {
 
 assert_eq_size!(ClassDef, [u8; 88]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Spanned,
+    FromVariant,
+    EqIgnoreSpan,
+    TypeEq,
+    Visit,
+    Is,
+    Serialize,
+    Deserialize,
+)]
 pub enum ClassMember {
     Constructor(ConstructorSignature),
     Method(Method),
@@ -702,7 +732,7 @@ impl ClassMember {
 }
 
 /// A class method.
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Method {
     pub span: Span,
     #[use_eq]
@@ -716,7 +746,7 @@ pub struct Method {
     pub ret_ty: Box<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ClassProperty {
     pub span: Span,
     #[use_eq_ignore_span]
@@ -733,7 +763,7 @@ pub struct ClassProperty {
     pub accessor: Accessor,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Mapped {
     pub span: Span,
     #[use_eq]
@@ -748,7 +778,7 @@ pub struct Mapped {
 
 assert_eq_size!(Mapped, [u8; 96]);
 
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Conditional {
     pub span: Span,
     pub check_type: Box<Type>,
@@ -771,7 +801,7 @@ impl Debug for Conditional {
 }
 
 /// TODO(kdy1): Remove this and create `keyof`, `unique` and `readonly` types.
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Operator {
     pub span: Span,
     #[use_eq]
@@ -782,7 +812,7 @@ pub struct Operator {
 
 assert_eq_size!(Operator, [u8; 32]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Tuple {
     pub span: Span,
     pub elems: Vec<TupleElement>,
@@ -791,7 +821,7 @@ pub struct Tuple {
 
 assert_eq_size!(Tuple, [u8; 48]);
 
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TupleElement {
     pub span: Span,
     #[not_type]
@@ -805,7 +835,7 @@ impl Debug for TupleElement {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Alias {
     pub span: Span,
     pub type_params: Option<Box<TypeParamDecl>>,
@@ -815,7 +845,7 @@ pub struct Alias {
 
 assert_eq_size!(Alias, [u8; 40]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Interface {
     pub span: Span,
     pub name: Id,
@@ -827,7 +857,7 @@ pub struct Interface {
 
 assert_eq_size!(Interface, [u8; 96]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeLit {
     pub span: Span,
     pub members: Vec<TypeElement>,
@@ -836,14 +866,14 @@ pub struct TypeLit {
 
 assert_eq_size!(TypeLit, [u8; 56]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeParamDecl {
     pub span: Span,
     pub params: Vec<TypeParam>,
 }
 
 /// Typescript expression with type arguments
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TsExpr {
     pub span: Span,
     #[use_eq_ignore_span]
@@ -851,7 +881,7 @@ pub struct TsExpr {
     pub type_args: Option<Box<TypeParamInstantiation>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeParamInstantiation {
     pub span: Span,
 
@@ -859,7 +889,19 @@ pub struct TypeParamInstantiation {
     pub params: Vec<Type>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Spanned,
+    FromVariant,
+    EqIgnoreSpan,
+    TypeEq,
+    Visit,
+    Is,
+    Serialize,
+    Deserialize,
+)]
 pub enum TypeElement {
     Call(CallSignature),
     Constructor(ConstructorSignature),
@@ -895,7 +937,7 @@ impl TypeElement {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct CallSignature {
     pub span: Span,
     pub params: Vec<FnParam>,
@@ -903,7 +945,7 @@ pub struct CallSignature {
     pub ret_ty: Option<Box<Type>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ConstructorSignature {
     pub span: Span,
     /// Only for synthesized type elements.
@@ -914,7 +956,7 @@ pub struct ConstructorSignature {
     pub type_params: Option<TypeParamDecl>,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct PropertySignature {
     pub span: Span,
     /// Only for synthesized type elements.
@@ -931,7 +973,7 @@ pub struct PropertySignature {
     pub accessor: Accessor,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct MethodSignature {
     pub span: Span,
     /// Only for synthesized type elements.
@@ -946,7 +988,7 @@ pub struct MethodSignature {
     pub metadata: TypeElMetadata,
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct IndexSignature {
     pub params: Vec<FnParam>,
     pub type_ann: Option<Box<Type>>,
@@ -969,7 +1011,7 @@ impl Take for IndexSignature {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Array {
     pub span: Span,
     pub elem_type: Box<Type>,
@@ -979,7 +1021,7 @@ pub struct Array {
 assert_eq_size!(Array, [u8; 32]);
 
 /// a | b
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Union {
     pub span: Span,
     pub types: Vec<Type>,
@@ -1036,7 +1078,7 @@ impl Union {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct FnParam {
     pub span: Span,
     pub required: bool,
@@ -1046,7 +1088,7 @@ pub struct FnParam {
 }
 
 /// a & b
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Intersection {
     pub span: Span,
     pub types: Vec<Type>,
@@ -1104,7 +1146,7 @@ impl Intersection {
 }
 
 /// A type parameter
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeParam {
     pub span: Span,
     pub name: Id,
@@ -1114,7 +1156,7 @@ pub struct TypeParam {
 }
 
 /// FooEnum.A
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub span: Span,
     pub ctxt: ModuleId,
@@ -1126,7 +1168,7 @@ pub struct EnumVariant {
 
 assert_eq_size!(EnumVariant, [u8; 56]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Function {
     pub span: Span,
     pub type_params: Option<TypeParamDecl>,
@@ -1137,7 +1179,7 @@ pub struct Function {
 
 assert_eq_size!(Function, [u8; 96]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Constructor {
     pub span: Span,
     pub type_params: Option<TypeParamDecl>,
@@ -1150,7 +1192,7 @@ pub struct Constructor {
 
 assert_eq_size!(Constructor, [u8; 96]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Predicate {
     pub span: Span,
     #[use_eq_ignore_span]
@@ -1162,7 +1204,7 @@ pub struct Predicate {
 
 assert_eq_size!(Predicate, [u8; 64]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TypeOrSpread {
     pub span: Span,
     pub spread: Option<Span>,
@@ -2405,7 +2447,9 @@ impl Type {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize,
+)]
 pub struct StaticThis {
     pub span: Span,
     pub metadata: StaticThisMetadata,
@@ -2413,7 +2457,9 @@ pub struct StaticThis {
 
 assert_eq_size!(StaticThis, [u8; 24]);
 
-#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize,
+)]
 pub struct ThisType {
     pub span: Span,
     pub metadata: ThisTypeMetadata,
@@ -2421,7 +2467,7 @@ pub struct ThisType {
 
 assert_eq_size!(ThisType, [u8; 24]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TplType {
     pub span: Span,
 
@@ -2434,7 +2480,7 @@ pub struct TplType {
 
 assert_eq_size!(TplType, [u8; 72]);
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq)]
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Serialize, Deserialize)]
 pub struct Freezed {
     ty: Arc<Type>,
 }
@@ -2489,7 +2535,9 @@ where
 ///
 /// [TypeEq] and [EqIgnoreSpan] always return true because this struct is
 /// metadata.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Visit)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Visit, Serialize, Deserialize,
+)]
 pub struct Accessor {
     pub getter: bool,
     pub setter: bool,

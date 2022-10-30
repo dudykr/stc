@@ -21,6 +21,15 @@ use swc_ecma_visit::{span_remover, FoldWith};
 builtin!();
 
 impl Lib {
+    pub fn load(lib_str: &str) -> Vec<Self> {
+        let lib: Self = match lib_str.parse() {
+            Ok(lib) => lib,
+            Err(..) => return vec![],
+        };
+
+        lib.load_deps()
+    }
+
     fn body(self) -> &'static TsNamespaceDecl {
         static CACHE: Lazy<RwLock<FxHashMap<Lib, &'static TsNamespaceDecl>>> =
             Lazy::new(Default::default);

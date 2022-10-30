@@ -50,3 +50,5 @@ pkg/
 tmp.txt
 # Used for module graph
 *.dot
+# Used by stc
+.stc/

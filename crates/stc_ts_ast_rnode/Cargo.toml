@@ -10,6 +10,7 @@ version = "0.1.0"
 [dependencies]
 num-bigint = "0.2"
 rnode = {path = "../rnode"}
+serde = { version = "1.0.147", features = ["derive"] }
 stc_utils = {path = "../stc_utils"}
 stc_visit = {path = "../stc_visit"}
 swc_atoms = "0.2.9"
