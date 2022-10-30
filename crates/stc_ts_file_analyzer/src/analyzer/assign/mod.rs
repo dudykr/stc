@@ -399,13 +399,14 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_with_opts(
         &mut self,
         data: &mut AssignData,
-        opts: AssignOpts,
+        mut opts: AssignOpts,
         left: &Type,
         right: &Type,
     ) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
+        opts.is_params_of_method_definition = false;
 
         left.assert_valid();
         right.assert_valid();

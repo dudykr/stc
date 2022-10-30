@@ -427,6 +427,7 @@ impl Analyzer<'_, '_> {
                     for_overload: false,
                     allow_assignment_of_void: Some(opts.allow_assignment_of_void.unwrap_or(true)),
                     allow_assignment_to_void: !opts.for_overload,
+                    is_params_of_method_definition: false,
                     ..opts
                 };
 
@@ -456,11 +457,13 @@ impl Analyzer<'_, '_> {
     pub(super) fn assign_to_function(
         &mut self,
         data: &mut AssignData,
-        opts: AssignOpts,
+        mut opts: AssignOpts,
         lt: &Type,
         l: &Function,
         r: &Type,
     ) -> VResult<()> {
+        opts.is_params_of_method_definition = false;
+
         let span = opts.span;
         let r = r.normalize();
 
