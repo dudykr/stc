@@ -1789,6 +1789,7 @@ version = "0.1.0"
 dependencies = [
  "num-bigint",
  "rnode",
+ "serde",
  "stc_utils",
  "stc_visit",
  "swc_atoms",
