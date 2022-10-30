@@ -149,7 +149,7 @@ impl AddAssign for ModuleTypeData {
 /// clone deeply, you have to clone this type in a closure passed to
 /// [`ALLOW_DEEP_CLONE`]. But this is not recommended, and should be avoided for
 /// performance.
-#[derive(Debug, PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit)]
+#[derive(Debug, PartialEq, Spanned, FromVariant, EqIgnoreSpan, Visit, Serialize)]
 pub enum Type {
     Instance(Instance),
     StaticThis(StaticThis),

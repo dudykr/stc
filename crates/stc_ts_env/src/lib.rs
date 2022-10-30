@@ -3,6 +3,7 @@ use std::sync::Arc;
 use derivative::Derivative;
 use parking_lot::Mutex;
 use rustc_hash::FxHashMap;
+use serde::{Deserialize, Serialize};
 use stc_ts_errors::Error;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Type};
@@ -15,7 +16,7 @@ pub use self::marks::{MarkExt, Marks};
 
 mod marks;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct BuiltIn {
     vars: FxHashMap<JsWord, Type>,
     types: FxHashMap<JsWord, Type>,
