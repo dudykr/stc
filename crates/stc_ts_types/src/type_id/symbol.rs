@@ -1,10 +1,13 @@
 use std::sync::atomic::{AtomicU64, Ordering::SeqCst};
 
 use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
 use stc_visit::Visit;
 use swc_common::{EqIgnoreSpan, TypeEq};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize,
+)]
 pub struct SymbolId(u64);
 
 impl SymbolId {

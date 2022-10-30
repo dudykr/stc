@@ -510,7 +510,9 @@ pub struct KeywordType {
 
 assert_eq_size!(KeywordType, [u8; 24]);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize,
+)]
 pub struct Symbol {
     pub span: Span,
     pub id: SymbolId,
@@ -548,7 +550,7 @@ pub struct IndexedAccessType {
 
 assert_eq_size!(IndexedAccessType, [u8; 40]);
 
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Ref {
     pub span: Span,
     /// Id of the module where the ref is used in.
@@ -760,7 +762,7 @@ pub struct Mapped {
 
 assert_eq_size!(Mapped, [u8; 96]);
 
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Conditional {
     pub span: Span,
     pub check_type: Box<Type>,
@@ -803,7 +805,7 @@ pub struct Tuple {
 
 assert_eq_size!(Tuple, [u8; 48]);
 
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct TupleElement {
     pub span: Span,
     #[not_type]
@@ -991,7 +993,7 @@ pub struct Array {
 assert_eq_size!(Array, [u8; 32]);
 
 /// a | b
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Union {
     pub span: Span,
     pub types: Vec<Type>,
@@ -1058,7 +1060,7 @@ pub struct FnParam {
 }
 
 /// a & b
-#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Intersection {
     pub span: Span,
     pub types: Vec<Type>,
