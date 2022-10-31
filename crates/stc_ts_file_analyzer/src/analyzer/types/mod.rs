@@ -216,18 +216,11 @@ impl Analyzer<'_, '_> {
                     Type::Union(_) => {}
 
                     Type::Intersection(ty) => {
-                        let is_str = ty.types.iter().any(|ty| ty.is_str());
-                        let is_num = ty.types.iter().any(|ty| ty.is_num());
-                        let is_bool = ty.types.iter().any(|ty| ty.is_bool());
-
-                        if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
-                            return Ok(Cow::Owned(Type::Keyword(KeywordType {
-                                span: ty.span,
-                                kind: TsKeywordTypeKind::TsNeverKeyword,
-                                metadata: KeywordTypeMetadata {
-                                    common: ty.metadata.common,
-                                },
-                            })));
+                        if let Some(new_ty) = self
+                            .normalize_intersection(span, ty, opts)
+                            .context("failed to normalize an intersection type")?
+                        {
+                            return Ok(Cow::Owned(new_ty));
                         }
                     }
 
@@ -618,6 +611,24 @@ impl Analyzer<'_, '_> {
         } else {
             Ok(None)
         }
+    }
+
+    fn normalize_intersection(&mut self, span: Option<Span>, ty: &Intersection, opts: NormalizeTypeOpts) -> VResult<Option<Type>> {
+        let is_str = ty.types.iter().any(|ty| ty.is_str());
+        let is_num = ty.types.iter().any(|ty| ty.is_num());
+        let is_bool = ty.types.iter().any(|ty| ty.is_bool());
+
+        if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
+            return Ok(Some(Type::Keyword(KeywordType {
+                span: ty.span,
+                kind: TsKeywordTypeKind::TsNeverKeyword,
+                metadata: KeywordTypeMetadata {
+                    common: ty.metadata.common,
+                },
+            })));
+        }
+
+        Ok(None)
     }
 
     // This is part of normalization.
