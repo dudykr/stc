@@ -19,13 +19,7 @@ impl Analyzer<'_, '_> {
     /// - Handles assignment of `Function` types.
     /// - Handles assignment of various array types.
     /// - Handles assignment of promise types.
-    pub(super) fn assign_to_builtins(
-        &mut self,
-        data: &mut AssignData,
-        opts: AssignOpts,
-        l: &Type,
-        r: &Type,
-    ) -> Option<VResult<()>> {
+    pub(super) fn assign_to_builtins(&mut self, data: &mut AssignData, opts: AssignOpts, l: &Type, r: &Type) -> Option<VResult<()>> {
         let span = opts.span;
         let l = l.normalize();
         let r = r.normalize();
@@ -37,22 +31,15 @@ impl Analyzer<'_, '_> {
             }) if *sym == *"ThisType" => return Some(Ok(())),
 
             Type::Ref(Ref {
-                type_name:
-                    RTsEntityName::Ident(RIdent {
-                        sym: js_word!("Array"),
-                        ..
-                    }),
+                type_name: RTsEntityName::Ident(RIdent {
+                    sym: js_word!("Array"), ..
+                }),
                 type_args: Some(type_args),
                 ..
             }) => match r {
                 Type::Array(r) => {
                     if type_args.params.len() == 1 {
-                        return Some(self.assign_inner(
-                            data,
-                            &type_args.params[0],
-                            &r.elem_type,
-                            opts,
-                        ));
+                        return Some(self.assign_inner(data, &type_args.params[0], &r.elem_type, opts));
                     }
                     return Some(Ok(()));
                 }
@@ -60,10 +47,7 @@ impl Analyzer<'_, '_> {
                     if type_args.params.len() == 1 {
                         let mut errors = vec![];
                         for el in &r.elems {
-                            errors.extend(
-                                self.assign_inner(data, &type_args.params[0], &el.ty, opts)
-                                    .err(),
-                            );
+                            errors.extend(self.assign_inner(data, &type_args.params[0], &el.ty, opts).err());
                         }
                         if !errors.is_empty() {
                             return Some(Err(Error::TupleAssignError { span, errors }));
@@ -75,19 +59,15 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Ref(Ref {
-                type_name:
-                    RTsEntityName::Ident(RIdent {
-                        sym: js_word!("Function"),
-                        ..
-                    }),
+                type_name: RTsEntityName::Ident(RIdent {
+                    sym: js_word!("Function"), ..
+                }),
                 ..
             }) => match r {
                 Type::Ref(Ref {
-                    type_name:
-                        RTsEntityName::Ident(RIdent {
-                            sym: js_word!("Function"),
-                            ..
-                        }),
+                    type_name: RTsEntityName::Ident(RIdent {
+                        sym: js_word!("Function"), ..
+                    }),
                     ..
                 }) => return Some(Ok(())),
 
@@ -119,18 +99,12 @@ impl Analyzer<'_, '_> {
                     for parent in &ri.extends {
                         match parent.expr {
                             RTsEntityName::Ident(RIdent {
-                                sym: js_word!("Function"),
-                                ..
+                                sym: js_word!("Function"), ..
                             }) => return Some(Ok(())),
                             _ => {}
                         }
 
-                        let parent = self.type_of_ts_entity_name(
-                            opts.span,
-                            self.ctx.module_id,
-                            &parent.expr,
-                            parent.type_args.as_deref(),
-                        );
+                        let parent = self.type_of_ts_entity_name(opts.span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref());
                         let parent = match parent {
                             Ok(ty) => ty,
                             Err(err) => return Some(Err(err)),
@@ -160,10 +134,7 @@ impl Analyzer<'_, '_> {
                             Type::Array(Array { elem_type, .. }) => {
                                 return Some(
                                     self.assign_inner(data, &type_args.params[0], elem_type, opts)
-                                        .context(
-                                            "tried to assign an array to a readonly array \
-                                             (builtin)",
-                                        ),
+                                        .context("tried to assign an array to a readonly array (builtin)"),
                                 );
                             }
                             _ => {}
@@ -199,9 +170,7 @@ impl Analyzer<'_, '_> {
                     &Type::Array(Array {
                         span: r.span(),
                         elem_type: box r_elem.clone(),
-                        metadata: ArrayMetadata {
-                            common: r.metadata(),
-                        },
+                        metadata: ArrayMetadata { common: r.metadata() },
                     }),
                 ));
             }
@@ -216,8 +185,7 @@ impl Analyzer<'_, '_> {
                 Type::Union(l) => {
                     if l.types.len() == 2
                         && l.types[0].is_type_param()
-                        && unwrap_ref_with_single_arg(&l.types[1], "PromiseLike")
-                            .type_eq(&Some(&l.types[0]))
+                        && unwrap_ref_with_single_arg(&l.types[1], "PromiseLike").type_eq(&Some(&l.types[0]))
                     {
                         return Some(Ok(()));
                     }

@@ -41,12 +41,7 @@ impl Analyzer<'_, '_> {
                     Some(v) => {
                         v.params = params;
                     }
-                    None => {
-                        f.type_params = Some(TypeParamDecl {
-                            span: DUMMY_SP,
-                            params,
-                        })
-                    }
+                    None => f.type_params = Some(TypeParamDecl { span: DUMMY_SP, params }),
                 }
             }
             _ => {}

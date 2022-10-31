@@ -19,16 +19,8 @@ impl Analyzer<'_, '_> {
         if self.scope.is_this_ref_to_class() {
             for (_, m) in self.scope.class_members() {
                 match m {
-                    ClassMember::Method(Method {
-                        key,
-                        is_static: false,
-                        ..
-                    })
-                    | ClassMember::Property(ClassProperty {
-                        key,
-                        is_static: false,
-                        ..
-                    }) => match key {
+                    ClassMember::Method(Method { key, is_static: false, .. })
+                    | ClassMember::Property(ClassProperty { key, is_static: false, .. }) => match key {
                         Key::Normal { sym, .. } => {
                             if *p.sym() == *sym {
                                 return true;

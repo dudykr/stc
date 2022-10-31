@@ -13,21 +13,7 @@ pub struct Intrinsic {
     pub metadata: IntrinsicMetadata,
 }
 
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Hash,
-    Is,
-    EqIgnoreSpan,
-    TypeEq,
-    Visit,
-    Serialize,
-    Deserialize,
-)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Is, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub enum IntrinsicKind {
     Uppercase,
     Lowercase,

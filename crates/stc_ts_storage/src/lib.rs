@@ -94,19 +94,11 @@ impl TypeStore for Single<'_> {
 
         if should_override {
             if self.info.exports.types.contains_key(&id.sym()) {
-                self.info
-                    .exports
-                    .types
-                    .insert(id.sym().clone(), vec![ty.clone()]);
+                self.info.exports.types.insert(id.sym().clone(), vec![ty.clone()]);
             }
             self.info.exports.private_types.insert(id, vec![ty]);
         } else {
-            self.info
-                .exports
-                .private_types
-                .entry(id)
-                .or_default()
-                .push(ty);
+            self.info.exports.private_types.entry(id).or_default().push(ty);
         }
     }
 
@@ -263,33 +255,13 @@ impl ErrorStore for Group<'_> {
 impl TypeStore for Group<'_> {
     fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool) {
         if should_override {
-            if self
-                .info
-                .entry(ctxt)
-                .or_default()
-                .types
-                .contains_key(&id.sym())
-            {
-                self.info
-                    .entry(ctxt)
-                    .or_default()
-                    .types
-                    .insert(id.sym().clone(), vec![ty.clone()]);
+            if self.info.entry(ctxt).or_default().types.contains_key(&id.sym()) {
+                self.info.entry(ctxt).or_default().types.insert(id.sym().clone(), vec![ty.clone()]);
             }
 
-            self.info
-                .entry(ctxt)
-                .or_default()
-                .private_types
-                .insert(id, vec![ty]);
+            self.info.entry(ctxt).or_default().private_types.insert(id, vec![ty]);
         } else {
-            self.info
-                .entry(ctxt)
-                .or_default()
-                .private_types
-                .entry(id)
-                .or_default()
-                .push(ty);
+            self.info.entry(ctxt).or_default().private_types.entry(id).or_default().push(ty);
         }
     }
 
@@ -299,8 +271,7 @@ impl TypeStore for Group<'_> {
         match map.private_vars.entry(id) {
             Entry::Occupied(e) => {
                 let (id, prev_ty) = e.remove_entry();
-                map.private_vars
-                    .insert(id, Type::new_union(DUMMY_SP, vec![prev_ty, ty]));
+                map.private_vars.insert(id, Type::new_union(DUMMY_SP, vec![prev_ty, ty]));
             }
             Entry::Vacant(e) => {
                 e.insert(ty);
@@ -356,13 +327,7 @@ impl TypeStore for Group<'_> {
     }
 
     fn reexport_type(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
-        self.info
-            .entry(ctxt)
-            .or_default()
-            .types
-            .entry(id)
-            .or_default()
-            .push(ty);
+        self.info.entry(ctxt).or_default().types.entry(id).or_default().push(ty);
     }
 
     fn reexport_var(&mut self, _span: Span, ctxt: ModuleId, id: JsWord, ty: Type) {
@@ -400,10 +365,7 @@ impl Mode for Group<'_> {
             }
         }
 
-        unreachable!(
-            "failed to get path by module id({:?}):  {:?}",
-            id, self.files
-        )
+        unreachable!("failed to get path by module id({:?}):  {:?}", id, self.files)
     }
 
     fn subscope(&self) -> Storage {
@@ -453,8 +415,7 @@ impl TypeStore for Builtin {
         match self.vars.entry(id.sym().clone()) {
             Entry::Occupied(entry) => {
                 let (id, prev_ty) = entry.remove_entry();
-                self.vars
-                    .insert(id, Type::new_intersection(DUMMY_SP, vec![prev_ty, ty]));
+                self.vars.insert(id, Type::new_intersection(DUMMY_SP, vec![prev_ty, ty]));
             }
             Entry::Vacant(entry) => {
                 entry.insert(ty);

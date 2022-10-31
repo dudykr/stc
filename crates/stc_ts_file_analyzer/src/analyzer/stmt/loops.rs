@@ -2,25 +2,18 @@ use std::borrow::Cow;
 
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{
-    RDoWhileStmt, RExpr, RForInStmt, RForOfStmt, RIdent, RPat, RStmt, RTsEntityName, RVarDecl,
-    RVarDeclOrPat, RWhileStmt,
+    RDoWhileStmt, RExpr, RForInStmt, RForOfStmt, RIdent, RPat, RStmt, RTsEntityName, RVarDecl, RVarDeclOrPat, RWhileStmt,
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{
-    Id, KeywordType, KeywordTypeMetadata, ModuleId, Operator, Ref, RefMetadata,
-    TypeParamInstantiation,
-};
+use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, ModuleId, Operator, Ref, RefMetadata, TypeParamInstantiation};
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
 
 use crate::{
-    analyzer::{
-        control_flow::CondFacts, types::NormalizeTypeOpts, util::ResultExt, Analyzer, Ctx,
-        ScopeKind,
-    },
+    analyzer::{control_flow::CondFacts, types::NormalizeTypeOpts, util::ResultExt, Analyzer, Ctx, ScopeKind},
     ty::Type,
     util::is_str_or_union,
     validator,
@@ -119,11 +112,7 @@ impl Analyzer<'_, '_> {
                     if let Some(m) = &mut self.mutations {
                         // We use node id of a variable declarator with `for_pats`.
                         let node_id = v.decls.first().unwrap().node_id;
-                        m.for_pats
-                            .entry(node_id)
-                            .or_default()
-                            .ty
-                            .get_or_insert_with(|| elem_ty.clone());
+                        m.for_pats.entry(node_id).or_default().ty.get_or_insert_with(|| elem_ty.clone());
                     }
                     // Add types.
                 }
@@ -151,11 +140,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn validate_lhs_of_for_in_of_loop(
-        &mut self,
-        e: &RVarDeclOrPat,
-        kind: ForHeadKind,
-    ) -> VResult<()> {
+    fn validate_lhs_of_for_in_of_loop(&mut self, e: &RVarDeclOrPat, kind: ForHeadKind) -> VResult<()> {
         match e {
             RVarDeclOrPat::VarDecl(v) => {
                 if v.decls.len() >= 1 {
@@ -171,9 +156,7 @@ impl Analyzer<'_, '_> {
     fn validate_lhs_of_for_in_of_loop_pat(&mut self, p: &RPat, kind: ForHeadKind) -> VResult<()> {
         match p {
             RPat::Object(..) | RPat::Array(..) => match kind {
-                ForHeadKind::In => {
-                    Err(Error::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() })
-                }
+                ForHeadKind::In => Err(Error::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() }),
                 ForHeadKind::Of { .. } => Ok(()),
             },
             RPat::Expr(e) => self.validate_lhs_of_for_in_of_loop_expr(e, kind),
@@ -283,136 +266,115 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    fn check_for_of_in_loop(
-        &mut self,
-        span: Span,
-        left: &RVarDeclOrPat,
-        rhs: &RExpr,
-        kind: ForHeadKind,
-        body: &RStmt,
-    ) {
-        self.with_child(
-            ScopeKind::Flow,
-            Default::default(),
-            |child: &mut Analyzer| -> VResult<()> {
-                // Error should not be `no such var` if it's used in rhs.
-                let created_vars: Vec<Id> = match left {
-                    RVarDeclOrPat::VarDecl(v) => find_ids_in_pat(&v.decls),
-                    RVarDeclOrPat::Pat(_) => {
-                        vec![]
-                    }
-                };
-                debug_assert_eq!(child.scope.declaring, Vec::<Id>::new());
-                child.scope.declaring.extend(created_vars);
+    fn check_for_of_in_loop(&mut self, span: Span, left: &RVarDeclOrPat, rhs: &RExpr, kind: ForHeadKind, body: &RStmt) {
+        self.with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<()> {
+            // Error should not be `no such var` if it's used in rhs.
+            let created_vars: Vec<Id> = match left {
+                RVarDeclOrPat::VarDecl(v) => find_ids_in_pat(&v.decls),
+                RVarDeclOrPat::Pat(_) => {
+                    vec![]
+                }
+            };
+            debug_assert_eq!(child.scope.declaring, Vec::<Id>::new());
+            child.scope.declaring.extend(created_vars);
 
-                child.ctx.allow_ref_declaring = match left {
-                    RVarDeclOrPat::VarDecl(RVarDecl {
-                        kind: VarDeclKind::Var,
-                        ..
-                    }) => true,
-                    _ => false,
-                };
+            child.ctx.allow_ref_declaring = match left {
+                RVarDeclOrPat::VarDecl(RVarDecl {
+                    kind: VarDeclKind::Var, ..
+                }) => true,
+                _ => false,
+            };
 
-                // Type annotation on lhs of for in/of loops is invalid.
-                match left {
-                    RVarDeclOrPat::VarDecl(RVarDecl { decls, .. }) => {
-                        if decls.len() >= 1 {
-                            if decls[0].name.get_ty().is_some() {
-                                match kind {
-                                    ForHeadKind::In => {
-                                        child.storage.report(Error::TypeAnnOnLhsOfForInLoops {
-                                            span: decls[0].span,
-                                        });
-                                    }
-                                    ForHeadKind::Of { .. } => {
-                                        child.storage.report(Error::TypeAnnOnLhsOfForOfLoops {
-                                            span: decls[0].span,
-                                        });
-                                    }
+            // Type annotation on lhs of for in/of loops is invalid.
+            match left {
+                RVarDeclOrPat::VarDecl(RVarDecl { decls, .. }) => {
+                    if decls.len() >= 1 {
+                        if decls[0].name.get_ty().is_some() {
+                            match kind {
+                                ForHeadKind::In => {
+                                    child.storage.report(Error::TypeAnnOnLhsOfForInLoops { span: decls[0].span });
+                                }
+                                ForHeadKind::Of { .. } => {
+                                    child.storage.report(Error::TypeAnnOnLhsOfForOfLoops { span: decls[0].span });
                                 }
                             }
                         }
                     }
-                    _ => {}
                 }
+                _ => {}
+            }
 
-                let rhs_ctx = Ctx {
-                    cannot_be_tuple: true,
-                    // use_undefined_for_empty_tuple: true,
-                    ..child.ctx
-                };
+            let rhs_ctx = Ctx {
+                cannot_be_tuple: true,
+                // use_undefined_for_empty_tuple: true,
+                ..child.ctx
+            };
 
-                let rty = rhs
-                    .validate_with_default(&mut *child.with_ctx(rhs_ctx))
-                    .context("tried to validate rhs of a for in/of loop");
-                let rty = rty
-                    .report(&mut child.storage)
-                    .unwrap_or_else(|| Type::any(span, Default::default()));
+            let rty = rhs
+                .validate_with_default(&mut *child.with_ctx(rhs_ctx))
+                .context("tried to validate rhs of a for in/of loop");
+            let rty = rty
+                .report(&mut child.storage)
+                .unwrap_or_else(|| Type::any(span, Default::default()));
 
-                match kind {
-                    ForHeadKind::Of { is_awaited: false } => {
-                        if child.env.target() < EsVersion::Es5 {
-                            if rty
-                                .iter_union()
-                                .flat_map(|ty| ty.iter_union())
-                                .flat_map(|ty| ty.iter_union())
-                                .any(|ty| is_str_or_union(&ty))
-                            {
-                                child.storage.report(Error::ForOfStringUsedInEs3 { span })
-                            }
+            match kind {
+                ForHeadKind::Of { is_awaited: false } => {
+                    if child.env.target() < EsVersion::Es5 {
+                        if rty
+                            .iter_union()
+                            .flat_map(|ty| ty.iter_union())
+                            .flat_map(|ty| ty.iter_union())
+                            .any(|ty| is_str_or_union(&ty))
+                        {
+                            child.storage.report(Error::ForOfStringUsedInEs3 { span })
                         }
                     }
-                    _ => {}
                 }
+                _ => {}
+            }
 
-                let mut elem_ty = match kind {
-                    ForHeadKind::Of { is_awaited: false } => child
-                        .get_iterator_element_type(rhs.span(), Cow::Owned(rty), false)
-                        .convert_err(|err| match err {
-                            Error::NotArrayType { span }
-                                if match rhs {
-                                    RExpr::Lit(..) => true,
-                                    _ => false,
-                                } =>
-                            {
-                                Error::NotArrayTypeNorStringType { span }
-                            }
-                            _ => err,
-                        })
-                        .context(
-                            "tried to get the element type of an iterator to calculate type for a \
-                             for-of loop",
-                        )
+            let mut elem_ty = match kind {
+                ForHeadKind::Of { is_awaited: false } => child
+                    .get_iterator_element_type(rhs.span(), Cow::Owned(rty), false)
+                    .convert_err(|err| match err {
+                        Error::NotArrayType { span }
+                            if match rhs {
+                                RExpr::Lit(..) => true,
+                                _ => false,
+                            } =>
+                        {
+                            Error::NotArrayTypeNorStringType { span }
+                        }
+                        _ => err,
+                    })
+                    .context("tried to get the element type of an iterator to calculate type for a for-of loop")
+                    .report(&mut child.storage)
+                    .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),
+
+                ForHeadKind::Of { is_awaited: true } => child
+                    .get_async_iterator_elem_type(rhs.span(), Cow::Owned(rty))
+                    .context("tried to get element type of an async iteratror")
+                    .report(&mut child.storage)
+                    .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),
+
+                ForHeadKind::In => Cow::Owned(
+                    child
+                        .get_element_type_of_for_in(&rty)
+                        .context("tried to calculate the element type for a for-in loop")
                         .report(&mut child.storage)
-                        .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),
+                        .unwrap_or_else(|| Type::any(span, Default::default())),
+                ),
+            };
+            elem_ty.make_clone_cheap();
 
-                    ForHeadKind::Of { is_awaited: true } => child
-                        .get_async_iterator_elem_type(rhs.span(), Cow::Owned(rty))
-                        .context("tried to get element type of an async iteratror")
-                        .report(&mut child.storage)
-                        .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),
+            child.scope.declaring.clear();
 
-                    ForHeadKind::In => Cow::Owned(
-                        child
-                            .get_element_type_of_for_in(&rty)
-                            .context("tried to calculate the element type for a for-in loop")
-                            .report(&mut child.storage)
-                            .unwrap_or_else(|| Type::any(span, Default::default())),
-                    ),
-                };
-                elem_ty.make_clone_cheap();
+            child.validate_lhs_of_for_loop(left, &elem_ty, kind);
 
-                child.scope.declaring.clear();
+            child.validate_loop_body_with_scope(None, &body).report(&mut child.storage);
 
-                child.validate_lhs_of_for_loop(left, &elem_ty, kind);
-
-                child
-                    .validate_loop_body_with_scope(None, &body)
-                    .report(&mut child.storage);
-
-                Ok(())
-            },
-        )?;
+            Ok(())
+        })?;
     }
 }
 

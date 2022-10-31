@@ -5,8 +5,8 @@ use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
-    Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature,
-    ModuleId, PropertySignature, Ref, Type, TypeElement, Union,
+    Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, ModuleId, PropertySignature, Ref, Type,
+    TypeElement, Union,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, try_cache};
 use swc_atoms::js_word;
@@ -31,10 +31,7 @@ impl Analyzer<'_, '_> {
         let _ctx = debug_ctx!(format!("keyof: {}", dump_type_as_string(&self.cm, ty)));
 
         if !self.is_builtin {
-            debug_assert!(
-                !span.is_dummy(),
-                "Cannot perform `keyof` operation with dummy span"
-            );
+            debug_assert!(!span.is_dummy(), "Cannot perform `keyof` operation with dummy span");
         }
 
         let ty = (|| -> VResult<_> {
@@ -72,10 +69,7 @@ impl Analyzer<'_, '_> {
                                 },
                             }),
                         )
-                        .context(
-                            "tried applying `keyof` to a literal by delegating to keyword type \
-                             handler",
-                        )
+                        .context("tried applying `keyof` to a literal by delegating to keyword type handler")
                 }
                 Type::Keyword(KeywordType { kind, .. }) => match kind {
                     TsKeywordTypeKind::TsAnyKeyword => {
@@ -111,9 +105,7 @@ impl Analyzer<'_, '_> {
                             metadata: Default::default(),
                         }));
                     }
-                    TsKeywordTypeKind::TsNumberKeyword
-                    | TsKeywordTypeKind::TsBooleanKeyword
-                    | TsKeywordTypeKind::TsStringKeyword => {
+                    TsKeywordTypeKind::TsNumberKeyword | TsKeywordTypeKind::TsBooleanKeyword | TsKeywordTypeKind::TsStringKeyword => {
                         let name = match kind {
                             TsKeywordTypeKind::TsNumberKeyword => {
                                 js_word!("Number")
@@ -169,33 +161,28 @@ impl Analyzer<'_, '_> {
                 },
 
                 Type::TypeLit(l) => {
-                    return Ok(try_cache!(
-                        self.data.cache.keyof_type_lit,
-                        ty.clone().into_owned(),
-                        {
-                            let mut types = vec![];
-                            for member in &l.members {
-                                match member {
-                                    TypeElement::Property(PropertySignature { key, .. })
-                                    | TypeElement::Method(MethodSignature { key, .. }) => {
-                                        if !key.is_computed() {
-                                            types.push(key.ty().into_owned());
-                                        }
+                    return Ok(try_cache!(self.data.cache.keyof_type_lit, ty.clone().into_owned(), {
+                        let mut types = vec![];
+                        for member in &l.members {
+                            match member {
+                                TypeElement::Property(PropertySignature { key, .. }) | TypeElement::Method(MethodSignature { key, .. }) => {
+                                    if !key.is_computed() {
+                                        types.push(key.ty().into_owned());
                                     }
-
-                                    TypeElement::Index(i) => {
-                                        // TODO(kdy1): Check if this is correct.
-                                        if let Some(p) = i.params.first() {
-                                            types.push(*p.ty.clone());
-                                        }
-                                    }
-
-                                    TypeElement::Call(_) | TypeElement::Constructor(_) => {}
                                 }
+
+                                TypeElement::Index(i) => {
+                                    // TODO(kdy1): Check if this is correct.
+                                    if let Some(p) = i.params.first() {
+                                        types.push(*p.ty.clone());
+                                    }
+                                }
+
+                                TypeElement::Call(_) | TypeElement::Constructor(_) => {}
                             }
-                            Ok(Type::new_union(span, types))
                         }
-                    ));
+                        Ok(Type::new_union(span, types))
+                    }));
                 }
 
                 Type::Class(Class { def, .. }) => {
@@ -210,8 +197,7 @@ impl Analyzer<'_, '_> {
                     let mut key_types = vec![];
                     for member in &cls.body {
                         match member {
-                            ClassMember::Property(ClassProperty { key, .. })
-                            | ClassMember::Method(Method { key, .. }) => {
+                            ClassMember::Property(ClassProperty { key, .. }) | ClassMember::Method(Method { key, .. }) => {
                                 if !key.is_computed() {
                                     key_types.push(key.ty().into_owned());
                                 }
@@ -244,10 +230,7 @@ impl Analyzer<'_, '_> {
                             &Type::Ref(Ref {
                                 span,
                                 ctxt: ModuleId::builtin(),
-                                type_name: RTsEntityName::Ident(RIdent::new(
-                                    js_word!("Array"),
-                                    DUMMY_SP,
-                                )),
+                                type_name: RTsEntityName::Ident(RIdent::new(js_word!("Array"), DUMMY_SP)),
                                 type_args: None,
                                 metadata: Default::default(),
                             }),
@@ -262,9 +245,9 @@ impl Analyzer<'_, '_> {
                         .map(Type::TypeLit)
                         .unwrap();
 
-                    return self.keyof(span, &ty).context(
-                        "tried to evaluate `keyof` for type literal created with type_to_type_lit",
-                    );
+                    return self
+                        .keyof(span, &ty)
+                        .context("tried to evaluate `keyof` for type literal created with type_to_type_lit");
                 }
 
                 Type::Intersection(i) => {
@@ -286,21 +269,14 @@ impl Analyzer<'_, '_> {
                     let key_types = u
                         .types
                         .iter()
-                        .map(|ty| {
-                            self.keyof(span, ty)
-                                .context("tried to get keys of an element of a union type")
-                        })
+                        .map(|ty| self.keyof(span, ty).context("tried to get keys of an element of a union type"))
                         .collect::<Result<Vec<_>, _>>()?;
 
                     if key_types.iter().all(|ty| is_str_lit_or_union(&ty)) {
                         let mut keys = key_types
                             .into_iter()
                             .map(|ty| match ty.foldable() {
-                                Type::Union(ty) => ty
-                                    .types
-                                    .into_iter()
-                                    .map(|ty| ty.foldable().lit().unwrap())
-                                    .collect_vec(),
+                                Type::Union(ty) => ty.types.into_iter().map(|ty| ty.foldable().lit().unwrap()).collect_vec(),
                                 Type::Lit(l) => vec![l],
                                 _ => {
                                     unreachable!()
@@ -312,11 +288,7 @@ impl Analyzer<'_, '_> {
 
                         let actual_keys = keys[0]
                             .iter()
-                            .filter(|&key| {
-                                keys[1..]
-                                    .iter()
-                                    .all(|keys| keys.iter().any(|other_key| key.type_eq(other_key)))
-                            })
+                            .filter(|&key| keys[1..].iter().all(|keys| keys.iter().any(|other_key| key.type_eq(other_key))))
                             .cloned()
                             .map(Type::Lit)
                             .collect_vec();

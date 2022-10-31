@@ -2,8 +2,8 @@ use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RBool, RNumber, RStr, RTsLit};
 use stc_ts_base_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
-    Array, Class, ClassProperty, Function, IndexedAccessType, Interface, KeywordType,
-    KeywordTypeMetadata, LitType, Ref, RestType, Tuple, Type, TypeLit, Union,
+    Array, Class, ClassProperty, Function, IndexedAccessType, Interface, KeywordType, KeywordTypeMetadata, LitType, Ref, RestType, Tuple,
+    Type, TypeLit, Union,
 };
 use stc_utils::ext::TypeVecExt;
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -36,14 +36,10 @@ impl Fold<Tuple> for LitGeneralizer {
     fn fold(&mut self, mut tuple: Tuple) -> Tuple {
         tuple = tuple.fold_children_with(self);
 
-        let has_rest = tuple
-            .elems
-            .iter()
-            .map(|element| &element.ty)
-            .any(|ty| match &**ty {
-                Type::Rest(..) => true,
-                _ => false,
-            });
+        let has_rest = tuple.elems.iter().map(|element| &element.ty).any(|ty| match &**ty {
+            Type::Rest(..) => true,
+            _ => false,
+        });
 
         if has_rest {
             // Handle rest
@@ -87,9 +83,7 @@ impl Fold<Type> for LitGeneralizer {
         ty.normalize_mut();
 
         match &ty {
-            Type::IndexedAccessType(IndexedAccessType { index_type, .. })
-                if is_str_lit_or_union(&index_type) =>
-            {
+            Type::IndexedAccessType(IndexedAccessType { index_type, .. }) if is_str_lit_or_union(&index_type) => {
                 return ty;
             }
             _ => {}
@@ -99,10 +93,7 @@ impl Fold<Type> for LitGeneralizer {
 
         match ty {
             Type::Lit(LitType {
-                span,
-                ref lit,
-                metadata,
-                ..
+                span, ref lit, metadata, ..
             }) => {
                 if metadata.common.prevent_generalization {
                     return ty;

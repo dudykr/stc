@@ -40,10 +40,7 @@ impl Analyzer<'_, '_> {
         } else {
             return Err(Error::Unimplemented {
                 span,
-                msg: format!(
-                    "Proper error reporting for using const assertion expression in left hand \
-                     side of an assignment expression"
-                ),
+                msg: format!("Proper error reporting for using const assertion expression in left hand side of an assignment expression"),
             });
         }
     }

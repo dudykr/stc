@@ -11,10 +11,7 @@ impl TypeFinder {
     where
         N: VisitWith<Self>,
     {
-        let mut v = TypeFinder {
-            found: false,
-            check,
-        };
+        let mut v = TypeFinder { found: false, check };
         node.visit_with(&mut v);
         v.found
     }

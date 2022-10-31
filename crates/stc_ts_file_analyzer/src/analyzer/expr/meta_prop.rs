@@ -12,18 +12,13 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RMetaPropExpr) -> VResult {
         match (&e.meta, &e.prop) {
             (
+                RIdent { sym: js_word!("new"), .. },
                 RIdent {
-                    sym: js_word!("new"),
-                    ..
-                },
-                RIdent {
-                    sym: js_word!("target"),
-                    ..
+                    sym: js_word!("target"), ..
                 },
             ) => {
                 if !self.ctx.allow_new_target {
-                    self.storage
-                        .report(Error::InvalidUsageOfNewTarget { span: e.span() })
+                    self.storage.report(Error::InvalidUsageOfNewTarget { span: e.span() })
                 }
 
                 return Ok(Type::any(e.meta.span, Default::default()));

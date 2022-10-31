@@ -31,8 +31,7 @@ fn rxjs(b: &mut Bencher) {
 }
 
 fn clone(git_url: &str, tag: &str) -> PathBuf {
-    let dir = PathBuf::from(env!("OUT_DIR"))
-        .join(format!("bench-{}", git_url.split("/").last().unwrap()));
+    let dir = PathBuf::from(env!("OUT_DIR")).join(format!("bench-{}", git_url.split("/").last().unwrap()));
     if dir.exists() {
         return dir;
     }
@@ -69,9 +68,7 @@ fn run_bench(b: &mut Bencher, path: &Path) {
                     ModuleConfig::None,
                     &Lib::load("es2020.full"),
                 ),
-                TsConfig {
-                    ..Default::default()
-                },
+                TsConfig { ..Default::default() },
                 None,
                 Arc::new(NodeResolver),
             );

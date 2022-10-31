@@ -12,12 +12,7 @@ use crate::{
 };
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn narrowed_type_of_assignment(
-        &mut self,
-        span: Span,
-        declared: Type,
-        actual: &Type,
-    ) -> VResult {
+    pub(crate) fn narrowed_type_of_assignment(&mut self, span: Span, declared: Type, actual: &Type) -> VResult {
         declared.assert_valid();
         actual.assert_valid();
 
@@ -35,11 +30,7 @@ impl Analyzer<'_, '_> {
             Type::Union(actual) => {
                 let mut new_types = vec![];
                 for actual in &actual.types {
-                    let ty = self.narrowed_type_of_assignment(
-                        span,
-                        declared.clone().into_owned(),
-                        &actual,
-                    )?;
+                    let ty = self.narrowed_type_of_assignment(span, declared.clone().into_owned(), &actual)?;
                     new_types.push(ty);
                 }
 

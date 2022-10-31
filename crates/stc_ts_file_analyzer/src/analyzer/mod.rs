@@ -8,8 +8,8 @@ use std::{
 use fxhash::{FxHashMap, FxHashSet};
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{
-    RDecorator, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsImportEqualsDecl,
-    RTsModuleBlock, RTsModuleDecl, RTsModuleName, RTsModuleRef, RTsNamespaceDecl,
+    RDecorator, RModule, RModuleDecl, RModuleItem, RScript, RStmt, RStr, RTsImportEqualsDecl, RTsModuleBlock, RTsModuleDecl, RTsModuleName,
+    RTsModuleRef, RTsNamespaceDecl,
 };
 use stc_ts_base_type_ops::bindings::Bindings;
 use stc_ts_dts_mutations::Mutations;
@@ -416,13 +416,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
 
     pub(crate) fn for_builtin(env: StableEnv, storage: &'b mut Builtin) -> Self {
         Self::new_inner(
-            Env::new(
-                env,
-                Default::default(),
-                EsVersion::latest(),
-                ModuleConfig::None,
-                Default::default(),
-            ),
+            Env::new(env, Default::default(), EsVersion::latest(), ModuleConfig::None, Default::default()),
             Arc::new(SourceMap::default()),
             Default::default(),
             box storage,
@@ -555,23 +549,14 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
     where
         F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> Ret,
     {
-        self.with_child(
-            ScopeKind::TypeParams,
-            Default::default(),
-            |a: &mut Analyzer| {
-                // TODO(kdy1): Optimize this.
-                Ok(op(a))
-            },
-        )
+        self.with_child(ScopeKind::TypeParams, Default::default(), |a: &mut Analyzer| {
+            // TODO(kdy1): Optimize this.
+            Ok(op(a))
+        })
         .unwrap()
     }
 
-    pub(crate) fn with_child<F, Ret>(
-        &mut self,
-        kind: ScopeKind,
-        facts: CondFacts,
-        op: F,
-    ) -> VResult<Ret>
+    pub(crate) fn with_child<F, Ret>(&mut self, kind: ScopeKind, facts: CondFacts, op: F) -> VResult<Ret>
     where
         F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> VResult<Ret>,
     {
@@ -582,13 +567,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
     ///
     ///
     /// Hook is invoked with `self` (not child) after `op`.
-    pub(crate) fn with_child_with_hook<F, Ret, H>(
-        &mut self,
-        kind: ScopeKind,
-        facts: CondFacts,
-        op: F,
-        hook: H,
-    ) -> VResult<Ret>
+    pub(crate) fn with_child_with_hook<F, Ret, H>(&mut self, kind: ScopeKind, facts: CondFacts, op: F, hook: H) -> VResult<Ret>
     where
         F: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>) -> VResult<Ret>,
         H: for<'aa, 'bb> FnOnce(&mut Analyzer<'aa, 'bb>),
@@ -606,18 +585,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         let data = take(&mut self.data);
 
         let child_scope = Scope::new(&self.scope, kind, facts);
-        let (
-            ret,
-            errors,
-            imports,
-            imports_by_id,
-            cur_facts,
-            mut child_scope,
-            prepend_stmts,
-            append_stmts,
-            mutations,
-            data,
-        ) = {
+        let (ret, errors, imports, imports_by_id, cur_facts, mut child_scope, prepend_stmts, append_stmts, mutations, data) = {
             let mut child = self.new(child_scope, data);
             child.imports = imports;
             child.imports_by_id = imports_by_id;
@@ -702,10 +670,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
     fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, 'scope, 'b> {
         let orig_ctx = self.ctx;
         self.ctx = ctx;
-        WithCtx {
-            analyzer: self,
-            orig_ctx,
-        }
+        WithCtx { analyzer: self, orig_ctx }
     }
 
     fn rule(&self) -> Rule {
@@ -754,12 +719,7 @@ impl Load for NoopLoader {
         unreachable!()
     }
 
-    fn load_circular_dep(
-        &self,
-        base: ModuleId,
-        dep: ModuleId,
-        partial: &ModuleTypeData,
-    ) -> VResult {
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> VResult {
         unreachable!()
     }
 
@@ -815,8 +775,7 @@ impl Analyzer<'_, '_> {
                         self.export_equals_span = decl.span;
                     }
                     if !is_dts && has_normal_export {
-                        self.storage
-                            .report(Error::ExportEqualsMixedWithOtherExports { span: decl.span });
+                        self.storage.report(Error::ExportEqualsMixedWithOtherExports { span: decl.span });
                     }
 
                     //
@@ -829,10 +788,9 @@ impl Analyzer<'_, '_> {
                     | RModuleDecl::TsNamespaceExport(..) => {
                         has_normal_export = true;
                         if !is_dts && !self.export_equals_span.is_dummy() {
-                            self.storage
-                                .report(Error::ExportEqualsMixedWithOtherExports {
-                                    span: self.export_equals_span,
-                                });
+                            self.storage.report(Error::ExportEqualsMixedWithOtherExports {
+                                span: self.export_equals_span,
+                            });
                         }
                     }
                     _ => {}
@@ -925,12 +883,9 @@ impl Analyzer<'_, '_> {
             if is_type {
                 analyzer.register_type(node.id.clone().into(), ty.clone());
                 if node.is_export {
-                    analyzer.storage.reexport_type(
-                        node.span,
-                        analyzer.ctx.module_id,
-                        node.id.sym.clone(),
-                        ty.clone(),
-                    )
+                    analyzer
+                        .storage
+                        .reexport_type(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty.clone())
                 }
             }
 
@@ -947,12 +902,9 @@ impl Analyzer<'_, '_> {
                 )?;
 
                 if node.is_export {
-                    analyzer.storage.reexport_var(
-                        node.span,
-                        analyzer.ctx.module_id,
-                        node.id.sym.clone(),
-                        ty,
-                    )
+                    analyzer
+                        .storage
+                        .reexport_var(node.span, analyzer.ctx.module_id, node.id.sym.clone(), ty)
                 }
             }
 
@@ -1018,10 +970,9 @@ impl Analyzer<'_, '_> {
             in_declare: self.ctx.in_declare || decl.declare,
             ..self.ctx
         };
-        let mut ty = self.with_ctx(ctx).with_child(
-            ScopeKind::Module,
-            Default::default(),
-            |child: &mut Analyzer| {
+        let mut ty = self
+            .with_ctx(ctx)
+            .with_child(ScopeKind::Module, Default::default(), |child: &mut Analyzer| {
                 child.scope.cur_module_name = match &decl.id {
                     RTsModuleName::Ident(i) => Some(i.into()),
                     RTsModuleName::Str(_) => None,
@@ -1063,8 +1014,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Ok(None)
-            },
-        )?;
+            })?;
 
         if let Some(ty) = &mut ty {
             ty.make_cheap();

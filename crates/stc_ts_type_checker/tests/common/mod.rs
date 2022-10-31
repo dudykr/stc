@@ -25,8 +25,7 @@ where
 
     for entry in WalkDir::new(&root).into_iter() {
         let entry = entry.unwrap();
-        let is_ts = entry.file_name().to_string_lossy().ends_with(".ts")
-            || entry.file_name().to_string_lossy().ends_with(".tsx");
+        let is_ts = entry.file_name().to_string_lossy().ends_with(".ts") || entry.file_name().to_string_lossy().ends_with(".tsx");
         if entry.file_type().is_dir() || !is_ts {
             continue;
         }
@@ -43,11 +42,7 @@ where
 
         let input = {
             let mut buf = String::new();
-            if File::open(entry.path())
-                .unwrap()
-                .read_to_string(&mut buf)
-                .is_err()
-            {
+            if File::open(entry.path()).unwrap().read_to_string(&mut buf).is_err() {
                 continue;
             }
             buf
@@ -72,10 +67,7 @@ where
                 ignore_message: Default::default(),
             },
             testfn: DynTestFn(box move || {
-                eprintln!(
-                    "\n\n========== Running test {}\nSource:\n{}\n",
-                    file_name, input
-                );
+                eprintln!("\n\n========== Running test {}\nSource:\n{}\n", file_name, input);
 
                 test_fn()
             }),

@@ -44,29 +44,16 @@ fn is_ignored(path: &Path) -> bool {
     static IGNORED: Lazy<Vec<String>> = Lazy::new(|| {
         let content = read_to_string("tests/types.ignored.txt").unwrap();
 
-        content
-            .lines()
-            .filter(|v| !v.trim().is_empty())
-            .map(|v| v.to_string())
-            .collect()
+        content.lines().filter(|v| !v.trim().is_empty()).map(|v| v.to_string()).collect()
     });
 
     static PASS: Lazy<Vec<String>> = Lazy::new(|| {
         let content = read_to_string("tests/types.pass.txt").unwrap();
 
-        content
-            .lines()
-            .filter(|v| !v.trim().is_empty())
-            .map(|v| v.to_string())
-            .collect()
+        content.lines().filter(|v| !v.trim().is_empty()).map(|v| v.to_string()).collect()
     });
 
-    !PASS
-        .iter()
-        .any(|line| path.to_string_lossy().contains(line))
-        || IGNORED
-            .iter()
-            .any(|line| path.to_string_lossy().contains(line))
+    !PASS.iter().any(|line| path.to_string_lossy().contains(line)) || IGNORED.iter().any(|line| path.to_string_lossy().contains(line))
 }
 
 #[test]
@@ -256,12 +243,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
         .expect_err("should fail");
 
     let spec = run_test2(false, |cm, _| {
-        let handler = Arc::new(Handler::with_tty_emitter(
-            ColorConfig::Always,
-            true,
-            false,
-            Some(cm.clone()),
-        ));
+        let handler = Arc::new(Handler::with_tty_emitter(ColorConfig::Always, true, false, Some(cm.clone())));
 
         Ok(TsTestCase::parse(
             &cm,
@@ -283,9 +265,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
         return Ok(());
     }
 
-    visualized
-        .compare_to_file(path.with_extension("stdout"))
-        .unwrap();
+    visualized.compare_to_file(path.with_extension("stdout")).unwrap();
 
     Ok(())
 }

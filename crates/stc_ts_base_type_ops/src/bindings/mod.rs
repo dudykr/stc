@@ -62,10 +62,7 @@ pub struct BindingCollector<'a> {
 
 impl Visit<RTsNamespaceDecl> for BindingCollector<'_> {
     fn visit(&mut self, decl: &RTsNamespaceDecl) {
-        self.data
-            .entry(decl.id.clone().into())
-            .or_default()
-            .push(BindingKind::Namespace);
+        self.data.entry(decl.id.clone().into()).or_default().push(BindingKind::Namespace);
 
         decl.visit_children_with(self);
     }
@@ -73,10 +70,7 @@ impl Visit<RTsNamespaceDecl> for BindingCollector<'_> {
 
 impl Visit<RTsInterfaceDecl> for BindingCollector<'_> {
     fn visit(&mut self, decl: &RTsInterfaceDecl) {
-        self.data
-            .entry(decl.id.clone().into())
-            .or_default()
-            .push(BindingKind::Inteface);
+        self.data.entry(decl.id.clone().into()).or_default().push(BindingKind::Inteface);
 
         decl.visit_children_with(self);
     }
@@ -84,10 +78,7 @@ impl Visit<RTsInterfaceDecl> for BindingCollector<'_> {
 
 impl Visit<RClassDecl> for BindingCollector<'_> {
     fn visit(&mut self, decl: &RClassDecl) {
-        self.data
-            .entry(decl.ident.clone().into())
-            .or_default()
-            .push(BindingKind::Class);
+        self.data.entry(decl.ident.clone().into()).or_default().push(BindingKind::Class);
 
         decl.visit_children_with(self);
     }
@@ -95,10 +86,7 @@ impl Visit<RClassDecl> for BindingCollector<'_> {
 
 impl Visit<RFnDecl> for BindingCollector<'_> {
     fn visit(&mut self, decl: &RFnDecl) {
-        self.data
-            .entry(decl.ident.clone().into())
-            .or_default()
-            .push(BindingKind::Function);
+        self.data.entry(decl.ident.clone().into()).or_default().push(BindingKind::Function);
 
         decl.visit_children_with(self);
     }
@@ -106,10 +94,7 @@ impl Visit<RFnDecl> for BindingCollector<'_> {
 
 impl Visit<RTsEnumDecl> for BindingCollector<'_> {
     fn visit(&mut self, decl: &RTsEnumDecl) {
-        self.data
-            .entry(decl.id.clone().into())
-            .or_default()
-            .push(BindingKind::Enum);
+        self.data.entry(decl.id.clone().into()).or_default().push(BindingKind::Enum);
 
         decl.visit_children_with(self);
     }
@@ -117,10 +102,7 @@ impl Visit<RTsEnumDecl> for BindingCollector<'_> {
 
 impl Visit<RTsTypeAliasDecl> for BindingCollector<'_> {
     fn visit(&mut self, decl: &RTsTypeAliasDecl) {
-        self.data
-            .entry(decl.id.clone().into())
-            .or_default()
-            .push(BindingKind::TypeAlias);
+        self.data.entry(decl.id.clone().into()).or_default().push(BindingKind::TypeAlias);
 
         decl.visit_children_with(self);
     }
@@ -132,10 +114,7 @@ impl Visit<RTsModuleDecl> for BindingCollector<'_> {
 
         match &d.id {
             RTsModuleName::Ident(i) => {
-                self.data
-                    .entry(i.clone().into())
-                    .or_default()
-                    .push(BindingKind::TsModule);
+                self.data.entry(i.clone().into()).or_default().push(BindingKind::TsModule);
             }
             RTsModuleName::Str(_) => {}
         }
