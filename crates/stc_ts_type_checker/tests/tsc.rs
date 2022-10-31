@@ -645,28 +645,6 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         mem::forget(stat_guard);
 
-        // Print per-test stats so we can prevent regressions.
-        if cfg!(debug_assertions) {
-            let stats_file_name = file_name.with_file_name(format!(
-                "{}.stats.rust-debug",
-                file_name.file_name().unwrap().to_string_lossy()
-            ));
-
-            if env::var("CI").unwrap_or_default() == "1" {
-                let stat_string =
-                    fs::read_to_string(&stats_file_name).expect("failed to read test stats file");
-
-                assert_eq!(
-                    format!("{:#?}", stats),
-                    stat_string,
-                    "CI=1 so test stats must match"
-                );
-            } else {
-                fs::write(stats_file_name, format!("{:#?}", stats))
-                    .expect("failed to write test stats");
-            }
-        }
-
         if !cfg!(debug_assertions) {
             let line_cnt = {
                 let content = fs::read_to_string(&file_name).unwrap();
@@ -747,6 +725,28 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let extra_err_count = extra_errors.len();
         stats.required_error += expected_errors.len();
         stats.extra_error += extra_err_count;
+
+        // Print per-test stats so we can prevent regressions.
+        if cfg!(debug_assertions) {
+            let stats_file_name = file_name.with_file_name(format!(
+                "{}.stats.rust-debug",
+                file_name.file_name().unwrap().to_string_lossy()
+            ));
+
+            if env::var("CI").unwrap_or_default() == "1" {
+                let stat_string =
+                    fs::read_to_string(&stats_file_name).expect("failed to read test stats file");
+
+                assert_eq!(
+                    format!("{:#?}", stats),
+                    stat_string,
+                    "CI=1 so test stats must match"
+                );
+            } else {
+                fs::write(stats_file_name, format!("{:#?}", stats))
+                    .expect("failed to write test stats");
+            }
+        }
 
         let total_stats = record_stat(stats);
 
