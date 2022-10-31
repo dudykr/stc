@@ -13,6 +13,13 @@ use stc_ts_types::{
     ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection, Intrinsic, IntrinsicKind, Key,
     KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref,
     ThisType, ThisTypeMetadata, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey,
+    Conditional, ConditionalMetadata, ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance,
+    InstanceMetadata, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId, Operator,
+    PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type,
+    TypeElMetadata, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation,
+    Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -1324,7 +1331,10 @@ impl Analyzer<'_, '_> {
                         },
                     })),
                     type_params: Default::default(),
-                    metadata: Default::default(),
+                    metadata: TypeElMetadata {
+                        is_implicit: true,
+                        ..Default::default()
+                    },
                     accessor: Accessor {
                         getter: true,
                         setter: false,
