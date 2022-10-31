@@ -13,8 +13,7 @@ impl Visit<TypeParamDecl> for TypeParamDeclFinder {
     fn visit(&mut self, decl: &TypeParamDecl) {
         decl.visit_children_with(self);
 
-        self.params
-            .extend(decl.params.iter().map(|v| v.name.clone()));
+        self.params.extend(decl.params.iter().map(|v| v.name.clone()));
     }
 }
 

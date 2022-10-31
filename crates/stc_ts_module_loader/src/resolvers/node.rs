@@ -72,15 +72,12 @@ impl NodeResolver {
         let pkg_dir = pkg_path.parent().unwrap_or(&root);
         let file = File::open(pkg_path)?;
         let reader = BufReader::new(file);
-        let pkg: PackageJson =
-            serde_json::from_reader(reader).context("failed to deserialize package.json")?;
+        let pkg: PackageJson = serde_json::from_reader(reader).context("failed to deserialize package.json")?;
 
         for main in &[&pkg.types] {
             if let Some(target) = main {
                 let path = pkg_dir.join(target);
-                return self
-                    .resolve_as_file(&path)
-                    .or_else(|_| self.resolve_as_directory(&path));
+                return self.resolve_as_file(&path).or_else(|_| self.resolve_as_directory(&path));
             }
         }
 
@@ -103,8 +100,7 @@ impl NodeResolver {
     }
 
     fn try_package(&self, pkg_dir: &Path) -> Result<PathBuf, Error> {
-        self.resolve_as_file(&pkg_dir)
-            .or_else(|_| self.resolve_as_directory(&pkg_dir))
+        self.resolve_as_file(&pkg_dir).or_else(|_| self.resolve_as_directory(&pkg_dir))
     }
 
     /// Resolve by walking up node_modules folders.
@@ -163,33 +159,16 @@ impl Resolve for NodeResolver {
             let path = base_dir.join(&*target);
             return self
                 .resolve_as_file(&path)
-                .with_context(|| {
-                    format!(
-                        "failed to resolve `{}` as a file dependancy from `{}`",
-                        target,
-                        base.display()
-                    )
-                })
+                .with_context(|| format!("failed to resolve `{}` as a file dependancy from `{}`", target, base.display()))
                 .or_else(|_| {
-                    self.resolve_as_directory(&path).with_context(|| {
-                        format!(
-                            "failed to resolve `{}` as a directory dependancy from `{}`",
-                            target,
-                            base.display()
-                        )
-                    })
+                    self.resolve_as_directory(&path)
+                        .with_context(|| format!("failed to resolve `{}` as a directory dependancy from `{}`", target, base.display()))
                 })
                 .and_then(|p| self.wrap(p));
         }
 
         self.resolve_node_modules(base_dir, target)
-            .with_context(|| {
-                format!(
-                    "failed to resolve `{}` as a node module from `{}`",
-                    target,
-                    base.display()
-                )
-            })
+            .with_context(|| format!("failed to resolve `{}` as a node module from `{}`", target, base.display()))
             .and_then(|p| self.wrap(p))
     }
 }

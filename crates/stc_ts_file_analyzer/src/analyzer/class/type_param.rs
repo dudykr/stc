@@ -33,10 +33,7 @@ impl Visit<TypeParam> for StaticTypeParamValidator<'_, '_, '_> {
     fn visit(&mut self, param: &TypeParam) {
         param.visit_children_with(self);
 
-        if self
-            .analyzer
-            .is_type_param_declared_in_containing_class(&param.name)
-        {
+        if self.analyzer.is_type_param_declared_in_containing_class(&param.name) {
             self.analyzer
                 .storage
                 .report(Error::StaticMemberCannotUseTypeParamOfClass { span: self.span })

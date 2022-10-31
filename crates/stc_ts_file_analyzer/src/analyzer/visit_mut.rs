@@ -2,15 +2,13 @@
 
 use rnode::Visit;
 use stc_ts_ast_rnode::{
-    RArrowExpr, RBlockStmt, RCatchClause, RClass, RClassDecl, RClassExpr, RClassMember,
-    RClassMethod, RComputedPropName, RConstructor, RDoWhileStmt, RExportAll, RExportDecl,
-    RExportDefaultDecl, RExportDefaultExpr, RExportNamedSpecifier, RExpr, RFnDecl, RFnExpr,
-    RForInStmt, RForOfStmt, RForStmt, RFunction, RIfStmt, RImportDecl, RModule, RModuleItem,
-    RNamedExport, RObjectLit, RParam, RParamOrTsParamProp, RPrivateMethod, RPrivateProp, RPropName,
-    RReturnStmt, RSeqExpr, RStmt, RSwitchStmt, RTpl, RTsEnumDecl, RTsExportAssignment, RTsFnParam,
-    RTsFnType, RTsImportEqualsDecl, RTsInterfaceBody, RTsInterfaceDecl, RTsModuleBlock,
-    RTsModuleDecl, RTsNamespaceDecl, RTsParamProp, RTsTplLitType, RTsType, RTsTypeAliasDecl,
-    RTsTypeElement, RVarDecl, RVarDeclarator, RWhileStmt, RWithStmt, RYieldExpr,
+    RArrowExpr, RBlockStmt, RCatchClause, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RComputedPropName, RConstructor,
+    RDoWhileStmt, RExportAll, RExportDecl, RExportDefaultDecl, RExportDefaultExpr, RExportNamedSpecifier, RExpr, RFnDecl, RFnExpr,
+    RForInStmt, RForOfStmt, RForStmt, RFunction, RIfStmt, RImportDecl, RModule, RModuleItem, RNamedExport, RObjectLit, RParam,
+    RParamOrTsParamProp, RPrivateMethod, RPrivateProp, RPropName, RReturnStmt, RSeqExpr, RStmt, RSwitchStmt, RTpl, RTsEnumDecl,
+    RTsExportAssignment, RTsFnParam, RTsFnType, RTsImportEqualsDecl, RTsInterfaceBody, RTsInterfaceDecl, RTsModuleBlock, RTsModuleDecl,
+    RTsNamespaceDecl, RTsParamProp, RTsTplLitType, RTsType, RTsTypeAliasDecl, RTsTypeElement, RVarDecl, RVarDeclarator, RWhileStmt,
+    RWithStmt, RYieldExpr,
 };
 
 use crate::{analyzer::Analyzer, validator::ValidateWith};

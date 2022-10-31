@@ -34,12 +34,7 @@ pub trait Load: 'static + Send + Sync {
     ///
     ///
     /// Returned value must be [Type::Arc] of [Type::Module]
-    fn load_circular_dep(
-        &self,
-        base: ModuleId,
-        dep: ModuleId,
-        partial: &ModuleTypeData,
-    ) -> VResult<Type>;
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> VResult<Type>;
 
     /// Note: This method is called in parallel.
     ///

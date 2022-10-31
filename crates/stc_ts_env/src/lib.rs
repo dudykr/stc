@@ -41,13 +41,7 @@ pub struct Env {
 }
 
 impl Env {
-    pub fn new(
-        env: StableEnv,
-        rule: Rule,
-        target: EsVersion,
-        module: ModuleConfig,
-        builtin: Arc<BuiltIn>,
-    ) -> Self {
+    pub fn new(env: StableEnv, rule: Rule, target: EsVersion, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Self {
         Self {
             stable: env,
             builtin,
@@ -88,12 +82,9 @@ impl Env {
 
         match self.get_global_type(ty.span(), &name) {
             Ok(prev_ty) => {
-                self.global_types.lock().insert(
-                    name,
-                    Type::new_intersection(DUMMY_SP, vec![prev_ty, ty])
-                        .fixed()
-                        .cheap(),
-                );
+                self.global_types
+                    .lock()
+                    .insert(name, Type::new_intersection(DUMMY_SP, vec![prev_ty, ty]).fixed().cheap());
             }
             Err(_) => {
                 self.global_types.lock().insert(name, ty);

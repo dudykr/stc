@@ -13,11 +13,7 @@ use swc_ecma_ast::TruePlusMinus;
 pub mod bindings;
 pub mod fix;
 
-pub fn apply_mapped_flags(
-    el: &mut TypeElement,
-    optional: Option<TruePlusMinus>,
-    readonly: Option<TruePlusMinus>,
-) {
+pub fn apply_mapped_flags(el: &mut TypeElement, optional: Option<TruePlusMinus>, readonly: Option<TruePlusMinus>) {
     match optional {
         Some(v) => match el {
             TypeElement::Call(_) => {}
@@ -83,10 +79,7 @@ pub fn apply_mapped_flags(
 
 pub fn is_str_lit_or_union(t: &Type) -> bool {
     match t.normalize() {
-        Type::Lit(LitType {
-            lit: RTsLit::Str(..),
-            ..
-        }) => true,
+        Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => true,
         Type::Union(Union { ref types, .. }) => types.iter().all(|ty| is_str_lit_or_union(&ty)),
         _ => false,
     }

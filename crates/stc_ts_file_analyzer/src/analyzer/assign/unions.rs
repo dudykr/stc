@@ -5,8 +5,7 @@ use stc_ts_ast_rnode::RBool;
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type,
-    TypeElement, TypeLit, Union, UnionMetadata,
+    KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union, UnionMetadata,
 };
 use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
 use swc_common::{Span, DUMMY_SP};
@@ -27,13 +26,7 @@ impl Analyzer<'_, '_> {
     ///
     ///  - lhs = `(["a", number] | ["b", number] | ["c", string]);`
     ///  - rhs = `[("b" | "a"), 1];`
-    pub(super) fn assign_to_union(
-        &mut self,
-        data: &mut AssignData,
-        l: &Type,
-        r: &Type,
-        opts: AssignOpts,
-    ) -> Option<VResult<()>> {
+    pub(super) fn assign_to_union(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
         let r_res = self.flatten_unions_for_assignment(opts.span, Cow::Borrowed(r));
 
         match r_res {
@@ -88,19 +81,12 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Use Cow<TupleElement>
-    fn append_type_element_to_type(
-        &mut self,
-        span: Span,
-        to: &mut Type,
-        el: &TypeElement,
-    ) -> VResult<()> {
+    fn append_type_element_to_type(&mut self, span: Span, to: &mut Type, el: &TypeElement) -> VResult<()> {
         match el {
             TypeElement::Property(el) => {
                 if let Some(el_ty) = &el.type_ann {
                     if let Some(ty) = self.expand_union_for_assignment(span, &el_ty) {
-                        let mut to_types = (0..ty.types.len())
-                            .map(|_| ALLOW_DEEP_CLONE.set(&(), || to.clone()))
-                            .collect_vec();
+                        let mut to_types = (0..ty.types.len()).map(|_| ALLOW_DEEP_CLONE.set(&(), || to.clone())).collect_vec();
 
                         for (idx, el_ty) in ty.types.iter().enumerate() {
                             self.append_type_element_to_type(
@@ -146,12 +132,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Use Cow<TupleElement>
-    fn append_tuple_element_to_type(
-        &mut self,
-        span: Span,
-        to: &mut Type,
-        el: &TupleElement,
-    ) -> VResult<()> {
+    fn append_tuple_element_to_type(&mut self, span: Span, to: &mut Type, el: &TupleElement) -> VResult<()> {
         if let Some(el_ty) = self.expand_union_for_assignment(span, &el.ty) {
             let mut to_types = (0..el_ty.types.len()).map(|_| to.clone()).collect_vec();
 
@@ -195,9 +176,7 @@ impl Analyzer<'_, '_> {
 
     /// Expands `boolean` to `true | false`.
     fn expand_union_for_assignment<'a>(&mut self, span: Span, t: &'a Type) -> Option<Union> {
-        let t = self
-            .normalize(Some(span), Cow::Borrowed(t), Default::default())
-            .ok()?;
+        let t = self.normalize(Some(span), Cow::Borrowed(t), Default::default()).ok()?;
 
         match t.normalize() {
             Type::Keyword(KeywordType {

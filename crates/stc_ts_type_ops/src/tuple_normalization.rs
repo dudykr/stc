@@ -25,13 +25,7 @@ impl VisitMut<Type> for TupleNormalizer {
                 }
 
                 let span = ty.span();
-                let mut types = ty
-                    .take()
-                    .expect_tuple()
-                    .elems
-                    .into_iter()
-                    .map(|elem| *elem.ty)
-                    .collect::<Vec<_>>();
+                let mut types = ty.take().expect_tuple().elems.into_iter().map(|elem| *elem.ty).collect::<Vec<_>>();
                 types.dedup_type();
 
                 let has_other = types.iter().any(|ty| !ty.is_null_or_undefined());

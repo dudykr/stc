@@ -1,8 +1,7 @@
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RBindingIdent, RDecl, RDefaultDecl, RExportAll, RExportDecl, RExportDefaultDecl,
-    RExportDefaultExpr, RExportNamedSpecifier, RExportSpecifier, RExpr, RIdent, RNamedExport, RPat,
-    RStmt, RTsExportAssignment, RTsModuleName, RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RBindingIdent, RDecl, RDefaultDecl, RExportAll, RExportDecl, RExportDefaultDecl, RExportDefaultExpr, RExportNamedSpecifier,
+    RExportSpecifier, RExpr, RIdent, RNamedExport, RPat, RStmt, RTsExportAssignment, RTsModuleName, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -35,12 +34,7 @@ impl Analyzer<'_, '_> {
                 RDecl::Fn(ref f) => {
                     f.visit_with(a);
                     // self.export(f.span(), f.ident.clone().into(), None);
-                    a.export_var(
-                        f.span(),
-                        f.ident.clone().into(),
-                        None,
-                        f.function.body.is_some(),
-                    );
+                    a.export_var(f.span(), f.ident.clone().into(), None, f.function.body.is_some());
                 }
                 RDecl::TsInterface(ref i) => {
                     i.visit_with(a);
@@ -66,29 +60,19 @@ impl Analyzer<'_, '_> {
                 RDecl::TsEnum(ref e) => {
                     let span = e.span();
 
-                    let ty = e
-                        .validate_with(a)
-                        .report(&mut a.storage)
-                        .map(Type::from)
-                        .map(|ty| ty.cheap());
+                    let ty = e.validate_with(a).report(&mut a.storage).map(Type::from).map(|ty| ty.cheap());
                     let ty = ty.unwrap_or_else(|| Type::any(span, Default::default()));
                     a.register_type(e.id.clone().into(), ty);
 
+                    a.storage.export_type(span, a.ctx.module_id, e.id.clone().into());
                     a.storage
-                        .export_type(span, a.ctx.module_id, e.id.clone().into());
-                    a.storage.export_var(
-                        span,
-                        a.ctx.module_id,
-                        e.id.clone().into(),
-                        e.id.clone().into(),
-                    );
+                        .export_var(span, a.ctx.module_id, e.id.clone().into(), e.id.clone().into());
                 }
                 RDecl::TsModule(module) => match &module.id {
                     RTsModuleName::Ident(id) => {
                         module.visit_with(a);
 
-                        a.storage
-                            .export_type(span, a.ctx.module_id, id.clone().into());
+                        a.storage.export_type(span, a.ctx.module_id, id.clone().into());
                     }
                     RTsModuleName::Str(..) => {
                         let module: Option<Type> = module.validate_with(a)?;
@@ -126,11 +110,7 @@ impl Analyzer<'_, '_> {
 
         match export.decl {
             RDefaultDecl::Fn(ref f) => {
-                let i = f
-                    .ident
-                    .as_ref()
-                    .map(|v| v.into())
-                    .unwrap_or_else(|| Id::word(js_word!("default")));
+                let i = f.ident.as_ref().map(|v| v.into()).unwrap_or_else(|| Id::word(js_word!("default")));
                 let fn_ty = match f.function.validate_with_args(self, f.ident.as_ref()) {
                     Ok(ty) => ty,
                     Err(err) => {
@@ -140,36 +120,16 @@ impl Analyzer<'_, '_> {
                 };
                 if f.function.return_type.is_none() {
                     if let Some(m) = &mut self.mutations {
-                        if m.for_fns
-                            .entry(f.function.node_id)
-                            .or_default()
-                            .ret_ty
-                            .is_none()
-                        {
-                            m.for_fns.entry(f.function.node_id).or_default().ret_ty =
-                                Some(*fn_ty.ret_ty.clone());
+                        if m.for_fns.entry(f.function.node_id).or_default().ret_ty.is_none() {
+                            m.for_fns.entry(f.function.node_id).or_default().ret_ty = Some(*fn_ty.ret_ty.clone());
                         }
                     }
                 }
 
-                self.declare_var(
-                    span,
-                    VarKind::Fn,
-                    i.clone(),
-                    Some(fn_ty.into()),
-                    None,
-                    true,
-                    true,
-                    false,
-                )
-                .report(&mut self.storage);
+                self.declare_var(span, VarKind::Fn, i.clone(), Some(fn_ty.into()), None, true, true, false)
+                    .report(&mut self.storage);
 
-                self.export_var(
-                    f.span(),
-                    Id::word(js_word!("default")),
-                    Some(i),
-                    f.function.body.is_some(),
-                );
+                self.export_var(f.span(), Id::word(js_word!("default")), Some(i), f.function.body.is_some());
             }
             RDefaultDecl::Class(ref c) => {
                 let id: Option<Id> = c.ident.as_ref().map(|v| v.into());
@@ -185,17 +145,8 @@ impl Analyzer<'_, '_> {
 
                 self.export_type(span, Id::word(js_word!("default")), Some(var_name.clone()));
 
-                self.declare_var(
-                    span,
-                    VarKind::Class,
-                    var_name.clone(),
-                    Some(class_ty),
-                    None,
-                    true,
-                    true,
-                    false,
-                )
-                .report(&mut self.storage);
+                self.declare_var(span, VarKind::Class, var_name.clone(), Some(class_ty), None, true, true, false)
+                    .report(&mut self.storage);
 
                 self.export_var(c.span(), Id::word(js_word!("default")), orig_name, true);
             }
@@ -221,12 +172,7 @@ impl Analyzer<'_, '_> {
         if self.ctx.reevaluating() {
             return;
         }
-        let v = self
-            .data
-            .for_module
-            .exports_spans
-            .entry((sym.clone(), IdCtx::Var))
-            .or_default();
+        let v = self.data.for_module.exports_spans.entry((sym.clone(), IdCtx::Var)).or_default();
         v.push(span);
 
         // TODO(kdy1): Optimize this by emitting same error only once.
@@ -244,12 +190,8 @@ impl Analyzer<'_, '_> {
             self.report_errors_for_duplicated_exports_of_var(span, name.sym().clone());
         }
 
-        self.storage.export_var(
-            span,
-            self.ctx.module_id,
-            name.clone(),
-            orig_name.unwrap_or(name),
-        );
+        self.storage
+            .export_var(span, self.ctx.module_id, name.clone(), orig_name.unwrap_or(name));
     }
 
     /// Exports a type.
@@ -274,21 +216,13 @@ impl Analyzer<'_, '_> {
 
         let types = match types {
             Some(ty) => ty,
-            None => unreachable!(
-                ".register_type() should be called before calling .export({})",
-                orig_name
-            ),
+            None => unreachable!(".register_type() should be called before calling .export({})", orig_name),
         };
 
-        let iter = types
-            .into_iter()
-            .map(|v| v.into_owned())
-            .map(|v| v.cheap())
-            .collect::<Vec<_>>();
+        let iter = types.into_iter().map(|v| v.into_owned()).map(|v| v.cheap()).collect::<Vec<_>>();
 
         for ty in iter {
-            self.storage
-                .store_private_type(self.ctx.module_id, name.clone(), ty, false);
+            self.storage.store_private_type(self.ctx.module_id, name.clone(), ty, false);
         }
 
         self.storage.export_type(span, self.ctx.module_id, name);
@@ -334,10 +268,7 @@ impl Analyzer<'_, '_> {
             })));
 
             if let Some(m) = &mut self.mutations {
-                m.for_export_defaults
-                    .entry(item_node_id)
-                    .or_default()
-                    .replace_with =
+                m.for_export_defaults.entry(item_node_id).or_default().replace_with =
                     Some(box RExpr::Ident(RIdent::new("_default".into(), DUMMY_SP)));
             }
 
@@ -414,8 +345,7 @@ impl Analyzer<'_, '_> {
                     }
                     for (id, types) in data.exports.types.iter() {
                         for ty in types {
-                            self.storage
-                                .reexport_type(span, dep, id.clone(), ty.clone());
+                            self.storage.reexport_type(span, dep, id.clone(), ty.clone());
                         }
                     }
                 }
@@ -462,11 +392,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 base,
                                 dep,
-                                named
-                                    .exported
-                                    .as_ref()
-                                    .map(Id::from)
-                                    .unwrap_or_else(|| Id::from(&named.orig)),
+                                named.exported.as_ref().map(Id::from).unwrap_or_else(|| Id::from(&named.orig)),
                                 Id::from(&named.orig),
                             );
                         }
@@ -475,11 +401,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 base,
                                 Id::from(&named.orig),
-                                named
-                                    .exported
-                                    .as_ref()
-                                    .map(Id::from)
-                                    .unwrap_or_else(|| Id::from(&named.orig)),
+                                named.exported.as_ref().map(Id::from).unwrap_or_else(|| Id::from(&named.orig)),
                             );
                         }
                     }
@@ -496,8 +418,7 @@ impl Analyzer<'_, '_> {
         if self.storage.get_local_var(ctxt, orig.clone()).is_some() {
             self.report_errors_for_duplicated_exports_of_var(span, id.sym().clone());
 
-            self.storage
-                .export_var(span, ctxt, id.clone(), orig.clone());
+            self.storage.export_var(span, ctxt, id.clone(), orig.clone());
         }
 
         if self.storage.get_local_type(ctxt, orig).is_some() {
@@ -518,8 +439,7 @@ impl Analyzer<'_, '_> {
                 Type::Module(data) => {
                     if let Some(ty) = data.exports.vars.get(orig.sym()) {
                         did_work = true;
-                        self.storage
-                            .reexport_var(span, ctxt, id.sym().clone(), ty.clone());
+                        self.storage.reexport_var(span, ctxt, id.sym().clone(), ty.clone());
                     }
 
                     if let Some(ty) = data.exports.types.get(orig.sym()) {

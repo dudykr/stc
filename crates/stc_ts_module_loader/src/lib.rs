@@ -81,13 +81,7 @@ where
     C: Comments + Send + Sync,
     R: Resolve,
 {
-    pub fn new(
-        cm: Arc<SourceMap>,
-        comments: C,
-        resolver: R,
-        parser_config: TsConfig,
-        target: EsVersion,
-    ) -> Self {
+    pub fn new(cm: Arc<SourceMap>, comments: C, resolver: R, parser_config: TsConfig, target: EsVersion) -> Self {
         ModuleGraph {
             cm,
             parser_config,
@@ -138,11 +132,7 @@ where
         if !errors.is_empty() {
             let err = anyhow!(
                 "failed load modules:\n{}",
-                errors
-                    .iter()
-                    .map(|s| format!("{:?}", s))
-                    .collect::<Vec<_>>()
-                    .join("\n")
+                errors.iter().map(|s| format!("{:?}", s)).collect::<Vec<_>>().join("\n")
             );
             return Err((module_id, err));
         }
@@ -151,8 +141,7 @@ where
     }
 
     pub fn id_for_declare_module(&self, module_name: &JsWord) -> ModuleId {
-        self.id_generator
-            .generate(&Arc::new(FileName::Custom(module_name.to_string())))
+        self.id_generator.generate(&Arc::new(FileName::Custom(module_name.to_string())))
     }
 
     pub fn path(&self, id: ModuleId) -> Arc<FileName> {
@@ -260,11 +249,7 @@ where
     /// Returns `Ok(None)` if it's already loaded.
     ///
     /// Note that this methods does not modify `self.loaded`.
-    fn load(
-        &self,
-        filename: &Arc<FileName>,
-        resolve_all: bool,
-    ) -> Result<Option<LoadResult>, Error> {
+    fn load(&self, filename: &Arc<FileName>, resolve_all: bool) -> Result<Option<LoadResult>, Error> {
         let module_id = self.id_generator.generate(filename);
 
         if self.loaded.contains_key(&module_id) {
@@ -292,10 +277,7 @@ where
 
         let module = self.load_one_module(filename)?;
 
-        let _panic = panic_ctx!(format!(
-            "ModuleGraph.load({}, span = {:?})",
-            filename, module.span
-        ));
+        let _panic = panic_ctx!(format!("ModuleGraph.load({}, span = {:?})", filename, module.span));
 
         let (declared_modules, deps) = find_modules_and_deps(&self.comments, &module);
 
@@ -365,9 +347,7 @@ where
         }
 
         let module = Arc::new(module);
-        self.parse_cache
-            .lock()
-            .insert(filename.clone(), module.clone());
+        self.parse_cache.lock().insert(filename.clone(), module.clone());
 
         Ok(module)
     }

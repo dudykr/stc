@@ -2,9 +2,8 @@
 
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RBindingIdent, RDecl, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RModuleDecl,
-    RModuleItem, RProp, RStmt, RTsEntityName, RTsExprWithTypeArgs, RTsIndexSignature,
-    RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl, RVarDeclOrExpr, RVarDeclOrPat,
+    RBindingIdent, RDecl, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RModuleDecl, RModuleItem, RProp, RStmt, RTsEntityName,
+    RTsExprWithTypeArgs, RTsIndexSignature, RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl, RVarDeclOrExpr, RVarDeclOrPat,
     RVarDeclarator,
 };
 use stc_ts_types::{Id, IdCtx};
@@ -62,10 +61,7 @@ fn vars_declared_by_var_decl(v: &RVarDecl) -> AHashMap<TypedId, AHashSet<TypedId
 
         // Exclude the variables we are defining.
         for var in vars.iter().cloned() {
-            type_ids.remove(&TypedId {
-                kind: IdCtx::Var,
-                id: var,
-            });
+            type_ids.remove(&TypedId { kind: IdCtx::Var, id: var });
         }
 
         let used_ids = deps_of(&decl.init);
@@ -194,10 +190,9 @@ where
         Ok(v) => match v {
             RModuleDecl::ExportDecl(d) => ids_declared_by_decl(&d.decl),
 
-            RModuleDecl::Import(_)
-            | RModuleDecl::ExportNamed(_)
-            | RModuleDecl::ExportDefaultExpr(_)
-            | RModuleDecl::ExportAll(_) => Default::default(),
+            RModuleDecl::Import(_) | RModuleDecl::ExportNamed(_) | RModuleDecl::ExportDefaultExpr(_) | RModuleDecl::ExportAll(_) => {
+                Default::default()
+            }
 
             RModuleDecl::ExportDefaultDecl(_) => {
                 // TODO

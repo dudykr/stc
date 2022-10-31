@@ -33,9 +33,7 @@ where
     T: Eq,
 {
     fn default() -> Self {
-        Self {
-            inner: Default::default(),
-        }
+        Self { inner: Default::default() }
     }
 }
 
