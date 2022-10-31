@@ -2219,7 +2219,7 @@ impl Analyzer<'_, '_> {
         let mut max_param = Some(params.len());
         for (index, param) in params.iter().enumerate() {
             match &param.pat {
-                RPat::Rest(..) => match param.ty.normalize() {
+                RPat::Rest(..) => match param.ty.normalize_instance() {
                     Type::Tuple(param_ty) => {
                         for elem in &param_ty.elems {
                             match elem.ty.normalize() {
