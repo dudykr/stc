@@ -52,6 +52,7 @@ async/es2017/functionDeclarations/asyncFunctionDeclaration1_es2017.ts
 async/es2017/functionDeclarations/asyncFunctionDeclaration2_es2017.ts
 async/es2017/functionDeclarations/asyncFunctionDeclaration3_es2017.ts
 async/es2017/functionDeclarations/asyncFunctionDeclaration4_es2017.ts
+async/es2017/functionDeclarations/asyncFunctionDeclaration5_es2017.ts
 async/es2017/functionDeclarations/asyncFunctionDeclaration8_es2017.ts
 async/es5/asyncArrowFunction/arrowFunctionWithParameterNameAsync_es5.ts
 async/es5/asyncArrowFunction/asyncArrowFunction10_es5.ts

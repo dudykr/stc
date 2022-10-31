@@ -1098,6 +1098,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS1359
+    ExpectedIdentifierReservedKeyword {
+        span: Span,
+    },
+
     TS1166 {
         span: Span,
     },
@@ -1527,6 +1532,7 @@ impl Error {
             Error::TS2370 { .. } => 2370,
             Error::WrongOverloadSignature { .. } => 2394,
             Error::TS1166 { .. } => 1166,
+            Error::ExpectedIdentifierReservedKeyword { .. } => 1359,
             Error::TS1345 { .. } => 1345,
             Error::TS2353 { .. } => 2353,
             Error::ConstructorImplMissingOrNotFollowedByDecl { .. } => 2390,
