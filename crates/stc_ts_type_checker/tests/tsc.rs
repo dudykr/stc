@@ -63,7 +63,9 @@ struct RefError {
 #[derive(Debug, Default, Clone)]
 struct Stats {
     required_error: usize,
+    /// Correct error count.
     matched_error: usize,
+    /// False-positive error count.
     extra_error: usize,
 }
 
