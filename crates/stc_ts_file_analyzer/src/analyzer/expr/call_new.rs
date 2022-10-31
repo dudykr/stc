@@ -2214,10 +2214,10 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let min_param: usize = params.iter().map(|v| &v.pat).map(count_required_pat).sum();
+        let mut min_param: usize = params.iter().map(|v| &v.pat).map(count_required_pat).sum();
 
         let mut max_param = Some(params.len());
-        for param in params {
+        for (index, param) in params.iter().enumerate() {
             match &param.pat {
                 RPat::Rest(..) => match param.ty.normalize() {
                     Type::Tuple(param_ty) => {
@@ -2274,8 +2274,12 @@ impl Analyzer<'_, '_> {
                         )
                         .is_ok()
                 {
-                    // Reduce min_params if the type of parameter accepts void.
-                    continue;
+                    // void is the last parameter, reduce min_params.
+                    //
+                    // function foo<A>(a: A, b: void) {}
+                    if index == params.len() - 1 {
+                        min_param -= 1;
+                    }
                 }
             }
         }
