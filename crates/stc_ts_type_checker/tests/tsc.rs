@@ -649,7 +649,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         if cfg!(debug_assertions) {
             let stats_file_name = file_name.with_file_name(format!(
                 "{}.stats.rust-debug",
-                file_name.file_stem().unwrap().to_string_lossy()
+                file_name.file_name().unwrap().to_string_lossy()
             ));
 
             fs::write(stats_file_name, format!("{:#?}", stats))
