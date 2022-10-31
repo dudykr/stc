@@ -53,7 +53,7 @@ impl Drop for RecordOnPanic {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, PartialOrd, Ord)]
 struct RefError {
     pub line: usize,
     pub column: usize,
@@ -558,6 +558,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
     let file_stem = file_name.file_stem().unwrap();
     let fname = file_name.display().to_string();
     let mut expected_errors = load_expected_errors(&file_name).unwrap();
+    expected_errors.sort();
 
     let specs = parse_test(file_name);
 
@@ -677,6 +678,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 (cp.line, code)
             })
             .collect::<Vec<_>>();
+        extra_errors.sort();
 
         let full_actual_errors = extra_errors.clone();
 
