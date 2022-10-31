@@ -729,7 +729,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let total_stats = record_stat(stats);
 
         if cfg!(debug_assertions) {
-            println!("[STATS] {:#?}", total_stats);
+            println!("[TOTAL_STATS] {:#?}", total_stats);
 
             if expected_errors.is_empty() {
                 println!("[REMOVE_ONLY]{}", file_name.display());
