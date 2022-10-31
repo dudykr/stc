@@ -645,6 +645,16 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         mem::forget(stat_guard);
 
+        if cfg!(debug_assertions) {
+            let stats_file_name = file_name.with_file_name(format!(
+                "{}.stats.rust-debug",
+                file_name.file_stem().unwrap().to_string_lossy()
+            ));
+
+            fs::write(stats_file_name, format!("{:#?}", stats))
+                .expect("failed to write test stats");
+        }
+
         if !cfg!(debug_assertions) {
             let line_cnt = {
                 let content = fs::read_to_string(&file_name).unwrap();
