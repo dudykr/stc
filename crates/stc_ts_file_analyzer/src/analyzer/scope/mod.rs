@@ -1302,7 +1302,7 @@ impl Analyzer<'_, '_> {
             if err {
                 let mut done = false;
                 for (_, span) in &**spans {
-                    if kind == VarKind::Param {
+                    if matches!(kind, VarKind::Param | VarKind::Class) {
                         self.storage.report(Error::DuplicateName {
                             name: name.clone(),
                             span: *span,
