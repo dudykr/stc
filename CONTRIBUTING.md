@@ -30,7 +30,11 @@ It will dump type information to a `foo.swc-stderr` file.
 Look at it, and if it's wrong, adjust the Rust source code, and run `./scripts/check.sh` to verify if your fix is correct.
 If you are done, please file a pull request on GitHub.
 
-### Troubleshooting
+### Updating performance stats
+
+You can run `./scripts/release-time.sh` from `./crates/stc_ts_type_checker` to update timing stats file.
+
+## Troubleshooting
 
 1. In case if you're using Windows and getting an error
 
