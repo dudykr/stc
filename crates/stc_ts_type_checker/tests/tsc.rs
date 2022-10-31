@@ -726,10 +726,10 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         stats.required_error += expected_errors.len();
         stats.extra_error += extra_err_count;
 
-        let stats = record_stat(stats);
+        let total_stats = record_stat(stats);
 
         if cfg!(debug_assertions) {
-            println!("[STATS] {:#?}", stats);
+            println!("[STATS] {:#?}", total_stats);
 
             if expected_errors.is_empty() {
                 println!("[REMOVE_ONLY]{}", file_name.display());
