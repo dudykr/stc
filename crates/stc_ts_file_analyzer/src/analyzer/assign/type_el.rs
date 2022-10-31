@@ -738,7 +738,7 @@ impl Analyzer<'_, '_> {
                             unimplemented!("assign: interface {{ [key: string]: Type; }} = new Foo()")
                         }
                     }
-                    // TOOD: missing fields
+                    // TODO: missing fields
                 }
 
                 Type::Tuple(..)
