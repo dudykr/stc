@@ -1468,6 +1468,7 @@ impl Analyzer<'_, '_> {
                                     Type::Query(..) => {}
                                     // Allow overloading query type.
                                     Type::Function(..) => {}
+                                    Type::ClassDef(..) => return Err(Error::DuplicateName { name: name.clone(), span }),
                                     Type::Union(..) => {
                                         // TODO(kdy1): Check if all types are
                                         // query or
