@@ -6,4 +6,4 @@ This project is in an early stage and it's under active development.
 
 ## Contributing
 
-See [Contributing.md](./CONTRIBUTING.md)
+See [CONTRIBUTING.md](./CONTRIBUTING.md)
