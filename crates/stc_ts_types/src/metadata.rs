@@ -392,6 +392,7 @@ pub struct TypeLitMetadata {
 
 impl_traits!(TypeLitMetadata);
 
+/// Metadata for [crate::TypeElement]
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TypeElMetadata {
     /// If `true`, it means the element has a default value.
