@@ -53,7 +53,7 @@ impl Drop for RecordOnPanic {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, PartialOrd, Ord)]
 struct RefError {
     pub line: usize,
     pub column: usize,
@@ -63,7 +63,9 @@ struct RefError {
 #[derive(Debug, Default, Clone)]
 struct Stats {
     required_error: usize,
+    /// Correct error count.
     matched_error: usize,
+    /// False-positive error count.
     extra_error: usize,
 }
 
@@ -558,6 +560,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
     let file_stem = file_name.file_stem().unwrap();
     let fname = file_name.display().to_string();
     let mut expected_errors = load_expected_errors(&file_name).unwrap();
+    expected_errors.sort();
 
     let specs = parse_test(file_name);
 
@@ -666,7 +669,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 let code = d
                     .code
                     .clone()
-                    .expect("conformance teting: All errors should have proper error code");
+                    .expect("conformance testing: All errors should have proper error code");
                 let code = match code {
                     DiagnosticId::Error(err) => err,
                     DiagnosticId::Lint(lint) => {
@@ -677,6 +680,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 (cp.line, code)
             })
             .collect::<Vec<_>>();
+        extra_errors.sort();
 
         let full_actual_errors = extra_errors.clone();
 
@@ -726,10 +730,32 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         stats.required_error += expected_errors.len();
         stats.extra_error += extra_err_count;
 
-        let stats = record_stat(stats);
+        // Print per-test stats so we can prevent regressions.
+        if cfg!(debug_assertions) {
+            let stats_file_name = file_name.with_file_name(format!(
+                "{}.stats.rust-debug",
+                file_name.file_name().unwrap().to_string_lossy()
+            ));
+
+            if env::var("CI").unwrap_or_default() == "1" {
+                let stat_string =
+                    fs::read_to_string(&stats_file_name).expect("failed to read test stats file");
+
+                assert_eq!(
+                    format!("{:#?}", stats),
+                    stat_string,
+                    "CI=1 so test stats must match"
+                );
+            } else {
+                fs::write(stats_file_name, format!("{:#?}", stats))
+                    .expect("failed to write test stats");
+            }
+        }
+
+        let total_stats = record_stat(stats);
 
         if cfg!(debug_assertions) {
-            println!("[STATS] {:#?}", stats);
+            println!("[TOTAL_STATS] {:#?}", total_stats);
 
             if expected_errors.is_empty() {
                 println!("[REMOVE_ONLY]{}", file_name.display());
