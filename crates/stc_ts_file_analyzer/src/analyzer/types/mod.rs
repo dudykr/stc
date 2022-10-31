@@ -12,14 +12,8 @@ use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection, Intrinsic, IntrinsicKind, Key,
     KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref,
-    ThisType, ThisTypeMetadata, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
-    name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey,
-    Conditional, ConditionalMetadata, ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance,
-    InstanceMetadata, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType,
-    KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId, Operator,
-    PropertySignature, QueryExpr, Ref, ThisType, ThisTypeMetadata, Tuple, TupleElement, Type,
-    TypeElMetadata, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation,
-    Union,
+    ThisType, ThisTypeMetadata, Tuple, TupleElement, Type, TypeElMetadata, TypeElement, TypeLit, TypeLitMetadata, TypeParam,
+    TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
