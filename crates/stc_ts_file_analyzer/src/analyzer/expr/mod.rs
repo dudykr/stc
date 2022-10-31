@@ -1333,6 +1333,12 @@ impl Analyzer<'_, '_> {
             res.report(&mut self.storage);
         }
 
+        if self.ctx.in_opt_chain {
+            if let Key::Private(p) = prop {
+                return Err(Error::OptionalChainCannotContainPrivateIdentifier { span: p.span });
+            }
+        }
+
         let opts = AccessPropertyOpts {
             do_not_validate_type_of_computed_prop: false,
             ..opts

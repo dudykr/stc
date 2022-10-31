@@ -342,6 +342,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS18030
+    OptionalChainCannotContainPrivateIdentifier {
+        span: Span,
+    },
+
     /// TS18011
     CannotDeletePrivateProperty {
         span: Span,
@@ -1735,6 +1740,8 @@ impl Error {
             Error::CannotDeletePrivateProperty { .. } => 18011,
 
             Error::CannotAccessPrivatePropertyFromOutside { .. } => 18013,
+
+            Error::OptionalChainCannotContainPrivateIdentifier { .. } => 18030,
 
             Error::TypeAnnOnLhsOfForInLoops { .. } => 2404,
             Error::TypeAnnOnLhsOfForOfLoops { .. } => 2483,
