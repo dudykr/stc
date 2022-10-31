@@ -1540,6 +1540,10 @@ impl Analyzer<'_, '_> {
                     }))
                 }
 
+                Type::Function(..) if self.rule().no_implicit_any => {
+                    return Err(Error::TargetLacksConstructSignature { span });
+                }
+
                 _ => {}
             },
             _ => {}

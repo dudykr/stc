@@ -241,6 +241,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS7009
+    TargetLacksConstructSignature {
+        span: Span,
+    },
+
     /// TS2448
     BlockScopedVarUsedBeforeInit {
         span: Span,
@@ -1859,6 +1864,8 @@ impl Error {
             Error::VarDeclNotCompatible { .. } => 2403,
 
             Error::InvalidInterfaceInheritance { .. } => 2430,
+
+            Error::TargetLacksConstructSignature { .. } => 7009,
 
             _ => 0,
         }
