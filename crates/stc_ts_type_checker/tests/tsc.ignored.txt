@@ -1,10 +1,11 @@
-recursiveTypes
+conditionalTypes1.ts
 namedTupleMembers.ts
-typeGuardOfFormInstanceOfOnInterface.ts
-typeGuardOfFormIsTypeOnInterfaces.ts
 privateNamesAndStaticFields.ts
 protectedClassPropertyAccessibleWithinNestedSubclass1.ts
 protectedStaticClassPropertyAccessibleWithinSubclass.ts
-conditionalTypes1.ts
 readonlyRestParameters.ts
+recursiveTypes
 typeGuardFunctionOfFormThis.ts
+typeGuardFunctionOfFormThisErrors.ts
+typeGuardOfFormInstanceOfOnInterface.ts
+typeGuardOfFormIsTypeOnInterfaces.ts
