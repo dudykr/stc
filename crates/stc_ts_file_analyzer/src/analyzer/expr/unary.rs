@@ -1,5 +1,5 @@
-use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, RStr, RTsLit, RUnaryExpr};
-use stc_ts_errors::{Error, Errors};
+use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, ROptChainExpr, RParenExpr, RStr, RTsLit, RUnaryExpr};
+use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};
@@ -192,7 +192,6 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate_delete_operand(&mut self, arg: &RExpr) -> VResult<()> {
         let span = arg.span();
-
         match &*arg {
             RExpr::Member(RMemberExpr {
                 obj: RExprOrSuper::Expr(box RExpr::This(..)),
@@ -201,14 +200,34 @@ impl Analyzer<'_, '_> {
                 ..
             }) => Err(Error::CannotDeletePrivateProperty { span }),
 
-            RExpr::Member(me) => {
+            RExpr::Paren(RParenExpr {
+                expr: box RExpr::Member(expr),
+                ..
+            })
+            | RExpr::OptChain(ROptChainExpr {
+                expr: box RExpr::Member(expr),
+                ..
+            })
+            | RExpr::Member(expr) => {
                 if self.rule().strict_null_checks {
-                    let ty = self.type_of_member_expr(me, TypeOfMode::RValue)?;
+                    let ty = self.type_of_member_expr(expr, TypeOfMode::RValue).convert_err(|err| match &err {
+                        Error::ObjectIsPossiblyNull { span, .. }
+                        | Error::ObjectIsPossiblyUndefined { span, .. }
+                        | Error::ObjectIsPossiblyNullOrUndefined { span, .. } => Error::DeleteOperandMustBeOptional { span: *span },
+                        _ => err,
+                    })?;
                     if !self.can_be_undefined(span, &ty)? {
                         return Err(Error::DeleteOperandMustBeOptional { span });
                     }
                 }
                 return Ok(());
+            }
+
+            //
+            // delete (o4.b?.c.d);
+            // delete (o4.b?.c.d)?.e;
+            RExpr::Paren(RParenExpr { expr, .. }) | RExpr::OptChain(ROptChainExpr { expr, .. }) => {
+                return self.validate_delete_operand(expr);
             }
 
             RExpr::Await(..) => Err(Error::InvalidDeleteOperand { span }),
