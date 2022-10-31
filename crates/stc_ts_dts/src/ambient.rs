@@ -1,7 +1,6 @@
 use rnode::{VisitMut, VisitMutWith};
 use stc_ts_ast_rnode::{
-    RBlockStmt, RClassMember, RDecl, REmptyStmt, RExportDecl, RIdent, RModuleDecl, RModuleItem,
-    RPropName, RStmt, RTsModuleDecl,
+    RBlockStmt, RClassMember, RDecl, REmptyStmt, RExportDecl, RIdent, RModuleDecl, RModuleItem, RPropName, RStmt, RTsModuleDecl,
 };
 use swc_common::DUMMY_SP;
 
@@ -44,10 +43,7 @@ impl VisitMut<RModuleItem> for RealImplRemover {
         node.visit_mut_children_with(self);
 
         match &node {
-            RModuleItem::ModuleDecl(RModuleDecl::ExportDecl(RExportDecl {
-                decl: RDecl::Fn(decl),
-                ..
-            })) => {
+            RModuleItem::ModuleDecl(RModuleDecl::ExportDecl(RExportDecl { decl: RDecl::Fn(decl), .. })) => {
                 if decl.function.body.is_none() {
                     self.last_ambient_fn_name = Some(decl.ident.clone());
                 } else {

@@ -26,12 +26,7 @@ fn main() {
         }
         libs.sort();
         libs.dedup();
-        let env = Env::simple(
-            Default::default(),
-            EsVersion::latest(),
-            ModuleConfig::None,
-            &libs,
-        );
+        let env = Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &libs);
         let env = black_box(env);
 
         println!("{:?}", env.get_global_type(DUMMY_SP, &"Function".into()));

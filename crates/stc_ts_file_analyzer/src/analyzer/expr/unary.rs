@@ -1,6 +1,4 @@
-use stc_ts_ast_rnode::{
-    RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, RStr, RTsLit, RUnaryExpr,
-};
+use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, RStr, RTsLit, RUnaryExpr};
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
 use swc_atoms::js_word;
@@ -32,13 +30,9 @@ impl Analyzer<'_, '_> {
             op!("!") => {
                 let orig_facts = self.cur_facts.take();
                 let arg_ty = self
-                    .with_child(
-                        ScopeKind::Flow,
-                        orig_facts.true_facts.clone(),
-                        |child: &mut Analyzer| {
-                            arg.validate_with_args(child, (TypeOfMode::RValue, None, None))
-                        },
-                    )
+                    .with_child(ScopeKind::Flow, orig_facts.true_facts.clone(), |child: &mut Analyzer| {
+                        arg.validate_with_args(child, (TypeOfMode::RValue, None, None))
+                    })
                     .report(&mut self.storage)
                     .map(|mut ty| {
                         ty.reposition(arg.span());
@@ -69,10 +63,7 @@ impl Analyzer<'_, '_> {
             op!(unary, "+") | op!(unary, "-") | op!("~") => {
                 if let Some(arg) = &arg {
                     if arg.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
-                        self.storage.report(Error::NumericUnaryOpToSymbol {
-                            span: arg.span(),
-                            op: *op,
-                        })
+                        self.storage.report(Error::NumericUnaryOpToSymbol { span: arg.span(), op: *op })
                     }
                 }
             }
@@ -134,11 +125,7 @@ impl Analyzer<'_, '_> {
                                 span,
                                 lit: RTsLit::Number(RNumber {
                                     span,
-                                    value: if *op == op!(unary, "-") {
-                                        -(*value)
-                                    } else {
-                                        *value
-                                    },
+                                    value: if *op == op!(unary, "-") { -(*value) } else { *value },
                                 }),
                                 metadata: Default::default(),
                             }));
@@ -235,9 +222,7 @@ impl Analyzer<'_, '_> {
 
         match op {
             op!("typeof") | op!("delete") | op!("void") => match arg.normalize() {
-                Type::EnumVariant(..) if op == op!("delete") => {
-                    errors.push(Error::TS2704 { span: arg.span() })
-                }
+                Type::EnumVariant(..) if op == op!("delete") => errors.push(Error::TS2704 { span: arg.span() }),
 
                 _ => {}
             },
@@ -272,11 +257,7 @@ impl Analyzer<'_, '_> {
 
 fn negate(ty: Type) -> Type {
     match ty {
-        Type::Lit(LitType {
-            ref lit,
-            span,
-            metadata,
-        }) => match *lit {
+        Type::Lit(LitType { ref lit, span, metadata }) => match *lit {
             RTsLit::Bool(ref v) => {
                 return Type::Lit(LitType {
                     lit: RTsLit::Bool(RBool {

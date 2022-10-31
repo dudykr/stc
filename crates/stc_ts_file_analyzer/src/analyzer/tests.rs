@@ -26,14 +26,7 @@ use crate::{
     tests::{GLOBALS, MARKS},
 };
 
-static ENV: Lazy<Env> = Lazy::new(|| {
-    Env::simple(
-        Default::default(),
-        EsVersion::latest(),
-        ModuleConfig::None,
-        &Lib::load("es5"),
-    )
-});
+static ENV: Lazy<Env> = Lazy::new(|| Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &Lib::load("es5")));
 
 pub struct Tester<'a, 'b> {
     cm: Arc<SourceMap>,
@@ -56,14 +49,7 @@ where
 
         let handler = Arc::new(handler);
         swc_common::GLOBALS.set(&crate::tests::GLOBALS, || {
-            let analyzer = Analyzer::root(
-                ENV.clone(),
-                cm.clone(),
-                Default::default(),
-                box &mut storage,
-                &NoopLoader,
-                None,
-            );
+            let analyzer = Analyzer::root(ENV.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
             let mut tester = Tester {
                 cm: cm.clone(),
                 analyzer,
@@ -79,9 +65,7 @@ where
 impl Tester<'_, '_> {
     pub fn parse(&self, name: &str, src: &str) -> RModule {
         swc_common::GLOBALS.set(&GLOBALS, || {
-            let fm = self
-                .cm
-                .new_source_file(FileName::Real(name.into()), src.into());
+            let fm = self.cm.new_source_file(FileName::Real(name.into()), src.into());
 
             let lexer = Lexer::new(
                 Syntax::Typescript(TsConfig {
@@ -98,10 +82,7 @@ impl Tester<'_, '_> {
             );
             let mut parser = Parser::new_from(lexer);
 
-            let module = parser
-                .parse_module()
-                .unwrap()
-                .fold_with(&mut ts_resolver(MARKS.top_level_mark()));
+            let module = parser.parse_module().unwrap().fold_with(&mut ts_resolver(MARKS.top_level_mark()));
 
             RModule::from_orig(&mut NodeIdGenerator::invalid(), module)
         })
@@ -128,9 +109,7 @@ where
         let mut node_id_gen = NodeIdGenerator::default();
         let mut module = {
             let lexer = Lexer::new(
-                Syntax::Typescript(TsConfig {
-                    ..Default::default()
-                }),
+                Syntax::Typescript(TsConfig { ..Default::default() }),
                 EsVersion::Es2021,
                 SourceFileInput::from(&*fm),
                 None,
@@ -160,18 +139,10 @@ where
             // Don't print logs from builtin modules.
             let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-            let mut analyzer = Analyzer::root(
-                env.clone(),
-                cm.clone(),
-                Default::default(),
-                box &mut storage,
-                &NoopLoader,
-                None,
-            );
+            let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
 
-            let top_level_ctxt =
-                SyntaxContext::empty().apply_mark(env.shared().marks().top_level_mark());
+            let top_level_ctxt = SyntaxContext::empty().apply_mark(env.shared().marks().top_level_mark());
 
             let t1 = analyzer
                 .find_type(module_id, &Id::new("T1".into(), top_level_ctxt))

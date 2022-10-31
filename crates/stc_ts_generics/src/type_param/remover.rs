@@ -1,9 +1,6 @@
 use fxhash::FxHashSet;
 use rnode::{Fold, FoldWith};
-use stc_ts_types::{
-    CallSignature, ConstructorSignature, Function, Id, MethodSignature, Type, TypeParam,
-    TypeParamDecl,
-};
+use stc_ts_types::{CallSignature, ConstructorSignature, Function, Id, MethodSignature, Type, TypeParam, TypeParamDecl};
 use swc_common::util::move_map::MoveMap;
 
 /// Removes conflicting type parameters from children.
@@ -26,9 +23,7 @@ pub struct TypeParamRemover<'a> {
 
 impl TypeParamRemover<'static> {
     pub fn new() -> Self {
-        Self {
-            scope: Default::default(),
-        }
+        Self { scope: Default::default() }
     }
 }
 

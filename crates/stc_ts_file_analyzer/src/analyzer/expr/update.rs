@@ -44,14 +44,8 @@ impl Analyzer<'_, '_> {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 })
-                | Type::Lit(LitType {
-                    lit: RTsLit::Str(..),
-                    ..
-                })
-                | Type::Lit(LitType {
-                    lit: RTsLit::Bool(..),
-                    ..
-                })
+                | Type::Lit(LitType { lit: RTsLit::Str(..), .. })
+                | Type::Lit(LitType { lit: RTsLit::Bool(..), .. })
                 | Type::TypeLit(..)
                 | Type::Array(..)
                 | Type::Tuple(..)
@@ -80,8 +74,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Lit(LitType {
-                    lit: RTsLit::Number(..),
-                    ..
+                    lit: RTsLit::Number(..), ..
                 })
                 | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
@@ -103,22 +96,19 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = ty {
             if let Some(false) = self.is_update_operand_valid(&ty).report(&mut self.storage) {
-                self.storage
-                    .report(Error::InvalidNumericOperand { span: e.arg.span() })
+                self.storage.report(Error::InvalidNumericOperand { span: e.arg.span() })
             }
         } else {
             if !errored
                 && match &*e.arg {
                     RExpr::Paren(RParenExpr {
-                        expr: box RExpr::Bin(..),
-                        ..
+                        expr: box RExpr::Bin(..), ..
                     })
                     | RExpr::Bin(..) => true,
                     _ => false,
                 }
             {
-                self.storage
-                    .report(Error::UpdateArgMustBeVariableOrPropertyAccess { span });
+                self.storage.report(Error::UpdateArgMustBeVariableOrPropertyAccess { span });
             }
         }
 
@@ -134,11 +124,7 @@ impl Analyzer<'_, '_> {
     fn is_update_operand_valid(&mut self, arg: &Type) -> VResult<bool> {
         let ty = self.normalize(Some(arg.span()), Cow::Borrowed(arg), Default::default())?;
 
-        if ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword)
-            || ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword)
-            || ty.is_str()
-            || ty.is_bool()
-        {
+        if ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) || ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_str() || ty.is_bool() {
             return Ok(false);
         }
 

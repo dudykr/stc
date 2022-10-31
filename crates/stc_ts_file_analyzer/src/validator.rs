@@ -2,8 +2,7 @@ use std::any::type_name;
 
 use rnode::RNode;
 use stc_ts_ast_rnode::{
-    RClassMember, RParam, RPat, RTsExprWithTypeArgs, RTsFnParam, RTsTupleElement, RTsType,
-    RTsTypeElement, RTsTypeParam,
+    RClassMember, RParam, RPat, RTsExprWithTypeArgs, RTsFnParam, RTsTupleElement, RTsType, RTsTypeElement, RTsTypeParam,
 };
 
 /// Visit with output

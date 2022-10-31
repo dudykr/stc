@@ -54,8 +54,7 @@ impl Analyzer<'_, '_> {
                     params.insert(param.name.clone(), default.clone());
                 } else {
                     unimplemented!(
-                        "Reporting errors when type parameter count and type argument count \
-                         differs\nParams={:#?}\nArgs: {:#?}",
+                        "Reporting errors when type parameter count and type argument count differs\nParams={:#?}\nArgs: {:#?}",
                         type_params,
                         type_args
                     )
@@ -83,12 +82,7 @@ impl Analyzer<'_, '_> {
     ///          x: infer P extends number ? infer P : string;
     ///      } ? P : never
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(in super::super) fn expand_type_params<T>(
-        &mut self,
-        params: &FxHashMap<Id, Type>,
-        ty: T,
-        opts: ExpandGenericOpts,
-    ) -> VResult<T>
+    pub(in super::super) fn expand_type_params<T>(&mut self, params: &FxHashMap<Id, Type>, ty: T, opts: ExpandGenericOpts) -> VResult<T>
     where
         T: for<'aa> FoldWith<GenericExpander<'aa>> + Fix,
     {
@@ -111,13 +105,7 @@ impl Analyzer<'_, '_> {
 
     /// Returns `Some(true)` if `child` extends `parent`.
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(crate) fn extends(
-        &mut self,
-        span: Span,
-        child: &Type,
-        parent: &Type,
-        opts: ExtendsOpts,
-    ) -> Option<bool> {
+    pub(crate) fn extends(&mut self, span: Span, child: &Type, parent: &Type, opts: ExtendsOpts) -> Option<bool> {
         let child = child.normalize();
         let parent = parent.normalize();
 
@@ -137,8 +125,7 @@ impl Analyzer<'_, '_> {
 
         match child {
             Type::Param(TypeParam {
-                constraint: Some(child),
-                ..
+                constraint: Some(child), ..
             }) => {
                 if let Some(v) = self.extends(span, child, parent, opts) {
                     return Some(v);
@@ -266,26 +253,19 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Interface(Interface { name, .. }) if *name.sym() == *"ObjectConstructor" => {
-                match child {
-                    Type::Class(..)
-                    | Type::ClassDef(..)
-                    | Type::Interface(..)
-                    | Type::TypeLit(..) => {
-                        return Some(true);
-                    }
-                    _ => {}
+            Type::Interface(Interface { name, .. }) if *name.sym() == *"ObjectConstructor" => match child {
+                Type::Class(..) | Type::ClassDef(..) | Type::Interface(..) | Type::TypeLit(..) => {
+                    return Some(true);
                 }
-            }
+                _ => {}
+            },
 
-            Type::Interface(Interface { name, .. }) if *name.sym() == *"ArrayConstructor" => {
-                match child {
-                    Type::Array(..) | Type::Tuple(..) => {
-                        return Some(true);
-                    }
-                    _ => {}
+            Type::Interface(Interface { name, .. }) if *name.sym() == *"ArrayConstructor" => match child {
+                Type::Array(..) | Type::Tuple(..) => {
+                    return Some(true);
                 }
-            }
+                _ => {}
+            },
 
             _ => {}
         }
@@ -349,10 +329,11 @@ impl Analyzer<'_, '_> {
             },
             Type::Tuple(child_tuple) => match parent {
                 Type::Array(parent_array) => {
-                    if child_tuple.elems.iter().all(|child_element| {
-                        self.extends(span, &child_element.ty, &parent_array.elem_type, opts)
-                            == Some(true)
-                    }) {
+                    if child_tuple
+                        .elems
+                        .iter()
+                        .all(|child_element| self.extends(span, &child_element.ty, &parent_array.elem_type, opts) == Some(true))
+                    {
                         return Some(true);
                     }
                 }

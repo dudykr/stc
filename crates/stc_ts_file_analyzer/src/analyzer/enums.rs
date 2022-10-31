@@ -1,13 +1,11 @@
 use fxhash::FxHashMap;
 use rnode::{NodeId, Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl, RTsEnumMember,
-    RTsEnumMemberId, RTsLit,
+    RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl, RTsEnumMember, RTsEnumMemberId, RTsLit,
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{
-    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata,
-    PropertySignature, TypeElement, TypeLit,
+    Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata, PropertySignature, TypeElement, TypeLit,
 };
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
@@ -80,9 +78,7 @@ impl Analyzer<'_, '_> {
                                 RTsLit::Number(v) => RExpr::Lit(RLit::Num(v)),
                                 RTsLit::Str(v) => RExpr::Lit(RLit::Str(v)),
                                 RTsLit::Bool(v) => RExpr::Lit(RLit::Bool(v)),
-                                RTsLit::Tpl(v) => {
-                                    RExpr::Lit(RLit::Str(v.quasis.into_iter().next().unwrap().raw))
-                                }
+                                RTsLit::Tpl(v) => RExpr::Lit(RLit::Str(v.quasis.into_iter().next().unwrap().raw)),
                                 RTsLit::BigInt(v) => RExpr::Lit(RLit::BigInt(v)),
                             }
                         })
@@ -142,17 +138,8 @@ impl Analyzer<'_, '_> {
 
         self.register_type(name.clone(), stored_ty.clone());
 
-        self.declare_var(
-            e.span,
-            VarKind::Enum,
-            name.clone(),
-            Some(stored_ty),
-            None,
-            true,
-            true,
-            false,
-        )
-        .report(&mut self.storage);
+        self.declare_var(e.span, VarKind::Enum, name.clone(), Some(stored_ty), None, true, true, false)
+            .report(&mut self.storage);
 
         // Validate const enums
         if e.is_const {
@@ -166,8 +153,7 @@ impl Analyzer<'_, '_> {
                     init.visit_with(&mut v);
                     self.storage.report_all(v.errors);
                     if v.error {
-                        self.storage
-                            .report(Error::InvalidInitInConstEnum { span: init.span() })
+                        self.storage.report(Error::InvalidInitInConstEnum { span: init.span() })
                     }
                 }
             }
@@ -189,12 +175,7 @@ impl Evaluator<'_> {
     ///
     /// If both of the default value and the initialization is None, this method
     /// returns [Err].
-    fn compute(
-        &mut self,
-        span: Span,
-        default: Option<f64>,
-        init: Option<&RExpr>,
-    ) -> VResult<RTsLit> {
+    fn compute(&mut self, span: Span, default: Option<f64>, init: Option<&RExpr>) -> VResult<RTsLit> {
         if let Some(expr) = init {
             match expr {
                 RExpr::Lit(RLit::Str(s)) => return Ok(RTsLit::Str(s.clone())),
@@ -205,9 +186,7 @@ impl Evaluator<'_> {
                     match &v {
                         RTsLit::Number(n) => {
                             if n.value.is_infinite() && self.e.is_const {
-                                return Err(Error::ConstEnumMemberHasInifinityAsInit {
-                                    span: bin.span,
-                                });
+                                return Err(Error::ConstEnumMemberHasInifinityAsInit { span: bin.span });
                             } else if n.value.is_nan() && self.e.is_const {
                                 return Err(Error::ConstEnumMemberHasNaNAsInit { span: bin.span });
                             } else {
@@ -235,8 +214,7 @@ impl Evaluator<'_> {
                     //
                     for m in self.e.members.iter() {
                         match m.id {
-                            RTsEnumMemberId::Str(RStr { value: ref sym, .. })
-                            | RTsEnumMemberId::Ident(RIdent { ref sym, .. }) => {
+                            RTsEnumMemberId::Str(RStr { value: ref sym, .. }) | RTsEnumMemberId::Ident(RIdent { ref sym, .. }) => {
                                 if *sym == id.sym {
                                     return self.compute(span, None, m.init.as_ref().map(|v| &**v));
                                 }
@@ -283,10 +261,7 @@ impl Evaluator<'_> {
             }
         } else {
             if let Some(value) = default {
-                return Ok(RTsLit::Number(RNumber {
-                    span,
-                    value: value as _,
-                }));
+                return Ok(RTsLit::Number(RNumber { span, value: value as _ }));
             }
         }
 
@@ -298,10 +273,7 @@ impl Evaluator<'_> {
         let r = self.compute(span, None, Some(&expr.right))?;
 
         Ok(match (l, r) {
-            (
-                RTsLit::Number(RNumber { value: l, .. }),
-                RTsLit::Number(RNumber { value: r, .. }),
-            ) => {
+            (RTsLit::Number(RNumber { value: l, .. }), RTsLit::Number(RNumber { value: r, .. })) => {
                 RTsLit::Number(RNumber {
                     span,
                     value: match expr.op {
@@ -482,12 +454,7 @@ impl Analyzer<'_, '_> {
     }
 
     // Check for rvalue of assignments.
-    pub(super) fn report_error_for_invalid_rvalue(
-        &mut self,
-        span: Span,
-        lhs: &RPat,
-        rhs_ty: &Type,
-    ) {
+    pub(super) fn report_error_for_invalid_rvalue(&mut self, span: Span, lhs: &RPat, rhs_ty: &Type) {
         match rhs_ty.normalize() {
             // Report an error for `a = G` where G is name of the const enum itself.
             Type::Enum(ref e) if e.is_const => {
@@ -500,8 +467,7 @@ impl Analyzer<'_, '_> {
                 if self.rule().strict_null_checks {
                     match lhs {
                         RPat::Array(_) | RPat::Rest(_) | RPat::Object(_) => {
-                            self.storage
-                                .report(Error::ObjectIsPossiblyUndefined { span });
+                            self.storage.report(Error::ObjectIsPossiblyUndefined { span });
                         }
                         _ => {}
                     }
@@ -545,8 +511,7 @@ impl Analyzer<'_, '_> {
             Some(RExpr::Ident(..)) => {}
             Some(e) => {
                 if type_of_expr(&e).is_none() {
-                    self.storage
-                        .report(Error::ComputedMemberInEnumWithStrMember { span: m.span })
+                    self.storage.report(Error::ComputedMemberInEnumWithStrMember { span: m.span })
                 }
             }
             _ => {}
@@ -586,9 +551,7 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 })),
                 _ => {
-                    unimplemented!(
-                        "Handle enum with value other than string literal or numeric literals"
-                    )
+                    unimplemented!("Handle enum with value other than string literal or numeric literals")
                 }
             }
         }
@@ -607,8 +570,7 @@ impl Analyzer<'_, '_> {
                         for ty in types {
                             if let Type::Enum(Enum { members, .. }) = ty.normalize() {
                                 if let Some(v) = members.iter().find(|m| match m.id {
-                                    RTsEnumMemberId::Ident(RIdent { ref sym, .. })
-                                    | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
+                                    RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
                                         sym == variant_name
                                     }
                                 }) {
@@ -663,8 +625,7 @@ impl Visit<RExpr> for LitValidator<'_> {
                 }
 
                 let is_ref = self.decl.members.iter().any(|m| match m.id {
-                    RTsEnumMemberId::Ident(RIdent { ref sym, .. })
-                    | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => *sym == i.sym,
+                    RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => *sym == i.sym,
                 });
                 if !is_ref {
                     self.error = true;

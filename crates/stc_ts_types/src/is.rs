@@ -25,9 +25,7 @@ macro_rules! impl_is {
                 if self.$is_name() {
                     match self.normalize_mut() {
                         Type::$variant(ty) => Some(ty),
-                        _ => unsafe {
-                            debug_unreachable!("`$is_name` is true, so this branch is unreachable")
-                        },
+                        _ => unsafe { debug_unreachable!("`$is_name` is true, so this branch is unreachable") },
                     }
                 } else {
                     None
@@ -41,9 +39,7 @@ macro_rules! impl_is {
                     self.normalize_mut();
                     match self {
                         Type::$variant(ty) => Some(ty),
-                        _ => unsafe {
-                            debug_unreachable!("`$is_name` is true, so this branch is unreachable")
-                        },
+                        _ => unsafe { debug_unreachable!("`$is_name` is true, so this branch is unreachable") },
                     }
                 } else {
                     None
@@ -54,50 +50,17 @@ macro_rules! impl_is {
             ///
             /// Panics if the underlying type is not the required variant.
             pub fn $expect_name(self) -> $type_name {
-                self.$opt_name()
-                    .expect(concat!("expected ", stringify!($variant)))
+                self.$opt_name().expect(concat!("expected ", stringify!($variant)))
             }
         }
     };
 }
 
-impl_is!(
-    This,
-    ThisType,
-    is_this,
-    as_this,
-    as_this_mut,
-    this,
-    expect_this
-);
+impl_is!(This, ThisType, is_this, as_this, as_this_mut, this, expect_this);
 impl_is!(Lit, LitType, is_lit, as_lit, as_lit_mut, lit, expect_lit);
-impl_is!(
-    Query,
-    QueryType,
-    is_query,
-    as_query,
-    as_query_mut,
-    query,
-    expect_query
-);
-impl_is!(
-    Infer,
-    InferType,
-    is_infer,
-    as_infer,
-    as_infer_mut,
-    infer,
-    expect_infer
-);
-impl_is!(
-    Import,
-    ImportType,
-    is_import,
-    as_import,
-    as_import_mut,
-    import,
-    expect_import
-);
+impl_is!(Query, QueryType, is_query, as_query, as_query_mut, query, expect_query);
+impl_is!(Infer, InferType, is_infer, as_infer, as_infer_mut, infer, expect_infer);
+impl_is!(Import, ImportType, is_import, as_import, as_import_mut, import, expect_import);
 impl_is!(
     Predicate,
     Predicate,
@@ -116,15 +79,7 @@ impl_is!(
     indexed_access_type,
     expect_indexed_access_type
 );
-impl_is!(
-    Ref,
-    Ref,
-    is_ref_type,
-    as_ref_type,
-    as_ref_type_mut,
-    ref_type,
-    expect_ref_type
-);
+impl_is!(Ref, Ref, is_ref_type, as_ref_type, as_ref_type_mut, ref_type, expect_ref_type);
 impl_is!(
     TypeLit,
     TypeLit,
@@ -152,24 +107,8 @@ impl_is!(
     conditional,
     expect_conditional
 );
-impl_is!(
-    Tuple,
-    Tuple,
-    is_tuple,
-    as_tuple,
-    as_tuple_mut,
-    tuple,
-    expect_tuple
-);
-impl_is!(
-    Array,
-    Array,
-    is_array,
-    as_array,
-    as_array_mut,
-    array,
-    expect_array
-);
+impl_is!(Tuple, Tuple, is_tuple, as_tuple, as_tuple_mut, tuple, expect_tuple);
+impl_is!(Array, Array, is_array, as_array, as_array_mut, array, expect_array);
 impl_is!(
     Union,
     Union,
@@ -188,15 +127,7 @@ impl_is!(
     intersection,
     expect_intersection
 );
-impl_is!(
-    Function,
-    Function,
-    is_fn_type,
-    as_fn_type,
-    as_fn_type_mut,
-    fn_type,
-    expect_fn_type
-);
+impl_is!(Function, Function, is_fn_type, as_fn_type, as_fn_type_mut, fn_type, expect_fn_type);
 impl_is!(
     Constructor,
     Constructor,
@@ -251,24 +182,8 @@ impl_is!(
     enum_type,
     expect_enum_type
 );
-impl_is!(
-    Mapped,
-    Mapped,
-    is_mapped,
-    as_mapped,
-    as_mapped_mut,
-    mapped,
-    expect_mapped
-);
-impl_is!(
-    Alias,
-    Alias,
-    is_alias,
-    as_alias,
-    as_alias_mut,
-    alias,
-    expect_alias
-);
+impl_is!(Mapped, Mapped, is_mapped, as_mapped, as_mapped_mut, mapped, expect_mapped);
+impl_is!(Alias, Alias, is_alias, as_alias, as_alias_mut, alias, expect_alias);
 impl_is!(
     Namespace,
     Namespace,
@@ -278,24 +193,8 @@ impl_is!(
     namespace,
     expect_namespace
 );
-impl_is!(
-    Module,
-    Module,
-    is_module,
-    as_module,
-    as_module_mut,
-    module,
-    expect_module
-);
-impl_is!(
-    Class,
-    Class,
-    is_class,
-    as_class,
-    as_class_mut,
-    class,
-    expect_class
-);
+impl_is!(Module, Module, is_module, as_module, as_module_mut, module, expect_module);
+impl_is!(Class, Class, is_class, as_class, as_class_mut, class, expect_class);
 impl_is!(
     ClassDef,
     ClassDef,
@@ -305,15 +204,7 @@ impl_is!(
     class_def,
     expect_class_def
 );
-impl_is!(
-    Rest,
-    RestType,
-    is_rest,
-    as_rest,
-    as_rest_mut,
-    rest,
-    expect_rest
-);
+impl_is!(Rest, RestType, is_rest, as_rest, as_rest_mut, rest, expect_rest);
 impl_is!(
     Optional,
     OptionalType,
@@ -323,15 +214,7 @@ impl_is!(
     optional,
     expect_optional
 );
-impl_is!(
-    Symbol,
-    Symbol,
-    is_symbol,
-    as_symbol,
-    as_symbol_mut,
-    symbol,
-    expect_symbol
-);
+impl_is!(Symbol, Symbol, is_symbol, as_symbol, as_symbol_mut, symbol, expect_symbol);
 impl_is!(Tpl, TplType, is_tpl, as_tpl, as_tpl_mut, tpl, expect_tpl);
 impl_is!(
     Intrinsic,

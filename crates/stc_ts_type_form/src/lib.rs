@@ -169,9 +169,7 @@ impl Ctx {
                 return self.path.clone();
             }
 
-            (TypeForm::Instance { of: a }, TypeForm::Instance { of: b }) => {
-                return self.compare_with_path(TypePath::Instance, &a, &b)
-            }
+            (TypeForm::Instance { of: a }, TypeForm::Instance { of: b }) => return self.compare_with_path(TypePath::Instance, &a, &b),
 
             (TypeForm::Array { elem: a }, TypeForm::Array { elem: b }) => {
                 return self.compare_with_path(TypePath::ArrayElem, &a, &b);
@@ -218,9 +216,7 @@ impl Ctx {
                     .iter()
                     .zip_longest(b_args.iter())
                     .filter_map(|pair| match pair {
-                        EitherOrBoth::Both(a, b) => {
-                            Some(self.compare_with_path(TypePath::TypeName, a, b))
-                        }
+                        EitherOrBoth::Both(a, b) => Some(self.compare_with_path(TypePath::TypeName, a, b)),
                         _ => None,
                     })
                     .max_by_key(|v| v.len())
@@ -247,16 +243,13 @@ impl Ctx {
                     return_type: b_return_yype,
                 },
             ) => {
-                let ret_path =
-                    self.compare_with_path(TypePath::ReturnType, &a_return_yype, &b_return_yype);
+                let ret_path = self.compare_with_path(TypePath::ReturnType, &a_return_yype, &b_return_yype);
 
                 let params_path = a_parmas
                     .iter()
                     .zip_longest(b_parmas.iter())
                     .filter_map(|pair| match pair {
-                        EitherOrBoth::Both(a, b) => {
-                            Some(self.compare_with_path(TypePath::TypeName, a, b))
-                        }
+                        EitherOrBoth::Both(a, b) => Some(self.compare_with_path(TypePath::TypeName, a, b)),
                         _ => None,
                     })
                     .max_by(max_path)
@@ -278,11 +271,7 @@ impl Ctx {
                 let mut max = vec![];
                 for a in &[a_truthy, a_falsy] {
                     for b in &[b_truthy, b_falsy] {
-                        max = max_by(
-                            max,
-                            self.compare_with_path(TypePath::Cond, &a, &b),
-                            max_path,
-                        );
+                        max = max_by(max, self.compare_with_path(TypePath::Cond, &a, &b), max_path);
                     }
                 }
 
@@ -298,11 +287,7 @@ impl Ctx {
             ) => {
                 let mut max = vec![];
                 for a in &[a_truthy, a_falsy] {
-                    max = max_by(
-                        max,
-                        self.compare_with_path(TypePath::Cond, &a, &b),
-                        max_path,
-                    );
+                    max = max_by(max, self.compare_with_path(TypePath::Cond, &a, &b), max_path);
                 }
 
                 max
@@ -316,11 +301,7 @@ impl Ctx {
             ) => {
                 let mut max = vec![];
                 for b in &[b_truthy, b_falsy] {
-                    max = max_by(
-                        max,
-                        self.compare_with_path(TypePath::Cond, &a, &b),
-                        max_path,
-                    );
+                    max = max_by(max, self.compare_with_path(TypePath::Cond, &a, &b), max_path);
                 }
 
                 max

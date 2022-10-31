@@ -12,9 +12,7 @@ use swc_common::{EqIgnoreSpan, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::Ident;
 use swc_ecma_utils::ident::IdentLike;
 
-#[derive(
-    Clone, PartialEq, Eq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize,
-)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Id {
     sym: JsWord,
     ctxt: SyntaxContext,

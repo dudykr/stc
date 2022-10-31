@@ -10,9 +10,8 @@ use syn::{
     fold::{fold_type, Fold},
     punctuated::Punctuated,
     spanned::Spanned,
-    Arm, Attribute, Block, Expr, ExprBlock, ExprMatch, Field, Fields, FieldsNamed, FieldsUnnamed,
-    GenericArgument, Ident, Item, ItemEnum, ItemStruct, Pat, PatIdent, Path, PathArguments, Stmt,
-    Token, Type, TypePath, Variant, VisPublic, Visibility,
+    Arm, Attribute, Block, Expr, ExprBlock, ExprMatch, Field, Fields, FieldsNamed, FieldsUnnamed, GenericArgument, Ident, Item, ItemEnum,
+    ItemStruct, Pat, PatIdent, Path, PathArguments, Stmt, Token, Type, TypePath, Variant, VisPublic, Visibility,
 };
 
 ///
@@ -74,11 +73,7 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
     match item {
         Item::Enum(e) => {
             let enum_name = e.ident.new_ident_with(|s| format!("R{}", s));
-            let info = e
-                .variants
-                .iter()
-                .map(|v| (v, handle_variant(v)))
-                .collect::<Vec<_>>();
+            let info = e.variants.iter().map(|v| (v, handle_variant(v))).collect::<Vec<_>>();
 
             let mut variants = Punctuated::<_, Token![,]>::default();
             let (mut from_orig_arms, mut to_orig_arms) = (vec![], vec![]);
@@ -91,12 +86,7 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                     discriminant: None,
                 });
 
-                let (from_orig, to_orig) = handle_enum_variant_fields(
-                    nodes_to_convert,
-                    Some(&e.ident),
-                    &variant.ident,
-                    &variant.fields,
-                );
+                let (from_orig, to_orig) = handle_enum_variant_fields(nodes_to_convert, Some(&e.ident), &variant.ident, &variant.fields);
                 from_orig_arms.push(from_orig);
                 to_orig_arms.push(to_orig);
             }
@@ -153,10 +143,7 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                         impl rnode::RNode for REnum {
                             type Orig = OrigType;
 
-                            fn from_orig(
-                                id_gen: &mut rnode::NodeIdGenerator,
-                                orig: Self::Orig,
-                            ) -> Self {
+                            fn from_orig(id_gen: &mut rnode::NodeIdGenerator, orig: Self::Orig) -> Self {
                                 from_orig_body
                             }
 
@@ -173,22 +160,11 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
             //
             match &s.fields {
                 Fields::Named(fields) => {
-                    let (from_orig_arm, to_orig_arm) =
-                        handle_struct_fields(&s.attrs, nodes_to_convert, &s.ident, &s.fields);
+                    let (from_orig_arm, to_orig_arm) = handle_struct_fields(&s.attrs, nodes_to_convert, &s.ident, &s.fields);
                     let field_rnode_info = fields
                         .named
                         .iter()
-                        .map(|f| {
-                            (
-                                f,
-                                handle_field(
-                                    nodes_to_convert,
-                                    &f.attrs,
-                                    f.ident.as_ref().unwrap(),
-                                    &f.ty,
-                                ),
-                            )
-                        })
+                        .map(|f| (f, handle_field(nodes_to_convert, &f.attrs, f.ident.as_ref().unwrap(), &f.ty)))
                         .collect::<Vec<_>>();
 
                     let orig_name = s.ident.clone();
@@ -214,9 +190,7 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                             attrs: field
                                 .attrs
                                 .iter()
-                                .filter(|attr| {
-                                    !attr.path.is_ident("arc") && !attr.path.is_ident("refcell")
-                                })
+                                .filter(|attr| !attr.path.is_ident("arc") && !attr.path.is_ident("refcell"))
                                 .cloned()
                                 .collect(),
                             vis: field.vis.clone(),
@@ -297,12 +271,7 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
 }
 
 /// Creates `(from_orig_arm, to_orig_arm)`
-fn handle_enum_variant_fields(
-    nodes_to_convert: &[String],
-    enum_name: Option<&Ident>,
-    variant_name: &Ident,
-    f: &Fields,
-) -> (Arm, Arm) {
+fn handle_enum_variant_fields(nodes_to_convert: &[String], enum_name: Option<&Ident>, variant_name: &Ident, f: &Fields) -> (Arm, Arm) {
     let mut from_orig_body: Vec<Stmt> = vec![];
     let mut to_orig_body: Vec<Stmt> = vec![];
 
@@ -318,18 +287,12 @@ fn handle_enum_variant_fields(
             handle_field(
                 nodes_to_convert,
                 &field.attrs,
-                &field
-                    .ident
-                    .clone()
-                    .unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span())),
+                &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span())),
                 &field.ty,
             ),
         )
     }) {
-        let binding = &field
-            .ident
-            .clone()
-            .unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span()));
+        let binding = &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span()));
 
         bindings.push(binding.clone());
 
@@ -454,12 +417,7 @@ fn skip_node_id(attrs: &[Attribute]) -> bool {
 }
 
 /// Creates `(from_orig_arm, to_orig_arm)`
-fn handle_struct_fields(
-    attrs: &[Attribute],
-    nodes_to_convert: &[String],
-    struct_name: &Ident,
-    f: &Fields,
-) -> (Arm, Arm) {
+fn handle_struct_fields(attrs: &[Attribute], nodes_to_convert: &[String], struct_name: &Ident, f: &Fields) -> (Arm, Arm) {
     let skip_node_id = skip_node_id(attrs);
 
     let mut from_orig_body: Vec<Stmt> = vec![];
@@ -493,18 +451,12 @@ fn handle_struct_fields(
             handle_field(
                 nodes_to_convert,
                 &field.attrs,
-                &field
-                    .ident
-                    .clone()
-                    .unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span())),
+                &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span())),
                 &field.ty,
             ),
         )
     }) {
-        let binding = &field
-            .ident
-            .clone()
-            .unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span()));
+        let binding = &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span()));
 
         bindings.push(binding.clone());
 
@@ -550,24 +502,14 @@ fn handle_struct_fields(
     }
 
     from_orig_body.push(if skip_node_id {
-        q!(
-            Vars {
-                bindings: &bindings
-            },
-            {
-                return Self { bindings };
-            }
-        )
+        q!(Vars { bindings: &bindings }, {
+            return Self { bindings };
+        })
         .parse()
     } else {
-        q!(
-            Vars {
-                bindings: &bindings
-            },
-            {
-                return Self { node_id, bindings };
-            }
-        )
+        q!(Vars { bindings: &bindings }, {
+            return Self { node_id, bindings };
+        })
         .parse()
     });
     to_orig_body.push(
@@ -644,10 +586,7 @@ impl Fold for OptionReplacer<'_> {
             Type::Path(inner_path) => {
                 //
                 if let Some(inner_name) = inner_path.path.get_ident() {
-                    let is_rnode = self
-                        .nodes_to_convert
-                        .iter()
-                        .any(|n| inner_name == &*format!("R{}", n));
+                    let is_rnode = self.nodes_to_convert.iter().any(|n| inner_name == &*format!("R{}", n));
                     if is_rnode {
                         return q!(Vars { inner_name }, (Option<inner_name>)).parse();
                     }
@@ -667,21 +606,13 @@ struct RNodeField {
 }
 
 /// Look for attributes, namely `#[arc]`.
-fn handle_field(
-    nodes_to_convert: &[String],
-    attrs: &[Attribute],
-    match_binding: &Ident,
-    ty: &Type,
-) -> RNodeField {
+fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding: &Ident, ty: &Type) -> RNodeField {
     let arc = attrs.iter().any(|attr| attr.path.is_ident("arc"));
     // let ref_cell = attrs.iter().any(|attr| attr.path.is_ident("refcell"));
     let ref_cell = false;
 
     if arc && ref_cell {
-        panic!(
-            "#[arc] and #[ref_cell] cannot be applied to same field because #[arc] implies \
-             Rc<RefCell<T>>"
-        )
+        panic!("#[arc] and #[ref_cell] cannot be applied to same field because #[arc] implies Rc<RefCell<T>>")
     }
 
     // If type can be converted to RNode, do it.
@@ -726,18 +657,10 @@ fn handle_field(
                 return RNodeField {
                     from_orig: q!(
                         Vars { match_binding },
-                        ({
-                            match_binding.map(|match_binding| {
-                                rnode::RNode::from_orig(id_gen, *match_binding)
-                            })
-                        })
+                        ({ match_binding.map(|match_binding| { rnode::RNode::from_orig(id_gen, *match_binding) }) })
                     )
                     .parse(),
-                    to_orig: q!(
-                        Vars { match_binding },
-                        ({ match_binding.map(|v| Box::new(v.into_orig())) })
-                    )
-                    .parse(),
+                    to_orig: q!(Vars { match_binding }, ({ match_binding.map(|v| Box::new(v.into_orig())) })).parse(),
                     ty: q!(Vars { ty: &inner.ty }, (Option<std::sync::Arc<ty>>)).parse(),
                 };
             }
@@ -747,17 +670,10 @@ fn handle_field(
             return RNodeField {
                 from_orig: q!(
                     Vars { match_binding },
-                    ({
-                        match_binding
-                            .map(|match_binding| rnode::RNode::from_orig(id_gen, *match_binding))
-                    })
+                    ({ match_binding.map(|match_binding| rnode::RNode::from_orig(id_gen, *match_binding)) })
                 )
                 .parse(),
-                to_orig: q!(
-                    Vars { match_binding },
-                    ({ Box::new(match_binding.into_orig()) })
-                )
-                .parse(),
+                to_orig: q!(Vars { match_binding }, ({ Box::new(match_binding.into_orig()) })).parse(),
                 ty: q!(Vars { ty: &inner.ty }, (std::sync::Arc<ty>)).parse(),
             };
         }
@@ -790,16 +706,8 @@ fn handle_field(
             let inner = handle_field(nodes_to_convert, &[], match_binding, ty);
 
             return RNodeField {
-                from_orig: q!(
-                    Vars { match_binding },
-                    ({ rnode::RNode::from_orig(id_gen, *match_binding) })
-                )
-                .parse(),
-                to_orig: q!(
-                    Vars { match_binding },
-                    ({ Box::new(match_binding.into_orig()) })
-                )
-                .parse(),
+                from_orig: q!(Vars { match_binding }, ({ rnode::RNode::from_orig(id_gen, *match_binding) })).parse(),
+                to_orig: q!(Vars { match_binding }, ({ Box::new(match_binding.into_orig()) })).parse(),
                 ty: q!(Vars { ty: &inner.ty }, (std::sync::Arc<ty>)).parse(),
             };
         }
@@ -915,10 +823,7 @@ fn handle_field(
     if ref_cell {
         if let Some(ty) = extract_vec(&ty) {
             return RNodeField {
-                from_orig: q!(Vars { match_binding }, {
-                    match_binding.into_iter().collect()
-                })
-                .parse(),
+                from_orig: q!(Vars { match_binding }, { match_binding.into_iter().collect() }).parse(),
                 to_orig: q!(Vars { match_binding }, { match_binding }).parse(),
                 ty: q!(Vars { ty }, (Vec<ty>)).parse(),
             };
@@ -954,9 +859,7 @@ fn handle_variant(variant: &Variant) -> RNodeVariant {
                             f.attrs = f
                                 .attrs
                                 .iter()
-                                .filter(|attr| {
-                                    !attr.path.is_ident("arc") && !attr.path.is_ident("refcell")
-                                })
+                                .filter(|attr| !attr.path.is_ident("arc") && !attr.path.is_ident("refcell"))
                                 .cloned()
                                 .collect();
 
@@ -992,11 +895,7 @@ fn prefix_type_name(ty: &Type) -> Type {
 
     match ty {
         Type::Path(p) => {
-            let new_name = p
-                .path
-                .get_ident()
-                .unwrap()
-                .new_ident_with(|s| format!("R{}", s));
+            let new_name = p.path.get_ident().unwrap().new_ident_with(|s| format!("R{}", s));
 
             return q!(Vars { new_name }, (new_name)).parse();
         }

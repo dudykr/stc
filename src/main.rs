@@ -22,12 +22,7 @@ use crate::check::IterateCommand;
 mod check;
 
 #[derive(Debug, StructOpt)]
-#[structopt(
-    name = "stc",
-    about = "Super fast type checker for typescript",
-    author,
-    rename_all = "camel"
-)]
+#[structopt(name = "stc", about = "Super fast type checker for typescript", author, rename_all = "camel")]
 enum Command {
     Iterate(IterateCommand),
 }
@@ -51,12 +46,7 @@ fn main() -> Result<(), Error> {
 
     let cm = Arc::new(SourceMap::default());
     let handler = {
-        let emitter = Box::new(EmitterWriter::stderr(
-            ColorConfig::Always,
-            Some(cm.clone()),
-            false,
-            false,
-        ));
+        let emitter = Box::new(EmitterWriter::stderr(ColorConfig::Always, Some(cm.clone()), false, false));
         Arc::new(Handler::with_emitter(true, false, emitter))
     };
 
@@ -74,11 +64,7 @@ fn main() -> Result<(), Error> {
                 let start = Instant::now();
 
                 let mut libs = match cmd.libs {
-                    Some(libs) => libs
-                        .iter()
-                        .map(|s| Lib::load(&s))
-                        .flatten()
-                        .collect::<Vec<_>>(),
+                    Some(libs) => libs.iter().map(|s| Lib::load(&s)).flatten().collect::<Vec<_>>(),
                     None => Lib::load("es5"),
                 };
                 libs.sort();
@@ -91,14 +77,7 @@ fn main() -> Result<(), Error> {
                 libs
             };
 
-            let env = Env::simple(
-                Rule {
-                    ..Default::default()
-                },
-                EsVersion::latest(),
-                ModuleConfig::None,
-                &libs,
-            );
+            let env = Env::simple(Rule { ..Default::default() }, EsVersion::latest(), ModuleConfig::None, &libs);
 
             let path = PathBuf::from(cmd.file);
 
@@ -109,9 +88,7 @@ fn main() -> Result<(), Error> {
                     cm.clone(),
                     handler.clone(),
                     env.clone(),
-                    TsConfig {
-                        ..Default::default()
-                    },
+                    TsConfig { ..Default::default() },
                     None,
                     Arc::new(NodeResolver),
                 );
@@ -131,9 +108,7 @@ fn main() -> Result<(), Error> {
                     cm.clone(),
                     handler.clone(),
                     env.clone(),
-                    TsConfig {
-                        ..Default::default()
-                    },
+                    TsConfig { ..Default::default() },
                     None,
                     Arc::new(NodeResolver),
                 );

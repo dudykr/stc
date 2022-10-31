@@ -6,9 +6,8 @@ use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, Function, Key, KeywordType, LitType, MethodSignature,
-    ModuleId, Operator, PropertySignature, Ref, Tuple, Type, TypeElement, TypeLit, TypeLitMetadata,
-    TypeParamInstantiation, Union, UnionMetadata,
+    Array, Class, ClassDef, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, ModuleId, Operator, PropertySignature, Ref,
+    Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, ext::SpanExt};
 use swc_atoms::js_word;
@@ -53,10 +52,7 @@ impl Analyzer<'_, '_> {
         let numeric_keyed_ty = lhs
             .iter()
             .filter_map(|e| match e {
-                TypeElement::Index(ref i)
-                    if i.params.len() == 1
-                        && i.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) =>
-                {
+                TypeElement::Index(ref i) if i.params.len() == 1 && i.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) => {
                     Some(i.type_ann.as_ref())
                 }
 
@@ -69,9 +65,7 @@ impl Analyzer<'_, '_> {
             let numeric_keyed_ty = numeric_keyed_ty.unwrap_or(&any);
 
             match *rhs.normalize() {
-                Type::Array(Array { ref elem_type, .. }) => {
-                    return self.assign_inner(data, numeric_keyed_ty, elem_type, opts)
-                }
+                Type::Array(Array { ref elem_type, .. }) => return self.assign_inner(data, numeric_keyed_ty, elem_type, opts),
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
                     let mut errors = Errors::default();
@@ -107,11 +101,9 @@ impl Analyzer<'_, '_> {
 
             match rhs.normalize() {
                 Type::Ref(Ref {
-                    type_name:
-                        RTsEntityName::Ident(RIdent {
-                            sym: js_word!("Function"),
-                            ..
-                        }),
+                    type_name: RTsEntityName::Ident(RIdent {
+                        sym: js_word!("Function"), ..
+                    }),
                     ..
                 }) => {
                     if lhs.iter().any(|el| match el {
@@ -132,12 +124,8 @@ impl Analyzer<'_, '_> {
                         if !allow_unknown_rhs {
                             // optional members do not have effect.
                             match r {
-                                TypeElement::Property(PropertySignature {
-                                    optional: true, ..
-                                })
-                                | TypeElement::Method(MethodSignature { optional: true, .. }) => {
-                                    continue
-                                }
+                                TypeElement::Property(PropertySignature { optional: true, .. })
+                                | TypeElement::Method(MethodSignature { optional: true, .. }) => continue,
                                 _ => {}
                             }
                             unhandled_rhs.push(r.span());
@@ -146,10 +134,7 @@ impl Analyzer<'_, '_> {
 
                     self.handle_assignment_of_type_elements_to_type_elements(
                         data,
-                        AssignOpts {
-                            allow_unknown_rhs,
-                            ..opts
-                        },
+                        AssignOpts { allow_unknown_rhs, ..opts },
                         &mut missing_fields,
                         &mut unhandled_rhs,
                         lhs,
@@ -188,18 +173,13 @@ impl Analyzer<'_, '_> {
                     {
                         return self
                             .assign_to_type_elements(data, opts, lhs_span, lhs, &rty, lhs_metadata)
-                            .context(
-                                "tried to assign to type elements by converting rhs to a type \
-                                 literal",
-                            );
+                            .context("tried to assign to type elements by converting rhs to a type literal");
                     }
 
                     return Err(Error::SimpleAssignFailed { span, cause: None });
                 }
 
-                Type::Tuple(..) | Type::Array(..) | Type::EnumVariant(..) if lhs.is_empty() => {
-                    return Ok(())
-                }
+                Type::Tuple(..) | Type::Array(..) | Type::EnumVariant(..) if lhs.is_empty() => return Ok(()),
 
                 Type::Array(..) | Type::Tuple(..) => {
                     if opts.allow_assignment_of_array_to_optional_type_lit {
@@ -225,10 +205,7 @@ impl Analyzer<'_, '_> {
                             let r_arr = Type::Ref(Ref {
                                 span,
                                 ctxt: ModuleId::builtin(),
-                                type_name: RTsEntityName::Ident(RIdent::new(
-                                    "Array".into(),
-                                    DUMMY_SP,
-                                )),
+                                type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
                                 type_args: Some(box TypeParamInstantiation {
                                     span: DUMMY_SP,
                                     params: vec![*r_arr.elem_type.clone()],
@@ -236,8 +213,7 @@ impl Analyzer<'_, '_> {
                                 metadata: Default::default(),
                             });
 
-                            let rhs =
-                                self.normalize(None, Cow::Owned(r_arr), Default::default())?;
+                            let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;
 
                             return self
                                 .assign_to_type_elements(
@@ -272,10 +248,7 @@ impl Analyzer<'_, '_> {
                                 let r_arr = Type::Ref(Ref {
                                     span,
                                     ctxt: ModuleId::builtin(),
-                                    type_name: RTsEntityName::Ident(RIdent::new(
-                                        "Array".into(),
-                                        DUMMY_SP,
-                                    )),
+                                    type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
                                     type_args: Some(box TypeParamInstantiation {
                                         span: DUMMY_SP,
                                         params: vec![r_elem_type],
@@ -283,8 +256,7 @@ impl Analyzer<'_, '_> {
                                     metadata: Default::default(),
                                 });
 
-                                let rhs =
-                                    self.normalize(None, Cow::Owned(r_arr), Default::default())?;
+                                let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;
 
                                 if let Ok(()) = self.assign_to_type_elements(
                                     data,
@@ -318,9 +290,7 @@ impl Analyzer<'_, '_> {
                                         &rhs,
                                         lhs_metadata,
                                     )
-                                    .context(
-                                        "tried to assign a tuple as type literal to type elements",
-                                    );
+                                    .context("tried to assign a tuple as type literal to type elements");
                             }
                         }
 
@@ -344,10 +314,7 @@ impl Analyzer<'_, '_> {
                 Type::ClassDef(rhs_cls) => {
                     let rhs = self
                         .convert_type_to_type_lit(span, Cow::Borrowed(rhs))
-                        .context(
-                            "tried to convert a class definition into a type literal for \
-                             assignment",
-                        )?
+                        .context("tried to convert a class definition into a type literal for assignment")?
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                         .unwrap();
@@ -386,9 +353,7 @@ impl Analyzer<'_, '_> {
                 Type::Class(rhs_cls) => {
                     // TODO(kdy1): Check if constructor exists.
                     if rhs_cls.def.is_abstract {
-                        return Err(
-                            Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span },
-                        );
+                        return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
                     }
 
                     // TODO(kdy1): Optimize
@@ -435,21 +400,13 @@ impl Analyzer<'_, '_> {
                     ..
                 })
                 | Type::Lit(LitType {
-                    lit: RTsLit::Number(..),
-                    ..
+                    lit: RTsLit::Number(..), ..
                 })
                 | Type::Lit(LitType {
-                    lit: RTsLit::BigInt(..),
-                    ..
+                    lit: RTsLit::BigInt(..), ..
                 })
-                | Type::Lit(LitType {
-                    lit: RTsLit::Str(..),
-                    ..
-                })
-                | Type::Lit(LitType {
-                    lit: RTsLit::Bool(..),
-                    ..
-                })
+                | Type::Lit(LitType { lit: RTsLit::Str(..), .. })
+                | Type::Lit(LitType { lit: RTsLit::Bool(..), .. })
                 | Type::Mapped(..)
                     if lhs.is_empty() =>
                 {
@@ -633,30 +590,13 @@ impl Analyzer<'_, '_> {
                                     op: TsTypeOperatorOp::KeyOf,
                                     ty: r_constraint,
                                     ..
-                                })) = r_mapped
-                                    .type_param
-                                    .constraint
-                                    .as_deref()
-                                    .map(|ty| ty.normalize())
+                                })) = r_mapped.type_param.constraint.as_deref().map(|ty| ty.normalize())
                                 {
-                                    if let Ok(()) = self.assign_with_opts(
-                                        data,
-                                        opts,
-                                        &l_index.params[0].ty,
-                                        &&r_constraint,
-                                    ) {
+                                    if let Ok(()) = self.assign_with_opts(data, opts, &l_index.params[0].ty, &&r_constraint) {
                                         if let Some(l_type_ann) = &l_index.type_ann {
                                             if let Some(r_ty) = &r_mapped.ty {
-                                                self.assign_with_opts(
-                                                    data,
-                                                    opts,
-                                                    &l_type_ann,
-                                                    &r_ty,
-                                                )
-                                                .context(
-                                                    "tried to assign a mapped type to an index \
-                                                     signature",
-                                                )?;
+                                                self.assign_with_opts(data, opts, &l_type_ann, &r_ty)
+                                                    .context("tried to assign a mapped type to an index signature")?;
                                             }
                                         }
 
@@ -680,16 +620,11 @@ impl Analyzer<'_, '_> {
                             fields: lhs.to_vec(),
                         }
                         .context("keyword `object` is not assignable to a non-empty type literal");
-                        return Err(Error::Errors {
-                            span,
-                            errors: vec![err],
-                        });
+                        return Err(Error::Errors { span, errors: vec![err] });
                     }
                 }
 
-                Type::EnumVariant(..) => {
-                    return Err(Error::SimpleAssignFailed { span, cause: None })
-                }
+                Type::EnumVariant(..) => return Err(Error::SimpleAssignFailed { span, cause: None }),
 
                 Type::Keyword(..) => {
                     let rhs = self
@@ -708,8 +643,7 @@ impl Analyzer<'_, '_> {
                         .context("failed to normalize")?;
 
                     if rhs.is_keyword() {
-                        return Err(Error::SimpleAssignFailed { span, cause: None }
-                            .context("failed to assign builtin type of a keyword"));
+                        return Err(Error::SimpleAssignFailed { span, cause: None }.context("failed to assign builtin type of a keyword"));
                     }
 
                     return self
@@ -781,8 +715,7 @@ impl Analyzer<'_, '_> {
                                 match rm {
                                     ClassMember::Property(ref rp) => {
                                         match rp.accessibility {
-                                            Some(Accessibility::Private)
-                                            | Some(Accessibility::Protected) => {
+                                            Some(Accessibility::Private) | Some(Accessibility::Protected) => {
                                                 errors.push(Error::AccessibilityDiffers { span });
                                             }
                                             _ => {}
@@ -802,9 +735,7 @@ impl Analyzer<'_, '_> {
                             unimplemented!("assign: interface {{ method() => ret; }} = new Foo()")
                         }
                         TypeElement::Index(_) => {
-                            unimplemented!(
-                                "assign: interface {{ [key: string]: Type; }} = new Foo()"
-                            )
+                            unimplemented!("assign: interface {{ [key: string]: Type; }} = new Foo()")
                         }
                     }
                     // TOOD: missing fields
@@ -842,25 +773,14 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    pub(super) fn try_assign_using_parent(
-        &mut self,
-        data: &mut AssignData,
-        l: &Type,
-        r: &Type,
-        opts: AssignOpts,
-    ) -> Option<VResult<()>> {
+    pub(super) fn try_assign_using_parent(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
         let span = opts.span;
 
         match r.normalize() {
             Type::Interface(ri) => {
                 let res: VResult<_> = try {
                     for parent in &ri.extends {
-                        let parent = self.type_of_ts_entity_name(
-                            span,
-                            self.ctx.module_id,
-                            &parent.expr,
-                            parent.type_args.as_deref(),
-                        )?;
+                        let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
 
                         // An interface can extend a class.
                         let parent = self.instantiate_class(span, &parent)?;
@@ -903,21 +823,9 @@ impl Analyzer<'_, '_> {
 
         let mut errors = vec![];
 
-        for (i, m) in lhs
-            .into_iter()
-            .enumerate()
-            .filter(|(_, m)| m.key().is_some())
-        {
+        for (i, m) in lhs.into_iter().enumerate().filter(|(_, m)| m.key().is_some()) {
             let res = self
-                .assign_type_elements_to_type_element(
-                    data,
-                    opts,
-                    missing_fields,
-                    unhandled_rhs,
-                    &[m],
-                    lhs_metadata,
-                    rhs,
-                )
+                .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, &[m], lhs_metadata, rhs)
                 .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
 
             match res {
@@ -931,30 +839,13 @@ impl Analyzer<'_, '_> {
             return Err(Error::Errors { span, errors });
         }
 
-        let lhs_index = lhs
-            .iter()
-            .filter(|m| matches!(m, TypeElement::Index(_)))
-            .collect_vec();
-        let lhs_call = lhs
-            .iter()
-            .filter(|m| matches!(m, TypeElement::Call(_)))
-            .collect_vec();
-        let lhs_constructor = lhs
-            .iter()
-            .filter(|m| matches!(m, TypeElement::Constructor(_)))
-            .collect_vec();
+        let lhs_index = lhs.iter().filter(|m| matches!(m, TypeElement::Index(_))).collect_vec();
+        let lhs_call = lhs.iter().filter(|m| matches!(m, TypeElement::Call(_))).collect_vec();
+        let lhs_constructor = lhs.iter().filter(|m| matches!(m, TypeElement::Constructor(_))).collect_vec();
 
         if !lhs_index.is_empty() {
             let res = self
-                .assign_type_elements_to_type_element(
-                    data,
-                    opts,
-                    missing_fields,
-                    unhandled_rhs,
-                    &lhs_index,
-                    lhs_metadata,
-                    rhs,
-                )
+                .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, &lhs_index, lhs_metadata, rhs)
                 .with_context(|| format!("tried to assign to an element (not a key-based)"));
 
             errors.extend(res.err());
@@ -962,15 +853,7 @@ impl Analyzer<'_, '_> {
 
         if !lhs_call.is_empty() {
             let res = self
-                .assign_type_elements_to_type_element(
-                    data,
-                    opts,
-                    missing_fields,
-                    unhandled_rhs,
-                    &lhs_call,
-                    lhs_metadata,
-                    rhs,
-                )
+                .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, &lhs_call, lhs_metadata, rhs)
                 .with_context(|| format!("tried to assign to an element (not a key-based)"));
 
             errors.extend(res.err());
@@ -978,15 +861,7 @@ impl Analyzer<'_, '_> {
 
         if !lhs_constructor.is_empty() {
             let res = self
-                .assign_type_elements_to_type_element(
-                    data,
-                    opts,
-                    missing_fields,
-                    unhandled_rhs,
-                    &lhs_constructor,
-                    lhs_metadata,
-                    rhs,
-                )
+                .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, &lhs_constructor, lhs_metadata, rhs)
                 .with_context(|| format!("tried to assign to an element (not a key-based)"));
 
             errors.extend(res.err());
@@ -1075,19 +950,13 @@ impl Analyzer<'_, '_> {
                                             if lp.accessibility == Some(Accessibility::Private)
                                                 || rp.accessibility == Some(Accessibility::Private)
                                             {
-                                                return Err(
-                                                    Error::AssignFailedDueToAccessibility { span },
-                                                );
+                                                return Err(Error::AssignFailedDueToAccessibility { span });
                                             }
                                         }
 
                                         if !opts.for_castablity {
                                             if !lp.optional && rp.optional {
-                                                return Err(
-                                                    Error::AssignFailedDueToOptionalityDifference {
-                                                        span,
-                                                    },
-                                                );
+                                                return Err(Error::AssignFailedDueToOptionalityDifference { span });
                                             }
                                         }
 
@@ -1113,21 +982,13 @@ impl Analyzer<'_, '_> {
 
                                             self.assign_inner(
                                                 data,
-                                                lp.type_ann.as_deref().unwrap_or(&Type::any(
-                                                    span,
-                                                    Default::default(),
-                                                )),
-                                                rp.type_ann.as_deref().unwrap_or(&Type::any(
-                                                    span,
-                                                    Default::default(),
-                                                )),
+                                                lp.type_ann.as_deref().unwrap_or(&Type::any(span, Default::default())),
+                                                rp.type_ann.as_deref().unwrap_or(&Type::any(span, Default::default())),
                                                 opts,
                                             )
                                         })()?;
 
-                                        if let Some(pos) =
-                                            unhandled_rhs.iter().position(|span| *span == rm.span())
-                                        {
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                             unhandled_rhs.remove(pos);
                                         }
                                         return Ok(());
@@ -1146,10 +1007,7 @@ impl Analyzer<'_, '_> {
                                                     &rm.params,
                                                     rm.ret_ty.as_deref(),
                                                 )
-                                                .context(
-                                                    "tried to assign a method signature to a \
-                                                     property signature with function type",
-                                                )?;
+                                                .context("tried to assign a method signature to a property signature with function type")?;
                                             } else {
                                                 self.assign_with_opts(
                                                     data,
@@ -1159,30 +1017,20 @@ impl Analyzer<'_, '_> {
                                                         span,
                                                         type_params: rm.type_params.clone(),
                                                         params: rm.params.clone(),
-                                                        ret_ty: rm.ret_ty.clone().unwrap_or_else(
-                                                            || {
-                                                                box Type::any(
-                                                                    span.with_ctxt(
-                                                                        SyntaxContext::empty(),
-                                                                    ),
-                                                                    Default::default(),
-                                                                )
-                                                            },
-                                                        ),
+                                                        ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
+                                                            box Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
+                                                        }),
                                                         metadata: Default::default(),
                                                     }),
                                                 )
                                                 .context(
-                                                    "failed to assign a method signature to a \
-                                                     property signature because the property was \
+                                                    "failed to assign a method signature to a property signature because the property was \
                                                      not a function",
                                                 )?;
                                             }
                                         }
 
-                                        if let Some(pos) =
-                                            unhandled_rhs.iter().position(|span| *span == rm.span())
-                                        {
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                             unhandled_rhs.remove(pos);
                                         }
                                         return Ok(());
@@ -1213,10 +1061,7 @@ impl Analyzer<'_, '_> {
 
                                         match res {
                                             Ok(()) => {
-                                                if let Some(pos) = unhandled_rhs
-                                                    .iter()
-                                                    .position(|span| *span == rm.span())
-                                                {
+                                                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                                     unhandled_rhs.remove(pos);
                                                 }
 
@@ -1244,15 +1089,10 @@ impl Analyzer<'_, '_> {
                                                     &rf.params,
                                                     Some(&rf.ret_ty),
                                                 )
-                                                .context(
-                                                    "tried to assign a property with callable \
-                                                     type to a method property",
-                                                )?;
+                                                .context("tried to assign a property with callable type to a method property")?;
                                             }
                                         }
-                                        if let Some(pos) =
-                                            unhandled_rhs.iter().position(|span| *span == rm.span())
-                                        {
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                             unhandled_rhs.remove(pos);
                                         }
                                         return Ok(());
@@ -1295,35 +1135,18 @@ impl Analyzer<'_, '_> {
                                     done = true;
 
                                     if self
-                                        .assign(
-                                            span,
-                                            &mut Default::default(),
-                                            &li.params[0].ty,
-                                            &r_prop.key.ty(),
-                                        )
+                                        .assign(span, &mut Default::default(), &li.params[0].ty, &r_prop.key.ty())
                                         .is_ok()
-                                        || li.params[0]
-                                            .ty
-                                            .is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                                        || li.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
                                     {
                                         if let Some(l_index_ret_ty) = &li.type_ann {
                                             if let Some(r_prop_ty) = &r_prop.type_ann {
-                                                self.assign_with_opts(
-                                                    data,
-                                                    opts,
-                                                    &l_index_ret_ty,
-                                                    &&r_prop_ty,
-                                                )
-                                                .context(
-                                                    "tried to assign a type of property to thr \
-                                                     type of an index signature",
-                                                )?;
+                                                self.assign_with_opts(data, opts, &l_index_ret_ty, &&r_prop_ty)
+                                                    .context("tried to assign a type of property to thr type of an index signature")?;
                                             }
                                         }
 
-                                        if let Some(pos) =
-                                            unhandled_rhs.iter().position(|span| *span == rm.span())
-                                        {
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                             unhandled_rhs.remove(pos);
                                         }
                                     }
@@ -1332,17 +1155,8 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Method(rm) => {
                                     done = true;
 
-                                    if self
-                                        .assign(
-                                            span,
-                                            &mut Default::default(),
-                                            &li.params[0].ty,
-                                            &rm.key.ty(),
-                                        )
-                                        .is_ok()
-                                        || li.params[0]
-                                            .ty
-                                            .is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                                    if self.assign(span, &mut Default::default(), &li.params[0].ty, &rm.key.ty()).is_ok()
+                                        || li.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
                                     {
                                         if let Some(li_ret) = &li.type_ann {
                                             self.assign_with_opts(
@@ -1356,28 +1170,17 @@ impl Analyzer<'_, '_> {
                                                     span: rm.span,
                                                     type_params: rm.type_params.clone(),
                                                     params: rm.params.clone(),
-                                                    ret_ty: rm.ret_ty.clone().unwrap_or_else(
-                                                        || {
-                                                            box Type::any(
-                                                                rm.span.with_ctxt(
-                                                                    SyntaxContext::empty(),
-                                                                ),
-                                                                Default::default(),
-                                                            )
-                                                        },
-                                                    ),
+                                                    ret_ty: rm.ret_ty.clone().unwrap_or_else(|| {
+                                                        box Type::any(rm.span.with_ctxt(SyntaxContext::empty()), Default::default())
+                                                    }),
                                                     metadata: Default::default(),
                                                 }),
                                             )
-                                            .context(
-                                                "tried to assign a method to an index signature",
-                                            )?;
+                                            .context("tried to assign a method to an index signature")?;
                                         }
                                     }
 
-                                    if let Some(pos) =
-                                        unhandled_rhs.iter().position(|span| *span == rm.span())
-                                    {
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                         unhandled_rhs.remove(pos);
                                     }
                                 }
@@ -1385,14 +1188,8 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Index(ri) => {
                                     done = true;
 
-                                    if li.params.type_eq(&ri.params)
-                                        || ri.params[0]
-                                            .ty
-                                            .is_kwd(TsKeywordTypeKind::TsStringKeyword)
-                                    {
-                                        if let Some(pos) =
-                                            unhandled_rhs.iter().position(|span| *span == ri.span())
-                                        {
+                                    if li.params.type_eq(&ri.params) || ri.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == ri.span()) {
                                             unhandled_rhs.remove(pos);
                                         }
 
@@ -1406,8 +1203,7 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     errors.push(
-                                        Error::SimpleAssignFailed { span, cause: None }
-                                            .context("failed to assign to an index signature"),
+                                        Error::SimpleAssignFailed { span, cause: None }.context("failed to assign to an index signature"),
                                     );
                                 }
                             }
@@ -1418,13 +1214,8 @@ impl Analyzer<'_, '_> {
                         for (ri, rm) in rhs_members.iter().enumerate() {
                             match rm {
                                 TypeElement::Call(rc) => {
-                                    for rm in rhs_members
-                                        .iter()
-                                        .filter(|rm| matches!(rm, TypeElement::Call(_)))
-                                    {
-                                        if let Some(pos) =
-                                            unhandled_rhs.iter().position(|span| *span == rm.span())
-                                        {
+                                    for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Call(_))) {
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                             unhandled_rhs.remove(pos);
                                             continue;
                                         }
@@ -1447,12 +1238,7 @@ impl Analyzer<'_, '_> {
                                             &rc.params,
                                             rc.ret_ty.as_deref(),
                                         )
-                                        .with_context(|| {
-                                            format!(
-                                                "tried to assign {}th element to a call signature",
-                                                ri
-                                            )
-                                        });
+                                        .with_context(|| format!("tried to assign {}th element to a call signature", ri));
 
                                     match res {
                                         Ok(()) => {
@@ -1480,13 +1266,8 @@ impl Analyzer<'_, '_> {
                         for rm in rhs_members {
                             match rm {
                                 TypeElement::Constructor(rc) => {
-                                    for rm in rhs_members
-                                        .iter()
-                                        .filter(|rm| matches!(rm, TypeElement::Constructor(_)))
-                                    {
-                                        if let Some(pos) =
-                                            unhandled_rhs.iter().position(|span| *span == rm.span())
-                                        {
+                                    for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Constructor(_))) {
+                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                             unhandled_rhs.remove(pos);
                                             continue;
                                         }
@@ -1516,10 +1297,7 @@ impl Analyzer<'_, '_> {
                                             for rm in rhs_members {
                                                 match rm {
                                                     TypeElement::Constructor(..) => {
-                                                        if let Some(pos) = unhandled_rhs
-                                                            .iter()
-                                                            .position(|span| *span == rm.span())
-                                                        {
+                                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
                                                             unhandled_rhs.remove(pos);
                                                         }
                                                     }
@@ -1541,8 +1319,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if !opts.is_assigning_to_class_members {
-                            return Err(Error::SimpleAssignFailed { span, cause: None }
-                                .context("failed to assign to a constructor"));
+                            return Err(Error::SimpleAssignFailed { span, cause: None }.context("failed to assign to a constructor"));
                         }
                     }
 

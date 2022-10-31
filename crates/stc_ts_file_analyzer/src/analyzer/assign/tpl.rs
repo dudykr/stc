@@ -24,10 +24,7 @@ impl Analyzer<'_, '_> {
         let r = r.normalize();
 
         match r {
-            Type::Lit(LitType {
-                lit: RTsLit::Str(r),
-                ..
-            }) => {
+            Type::Lit(LitType { lit: RTsLit::Str(r), .. }) => {
                 let mut start = 0;
                 let mut positions = vec![];
 

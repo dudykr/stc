@@ -15,10 +15,7 @@ where
 }
 
 /// Returns `(cycles, graph)`.
-pub(crate) fn to_graph<I>(
-    deps: &Deps<I>,
-    len: usize,
-) -> (Vec<Vec<usize>>, FastDiGraphMap<usize, ()>)
+pub(crate) fn to_graph<I>(deps: &Deps<I>, len: usize) -> (Vec<Vec<usize>>, FastDiGraphMap<usize, ()>)
 where
     I: Eq + Hash,
 {
@@ -60,11 +57,7 @@ where
     }
 }
 
-pub(crate) fn calc_order(
-    cycles: Vec<Vec<usize>>,
-    graph: &mut FastDiGraphMap<usize, ()>,
-    len: usize,
-) -> Vec<Vec<usize>> {
+pub(crate) fn calc_order(cycles: Vec<Vec<usize>>, graph: &mut FastDiGraphMap<usize, ()>, len: usize) -> Vec<Vec<usize>> {
     let mut done = AHashSet::default();
     let mut orders = vec![];
 
@@ -110,12 +103,7 @@ pub(crate) fn calc_order(
     orders
 }
 
-fn calc_one(
-    done: &AHashSet<usize>,
-    cycles: &[Vec<usize>],
-    graph: &mut FastDiGraphMap<usize, ()>,
-    idx: usize,
-) -> Vec<usize> {
+fn calc_one(done: &AHashSet<usize>, cycles: &[Vec<usize>], graph: &mut FastDiGraphMap<usize, ()>, idx: usize) -> Vec<usize> {
     if cfg!(debug_assertions) && cfg!(feature = "debug") {
         trace!("calc_one(idx = {:?})", idx);
     }

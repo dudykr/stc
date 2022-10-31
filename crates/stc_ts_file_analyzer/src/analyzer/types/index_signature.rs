@@ -9,11 +9,7 @@ use crate::{analyzer::Analyzer, VResult};
 
 impl Analyzer<'_, '_> {
     /// Get [IndexSignature] from `ty`, if there's one.
-    pub(crate) fn get_index_signature(
-        &mut self,
-        span: Span,
-        ty: &Type,
-    ) -> VResult<Option<IndexSignature>> {
+    pub(crate) fn get_index_signature(&mut self, span: Span, ty: &Type) -> VResult<Option<IndexSignature>> {
         (|| -> VResult<_> {
             let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?;
 
@@ -24,19 +20,10 @@ impl Analyzer<'_, '_> {
                 _ => Ok(None),
             }
         })()
-        .with_context(|| {
-            format!(
-                "tried to get index signature of '{}'",
-                dump_type_as_string(&self.cm, &ty)
-            )
-        })
+        .with_context(|| format!("tried to get index signature of '{}'", dump_type_as_string(&self.cm, &ty)))
     }
 
-    pub(crate) fn get_index_signature_from_class(
-        &mut self,
-        span: Span,
-        class: &ClassDef,
-    ) -> VResult<Option<IndexSignature>> {
+    pub(crate) fn get_index_signature_from_class(&mut self, span: Span, class: &ClassDef) -> VResult<Option<IndexSignature>> {
         for member in &class.body {
             match member {
                 ClassMember::IndexSignature(i) => return i.clone().as_some().as_ok(),
