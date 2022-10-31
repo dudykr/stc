@@ -181,17 +181,24 @@ impl GenericExpander<'_> {
 
                                         for member in &ty.members {
                                             match member {
-                                                TypeElement::Property(p) => members.push(TypeElement::Property(PropertySignature {
-                                                    type_ann: m.ty.clone().fold_with(&mut MappedHandler {
-                                                        key: &p.key,
-                                                        param_name: &param.name,
-                                                        prop_ty: &*p
-                                                            .type_ann
-                                                            .clone()
-                                                            .unwrap_or_else(|| box Type::any(p.span, Default::default())),
-                                                    }),
-                                                    ..p.clone()
-                                                })),
+                                                TypeElement::Property(p) => {
+                                                    if p.metadata.is_implicit {
+                                                        members.push(p.clone().into());
+                                                        continue;
+                                                    }
+
+                                                    members.push(TypeElement::Property(PropertySignature {
+                                                        type_ann: m.ty.clone().fold_with(&mut MappedHandler {
+                                                            key: &p.key,
+                                                            param_name: &param.name,
+                                                            prop_ty: &*p
+                                                                .type_ann
+                                                                .clone()
+                                                                .unwrap_or_else(|| box Type::any(p.span, Default::default())),
+                                                        }),
+                                                        ..p.clone()
+                                                    }))
+                                                }
                                                 TypeElement::Method(method) => members.push(TypeElement::Property(PropertySignature {
                                                     span: method.span,
                                                     accessibility: None,
