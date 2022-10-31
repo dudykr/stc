@@ -652,8 +652,19 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 file_name.file_name().unwrap().to_string_lossy()
             ));
 
-            fs::write(stats_file_name, format!("{:#?}", stats))
-                .expect("failed to write test stats");
+            if env::var("CI").unwrap_or_default() == "1" {
+                let stat_string =
+                    fs::read_to_string(&stats_file_name).expect("failed to read test stats file");
+
+                assert_eq!(
+                    format!("{:#?}", stats),
+                    stat_string,
+                    "CI=1 so test stats must match"
+                );
+            } else {
+                fs::write(stats_file_name, format!("{:#?}", stats))
+                    .expect("failed to write test stats");
+            }
         }
 
         if !cfg!(debug_assertions) {
