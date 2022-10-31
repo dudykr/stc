@@ -645,6 +645,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         mem::forget(stat_guard);
 
+        // Print per-test stats so we can prevent regressions.
         if cfg!(debug_assertions) {
             let stats_file_name = file_name.with_file_name(format!(
                 "{}.stats.rust-debug",
