@@ -666,7 +666,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                 let code = d
                     .code
                     .clone()
-                    .expect("conformance teting: All errors should have proper error code");
+                    .expect("conformance testing: All errors should have proper error code");
                 let code = match code {
                     DiagnosticId::Error(err) => err,
                     DiagnosticId::Lint(lint) => {
