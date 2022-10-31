@@ -400,6 +400,13 @@ pub struct TypeElMetadata {
     /// While assignment, missing property error will not occur by the element
     /// with this flag set to `true`.
     pub has_default: bool,
+
+    /// If `true`, it's ignored while handling operations like expansion of
+    /// mapped types.
+    ///
+    /// Currently, this is true for `length` property of [crate::Type::Array]
+    /// and [crate::Type::Tuple].
+    pub is_implicit: bool,
 }
 
 impl_basic_traits!(TypeElMetadata);
