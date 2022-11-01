@@ -51,7 +51,7 @@ pub(crate) struct NormalizeTypeOpts {
     pub process_only_key: bool,
 
     /// If true, we expand intersections fully.
-    pub normalize_property_of_intersections: bool,
+    pub normalize_properties_of_intersection: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -629,7 +629,7 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        if opts.normalize_property_of_intersections {
+        if opts.normalize_properties_of_intersection {
             let mut property_types = vec![];
 
             for elem in types.iter() {

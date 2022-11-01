@@ -1210,7 +1210,7 @@ impl Analyzer<'_, '_> {
                     span,
                     types,
                     NormalizeTypeOpts {
-                        normalize_property_of_intersections: true,
+                        normalize_properties_of_intersection: true,
                         ..Default::default()
                     },
                 )? {
