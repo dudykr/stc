@@ -6,7 +6,7 @@ use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RBindingIdent, RCallExpr, RExpr, RExprOrSpread, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr, RNewExpr, RObjectPat,
-    RPat, RRestPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
+    RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
@@ -1760,29 +1760,6 @@ impl Analyzer<'_, '_> {
             .normalize(Some(span), Cow::Borrowed(callee), Default::default())
             .context("tried to normalize to extract callee")?;
 
-        if callee.is_any() {
-            return Ok(vec![CallCandidate {
-                type_params: None,
-                params: vec![FnParam {
-                    span: DUMMY_SP,
-                    required: false,
-                    pat: RPat::Rest(RRestPat {
-                        node_id: NodeId::invalid(),
-                        span: DUMMY_SP,
-                        dot3_token: DUMMY_SP,
-                        arg: box RPat::Ident(RBindingIdent {
-                            node_id: NodeId::invalid(),
-                            id: RIdent::new("args".into(), DUMMY_SP),
-                            type_ann: None,
-                        }),
-                        type_ann: None,
-                    }),
-                    ty: box Type::any(span, Default::default()),
-                }],
-                ret_ty: Type::any(span, Default::default()),
-            }]);
-        }
-
         // TODO(kdy1): Check if signature match.
         match callee.normalize_instance() {
             Type::Intersection(i) => {
@@ -1969,7 +1946,9 @@ impl Analyzer<'_, '_> {
             return Ok(v);
         }
 
-        dbg!();
+        if callee.is_any() {
+            return Ok(Type::any(span, Default::default()));
+        }
 
         match callee.normalize() {
             Type::ClassDef(cls) if kind == ExtractKind::New => {
