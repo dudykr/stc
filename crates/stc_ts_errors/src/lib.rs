@@ -226,6 +226,31 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2777
+    InvalidOperandOfIncDecOptionalProp {
+        span: Span,
+    },
+
+    /// TS2778
+    InvalidRestPatternInOptionalChain {
+        span: Span,
+    },
+
+    /// TS2779
+    InvalidLhsOfAssignOptionalProp {
+        span: Span,
+    },
+
+    /// TS2780
+    InvalidRestPatternInForIn {
+        span: Span,
+    },
+
+    /// TS2781
+    InvalidRestPatternInForOf {
+        span: Span,
+    },
+
     /// TS2501
     BindingPatNotAllowedInRestPatArg {
         span: Span,
@@ -1820,6 +1845,16 @@ impl Error {
             Error::SuperNotCalled { .. } => 2377,
 
             Error::SuperInNestedFunction { .. } => 2337,
+
+            Error::InvalidOperandOfIncDecOptionalProp { .. } => 2777,
+
+            Error::InvalidRestPatternInOptionalChain { .. } => 2778,
+
+            Error::InvalidLhsOfAssignOptionalProp { .. } => 2779,
+
+            Error::InvalidRestPatternInForIn { .. } => 2780,
+
+            Error::InvalidRestPatternInForOf { .. } => 2781,
 
             Error::ThisUsedBeforeCallingSuper { .. } => 17009,
 

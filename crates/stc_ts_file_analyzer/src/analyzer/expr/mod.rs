@@ -63,7 +63,7 @@ mod function;
 mod jsx;
 mod meta_prop;
 mod object;
-mod optional_chaining;
+pub(crate) mod optional_chaining;
 mod type_cast;
 mod unary;
 mod update;
@@ -435,9 +435,7 @@ impl Analyzer<'_, '_> {
                 }
             };
 
-            if !is_valid_lhs(&e.left) {
-                analyzer.storage.report(Error::InvalidLhsOfAssign { span: e.left.span() });
-            }
+            is_valid_lhs(&e.left).report(&mut analyzer.storage);
 
             let mut errors = Errors::default();
 
@@ -3784,19 +3782,23 @@ impl Analyzer<'_, '_> {
     }
 }
 
-fn is_valid_lhs(l: &RPatOrExpr) -> bool {
-    fn is_valid_lhs_expr(e: &RExpr) -> bool {
+fn is_valid_lhs(l: &RPatOrExpr) -> Result<(), Error> {
+    fn is_valid_lhs_expr(e: &RExpr) -> Result<(), Error> {
+        // obj?.a["b"] += 1;
+        if is_obj_opt_chaining(&e) {
+            return Err(Error::InvalidLhsOfAssignOptionalProp { span: e.span() });
+        }
         match e {
-            RExpr::Ident(..) | RExpr::Member(..) => true,
+            RExpr::Ident(..) | RExpr::Member(..) => Ok(()),
             RExpr::Paren(e) => is_valid_lhs_expr(&e.expr),
-            _ => false,
+            _ => Err(Error::InvalidLhsOfAssign { span: e.span() }),
         }
     }
 
     match l {
         RPatOrExpr::Pat(pat) => match &**pat {
             RPat::Expr(e) => is_valid_lhs_expr(&e),
-            _ => true,
+            _ => Ok(()),
         },
         RPatOrExpr::Expr(e) => is_valid_lhs_expr(&e),
     }

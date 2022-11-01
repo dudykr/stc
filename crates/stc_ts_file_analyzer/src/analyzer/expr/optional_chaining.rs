@@ -82,7 +82,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(super) fn is_obj_opt_chaining(obj: &RExpr) -> bool {
+pub(crate) fn is_obj_opt_chaining(obj: &RExpr) -> bool {
     match obj {
         RExpr::OptChain(..) => true,
         RExpr::Member(RMemberExpr {

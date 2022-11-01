@@ -323,7 +323,16 @@ impl Analyzer<'_, '_> {
         }
 
         match op {
-            op!("+=") => {}
+            op!("+=") => {
+                if rhs.is_str() {
+                    return Err(Error::InvalidOpAssign {
+                        span,
+                        op,
+                        lhs: box l.into_owned().clone(),
+                        rhs: box r.into_owned().clone(),
+                    });
+                }
+            }
 
             op!("??=") | op!("||=") | op!("&&=") => {
                 return self
@@ -346,12 +355,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::InvalidOpAssign {
-            span,
-            op,
-            lhs: box l.into_owned().clone(),
-            rhs: box r.into_owned().clone(),
-        })
+        Err(Error::AssignOpCannotBeApplied { span, op })
     }
 
     /// Assign `right` to `left`. You can just use default for [AssignData].
