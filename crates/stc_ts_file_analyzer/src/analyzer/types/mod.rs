@@ -246,7 +246,7 @@ impl Analyzer<'_, '_> {
                             return Ok(Cow::Owned(types.into_iter().next().unwrap()));
                         }
 
-                        let ty = Type::Union(Union { types, ..*ty });
+                        let ty = Type::Union(Union { types, ..*ty }).cheap();
 
                         return Ok(Cow::Owned(ty));
                     }
