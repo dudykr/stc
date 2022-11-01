@@ -1,5 +1,4 @@
-// @strict: true
-// @allowUnreachableCode: false
+//@strict: true
 
 // assignments in shortcutting chain
 declare const o: undefined | {
