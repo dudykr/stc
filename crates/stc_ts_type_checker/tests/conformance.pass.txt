@@ -278,7 +278,6 @@ controlFlow/controlFlowBinaryAndExpression.ts
 controlFlow/controlFlowBindingPatternOrder.ts
 controlFlow/controlFlowCommaOperator.ts
 controlFlow/controlFlowConditionalExpression.ts
-controlFlow/controlFlowDeleteOperator.ts
 controlFlow/controlFlowDestructuringDeclaration.ts
 controlFlow/controlFlowDoWhileStatement.ts
 controlFlow/controlFlowElementAccess.ts
@@ -1142,7 +1141,6 @@ es7/exponentiationOperator/emitExponentiationOperatorInTemplateString3.ts
 es7/exponentiationOperator/emitExponentiationOperatorInTemplateString3ES6.ts
 es7/exponentiationOperator/exponentiationOperatorWithAnyAndNumber.ts
 es7/exponentiationOperator/exponentiationOperatorWithEnum.ts
-es7/exponentiationOperator/exponentiationOperatorWithEnumUnion.ts
 es7/exponentiationOperator/exponentiationOperatorWithInvalidOperands.ts
 es7/exponentiationOperator/exponentiationOperatorWithInvalidSimpleUnaryExpressionOperands.ts
 es7/exponentiationOperator/exponentiationOperatorWithNew.ts
@@ -2007,7 +2005,6 @@ types/literal/booleanLiteralTypes1.ts
 types/literal/booleanLiteralTypes2.ts
 types/literal/enumLiteralTypes1.ts
 types/literal/enumLiteralTypes2.ts
-types/literal/enumLiteralTypes3.ts
 types/literal/literalTypes1.ts
 types/literal/literalTypes2.ts
 types/literal/literalTypes3.ts
@@ -2019,7 +2016,6 @@ types/literal/numericLiteralTypes2.ts
 types/literal/numericLiteralTypes3.ts
 types/literal/stringEnumLiteralTypes1.ts
 types/literal/stringEnumLiteralTypes2.ts
-types/literal/stringEnumLiteralTypes3.ts
 types/literal/stringLiteralsAssertionsInEqualityComparisons01.ts
 types/literal/stringLiteralsAssertionsInEqualityComparisons02.ts
 types/literal/stringLiteralsWithEqualityChecks01.ts
