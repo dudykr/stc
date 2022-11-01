@@ -215,8 +215,41 @@ impl Analyzer<'_, '_> {
                     // Not normalizable.
                     Type::Infer(_) | Type::StaticThis(_) | Type::This(_) => {}
 
-                    // Maybe it can be changed in future, but currently noop
-                    Type::Union(_) => {}
+                    Type::Union(ty) => {
+                        let mut types = vec![];
+
+                        for ty in ty.types.iter() {
+                            let ty = self
+                                .normalize(span, Cow::Borrowed(ty), opts)
+                                .context("tried to normalize an element of a union type")?
+                                .into_owned();
+
+                            if let Type::Union(u) = ty {
+                                types.extend(u.types);
+                            } else {
+                                types.push(ty);
+                            }
+                        }
+
+                        types.dedup_type();
+                        types.retain(|ty| !ty.is_never());
+
+                        if types.is_empty() {
+                            return Ok(Cow::Owned(Type::never(
+                                ty.span,
+                                KeywordTypeMetadata {
+                                    common: ty.metadata.common,
+                                },
+                            )));
+                        }
+                        if types.len() == 1 {
+                            return Ok(Cow::Owned(types.into_iter().next().unwrap()));
+                        }
+
+                        let ty = Type::Union(Union { types, ..*ty });
+
+                        return Ok(Cow::Owned(ty));
+                    }
 
                     Type::Intersection(ty) => {
                         if let Some(new_ty) = self
