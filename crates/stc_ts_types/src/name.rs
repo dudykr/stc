@@ -140,6 +140,7 @@ impl TryFrom<&'_ RExpr> for Name {
 
                 this.into()
             }),
+            RExpr::OptChain(e) => (&*e.expr).try_into(),
 
             // TODO
             _ => Err(()),
