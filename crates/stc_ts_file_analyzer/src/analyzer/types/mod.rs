@@ -217,7 +217,7 @@ impl Analyzer<'_, '_> {
 
                     Type::Intersection(ty) => {
                         if let Some(new_ty) = self
-                            .normalize_intersection(span, ty, opts)
+                            .normalize_intersection_types(span.unwrap_or(ty.span), &ty.types, opts)
                             .context("failed to normalize an intersection type")?
                         {
                             return Ok(Cow::Owned(new_ty));
@@ -613,19 +613,46 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn normalize_intersection(&mut self, span: Option<Span>, ty: &Intersection, opts: NormalizeTypeOpts) -> VResult<Option<Type>> {
-        let is_str = ty.types.iter().any(|ty| ty.is_str());
-        let is_num = ty.types.iter().any(|ty| ty.is_num());
-        let is_bool = ty.types.iter().any(|ty| ty.is_bool());
+    fn normalize_intersection_types(&mut self, span: Span, types: &[Type], opts: NormalizeTypeOpts) -> VResult<Option<Type>> {
+        let is_str = types.iter().any(|ty| ty.is_str());
+        let is_num = types.iter().any(|ty| ty.is_num());
+        let is_bool = types.iter().any(|ty| ty.is_bool());
 
         if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
             return Ok(Some(Type::Keyword(KeywordType {
-                span: ty.span,
+                span,
                 kind: TsKeywordTypeKind::TsNeverKeyword,
-                metadata: KeywordTypeMetadata {
-                    common: ty.metadata.common,
-                },
+                metadata: KeywordTypeMetadata { ..Default::default() },
             })));
+        }
+
+        let mut property_types = vec![];
+
+        for elem in types.iter() {
+            match elem.normalize_instance() {
+                Type::TypeLit(elem_tl) => {
+                    // Intersect property types
+                    for e in elem_tl.members.iter() {
+                        match e {
+                            TypeElement::Property(p) => {
+                                let idx = property_types.iter().position(|e| match e {
+                                    TypeElement::Property(p2) => p.key.type_eq(&p2.key),
+                                    _ => false,
+                                });
+
+                                match idx {
+                                    Some(idx) => {}
+                                    None => {
+                                        property_types.push(e.clone());
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                _ => {}
+            }
         }
 
         Ok(None)
