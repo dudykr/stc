@@ -1,0 +1,138 @@
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:11:13
+   |
+11 |     switch (shape?.type) {
+   |             ^^^^^
+   |
+   = note: ({
+               type: 'rectangle';
+               width: number;
+               height: number;
+           } | {
+               type: 'circle';
+               radius: number;
+           })
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:11:13
+   |
+11 |     switch (shape?.type) {
+   |             ^^^^^^^^^^^
+   |
+   = note: ('rectangle' | 'circle')
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:12:14
+   |
+12 |         case 'circle':
+   |              ^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:13:20
+   |
+13 |             return Math.PI * shape.radius ** 2
+   |                    ^^^^
+   |
+   = note: Math
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:13:20
+   |
+13 |             return Math.PI * shape.radius ** 2
+   |                    ^^^^^^^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:13:30
+   |
+13 |             return Math.PI * shape.radius ** 2
+   |                              ^^^^^
+   |
+   = note: {
+               type: 'circle';
+               radius: number;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:13:30
+   |
+13 |             return Math.PI * shape.radius ** 2
+   |                              ^^^^^^^^^^^^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:13:30
+   |
+13 |             return Math.PI * shape.radius ** 2
+   |                              ^^^^^^^^^^^^^^^^^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:13:20
+   |
+13 |             return Math.PI * shape.radius ** 2
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:14:14
+   |
+14 |         case 'rectangle':
+   |              ^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:15:20
+   |
+15 |             return shape.width * shape.height
+   |                    ^^^^^
+   |
+   = note: {
+               type: 'rectangle';
+               width: number;
+               height: number;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:15:20
+   |
+15 |             return shape.width * shape.height
+   |                    ^^^^^^^^^^^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:15:34
+   |
+15 |             return shape.width * shape.height
+   |                                  ^^^^^
+   |
+   = note: {
+               type: 'rectangle';
+               width: number;
+               height: number;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:15:34
+   |
+15 |             return shape.width * shape.height
+   |                                  ^^^^^^^^^^^^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:15:20
+   |
+15 |             return shape.width * shape.height
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: number
+
