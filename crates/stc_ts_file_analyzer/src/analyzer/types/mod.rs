@@ -617,16 +617,32 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn normalize_intersection_types(&mut self, span: Span, types: &[Type], opts: NormalizeTypeOpts) -> VResult<Option<Type>> {
+        macro_rules! never {
+            () => {{
+                Ok(Some(Type::Keyword(KeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsNeverKeyword,
+                    metadata: KeywordTypeMetadata { ..Default::default() },
+                })))
+            }};
+        }
+
         let is_str = types.iter().any(|ty| ty.is_str());
         let is_num = types.iter().any(|ty| ty.is_num());
         let is_bool = types.iter().any(|ty| ty.is_bool());
 
         if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
-            return Ok(Some(Type::Keyword(KeywordType {
-                span,
-                kind: TsKeywordTypeKind::TsNeverKeyword,
-                metadata: KeywordTypeMetadata { ..Default::default() },
-            })));
+            return never!();
+        }
+
+        if types.len() == 2 {
+            let (a, b) = (&types[0], &types[1]);
+
+            if (a.is_str_lit() && b.is_str_lit() || (a.is_num_lit() && b.is_num_lit()) || (a.is_bool_lit() && b.is_bool_lit()))
+                && !a.type_eq(&b)
+            {
+                return never!();
+            }
         }
 
         if opts.normalize_properties_of_intersection {
@@ -660,11 +676,7 @@ impl Analyzer<'_, '_> {
 
                                                     if let Some(new) = new {
                                                         if new.is_never() {
-                                                            return Ok(Some(Type::Keyword(KeywordType {
-                                                                span,
-                                                                kind: TsKeywordTypeKind::TsNeverKeyword,
-                                                                metadata: KeywordTypeMetadata { ..Default::default() },
-                                                            })));
+                                                            return never!();
                                                         }
                                                         prev.type_ann = Some(box new);
                                                         continue 'outer;
