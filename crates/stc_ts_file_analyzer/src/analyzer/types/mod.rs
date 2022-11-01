@@ -682,7 +682,7 @@ impl Analyzer<'_, '_> {
             return never!();
         }
 
-        if types.len() == 2 {
+        if !self.rule().always_strict && types.len() == 2 {
             let (a, b) = (&types[0], &types[1]);
 
             if (a.is_str_lit() && b.is_str_lit() || (a.is_num_lit() && b.is_num_lit()) || (a.is_bool_lit() && b.is_bool_lit()))
