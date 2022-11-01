@@ -154,7 +154,7 @@ warning: Type
 15 | ee.foo.substring
    | ^^^^^^^^^^^^^^^^
    |
-   = note: (undefined | string["substring"])
+   = note: (undefined | (start: number, end?: number) => string)
 
 warning: Type
   --> $DIR/tests/pass/types/mapped/4-3.ts:16:1
