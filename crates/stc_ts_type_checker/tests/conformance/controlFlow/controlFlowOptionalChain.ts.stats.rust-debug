@@ -1,5 +1,5 @@
 Stats {
     required_error: 10,
     matched_error: 52,
-    extra_error: 74,
+    extra_error: 73,
 }

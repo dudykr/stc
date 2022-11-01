@@ -2207,6 +2207,7 @@ types/thisType/thisTypeInBasePropertyAndDerivedContainerOfBase01.ts
 types/thisType/thisTypeInClasses.ts
 types/thisType/thisTypeInFunctions3.ts
 types/thisType/thisTypeInInterfaces.ts
+types/thisType/thisTypeInObjectLiterals.ts
 types/thisType/thisTypeInTuples.ts
 types/thisType/thisTypeInTypePredicate.ts
 types/thisType/thisTypeOptionalCall.ts

@@ -1761,7 +1761,7 @@ impl Analyzer<'_, '_> {
             .context("tried to normalize to extract callee")?;
 
         // TODO(kdy1): Check if signature match.
-        match callee.normalize() {
+        match callee.normalize_instance() {
             Type::Intersection(i) => {
                 let candidates = i
                     .types
@@ -1946,7 +1946,9 @@ impl Analyzer<'_, '_> {
             return Ok(v);
         }
 
-        dbg!();
+        if callee.is_any() {
+            return Ok(Type::any(span, Default::default()));
+        }
 
         match callee.normalize() {
             Type::ClassDef(cls) if kind == ExtractKind::New => {
