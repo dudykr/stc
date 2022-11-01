@@ -226,6 +226,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2777
+    InvalidOperandOfIncDecOptionalProp {
+        span: Span,
+    },
+
     /// TS2778
     InvalidRestPatternInOptionalChain {
         span: Span,
@@ -1840,6 +1845,8 @@ impl Error {
             Error::SuperNotCalled { .. } => 2377,
 
             Error::SuperInNestedFunction { .. } => 2337,
+
+            Error::InvalidOperandOfIncDecOptionalProp { .. } => 2777,
 
             Error::InvalidRestPatternInOptionalChain { .. } => 2778,
 
