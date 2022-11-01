@@ -223,10 +223,10 @@ impl Analyzer<'_, '_> {
                                 .normalize(span, Cow::Borrowed(ty), opts)
                                 .context("tried to normalize an element of a union type")?;
                             ty.make_clone_cheap();
-                            let ty = ty.into_owned();
+                            let mut ty = ty.into_owned();
 
-                            if let Type::Union(u) = ty {
-                                types.extend(u.types);
+                            if let Some(u) = ty.as_union_type_mut() {
+                                types.append(&mut u.types);
                             } else {
                                 types.push(ty);
                             }
