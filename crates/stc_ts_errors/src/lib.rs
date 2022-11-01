@@ -231,6 +231,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2779
+    InvalidLhsOfAssignOptionalProp {
+        span: Span,
+    },
+
     /// TS2780
     InvalidRestPatternInForIn {
         span: Span,
@@ -1837,6 +1842,8 @@ impl Error {
             Error::SuperInNestedFunction { .. } => 2337,
 
             Error::InvalidRestPatternInOptionalChain { .. } => 2778,
+
+            Error::InvalidLhsOfAssignOptionalProp { .. } => 2779,
 
             Error::InvalidRestPatternInForIn { .. } => 2780,
 
