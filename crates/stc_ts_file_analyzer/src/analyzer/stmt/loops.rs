@@ -165,6 +165,12 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_lhs_of_for_in_of_loop_expr(&mut self, e: &RExpr, kind: ForHeadKind) -> VResult<()> {
+        // { ...obj?.a["b"] }
+        use crate::analyzer::expr::optional_chaining::is_obj_opt_chaining;
+        if is_obj_opt_chaining(&e) {
+            return Err(Error::InvalidRestPatternInForIn { span: e.span() });
+        }
+
         match e {
             RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) => Ok(()),
             // We use different error code for this.

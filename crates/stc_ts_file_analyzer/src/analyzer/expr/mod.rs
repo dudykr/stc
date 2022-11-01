@@ -63,7 +63,7 @@ mod function;
 mod jsx;
 mod meta_prop;
 mod object;
-mod optional_chaining;
+pub(crate) mod optional_chaining;
 mod type_cast;
 mod unary;
 mod update;

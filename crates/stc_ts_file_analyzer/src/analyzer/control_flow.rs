@@ -1021,7 +1021,13 @@ impl Analyzer<'_, '_> {
                                     self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
 
-                                RPat::Expr(_) => {
+                                RPat::Expr(expr) => {
+                                    // { ...obj?.a["b"] }
+                                    use crate::analyzer::expr::optional_chaining::is_obj_opt_chaining;
+                                    if is_obj_opt_chaining(&expr) {
+                                        return Err(Error::InvalidRestPatternInOptionalChain { span: r.span });
+                                    }
+
                                     self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
 
