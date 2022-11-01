@@ -1840,7 +1840,7 @@ impl Error {
 
             Error::InvalidRestPatternInForIn { .. } => 2780,
 
-            Error::InvalidRestPatternInForOf { .. } => 2780,
+            Error::InvalidRestPatternInForOf { .. } => 2781,
 
             Error::ThisUsedBeforeCallingSuper { .. } => 17009,
 

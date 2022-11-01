@@ -168,7 +168,10 @@ impl Analyzer<'_, '_> {
         // { ...obj?.a["b"] }
         use crate::analyzer::expr::optional_chaining::is_obj_opt_chaining;
         if is_obj_opt_chaining(&e) {
-            return Err(Error::InvalidRestPatternInForIn { span: e.span() });
+            return match kind {
+                ForHeadKind::In => Err(Error::InvalidRestPatternInForIn { span: e.span() }),
+                ForHeadKind::Of { .. } => Err(Error::InvalidRestPatternInForOf { span: e.span() }),
+            };
         }
 
         match e {
