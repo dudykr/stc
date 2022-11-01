@@ -453,6 +453,12 @@ impl Analyzer<'_, '_> {
                             .instantiate_for_normalization(span, &ty.ty)
                             .context("tried to instantiate for normalizations")?;
                         ty.assert_valid();
+
+                        let ty = match ty.normalize() {
+                            Type::Union(..) | Type::Intersection(..) => self.normalize(span, Cow::Owned(ty), opts)?.into_owned(),
+                            _ => ty,
+                        };
+
                         return Ok(Cow::Owned(ty));
                     }
 
