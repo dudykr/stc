@@ -4,11 +4,7 @@ warning: Type
 6 | f(a);  // never
   |   ^
   |
-  = note: ({
-              prop: string;
-          } & {
-              prop: number;
-          })
+  = note: never
 
 warning: Type
  --> $DIR/tests/pass/types/intersection/intersectionTypeInference2/1.ts:6:1
@@ -26,5 +22,6 @@ warning: Type
 6 | f(a);  // never
   | ^^^^
   |
-  = note: never
+  = note: {
+          }
 

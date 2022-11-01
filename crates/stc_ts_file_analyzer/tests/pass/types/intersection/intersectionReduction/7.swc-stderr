@@ -4,13 +4,7 @@ warning: Type
 7 | export const f4 = (t: number | (Container<"b"> & { dataB: boolean } & Container<"a">)): number => t;
   |                                                                                                   ^
   |
-  = note: (number | ({
-              type: "b";
-          } & {
-              dataB: boolean;
-          } & {
-              type: "a";
-          }))
+  = note: number
 
 warning: Type
  --> $DIR/tests/pass/types/intersection/intersectionReduction/7.ts:7:19

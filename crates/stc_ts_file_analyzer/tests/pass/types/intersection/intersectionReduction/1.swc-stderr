@@ -4,14 +4,8 @@ warning: Type
 8 | export let a: A = x;
   |                   ^
   |
-  = note: ({
+  = note: {
               kind: 'a';
               foo: string;
-          } | ({
-              kind: 'b';
-              foo: number;
-          } & {
-              kind: 'c';
-              foo: number;
-          }))
+          }
 
