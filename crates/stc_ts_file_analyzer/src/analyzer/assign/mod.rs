@@ -1205,6 +1205,13 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Intersection(Intersection { types, .. }) => {
+                // Filter out `never` types
+                if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
+                    return self
+                        .assign_inner(data, to, &new, opts)
+                        .context("tried to assign a normalized intersection type to another type");
+                }
+
                 let errors = types
                     .iter()
                     .map(|rhs| {

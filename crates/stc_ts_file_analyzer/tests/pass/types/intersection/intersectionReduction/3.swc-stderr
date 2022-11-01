@@ -1,0 +1,29 @@
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionReduction/3.ts:14:21
+   |
+14 | export let r2 = f10(a2);  // string
+   |                     ^^
+   |
+   = note: {
+               kind: 'a';
+               foo: string;
+           }
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionReduction/3.ts:14:17
+   |
+14 | export let r2 = f10(a2);  // string
+   |                 ^^^
+   |
+   = note: <T>(x: {
+               foo: T;
+           }) => T
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionReduction/3.ts:14:17
+   |
+14 | export let r2 = f10(a2);  // string
+   |                 ^^^^^^^
+   |
+   = note: string
+

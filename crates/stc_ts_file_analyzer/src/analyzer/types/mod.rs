@@ -76,6 +76,9 @@ impl Analyzer<'_, '_> {
             None
         };
 
+        #[cfg(debug_assertions)]
+        let input = dump_type_as_string(&self.cm, &ty);
+
         let res = (|| {
             ty.assert_valid();
 
@@ -212,22 +215,49 @@ impl Analyzer<'_, '_> {
                     // Not normalizable.
                     Type::Infer(_) | Type::StaticThis(_) | Type::This(_) => {}
 
-                    // Maybe it can be changed in future, but currently noop
-                    Type::Union(_) => {}
+                    Type::Union(ty) => {
+                        let mut types = vec![];
 
-                    Type::Intersection(ty) => {
-                        let is_str = ty.types.iter().any(|ty| ty.is_str());
-                        let is_num = ty.types.iter().any(|ty| ty.is_num());
-                        let is_bool = ty.types.iter().any(|ty| ty.is_bool());
+                        for ty in ty.types.iter() {
+                            let mut ty = self
+                                .normalize(span, Cow::Borrowed(ty), opts)
+                                .context("tried to normalize an element of a union type")?;
+                            ty.make_clone_cheap();
+                            let mut ty = ty.into_owned();
 
-                        if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
-                            return Ok(Cow::Owned(Type::Keyword(KeywordType {
-                                span: ty.span,
-                                kind: TsKeywordTypeKind::TsNeverKeyword,
-                                metadata: KeywordTypeMetadata {
+                            if let Some(u) = ty.as_union_type_mut() {
+                                types.append(&mut u.types);
+                            } else {
+                                types.push(ty);
+                            }
+                        }
+
+                        types.dedup_type();
+                        types.retain(|ty| !ty.is_never());
+
+                        if types.is_empty() {
+                            return Ok(Cow::Owned(Type::never(
+                                ty.span,
+                                KeywordTypeMetadata {
                                     common: ty.metadata.common,
                                 },
-                            })));
+                            )));
+                        }
+                        if types.len() == 1 {
+                            return Ok(Cow::Owned(types.into_iter().next().unwrap()));
+                        }
+
+                        let ty = Type::Union(Union { types, ..*ty }).cheap();
+
+                        return Ok(Cow::Owned(ty));
+                    }
+
+                    Type::Intersection(ty) => {
+                        if let Some(new_ty) = self
+                            .normalize_intersection_types(span.unwrap_or(ty.span), &ty.types, opts)
+                            .context("failed to normalize an intersection type")?
+                        {
+                            return Ok(Cow::Owned(new_ty));
                         }
                     }
 
@@ -420,6 +450,11 @@ impl Analyzer<'_, '_> {
                             .instantiate_for_normalization(span, &ty.ty)
                             .context("tried to instantiate for normalizations")?;
                         ty.assert_valid();
+
+                        let mut ty = self.normalize(span, Cow::Owned(ty), opts)?;
+                        ty.make_clone_cheap();
+                        let ty = ty.into_owned();
+
                         return Ok(Cow::Owned(ty));
                     }
 
@@ -515,6 +550,14 @@ impl Analyzer<'_, '_> {
 
             Ok(ty)
         })();
+
+        if let Ok(res) = &res {
+            #[cfg(debug_assertions)]
+            let output = dump_type_as_string(&self.cm, &res);
+
+            #[cfg(debug_assertions)]
+            debug!("normalize: {} -> {}", input, output);
+        }
 
         res
     }
@@ -618,6 +661,92 @@ impl Analyzer<'_, '_> {
         } else {
             Ok(None)
         }
+    }
+
+    pub(crate) fn normalize_intersection_types(&mut self, span: Span, types: &[Type], opts: NormalizeTypeOpts) -> VResult<Option<Type>> {
+        macro_rules! never {
+            () => {{
+                Ok(Some(Type::Keyword(KeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsNeverKeyword,
+                    metadata: KeywordTypeMetadata { ..Default::default() },
+                })))
+            }};
+        }
+
+        let is_str = types.iter().any(|ty| ty.is_str());
+        let is_num = types.iter().any(|ty| ty.is_num());
+        let is_bool = types.iter().any(|ty| ty.is_bool());
+
+        if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
+            return never!();
+        }
+
+        if !self.rule().always_strict && types.len() == 2 {
+            let (a, b) = (&types[0], &types[1]);
+
+            if (a.is_str_lit() && b.is_str_lit() || (a.is_num_lit() && b.is_num_lit()) || (a.is_bool_lit() && b.is_bool_lit()))
+                && !a.type_eq(&b)
+            {
+                return never!();
+            }
+        }
+
+        // TODO(kdy1): Fix condition
+        if !self.rule().always_strict {
+            let mut property_types = vec![];
+
+            for elem in types.iter() {
+                let elem = self
+                    .normalize(Some(span), Cow::Borrowed(elem), opts)
+                    .context("failed to normalize types while intersecting properties")?;
+
+                match elem.normalize_instance() {
+                    Type::TypeLit(elem_tl) => {
+                        // Intersect property types
+                        'outer: for e in elem_tl.members.iter() {
+                            match e {
+                                TypeElement::Property(p) => {
+                                    for prev in property_types.iter_mut() {
+                                        match prev {
+                                            TypeElement::Property(prev) => {
+                                                if prev.key.type_eq(&p.key) {
+                                                    let prev_type =
+                                                        prev.type_ann.clone().map(|v| *v).unwrap_or_else(|| {
+                                                            Type::any(span, KeywordTypeMetadata { ..Default::default() })
+                                                        });
+                                                    let other =
+                                                        p.type_ann.clone().map(|v| *v).unwrap_or_else(|| {
+                                                            Type::any(span, KeywordTypeMetadata { ..Default::default() })
+                                                        });
+
+                                                    let new = self.normalize_intersection_types(span, &[prev_type, other], opts)?;
+
+                                                    if let Some(new) = new {
+                                                        if new.is_never() {
+                                                            return never!();
+                                                        }
+                                                        prev.type_ann = Some(box new);
+                                                        continue 'outer;
+                                                    }
+                                                }
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+
+                            property_types.push(e.clone());
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        Ok(None)
     }
 
     // This is part of normalization.
