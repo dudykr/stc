@@ -38,12 +38,12 @@ pub trait BuiltInGen: Sized {
             format!("{:x}", result)
         };
 
-        let cache_path = Path::new(".stc").join(".builtin-cache").join(&format!("{}.json", key));
+        let cache_path = Path::new(".stc").join(".builtin-cache").join(&format!("{}.rmp", key));
 
         if cache_path.is_file() {
             let data =
                 std::fs::read(&cache_path).unwrap_or_else(|err| panic!("failed to read builtin cache at {:?}: {:?}", cache_path, err));
-            let builtin = serde_json::from_slice(&data)
+            let builtin = rmp_serde::decode::from_slice(&data)
                 .unwrap_or_else(|err| panic!("failed to deserialize builtin cache at {:?}: {:?}", cache_path, err));
             return builtin;
         }
@@ -68,7 +68,7 @@ pub trait BuiltInGen: Sized {
 
         let builtin = Self::from_module_items(env, iter);
 
-        let json_data = serde_json::to_vec(&builtin).unwrap_or_else(|err| panic!("failed to serialize builtin cache: {:?}", err));
+        let json_data = rmp_serde::encode::to_vec(&builtin).unwrap_or_else(|err| panic!("failed to serialize builtin cache: {:?}", err));
 
         std::fs::create_dir_all(cache_path.parent().unwrap())
             .unwrap_or_else(|err| panic!("failed to create directory for builtin cache at {:?}: {:?}", cache_path, err));
