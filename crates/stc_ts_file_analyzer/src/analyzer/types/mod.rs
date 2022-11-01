@@ -49,9 +49,6 @@ pub(crate) struct NormalizeTypeOpts {
 
     //// If `true`, we will not expand generics.
     pub process_only_key: bool,
-
-    /// If true, we expand intersections fully.
-    pub normalize_properties_of_intersection: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -685,7 +682,7 @@ impl Analyzer<'_, '_> {
             return never!();
         }
 
-        if !self.rule().always_strict && types.len() == 2 {
+        if types.len() == 2 {
             let (a, b) = (&types[0], &types[1]);
 
             if (a.is_str_lit() && b.is_str_lit() || (a.is_num_lit() && b.is_num_lit()) || (a.is_bool_lit() && b.is_bool_lit()))
@@ -695,7 +692,8 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if !self.rule().always_strict && opts.normalize_properties_of_intersection {
+        // TODO(kdy1): Fix condition
+        if !self.rule().always_strict {
             let mut property_types = vec![];
 
             for elem in types.iter() {
