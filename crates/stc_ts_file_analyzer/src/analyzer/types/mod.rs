@@ -629,26 +629,47 @@ impl Analyzer<'_, '_> {
         let mut property_types = vec![];
 
         for elem in types.iter() {
+            let elem = self
+                .normalize(Some(span), Cow::Borrowed(elem), opts)
+                .context("failed to normalize types while intersecting properties")?;
+
             match elem.normalize_instance() {
                 Type::TypeLit(elem_tl) => {
                     // Intersect property types
-                    for e in elem_tl.members.iter() {
+                    'outer: for e in elem_tl.members.iter() {
                         match e {
                             TypeElement::Property(p) => {
-                                let idx = property_types.iter().position(|e| match e {
-                                    TypeElement::Property(p2) => p.key.type_eq(&p2.key),
-                                    _ => false,
-                                });
+                                for prev in property_types.iter_mut() {
+                                    match prev {
+                                        TypeElement::Property(prev) => {
+                                            if prev.key.type_eq(&p.key) {
+                                                let prev_type = prev
+                                                    .type_ann
+                                                    .clone()
+                                                    .map(|v| *v)
+                                                    .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
+                                                let other = p
+                                                    .type_ann
+                                                    .clone()
+                                                    .map(|v| *v)
+                                                    .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
 
-                                match idx {
-                                    Some(idx) => {}
-                                    None => {
-                                        property_types.push(e.clone());
+                                                let new = self.normalize_intersection_types(span, &[prev_type, other], opts)?;
+
+                                                if let Some(new) = new {
+                                                    prev.type_ann = Some(box new);
+                                                    continue 'outer;
+                                                }
+                                            }
+                                        }
+                                        _ => {}
                                     }
                                 }
                             }
                             _ => {}
                         }
+
+                        property_types.push(e.clone());
                     }
                 }
                 _ => {}
