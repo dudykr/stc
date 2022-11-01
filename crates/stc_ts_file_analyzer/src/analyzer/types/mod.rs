@@ -49,6 +49,9 @@ pub(crate) struct NormalizeTypeOpts {
 
     //// If `true`, we will not expand generics.
     pub process_only_key: bool,
+
+    /// If true, we expand intersections fully.
+    pub normalize_property_of_intersections: bool,
 }
 
 impl Analyzer<'_, '_> {
@@ -613,7 +616,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn normalize_intersection_types(&mut self, span: Span, types: &[Type], opts: NormalizeTypeOpts) -> VResult<Option<Type>> {
+    pub(crate) fn normalize_intersection_types(&mut self, span: Span, types: &[Type], opts: NormalizeTypeOpts) -> VResult<Option<Type>> {
         let is_str = types.iter().any(|ty| ty.is_str());
         let is_num = types.iter().any(|ty| ty.is_num());
         let is_bool = types.iter().any(|ty| ty.is_bool());
@@ -626,53 +629,60 @@ impl Analyzer<'_, '_> {
             })));
         }
 
-        let mut property_types = vec![];
+        if opts.normalize_property_of_intersections {
+            let mut property_types = vec![];
 
-        for elem in types.iter() {
-            let elem = self
-                .normalize(Some(span), Cow::Borrowed(elem), opts)
-                .context("failed to normalize types while intersecting properties")?;
+            for elem in types.iter() {
+                let elem = self
+                    .normalize(Some(span), Cow::Borrowed(elem), opts)
+                    .context("failed to normalize types while intersecting properties")?;
 
-            match elem.normalize_instance() {
-                Type::TypeLit(elem_tl) => {
-                    // Intersect property types
-                    'outer: for e in elem_tl.members.iter() {
-                        match e {
-                            TypeElement::Property(p) => {
-                                for prev in property_types.iter_mut() {
-                                    match prev {
-                                        TypeElement::Property(prev) => {
-                                            if prev.key.type_eq(&p.key) {
-                                                let prev_type = prev
-                                                    .type_ann
-                                                    .clone()
-                                                    .map(|v| *v)
-                                                    .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
-                                                let other = p
-                                                    .type_ann
-                                                    .clone()
-                                                    .map(|v| *v)
-                                                    .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
+                match elem.normalize_instance() {
+                    Type::TypeLit(elem_tl) => {
+                        // Intersect property types
+                        'outer: for e in elem_tl.members.iter() {
+                            match e {
+                                TypeElement::Property(p) => {
+                                    for prev in property_types.iter_mut() {
+                                        match prev {
+                                            TypeElement::Property(prev) => {
+                                                if prev.key.type_eq(&p.key) {
+                                                    let prev_type =
+                                                        prev.type_ann.clone().map(|v| *v).unwrap_or_else(|| {
+                                                            Type::any(span, KeywordTypeMetadata { ..Default::default() })
+                                                        });
+                                                    let other =
+                                                        p.type_ann.clone().map(|v| *v).unwrap_or_else(|| {
+                                                            Type::any(span, KeywordTypeMetadata { ..Default::default() })
+                                                        });
 
-                                                let new = self.normalize_intersection_types(span, &[prev_type, other], opts)?;
+                                                    let new = self.normalize_intersection_types(span, &[prev_type, other], opts)?;
 
-                                                if let Some(new) = new {
-                                                    prev.type_ann = Some(box new);
-                                                    continue 'outer;
+                                                    if let Some(new) = new {
+                                                        if new.is_never() {
+                                                            return Ok(Some(Type::Keyword(KeywordType {
+                                                                span,
+                                                                kind: TsKeywordTypeKind::TsNeverKeyword,
+                                                                metadata: KeywordTypeMetadata { ..Default::default() },
+                                                            })));
+                                                        }
+                                                        prev.type_ann = Some(box new);
+                                                        continue 'outer;
+                                                    }
                                                 }
                                             }
+                                            _ => {}
                                         }
-                                        _ => {}
                                     }
                                 }
+                                _ => {}
                             }
-                            _ => {}
-                        }
 
-                        property_types.push(e.clone());
+                            property_types.push(e.clone());
+                        }
                     }
+                    _ => {}
                 }
-                _ => {}
             }
         }
 
