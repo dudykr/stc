@@ -219,10 +219,11 @@ impl Analyzer<'_, '_> {
                         let mut types = vec![];
 
                         for ty in ty.types.iter() {
-                            let ty = self
+                            let mut ty = self
                                 .normalize(span, Cow::Borrowed(ty), opts)
-                                .context("tried to normalize an element of a union type")?
-                                .into_owned();
+                                .context("tried to normalize an element of a union type")?;
+                            ty.make_clone_cheap();
+                            let ty = ty.into_owned();
 
                             if let Type::Union(u) = ty {
                                 types.extend(u.types);
