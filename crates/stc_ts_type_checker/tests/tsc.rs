@@ -146,6 +146,7 @@ fn record_stat(stats: Stats) -> Stats {
     guard.required_error += stats.required_error;
     guard.matched_error += stats.matched_error;
     guard.extra_error += stats.extra_error;
+    guard.panic += stats.panic;
 
     let stats = (*guard).clone();
 
