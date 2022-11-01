@@ -44,12 +44,18 @@ use testing::{StdErr, Tester};
 use self::common::load_fixtures;
 
 struct RecordOnPanic {
+    filename: PathBuf,
     stats: Stats,
 }
 
 impl Drop for RecordOnPanic {
     fn drop(&mut self) {
-        record_stat(self.stats.clone());
+        let stats = Stats {
+            panic: 1,
+            ..self.stats.clone()
+        };
+        print_per_test_stat(&self.filename, &stats);
+        record_stat(stats);
     }
 }
 
@@ -67,6 +73,9 @@ struct Stats {
     matched_error: usize,
     /// False-positive error count.
     extra_error: usize,
+
+    /// Tests failed with panic
+    panic: usize,
 }
 
 fn is_all_test_enabled() -> bool {
@@ -137,6 +146,7 @@ fn record_stat(stats: Stats) -> Stats {
     guard.required_error += stats.required_error;
     guard.matched_error += stats.matched_error;
     guard.extra_error += stats.extra_error;
+    guard.panic += stats.panic;
 
     let stats = (*guard).clone();
 
@@ -551,6 +561,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let mut full_time = Duration::new(0, 0);
 
         let stat_guard = RecordOnPanic {
+            filename: file_name.to_path_buf(),
             stats: Stats {
                 required_error: expected_errors.len(),
                 ..Default::default()
@@ -704,16 +715,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         // Print per-test stats so we can prevent regressions.
         if cfg!(debug_assertions) {
-            let stats_file_name =
-                file_name.with_file_name(format!("{}.stats.rust-debug", file_name.file_name().unwrap().to_string_lossy()));
-
-            if env::var("CI").unwrap_or_default() == "1" {
-                let stat_string = fs::read_to_string(&stats_file_name).expect("failed to read test stats file");
-
-                assert_eq!(format!("{:#?}", stats), stat_string, "CI=1 so test stats must match");
-            } else {
-                fs::write(stats_file_name, format!("{:#?}", stats)).expect("failed to write test stats");
-            }
+            print_per_test_stat(&file_name, &stats);
         }
 
         let total_stats = record_stat(stats);
@@ -767,6 +769,18 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
     }
 
     Ok(())
+}
+
+fn print_per_test_stat(file_name: &Path, stats: &Stats) {
+    let stats_file_name = file_name.with_file_name(format!("{}.stats.rust-debug", file_name.file_name().unwrap().to_string_lossy()));
+
+    if env::var("CI").unwrap_or_default() == "1" {
+        let stat_string = fs::read_to_string(&stats_file_name).expect("failed to read test stats file");
+
+        assert_eq!(format!("{:#?}", stats), stat_string, "CI=1 so test stats must match");
+    } else {
+        fs::write(stats_file_name, format!("{:#?}", stats)).expect("failed to write test stats");
+    }
 }
 
 struct Spanner {
