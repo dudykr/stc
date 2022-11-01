@@ -2,4 +2,5 @@ Stats {
     required_error: 4,
     matched_error: 1,
     extra_error: 2,
+    panic: 0,
 }
