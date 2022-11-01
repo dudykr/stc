@@ -79,6 +79,9 @@ impl Analyzer<'_, '_> {
             None
         };
 
+        #[cfg(debug_assertions)]
+        let input = dump_type_as_string(&self.cm, &ty);
+
         let res = (|| {
             ty.assert_valid();
 
@@ -545,6 +548,14 @@ impl Analyzer<'_, '_> {
 
             Ok(ty)
         })();
+
+        if let Ok(res) = &res {
+            #[cfg(debug_assertions)]
+            let output = dump_type_as_string(&self.cm, &res);
+
+            #[cfg(debug_assertions)]
+            debug!("normalize: {} -> {}", input, output);
+        }
 
         res
     }
