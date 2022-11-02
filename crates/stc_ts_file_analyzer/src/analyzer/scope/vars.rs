@@ -293,7 +293,7 @@ impl Analyzer<'_, '_> {
                                         // Rest element is special.
                                         let type_for_rest_arg = match ty {
                                             Some(ty) => self
-                                                .get_lefting_elements(Some(span), Cow::Owned(ty), idx)
+                                                .get_rest_elements(Some(span), Cow::Owned(ty), idx)
                                                 .context(
                                                     "tried to get lefting elements of an iterator to declare variables using a rest \
                                                      pattern",
@@ -306,7 +306,7 @@ impl Analyzer<'_, '_> {
 
                                         let default = match default {
                                             Some(ty) => self
-                                                .get_lefting_elements(Some(span), Cow::Owned(ty), idx)
+                                                .get_rest_elements(Some(span), Cow::Owned(ty), idx)
                                                 .context(
                                                     "tried to get lefting elements of an iterator to declare variables using a rest \
                                                      pattern",

@@ -913,7 +913,7 @@ impl Analyzer<'_, '_> {
                             RPat::Rest(elem) => {
                                 // Rest element is special.
                                 let type_for_rest_arg = self
-                                    .get_lefting_elements(None, ty, i)
+                                    .get_rest_elements(None, ty, i)
                                     .context("tried to get lefting elements of an iterator to assign using a rest pattern")?;
 
                                 self.try_assign_pat_with_opts(
