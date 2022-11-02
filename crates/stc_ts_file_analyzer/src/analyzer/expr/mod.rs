@@ -944,7 +944,7 @@ impl Analyzer<'_, '_> {
                     //
                     // I guess it's because javascript work in that way.
 
-                    if index_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) && prop_ty.is_str() {
+                    if index_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) && prop_ty.is_str() && prop.is_computed() {
                         return Ok(Some(Type::any(span, Default::default())));
                     }
 

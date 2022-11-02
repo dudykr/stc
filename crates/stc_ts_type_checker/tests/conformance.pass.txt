@@ -699,6 +699,7 @@ es6/for-ofStatements/for-of11.ts
 es6/for-ofStatements/for-of12.ts
 es6/for-ofStatements/for-of13.ts
 es6/for-ofStatements/for-of14.ts
+es6/for-ofStatements/for-of15.ts
 es6/for-ofStatements/for-of16.ts
 es6/for-ofStatements/for-of17.ts
 es6/for-ofStatements/for-of18.ts
