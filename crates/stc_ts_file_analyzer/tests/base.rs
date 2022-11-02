@@ -365,6 +365,11 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
                     rule.strict_null_checks = value;
                     continue;
                 }
+                if line.to_ascii_lowercase().starts_with(&"allowUnreachableCode:".to_ascii_lowercase()) {
+                    let value = line["allowUnreachableCode:".len()..].trim().parse::<bool>().unwrap();
+                    rule.allow_unreachable_code = value;
+                    continue;
+                }
 
                 panic!("Invalid directive: {:?}", line)
             }
