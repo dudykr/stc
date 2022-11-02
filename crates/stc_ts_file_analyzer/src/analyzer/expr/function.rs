@@ -1,6 +1,5 @@
-use itertools::{EitherOrBoth, Itertools};
-use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr};
-use stc_ts_types::{Class, ClassMetadata, Function, KeywordType, Type};
+use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr, RNumber, RPat};
+use stc_ts_types::{Class, ClassMetadata, Function, Key, KeywordType, RestType, Tuple, TupleElement, Type};
 use stc_ts_utils::PatExt;
 use stc_utils::cache::Freeze;
 use swc_common::Spanned;
@@ -42,22 +41,62 @@ impl Analyzer<'_, '_> {
                         for ty in ty.iter_union() {
                             match ty.normalize() {
                                 Type::Function(ty) => {
-                                    // TODO(kdy1): Handle result in `ty.params`.
+                                    // Handle rest in `ty.params`.
                                     // If a rest parameter is present, we should adjust offset
 
-                                    for p in f.params.iter().zip_longest(ty.params.iter()) {
-                                        match p {
-                                            EitherOrBoth::Both(param, ty) => {
-                                                // Store type information, so the pattern
-                                                // validator can use a correct
-                                                // type.
-                                                if let Some(pat_node_id) = param.node_id() {
-                                                    if let Some(m) = &mut child.mutations {
-                                                        m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| *ty.ty.clone());
-                                                    }
+                                    // We do it by creating a tuple and calling access_property
+                                    // TODO(kdy1): This is not efficient.
+                                    let mut params_tuple_els = vec![];
+
+                                    for param in ty.params.iter() {
+                                        match param.pat {
+                                            RPat::Rest(..) => {
+                                                params_tuple_els.push(TupleElement {
+                                                    span: param.span,
+                                                    label: None,
+                                                    ty: box Type::Rest(RestType {
+                                                        span: param.span,
+                                                        ty: param.ty.clone(),
+                                                        metadata: Default::default(),
+                                                    }),
+                                                });
+                                            }
+                                            _ => {
+                                                params_tuple_els.push(TupleElement {
+                                                    span: param.span,
+                                                    label: None,
+                                                    ty: param.ty.clone(),
+                                                });
+                                            }
+                                        }
+                                    }
+
+                                    let params_tuple = Type::Tuple(Tuple {
+                                        span: ty.span,
+                                        elems: params_tuple_els,
+                                        metadata: Default::default(),
+                                    });
+
+                                    for (idx, param) in f.params.iter().enumerate() {
+                                        if let Ok(ty) = child.access_property(
+                                            param.span(),
+                                            &params_tuple,
+                                            &Key::Num(RNumber {
+                                                span: param.span(),
+                                                value: idx as f64,
+                                            }),
+                                            TypeOfMode::RValue,
+                                            stc_ts_types::IdCtx::Var,
+                                            Default::default(),
+                                        ) {
+                                            // Store type information, so the pattern
+                                            // validator can use a correct
+                                            // type.
+                                            if let Some(pat_node_id) = param.node_id() {
+                                                if let Some(m) = &mut child.mutations {
+                                                    m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| ty.clone());
                                                 }
                                             }
-                                            _ => {}
                                         }
                                     }
                                 }
