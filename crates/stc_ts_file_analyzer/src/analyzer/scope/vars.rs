@@ -807,14 +807,15 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             ) {
-                return Ok(ty);
+                return Ok(ty.cheap());
             }
 
             Ok(Type::Array(Array {
                 span,
                 elem_type: box ty,
                 metadata: Default::default(),
-            }))
+            })
+            .cheap())
         })
         .context("tried to ensure iterator")
     }
