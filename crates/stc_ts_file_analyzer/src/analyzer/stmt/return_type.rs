@@ -436,7 +436,7 @@ impl Analyzer<'_, '_> {
 
             let item_ty = if e.delegate {
                 if self.ctx.in_async {
-                    self.get_async_iterator_elem_type(e.span, Cow::Owned(ty))
+                    self.get_async_iterator_element_type(e.span, Cow::Owned(ty))
                         .context("tried to convert argument as an async iterator for delegating yield")?
                         .into_owned()
                 } else {

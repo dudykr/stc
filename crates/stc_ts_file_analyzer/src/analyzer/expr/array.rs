@@ -401,7 +401,7 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(elem_ty))
     }
 
-    pub(crate) fn get_async_iterator_elem_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_async_iterator_element_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> VResult<Cow<'a, Type>> {
         let ty = self
             .normalize(Some(span), ty, Default::default())
             .context("tried to normalize type to calculate element type of an async iterator")?;
