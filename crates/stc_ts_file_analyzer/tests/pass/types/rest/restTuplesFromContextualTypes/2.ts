@@ -3,10 +3,8 @@
 type ArgsUnion = [number, string] | [number, Error];
 type TupleUnionFunc = (...params: ArgsUnion) => number;
 
-const funcUnionTupleRest: TupleUnionFunc = (...params) => {
-  const [num, strOrErr] = params;
+const funcUnionTupleNoRest: TupleUnionFunc = (num, strOrErr) => {
   return num;
 };
-
 
 export { }
