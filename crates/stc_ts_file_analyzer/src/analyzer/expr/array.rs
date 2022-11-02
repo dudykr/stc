@@ -528,7 +528,7 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(elem_ty))
     }
 
-    pub(crate) fn get_lefting_elements<'a>(
+    pub(crate) fn get_rest_elements<'a>(
         &mut self,
         span: Option<Span>,
         iterator: Cow<'a, Type>,
