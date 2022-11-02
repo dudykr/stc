@@ -534,9 +534,10 @@ impl Analyzer<'_, '_> {
         iterator: Cow<'a, Type>,
         start_index: usize,
     ) -> VResult<Cow<'a, Type>> {
-        let iterator = self.normalize(span, iterator, NormalizeTypeOpts { ..Default::default() })?;
+        let mut iterator = self.normalize(span, iterator, NormalizeTypeOpts { ..Default::default() })?;
 
         if iterator.is_tuple() {
+            iterator.make_clone_cheap();
             let ty = iterator.into_owned().expect_tuple();
 
             return Ok(Cow::Owned(Type::Tuple(Tuple {
