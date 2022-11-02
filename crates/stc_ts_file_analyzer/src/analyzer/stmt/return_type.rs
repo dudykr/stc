@@ -17,7 +17,13 @@ use swc_ecma_ast::*;
 use tracing::{debug, instrument};
 
 use crate::{
-    analyzer::{assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, util::ResultExt, Analyzer, Ctx},
+    analyzer::{
+        assign::AssignOpts,
+        expr::{GetIteratorOpts, TypeOfMode},
+        scope::ExpandOpts,
+        util::ResultExt,
+        Analyzer, Ctx,
+    },
     ty::{Array, Type, TypeExt},
     validator,
     validator::ValidateWith,
@@ -429,9 +435,15 @@ impl Analyzer<'_, '_> {
             let ty = res?;
 
             let item_ty = if e.delegate {
-                self.get_iterator_element_type(e.span, Cow::Owned(ty), false, Default::default())
-                    .context("tried to convert argument as an iterator for delegating yield")?
-                    .into_owned()
+                if self.ctx.in_async {
+                    self.get_async_iterator_elem_type(e.span, Cow::Owned(ty))
+                        .context("tried to convert argument as an async iterator for delegating yield")?
+                        .into_owned()
+                } else {
+                    self.get_iterator_element_type(e.span, Cow::Owned(ty), false, GetIteratorOpts { ..Default::default() })
+                        .context("tried to convert argument as an iterator for delegating yield")?
+                        .into_owned()
+                }
             } else {
                 ty
             }
