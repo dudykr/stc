@@ -407,11 +407,14 @@ impl Analyzer<'_, '_> {
 
         if ends_with_ret {
             self.cur_facts.true_facts += false_facts;
+            return Ok(());
         }
 
         if cons_ends_with_unreachable {
             if let Some(true) = alt_ends_with_unreachable {
                 self.ctx.in_unreachable = true;
+            } else {
+                self.cur_facts.true_facts += false_facts;
             }
         }
 
