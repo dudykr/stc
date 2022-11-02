@@ -1,0 +1,56 @@
+warning: Type
+ --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/2.ts:5:9
+  |
+5 |     if (x === undefined) fail("undefined argument");
+  |         ^
+  |
+  = note: (string | undefined)
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/2.ts:5:15
+  |
+5 |     if (x === undefined) fail("undefined argument");
+  |               ^^^^^^^^^
+  |
+  = note: undefined
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/2.ts:5:9
+  |
+5 |     if (x === undefined) fail("undefined argument");
+  |         ^^^^^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/2.ts:5:26
+  |
+5 |     if (x === undefined) fail("undefined argument");
+  |                          ^^^^
+  |
+  = note: (message?: string) => never
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/2.ts:5:26
+  |
+5 |     if (x === undefined) fail("undefined argument");
+  |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: never
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/2.ts:6:5
+  |
+6 |     x.length;  // string
+  |     ^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/2.ts:6:5
+  |
+6 |     x.length;  // string
+  |     ^^^^^^^^
+  |
+  = note: number
+

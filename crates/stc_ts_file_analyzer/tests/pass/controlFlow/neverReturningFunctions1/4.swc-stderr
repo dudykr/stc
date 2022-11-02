@@ -1,0 +1,184 @@
+warning: Type
+ --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:5:21
+  |
+5 |     throw new Error(message);
+  |                     ^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:5:15
+  |
+5 |     throw new Error(message);
+  |               ^^^^^
+  |
+  = note: ErrorConstructor
+
+warning: Type
+ --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:5:11
+  |
+5 |     throw new Error(message);
+  |           ^^^^^^^^^^^^^^^^^^
+  |
+  = note: Error
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:10:25
+   |
+10 |         throw new Error(message);
+   |                         ^^^^^^^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:10:19
+   |
+10 |         throw new Error(message);
+   |                   ^^^^^
+   |
+   = note: ErrorConstructor
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:10:15
+   |
+10 |         throw new Error(message);
+   |               ^^^^^^^^^^^^^^^^^^
+   |
+   = note: Error
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:13:13
+   |
+13 |         if (x === undefined) this.fail("undefined argument");
+   |             ^
+   |
+   = note: (string | undefined)
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:13:19
+   |
+13 |         if (x === undefined) this.fail("undefined argument");
+   |                   ^^^^^^^^^
+   |
+   = note: undefined
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:13:13
+   |
+13 |         if (x === undefined) this.fail("undefined argument");
+   |             ^^^^^^^^^^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:13:30
+   |
+13 |         if (x === undefined) this.fail("undefined argument");
+   |                              ^^^^
+   |
+   = note: this
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:13:30
+   |
+13 |         if (x === undefined) this.fail("undefined argument");
+   |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: never
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:14:9
+   |
+14 |         x.length;  // string
+   |         ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:14:9
+   |
+14 |         x.length;  // string
+   |         ^^^^^^^^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:17:13
+   |
+17 |         if (x >= 0) return x;
+   |             ^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:17:13
+   |
+17 |         if (x >= 0) return x;
+   |             ^^^^^^
+   |
+   = note: boolean
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:17:28
+   |
+17 |         if (x >= 0) return x;
+   |                            ^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:18:9
+   |
+18 |         this.fail("negative number");
+   |         ^^^^
+   |
+   = note: this
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:18:9
+   |
+18 |         this.fail("negative number");
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: never
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:19:9
+   |
+19 |         x;  // Unreachable
+   |         ^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:22:9
+   |
+22 |         x;  // string
+   |         ^
+   |
+   = note: string
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:23:9
+   |
+23 |         this.fail();
+   |         ^^^^
+   |
+   = note: this
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:23:9
+   |
+23 |         this.fail();
+   |         ^^^^^^^^^^^
+   |
+   = note: never
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/neverReturningFunctions1/4.ts:24:9
+   |
+24 |         x;  // Unreachable
+   |         ^
+   |
+   = note: string
+
