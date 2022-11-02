@@ -1189,7 +1189,7 @@ impl Analyzer<'_, '_> {
                             self.scope.is_call_arg_count_unknown = true;
 
                             let elem_type = self
-                                .get_iterator_element_type(arg.span(), arg_ty, false)
+                                .get_iterator_element_type(arg.span(), arg_ty, false, Default::default())
                                 .context("tried to get element type of an iterator for spread syntax in arguments")?;
 
                             new_arg_types.push(TypeOrSpread {

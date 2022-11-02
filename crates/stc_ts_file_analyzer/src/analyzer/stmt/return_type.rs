@@ -169,7 +169,7 @@ impl Analyzer<'_, '_> {
                 if types.is_empty() {
                     if let Some(declared) = self.scope.declared_return_type().cloned() {
                         // TODO(kdy1): Change this to `get_iterable_element_type`
-                        if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true) {
+                        if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true, Default::default()) {
                             types.push(el_ty.into_owned());
                         }
                     }
@@ -429,7 +429,7 @@ impl Analyzer<'_, '_> {
             let ty = res?;
 
             let item_ty = if e.delegate {
-                self.get_iterator_element_type(e.span, Cow::Owned(ty), false)
+                self.get_iterator_element_type(e.span, Cow::Owned(ty), false, Default::default())
                     .context("tried to convert argument as an iterator for delegating yield")?
                     .into_owned()
             } else {
@@ -439,7 +439,7 @@ impl Analyzer<'_, '_> {
 
             if let Some(declared) = self.scope.declared_return_type().cloned() {
                 match self
-                    .get_iterator_element_type(span, Cow::Owned(declared), true)
+                    .get_iterator_element_type(span, Cow::Owned(declared), true, Default::default())
                     .map(Cow::into_owned)
                     .map(Freeze::freezed)
                 {

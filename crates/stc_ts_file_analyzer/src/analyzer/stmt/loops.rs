@@ -344,7 +344,7 @@ impl Analyzer<'_, '_> {
 
             let mut elem_ty = match kind {
                 ForHeadKind::Of { is_awaited: false } => child
-                    .get_iterator_element_type(rhs.span(), Cow::Owned(rty), false)
+                    .get_iterator_element_type(rhs.span(), Cow::Owned(rty), false, Default::default())
                     .convert_err(|err| match err {
                         Error::NotArrayType { span }
                             if match rhs {
