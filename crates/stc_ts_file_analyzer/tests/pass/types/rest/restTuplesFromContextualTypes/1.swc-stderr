@@ -1,0 +1,28 @@
+warning: Type
+ --> $DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:7:27
+  |
+7 |   const [num, strOrErr] = params;
+  |                           ^^^^^^
+  |
+  = note: ([number, string] | [number, Error])
+
+warning: Type
+ --> $DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:8:10
+  |
+8 |   return num;
+  |          ^^^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/pass/types/rest/restTuplesFromContextualTypes/1.ts:6:44
+  |
+6 |   const funcUnionTupleRest: TupleUnionFunc = (...params) => {
+  |  ____________________________________________^
+7 | |   const [num, strOrErr] = params;
+8 | |   return num;
+9 | | };
+  | |_^
+  |
+  = note: (...params: ArgsUnion) => number
+
