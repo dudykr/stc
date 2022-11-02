@@ -42,6 +42,9 @@ impl Analyzer<'_, '_> {
                         for ty in ty.iter_union() {
                             match ty.normalize() {
                                 Type::Function(ty) => {
+                                    // TODO(kdy1): Handle result in `ty.params`.
+                                    // If a rest parameter is present, we should adjust offset
+
                                     for p in f.params.iter().zip_longest(ty.params.iter()) {
                                         match p {
                                             EitherOrBoth::Both(param, ty) => {
