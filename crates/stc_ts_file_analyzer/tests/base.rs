@@ -7,7 +7,6 @@ use std::{
 };
 
 use itertools::Itertools;
-use rayon::join;
 use rnode::{NodeIdGenerator, RNode, VisitWith};
 use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
@@ -366,6 +365,11 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
                     rule.strict_null_checks = value;
                     continue;
                 }
+                if line.to_ascii_lowercase().starts_with(&"allowUnreachableCode:".to_ascii_lowercase()) {
+                    let value = line["allowUnreachableCode:".len()..].trim().parse::<bool>().unwrap();
+                    rule.allow_unreachable_code = value;
+                    continue;
+                }
 
                 panic!("Invalid directive: {:?}", line)
             }
@@ -446,7 +450,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
             return None;
         }
 
-        panic!("Failed to validate.\n{}\n{}", res, file_name.display())
+        panic!("Failed to validate.\n{}\n{}", res.replace("$DIR/", "/"), file_name.display())
     } else {
         return Some(res);
     }
