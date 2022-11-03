@@ -429,7 +429,7 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     if expanded_ty.is_query() {
-                                        panic!(
+                                        unreachable!(
                                             "normalize: resolve_typeof returned a query type: {}",
                                             dump_type_as_string(&self.cm, &expanded_ty)
                                         )

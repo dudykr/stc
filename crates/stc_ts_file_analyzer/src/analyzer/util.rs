@@ -63,7 +63,7 @@ impl Analyzer<'_, '_> {
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn make_instance_or_report(&mut self, span: Span, ty: &Type) -> Type {
         if span.is_dummy() {
-            panic!("Cannot make an instance with dummy span")
+            unreachable!("Cannot make an instance with dummy span")
         }
 
         let res = self.make_instance(span, ty);

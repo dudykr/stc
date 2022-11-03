@@ -56,7 +56,7 @@ impl Errors {
         if 5000 <= code && code < 6000 {
             // This is error for invalid options.
         } else if err.span().is_dummy() {
-            panic!("Error with a dummy span found: {:?}", err)
+            unreachable!("Error with a dummy span found: {:?}", err)
         }
     }
 }
@@ -1489,7 +1489,7 @@ impl Error {
             Error::Errors { .. } | Error::DebugContext { .. } => {}
             _ => {
                 if self.span().is_dummy() {
-                    panic!("Error with dummy span found(context: {}): {:#?}", context, self)
+                    unreachable!("Error with dummy span found(context: {}): {:#?}", context, self)
                 }
             }
         }

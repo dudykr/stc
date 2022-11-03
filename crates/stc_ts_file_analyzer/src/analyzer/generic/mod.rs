@@ -595,7 +595,7 @@ impl Analyzer<'_, '_> {
 
                         if !orig.eq_ignore_span(&constraint.as_ref().unwrap()) {
                             print_backtrace();
-                            panic!(
+                            unreachable!(
                                 "Cannot override T in `T extends <literal>`\nOrig: {:?}\nConstraints: {:?}",
                                 orig, constraint
                             )
@@ -1167,15 +1167,18 @@ impl Analyzer<'_, '_> {
                     preserve_params: true,
                     ..self.ctx
                 };
-                let arg = self.with_ctx(ctx).expand(
-                    span,
-                    arg.clone(),
-                    ExpandOpts {
-                        full: true,
-                        expand_union: true,
-                        ..Default::default()
-                    },
-                )?;
+                let arg = self
+                    .with_ctx(ctx)
+                    .expand(
+                        span,
+                        arg.clone(),
+                        ExpandOpts {
+                            full: true,
+                            expand_union: true,
+                            ..Default::default()
+                        },
+                    )?
+                    .cheap();
                 match arg.normalize() {
                     Type::Ref(..) => {}
                     _ => {
@@ -1993,10 +1996,10 @@ impl Analyzer<'_, '_> {
                     }) => match &param.ty {
                         Some(param_ty) => match arg {
                             Type::TypeLit(arg_lit) => {
-                                let revesed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default());
-                                print_type(&"reversed", &self.cm, &revesed_param_ty);
+                                let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).cheap();
+                                print_type(&"reversed", &self.cm, &reversed_param_ty);
 
-                                self.infer_type(span, inferred, &revesed_param_ty, arg, opts)?;
+                                self.infer_type(span, inferred, &reversed_param_ty, arg, opts)?;
 
                                 return Ok(true);
                             }

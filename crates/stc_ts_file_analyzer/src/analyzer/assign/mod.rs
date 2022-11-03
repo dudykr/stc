@@ -524,7 +524,7 @@ impl Analyzer<'_, '_> {
         let span = opts.span;
 
         if !self.is_builtin && span.is_dummy() {
-            panic!("cannot assign with dummy span")
+            unreachable!("cannot assign with dummy span")
         }
 
         let _tracing = if cfg!(debug_assertions) {

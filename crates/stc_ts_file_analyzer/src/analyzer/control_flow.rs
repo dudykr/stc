@@ -301,6 +301,7 @@ impl AddAssign for CondFacts {
                             *e.get_mut() = Type::new_union(DUMMY_SP, vec![prev, v]).cheap();
                         }
                     };
+                    e.get_mut().fix();
                     e.get_mut().make_clone_cheap();
                 }
                 Entry::Vacant(e) => {

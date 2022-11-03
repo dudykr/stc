@@ -58,7 +58,7 @@ mod vars;
 macro_rules! no_ref {
     ($t:expr) => {{
         match $t {
-            Some(Type::Ref(..)) => panic!("cannot store a variable with type `Ref`"),
+            Some(Type::Ref(..)) => unreachable!("cannot store a variable with type `Ref`"),
             _ => {}
         }
     }};

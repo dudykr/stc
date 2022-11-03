@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Class, ClassDef, ClassMember, QueryExpr, Type, TypeLitMetadata};
+use stc_utils::cache::Freeze;
 use swc_common::EqIgnoreSpan;
 use swc_ecma_ast::Accessibility;
 
@@ -129,7 +130,8 @@ impl Analyzer<'_, '_> {
 
         match r {
             Type::Ref(..) => {
-                let r = self.expand_top_ref(opts.span, Cow::Borrowed(r), Default::default())?;
+                let mut r = self.expand_top_ref(opts.span, Cow::Borrowed(r), Default::default())?;
+                r.make_clone_cheap();
                 return self.assign_to_class(data, opts, l, &r);
             }
 
