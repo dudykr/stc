@@ -692,6 +692,7 @@ es6/destructuring/restElementWithAssignmentPattern1.ts
 es6/destructuring/restElementWithAssignmentPattern3.ts
 es6/destructuring/restElementWithAssignmentPattern5.ts
 es6/destructuring/restElementWithBindingPattern.ts
+es6/destructuring/restElementWithBindingPattern2.ts
 es6/destructuring/restPropertyWithBindingPattern.ts
 es6/for-ofStatements/for-of1.ts
 es6/for-ofStatements/for-of10.ts
@@ -699,6 +700,7 @@ es6/for-ofStatements/for-of11.ts
 es6/for-ofStatements/for-of12.ts
 es6/for-ofStatements/for-of13.ts
 es6/for-ofStatements/for-of14.ts
+es6/for-ofStatements/for-of15.ts
 es6/for-ofStatements/for-of16.ts
 es6/for-ofStatements/for-of17.ts
 es6/for-ofStatements/for-of18.ts
@@ -1911,6 +1913,7 @@ statements/continueStatements/forInContinueStatements.ts
 statements/continueStatements/whileContinueStatements.ts
 statements/for-inStatements/for-inStatementsArray.ts
 statements/for-inStatements/for-inStatementsDestructuring.ts
+statements/for-inStatements/for-inStatementsDestructuring2.ts
 statements/for-inStatements/for-inStatementsDestructuring3.ts
 statements/for-inStatements/for-inStatementsDestructuring4.ts
 statements/for-ofStatements/ES3For-ofTypeCheck1.ts
