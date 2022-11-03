@@ -567,12 +567,7 @@ impl Analyzer<'_, '_> {
                     right_ident: opts.right_ident_span,
                     cause: vec![],
                 })
-                .with_context(|| {
-                    let l = dump_type_as_string(&self.cm, &to);
-                    let r = dump_type_as_string(&self.cm, &rhs);
-
-                    format!("\nlhs={}\nrhs={}\n`fail!()` called from {}", l, r, line!())
-                });
+                .with_context(|| format!("`fail!()` called from {}", line!()));
             }};
         }
 
