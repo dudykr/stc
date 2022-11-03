@@ -1,0 +1,50 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/computed/2-3.ts:4:6
+  |
+4 |     ["" || 0]: ""
+  |      ^^^^^^^
+  |
+  = note: 0
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/computed/2-3.ts:3:26
+  |
+3 |   const x = extractIndexer({
+  |  __________________________^
+4 | |     ["" || 0]: ""
+5 | | }); // Should return any (widened form of undefined)
+  | |_^
+  |
+  = note: {
+              ["" || 0]: "";
+          }
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/computed/2-3.ts:3:11
+  |
+3 | const x = extractIndexer({
+  |           ^^^^^^^^^^^^^^
+  |
+  = note: <T>(p: {
+              [n: number]: T;
+          }) => T
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/computed/2-3.ts:3:11
+  |
+3 |   const x = extractIndexer({
+  |  ___________^
+4 | |     ["" || 0]: ""
+5 | | }); // Should return any (widened form of undefined)
+  | |__^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/computed/2-3.ts:7:16
+  |
+7 | export default x
+  |                ^
+  |
+  = note: string
+
