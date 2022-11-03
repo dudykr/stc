@@ -8,7 +8,10 @@ use stc_ts_types::{
     type_id::SymbolId, Array, CommonTypeMetadata, ComputedKey, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Symbol, Tuple,
     TupleElement, Type, TypeParamInstantiation, Union, UnionMetadata,
 };
-use stc_utils::{cache::Freeze, ext::TypeVecExt};
+use stc_utils::{
+    cache::Freeze,
+    ext::{SpanExt, TypeVecExt},
+};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -781,7 +784,12 @@ impl Analyzer<'_, '_> {
                     .types
                     .iter()
                     .map(|iterator| {
-                        self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator), try_next_value, Default::default())
+                        self.get_iterator_element_type(
+                            iterator.span().or_else(|| span),
+                            Cow::Borrowed(iterator),
+                            try_next_value,
+                            Default::default(),
+                        )
                     })
                     .map(|ty| ty.map(Cow::into_owned))
                     .collect::<Result<Vec<_>, _>>()?;
