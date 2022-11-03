@@ -1957,9 +1957,12 @@ impl Analyzer<'_, '_> {
 
             Type::Function(lf) => match rhs {
                 Type::Function(..) | Type::TypeLit(..) | Type::Interface(..) => {
-                    return self
-                        .assign_to_function(data, opts, to, lf, rhs)
-                        .context("tried to assign to a function type")
+                    return self.assign_to_function(data, opts, to, lf, rhs).with_context(|| {
+                        format!(
+                            "tried to assign to a function type: {}",
+                            dump_type_as_string(&self.cm, &Type::Function(lf.clone()))
+                        )
+                    })
                 }
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
