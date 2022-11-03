@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use stc_ts_ast_rnode::{RArrowExpr, RBlockStmtOrExpr, RNumber, RPat};
 use stc_ts_types::{Class, ClassMetadata, Function, Key, KeywordType, RestType, Tuple, TupleElement, Type};
 use stc_ts_utils::PatExt;
@@ -77,7 +79,28 @@ impl Analyzer<'_, '_> {
                                         metadata: Default::default(),
                                     });
 
+                                    dbg!(&params_tuple);
+
                                     for (idx, param) in f.params.iter().enumerate() {
+                                        if let RPat::Rest(..) = param {
+                                            if let Ok(mut ty) =
+                                                child.get_rest_elements(Some(param.span()), Cow::Borrowed(&params_tuple), idx)
+                                            {
+                                                ty.make_clone_cheap();
+
+                                                if let Some(pat_node_id) = param.node_id() {
+                                                    if let Some(m) = &mut child.mutations {
+                                                        m.for_pats
+                                                            .entry(pat_node_id)
+                                                            .or_default()
+                                                            .ty
+                                                            .get_or_insert_with(|| ty.into_owned());
+                                                    }
+                                                }
+                                            }
+                                            continue;
+                                        }
+
                                         if let Ok(ty) = child.access_property(
                                             param.span(),
                                             &params_tuple,
@@ -89,24 +112,6 @@ impl Analyzer<'_, '_> {
                                             stc_ts_types::IdCtx::Var,
                                             Default::default(),
                                         ) {
-                                            if matches!(param, RPat::Rest(..)) {
-                                                match ty.normalize_instance() {
-                                                    Type::Rest(r) => {
-                                                        if let Some(pat_node_id) = param.node_id() {
-                                                            if let Some(m) = &mut child.mutations {
-                                                                m.for_pats
-                                                                    .entry(pat_node_id)
-                                                                    .or_default()
-                                                                    .ty
-                                                                    .get_or_insert_with(|| *r.ty.clone());
-                                                                continue;
-                                                            }
-                                                        }
-                                                    }
-                                                    _ => {}
-                                                }
-                                            }
-
                                             // Store type information, so the pattern
                                             // validator can use a correct
                                             // type.
