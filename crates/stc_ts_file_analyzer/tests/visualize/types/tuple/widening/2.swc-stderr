@@ -1,0 +1,16 @@
+warning: Type
+ --> $DIR/tests/visualize/types/tuple/widening/2.ts:1:22
+  |
+1 | export var [a, b] = [undefined, null];
+  |                      ^^^^^^^^^
+  |
+  = note: undefined
+
+warning: Type
+ --> $DIR/tests/visualize/types/tuple/widening/2.ts:1:21
+  |
+1 | export var [a, b] = [undefined, null];
+  |                     ^^^^^^^^^^^^^^^^^
+  |
+  = note: [undefined, null]
+

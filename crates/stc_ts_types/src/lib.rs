@@ -1192,8 +1192,7 @@ impl Type {
         tys.dedup_type();
 
         let has_str = tys.iter().any(|ty| ty.is_str());
-        // TODO
-        let has_bool = tys.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword));
+        let has_bool = tys.iter().any(|ty| ty.is_bool());
         let has_num = tys.iter().any(|ty| ty.is_num());
 
         if (has_str && has_bool) || (has_bool && has_num) || (has_num && has_str) {
@@ -1849,8 +1848,6 @@ impl Type {
 
 impl Type {
     /// Converts this type to foldable type.
-    ///
-    /// TODO(kdy1): Remove if possible
     pub fn foldable(mut self) -> Type {
         self.normalize_mut();
         self
@@ -1886,8 +1883,6 @@ impl Type {
     }
 
     /// `Type::Static` is normalized.
-    ///
-    /// TODO(kdy1): Remove if possible
     #[instrument(skip(self))]
     pub fn normalize_mut(&mut self) -> &mut Type {
         match self {
@@ -1901,7 +1896,6 @@ impl Type {
         self
     }
 
-    /// TODO(kdy1): Make this more efficient, and explode subunions.
     pub fn iter_union(&self) -> impl Debug + Iterator<Item = &Type> {
         Iter {
             ty: self.normalize(),
