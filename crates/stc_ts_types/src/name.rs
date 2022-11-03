@@ -12,7 +12,7 @@ use crate::Id;
 
 type Inner = SmallVec<[Id; 4]>;
 
-/// Efficient alternative for [RTsEntityName].
+/// Efficient alternative for names with variable length like `foo.bar.baz.qux`.
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Name(Inner);
 
