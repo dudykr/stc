@@ -2579,6 +2579,7 @@ impl Analyzer<'_, '_> {
                 preserve_ret_ty: true,
                 ..self.ctx
             };
+            ret_ty.fix();
             let ret_ty = self.with_ctx(ctx).expand(span, ret_ty, Default::default())?;
 
             for item in &expanded_param_types {
