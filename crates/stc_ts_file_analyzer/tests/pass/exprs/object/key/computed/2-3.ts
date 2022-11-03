@@ -1,7 +1,7 @@
 declare function extractIndexer<T>(p: { [n: number]: T }): T;
 
-extractIndexer({
+const x = extractIndexer({
     ["" || 0]: ""
 }); // Should return any (widened form of undefined)
 
-export { }
+export { x }
