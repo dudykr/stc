@@ -1,4 +1,5 @@
-//! Currently this crate is not used.
+//! Because of the way the compiler works, we need to be careful about the order
+//! in which we evaluate ast nodes
 
 #![allow(incomplete_features)]
 #![feature(specialization)]

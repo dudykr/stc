@@ -14,7 +14,7 @@ pub struct Var {}
 /// `Form` of the type.
 ///
 /// For example, `T | PromiseLike<T>` has identical `form` with `void |
-/// PrmomiseLike<void>`
+/// PromiseLike<void>`
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeForm {
     // Type parameters, including infer type.
