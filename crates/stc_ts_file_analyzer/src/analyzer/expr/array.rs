@@ -540,6 +540,8 @@ impl Analyzer<'_, '_> {
             iterator.make_clone_cheap();
             let ty = iterator.into_owned().expect_tuple();
 
+            // TODO: Handle [Type::Rest]
+
             return Ok(Cow::Owned(Type::Tuple(Tuple {
                 elems: ty.elems.into_iter().skip(start_index).collect(),
                 ..ty

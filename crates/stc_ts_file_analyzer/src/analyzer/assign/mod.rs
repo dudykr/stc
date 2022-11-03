@@ -1994,9 +1994,13 @@ impl Analyzer<'_, '_> {
                 //
                 match *rhs.normalize() {
                     Type::Tuple(Tuple { elems: ref rhs_elems, .. }) => {
+                        // TODO: Handle Type::Rest
+
                         if elems.len() < rhs_elems.len() {
                             return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
                         }
+
+                        // TODO: Handle Type::Rest
 
                         if elems.len() > rhs_elems.len() {
                             return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
