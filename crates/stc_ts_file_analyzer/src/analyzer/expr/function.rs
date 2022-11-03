@@ -79,8 +79,6 @@ impl Analyzer<'_, '_> {
                                         metadata: Default::default(),
                                     });
 
-                                    dbg!(&params_tuple);
-
                                     for (idx, param) in f.params.iter().enumerate() {
                                         if let RPat::Rest(..) = param {
                                             if let Ok(mut ty) =
