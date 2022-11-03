@@ -2178,18 +2178,36 @@ impl Analyzer<'_, '_> {
                             });
                         }
 
-                        if v as usize >= elems.len() {
+                        if (v as usize) + 1 >= elems.len() {
                             match elems.last() {
-                                Some(elem) => match elem.ty.normalize() {
-                                    Type::Rest(rest_ty) => {
-                                        // debug_assert!(rest_ty.ty.is_clone_cheap());
-                                        return Ok(*rest_ty.ty.clone());
+                                Some(elem) => {
+                                    match elem.ty.normalize() {
+                                        Type::Rest(rest_ty) => {
+                                            if let Ok(ty) = self.access_property(
+                                                span,
+                                                &rest_ty.ty,
+                                                &Key::Num(RNumber {
+                                                    span: n.span,
+                                                    value: (v + 1i64 - (elems.len() as i64)) as _,
+                                                }),
+                                                type_mode,
+                                                id_ctx,
+                                                opts,
+                                            ) {
+                                                return Ok(ty);
+                                            }
+
+                                            // debug_assert!(rest_ty.ty.is_clone_cheap());
+                                            return Ok(*rest_ty.ty.clone());
+                                        }
+                                        _ => {}
                                     }
-                                    _ => {}
-                                },
+                                }
                                 _ => {}
                             }
+                        }
 
+                        if v as usize >= elems.len() {
                             if opts.use_undefined_for_tuple_index_error {
                                 return Ok(Type::Keyword(KeywordType {
                                     span,

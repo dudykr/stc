@@ -1532,7 +1532,8 @@ impl Analyzer<'_, '_> {
                                             let mapped_param_ty = arg_prop_ty
                                                 .clone()
                                                 .foldable()
-                                                .fold_with(&mut SingleTypeParamReplacer { name: &name, to: param_ty });
+                                                .fold_with(&mut SingleTypeParamReplacer { name: &name, to: param_ty })
+                                                .cheap();
 
                                             self.infer_type(span, inferred, &mapped_param_ty, arg_prop_ty, opts)?;
                                         }
