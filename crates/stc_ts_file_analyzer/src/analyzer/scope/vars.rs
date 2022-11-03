@@ -6,7 +6,7 @@ use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RP
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::{widen::Widen, Fix};
 use stc_ts_types::{Array, Key, KeywordType, LitType, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
-use stc_ts_utils::PatExt;
+use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, TryOpt};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
@@ -611,38 +611,11 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Rest(pat) => {
-                let ty = ty
-                    .map(|ty| {
-                        Type::Array(Array {
-                            span,
-                            elem_type: box ty,
-                            metadata: Default::default(),
-                        })
-                    })
-                    .freezed();
-                return self.add_vars(
-                    &pat.arg,
-                    ty,
-                    actual
-                        .map(|ty| {
-                            Type::Array(Array {
-                                span,
-                                elem_type: box ty,
-                                metadata: Default::default(),
-                            })
-                        })
-                        .freezed(),
-                    default
-                        .map(|ty| {
-                            Type::Array(Array {
-                                span,
-                                elem_type: box ty,
-                                metadata: Default::default(),
-                            })
-                        })
-                        .freezed(),
-                    opts,
-                );
+                let ty = ty.map(|ty| self.ensure_iterable(span, ty)).transpose()?;
+                let actual = actual.map(|ty| self.ensure_iterable(span, ty)).transpose()?;
+                let default = default.map(|ty| self.ensure_iterable(span, ty)).transpose()?;
+
+                return self.add_vars(&pat.arg, ty, actual, default, opts);
             }
 
             _ => {
@@ -822,5 +795,28 @@ impl Analyzer<'_, '_> {
 
             _ => unimplemented!("declare_vars for patterns other than ident: {:#?}", pat),
         }
+    }
+
+    fn ensure_iterable(&mut self, span: Span, ty: Type) -> VResult<Type> {
+        run(|| {
+            if let Ok(..) = self.get_iterator(
+                span,
+                Cow::Borrowed(&ty),
+                GetIteratorOpts {
+                    disallow_str: true,
+                    ..Default::default()
+                },
+            ) {
+                return Ok(ty.cheap());
+            }
+
+            Ok(Type::Array(Array {
+                span,
+                elem_type: box ty,
+                metadata: Default::default(),
+            })
+            .cheap())
+        })
+        .context("tried to ensure iterator")
     }
 }

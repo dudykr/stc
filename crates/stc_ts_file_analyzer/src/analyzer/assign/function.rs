@@ -17,6 +17,7 @@ use tracing::debug;
 use crate::{
     analyzer::{
         assign::{AssignData, AssignOpts},
+        expr::GetIteratorOpts,
         generic::InferTypeOpts,
         Analyzer,
     },
@@ -668,13 +669,12 @@ impl Analyzer<'_, '_> {
                     .normalize(Some(span), Cow::Borrowed(&l.ty), Default::default())
                     .context("tried to normalize lhs")?;
 
-                match l_ty.normalize() {
-                    Type::Array(l_arr) => {
-                        if let Ok(()) = self.assign_with_opts(data, opts, &l_arr.elem_type, &r.ty) {
-                            return Ok(());
-                        }
+                let l_elem_type = self.get_iterator_element_type(span, l_ty, false, GetIteratorOpts { ..Default::default() });
+
+                if let Ok(l_elem_type) = l_elem_type {
+                    if let Ok(()) = self.assign_with_opts(data, opts, &l_elem_type, &r.ty) {
+                        return Ok(());
                     }
-                    _ => {}
                 }
             }
             _ => {}

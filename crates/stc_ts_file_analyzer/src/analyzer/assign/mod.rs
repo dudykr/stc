@@ -1952,9 +1952,12 @@ impl Analyzer<'_, '_> {
 
             Type::Function(lf) => match rhs {
                 Type::Function(..) | Type::TypeLit(..) | Type::Interface(..) => {
-                    return self
-                        .assign_to_function(data, opts, to, lf, rhs)
-                        .context("tried to assign to a function type")
+                    return self.assign_to_function(data, opts, to, lf, rhs).with_context(|| {
+                        format!(
+                            "tried to assign to a function type: {}",
+                            dump_type_as_string(&self.cm, &Type::Function(lf.clone()))
+                        )
+                    })
                 }
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
@@ -1994,16 +1997,16 @@ impl Analyzer<'_, '_> {
                 //
                 match *rhs.normalize() {
                     Type::Tuple(Tuple { elems: ref rhs_elems, .. }) => {
+                        // TODO: Handle Type::Rest
+
                         if elems.len() < rhs_elems.len() {
                             return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
                         }
 
+                        // TODO: Handle Type::Rest
+
                         if elems.len() > rhs_elems.len() {
                             return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
-                        }
-
-                        if !elems.is_empty() && rhs_elems.is_empty() {
-                            fail!();
                         }
 
                         let mut errors = vec![];
