@@ -2009,10 +2009,6 @@ impl Analyzer<'_, '_> {
                             return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
                         }
 
-                        if !elems.is_empty() && rhs_elems.is_empty() {
-                            fail!();
-                        }
-
                         let mut errors = vec![];
                         for (l, r) in elems.into_iter().zip(rhs_elems) {
                             for el in elems {
