@@ -77,7 +77,7 @@ macro_rules! known {
                     )*
 
                     _ => {
-                        panic!("Unknown builtin symbol {}", s)
+                        unreachable!("Unknown builtin symbol {}", s)
                     }
                 }
             }

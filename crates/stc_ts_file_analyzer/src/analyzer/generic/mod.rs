@@ -595,7 +595,7 @@ impl Analyzer<'_, '_> {
 
                         if !orig.eq_ignore_span(&constraint.as_ref().unwrap()) {
                             print_backtrace();
-                            panic!(
+                            unreachable!(
                                 "Cannot override T in `T extends <literal>`\nOrig: {:?}\nConstraints: {:?}",
                                 orig, constraint
                             )
