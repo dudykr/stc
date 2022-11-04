@@ -13,6 +13,8 @@ use stc_ts_ast_rnode::{
     RPat, RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
     RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase,
     ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
+    RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
+    RTsEntityName, RTsLit, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -666,6 +668,7 @@ impl Analyzer<'_, '_> {
                         RExpr::Tpl(t) if t.quasis.len() == 1 => {
                             t.quasis[0].cooked.clone().map(|v| (&*v).into())
                         }
+                        RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| (&*v).into()),
                         _ => None,
                     };
                     let name = Name::try_from(&**right).ok();
@@ -996,12 +999,7 @@ impl Analyzer<'_, '_> {
     /// If we apply `instanceof C` to `v`, `v` becomes `T`.
     /// Note that `C extends D` and `D extends C` are true because both of `C`
     /// and `D` are empty classes.
-    fn narrow_with_instanceof(
-        &mut self,
-        span: Span,
-        ty: Cow<Type>,
-        orig_ty: &Type,
-    ) -> VResult<Type> {
+    fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult<Type> {
         let orig_ty = orig_ty.normalize();
 
         match orig_ty {
@@ -1610,6 +1608,7 @@ impl Analyzer<'_, '_> {
                             ..
                         }) => {
                             self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: *span });
+                            self.storage.report(Error::ObjectIsPossiblyUndefined { span: *span });
                         }
 
                         Type::Keyword(KeywordType {
@@ -1618,6 +1617,7 @@ impl Analyzer<'_, '_> {
                             ..
                         }) => {
                             self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: *span });
+                            self.storage.report(Error::ObjectIsPossiblyNull { span: *span });
                         }
 
                         _ => errors.push(if is_left {

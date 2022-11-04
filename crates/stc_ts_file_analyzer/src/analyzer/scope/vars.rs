@@ -7,6 +7,7 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::{widen::Widen, Fix};
 use stc_ts_types::{Array, Key, KeywordType, LitType, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::{run, PatExt};
+use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, TryOpt};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{TsKeywordTypeKind, VarDeclKind};
@@ -294,6 +295,16 @@ impl Analyzer<'_, '_> {
                                             _ => Err(err),
                                         },
                                     }
+                                .try_map(|ty| -> VResult<_> {
+                                    Ok(self
+                                        .get_element_from_iterator(span, Cow::Borrowed(&ty), idx)
+                                        .with_context(|| {
+                                            format!(
+                                                "tried to get the type of {}th element from iterator to declare vars with an array pattern",
+                                                idx
+                                            )
+                                        })?
+                                        .into_owned())
                                 })?
                                 .freezed();
 
@@ -329,6 +340,7 @@ impl Analyzer<'_, '_> {
                                         let type_for_rest_arg = match ty {
                                             Some(ty) => self
                                                 .get_rest_elements(Some(span), Cow::Owned(ty), idx)
+                                                .get_lefting_elements(Some(span), Cow::Owned(ty), idx)
                                                 .context(
                                                     "tried to get lefting elements of an iterator to declare variables using a rest \
                                                      pattern",
@@ -342,6 +354,7 @@ impl Analyzer<'_, '_> {
                                         let default = match default {
                                             Some(ty) => self
                                                 .get_rest_elements(Some(span), Cow::Owned(ty), idx)
+                                                .get_lefting_elements(Some(span), Cow::Owned(ty), idx)
                                                 .context(
                                                     "tried to get lefting elements of an iterator to declare variables using a rest \
                                                      pattern",
@@ -467,6 +480,7 @@ impl Analyzer<'_, '_> {
                                                 ..Default::default()
                                             },
                                         )
+                                        .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
                                         .ok()
                                 })
                                 .freezed();
@@ -540,6 +554,7 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                     )
+                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
                                     .ok()
                             });
 

@@ -780,6 +780,7 @@ impl Analyzer<'_, '_> {
         inferred: &mut InferData,
         is_from_type_ann: bool,
     ) {
+    pub(super) fn prevent_generalization_of_inferred_types(&mut self, type_params: &[TypeParam], inferred: &mut InferData) {
         for type_param in type_params {
             match type_param.constraint.as_deref() {
                 Some(Type::Lit(..)) => {}

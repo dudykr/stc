@@ -1205,6 +1205,8 @@ impl Type {
 
         let has_str = tys.iter().any(|ty| ty.is_str());
         let has_bool = tys.iter().any(|ty| ty.is_bool());
+        // TODO
+        let has_bool = tys.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword));
         let has_num = tys.iter().any(|ty| ty.is_num());
 
         if (has_str && has_bool) || (has_bool && has_num) || (has_num && has_str) {

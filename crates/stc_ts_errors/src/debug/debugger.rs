@@ -43,6 +43,7 @@ impl Debugger {
             .struct_span_err(span, "Type")
             .note(&ty_str)
             .emit();
+        self.handler.struct_span_err(span, "Type").note(&ty_str).emit();
     }
 }
 

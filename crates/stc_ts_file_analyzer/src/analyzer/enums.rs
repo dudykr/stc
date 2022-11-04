@@ -82,6 +82,7 @@ impl Analyzer<'_, '_> {
                                 RTsLit::Tpl(v) => {
                                     RExpr::Lit(v.quasis.into_iter().next().unwrap().raw.into())
                                 }
+                                RTsLit::Tpl(v) => RExpr::Lit(v.quasis.into_iter().next().unwrap().raw.into()),
                                 RTsLit::BigInt(v) => RExpr::Lit(RLit::BigInt(v)),
                             }
                         })
@@ -518,6 +519,7 @@ impl Analyzer<'_, '_> {
             Some(RExpr::Ident(..)) => {}
             Some(e) => {
                 if type_of_expr(&e).is_none() && !matches!(e, RExpr::Tpl(..) | RExpr::Bin(..) | RExpr::Member(..)) {
+                if type_of_expr(&e).is_none() {
                     self.storage.report(Error::ComputedMemberInEnumWithStrMember { span: m.span })
                 }
             }

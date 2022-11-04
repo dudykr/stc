@@ -16,6 +16,8 @@ use stc_ts_ast_rnode::{
     RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr,
     RMemberProp, RNull, RNumber, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuperProp,
     RSuperPropExpr, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr,
+    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, RParenExpr, RPat,
+    RPatOrExpr, RSeqExpr, RStr, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr,
     RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
@@ -34,6 +36,7 @@ use stc_ts_types::{
     ComputedKey, Id, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Method,
     ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType, QueryTypeMetadata,
     StaticThis, ThisType,
+    QueryTypeMetadata, StaticThis, ThisType,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use swc_atoms::js_word;
@@ -379,24 +382,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        e: &RParenExpr,
-        mode: TypeOfMode,
-        type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    fn validate(&mut self, e: &RParenExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
         e.expr.validate_with_args(self, (mode, None, type_ann))
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        e: &RAssignExpr,
-        mode: TypeOfMode,
-        type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    fn validate(&mut self, e: &RAssignExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
         let ctx = Ctx {
             pat_mode: PatMode::Assign,
             ..self.ctx
@@ -471,6 +464,9 @@ impl Analyzer<'_, '_> {
             };
 
             is_valid_lhs(&e.left).report(&mut analyzer.storage);
+            if !is_valid_lhs(&e.left) {
+                analyzer.storage.report(Error::InvalidLhsOfAssign { span: e.left.span() });
+            }
 
             let mut errors = Errors::default();
 
@@ -587,6 +583,8 @@ impl Analyzer<'_, '_> {
         let RSeqExpr {
             span, ref exprs, ..
         } = *e;
+    fn validate(&mut self, e: &RSeqExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
+        let RSeqExpr { span, ref exprs, .. } = *e;
 
         assert!(exprs.len() >= 1);
 
@@ -2076,6 +2074,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(TypeLit { ref members, metadata, .. }) => {
+            Type::TypeLit(TypeLit { ref members, .. }) => {
                 if let Some(v) = self.access_property_of_type_elements(span, &obj, prop, type_mode, members, opts)? {
                     return Ok(v);
                 }
@@ -2703,12 +2702,7 @@ impl Analyzer<'_, '_> {
                 expr: box QueryExpr::TsEntityName(name),
                 ..
             }) => {
-                let obj = self.type_of_ts_entity_name(
-                    span,
-                    self.ctx.module_id,
-                    &name.clone().into(),
-                    None,
-                )?;
+                let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, &name.clone().into(), None)?;
                 return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
             }
 
@@ -2919,6 +2913,7 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<Type> {
+    pub(super) fn type_of_var(&mut self, i: &RIdent, type_mode: TypeOfMode, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
         let span = i.span();
         let id: Id = i.into();
         let name: Name = i.into();
@@ -3147,6 +3142,7 @@ impl Analyzer<'_, '_> {
                         left: span,
                         ty: None,
                     }),
+                    TypeOfMode::LValue => self.storage.report(Error::NotVariable { span, left: span }),
                     TypeOfMode::RValue => {}
                 }
                 return Ok(Type::undefined(span, Default::default()));
@@ -3582,10 +3578,7 @@ impl Analyzer<'_, '_> {
     /// TODO(kdy1): Expand type arguments if provided.
     fn type_of_member_expr(&mut self, expr: &RMemberExpr, type_mode: TypeOfMode) -> VResult<Type> {
         let RMemberExpr {
-            ref obj,
-            ref prop,
-            span,
-            ..
+            ref obj, ref prop, span, ..
         } = *expr;
         let computed = matches!(prop, RMemberProp::Computed(..));
 
@@ -3666,17 +3659,8 @@ impl Analyzer<'_, '_> {
 
         let mut ty = self
             .with_ctx(prop_access_ctx)
-            .access_property(
-                span,
-                &obj_ty,
-                &prop,
-                type_mode,
-                IdCtx::Var,
-                Default::default(),
-            )
-            .context(
-                "tried to access property of an object to calculate type of a member expression",
-            )?;
+            .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var, Default::default())
+            .context("tried to access property of an object to calculate type of a member expression")?;
 
         if !self.is_builtin {
             if let Some(name) = name {
@@ -3720,26 +3704,16 @@ impl Analyzer<'_, '_> {
         };
 
         if should_be_optional {
-            Ok(Type::union(vec![
-                Type::undefined(span, Default::default()),
-                ty,
-            ]))
+            Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
         } else {
             Ok(ty)
         }
     }
 
     /// TODO(kdy1): Expand type arguments if provided.
-    fn type_of_super_expr(
-        &mut self,
-        expr: &RSuperPropExpr,
-        type_mode: TypeOfMode,
-    ) -> VResult<Type> {
+    fn type_of_super_expr(&mut self, expr: &RSuperPropExpr, type_mode: TypeOfMode) -> VResult<Type> {
         let RSuperPropExpr {
-            ref obj,
-            ref prop,
-            span,
-            ..
+            ref obj, ref prop, span, ..
         } = *expr;
 
         let computed = matches!(prop, RSuperProp::Computed(..));
@@ -3750,8 +3724,7 @@ impl Analyzer<'_, '_> {
         let mut should_be_optional = false;
         let mut obj_ty = {
             if self.scope.cannot_use_this_because_super_not_called() {
-                self.storage
-                    .report(Error::SuperUsedBeforeCallingSuper { span })
+                self.storage.report(Error::SuperUsedBeforeCallingSuper { span })
             }
 
             RExprOrSuper::Super(RSuper { span, .. }) => {
@@ -3772,8 +3745,7 @@ impl Analyzer<'_, '_> {
             if let Some(v) = self.scope.get_super_class() {
                 v.clone()
             } else {
-                self.storage
-                    .report(Error::SuperInClassWithoutSuper { span });
+                self.storage.report(Error::SuperInClassWithoutSuper { span });
                 Type::any(span, Default::default())
             }
         };
@@ -3977,6 +3949,7 @@ impl Analyzer<'_, '_> {
                         .unwrap_or_else(|| e.quasis[0].raw.clone())
                         .into(),
                 ),
+                lit: RTsLit::Str(e.quasis[0].cooked.clone().unwrap_or_else(|| e.quasis[0].raw.clone()).into()),
                 metadata: Default::default(),
             }));
         }

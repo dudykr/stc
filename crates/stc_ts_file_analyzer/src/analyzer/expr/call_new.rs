@@ -17,6 +17,9 @@ use stc_ts_ast_rnode::{
     RInvalid, RLit, RMemberExpr, RMemberProp, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl,
     RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation,
     RTsTypeRef,
+    RArrayPat, RBindingIdent, RCallExpr, RCallee, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid, RLit, RMemberExpr,
+    RMemberProp, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType,
+    RTsTypeParamInstantiation, RTsTypeRef,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
@@ -145,6 +148,10 @@ impl Analyzer<'_, '_> {
                 )
             },
         )
+                type_args.as_deref(),
+                type_ann.as_deref(),
+            )
+        })
     }
 }
 
@@ -192,6 +199,10 @@ impl Analyzer<'_, '_> {
                 )
             },
         )
+                type_args.as_deref(),
+                type_ann.as_deref(),
+            )
+        })
     }
 }
 
@@ -247,6 +258,10 @@ impl Analyzer<'_, '_> {
                 )
             },
         );
+                e.type_params.as_deref(),
+                Default::default(),
+            )
+        });
 
         // dbg!(&res);
 
@@ -388,6 +403,7 @@ impl Analyzer<'_, '_> {
 
                 // Validate object
                 let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
+            RExpr::Member(RMemberExpr { ref obj, ref prop, .. }) => {
                 let computed = matches!(prop, RMemberProp::Computed(..));
                 let prop = self.validate_key(
                     &*match prop {
@@ -905,6 +921,7 @@ impl Analyzer<'_, '_> {
                         key: box prop.clone(),
                     },
                     Error::NoNewSignature { span, .. } => Error::NoConstructablePropertyWithName {
+                    Error::NoNewSignature { span, .. } => Error::NoCallablePropertyWithName {
                         span,
                         obj: box obj_type.clone(),
                         key: box prop.clone(),
@@ -1276,6 +1293,7 @@ impl Analyzer<'_, '_> {
 
                             let elem_type = self
                                 .get_iterator_element_type(arg.span(), arg_ty, false, Default::default())
+                                .get_iterator_element_type(arg.span(), arg_ty, false)
                                 .context("tried to get element type of an iterator for spread syntax in arguments")?;
 
                             new_arg_types.push(TypeOrSpread {
@@ -2241,6 +2259,7 @@ impl Analyzer<'_, '_> {
                     None => arg.expr.span(),
                 })
                 .unwrap_or(span);
+            let span = args.get(min_param).map(|arg| arg.expr.span()).unwrap_or(span);
 
             return Err(Error::ExpectedNArgsButGotM {
                 span,
@@ -2485,6 +2504,7 @@ impl Analyzer<'_, '_> {
                     is_type_ann: type_ann.is_some(),
                     ..Default::default()
                 },
+                InferTypeOpts { ..Default::default() },
             )?;
             debug!("Inferred types:\n{}", dump_type_map(&self.cm, &inferred.types));
             warn!("Failed to infer types of {:?}", inferred.errored);
@@ -2824,6 +2844,10 @@ impl Analyzer<'_, '_> {
                                 report_err!(Error::SpreadMustBeTupleOrPassedToRest { span: arg.span() })
                             }
                         }
+                        self.storage.report(Error::ExpectedAtLeastNArgsButGotMOrMore {
+                            span: arg.span(),
+                            min: rest_idx - 1,
+                        })
                     }
                 }
             }
@@ -3123,12 +3147,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn narrow_type_with_predicate(
-        &mut self,
-        span: Span,
-        orig_ty: &Type,
-        new_ty: Type,
-    ) -> VResult<Type> {
+    fn narrow_type_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let orig_ty = self

@@ -15,6 +15,8 @@ use stc_ts_ast_rnode::{
     RMemberExpr, RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStmt,
     RTsEntityName, RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn,
     RVarDecl, RVarDeclarator,
+    RDecl, RExpr, RFunction, RIdent, RLit, RMemberExpr, RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStmt,
+    RTsEntityName, RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{DebugExt, Error, Errors};
@@ -30,6 +32,8 @@ use stc_ts_types::{
     rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty,
     ComputedKey, ConstructorSignature, FnParam, Id, Intersection, Key, KeywordType, Method,
     Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
+    rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
+    Id, Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
 };
 use stc_utils::{cache::Freeze, AHashSet};
 use swc_atoms::js_word;
@@ -193,10 +197,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let key = self.validate_key(
-            &rprop_name_to_expr(p.key.clone()),
-            matches!(p.key, RPropName::Computed(..)),
-        )?;
+        let key = self.validate_key(&rprop_name_to_expr(p.key.clone()), matches!(p.key, RPropName::Computed(..)))?;
 
         Ok(ClassProperty {
             span: p.span,
@@ -499,6 +500,13 @@ impl Analyzer<'_, '_> {
         match c.key.id.sym {
             js_word!("constructor") => {
                 self.storage.report(Error::ConstructorIsKeyword { span: c.key.id.span });
+            }
+            _ => {}
+        }
+
+        match c.kind {
+            MethodKind::Method => {
+                self.storage.report(Error::PrivateIdUsedAsMethodName { span: c.key.id.span });
             }
             _ => {}
         }
@@ -1263,6 +1271,9 @@ impl Analyzer<'_, '_> {
                         sym: js_word!("Symbol"),
                         ..
                     }),
+                obj: box RExpr::Ident(RIdent {
+                    sym: js_word!("Symbol"), ..
+                }),
                 ..
             }) => true,
             _ => false,
@@ -1713,6 +1724,8 @@ impl Analyzer<'_, '_> {
                                             Some(box RExpr::Ident(new_ty.clone()));
                                     }
                                     Some(box Type::Ref(Ref {
+                                    child.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
+                                        node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
                                         kind: VarDeclKind::Const,
                                         declare: false,
@@ -1722,6 +1735,7 @@ impl Analyzer<'_, '_> {
                                             name: RPat::Ident(RBindingIdent {
                                                 node_id: NodeId::invalid(),
                                                 type_ann: Some(RTsTypeAnn {
+                                                type_ann: Some(box RTsTypeAnn {
                                                     node_id: NodeId::invalid(),
                                                     span: DUMMY_SP,
                                                     type_ann: box super_ty.into(),
@@ -1734,6 +1748,7 @@ impl Analyzer<'_, '_> {
                                     })));
                                 } else {
                                     child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(RTsTypeAliasDecl {
+                                    child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(box RTsTypeAliasDecl {
                                         node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
                                         declare: false,
@@ -1791,6 +1806,7 @@ impl Analyzer<'_, '_> {
                 if constructors_with_body.len() >= 2 {
                     for &span in &constructors_with_body {
                         child.storage.report(Error::DuplicateConstructor { span })
+                        child.storage.report(Error::DuplciateConstructor { span })
                     }
                 }
 
@@ -2005,6 +2021,7 @@ impl Analyzer<'_, '_> {
                                     };
                                     key.type_ann = None;
                                     let key = box RExpr::Ident(key.id);
+                                    let key = RPropName::Ident(key.id);
                                     additional_members.push(RClassMember::ClassProp(RClassProp {
                                         node_id: NodeId::invalid(),
                                         span: p.span,
@@ -2396,6 +2413,7 @@ impl Analyzer<'_, '_> {
                     .convert_err(|_err| {
                         if index.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
                             Error::ClassMemberNotCompatibleWithNumericIndexSignature { span }
+                            Error::ClassMemeberNotCompatibleWithNumericIndexSignature { span }
                         } else {
                             Error::ClassMemberNotCompatibleWithStringIndexSignature { span }
                         }

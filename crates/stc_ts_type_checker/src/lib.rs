@@ -115,6 +115,7 @@ impl Checker {
 
             let end = Instant::now();
             log::debug!("Loading of `{}` and dependencies took {:?}", entry, end - start);
+            info!("Loading of `{}` and dependencies took {:?}", entry, end - start);
 
             let start = Instant::now();
 
@@ -122,6 +123,7 @@ impl Checker {
 
             let end = Instant::now();
             log::debug!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
+            info!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
 
             id.unwrap_or_else(|(id, _)| id)
         })
@@ -410,6 +412,7 @@ impl Load for Checker {
         dep: ModuleId,
         _partial: &ModuleTypeData,
     ) -> VResult<Type> {
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, _partial: &ModuleTypeData) -> VResult<Type> {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 

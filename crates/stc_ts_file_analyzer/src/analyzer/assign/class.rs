@@ -169,6 +169,7 @@ impl Analyzer<'_, '_> {
                         let parent = self
                             .instantiate_class(opts.span, &parent)
                             .context("tried to instantiated class to assign the super class to a class")?;
+                            .context("tried to instanitate class to asssign the super class to a class")?;
                         if self.assign_to_class(data, opts, l, &parent).is_ok() {
                             return Ok(());
                         }

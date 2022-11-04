@@ -1,8 +1,6 @@
 use std::borrow::Cow;
 
-use stc_ts_ast_rnode::{
-    RCallExpr, RExpr, RMemberExpr, RMemberProp, ROptCall, ROptChainBase, ROptChainExpr,
-};
+use stc_ts_ast_rnode::{RCallExpr, RExpr, RMemberExpr, RMemberProp, ROptCall, ROptChainBase, ROptChainExpr};
 use stc_ts_errors::DebugExt;
 use stc_ts_types::Type;
 use stc_utils::ext::TypeVecExt;
@@ -85,10 +83,7 @@ impl Analyzer<'_, '_> {
         }
         .validate_with_args(self, type_ann)?;
 
-        Ok(Type::union(vec![
-            Type::undefined(e.span, Default::default()),
-            ty,
-        ]))
+        Ok(Type::union(vec![Type::undefined(e.span, Default::default()), ty]))
     }
 }
 

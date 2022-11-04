@@ -6,6 +6,8 @@ use stc_ts_ast_rnode::{
     RExportDefaultExpr, RExportNamedSpecifier, RExportSpecifier, RExpr, RIdent, RModuleExportName,
     RNamedExport, RPat, RStmt, RTsExportAssignment, RTsModuleName, RTsTypeAnn, RVarDecl,
     RVarDeclarator,
+    RExportSpecifier, RExpr, RIdent, RModuleExportName, RNamedExport, RPat, RStmt, RTsExportAssignment, RTsModuleName, RTsTypeAnn,
+    RVarDecl, RVarDeclarator,
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -263,14 +265,13 @@ impl Analyzer<'_, '_> {
                 init: None,
                 definite: false,
             };
-            self.prepend_stmts
-                .push(RStmt::Decl(RDecl::Var(box RVarDecl {
-                    node_id: NodeId::invalid(),
-                    span: DUMMY_SP,
-                    kind: VarDeclKind::Const,
-                    declare: true,
-                    decls: vec![var],
-                })));
+            self.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
+                node_id: NodeId::invalid(),
+                span: DUMMY_SP,
+                kind: VarDeclKind::Const,
+                declare: true,
+                decls: vec![var],
+            })));
 
             if let Some(m) = &mut self.mutations {
                 m.for_export_defaults.entry(item_node_id).or_default().replace_with =

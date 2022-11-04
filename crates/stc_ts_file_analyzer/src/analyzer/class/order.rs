@@ -129,9 +129,7 @@ impl Visit<RMemberExpr> for MethodAnalyzer {
                     RExpr::PrivateName(i) => {
                         self.result.depends_on.insert(Key::Private(i.id.clone().into()));
                     RMemberProp::PrivateName(i) => {
-                        self.result
-                            .depends_on
-                            .insert(Key::Private(i.id.clone().into()));
+                        self.result.depends_on.insert(Key::Private(i.id.clone().into()));
                     }
                     _ => {}
                 }

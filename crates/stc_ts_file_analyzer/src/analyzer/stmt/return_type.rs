@@ -24,6 +24,7 @@ use crate::{
         util::ResultExt,
         Analyzer, Ctx,
     },
+    analyzer::{assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, util::ResultExt, Analyzer, Ctx},
     ty::{Array, Type, TypeExt},
     validator,
     validator::ValidateWith,
@@ -176,6 +177,7 @@ impl Analyzer<'_, '_> {
                     if let Some(declared) = self.scope.declared_return_type().cloned() {
                         // TODO(kdy1): Change this to `get_iterable_element_type`
                         if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true, Default::default()) {
+                        if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true) {
                             types.push(el_ty.into_owned());
                         }
                     }

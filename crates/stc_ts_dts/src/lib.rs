@@ -12,6 +12,9 @@ use stc_ts_ast_rnode::{
     RParamOrTsParamProp, RPat, RPrivateName, RPrivateProp, RPropName, RStmt, RTsEntityName, RTsEnumDecl, RTsIndexSignature,
     RTsInterfaceDecl, RTsKeywordType, RTsModuleDecl, RTsParamProp, RTsParamPropParam, RTsPropertySignature, RTsType, RTsTypeAliasDecl,
     RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RFnDecl, RIdent, RImportDecl, RImportSpecifier, RMemberExpr, RModuleDecl, RModuleItem, RNamedExport, RParamOrTsParamProp, RPat,
+    RPrivateName, RPrivateProp, RPropName, RStmt, RTsEntityName, RTsEnumDecl, RTsIndexSignature, RTsInterfaceDecl, RTsKeywordType,
+    RTsModuleDecl, RTsParamProp, RTsParamPropParam, RTsPropertySignature, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_types::{Id, ModuleTypeData};
 use stc_ts_utils::{find_ids_in_pat, MapWithMut};
@@ -371,6 +374,9 @@ impl VisitMut<Vec<RModuleItem>> for Dts {
                     | RDecl::TsEnum(RTsEnumDecl { id: ident, .. })
                     | RDecl::TsTypeAlias(RTsTypeAliasDecl { id: ident, .. })
                     | RDecl::TsInterface(RTsInterfaceDecl { id: ident, .. }) => self.used_types.contains(&Id::from(ident)),
+                    | RDecl::TsEnum(box RTsEnumDecl { id: ident, .. })
+                    | RDecl::TsTypeAlias(box RTsTypeAliasDecl { id: ident, .. })
+                    | RDecl::TsInterface(box RTsInterfaceDecl { id: ident, .. }) => self.used_types.contains(&Id::from(ident)),
                     // Handled by `visit_mut_var_decl`
                     RDecl::Var(decl) => !decl.decls.is_empty(),
                     RDecl::TsModule(_) => true,
@@ -511,6 +517,11 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                                                 RTsParamPropParam::Assign(p) => match &p.left {
                                                     //
                                                     box RPat::Ident(i) => RExpr::Ident(i.id.clone()),
+                                            key: match &p.param {
+                                                RTsParamPropParam::Ident(p) => RPropName::Ident(p.id.clone()),
+                                                RTsParamPropParam::Assign(p) => match &p.left {
+                                                    //
+                                                    box RPat::Ident(i) => RPropName::Ident(i.id.clone()),
                                                     _ => unreachable!("binding pattern in property initializer"),
                                                 },
                                             },

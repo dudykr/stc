@@ -54,6 +54,7 @@ fn get_env() -> Env {
         ModuleConfig::None,
         &libs,
     )
+    Env::simple(Rule { ..Default::default() }, EsVersion::latest(), ModuleConfig::None, &libs)
 }
 
 fn validate(input: &Path) -> Vec<StcError> {

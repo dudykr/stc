@@ -4,6 +4,7 @@ use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RMemberExpr, RNumber, RStr, RTsLit
 use stc_ts_ast_rnode::{
     RBigInt, RBool, RExpr, RMemberExpr, RMemberProp, RNumber, RStr, RTsLit, RUnaryExpr,
 };
+use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RMemberExpr, RMemberProp, RNumber, RStr, RTsLit, RUnaryExpr};
 use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
 use swc_atoms::js_word;
@@ -95,11 +96,7 @@ impl Analyzer<'_, '_> {
                         .cloned()
                         .map(|value| LitType {
                             span,
-                            lit: RTsLit::Str(RStr {
-                                span,
-                                value,
-                                raw: None,
-                            }),
+                            lit: RTsLit::Str(RStr { span, value, raw: None }),
                             metadata: Default::default(),
                         })
                         .map(Type::Lit)
@@ -120,12 +117,7 @@ impl Analyzer<'_, '_> {
                 if let Some(arg) = &arg {
                     match arg.normalize() {
                         Type::Lit(LitType {
-                            lit:
-                                RTsLit::Number(RNumber {
-                                    span,
-                                    value,
-                                    raw: None,
-                                }),
+                            lit: RTsLit::Number(RNumber { span, value, raw: None }),
                             ..
                         }) => {
                             let span = *span;

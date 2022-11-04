@@ -117,7 +117,19 @@ impl Analyzer<'_, '_> {
                                                 if let Some(m) = &mut child.mutations {
                                                     m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| ty.clone());
                                                 }
+                                    for p in f.params.iter().zip_longest(ty.params.iter()) {
+                                        match p {
+                                            EitherOrBoth::Both(param, ty) => {
+                                                // Store type information, so the pattern
+                                                // validator can use a correct
+                                                // type.
+                                                if let Some(pat_node_id) = param.node_id() {
+                                                    if let Some(m) = &mut child.mutations {
+                                                        m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| *ty.ty.clone());
+                                                    }
+                                                }
                                             }
+                                            _ => {}
                                         }
                                     }
                                 }
@@ -165,6 +177,7 @@ impl Analyzer<'_, '_> {
                 match f.body {
                     RBlockStmtOrExpr::Expr(ref e) => Some({
                         let ty = e.validate_with_args(child, (TypeOfMode::RValue, None, declared_ret_ty.as_ref()))?;
+                        let ty = e.validate_with_default(child)?;
                         if !child.ctx.in_argument && f.return_type.is_none() && type_ann.is_none() && child.may_generalize(&ty) {
                             ty.generalize_lit()
                         } else {
@@ -207,6 +220,7 @@ impl Analyzer<'_, '_> {
                         declared,
                         inferred,
                     )?;
+                    child.assign(span, &mut Default::default(), declared, inferred)?;
                 }
             }
 

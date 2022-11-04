@@ -916,6 +916,7 @@ impl Analyzer<'_, '_> {
                                 // Rest element is special.
                                 let type_for_rest_arg = self
                                     .get_rest_elements(None, ty, i)
+                                    .get_lefting_elements(None, ty, i)
                                     .context("tried to get lefting elements of an iterator to assign using a rest pattern")?;
 
                                 self.try_assign_pat_with_opts(
@@ -1033,6 +1034,7 @@ impl Analyzer<'_, '_> {
                                         return Err(Error::InvalidRestPatternInOptionalChain { span: r.span });
                                     }
 
+                                RPat::Expr(_) => {
                                     self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
 
@@ -1274,12 +1276,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(
-        &mut self,
-        e: &RCondExpr,
-        mode: TypeOfMode,
-        type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    fn validate(&mut self, e: &RCondExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
         self.record(e);
 
         let RCondExpr {

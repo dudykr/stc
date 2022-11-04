@@ -140,6 +140,7 @@ pub trait BuiltInGen: Sized {
                                                 .type_params
                                                 .validate_with(analyzer)
                                                 .map(|opt| box opt.expect("builtin: failed to parse type params of a class")),
+                                                .map(|opt| box opt.expect("builtin: failed to parse type parmas of a class")),
                                             implements: c.class.implements.validate_with(analyzer).map(Box::new).unwrap(),
                                             metadata: Default::default(),
                                         }))
@@ -279,6 +280,7 @@ pub trait EnvFactory {
     fn simple(rule: Rule, target: EsVersion, module: ModuleConfig, libs: &[Lib]) -> Env {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);
         static CACHE: Lazy<DashMap<Vec<Lib>, Arc<OnceCell<Arc<BuiltIn>>>, ahash::RandomState>> = Lazy::new(Default::default);
+        static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>, ahash::RandomState>> = Lazy::new(Default::default);
 
         // TODO(kdy1): Include `env` in cache
         let mut libs = libs.to_vec();

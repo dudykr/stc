@@ -86,6 +86,10 @@ impl Tester<'_, '_> {
                 MARKS.top_level_mark(),
                 true,
             ));
+            let module = parser
+                .parse_module()
+                .unwrap()
+                .fold_with(&mut resolver(MARKS.unresolved_mark(), MARKS.top_level_mark(), true));
 
             RModule::from_orig(&mut NodeIdGenerator::invalid(), module)
         })
@@ -195,4 +199,5 @@ fn get_env() -> Env {
         ModuleConfig::None,
         &libs,
     )
+    Env::simple(Rule { ..Default::default() }, EsVersion::latest(), ModuleConfig::None, &libs)
 }

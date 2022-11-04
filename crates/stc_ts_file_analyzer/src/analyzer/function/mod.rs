@@ -284,6 +284,7 @@ impl Analyzer<'_, '_> {
             &ty.type_name.clone().into(),
             ty.type_args.as_deref(),
         )?;
+        let actual_ty = self.type_of_ts_entity_name(span, self.ctx.module_id, &ty.type_name.clone().into(), ty.type_args.as_deref())?;
 
         // TODO(kdy1): PERF
         let type_params = match actual_ty.foldable() {

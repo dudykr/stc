@@ -596,6 +596,7 @@ impl Analyzer<'_, '_> {
                         if !orig.eq_ignore_span(&constraint.as_ref().unwrap()) {
                             print_backtrace();
                             unreachable!(
+                            panic!(
                                 "Cannot override T in `T extends <literal>`\nOrig: {:?}\nConstraints: {:?}",
                                 orig, constraint
                             )
@@ -1478,6 +1479,7 @@ impl Analyzer<'_, '_> {
                                             value: sym.clone(),
                                             has_escape: false,
                                             kind: Default::default(),
+                                            raw: None,
                                         }),
                                         metadata: LitTypeMetadata {
                                             common: param.metadata.common,
@@ -1563,6 +1565,7 @@ impl Analyzer<'_, '_> {
                                                 .foldable()
                                                 .fold_with(&mut SingleTypeParamReplacer { name: &name, to: param_ty })
                                                 .cheap();
+                                                .fold_with(&mut SingleTypeParamReplacer { name: &name, to: param_ty });
 
                                             self.infer_type(span, inferred, &mapped_param_ty, arg_prop_ty, opts)?;
                                         }
@@ -1740,6 +1743,7 @@ impl Analyzer<'_, '_> {
                                                     value: i_sym.clone(),
                                                     has_escape: false,
                                                     kind: Default::default(),
+                                                    raw: None,
                                                 }),
                                                 metadata: LitTypeMetadata {
                                                     common: param.metadata.common,
@@ -2044,6 +2048,8 @@ impl Analyzer<'_, '_> {
                             Type::TypeLit(arg_lit) => {
                                 let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).cheap();
                                 print_type(&"reversed", &self.cm, &reversed_param_ty);
+                                let revesed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default());
+                                print_type(&"reversed", &self.cm, &revesed_param_ty);
 
                                 self.infer_type(span, inferred, &reversed_param_ty, arg, opts)?;
 
@@ -2207,6 +2213,7 @@ impl Analyzer<'_, '_> {
         mut ty: Type,
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
+    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult<Type> {
         if self.is_builtin {
             return Ok(ty);
         }

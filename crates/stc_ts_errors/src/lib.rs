@@ -1538,6 +1538,7 @@ impl Error {
             _ => {
                 if self.span().is_dummy() {
                     unreachable!("Error with dummy span found(context: {}): {:#?}", context, self)
+                    panic!("Error with dummy span found(context: {}): {:#?}", context, self)
                 }
             }
         }
