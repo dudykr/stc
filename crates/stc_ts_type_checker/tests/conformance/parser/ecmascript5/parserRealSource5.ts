@@ -4,7 +4,7 @@
 ///<reference path='typescript.ts' />
 
 module TypeScript {
-    // TODO(kdy1): refactor indent logic for use in emit
+    // TODO: refactor indent logic for use in emit
     export class PrintContext {
         public builder = "";
         public indent1 = "  ";
