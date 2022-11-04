@@ -445,7 +445,7 @@ module TypeScript {
         }
     }
 
-    // TODO(kdy1): new with length TokenID.LimFixed
+    // TODO: new with length TokenID.LimFixed
     export var staticTokens = new Token[];
     export function initializeStaticTokens() {
         for (var i = 0; i <= TokenID.LimFixed; i++) {

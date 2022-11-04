@@ -33,7 +33,7 @@ interface I {
     explicitVoid2(this: void): number;
     explicitStructural(this: {a: number}): number;
     explicitInterface(this: I): number;
-    explicitThis(this: this): number; // TODO(kdy1): Allow `this` types for interfaces
+    explicitThis(this: this): number; // TODO: Allow `this` types for interfaces
 }
 let impl: I = {
     a: 12,

@@ -49,4 +49,4 @@ enum X {
 let a = X["foo"];
 let a0 = X["bar"];
 
-// TODO(kdy1): make sure that enum still disallow template literals as member names
+// TODO: make sure that enum still disallow template literals as member names
