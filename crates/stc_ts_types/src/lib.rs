@@ -1191,8 +1191,6 @@ impl Type {
         tys.dedup_type();
 
         let has_str = tys.iter().any(|ty| ty.is_str());
-        // TODO
-        let has_bool = tys.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword));
         let has_bool = tys.iter().any(|ty| ty.is_bool());
         let has_num = tys.iter().any(|ty| ty.is_num());
 
