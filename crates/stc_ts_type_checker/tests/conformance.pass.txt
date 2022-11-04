@@ -148,8 +148,10 @@ classes/classDeclarations/classAbstractKeyword/classAbstractOverrideWithAbstract
 classes/classDeclarations/classAbstractKeyword/classAbstractSingleLineDecl.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractSuperCalls.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractUsingAbstractMethod1.ts
+classes/classDeclarations/classAndInterfaceMerge.d.ts
 classes/classDeclarations/classAndInterfaceWithSameName.ts
 classes/classDeclarations/classBody/classWithEmptyBody.ts
+classes/classDeclarations/classDeclarationLoop.ts
 classes/classDeclarations/classExtendingBuiltinType.ts
 classes/classDeclarations/classExtendingNull.ts
 classes/classDeclarations/classHeritageSpecification/classAppearsToHaveMembersOfObject.ts
@@ -172,6 +174,7 @@ classes/classExpressions/classExpression2.ts
 classes/classExpressions/classExpression3.ts
 classes/classExpressions/classExpression4.ts
 classes/classExpressions/classExpression5.ts
+classes/classExpressions/classExpressionLoop.ts
 classes/classExpressions/classWithStaticFieldInParameterBindingPattern.3.ts
 classes/classExpressions/classWithStaticFieldInParameterInitializer.3.ts
 classes/classExpressions/genericClassExpressionInFunction.ts
@@ -225,17 +228,25 @@ classes/members/privateNames/privateNameFieldAssignment.ts
 classes/members/privateNames/privateNameFieldClassExpression.ts
 classes/members/privateNames/privateNameFieldInitializer.ts
 classes/members/privateNames/privateNameFieldUnaryMutation.ts
+classes/members/privateNames/privateNameLateSuper.ts
 classes/members/privateNames/privateNameNestedClassNameConflict.ts
 classes/members/privateNames/privateNameNotAccessibleOutsideDefiningClass.ts
+classes/members/privateNames/privateNameSetterExprReturnValue.ts
+classes/members/privateNames/privateNameStaticFieldAccess.ts
+classes/members/privateNames/privateNameStaticFieldAssignment.ts
+classes/members/privateNames/privateNameStaticFieldUnaryMutation.ts
 classes/members/privateNames/privateNamesAndFields.ts
 classes/members/privateNames/privateNamesAndkeyof.ts
 classes/members/privateNames/privateNamesInterfaceExtendingClass.ts
 classes/members/privateNames/privateNamesUnique-1.ts
 classes/members/privateNames/privateNamesUnique-4.ts
 classes/members/privateNames/privateNamesUnique-5.ts
+classes/members/privateNames/typeFromPrivatePropertyAssignment.ts
 classes/methodDeclarations/optionalMethodDeclarations.ts
+classes/mixinAbstractClassesReturnTypeInference.ts
 classes/mixinClassesAnonymous.ts
 classes/mixinClassesMembers.ts
+classes/propertyMemberDeclarations/abstractProperty.ts
 classes/propertyMemberDeclarations/accessorsOverrideProperty5.ts
 classes/propertyMemberDeclarations/constructorParameterShadowsOuterScopes2.ts
 classes/propertyMemberDeclarations/definePropertyOutputES3.ts
@@ -287,6 +298,7 @@ controlFlow/controlFlowIfStatement.ts
 controlFlow/controlFlowInstanceOfGuardPrimitives.ts
 controlFlow/controlFlowInstanceofExtendsFunction.ts
 controlFlow/controlFlowIteration.ts
+controlFlow/controlFlowParameter.ts
 controlFlow/controlFlowStringIndex.ts
 controlFlow/controlFlowSuperPropertyAccess.ts
 controlFlow/controlFlowTruthiness.ts
@@ -299,6 +311,7 @@ controlFlow/typeGuardsNestedAssignments.ts
 controlFlow/typeGuardsTypeParameters.ts
 declarationEmit/classDoesNotDependOnPrivateMember.ts
 declarationEmit/declarationEmitWorkWithInlineComments.ts
+declarationEmit/exportDefaultExpressionComments.ts
 declarationEmit/exportDefaultNamespace.ts
 declarationEmit/nullPropertyName.ts
 declarationEmit/typePredicates/declarationEmitIdentifierPredicates01.ts
@@ -327,6 +340,9 @@ es2018/usePromiseFinally.ts
 es2018/useRegexpGroups.ts
 es2020/bigintMissingES2019.ts
 es2020/modules/exportAsNamespace_nonExistent.ts
+es2020/numberFormatCurrencySign.ts
+es2020/numberFormatCurrencySignResolved.ts
+es2021/logicalAssignment/logicalAssignment9.ts
 es6/Symbols/symbolDeclarationEmit1.ts
 es6/Symbols/symbolDeclarationEmit10.ts
 es6/Symbols/symbolDeclarationEmit11.ts
@@ -769,6 +785,7 @@ es6/newTarget/invalidNewTarget.es5.ts
 es6/newTarget/invalidNewTarget.es6.ts
 es6/newTarget/newTarget.es5.ts
 es6/newTarget/newTarget.es6.ts
+es6/newTarget/newTargetNarrowing.ts
 es6/propertyAccess/propertyAccessNumericLiterals.es6.ts
 es6/restParameters/emitRestParametersFunction.ts
 es6/restParameters/emitRestParametersFunctionES6.ts
@@ -1202,6 +1219,7 @@ expressions/binaryOperators/arithmeticOperator/arithmeticOperatorWithUndefinedVa
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithIdenticalObjects.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithIdenticalPrimitiveType.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithIdenticalTypeParameter.ts
+expressions/binaryOperators/comparisonOperator/comparisonOperatorWithIntersectionType.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipObjectsOnIndexSignature.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipObjectsOnInstantiatedCallSignature.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipObjectsOnInstantiatedConstructorSignature.ts
@@ -1293,10 +1311,14 @@ expressions/nullishCoalescingOperator/nullishCoalescingOperator_not_strict.ts
 expressions/optionalChaining/callChain/callChain.2.ts
 expressions/optionalChaining/callChain/callChain.3.ts
 expressions/optionalChaining/callChain/callChain.ts
+expressions/optionalChaining/callChain/parentheses.ts
 expressions/optionalChaining/callChain/superMethodCall.ts
 expressions/optionalChaining/callChain/thisMethodCall.ts
 expressions/optionalChaining/elementAccessChain/elementAccessChain.2.ts
 expressions/optionalChaining/elementAccessChain/elementAccessChain.ts
+expressions/optionalChaining/optionalChainingInArrow.ts
+expressions/optionalChaining/optionalChainingInLoop.ts
+expressions/optionalChaining/optionalChainingInTypeAssertions.ts
 expressions/optionalChaining/optionalChainingInference.ts
 expressions/optionalChaining/propertyAccessChain/propertyAccessChain.2.ts
 expressions/optionalChaining/propertyAccessChain/propertyAccessChain.ts
@@ -1352,6 +1374,9 @@ expressions/typeGuards/typeGuardsOnClassProperty.ts
 expressions/typeGuards/typeGuardsWithAny.ts
 expressions/typeGuards/typeGuardsWithInstanceOf.ts
 expressions/typeGuards/typePredicateASI.ts
+expressions/typeSatisfaction/typeSatisfaction_contextualTyping1.ts
+expressions/typeSatisfaction/typeSatisfaction_ensureInterfaceImpl.ts
+expressions/typeSatisfaction/typeSatisfaction_optionalMemberConformance.ts
 expressions/unaryOperators/bitwiseNotOperator/bitwiseNotOperatorWithAnyOtherType.ts
 expressions/unaryOperators/bitwiseNotOperator/bitwiseNotOperatorWithBooleanType.ts
 expressions/unaryOperators/bitwiseNotOperator/bitwiseNotOperatorWithEnumType.ts
@@ -1439,6 +1464,7 @@ functions/functionOverloadCompatibilityWithVoid03.ts
 functions/functionWithUseStrictAndSimpleParameterList.ts
 functions/parameterInitializersBackwardReferencing.ts
 functions/strictBindCallApply2.ts
+generators/asyncGeneratorGenericNonWrappedReturn.ts
 generators/generatorImplicitAny.ts
 generators/generatorReturnTypeFallback.1.ts
 generators/generatorReturnTypeFallback.4.ts
@@ -1513,9 +1539,14 @@ internalModules/moduleDeclarations/asiPreventsParsingAsNamespace03.ts
 internalModules/moduleDeclarations/asiPreventsParsingAsNamespace04.ts
 internalModules/moduleDeclarations/asiPreventsParsingAsNamespace05.ts
 jsdoc/jsdocTwoLineTypedef.ts
+jsdoc/parseLinkTag.ts
 jsdoc/seeTag1.ts
 jsdoc/seeTag2.ts
 jsdoc/typeParameterExtendsUnionConstraintDistributed.ts
+parser/ecmascript2021/numericSeparators/parser.numericSeparators.binary.ts
+parser/ecmascript2021/numericSeparators/parser.numericSeparators.decimal.ts
+parser/ecmascript2021/numericSeparators/parser.numericSeparators.hex.ts
+parser/ecmascript2021/numericSeparators/parser.numericSeparators.octal.ts
 parser/ecmascript5/Accessors/parserAccessors1.ts
 parser/ecmascript5/Accessors/parserAccessors2.ts
 parser/ecmascript5/Accessors/parserAccessors3.ts
@@ -1556,6 +1587,7 @@ parser/ecmascript5/ClassDeclarations/parserClassDeclaration23.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration24.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration25.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration26.ts
+parser/ecmascript5/ClassDeclarations/parserClassDeclaration7.d.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration8.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration9.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclarationIndexSignature1.ts
@@ -1570,6 +1602,7 @@ parser/ecmascript5/EnumDeclarations/parserEnum3.ts
 parser/ecmascript5/EnumDeclarations/parserEnum6.ts
 parser/ecmascript5/EnumDeclarations/parserEnum7.ts
 parser/ecmascript5/EnumDeclarations/parserEnumDeclaration1.ts
+parser/ecmascript5/EnumDeclarations/parserEnumDeclaration2.d.ts
 parser/ecmascript5/EnumDeclarations/parserEnumDeclaration3.ts
 parser/ecmascript5/EnumDeclarations/parserEnumDeclaration5.ts
 parser/ecmascript5/EnumDeclarations/parserEnumDeclaration6.ts
@@ -1607,6 +1640,7 @@ parser/ecmascript5/Expressions/parserUnaryExpression3.ts
 parser/ecmascript5/Expressions/parserUnaryExpression4.ts
 parser/ecmascript5/Expressions/parserUnaryExpression6.ts
 parser/ecmascript5/Expressions/parserUnaryExpression7.ts
+parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration1.d.ts
 parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration3.ts
 parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration4.ts
 parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration5.ts
@@ -1676,6 +1710,7 @@ parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration10.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration11.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration12.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration2.ts
+parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration3.d.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration4.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration6.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration7.ts
@@ -1802,11 +1837,13 @@ parser/ecmascript5/Types/parserTypeQuery2.ts
 parser/ecmascript5/Types/parserTypeQuery5.ts
 parser/ecmascript5/Types/parserTypeQuery6.ts
 parser/ecmascript5/Types/parserTypeQuery7.ts
+parser/ecmascript5/Types/parserTypeQuery8.ts
 parser/ecmascript5/Types/parserTypeQuery9.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration1.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration11.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration2.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration3.ts
+parser/ecmascript5/VariableDeclarations/parserVariableDeclaration4.d.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration7.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration9.ts
 parser/ecmascript5/parserAdditiveExpression1.ts
@@ -1826,6 +1863,7 @@ parser/ecmascript5/parserObjectCreationArrayLiteral4.ts
 parser/ecmascript5/parserOptionalTypeMembers1.ts
 parser/ecmascript5/parserOverloadOnConstants1.ts
 parser/ecmascript5/parserParenthesizedVariableAndFunctionInTernary.ts
+parser/ecmascript5/parserParenthesizedVariableAndParenthesizedFunctionInTernary.ts
 parser/ecmascript5/parserS7.2_A1.5_T2.ts
 parser/ecmascript5/parserS7.3_A1.1_T2.ts
 parser/ecmascript5/parserS7.6.1.1_A1.10.ts
@@ -1912,6 +1950,7 @@ statements/continueStatements/forContinueStatements.ts
 statements/continueStatements/forInContinueStatements.ts
 statements/continueStatements/whileContinueStatements.ts
 statements/for-inStatements/for-inStatementsArray.ts
+statements/for-inStatements/for-inStatementsAsyncIdentifier.ts
 statements/for-inStatements/for-inStatementsDestructuring.ts
 statements/for-inStatements/for-inStatementsDestructuring2.ts
 statements/for-inStatements/for-inStatementsDestructuring3.ts
@@ -1995,6 +2034,8 @@ types/forAwait/types.forAwait.es2018.2.ts
 types/forAwait/types.forAwait.es2018.3.ts
 types/intersection/contextualIntersectionType.ts
 types/intersection/intersectionMemberOfUnionNarrowsCorrectly.ts
+types/intersection/intersectionNarrowing.ts
+types/intersection/intersectionOfUnionNarrowing.ts
 types/intersection/intersectionOfUnionOfUnitTypes.ts
 types/intersection/intersectionTypeEquivalence.ts
 types/intersection/intersectionTypeInference.ts
@@ -2066,6 +2107,7 @@ types/namedTypes/classWithOptionalParameter.ts
 types/namedTypes/genericInstantiationEquivalentToObjectLiteral.ts
 types/namedTypes/optionalMethods.ts
 types/never/neverInference.ts
+types/never/neverIntersectionNotCallable.ts
 types/never/neverType.ts
 types/never/neverUnionIntersection.ts
 types/nonPrimitive/assignObjectToNonPrimitive.ts
@@ -2170,6 +2212,7 @@ types/spread/spreadExcessProperty.ts
 types/spread/spreadNonPrimitive.ts
 types/spread/spreadOverwritesProperty.ts
 types/spread/spreadUnion.ts
+types/spread/spreadUnion4.ts
 types/stringLiteral/stringLiteralCheckedInIf01.ts
 types/stringLiteral/stringLiteralCheckedInIf02.ts
 types/stringLiteral/stringLiteralMatchedInSwitch01.ts
@@ -2265,6 +2308,7 @@ types/typeParameters/typeParameterLists/staticMembersUsingClassTypeParameter.ts
 types/typeParameters/typeParameterLists/typeParameterUsedAsConstraint.ts
 types/typeParameters/typeParameterLists/typeParametersAvailableInNestedScope.ts
 types/typeParameters/typeParameterLists/typeParametersAvailableInNestedScope2.ts
+types/typeParameters/typeParameterLists/typeParametersAvailableInNestedScope3.ts
 types/typeParameters/typeParameterLists/typesWithDuplicateTypeParameters.ts
 types/typeRelationships/assignmentCompatibility/anyAssignabilityInInheritance.ts
 types/typeRelationships/assignmentCompatibility/anyAssignableToEveryType.ts
