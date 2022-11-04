@@ -405,14 +405,24 @@ impl Analyzer<'_, '_> {
                             mark_var_as_truthy = true;
                             ty
                         })
-                        .map_err(|v| {
-                            match v.actual() {
-                                Error::CannotAssignToNonVariable { .. } => {
-                                    skip_right = true;
-                                }
-                                _ => {}
+                        .convert_err(|err| {
+                            skip_right = true;
+                            match err.actual() {
+                                Error::CannotAssignToNonVariable { .. } => match analyzer.scope.vars.get(&i.into()) {
+                                    Some(v) if v.kind == VarKind::Fn => Error::CannotAssignToFunction { span },
+                                    _ => err,
+                                },
+                                Error::NotVariable { .. } => match analyzer.type_of_raw_var(i, TypeOfMode::LValue) {
+                                    Ok(ty) => match ty.normalize() {
+                                        Type::Module(..) => Error::CannotAssignToModule { span },
+                                        Type::ClassDef(..) => Error::CannotAssignToClass { span },
+                                        Type::Enum(..) => Error::CannotAssignToEnum { span },
+                                        _ => err,
+                                    },
+                                    _ => err,
+                                },
+                                _ => err,
                             }
-                            v
                         })
                         .report(&mut analyzer.storage);
 
