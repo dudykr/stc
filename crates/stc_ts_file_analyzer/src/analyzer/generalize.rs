@@ -72,7 +72,6 @@ impl Simplifier<'_> {
 impl Fold<Union> for Simplifier<'_> {
     fn fold(&mut self, mut union: Union) -> Union {
         let should_remove_null_and_undefined = union.types.iter().any(|ty| match ty.normalize() {
-            Type::TypeLit(..) => true,
             Type::Ref(..) => true,
             Type::Function(..) => true,
             _ => false,
