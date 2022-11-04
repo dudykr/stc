@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Class, ClassDef, ClassMember, QueryExpr, Type, TypeLitMetadata};
+use stc_utils::cache::Freeze;
 use swc_common::EqIgnoreSpan;
 use swc_ecma_ast::Accessibility;
 
@@ -129,7 +130,8 @@ impl Analyzer<'_, '_> {
 
         match r {
             Type::Ref(..) => {
-                let r = self.expand_top_ref(opts.span, Cow::Borrowed(r), Default::default())?;
+                let mut r = self.expand_top_ref(opts.span, Cow::Borrowed(r), Default::default())?;
+                r.make_clone_cheap();
                 return self.assign_to_class(data, opts, l, &r);
             }
 
@@ -166,7 +168,7 @@ impl Analyzer<'_, '_> {
                     if let Some(parent) = &rc.def.super_class {
                         let parent = self
                             .instantiate_class(opts.span, &parent)
-                            .context("tried to instanitate class to asssign the super class to a class")?;
+                            .context("tried to instantiated class to assign the super class to a class")?;
                         if self.assign_to_class(data, opts, l, &parent).is_ok() {
                             return Ok(());
                         }
@@ -277,8 +279,8 @@ impl Analyzer<'_, '_> {
                 }
             }
             ClassMember::Method(lm) => {
-                for rmember in r {
-                    match rmember {
+                for r_member in r {
+                    match r_member {
                         ClassMember::Constructor(_) => {}
                         ClassMember::Method(rm) => {
                             //
@@ -374,7 +376,7 @@ impl Analyzer<'_, '_> {
 
         Err(Error::Unimplemented {
             span: opts.span,
-            msg: format!("fine-grained class assignment to lhs memeber: {:#?}", l),
+            msg: format!("fine-grained class assignment to lhs member: {:#?}", l),
         })
     }
 }

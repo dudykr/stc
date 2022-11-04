@@ -1,3 +1,66 @@
+warning: Type
+ --> $DIR/tests/pass/types/builtin/extension/simple-1.ts:7:24
+  |
+7 | export var a: string = x.doStuff();
+  |                        ^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/pass/types/builtin/extension/simple-1.ts:7:24
+  |
+7 | export var a: string = x.doStuff();
+  |                        ^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/types/builtin/extension/simple-1.ts:8:24
+  |
+8 | export var b: string = x.doOtherStuff('hm');
+  |                        ^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/pass/types/builtin/extension/simple-1.ts:8:24
+  |
+8 | export var b: string = x.doOtherStuff('hm');
+  |                        ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: 'hm'
+
+warning: Type
+ --> $DIR/tests/pass/types/builtin/extension/simple-1.ts:9:24
+  |
+9 | export var c: string = x['doStuff']();
+  |                        ^
+  |
+  = note: number
+
+warning: Type
+ --> $DIR/tests/pass/types/builtin/extension/simple-1.ts:9:24
+  |
+9 | export var c: string = x['doStuff']();
+  |                        ^^^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+  --> $DIR/tests/pass/types/builtin/extension/simple-1.ts:10:24
+   |
+10 | export var d: string = x['doOtherStuff']('hm');
+   |                        ^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/types/builtin/extension/simple-1.ts:10:24
+   |
+10 | export var d: string = x['doOtherStuff']('hm');
+   |                        ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: 'hm'
 
   x Type
    ,-[$DIR/tests/pass/types/builtin/extension/simple-1.ts:7:1]

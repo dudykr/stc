@@ -22,7 +22,7 @@ use syn::{
 /// Don't inject `node_id`.
 ///
 ///
-/// # Fields atributes
+/// # Fields attributes
 ///
 /// ## `#[arc]`
 ///
@@ -46,7 +46,7 @@ pub fn define_rnode(module: proc_macro::TokenStream) -> proc_macro::TokenStream 
                 }
                 _ => {}
             },
-            _ => unreachable!("Sttm other than item in rnode definition"),
+            _ => unreachable!("Stmt other than item in rnode definition"),
         }
     }
 
@@ -60,7 +60,7 @@ pub fn define_rnode(module: proc_macro::TokenStream) -> proc_macro::TokenStream 
                     tts.push_tokens(&i);
                 }
             }
-            _ => unreachable!("Sttm other than item in rnode definition"),
+            _ => unreachable!("Stmt other than item in rnode definition"),
         }
     }
 
@@ -101,6 +101,8 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                         ::swc_common::Spanned,
                         ::swc_common::EqIgnoreSpan,
                         ::rnode::Visit,
+                        ::serde::Serialize,
+                        ::serde::Deserialize,
                     )]
                     struct Dummy;
                 })),
@@ -200,7 +202,22 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
 
                     gen.push(Item::Struct(ItemStruct {
                         attrs: take_attrs(q!({
-                            #[derive(Debug, Clone, PartialEq, ::swc_common::Spanned, ::swc_common::EqIgnoreSpan, ::rnode::Visit)]
+                            #[derive(
+                                Debug,
+                                Clone,
+                                PartialEq,
+                                ::swc_common::Spanned,
+                                ::swc_common::EqIgnoreSpan,
+                                ::rnode::Visit,
+                                Debug,
+                                Clone,
+                                PartialEq,
+                                ::swc_common::Spanned,
+                                ::swc_common::EqIgnoreSpan,
+                                ::rnode::Visit,
+                                ::serde::Serialize,
+                                ::serde::Deserialize,
+                            )]
                             struct Dummy;
                         })),
                         vis: syn::Visibility::Public(VisPublic {
@@ -253,13 +270,14 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                 Fields::Unit => return vec![],
             }
         }
-        _ => unreachable!("Item other than sturct or enum in rnode definition"),
+        _ => unreachable!("Item other than struct or enum in rnode definition"),
     }
 
     gen
 }
 
 /// Cretes `(from_orig_arm, to_orig_arm)`
+/// Creates `(from_orig_arm, to_orig_arm)`
 fn handle_enum_variant_fields(nodes_to_convert: &[String], enum_name: Option<&Ident>, variant_name: &Ident, f: &Fields) -> (Arm, Arm) {
     let mut from_orig_body: Vec<Stmt> = vec![];
     let mut to_orig_body: Vec<Stmt> = vec![];
@@ -406,6 +424,7 @@ fn skip_node_id(attrs: &[Attribute]) -> bool {
 }
 
 /// Cretes `(from_orig_arm, to_orig_arm)`
+/// Creates `(from_orig_arm, to_orig_arm)`
 fn handle_struct_fields(attrs: &[Attribute], nodes_to_convert: &[String], struct_name: &Ident, f: &Fields) -> (Arm, Arm) {
     let skip_node_id = skip_node_id(attrs);
 
@@ -601,7 +620,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
     let ref_cell = false;
 
     if arc && ref_cell {
-        panic!("#[arc] and #[ref_cell] cannot be applied to same field because #[arc] implies Rc<Refell<T>>")
+        panic!("#[arc] and #[ref_cell] cannot be applied to same field because #[arc] implies Rc<RefCell<T>>")
     }
 
     // If type can be converted to RNode, do it.

@@ -108,7 +108,7 @@ impl Analyzer<'_, '_> {
             actual_args = vec![];
             for arg in args {
                 if arg.spread.is_some() {
-                    match arg.ty.normalize() {
+                    match arg.ty.normalize_instance() {
                         Type::Tuple(Tuple { elems, .. }) => {
                             actual_args.extend(elems.iter().map(|elem| TypeOrSpread {
                                 span: arg.spread.unwrap(),
@@ -140,7 +140,7 @@ impl Analyzer<'_, '_> {
                     self.infer_type(span, &mut inferred, &p.ty, &arg.ty, opts)?;
                 }
             } else {
-                match p.ty.normalize() {
+                match p.ty.normalize_instance() {
                     Type::Param(param) => {
                         self.infer_type(
                             span,
@@ -265,7 +265,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.prevent_generalization_of_inferred_types(type_params, &mut inferred);
+        self.prevent_generalization_of_inferred_types(type_params, &mut inferred, opts.is_type_ann);
 
         let map = self.finalize_inference(inferred);
 
@@ -595,7 +595,7 @@ impl Analyzer<'_, '_> {
 
                         if !orig.eq_ignore_span(&constraint.as_ref().unwrap()) {
                             print_backtrace();
-                            panic!(
+                            unreachable!(
                                 "Cannot override T in `T extends <literal>`\nOrig: {:?}\nConstraints: {:?}",
                                 orig, constraint
                             )
@@ -1167,15 +1167,18 @@ impl Analyzer<'_, '_> {
                     preserve_params: true,
                     ..self.ctx
                 };
-                let arg = self.with_ctx(ctx).expand(
-                    span,
-                    arg.clone(),
-                    ExpandOpts {
-                        full: true,
-                        expand_union: true,
-                        ..Default::default()
-                    },
-                )?;
+                let arg = self
+                    .with_ctx(ctx)
+                    .expand(
+                        span,
+                        arg.clone(),
+                        ExpandOpts {
+                            full: true,
+                            expand_union: true,
+                            ..Default::default()
+                        },
+                    )?
+                    .cheap();
                 match arg.normalize() {
                     Type::Ref(..) => {}
                     _ => {
@@ -1462,6 +1465,8 @@ impl Analyzer<'_, '_> {
                                             span: *i_span,
                                             value: sym.clone(),
                                             raw: None,
+                                            has_escape: false,
+                                            kind: Default::default(),
                                         }),
                                         metadata: LitTypeMetadata {
                                             common: param.metadata.common,
@@ -1531,7 +1536,8 @@ impl Analyzer<'_, '_> {
                                             let mapped_param_ty = arg_prop_ty
                                                 .clone()
                                                 .foldable()
-                                                .fold_with(&mut SingleTypeParamReplacer { name: &name, to: param_ty });
+                                                .fold_with(&mut SingleTypeParamReplacer { name: &name, to: param_ty })
+                                                .cheap();
 
                                             self.infer_type(span, inferred, &mapped_param_ty, arg_prop_ty, opts)?;
                                         }
@@ -1708,6 +1714,8 @@ impl Analyzer<'_, '_> {
                                                     span: *i_span,
                                                     value: i_sym.clone(),
                                                     raw: None,
+                                                    has_escape: false,
+                                                    kind: Default::default(),
                                                 }),
                                                 metadata: LitTypeMetadata {
                                                     common: param.metadata.common,
@@ -1990,10 +1998,10 @@ impl Analyzer<'_, '_> {
                     }) => match &param.ty {
                         Some(param_ty) => match arg {
                             Type::TypeLit(arg_lit) => {
-                                let revesed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default());
-                                print_type(&"reversed", &self.cm, &revesed_param_ty);
+                                let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).cheap();
+                                print_type(&"reversed", &self.cm, &reversed_param_ty);
 
-                                self.infer_type(span, inferred, &revesed_param_ty, arg, opts)?;
+                                self.infer_type(span, inferred, &reversed_param_ty, arg, opts)?;
 
                                 return Ok(true);
                             }
@@ -2148,7 +2156,7 @@ impl Analyzer<'_, '_> {
 
 /// Handles renaming of the type parameters.
 impl Analyzer<'_, '_> {
-    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult<Type> {
+    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult {
         if self.is_builtin {
             return Ok(ty);
         }
@@ -2512,6 +2520,10 @@ fn is_ok_to_append(prev: &[Type], arg: &Type) -> bool {
             return true;
         }
         if p.is_bool_lit() && arg.is_bool_lit() {
+            return true;
+        }
+
+        if p.clone().generalize_lit().type_eq(&arg.clone().generalize_lit()) {
             return true;
         }
     }

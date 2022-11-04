@@ -58,7 +58,7 @@ mod vars;
 macro_rules! no_ref {
     ($t:expr) => {{
         match $t {
-            Some(Type::Ref(..)) => panic!("cannot store a variable with type `Ref`"),
+            Some(Type::Ref(..)) => unreachable!("cannot store a variable with type `Ref`"),
             _ => {}
         }
     }};
@@ -1302,7 +1302,7 @@ impl Analyzer<'_, '_> {
             if err {
                 let mut done = false;
                 for (_, span) in &**spans {
-                    if kind == VarKind::Param {
+                    if matches!(kind, VarKind::Param | VarKind::Class) {
                         self.storage.report(Error::DuplicateName {
                             name: name.clone(),
                             span: *span,
@@ -1468,6 +1468,7 @@ impl Analyzer<'_, '_> {
                                     Type::Query(..) => {}
                                     // Allow overloading query type.
                                     Type::Function(..) => {}
+                                    Type::ClassDef(..) => return Err(Error::DuplicateName { name: name.clone(), span }),
                                     Type::Union(..) => {
                                         // TODO(kdy1): Check if all types are
                                         // query or
@@ -2450,7 +2451,7 @@ impl Expander<'_, '_, '_> {
                                 .cloned()
                                 .enumerate()
                                 .map(|(idx, mut element)| {
-                                    if let Some(v) = self.analyzer.extends(span, Default::default(), &element.ty, &extends_type) {
+                                    if let Some(v) = self.analyzer.extends(span, &element.ty, &extends_type, Default::default()) {
                                         let ty = if v { true_type } else { false_type };
 
                                         let (unwrapped, ty) = unwrap_type(&ty);
@@ -2484,7 +2485,7 @@ impl Expander<'_, '_, '_> {
                         _ => {}
                     }
 
-                    if let Some(v) = self.analyzer.extends(span, Default::default(), &obj_type, &extends_type) {
+                    if let Some(v) = self.analyzer.extends(span, &obj_type, &extends_type, Default::default()) {
                         let ty = if v { true_type } else { false_type };
                         let (_, mut ty) = unwrap_type(&**ty);
 

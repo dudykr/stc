@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
 use parking_lot::Mutex;
+use serde::{Deserialize, Serialize};
 use stc_visit::Visit;
 use swc_common::{collections::AHashMap, EqIgnoreSpan, FileName, TypeEq};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ModuleId(u32);
 
 impl ModuleId {

@@ -1,3 +1,50 @@
+warning: Type
+ --> $DIR/tests/pass/class/inheritance/methods-from-object-1.ts:4:16
+  |
+4 | export var r = c.toString();
+  |                ^
+  |
+  = note: C
+
+warning: Type
+ --> $DIR/tests/pass/class/inheritance/methods-from-object-1.ts:4:16
+  |
+4 | export var r = c.toString();
+  |                ^^^^^^^^^^^^
+  |
+  = note: string
+
+warning: Type
+ --> $DIR/tests/pass/class/inheritance/methods-from-object-1.ts:5:17
+  |
+5 | export var r2 = c.hasOwnProperty('');
+  |                 ^
+  |
+  = note: C
+
+warning: Type
+ --> $DIR/tests/pass/class/inheritance/methods-from-object-1.ts:5:17
+  |
+5 | export var r2 = c.hasOwnProperty('');
+  |                 ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
+
+warning: Type
+ --> $DIR/tests/pass/class/inheritance/methods-from-object-1.ts:6:24
+  |
+6 | export var o: Object = c;
+  |                        ^
+  |
+  = note: C
+
+warning: Type
+ --> $DIR/tests/pass/class/inheritance/methods-from-object-1.ts:7:21
+  |
+7 | export var o2: {} = c;
+  |                     ^
+  |
+  = note: C
 
   x Type
    ,-[$DIR/tests/pass/class/inheritance/methods-from-object-1.ts:4:1]

@@ -187,11 +187,7 @@ impl Checker {
                             .map(|module| {
                                 RModule::from_orig(
                                     &mut node_id_gen,
-                                    module.fold_with(&mut resolver(
-                                        self.env.shared().marks().unresolved_mark(),
-                                        self.env.shared().marks().top_level_mark(),
-                                        true,
-                                    )),
+                                    module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark())),
                                 )
                             })
                             .collect::<Vec<_>>();
@@ -307,11 +303,7 @@ impl Checker {
                 .module_graph
                 .clone_module(id)
                 .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", id, path));
-            module = module.fold_with(&mut resolver(
-                self.env.shared().marks().unresolved_mark(),
-                self.env.shared().marks().top_level_mark(),
-                true,
-            ));
+            module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
 
             let _panic = panic_ctx!(format!("Span of module = ({:?})", module.span));
 
@@ -398,7 +390,7 @@ impl Load for Checker {
         }
     }
 
-    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, _partial: &ModuleTypeData) -> VResult<Type> {
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, _partial: &ModuleTypeData) -> VResult {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 

@@ -301,6 +301,7 @@ impl AddAssign for CondFacts {
                             *e.get_mut() = Type::new_union(DUMMY_SP, vec![prev, v]).cheap();
                         }
                     };
+                    e.get_mut().fix();
                     e.get_mut().make_clone_cheap();
                 }
                 Entry::Vacant(e) => {
@@ -407,11 +408,14 @@ impl Analyzer<'_, '_> {
 
         if ends_with_ret {
             self.cur_facts.true_facts += false_facts;
+            return Ok(());
         }
 
         if cons_ends_with_unreachable {
             if let Some(true) = alt_ends_with_unreachable {
                 self.ctx.in_unreachable = true;
+            } else {
+                self.cur_facts.true_facts += false_facts;
             }
         }
 
@@ -486,7 +490,7 @@ impl Analyzer<'_, '_> {
                         break;
                     }
 
-                    match self.extends(span, Default::default(), &b, ty) {
+                    match self.extends(span, &b, ty, Default::default()) {
                         Some(true) => {
                             // Remove ty.
                             continue 'outer;
@@ -517,7 +521,7 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
 
-                match self.extends(span, Default::default(), &ty, b) {
+                match self.extends(span, &ty, b, Default::default()) {
                     Some(true) => {
                         // Remove ty.
                         continue 'outer;
@@ -911,6 +915,7 @@ impl Analyzer<'_, '_> {
                                 // Rest element is special.
                                 let type_for_rest_arg = self
                                     .get_lefting_elements(None, ty, i)
+                                    .get_rest_elements(None, ty, i)
                                     .context("tried to get lefting elements of an iterator to assign using a rest pattern")?;
 
                                 self.try_assign_pat_with_opts(
@@ -1021,7 +1026,13 @@ impl Analyzer<'_, '_> {
                                     self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
 
-                                RPat::Expr(_) => {
+                                RPat::Expr(expr) => {
+                                    // { ...obj?.a["b"] }
+                                    use crate::analyzer::expr::optional_chaining::is_obj_opt_chaining;
+                                    if is_obj_opt_chaining(&expr) {
+                                        return Err(Error::InvalidRestPatternInOptionalChain { span: r.span });
+                                    }
+
                                     self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
 

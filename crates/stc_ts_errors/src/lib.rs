@@ -56,7 +56,7 @@ impl Errors {
         if 5000 <= code && code < 6000 {
             // This is error for invalid options.
         } else if err.span().is_dummy() {
-            panic!("Error with a dummy span found: {:?}", err)
+            unreachable!("Error with a dummy span found: {:?}", err)
         }
     }
 }
@@ -138,7 +138,7 @@ pub enum Error {
     },
 
     /// TS2564
-    ClassPropNotInistalized {
+    ClassPropNotInitialized {
         span: Span,
     },
 
@@ -187,12 +187,12 @@ pub enum Error {
     },
 
     /// TS2411
-    ClassMemeberNotCompatibleWithStringIndexSignature {
+    ClassMemberNotCompatibleWithStringIndexSignature {
         span: Span,
     },
 
     /// TS2412
-    ClassMemeberNotCompatibleWithNumericIndexSignature {
+    ClassMemberNotCompatibleWithNumericIndexSignature {
         span: Span,
     },
 
@@ -226,6 +226,31 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2777
+    InvalidOperandOfIncDecOptionalProp {
+        span: Span,
+    },
+
+    /// TS2778
+    InvalidRestPatternInOptionalChain {
+        span: Span,
+    },
+
+    /// TS2779
+    InvalidLhsOfAssignOptionalProp {
+        span: Span,
+    },
+
+    /// TS2780
+    InvalidRestPatternInForIn {
+        span: Span,
+    },
+
+    /// TS2781
+    InvalidRestPatternInForOf {
+        span: Span,
+    },
+
     /// TS2501
     BindingPatNotAllowedInRestPatArg {
         span: Span,
@@ -238,6 +263,11 @@ pub enum Error {
 
     /// TS2754
     SuperCannotUseTypeArgs {
+        span: Span,
+    },
+
+    /// TS7009
+    TargetLacksConstructSignature {
         span: Span,
     },
 
@@ -257,7 +287,7 @@ pub enum Error {
     },
 
     /// TS2392
-    DuplciateConstructor {
+    DuplicateConstructor {
         span: Span,
     },
 
@@ -339,6 +369,11 @@ pub enum Error {
 
     /// TS18013
     CannotAccessPrivatePropertyFromOutside {
+        span: Span,
+    },
+
+    /// TS18030
+    OptionalChainCannotContainPrivateIdentifier {
         span: Span,
     },
 
@@ -550,7 +585,7 @@ pub enum Error {
     /// TS2356
     TypeInvalidForUpdateArg {
         span: Span,
-        /// Type of the arugment.
+        /// Type of the arguments.
         ty: Box<Type>,
     },
 
@@ -1422,7 +1457,7 @@ impl Error {
             // const.
             2448 => 2372,
 
-            // ===== ===== ===== For convinience ===== ===== =====
+            // ===== ===== ===== For convenience ===== ===== =====
 
             // TS2461: Not an array type.
             // TS2488: Need Symbol.iterator
@@ -1454,7 +1489,7 @@ impl Error {
             Error::Errors { .. } | Error::DebugContext { .. } => {}
             _ => {
                 if self.span().is_dummy() {
-                    panic!("Error with dummy span found(context: {}): {:#?}", context, self)
+                    unreachable!("Error with dummy span found(context: {}): {:#?}", context, self)
                 }
             }
         }
@@ -1732,6 +1767,8 @@ impl Error {
 
             Error::CannotAccessPrivatePropertyFromOutside { .. } => 18013,
 
+            Error::OptionalChainCannotContainPrivateIdentifier { .. } => 18030,
+
             Error::TypeAnnOnLhsOfForInLoops { .. } => 2404,
             Error::TypeAnnOnLhsOfForOfLoops { .. } => 2483,
 
@@ -1767,7 +1804,7 @@ impl Error {
 
             Error::ModuleNotFound { .. } => 2307,
 
-            Error::DuplciateConstructor { .. } => 2392,
+            Error::DuplicateConstructor { .. } => 2392,
 
             Error::DuplicateFnImpl { .. } => 2393,
 
@@ -1793,9 +1830,9 @@ impl Error {
 
             Error::AssignFailedBecauseTupleLengthDiffers { .. } => 2322,
 
-            Error::ClassMemeberNotCompatibleWithStringIndexSignature { .. } => 2411,
+            Error::ClassMemberNotCompatibleWithStringIndexSignature { .. } => 2411,
 
-            Error::ClassMemeberNotCompatibleWithNumericIndexSignature { .. } => 2412,
+            Error::ClassMemberNotCompatibleWithNumericIndexSignature { .. } => 2412,
 
             Error::AbstractAndConcreteIsMixed { .. } => 2512,
 
@@ -1809,6 +1846,16 @@ impl Error {
 
             Error::SuperInNestedFunction { .. } => 2337,
 
+            Error::InvalidOperandOfIncDecOptionalProp { .. } => 2777,
+
+            Error::InvalidRestPatternInOptionalChain { .. } => 2778,
+
+            Error::InvalidLhsOfAssignOptionalProp { .. } => 2779,
+
+            Error::InvalidRestPatternInForIn { .. } => 2780,
+
+            Error::InvalidRestPatternInForOf { .. } => 2781,
+
             Error::ThisUsedBeforeCallingSuper { .. } => 17009,
 
             Error::SuperUsedBeforeCallingSuper { .. } => 17011,
@@ -1821,7 +1868,7 @@ impl Error {
 
             Error::DefinedWitHAccessorInSuper { .. } => 2610,
 
-            Error::ClassPropNotInistalized { .. } => 2564,
+            Error::ClassPropNotInitialized { .. } => 2564,
 
             Error::VarMayNotBeInitialized { .. } => 2454,
 
@@ -1848,6 +1895,8 @@ impl Error {
             Error::VarDeclNotCompatible { .. } => 2403,
 
             Error::InvalidInterfaceInheritance { .. } => 2430,
+
+            Error::TargetLacksConstructSignature { .. } => 7009,
 
             _ => 0,
         }

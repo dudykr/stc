@@ -225,15 +225,6 @@ pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
             },
             {
                 impl Lib {
-                    pub fn load(lib_str: &str) -> Vec<Self> {
-                        let lib: Self = match lib_str.parse() {
-                            Ok(lib) => lib,
-                            Err(..) => return vec![],
-                        };
-
-                        lib.load_deps()
-                    }
-
                     fn load_deps(self) -> Vec<Self> {
                         use std::collections::HashSet;
                         let mut libs = indexmap::IndexSet::<Self>::default();

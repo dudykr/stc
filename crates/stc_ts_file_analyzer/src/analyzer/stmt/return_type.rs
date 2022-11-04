@@ -17,7 +17,13 @@ use swc_ecma_ast::*;
 use tracing::{debug, instrument};
 
 use crate::{
-    analyzer::{assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, util::ResultExt, Analyzer, Ctx},
+    analyzer::{
+        assign::AssignOpts,
+        expr::{GetIteratorOpts, TypeOfMode},
+        scope::ExpandOpts,
+        util::ResultExt,
+        Analyzer, Ctx,
+    },
     ty::{Array, Type, TypeExt},
     validator,
     validator::ValidateWith,
@@ -168,7 +174,8 @@ impl Analyzer<'_, '_> {
 
                 if types.is_empty() {
                     if let Some(declared) = self.scope.declared_return_type().cloned() {
-                        if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true) {
+                        // TODO(kdy1): Change this to `get_iterable_element_type`
+                        if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true, Default::default()) {
                             types.push(el_ty.into_owned());
                         }
                     }
@@ -286,6 +293,7 @@ impl Analyzer<'_, '_> {
                     &declared,
                     ret_ty,
                 )
+                .context("tried to assign return type")
                 .report(&mut self.storage);
             }
         }
@@ -427,9 +435,15 @@ impl Analyzer<'_, '_> {
             let ty = res?;
 
             let item_ty = if e.delegate {
-                self.get_iterator_element_type(e.span, Cow::Owned(ty), false)
-                    .context("tried to convert argument as an iterator for delegating yield")?
-                    .into_owned()
+                if self.ctx.in_async {
+                    self.get_async_iterator_element_type(e.span, Cow::Owned(ty))
+                        .context("tried to convert argument as an async iterator for delegating yield")?
+                        .into_owned()
+                } else {
+                    self.get_iterator_element_type(e.span, Cow::Owned(ty), false, GetIteratorOpts { ..Default::default() })
+                        .context("tried to convert argument as an iterator for delegating yield")?
+                        .into_owned()
+                }
             } else {
                 ty
             }
@@ -437,7 +451,7 @@ impl Analyzer<'_, '_> {
 
             if let Some(declared) = self.scope.declared_return_type().cloned() {
                 match self
-                    .get_iterator_element_type(span, Cow::Owned(declared), true)
+                    .get_iterator_element_type(span, Cow::Owned(declared), true, Default::default())
                     .map(Cow::into_owned)
                     .map(Freeze::freezed)
                 {

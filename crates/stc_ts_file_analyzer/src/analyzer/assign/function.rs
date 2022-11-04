@@ -17,6 +17,7 @@ use tracing::debug;
 use crate::{
     analyzer::{
         assign::{AssignData, AssignOpts},
+        expr::GetIteratorOpts,
         generic::InferTypeOpts,
         Analyzer,
     },
@@ -188,7 +189,7 @@ impl Analyzer<'_, '_> {
                         .context("tried to expand type parameters as a step of function assignemnt")?;
                     let mut new_r_ret_ty = self
                         .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
-                        .context("tried to expand return type of rhs as a step of function assignemnt")?;
+                        .context("tried to expand return type of rhs as a step of function assignment")?;
 
                     new_r_params.make_clone_cheap();
                     new_r_ret_ty.make_clone_cheap();
@@ -243,7 +244,7 @@ impl Analyzer<'_, '_> {
                     .context("tried to expand type parameters of lhs as a step of function assignemnt")?;
                 let mut new_l_ret_ty = self
                     .expand_type_params(&map, l_ret_ty.cloned(), Default::default())
-                    .context("tried to expand return type of lhs as a step of function assignemnt")?;
+                    .context("tried to expand return type of lhs as a step of function assignment")?;
 
                 new_l_params.make_clone_cheap();
                 new_l_ret_ty.make_clone_cheap();
@@ -297,20 +298,20 @@ impl Analyzer<'_, '_> {
 
                 let new_l_params = self
                     .expand_type_params(&map, l_params.to_vec(), Default::default())
-                    .context("tried to expand type parameters of lhs as a step of function assignemnt")?
+                    .context("tried to expand type parameters of lhs as a step of function assignment")?
                     .freezed();
                 let new_l_ret_ty = self
                     .expand_type_params(&map, l_ret_ty.cloned(), Default::default())
-                    .context("tried to expand return type of lhs as a step of function assignemnt")?
+                    .context("tried to expand return type of lhs as a step of function assignment")?
                     .freezed();
 
                 let new_r_params = self
                     .expand_type_params(&map, r_params.to_vec(), Default::default())
-                    .context("tried to expand type parameters of rhs as a step of function assignemnt")?
+                    .context("tried to expand type parameters of rhs as a step of function assignment")?
                     .freezed();
                 let new_r_ret_ty = self
                     .expand_type_params(&map, r_ret_ty.cloned(), Default::default())
-                    .context("tried to expand return type of rhs as a step of function assignemnt")?
+                    .context("tried to expand return type of rhs as a step of function assignment")?
                     .freezed();
 
                 let _panic_ctx = debug_ctx!(format!("new_r_params = {:?}", new_r_params));
@@ -334,6 +335,24 @@ impl Analyzer<'_, '_> {
             _ => (r_params, r_ret_ty),
         };
 
+        // TypeScript functions are bivariant if strict_function_types is false.
+        if !self.env.rule().strict_function_types || opts.is_params_of_method_definition {
+            if self
+                .assign_params(
+                    data,
+                    AssignOpts {
+                        is_params_of_method_definition: false,
+                        ..opts
+                    },
+                    &r_params,
+                    &l_params,
+                )
+                .is_ok()
+            {
+                return Ok(());
+            }
+        }
+
         // () => void
         //
         // is assignable to
@@ -344,6 +363,16 @@ impl Analyzer<'_, '_> {
         if r_params.len() != 0 {
             self.assign_params(data, opts, l_params, &r_params)
                 .context("tried to assign parameters of a function to parameters of another function")?;
+            self.assign_params(
+                data,
+                AssignOpts {
+                    is_params_of_method_definition: false,
+                    ..opts
+                },
+                l_params,
+                r_params,
+            )
+            .context("tried to assign parameters of a function to parameters of another function")?;
         }
 
         if let Some(l_ret_ty) = l_ret_ty {
@@ -355,6 +384,7 @@ impl Analyzer<'_, '_> {
                     for_overload: false,
                     allow_assignment_of_void: Some(opts.allow_assignment_of_void.unwrap_or(true)),
                     allow_assignment_to_void: !opts.for_overload,
+                    is_params_of_method_definition: false,
                     ..opts
                 };
 
@@ -379,7 +409,16 @@ impl Analyzer<'_, '_> {
     /// b = a; // error
     /// ```
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn assign_to_function(&mut self, data: &mut AssignData, opts: AssignOpts, lt: &Type, l: &Function, r: &Type) -> VResult<()> {
+    pub(super) fn assign_to_function(
+        &mut self,
+        data: &mut AssignData,
+        mut opts: AssignOpts,
+        lt: &Type,
+        l: &Function,
+        r: &Type,
+    ) -> VResult<()> {
+        opts.is_params_of_method_definition = false;
+
         let span = opts.span;
         let r = r.normalize();
 
@@ -632,13 +671,12 @@ impl Analyzer<'_, '_> {
                     .normalize(Some(span), Cow::Borrowed(&l.ty), Default::default())
                     .context("tried to normalize lhs")?;
 
-                match l_ty.normalize() {
-                    Type::Array(l_arr) => {
-                        if let Ok(()) = self.assign_with_opts(data, opts, &l_arr.elem_type, &r.ty) {
-                            return Ok(());
-                        }
+                let l_elem_type = self.get_iterator_element_type(span, l_ty, false, GetIteratorOpts { ..Default::default() });
+
+                if let Ok(l_elem_type) = l_elem_type {
+                    if let Ok(()) = self.assign_with_opts(data, opts, &l_elem_type, &r.ty) {
+                        return Ok(());
                     }
-                    _ => {}
                 }
             }
             _ => {}
@@ -665,12 +703,12 @@ impl Analyzer<'_, '_> {
                 _ => true,
             };
 
-        let res = if reverse {
-            self.assign_with_opts(data, AssignOpts { ..opts }, &r_ty, &l_ty)
-                .context("tried to assign the type of a parameter to another (reversed)")
-        } else {
+        let res = if opts.for_overload {
             self.assign_with_opts(data, AssignOpts { ..opts }, &l_ty, &r_ty)
                 .context("tried to assign the type of a parameter to another")
+        } else {
+            self.assign_with_opts(data, AssignOpts { ..opts }, &r_ty, &l_ty)
+                .context("tried to assign the type of a parameter to another (reversed due to variance)")
         };
 
         res.convert_err(|err| match &err {

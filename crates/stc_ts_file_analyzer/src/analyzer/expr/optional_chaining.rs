@@ -60,7 +60,11 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            ROptChainBase::Call(ce) => ce.validate_with_args(self, type_ann),
+            ROptChainBase::Call(ce) => {
+                let ty = ce.validate_with_args(self, type_ann)?;
+
+                Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
+            }
         }
     }
 }
@@ -103,7 +107,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(super) fn is_obj_opt_chaining(obj: &RExpr) -> bool {
+pub(crate) fn is_obj_opt_chaining(obj: &RExpr) -> bool {
     match obj {
         RExpr::OptChain(..) => true,
         RExpr::Member(RMemberExpr { obj, .. }) => is_obj_opt_chaining(&obj),

@@ -57,7 +57,7 @@ pub(crate) struct AssignOpts {
     /// ```
     pub allow_unknown_type: bool,
 
-    /// Allow assignmnet to [Type::Param].
+    /// Allow assignment to [Type::Param].
     pub allow_assignment_to_param: bool,
 
     pub allow_assignment_of_param: bool,
@@ -83,6 +83,8 @@ pub(crate) struct AssignOpts {
 
     /// If `true`, assignment will success if rhs is `void`.
     /// [None] means `false`.
+    ///
+    /// This is [Option] because it's required.
     pub allow_assignment_of_void: Option<bool>,
 
     /// If `true`, assignment will success if lhs is `void`.
@@ -145,6 +147,9 @@ pub(crate) struct AssignOpts {
     pub infer_type_params_of_left: bool,
 
     pub is_assigning_to_class_members: bool,
+
+    // Method definitions are bivariant (method shorthand)
+    pub is_params_of_method_definition: bool,
 }
 
 #[derive(Default)]
@@ -318,7 +323,16 @@ impl Analyzer<'_, '_> {
         }
 
         match op {
-            op!("+=") => {}
+            op!("+=") => {
+                if rhs.is_str() {
+                    return Err(Error::InvalidOpAssign {
+                        span,
+                        op,
+                        lhs: box l.into_owned().clone(),
+                        rhs: box r.into_owned().clone(),
+                    });
+                }
+            }
 
             op!("??=") | op!("||=") | op!("&&=") => {
                 return self
@@ -341,12 +355,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::InvalidOpAssign {
-            span,
-            op,
-            lhs: box l.into_owned().clone(),
-            rhs: box r.into_owned().clone(),
-        })
+        Err(Error::AssignOpCannotBeApplied { span, op })
     }
 
     /// Assign `right` to `left`. You can just use default for [AssignData].
@@ -363,10 +372,11 @@ impl Analyzer<'_, '_> {
     }
 
     /// Assign `right` to `left`. You can just use default for [AssignData].
-    pub(crate) fn assign_with_opts(&mut self, data: &mut AssignData, opts: AssignOpts, left: &Type, right: &Type) -> VResult<()> {
+    pub(crate) fn assign_with_opts(&mut self, data: &mut AssignData, mut opts: AssignOpts, left: &Type, right: &Type) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
+        opts.is_params_of_method_definition = false;
 
         left.assert_valid();
         right.assert_valid();
@@ -467,9 +477,11 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Borrowed(ty))
     }
 
-    fn assign_inner(&mut self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
+    fn assign_inner(&mut self, data: &mut AssignData, left: &Type, right: &Type, mut opts: AssignOpts) -> VResult<()> {
         left.assert_valid();
         right.assert_valid();
+
+        opts.is_params_of_method_definition = false;
 
         let l = dump_type_as_string(&self.cm, &left);
         let r = dump_type_as_string(&self.cm, &right);
@@ -512,7 +524,7 @@ impl Analyzer<'_, '_> {
         let span = opts.span;
 
         if !self.is_builtin && span.is_dummy() {
-            panic!("cannot assign with dummy span")
+            unreachable!("cannot assign with dummy span")
         }
 
         let _tracing = if cfg!(debug_assertions) {
@@ -1193,6 +1205,13 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Intersection(Intersection { types, .. }) => {
+                // Filter out `never` types
+                if let Some(new) = self.normalize_intersection_types(span, types, NormalizeTypeOpts { ..Default::default() })? {
+                    return self
+                        .assign_inner(data, to, &new, opts)
+                        .context("tried to assign a normalized intersection type to another type");
+                }
+
                 let errors = types
                     .iter()
                     .map(|rhs| {
@@ -1444,6 +1463,7 @@ impl Analyzer<'_, '_> {
                             //
                             let rhs_el = self
                                 .get_iterator_element_type(span, r, false)
+                                .get_iterator_element_type(span, r, false, Default::default())
                                 .context("tried to get the element type of an iterator assignment")?;
 
                             self.assign_with_opts(
@@ -1933,9 +1953,12 @@ impl Analyzer<'_, '_> {
 
             Type::Function(lf) => match rhs {
                 Type::Function(..) | Type::TypeLit(..) | Type::Interface(..) => {
-                    return self
-                        .assign_to_function(data, opts, to, lf, rhs)
-                        .context("tried to assign to a function type")
+                    return self.assign_to_function(data, opts, to, lf, rhs).with_context(|| {
+                        format!(
+                            "tried to assign to a function type: {}",
+                            dump_type_as_string(&self.cm, &Type::Function(lf.clone()))
+                        )
+                    })
                 }
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
@@ -1975,16 +1998,16 @@ impl Analyzer<'_, '_> {
                 //
                 match *rhs.normalize() {
                     Type::Tuple(Tuple { elems: ref rhs_elems, .. }) => {
+                        // TODO: Handle Type::Rest
+
                         if elems.len() < rhs_elems.len() {
                             return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
                         }
 
+                        // TODO: Handle Type::Rest
+
                         if elems.len() > rhs_elems.len() {
                             return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
-                        }
-
-                        if !elems.is_empty() && rhs_elems.is_empty() {
-                            fail!();
                         }
 
                         let mut errors = vec![];

@@ -121,7 +121,7 @@ impl Analyzer<'_, '_> {
                 callee,
                 ExtractKind::Call,
                 args,
-                type_args.as_deref(),
+                type_args.as_ref(),
                 type_ann.as_deref(),
             )
         })
@@ -153,7 +153,7 @@ impl Analyzer<'_, '_> {
                 callee,
                 ExtractKind::New,
                 args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
-                type_args.as_deref(),
+                type_args.as_ref(),
                 type_ann.as_deref(),
             )
         })
@@ -193,7 +193,7 @@ impl Analyzer<'_, '_> {
                 &e.tag,
                 ExtractKind::Call,
                 args.as_ref(),
-                e.type_params.as_deref(),
+                e.type_params.as_ref(),
                 Default::default(),
             )
         });
@@ -341,6 +341,18 @@ impl Analyzer<'_, '_> {
                     },
                     computed,
                 )?;
+            }
+
+            RExpr::Member(RMemberExpr {
+                obj: RExprOrSuper::Expr(ref obj),
+                ref prop,
+                computed,
+                ..
+            }) => {
+                let prop = self.validate_key(prop, computed)?;
+
+                // Validate object
+                let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
                 {
                     // Handle toString()
 
@@ -354,7 +366,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 // Handle member expression
-                let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
                 obj_type.make_clone_cheap();
 
                 let obj_type = match *obj_type.normalize() {
@@ -1197,7 +1208,7 @@ impl Analyzer<'_, '_> {
                             self.scope.is_call_arg_count_unknown = true;
 
                             let elem_type = self
-                                .get_iterator_element_type(arg.span(), arg_ty, false)
+                                .get_iterator_element_type(arg.span(), arg_ty, false, Default::default())
                                 .context("tried to get element type of an iterator for spread syntax in arguments")?;
 
                             new_arg_types.push(TypeOrSpread {
@@ -1426,6 +1437,10 @@ impl Analyzer<'_, '_> {
                         }),
                         metadata: Default::default(),
                     }))
+                }
+
+                Type::Function(..) if self.rule().no_implicit_any => {
+                    return Err(Error::TargetLacksConstructSignature { span });
                 }
 
                 _ => {}
@@ -1765,7 +1780,7 @@ impl Analyzer<'_, '_> {
             .context("tried to normalize to extract callee")?;
 
         // TODO(kdy1): Check if signature match.
-        match callee.normalize() {
+        match callee.normalize_instance() {
             Type::Intersection(i) => {
                 let candidates = i
                     .types
@@ -1950,7 +1965,9 @@ impl Analyzer<'_, '_> {
             return Ok(v);
         }
 
-        dbg!();
+        if callee.is_any() {
+            return Ok(Type::any(span, Default::default()));
+        }
 
         match callee.normalize() {
             Type::ClassDef(cls) if kind == ExtractKind::New => {
@@ -2053,12 +2070,12 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let min_param: usize = params.iter().map(|v| &v.pat).map(count_required_pat).sum();
+        let mut min_param: usize = params.iter().map(|v| &v.pat).map(count_required_pat).sum();
 
         let mut max_param = Some(params.len());
-        for param in params {
+        for (index, param) in params.iter().enumerate() {
             match &param.pat {
-                RPat::Rest(..) => match param.ty.normalize() {
+                RPat::Rest(..) => match param.ty.normalize_instance() {
                     Type::Tuple(param_ty) => {
                         for elem in &param_ty.elems {
                             match elem.ty.normalize() {
@@ -2109,8 +2126,12 @@ impl Analyzer<'_, '_> {
                         )
                         .is_ok()
                 {
-                    // Reduce min_params if the type of parameter accepts void.
-                    continue;
+                    // void is the last parameter, reduce min_params.
+                    //
+                    // function foo<A>(a: A, b: void) {}
+                    if index == params.len() - 1 {
+                        min_param -= 1;
+                    }
                 }
             }
         }
@@ -2144,6 +2165,16 @@ impl Analyzer<'_, '_> {
             }
 
             let span = args.get(min_param).map(|arg| arg.expr.span()).unwrap_or(span);
+            // function foo(a) {}
+            // foo(1, 2, 3)
+            //        ^^^^
+            let span = args
+                .get(min_param)
+                .map(|arg| match args.last() {
+                    Some(to) => arg.expr.span().to(to.expr.span()),
+                    None => arg.expr.span(),
+                })
+                .unwrap_or(span);
 
             return Err(Error::ExpectedNArgsButGotM {
                 span,
@@ -2384,7 +2415,10 @@ impl Analyzer<'_, '_> {
                 &params,
                 &spread_arg_types,
                 None,
-                InferTypeOpts { ..Default::default() },
+                InferTypeOpts {
+                    is_type_ann: type_ann.is_some(),
+                    ..Default::default()
+                },
             )?;
             debug!("Inferred types:\n{}", dump_type_map(&self.cm, &inferred.types));
             warn!("Failed to infer types of {:?}", inferred.errored);
@@ -2565,6 +2599,7 @@ impl Analyzer<'_, '_> {
                 preserve_ret_ty: true,
                 ..self.ctx
             };
+            ret_ty.fix();
             let ret_ty = self.with_ctx(ctx).expand(span, ret_ty, Default::default())?;
 
             for item in &expanded_param_types {
@@ -3033,7 +3068,7 @@ impl Analyzer<'_, '_> {
                     Type::Union(..) | Type::Interface(..) => {}
 
                     _ => {
-                        if let Some(v) = self.extends(span, Default::default(), &orig_ty, &new_ty) {
+                        if let Some(v) = self.extends(span, &orig_ty, &new_ty, Default::default()) {
                             if v {
                                 match orig_ty.normalize() {
                                     Type::ClassDef(def) => {
@@ -3057,7 +3092,7 @@ impl Analyzer<'_, '_> {
 
                 let mut upcasted = false;
                 for ty in orig_ty.iter_union().flat_map(|ty| ty.iter_union()) {
-                    match self.extends(span, Default::default(), &new_ty, &ty) {
+                    match self.extends(span, &new_ty, &ty, Default::default()) {
                         Some(true) => {
                             upcasted = true;
                             new_types.push(ty.clone());

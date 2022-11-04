@@ -1,0 +1,52 @@
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:6
+   |
+11 | o?.x(d = 1);
+   |      ^^^^^
+   |
+   = note: 1
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1
+   |
+11 | o?.x(d = 1);
+   | ^
+   |
+   = note: (undefined | {
+               [key: string]: any;
+               [key: number]: any;
+               (...args: any[]) : any;
+           })
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1
+   |
+11 | o?.x(d = 1);
+   | ^^^^
+   |
+   = note: (undefined | any)
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1
+   |
+11 | o?.x(d = 1);
+   | ^^^^^^^^^^^
+   |
+   = note: any
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:12:1
+   |
+12 | d.toString();
+   | ^
+   |
+   = note: number
+
+warning: Type
+  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:12:1
+   |
+12 | d.toString();
+   | ^^^^^^^^^^^^
+   |
+   = note: string
+

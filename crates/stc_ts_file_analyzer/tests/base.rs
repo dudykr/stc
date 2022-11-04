@@ -45,7 +45,15 @@ fn get_env() -> Env {
     libs.sort();
     libs.dedup();
 
-    Env::simple(Rule { ..Default::default() }, EsVersion::latest(), ModuleConfig::None, &libs)
+    Env::simple(
+        Rule {
+            strict_function_types: true,
+            ..Default::default()
+        },
+        EsVersion::latest(),
+        ModuleConfig::None,
+        &libs,
+    )
 }
 
 fn validate(input: &Path) -> Vec<StcError> {
@@ -317,8 +325,8 @@ fn invoke_tsc(input: &Path) -> Vec<TscError> {
 
 /// If `for_error` is false, this function will run as type dump mode.
 fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
-    let fname = file_name.display().to_string();
-    println!("{}", fname);
+    let filename = file_name.display().to_string();
+    println!("{}", filename);
 
     let res = testing::Tester::new()
         .print_errors(|cm, handler| -> Result<(), _> {
@@ -362,11 +370,16 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
                 if !line.starts_with("//@") {
                     continue;
                 }
-                let line = &line["//@".len()..];
+                let line = &line["//@".len()..].trim();
                 if line.starts_with("strict:") {
-                    let value = line["strict:".len()..].parse::<bool>().unwrap();
+                    let value = line["strict:".len()..].trim().parse::<bool>().unwrap();
                     rule.strict_function_types = value;
                     rule.strict_null_checks = value;
+                    continue;
+                }
+                if line.to_ascii_lowercase().starts_with(&"allowUnreachableCode:".to_ascii_lowercase()) {
+                    let value = line["allowUnreachableCode:".len()..].trim().parse::<bool>().unwrap();
+                    rule.allow_unreachable_code = value;
                     continue;
                 }
 
@@ -391,7 +404,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
 
             let lexer = Lexer::new(
                 Syntax::Typescript(TsConfig {
-                    tsx: fname.contains("tsx"),
+                    tsx: filename.contains("tsx"),
                     decorators: true,
                     ..Default::default()
                 }),
@@ -453,7 +466,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
             return None;
         }
 
-        panic!("Failed to validate.\n{}\n{}", res, file_name.display())
+        panic!("Failed to validate.\n{}\n{}", res.replace("$DIR/", "/"), file_name.display())
     } else {
         return Some(res);
     }

@@ -1,0 +1,61 @@
+warning: Type
+ --> $DIR/tests/pass/types/tuple/widening/1.ts:2:24
+  |
+2 |     let intermediate = bar();
+  |                        ^^^
+  |
+  = note: typeof bar
+
+warning: Type
+ --> $DIR/tests/pass/types/tuple/widening/1.ts:2:24
+  |
+2 |     let intermediate = bar();
+  |                        ^^^^^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/pass/types/tuple/widening/1.ts:3:20
+  |
+3 |     intermediate = [""];
+  |                    ^^^^
+  |
+  = note: [""]
+
+warning: Type
+ --> $DIR/tests/pass/types/tuple/widening/1.ts:3:5
+  |
+3 |     intermediate = [""];
+  |     ^^^^^^^^^^^^^^^^^^^
+  |
+  = note: [""]
+
+warning: Type
+ --> $DIR/tests/pass/types/tuple/widening/1.ts:4:13
+  |
+4 |     return [undefined];
+  |             ^^^^^^^^^
+  |
+  = note: undefined
+
+warning: Type
+ --> $DIR/tests/pass/types/tuple/widening/1.ts:4:12
+  |
+4 |     return [undefined];
+  |            ^^^^^^^^^^^
+  |
+  = note: [any]
+
+warning: Type
+ --> $DIR/tests/pass/types/tuple/widening/1.ts:1:31
+  |
+1 |   export var foo: () => [any] = function bar() {
+  |  _______________________________^
+2 | |     let intermediate = bar();
+3 | |     intermediate = [""];
+4 | |     return [undefined];
+5 | | };
+  | |_^
+  |
+  = note: () => [any]
+

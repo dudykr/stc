@@ -1,10 +1,12 @@
 #!/bin/bash
 set -eu
-cat tests/conformance.pass.txt | awk NF | sort | uniq | awk '{$1=$1};1' | uniq | sort > tests/conformance_sorted.txt
-mv tests/conformance_sorted.txt tests/conformance.pass.txt
 
-cat tests/compiler.pass.txt | awk NF | sort | uniq | awk '{$1=$1};1' | uniq | sort > tests/compiler_sorted.txt
-mv tests/compiler_sorted.txt tests/compiler.pass.txt
+function sortFile {
+    cat $1 | awk NF | sort | uniq | awk '{$1=$1};1' | uniq | sort > tests/tmp.txt
+    mv tests/tmp.txt $1
+}
 
-cat tests/tsc.wip.txt | awk NF | sort | uniq | awk '{$1=$1};1' | uniq | sort > tests/tmp.txt
-mv tests/tmp.txt tests/tsc.wip.txt
+sortFile tests/conformance.pass.txt
+sortFile tests/compiler.pass.txt
+sortFile tests/tsc.wip.txt
+sortFile tests/tsc.ignored.txt

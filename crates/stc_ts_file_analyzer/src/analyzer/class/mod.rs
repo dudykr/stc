@@ -93,7 +93,7 @@ impl Analyzer<'_, '_> {
                             )
                             .is_err()
                         {
-                            self.storage.report(Error::ClassPropNotInistalized { span })
+                            self.storage.report(Error::ClassPropNotInitialized { span })
                         }
                     }
                 }
@@ -1630,7 +1630,7 @@ impl Analyzer<'_, '_> {
                                 });
 
                                 if has_class_in_super {
-                                    child.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
+                                    child.prepend_stmts.push(RStmt::Decl(RDecl::Var(RVarDecl {
                                         node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
                                         kind: VarDeclKind::Const,
@@ -1640,7 +1640,7 @@ impl Analyzer<'_, '_> {
                                             span: i.span,
                                             name: RPat::Ident(RBindingIdent {
                                                 node_id: NodeId::invalid(),
-                                                type_ann: Some(box RTsTypeAnn {
+                                                type_ann: Some(RTsTypeAnn {
                                                     node_id: NodeId::invalid(),
                                                     span: DUMMY_SP,
                                                     type_ann: box super_ty.into(),
@@ -1652,7 +1652,7 @@ impl Analyzer<'_, '_> {
                                         }],
                                     })));
                                 } else {
-                                    child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(box RTsTypeAliasDecl {
+                                    child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(RTsTypeAliasDecl {
                                         node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
                                         declare: false,
@@ -1667,6 +1667,7 @@ impl Analyzer<'_, '_> {
                                     let node_id = c.node_id;
                                     m.for_classes.entry(node_id).or_default().super_class = Some(box RExpr::Ident(new_ty.clone()));
                                 }
+
                                 Some(box Type::Ref(Ref {
                                     span: DUMMY_SP,
                                     ctxt: child.ctx.module_id,
@@ -1709,7 +1710,7 @@ impl Analyzer<'_, '_> {
 
                 if constructors_with_body.len() >= 2 {
                     for &span in &constructors_with_body {
-                        child.storage.report(Error::DuplciateConstructor { span })
+                        child.storage.report(Error::DuplicateConstructor { span });
                     }
                 }
 
@@ -1809,12 +1810,14 @@ impl Analyzer<'_, '_> {
                                     };
                                     key.type_ann = None;
                                     let key = RPropName::Ident(key.id);
+                                    let key = box RExpr::Ident(key.id);
                                     additional_members.push(RClassMember::ClassProp(RClassProp {
                                         node_id: NodeId::invalid(),
                                         span: p.span,
                                         key,
                                         value: None,
                                         is_static: false,
+                                        computed: false,
                                         accessibility: Some(Accessibility::Private),
                                         is_abstract: false,
                                         is_optional,
@@ -2198,9 +2201,9 @@ impl Analyzer<'_, '_> {
                     )
                     .convert_err(|_err| {
                         if index.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
-                            Error::ClassMemeberNotCompatibleWithNumericIndexSignature { span }
+                            Error::ClassMemberNotCompatibleWithNumericIndexSignature { span }
                         } else {
-                            Error::ClassMemeberNotCompatibleWithStringIndexSignature { span }
+                            Error::ClassMemberNotCompatibleWithStringIndexSignature { span }
                         }
                     })?;
                 }

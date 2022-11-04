@@ -1,0 +1,40 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/call/genericCallWithGenericSignatureArguments/2.ts:6:12
+  |
+6 |     return r;
+  |            ^
+  |
+  = note: (x: T) => T
+
+warning: Type
+  --> $DIR/tests/pass/exprs/call/genericCallWithGenericSignatureArguments/2.ts:10:14
+   |
+10 | var r2 = foo((x: Object) => null, (x: string) => ''); // Object => Object
+   |              ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: (x: Object) => null
+
+warning: Type
+  --> $DIR/tests/pass/exprs/call/genericCallWithGenericSignatureArguments/2.ts:10:35
+   |
+10 | var r2 = foo((x: Object) => null, (x: string) => ''); // Object => Object
+   |                                   ^^^^^^^^^^^^^^^^^
+   |
+   = note: (x: string) => ''
+
+warning: Type
+  --> $DIR/tests/pass/exprs/call/genericCallWithGenericSignatureArguments/2.ts:10:10
+   |
+10 | var r2 = foo((x: Object) => null, (x: string) => ''); // Object => Object
+   |          ^^^
+   |
+   = note: <T>(a: (x: T) => T, b: (x: T) => T) => (x: T) => T
+
+warning: Type
+  --> $DIR/tests/pass/exprs/call/genericCallWithGenericSignatureArguments/2.ts:10:10
+   |
+10 | var r2 = foo((x: Object) => null, (x: string) => ''); // Object => Object
+   |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: (x: Object) => Object
+

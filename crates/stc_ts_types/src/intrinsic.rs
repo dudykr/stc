@@ -1,10 +1,11 @@
 use is_macro::Is;
+use serde::{Deserialize, Serialize};
 use stc_visit::Visit;
 use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq};
 
 use crate::{IntrinsicMetadata, TypeParamInstantiation};
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Intrinsic {
     pub span: Span,
     pub kind: IntrinsicKind,
@@ -12,7 +13,7 @@ pub struct Intrinsic {
     pub metadata: IntrinsicMetadata,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Is, EqIgnoreSpan, TypeEq, Visit)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Is, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub enum IntrinsicKind {
     Uppercase,
     Lowercase,

@@ -347,8 +347,8 @@ impl From<super::Constructor> for RTsType {
             node_id: NodeId::invalid(),
             span: t.span,
             params: t.params.into_iter().map(From::from).collect(),
-            type_params: t.type_params.map(From::from).map(Box::new),
-            type_ann: box t.type_ann.into(),
+            type_params: t.type_params.map(From::from),
+            type_ann: t.type_ann.into(),
             is_abstract: t.is_abstract,
         }))
     }
@@ -575,8 +575,8 @@ impl From<super::ClassMember> for RTsTypeElement {
                 node_id: NodeId::invalid(),
                 span: c.span,
                 params: c.params.into_iter().map(From::from).collect(),
-                type_ann: c.ret_ty.map(From::from).map(Box::new),
-                type_params: c.type_params.map(From::from).map(Box::new),
+                type_ann: c.ret_ty.map(From::from),
+                type_params: c.type_params.map(From::from),
             }),
             super::ClassMember::Method(m) => RTsTypeElement::TsMethodSignature(RTsMethodSignature {
                 node_id: NodeId::invalid(),
@@ -589,12 +589,12 @@ impl From<super::ClassMember> for RTsTypeElement {
                 key: m.key.into_expr(),
                 optional: m.is_optional,
                 params: m.params.into_iter().map(From::from).collect(),
-                type_ann: Some(box RTsTypeAnn {
+                type_ann: Some(RTsTypeAnn {
                     node_id: NodeId::invalid(),
                     span: DUMMY_SP,
                     type_ann: box (*m.ret_ty).into(),
                 }),
-                type_params: m.type_params.map(From::from).map(Box::new),
+                type_params: m.type_params.map(From::from),
             }),
             super::ClassMember::Property(p) => RTsTypeElement::TsPropertySignature(RTsPropertySignature {
                 node_id: NodeId::invalid(),
@@ -605,7 +605,7 @@ impl From<super::ClassMember> for RTsTypeElement {
                 optional: p.is_optional,
                 init: None,
                 params: vec![],
-                type_ann: p.value.map(|ty| box RTsTypeAnn {
+                type_ann: p.value.map(|ty| RTsTypeAnn {
                     node_id: NodeId::invalid(),
                     span: DUMMY_SP,
                     type_ann: box ty.into(),
@@ -616,7 +616,7 @@ impl From<super::ClassMember> for RTsTypeElement {
                 node_id: NodeId::invalid(),
                 span: s.span,
                 params: s.params.into_iter().map(From::from).collect(),
-                type_ann: s.type_ann.map(|ty| box RTsTypeAnn {
+                type_ann: s.type_ann.map(|ty| RTsTypeAnn {
                     node_id: NodeId::invalid(),
                     span: DUMMY_SP,
                     type_ann: box ty.into(),
@@ -644,6 +644,13 @@ impl From<TypeElement> for RTsTypeElement {
                 params: e.params.into_iter().map(|v| v.into()).collect(),
                 type_ann: e.ret_ty.map(From::from).map(Box::new),
                 type_params: e.type_params.map(From::from).map(Box::new),
+            }),
+            TypeElement::Constructor(e) => RTsTypeElement::TsConstructSignatureDecl(RTsConstructSignatureDecl {
+                node_id: NodeId::invalid(),
+                span: e.span,
+                params: e.params.into_iter().map(|v| v.into()).collect(),
+                type_ann: e.ret_ty.map(From::from),
+                type_params: e.type_params.map(From::from),
             }),
             TypeElement::Property(e) => RTsTypeElement::TsPropertySignature(RTsPropertySignature {
                 node_id: NodeId::invalid(),
@@ -791,7 +798,7 @@ impl From<Intrinsic> for RTsKeywordType {
     }
 }
 
-/// This function shoulod be used for keys.
+/// This function should be used for keys.
 pub fn rprop_name_to_expr(p: RPropName) -> RExpr {
     match p {
         RPropName::Ident(i) => RExpr::Ident(i),

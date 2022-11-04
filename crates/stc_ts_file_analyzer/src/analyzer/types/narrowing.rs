@@ -12,7 +12,7 @@ use crate::{
 };
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn narrowed_type_of_assignment(&mut self, span: Span, declared: Type, actual: &Type) -> VResult<Type> {
+    pub(crate) fn narrowed_type_of_assignment(&mut self, span: Span, declared: Type, actual: &Type) -> VResult {
         declared.assert_valid();
         actual.assert_valid();
 

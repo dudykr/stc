@@ -165,6 +165,15 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_lhs_of_for_in_of_loop_expr(&mut self, e: &RExpr, kind: ForHeadKind) -> VResult<()> {
+        // for (obj?.a["b"] in obj) {}
+        use crate::analyzer::expr::optional_chaining::is_obj_opt_chaining;
+        if is_obj_opt_chaining(&e) {
+            return match kind {
+                ForHeadKind::In => Err(Error::InvalidRestPatternInForIn { span: e.span() }),
+                ForHeadKind::Of { .. } => Err(Error::InvalidRestPatternInForOf { span: e.span() }),
+            };
+        }
+
         match e {
             RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) => Ok(()),
             // We use different error code for this.
@@ -279,7 +288,7 @@ impl Analyzer<'_, '_> {
             child.scope.declaring.extend(created_vars);
 
             child.ctx.allow_ref_declaring = match left {
-                RVarDeclOrPat::VarDecl(box RVarDecl {
+                RVarDeclOrPat::VarDecl(RVarDecl {
                     kind: VarDeclKind::Var, ..
                 }) => true,
                 _ => false,
@@ -287,7 +296,7 @@ impl Analyzer<'_, '_> {
 
             // Type annotation on lhs of for in/of loops is invalid.
             match left {
-                RVarDeclOrPat::VarDecl(box RVarDecl { decls, .. }) => {
+                RVarDeclOrPat::VarDecl(RVarDecl { decls, .. }) => {
                     if decls.len() >= 1 {
                         if decls[0].name.get_ty().is_some() {
                             match kind {
@@ -335,7 +344,7 @@ impl Analyzer<'_, '_> {
 
             let mut elem_ty = match kind {
                 ForHeadKind::Of { is_awaited: false } => child
-                    .get_iterator_element_type(rhs.span(), Cow::Owned(rty), false)
+                    .get_iterator_element_type(rhs.span(), Cow::Owned(rty), false, Default::default())
                     .convert_err(|err| match err {
                         Error::NotArrayType { span }
                             if match rhs {
@@ -353,6 +362,7 @@ impl Analyzer<'_, '_> {
 
                 ForHeadKind::Of { is_awaited: true } => child
                     .get_async_iterator_elem_type(rhs.span(), Cow::Owned(rty))
+                    .get_async_iterator_element_type(rhs.span(), Cow::Owned(rty))
                     .context("tried to get element type of an async iteratror")
                     .report(&mut child.storage)
                     .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),

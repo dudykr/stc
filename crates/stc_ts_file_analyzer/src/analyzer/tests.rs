@@ -80,10 +80,7 @@ impl Tester<'_, '_> {
             );
             let mut parser = Parser::new_from(lexer);
 
-            let module = parser
-                .parse_module()
-                .unwrap()
-                .fold_with(&mut resolver(MARKS.unresolved_mark(), MARKS.top_level_mark(), true));
+            let module = parser.parse_module().unwrap().fold_with(&mut ts_resolver(MARKS.top_level_mark()));
 
             RModule::from_orig(&mut NodeIdGenerator::invalid(), module)
         })
@@ -183,5 +180,14 @@ fn get_env() -> Env {
     libs.sort();
     libs.dedup();
 
-    Env::simple(Rule { ..Default::default() }, EsVersion::latest(), ModuleConfig::None, &libs)
+    Env::simple(
+        Rule {
+            strict_null_checks: true,
+            strict_function_types: true,
+            ..Default::default()
+        },
+        EsVersion::latest(),
+        ModuleConfig::None,
+        &libs,
+    )
 }

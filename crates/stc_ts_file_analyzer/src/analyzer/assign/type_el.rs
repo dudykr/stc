@@ -811,7 +811,7 @@ impl Analyzer<'_, '_> {
     fn handle_assignment_of_type_elements_to_type_elements(
         &mut self,
         data: &mut AssignData,
-        opts: AssignOpts,
+        mut opts: AssignOpts,
         missing_fields: &mut Vec<TypeElement>,
         unhandled_rhs: &mut Vec<Span>,
         lhs: &[TypeElement],
@@ -819,6 +819,7 @@ impl Analyzer<'_, '_> {
         rhs: &[TypeElement],
     ) -> VResult<()> {
         let span = opts.span;
+        opts.is_params_of_method_definition = false;
 
         let mut errors = vec![];
 
@@ -1040,12 +1041,13 @@ impl Analyzer<'_, '_> {
                                 // `foo(a: string) is assignable to foo(a: any)`
                                 TypeElement::Method(ref lm) => match rm {
                                     TypeElement::Method(ref rm) => {
-                                        //
-
                                         let res = self
                                             .assign_to_fn_like(
                                                 data,
-                                                opts,
+                                                AssignOpts {
+                                                    is_params_of_method_definition: true,
+                                                    ..opts
+                                                },
                                                 true,
                                                 lm.type_params.as_ref(),
                                                 &lm.params,
