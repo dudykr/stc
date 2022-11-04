@@ -23,10 +23,6 @@ impl RExpr {
         match self {
             RExpr::MetaProp(RMetaPropExpr {
                 kind: MetaPropKind::NewTarget,
-                meta: RIdent { sym: js_word!("new"), .. },
-                prop: RIdent {
-                    sym: js_word!("target"), ..
-                },
                 ..
             }) => true,
             _ => false,

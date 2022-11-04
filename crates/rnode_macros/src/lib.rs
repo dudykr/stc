@@ -209,12 +209,6 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                                 ::swc_common::Spanned,
                                 ::swc_common::EqIgnoreSpan,
                                 ::rnode::Visit,
-                                Debug,
-                                Clone,
-                                PartialEq,
-                                ::swc_common::Spanned,
-                                ::swc_common::EqIgnoreSpan,
-                                ::rnode::Visit,
                                 ::serde::Serialize,
                                 ::serde::Deserialize,
                             )]

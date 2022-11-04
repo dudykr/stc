@@ -1919,7 +1919,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "sha1",
- "smallvec 1.6.1",
+ "smallvec",
  "stc_arc_cow",
  "stc_testing",
  "stc_ts_ast_rnode",
@@ -2209,7 +2209,7 @@ dependencies = [
  "rnode",
  "scoped-tls",
  "serde",
- "smallvec 1.6.1",
+ "smallvec",
  "static_assertions",
  "stc_arc_cow",
  "stc_ts_ast_rnode",
@@ -2709,6 +2709,7 @@ dependencies = [
  "regex",
  "serde_json",
  "swc_common",
+ "swc_error_reporters",
  "testing_macros",
  "tracing",
  "tracing-subscriber 0.3.15",
@@ -2729,6 +2730,15 @@ dependencies = [
  "regex",
  "relative-path",
  "syn",
+]
+
+[[package]]
+name = "textwrap"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
+dependencies = [
+ "unicode-width",
 ]
 
 [[package]]
@@ -2987,10 +2997,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "unicode-id"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d70b6494226b36008c8366c288d77190b3fad2eb4c10533139c1c1f461127f1a"
+
+[[package]]
 name = "unicode-ident"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ceab39d59e4c9499d4e5a8ee0e2735b891bb7308ac83dfb4e80cad195c9f6f3"
+
+[[package]]
+name = "unicode-linebreak"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c5faade31a542b8b35855fff6e8def199853b2da8da256da52f52f1316ee3137"
+dependencies = [
+ "hashbrown 0.12.3",
+ "regex",
+]
 
 [[package]]
 name = "unicode-normalization"
