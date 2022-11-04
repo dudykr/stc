@@ -7,7 +7,7 @@ protectedClassPropertyAccessibleWithinSubclass2.ts
 protectedStaticClassPropertyAccessibleWithinSubclass.ts
 readonlyRestParameters.ts
 recursiveTypes
-typeGuardFunctionOfFormThis.ts
 typeGuardFunctionOfFormThisErrors.ts
+typeGuardFunctionOfFormThis.ts
 typeGuardOfFormInstanceOfOnInterface.ts
 typeGuardOfFormIsTypeOnInterfaces.ts
