@@ -18,10 +18,7 @@ impl Fold<TypeParamDecl> for TypeParamRenamer {
             self.declared = Some(Default::default())
         }
 
-        self.declared
-            .as_mut()
-            .unwrap()
-            .extend(decl.params.iter().map(|v| v.name.clone()));
+        self.declared.as_mut().unwrap().extend(decl.params.iter().map(|v| v.name.clone()));
         decl.fold_children_with(self)
     }
 }

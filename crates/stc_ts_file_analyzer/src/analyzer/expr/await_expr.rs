@@ -28,8 +28,7 @@ impl Analyzer<'_, '_> {
                     Type::Ref(Ref {
                         type_name:
                             RTsEntityName::Ident(RIdent {
-                                sym: js_word!("Promise"),
-                                ..
+                                sym: js_word!("Promise"), ..
                             }),
                         type_args: Some(type_args),
                         ..
@@ -79,26 +78,16 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn get_awaited_type<'a>(
-        &mut self,
-        span: Span,
-        ty: Cow<'a, Type>,
-    ) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_awaited_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> VResult<Cow<'a, Type>> {
         if let Some(arg) = unwrap_ref_with_single_arg(&ty, "Promise") {
-            return self
-                .get_awaited_type(span, Cow::Borrowed(arg))
-                .map(Cow::into_owned)
-                .map(Cow::Owned);
+            return self.get_awaited_type(span, Cow::Borrowed(arg)).map(Cow::into_owned).map(Cow::Owned);
         }
 
         Ok(self
             .access_property(
                 span,
                 &ty,
-                &Key::Normal {
-                    span,
-                    sym: "then".into(),
-                },
+                &Key::Normal { span, sym: "then".into() },
                 TypeOfMode::RValue,
                 IdCtx::Var,
                 Default::default(),

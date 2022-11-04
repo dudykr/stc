@@ -24,10 +24,7 @@ impl Analyzer<'_, '_> {
 
         match ty {
             Type::Ref(..) => {
-                if let Some(expanded) = self
-                    .expand_top_ref(span, Cow::Borrowed(ty), Default::default())
-                    .ok()
-                {
+                if let Some(expanded) = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default()).ok() {
                     return self.can_be_casted_to_number_in_rhs(span, &expanded);
                 }
 
@@ -38,14 +35,8 @@ impl Analyzer<'_, '_> {
                 true
             }
             Type::Enum(e) => !e.has_str,
-            Type::Union(ty) => ty
-                .types
-                .iter()
-                .all(|ty| self.can_be_casted_to_number_in_rhs(span, &ty)),
-            Type::Intersection(ty) => ty
-                .types
-                .iter()
-                .any(|ty| self.can_be_casted_to_number_in_rhs(span, &ty)),
+            Type::Union(ty) => ty.types.iter().all(|ty| self.can_be_casted_to_number_in_rhs(span, &ty)),
+            Type::Intersection(ty) => ty.types.iter().any(|ty| self.can_be_casted_to_number_in_rhs(span, &ty)),
             _ => false,
         }
     }

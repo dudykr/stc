@@ -22,8 +22,7 @@ builtin!();
 
 impl Lib {
     fn body(self) -> &'static TsNamespaceDecl {
-        static CACHE: Lazy<RwLock<FxHashMap<Lib, &'static TsNamespaceDecl>>> =
-            Lazy::new(Default::default);
+        static CACHE: Lazy<RwLock<FxHashMap<Lib, &'static TsNamespaceDecl>>> = Lazy::new(Default::default);
 
         {
             let read = CACHE.read().expect("no panic is expected");

@@ -1454,10 +1454,7 @@ impl Error {
             Error::Errors { .. } | Error::DebugContext { .. } => {}
             _ => {
                 if self.span().is_dummy() {
-                    panic!(
-                        "Error with dummy span found(context: {}): {:#?}",
-                        context, self
-                    )
+                    panic!("Error with dummy span found(context: {}): {:#?}", context, self)
                 }
             }
         }
@@ -1594,8 +1591,7 @@ impl Error {
             Error::DebugContext(c) => c.inner.code(),
 
             Error::ObjectIsPossiblyNull { .. } => 2531,
-            Error::ObjectIsPossiblyUndefined { .. }
-            | Error::ObjectIsPossiblyUndefinedWithType { .. } => 2532,
+            Error::ObjectIsPossiblyUndefined { .. } | Error::ObjectIsPossiblyUndefinedWithType { .. } => 2532,
             Error::ObjectIsPossiblyNullOrUndefined { .. } => 2533,
 
             Error::InvalidBinaryOp { .. } => 2365,
@@ -1869,9 +1865,7 @@ impl Error {
 
     pub fn is_var_not_found(&self) -> bool {
         match self.actual() {
-            Self::NoSuchVar { .. }
-            | Self::NoSuchVarButThisHasSuchProperty { .. }
-            | Self::NoSuchVarForShorthand { .. } => true,
+            Self::NoSuchVar { .. } | Self::NoSuchVarButThisHasSuchProperty { .. } | Self::NoSuchVarForShorthand { .. } => true,
             _ => false,
         }
     }
@@ -1914,9 +1908,7 @@ impl Error {
 
         for e in vec {
             match e {
-                Error::Errors { errors, .. } | Error::TupleAssignError { errors, .. } => {
-                    buf.extend(Self::flatten(errors))
-                }
+                Error::Errors { errors, .. } | Error::TupleAssignError { errors, .. } => buf.extend(Self::flatten(errors)),
                 Error::DebugContext(DebugContext { inner, context, .. }) => {
                     //
                     buf.extend(Self::flatten(vec![*inner]).into_iter().map(|inner| {
@@ -1938,10 +1930,7 @@ impl Error {
 impl From<Vec<Error>> for Error {
     #[inline]
     fn from(errors: Vec<Error>) -> Self {
-        Error::Errors {
-            span: DUMMY_SP,
-            errors,
-        }
+        Error::Errors { span: DUMMY_SP, errors }
     }
 }
 

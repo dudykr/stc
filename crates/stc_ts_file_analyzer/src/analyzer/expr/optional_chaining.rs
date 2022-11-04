@@ -1,8 +1,6 @@
 use std::borrow::Cow;
 
-use stc_ts_ast_rnode::{
-    RCallExpr, RExpr, RMemberExpr, RMemberProp, ROptCall, ROptChainBase, ROptChainExpr,
-};
+use stc_ts_ast_rnode::{RCallExpr, RExpr, RMemberExpr, RMemberProp, ROptCall, ROptChainBase, ROptChainExpr};
 use stc_ts_errors::DebugExt;
 use stc_ts_types::Type;
 use stc_utils::ext::TypeVecExt;
@@ -48,17 +46,8 @@ impl Analyzer<'_, '_> {
                 };
                 let ty = self
                     .with_ctx(ctx)
-                    .access_property(
-                        span,
-                        &obj,
-                        &prop,
-                        TypeOfMode::RValue,
-                        IdCtx::Var,
-                        Default::default(),
-                    )
-                    .context(
-                        "tried to access property to validate an optional chaining expression",
-                    )?;
+                    .access_property(span, &obj, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                    .context("tried to access property to validate an optional chaining expression")?;
 
                 //
 
@@ -88,18 +77,13 @@ impl Analyzer<'_, '_> {
         }
         .validate_with_args(self, type_ann)?;
 
-        Ok(Type::union(vec![
-            Type::undefined(e.span, Default::default()),
-            ty,
-        ]))
+        Ok(Type::union(vec![Type::undefined(e.span, Default::default()), ty]))
     }
 }
 
 impl Analyzer<'_, '_> {
     pub(super) fn is_obj_optional(&mut self, obj: &Type) -> VResult<bool> {
-        if obj.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-            || obj.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-        {
+        if obj.is_kwd(TsKeywordTypeKind::TsNullKeyword) || obj.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
             return Ok(true);
         }
 

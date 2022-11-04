@@ -13,12 +13,7 @@ use swc_ecma_visit::VisitMutWith;
 pub mod tsc;
 pub mod visualizer;
 
-pub fn parse(
-    fm: &SourceFile,
-    comments: &dyn Comments,
-    unresolved_mark: Mark,
-    top_level_mark: Mark,
-) -> Module {
+pub fn parse(fm: &SourceFile, comments: &dyn Comments, unresolved_mark: Mark, top_level_mark: Mark) -> Module {
     let lexer = Lexer::new(
         Syntax::Typescript(TsConfig {
             tsx: fm.name.to_string().ends_with(".tsx"),
@@ -46,12 +41,7 @@ pub fn parse(
     m
 }
 
-pub fn parse_rnode(
-    fm: &SourceFile,
-    comments: &dyn Comments,
-    unresolved_mark: Mark,
-    top_level_mark: Mark,
-) -> RModule {
+pub fn parse_rnode(fm: &SourceFile, comments: &dyn Comments, unresolved_mark: Mark, top_level_mark: Mark) -> RModule {
     let module = parse(fm, comments, unresolved_mark, top_level_mark);
 
     let mut generator = rnode::NodeIdGenerator::default();

@@ -24,9 +24,7 @@ pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         {
             let mut add_dep = |from: &str, to: &str| {
-                deps.entry(from.to_string())
-                    .or_default()
-                    .push(to.to_string());
+                deps.entry(from.to_string()).or_default().push(to.to_string());
             };
 
             add_dep("Es2015", "Es5Full");
@@ -39,8 +37,7 @@ pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
 
         let mut contents = HashMap::<String, String>::default();
 
-        let dir_str =
-            ::std::env::var("CARGO_MANIFEST_DIR").expect("failed to read CARGO_MANIFEST_DIR");
+        let dir_str = ::std::env::var("CARGO_MANIFEST_DIR").expect("failed to read CARGO_MANIFEST_DIR");
         let dir = Path::new(&dir_str).join("lib");
         let mut tokens = q();
 
@@ -48,10 +45,7 @@ pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
             .expect("failed to read $CARGO_MANIFEST_DIR/lib")
             .filter_map(|entry| {
                 let entry = entry.expect("failed to read file of directory");
-                let file_name = entry
-                    .file_name()
-                    .into_string()
-                    .expect("OsString.into_string()");
+                let file_name = entry.file_name().into_string().expect("OsString.into_string()");
                 if !file_name.ends_with(".d.ts") {
                     return None;
                 }
@@ -91,21 +85,12 @@ pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
             let (leading, trailing) = comments.take_all();
 
             let mut ds = vec![];
-            for (_, comments) in leading
-                .borrow_mut()
-                .drain()
-                .chain(trailing.borrow_mut().drain())
-            {
+            for (_, comments) in leading.borrow_mut().drain().chain(trailing.borrow_mut().drain()) {
                 for cmt in comments {
-                    if !cmt.text.starts_with("/ <reference lib=")
-                        && !cmt.text.starts_with("/<reference lib=")
-                    {
+                    if !cmt.text.starts_with("/ <reference lib=") && !cmt.text.starts_with("/<reference lib=") {
                         continue;
                     }
-                    let dep = cmt
-                        .text
-                        .replace("/ <reference lib=\"", "")
-                        .replace(" />", "");
+                    let dep = cmt.text.replace("/ <reference lib=\"", "").replace(" />", "");
                     ds.push(name_for(&dep));
                 }
             }

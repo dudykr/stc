@@ -11,9 +11,8 @@ use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
 use stc_ts_type_ops::generalization::prevent_generalize;
 use stc_ts_types::{
-    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType,
-    KeywordTypeMetadata, LitType, Operator, Ref, Type, TypeElement, TypeLit, TypeParam,
-    TypeParamMetadata, Union,
+    Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
+    Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
@@ -109,16 +108,11 @@ impl Analyzer<'_, '_> {
         let type_forms = param.types.iter().map(TypeForm::from).collect_vec();
         let arg_form = TypeForm::from(arg);
 
-        let matched_paths = type_forms
-            .iter()
-            .map(|param| compare_type_forms(&param, &arg_form))
-            .collect_vec();
+        let matched_paths = type_forms.iter().map(|param| compare_type_forms(&param, &arg_form)).collect_vec();
         let max = matched_paths.iter().max_by(|a, b| max_path(a, b));
 
         if let Some(max) = max {
-            for (idx, (param, type_path)) in
-                param.types.iter().zip(matched_paths.iter()).enumerate()
-            {
+            for (idx, (param, type_path)) in param.types.iter().zip(matched_paths.iter()).enumerate() {
                 if type_path == max {
                     self.infer_type(span, inferred, &param, arg, opts)?;
                 }
@@ -181,11 +175,7 @@ impl Analyzer<'_, '_> {
     ) -> VResult<()> {
         let marks = self.marks();
 
-        info!(
-            "Inferred {} as {}",
-            name,
-            dump_type_as_string(&self.cm, &ty)
-        );
+        info!("Inferred {} as {}", name, dump_type_as_string(&self.cm, &ty));
 
         match ty.normalize() {
             Type::Param(ty) => {
@@ -295,17 +285,8 @@ impl Analyzer<'_, '_> {
 
         let mut inferred = InferData::default();
 
-        self.infer_type(
-            span,
-            &mut inferred,
-            &param,
-            &arg,
-            InferTypeOpts {
-                skip_union: true,
-                ..opts
-            },
-        )
-        .context("tried to infer type using two type")?;
+        self.infer_type(span, &mut inferred, &param, &arg, InferTypeOpts { skip_union: true, ..opts })
+            .context("tried to infer type using two type")?;
 
         let map = self.finalize_inference(inferred);
 
@@ -325,23 +306,21 @@ impl Analyzer<'_, '_> {
         let param = param.normalize();
         let arg = arg.normalize();
 
-        if let Some(elem_type) =
-            unwrap_ref_with_single_arg(param, "ReadonlyArray").or_else(|| match param.normalize() {
-                Type::Interface(Interface { name, body, .. }) => {
-                    if name == "ReadonlyArray" {
-                        body.iter()
-                            .filter_map(|v| match v {
-                                TypeElement::Index(i) => i.type_ann.as_deref(),
-                                _ => None,
-                            })
-                            .next()
-                    } else {
-                        None
-                    }
+        if let Some(elem_type) = unwrap_ref_with_single_arg(param, "ReadonlyArray").or_else(|| match param.normalize() {
+            Type::Interface(Interface { name, body, .. }) => {
+                if name == "ReadonlyArray" {
+                    body.iter()
+                        .filter_map(|v| match v {
+                            TypeElement::Index(i) => i.type_ann.as_deref(),
+                            _ => None,
+                        })
+                        .next()
+                } else {
+                    None
                 }
-                _ => None,
-            })
-        {
+            }
+            _ => None,
+        }) {
             return Some(self.infer_type(
                 span,
                 inferred,
@@ -405,24 +384,12 @@ impl Analyzer<'_, '_> {
                 self.infer_type_using_interface_and_interface(span, inferred, param, arg, opts)?;
             }
             Type::TypeLit(arg) => {
-                self.infer_type_using_type_elements_and_type_elements(
-                    span,
-                    inferred,
-                    &param.body,
-                    &arg.members,
-                    opts,
-                )?;
+                self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members, opts)?;
             }
             Type::Tuple(..) => {
                 // Convert to a type literal.
                 if let Some(arg) = self.convert_type_to_type_lit(span, Cow::Borrowed(arg))? {
-                    self.infer_type_using_type_elements_and_type_elements(
-                        span,
-                        inferred,
-                        &param.body,
-                        &arg.members,
-                        opts,
-                    )?;
+                    self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.members, opts)?;
                 }
             }
             _ => {
@@ -431,12 +398,7 @@ impl Analyzer<'_, '_> {
         }
 
         for parent in &param.extends {
-            let parent = self.type_of_ts_entity_name(
-                span,
-                self.ctx.module_id,
-                &parent.expr,
-                parent.type_args.as_deref(),
-            )?;
+            let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
             self.infer_type(span, inferred, &parent, arg, opts)?;
         }
 
@@ -451,13 +413,7 @@ impl Analyzer<'_, '_> {
         arg: &Interface,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        self.infer_type_using_type_elements_and_type_elements(
-            span,
-            inferred,
-            &param.body,
-            &arg.body,
-            opts,
-        )?;
+        self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.body, &arg.body, opts)?;
 
         Ok(())
     }
@@ -471,13 +427,7 @@ impl Analyzer<'_, '_> {
         arg: &TypeLit,
         opts: InferTypeOpts,
     ) -> VResult<()> {
-        self.infer_type_using_type_elements_and_type_elements(
-            span,
-            inferred,
-            &param.members,
-            &arg.members,
-            opts,
-        )
+        self.infer_type_using_type_elements_and_type_elements(span, inferred, &param.members, &arg.members, opts)
     }
 
     /// Returns `Ok(true)` if this method know how to infer types.
@@ -492,17 +442,13 @@ impl Analyzer<'_, '_> {
         let p = param.normalize();
         let a = arg.normalize();
         match (p, a) {
-            (Type::Constructor(..), Type::Class(..)) | (Type::Function(..), Type::Function(..)) => {
-                return Ok(false)
-            }
+            (Type::Constructor(..), Type::Class(..)) | (Type::Function(..), Type::Function(..)) => return Ok(false),
             (Type::Constructor(..), _) | (Type::Function(..), _) => {
                 let p = self.convert_type_to_type_lit(span, Cow::Borrowed(p))?;
                 let a = self.convert_type_to_type_lit(span, Cow::Borrowed(a))?;
                 if let Some(p) = p {
                     if let Some(a) = a {
-                        self.infer_type_using_type_elements_and_type_elements(
-                            span, inferred, &p.members, &a.members, opts,
-                        )?;
+                        self.infer_type_using_type_elements_and_type_elements(span, inferred, &p.members, &a.members, opts)?;
                         return Ok(true);
                     }
                 }
@@ -529,11 +475,7 @@ impl Analyzer<'_, '_> {
                         ..opts
                     },
                     _ => InferTypeOpts {
-                        append_type_as_union: if opts.for_fn_assignment {
-                            false
-                        } else {
-                            opts.append_type_as_union
-                        },
+                        append_type_as_union: if opts.for_fn_assignment { false } else { opts.append_type_as_union },
                         ..opts
                     },
                 };
@@ -541,10 +483,7 @@ impl Analyzer<'_, '_> {
 
                 match (p, a) {
                     (TypeElement::Property(p), TypeElement::Property(a)) => {
-                        if self
-                            .assign(span, &mut Default::default(), &p.key.ty(), &a.key.ty())
-                            .is_ok()
-                        {
+                        if self.assign(span, &mut Default::default(), &p.key.ty(), &a.key.ty()).is_ok() {
                             if let Some(pt) = &p.type_ann {
                                 if let Some(at) = &a.type_ann {
                                     self.infer_type(span, inferred, pt, at, opts)?;
@@ -571,9 +510,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         type_params: a.type_params.clone(),
                                         params: a.params.clone(),
-                                        ret_ty: a.ret_ty.clone().unwrap_or_else(|| {
-                                            box Type::any(span, Default::default())
-                                        }),
+                                        ret_ty: a.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                                         metadata: Default::default(),
                                     }),
                                     opts,
@@ -595,9 +532,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         type_params: p.type_params.clone(),
                                         params: p.params.clone(),
-                                        ret_ty: p.ret_ty.clone().unwrap_or_else(|| {
-                                            box Type::any(span, Default::default())
-                                        }),
+                                        ret_ty: p.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                                         metadata: Default::default(),
                                     }),
                                     &at,
@@ -633,15 +568,9 @@ impl Analyzer<'_, '_> {
                     }
 
                     (TypeElement::Index(p), TypeElement::Property(a)) => {
-                        assert_eq!(
-                            p.params.len(),
-                            1,
-                            "Index signature should have exactly one parameter"
-                        );
+                        assert_eq!(p.params.len(), 1, "Index signature should have exactly one parameter");
 
-                        if self
-                            .assign(span, &mut Default::default(), &p.params[0].ty, &a.key.ty())
-                            .is_ok()
+                        if self.assign(span, &mut Default::default(), &p.params[0].ty, &a.key.ty()).is_ok()
                             || p.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
                         {
                             if let Some(p_ty) = &p.type_ann {
@@ -664,13 +593,8 @@ impl Analyzer<'_, '_> {
                     }
 
                     (TypeElement::Method(p), TypeElement::Method(a)) => {
-                        if self
-                            .assign(span, &mut Default::default(), &p.key.ty(), &a.key.ty())
-                            .is_ok()
-                        {
-                            self.infer_type_of_fn_params(
-                                span, inferred, &p.params, &a.params, opts,
-                            )?;
+                        if self.assign(span, &mut Default::default(), &p.key.ty(), &a.key.ty()).is_ok() {
+                            self.infer_type_of_fn_params(span, inferred, &p.params, &a.params, opts)?;
 
                             if let Some(p_ret) = &p.ret_ty {
                                 if let Some(a_ret) = &a.ret_ty {
@@ -714,10 +638,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                error!(
-                    "unimplemented: type inference: type element:\nParam = {:#?}\nArg = {:#?}",
-                    p, a
-                );
+                error!("unimplemented: type inference: type element:\nParam = {:#?}\nArg = {:#?}", p, a);
             }
         }
 
@@ -735,9 +656,7 @@ impl Analyzer<'_, '_> {
         match param.op {
             TsTypeOperatorOp::KeyOf => {}
             TsTypeOperatorOp::Unique => {}
-            TsTypeOperatorOp::ReadOnly => {
-                return self.infer_type(span, inferred, &param.ty, arg, opts)
-            }
+            TsTypeOperatorOp::ReadOnly => return self.infer_type(span, inferred, &param.ty, arg, opts),
         }
 
         error!(
@@ -769,9 +688,7 @@ impl Analyzer<'_, '_> {
         for pm in &param.body {
             for am in &arg.body {
                 match (pm, am) {
-                    (ClassMember::Property(p), ClassMember::Property(a))
-                        if p.is_static == a.is_static =>
-                    {
+                    (ClassMember::Property(p), ClassMember::Property(a)) if p.is_static == a.is_static => {
                         if self.key_matches(span, &p.key, &a.key, false) {
                             if let Some(p_ty) = &p.value {
                                 if let Some(a_ty) = &a.value {
@@ -850,11 +767,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Prevent generalizations if a type parameter extends literal.
-    pub(super) fn prevent_generalization_of_inferred_types(
-        &mut self,
-        type_params: &[TypeParam],
-        inferred: &mut InferData,
-    ) {
+    pub(super) fn prevent_generalization_of_inferred_types(&mut self, type_params: &[TypeParam], inferred: &mut InferData) {
         for type_param in type_params {
             match type_param.constraint.as_deref() {
                 Some(Type::Lit(..)) => {}
@@ -890,15 +803,10 @@ fn should_prevent_generalization(constraint: &Type) -> bool {
             ..
         })
         | Type::Keyword(KeywordType {
-            kind:
-                TsKeywordTypeKind::TsStringKeyword
-                | TsKeywordTypeKind::TsNumberKeyword
-                | TsKeywordTypeKind::TsBooleanKeyword,
+            kind: TsKeywordTypeKind::TsStringKeyword | TsKeywordTypeKind::TsNumberKeyword | TsKeywordTypeKind::TsBooleanKeyword,
             ..
         }) => true,
-        Type::Union(Union { ref types, .. }) => {
-            types.iter().all(|ty| should_prevent_generalization(&ty))
-        }
+        Type::Union(Union { ref types, .. }) => types.iter().all(|ty| should_prevent_generalization(&ty)),
         _ => false,
     }
 }

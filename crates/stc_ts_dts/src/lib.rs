@@ -7,12 +7,10 @@
 use fxhash::FxHashSet;
 use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RAssignPat, RBlockStmt, RClass, RClassDecl, RClassMember, RClassProp, RDecl,
-    RExportDecl, RExportDefaultExpr, RExpr, RFnDecl, RIdent, RImportDecl, RImportSpecifier,
-    RMemberExpr, RModuleDecl, RModuleItem, RNamedExport, RParamOrTsParamProp, RPat, RPrivateName,
-    RPrivateProp, RPropName, RStmt, RTsEntityName, RTsEnumDecl, RTsIndexSignature,
-    RTsInterfaceDecl, RTsKeywordType, RTsModuleDecl, RTsParamProp, RTsParamPropParam,
-    RTsPropertySignature, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RArrayPat, RAssignPat, RBlockStmt, RClass, RClassDecl, RClassMember, RClassProp, RDecl, RExportDecl, RExportDefaultExpr, RExpr,
+    RFnDecl, RIdent, RImportDecl, RImportSpecifier, RMemberExpr, RModuleDecl, RModuleItem, RNamedExport, RParamOrTsParamProp, RPat,
+    RPrivateName, RPrivateProp, RPropName, RStmt, RTsEntityName, RTsEnumDecl, RTsIndexSignature, RTsInterfaceDecl, RTsKeywordType,
+    RTsModuleDecl, RTsParamProp, RTsParamPropParam, RTsPropertySignature, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_types::{Id, ModuleTypeData};
 use stc_ts_utils::{find_ids_in_pat, MapWithMut};
@@ -327,11 +325,7 @@ impl VisitMut<Vec<RModuleItem>> for Dts {
         items.retain(|item| {
             match item {
                 RModuleItem::ModuleDecl(decl) => match decl {
-                    RModuleDecl::ExportNamed(export @ RNamedExport { src: None, .. })
-                        if export.specifiers.is_empty() =>
-                    {
-                        return false
-                    }
+                    RModuleDecl::ExportNamed(export @ RNamedExport { src: None, .. }) if export.specifiers.is_empty() => return false,
                     _ => {}
                 },
                 RModuleItem::Stmt(stmt) => match stmt {
@@ -360,9 +354,7 @@ impl VisitMut<Vec<RModuleItem>> for Dts {
                     | RDecl::Fn(RFnDecl { ident, .. })
                     | RDecl::TsEnum(box RTsEnumDecl { id: ident, .. })
                     | RDecl::TsTypeAlias(box RTsTypeAliasDecl { id: ident, .. })
-                    | RDecl::TsInterface(box RTsInterfaceDecl { id: ident, .. }) => {
-                        self.used_types.contains(&Id::from(ident))
-                    }
+                    | RDecl::TsInterface(box RTsInterfaceDecl { id: ident, .. }) => self.used_types.contains(&Id::from(ident)),
                     // Handled by `visit_mut_var_decl`
                     RDecl::Var(decl) => !decl.decls.is_empty(),
                     RDecl::TsModule(_) => true,
@@ -372,9 +364,7 @@ impl VisitMut<Vec<RModuleItem>> for Dts {
         }
 
         items.retain(|item| match item {
-            RModuleItem::ModuleDecl(RModuleDecl::Import(RImportDecl { specifiers, .. })) => {
-                !specifiers.is_empty()
-            }
+            RModuleItem::ModuleDecl(RModuleDecl::Import(RImportDecl { specifiers, .. })) => !specifiers.is_empty(),
             RModuleItem::Stmt(RStmt::Empty(..)) => false,
             _ => true,
         });
@@ -384,15 +374,9 @@ impl VisitMut<Vec<RModuleItem>> for Dts {
 impl VisitMut<Vec<RImportSpecifier>> for Dts {
     fn visit_mut(&mut self, specifiers: &mut Vec<RImportSpecifier>) {
         specifiers.retain(|specifier| match specifier {
-            RImportSpecifier::Named(specifier) => {
-                self.used_types.contains(&Id::from(&specifier.local))
-            }
-            RImportSpecifier::Default(specifier) => {
-                self.used_types.contains(&Id::from(&specifier.local))
-            }
-            RImportSpecifier::Namespace(specifier) => {
-                self.used_types.contains(&Id::from(&specifier.local))
-            }
+            RImportSpecifier::Named(specifier) => self.used_types.contains(&Id::from(&specifier.local)),
+            RImportSpecifier::Default(specifier) => self.used_types.contains(&Id::from(&specifier.local)),
+            RImportSpecifier::Namespace(specifier) => self.used_types.contains(&Id::from(&specifier.local)),
         });
     }
 }
@@ -507,17 +491,11 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                                             span: Default::default(),
                                             declare: false,
                                             key: match &p.param {
-                                                RTsParamPropParam::Ident(p) => {
-                                                    RPropName::Ident(p.id.clone())
-                                                }
+                                                RTsParamPropParam::Ident(p) => RPropName::Ident(p.id.clone()),
                                                 RTsParamPropParam::Assign(p) => match &p.left {
                                                     //
-                                                    box RPat::Ident(i) => {
-                                                        RPropName::Ident(i.id.clone())
-                                                    }
-                                                    _ => unreachable!(
-                                                        "binding pattern in property initializer"
-                                                    ),
+                                                    box RPat::Ident(i) => RPropName::Ident(i.id.clone()),
+                                                    _ => unreachable!("binding pattern in property initializer"),
                                                 },
                                             },
                                             value: None,
@@ -539,8 +517,7 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                                     match &mut p.param {
                                         RTsParamPropParam::Ident(_) => {}
                                         RTsParamPropParam::Assign(RAssignPat {
-                                            left: box RPat::Ident(i),
-                                            ..
+                                            left: box RPat::Ident(i), ..
                                         }) => {
                                             // Original pattern has default value, so it should be
                                             // option

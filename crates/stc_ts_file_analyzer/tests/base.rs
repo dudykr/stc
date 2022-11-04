@@ -45,14 +45,7 @@ fn get_env() -> Env {
     libs.sort();
     libs.dedup();
 
-    Env::simple(
-        Rule {
-            ..Default::default()
-        },
-        EsVersion::latest(),
-        ModuleConfig::None,
-        &libs,
-    )
+    Env::simple(Rule { ..Default::default() }, EsVersion::latest(), ModuleConfig::None, &libs)
 }
 
 fn validate(input: &Path) -> Vec<StcError> {
@@ -71,9 +64,7 @@ fn validate(input: &Path) -> Vec<StcError> {
             let mut node_id_gen = NodeIdGenerator::default();
             let mut module = {
                 let lexer = Lexer::new(
-                    Syntax::Typescript(TsConfig {
-                        ..Default::default()
-                    }),
+                    Syntax::Typescript(TsConfig { ..Default::default() }),
                     EsVersion::Es2021,
                     SourceFileInput::from(&*fm),
                     None,
@@ -103,14 +94,7 @@ fn validate(input: &Path) -> Vec<StcError> {
                 // Don't print logs from builtin modules.
                 let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-                let mut analyzer = Analyzer::root(
-                    env.clone(),
-                    cm.clone(),
-                    Default::default(),
-                    box &mut storage,
-                    &NoopLoader,
-                    None,
-                );
+                let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
                 module.visit_with(&mut analyzer);
             }
 
@@ -171,9 +155,7 @@ fn errors(input: PathBuf) {
         let mut node_id_gen = NodeIdGenerator::default();
         let mut module = {
             let lexer = Lexer::new(
-                Syntax::Typescript(TsConfig {
-                    ..Default::default()
-                }),
+                Syntax::Typescript(TsConfig { ..Default::default() }),
                 EsVersion::Es2021,
                 SourceFileInput::from(&*fm),
                 None,
@@ -203,14 +185,7 @@ fn errors(input: PathBuf) {
             // Don't print logs from builtin modules.
             let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-            let mut analyzer = Analyzer::root(
-                env.clone(),
-                cm.clone(),
-                Default::default(),
-                box &mut storage,
-                &NoopLoader,
-                None,
-            );
+            let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
         }
 
@@ -250,9 +225,7 @@ fn pass_only(input: PathBuf) {
         let mut node_id_gen = NodeIdGenerator::default();
         let mut module = {
             let lexer = Lexer::new(
-                Syntax::Typescript(TsConfig {
-                    ..Default::default()
-                }),
+                Syntax::Typescript(TsConfig { ..Default::default() }),
                 EsVersion::Es2021,
                 SourceFileInput::from(&*fm),
                 None,
@@ -282,14 +255,7 @@ fn pass_only(input: PathBuf) {
             // Don't print logs from builtin modules.
             let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-            let mut analyzer = Analyzer::root(
-                env.clone(),
-                cm.clone(),
-                Default::default(),
-                box &mut storage,
-                &NoopLoader,
-                None,
-            );
+            let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
         }
 
@@ -496,8 +462,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
 #[testing::fixture("tests/visualize/**/*.ts", exclude(".*\\.\\.d.\\.ts"))]
 fn visualize(file_name: PathBuf) {
     let res = run_test(file_name.clone(), false).unwrap();
-    res.compare_to_file(&file_name.with_extension("swc-stderr"))
-        .unwrap();
+    res.compare_to_file(&file_name.with_extension("swc-stderr")).unwrap();
 
     println!("[SUCCESS]{}", file_name.display())
 }
@@ -509,8 +474,7 @@ fn pass(file_name: PathBuf) {
 
     run_test(file_name.clone(), true);
 
-    res.compare_to_file(&file_name.with_extension("swc-stderr"))
-        .unwrap();
+    res.compare_to_file(&file_name.with_extension("swc-stderr")).unwrap();
 
     println!("[SUCCESS]{}", file_name.display())
 }

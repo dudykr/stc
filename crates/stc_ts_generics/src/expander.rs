@@ -6,9 +6,8 @@ use stc_ts_ast_rnode::{RExpr, RInvalid, RTsEntityName, RTsLit};
 use stc_ts_base_type_ops::{apply_mapped_flags, fix::Fix};
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_types::{
-    Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature,
-    Function, Id, IndexSignature, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata,
-    LitType, Mapped, Method, MethodSignature, Operator, PropertySignature, Ref, Type, TypeElement,
+    Array, ArrayMetadata, CallSignature, ClassProperty, ComputedKey, ConstructorSignature, Function, Id, IndexSignature, IndexedAccessType,
+    Key, KeywordType, KeywordTypeMetadata, LitType, Mapped, Method, MethodSignature, Operator, PropertySignature, Ref, Type, TypeElement,
     TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, debug_ctx, stack};
@@ -124,10 +123,7 @@ impl GenericExpander<'_> {
                 param = param.fold_with(self);
 
                 if !self.dejavu.contains(&param.name) {
-                    warn!(
-                        "generic_expand: Failed to found type parameter instantiation: {}",
-                        param.name,
-                    );
+                    warn!("generic_expand: Failed to found type parameter instantiation: {}", param.name,);
                 }
 
                 return Type::Param(param);
@@ -165,88 +161,83 @@ impl GenericExpander<'_> {
                 m.make_clone_cheap();
 
                 match &m.type_param.constraint {
-                    Some(constraint) => {
-                        match constraint.normalize() {
-                            Type::Operator(
-                                operator @ Operator {
-                                    op: TsTypeOperatorOp::KeyOf,
-                                    ..
-                                },
-                            ) => match operator.ty.normalize() {
-                                Type::Param(param) if self.params.contains_key(&param.name) => {
-                                    let ty = self.params.get(&param.name).unwrap();
-                                    match ty.normalize() {
-                                        Type::TypeLit(ty)
-                                            if ty.members.iter().all(|element| match element {
-                                                TypeElement::Property(..)
-                                                | TypeElement::Method(..) => true,
-                                                _ => false,
-                                            }) =>
-                                        {
-                                            let mut members = vec![];
+                    Some(constraint) => match constraint.normalize() {
+                        Type::Operator(
+                            operator @ Operator {
+                                op: TsTypeOperatorOp::KeyOf,
+                                ..
+                            },
+                        ) => match operator.ty.normalize() {
+                            Type::Param(param) if self.params.contains_key(&param.name) => {
+                                let ty = self.params.get(&param.name).unwrap();
+                                match ty.normalize() {
+                                    Type::TypeLit(ty)
+                                        if ty.members.iter().all(|element| match element {
+                                            TypeElement::Property(..) | TypeElement::Method(..) => true,
+                                            _ => false,
+                                        }) =>
+                                    {
+                                        let mut members = vec![];
 
-                                            for member in &ty.members {
-                                                match member {
-                                                TypeElement::Property(p) => {
-                                                    members.push(TypeElement::Property(PropertySignature {
-                                                        type_ann: m.ty.clone().fold_with(&mut MappedHandler {
-                                                            key: &p.key,
-                                                            param_name: &param.name,
-                                                            prop_ty: &*p.type_ann.clone().unwrap_or_else(|| {
-                                                                box Type::any(p.span, Default::default())
-                                                            }),
+                                        for member in &ty.members {
+                                            match member {
+                                                TypeElement::Property(p) => members.push(TypeElement::Property(PropertySignature {
+                                                    type_ann: m.ty.clone().fold_with(&mut MappedHandler {
+                                                        key: &p.key,
+                                                        param_name: &param.name,
+                                                        prop_ty: &*p
+                                                            .type_ann
+                                                            .clone()
+                                                            .unwrap_or_else(|| box Type::any(p.span, Default::default())),
+                                                    }),
+                                                    ..p.clone()
+                                                })),
+                                                TypeElement::Method(method) => members.push(TypeElement::Property(PropertySignature {
+                                                    span: method.span,
+                                                    accessibility: None,
+                                                    readonly: method.readonly,
+                                                    key: method.key.clone(),
+                                                    optional: method.optional,
+                                                    params: Default::default(),
+                                                    type_ann: m.ty.clone().fold_with(&mut MappedHandler {
+                                                        key: &method.key,
+                                                        param_name: &param.name,
+                                                        prop_ty: &Type::Function(Function {
+                                                            span: method.span,
+                                                            type_params: method.type_params.clone(),
+                                                            params: method.params.clone(),
+                                                            ret_ty: method
+                                                                .ret_ty
+                                                                .clone()
+                                                                .unwrap_or_else(|| box Type::any(method.span, Default::default())),
+                                                            metadata: Default::default(),
                                                         }),
-                                                        ..p.clone()
-                                                    }))
-                                                }
-                                                TypeElement::Method(method) => {
-                                                    members.push(TypeElement::Property(PropertySignature {
-                                                        span: method.span,
-                                                        accessibility: None,
-                                                        readonly: method.readonly,
-                                                        key: method.key.clone(),
-                                                        optional: method.optional,
-                                                        params: Default::default(),
-                                                        type_ann: m.ty.clone().fold_with(&mut MappedHandler {
-                                                            key: &method.key,
-                                                            param_name: &param.name,
-                                                            prop_ty: &Type::Function(Function {
-                                                                span: method.span,
-                                                                type_params: method.type_params.clone(),
-                                                                params: method.params.clone(),
-                                                                ret_ty: method.ret_ty.clone().unwrap_or_else(|| {
-                                                                    box Type::any(method.span, Default::default())
-                                                                }),
-                                                                metadata: Default::default(),
-                                                            }),
-                                                        }),
-                                                        type_params: Default::default(),
-                                                        metadata: Default::default(),
-                                                        accessor: Default::default(),
-                                                    }))
-                                                }
+                                                    }),
+                                                    type_params: Default::default(),
+                                                    metadata: Default::default(),
+                                                    accessor: Default::default(),
+                                                })),
                                                 _ => {}
                                             }
-                                            }
-
-                                            for member in &mut members {
-                                                apply_mapped_flags(member, m.optional, m.readonly);
-                                            }
-
-                                            return Type::TypeLit(TypeLit {
-                                                span: ty.span,
-                                                members,
-                                                metadata: ty.metadata,
-                                            });
                                         }
-                                        _ => {}
+
+                                        for member in &mut members {
+                                            apply_mapped_flags(member, m.optional, m.readonly);
+                                        }
+
+                                        return Type::TypeLit(TypeLit {
+                                            span: ty.span,
+                                            members,
+                                            metadata: ty.metadata,
+                                        });
                                     }
+                                    _ => {}
                                 }
-                                _ => {}
-                            },
+                            }
                             _ => {}
-                        }
-                    }
+                        },
+                        _ => {}
+                    },
                     _ => {}
                 }
 
@@ -314,10 +305,7 @@ impl GenericExpander<'_> {
                         // TODO(kdy1): PERF
                         match *obj_type {
                             Type::TypeLit(TypeLit {
-                                span,
-                                members,
-                                metadata,
-                                ..
+                                span, members, metadata, ..
                             }) if members.iter().all(|m| match m {
                                 TypeElement::Property(_) => true,
                                 TypeElement::Method(_) => true,
@@ -365,9 +353,7 @@ impl GenericExpander<'_> {
                             ty,
                             ..
                         }) => match ty.normalize() {
-                            Type::Keyword(..) if m.optional == None && m.readonly == None => {
-                                return *ty.clone()
-                            }
+                            Type::Keyword(..) if m.optional == None && m.readonly == None => return *ty.clone(),
                             Type::TypeLit(TypeLit {
                                 span,
                                 members,
@@ -383,20 +369,18 @@ impl GenericExpander<'_> {
                                 for member in members {
                                     match member {
                                         TypeElement::Method(method) => {
-                                            new_members.push(TypeElement::Property(
-                                                PropertySignature {
-                                                    span: method.span,
-                                                    accessibility: None,
-                                                    readonly: method.readonly,
-                                                    key: method.key.clone(),
-                                                    optional: method.optional,
-                                                    params: vec![],
-                                                    type_ann: m.ty.clone().map(|v| v),
-                                                    type_params: None,
-                                                    metadata: Default::default(),
-                                                    accessor: Default::default(),
-                                                },
-                                            ));
+                                            new_members.push(TypeElement::Property(PropertySignature {
+                                                span: method.span,
+                                                accessibility: None,
+                                                readonly: method.readonly,
+                                                key: method.key.clone(),
+                                                optional: method.optional,
+                                                params: vec![],
+                                                type_ann: m.ty.clone().map(|v| v),
+                                                type_params: None,
+                                                metadata: Default::default(),
+                                                accessor: Default::default(),
+                                            }));
                                         }
                                         TypeElement::Property(p) => {
                                             let mut p = p.clone();
@@ -430,25 +414,19 @@ impl GenericExpander<'_> {
                 return Type::Mapped(m);
             }
 
-            Type::This(..) | Type::Keyword(..) | Type::TypeLit(..) | Type::Lit(..) => {
-                return ty.fold_children_with(self)
-            }
+            Type::This(..) | Type::Keyword(..) | Type::TypeLit(..) | Type::Lit(..) => return ty.fold_children_with(self),
 
             Type::IndexedAccessType(ty) => {
                 let mut ty = ty.fold_with(self);
                 ty.obj_type.fix();
 
                 let key = match ty.index_type.normalize() {
-                    Type::Lit(LitType {
-                        lit: RTsLit::Str(s),
-                        ..
-                    }) => Some(Key::Normal {
+                    Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => Some(Key::Normal {
                         span: s.span,
                         sym: s.value.clone(),
                     }),
                     Type::Lit(LitType {
-                        lit: RTsLit::Number(v),
-                        ..
+                        lit: RTsLit::Number(v), ..
                     }) => Some(Key::Num(v.clone())),
 
                     Type::Keyword(KeywordType {
@@ -504,17 +482,11 @@ impl Fold<Type> for GenericExpander<'_> {
         let _stack = match stack::track(ty.span()) {
             Ok(v) => v,
             _ => {
-                error!(
-                    "[generic/expander] Stack overflow: {}",
-                    dump_type_as_string(&self.cm, &ty)
-                );
+                error!("[generic/expander] Stack overflow: {}", dump_type_as_string(&self.cm, &ty));
                 return ty;
             }
         };
-        let _context = debug_ctx!(format!(
-            "Expanding generics of {}",
-            dump_type_as_string(&self.cm, &ty)
-        ));
+        let _context = debug_ctx!(format!("Expanding generics of {}", dump_type_as_string(&self.cm, &ty)));
 
         let old_fully = self.fully;
         self.fully |= match ty.normalize() {
@@ -525,10 +497,7 @@ impl Fold<Type> for GenericExpander<'_> {
         {
             let mut v = TypeParamNameUsageFinder::default();
             ty.visit_with(&mut v);
-            let will_expand = v
-                .params
-                .iter()
-                .any(|param| self.params.contains_key(&param));
+            let will_expand = v.params.iter().any(|param| self.params.contains_key(&param));
             if !will_expand {
                 return ty;
             }
@@ -655,10 +624,7 @@ impl Fold<Type> for MappedHandler<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
         match ty.normalize() {
             Type::IndexedAccessType(ty) => match ty.obj_type.normalize() {
-                Type::Param(TypeParam {
-                    name: obj_param_name,
-                    ..
-                }) => match ty.index_type.normalize() {
+                Type::Param(TypeParam { name: obj_param_name, .. }) => match ty.index_type.normalize() {
                     Type::Param(TypeParam {
                         name: index_param_name,
                         constraint: Some(index_type_constraint),
@@ -671,9 +637,7 @@ impl Fold<Type> for MappedHandler<'_> {
                             },
                         ) => match operator.ty.normalize() {
                             Type::Param(constraint_param) => {
-                                if *obj_param_name == constraint_param.name
-                                    && *self.param_name == *obj_param_name
-                                {
+                                if *obj_param_name == constraint_param.name && *self.param_name == *obj_param_name {
                                     return self.prop_ty.clone();
                                 }
                             }

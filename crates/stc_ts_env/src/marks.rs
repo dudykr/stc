@@ -19,11 +19,7 @@ impl Marks {
     pub fn new(globals: &Globals) -> Self {
         fn m(name: &str) -> Mark {
             let m = Mark::fresh(Mark::root());
-            info!(
-                "Mark ({}): {:?}",
-                name,
-                SyntaxContext::empty().apply_mark(m)
-            );
+            info!("Mark ({}): {:?}", name, SyntaxContext::empty().apply_mark(m));
             m
         }
 

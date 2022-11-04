@@ -4,10 +4,7 @@ use std::{
 };
 
 use smallvec::{smallvec, SmallVec};
-use stc_ts_ast_rnode::{
-    RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, RTsEntityName,
-    RTsThisTypeOrIdent,
-};
+use stc_ts_ast_rnode::{RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, RTsEntityName, RTsThisTypeOrIdent};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{iter::IdentifyLast, SyntaxContext};
 
@@ -139,11 +136,7 @@ impl TryFrom<&'_ RExpr> for Name {
             RExpr::Ident(i) => Ok(i.into()),
             RExpr::Member(m) => m.try_into(),
             RExpr::This(this) => Ok({
-                let this: Id = RIdent::new(
-                    js_word!("this"),
-                    this.span.with_ctxt(SyntaxContext::empty()),
-                )
-                .into();
+                let this: Id = RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty())).into();
 
                 this.into()
             }),
@@ -157,10 +150,7 @@ impl TryFrom<&'_ RExpr> for Name {
 impl From<&'_ RTsThisTypeOrIdent> for Name {
     fn from(ty: &RTsThisTypeOrIdent) -> Self {
         match ty {
-            RTsThisTypeOrIdent::TsThisType(this) => Name::from(RIdent::new(
-                js_word!("this"),
-                this.span.with_ctxt(SyntaxContext::empty()),
-            )),
+            RTsThisTypeOrIdent::TsThisType(this) => Name::from(RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty()))),
             RTsThisTypeOrIdent::Ident(ref i) => Name::from(i),
         }
     }

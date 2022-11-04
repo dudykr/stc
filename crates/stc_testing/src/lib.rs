@@ -13,10 +13,7 @@ pub fn get_git_root() -> PathBuf {
             .expect("failed to get root git direcrtory");
 
         assert!(output.status.success());
-        String::from_utf8_lossy(&output.stdout)
-            .trim()
-            .to_string()
-            .into()
+        String::from_utf8_lossy(&output.stdout).trim().to_string().into()
     });
 
     DIR.clone()
@@ -25,11 +22,7 @@ pub fn get_git_root() -> PathBuf {
 /// Used for loading golden txt files.
 pub fn load_txt(path: &str) -> Vec<String> {
     let s = read_to_string(&path).expect("failed to load txt file");
-    s.lines()
-        .map(|s| s.trim())
-        .filter(|&s| s != "")
-        .map(|s| s.to_string())
-        .collect()
+    s.lines().map(|s| s.trim()).filter(|&s| s != "").map(|s| s.to_string()).collect()
 }
 
 pub fn logger(level: Level) -> impl tracing::Subscriber {

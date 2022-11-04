@@ -12,8 +12,7 @@ impl Analyzer<'_, '_> {
         match e.kind {
             swc_ecma_ast::MetaPropKind::NewTarget => {
                 if !self.ctx.allow_new_target {
-                    self.storage
-                        .report(Error::InvalidUsageOfNewTarget { span: e.span() })
+                    self.storage.report(Error::InvalidUsageOfNewTarget { span: e.span() })
                 }
 
                 return Ok(Type::any(e.span, Default::default()));

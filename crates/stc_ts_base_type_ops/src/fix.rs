@@ -1,8 +1,5 @@
 use rnode::{VisitMut, VisitMutWith};
-use stc_ts_types::{
-    Array, Conditional, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam,
-    Union, Valid,
-};
+use stc_ts_types::{Array, Conditional, FnParam, Intersection, KeywordTypeMetadata, Type, TypeOrSpread, TypeParam, Union, Valid};
 use swc_common::TypeEq;
 
 pub trait Fix: Sized {

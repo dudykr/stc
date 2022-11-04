@@ -1,13 +1,13 @@
 use rnode::{FoldWith, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RAssignPat, RAssignPatProp, RBindingIdent, RExpr, RIdent, RKeyValuePatProp,
-    RKeyValueProp, RObjectPat, RObjectPatProp, RParam, RPat, RProp, RPropOrSpread, RRestPat,
+    RArrayPat, RAssignPat, RAssignPatProp, RBindingIdent, RExpr, RIdent, RKeyValuePatProp, RKeyValueProp, RObjectPat, RObjectPatProp,
+    RParam, RPat, RProp, RPropOrSpread, RRestPat,
 };
 use stc_ts_errors::{Error, Errors};
 use stc_ts_type_ops::widen::Widen;
 use stc_ts_types::{
-    Array, ArrayMetadata, CommonTypeMetadata, Instance, Key, KeywordType, PropertySignature, Tuple,
-    TupleElement, TypeElMetadata, TypeElement, TypeLit, TypeLitMetadata,
+    Array, ArrayMetadata, CommonTypeMetadata, Instance, Key, KeywordType, PropertySignature, Tuple, TupleElement, TypeElMetadata,
+    TypeElement, TypeLit, TypeLitMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
@@ -180,27 +180,16 @@ impl Analyzer<'_, '_> {
 
         if self.ctx.in_declare {
             match p {
-                RPat::Assign(p) => self
-                    .storage
-                    .report(Error::InitializerDisallowedInAmbientContext { span: p.span }),
+                RPat::Assign(p) => self.storage.report(Error::InitializerDisallowedInAmbientContext { span: p.span }),
                 _ => {}
             }
         }
 
         if !self.ctx.in_declare && !self.ctx.in_fn_without_body {
             match p {
-                RPat::Array(RArrayPat {
-                    span,
-                    optional: true,
-                    ..
-                })
-                | RPat::Object(RObjectPat {
-                    span,
-                    optional: true,
-                    ..
-                }) => self
-                    .storage
-                    .report(Error::OptionalBindingPatternInImplSignature { span: *span }),
+                RPat::Array(RArrayPat { span, optional: true, .. }) | RPat::Object(RObjectPat { span, optional: true, .. }) => {
+                    self.storage.report(Error::OptionalBindingPatternInImplSignature { span: *span })
+                }
                 _ => {}
             }
         }
@@ -248,11 +237,7 @@ impl Analyzer<'_, '_> {
             PatMode::Decl => {
                 match p {
                     RPat::Ident(RBindingIdent {
-                        id:
-                            RIdent {
-                                sym: js_word!("this"),
-                                ..
-                            },
+                        id: RIdent { sym: js_word!("this"), .. },
                         ..
                     }) => {
                         assert!(ty.is_some(), "parameter named `this` should have type");
@@ -294,10 +279,7 @@ impl Analyzer<'_, '_> {
                         ..self.ctx
                     };
                     let mut a = self.with_ctx(ctx);
-                    assign_pat
-                        .right
-                        .validate_with_default(&mut *a)
-                        .report(&mut a.storage)
+                    assign_pat.right.validate_with_default(&mut *a).report(&mut a.storage)
                 } else {
                     None
                 }
@@ -360,11 +342,7 @@ impl Analyzer<'_, '_> {
                             ty.normalize_mut();
                             match ty {
                                 Type::Tuple(tuple) => {
-                                    let mut types = tuple
-                                        .elems
-                                        .into_iter()
-                                        .map(|element| *element.ty)
-                                        .collect::<Vec<_>>();
+                                    let mut types = tuple.elems.into_iter().map(|element| *element.ty).collect::<Vec<_>>();
 
                                     types.dedup_type();
 
@@ -414,16 +392,12 @@ impl Analyzer<'_, '_> {
                             // function body), the parameter type is the widened form (section
                             // 3.11) of the type of the initializer expression.
 
-                            ty = ty.fold_with(&mut Widen {
-                                tuple_to_array: true,
-                            });
+                            ty = ty.fold_with(&mut Widen { tuple_to_array: true });
                         }
 
                         ty
                     }),
-                    PatMode::Assign => Some(
-                        default_value_ty.unwrap_or_else(|| Type::any(p.span, Default::default())),
-                    ),
+                    PatMode::Assign => Some(default_value_ty.unwrap_or_else(|| Type::any(p.span, Default::default()))),
                 },
                 _ => None,
             },
@@ -529,16 +503,10 @@ impl Analyzer<'_, '_> {
                                     //
                                     for lp in &left.props {
                                         match lp {
-                                            RObjectPatProp::KeyValue(RKeyValuePatProp {
-                                                key: ref pk,
-                                                ..
-                                            }) => {
+                                            RObjectPatProp::KeyValue(RKeyValuePatProp { key: ref pk, .. }) => {
                                                 //
                                                 match **prop {
-                                                    RProp::KeyValue(RKeyValueProp {
-                                                        ref key,
-                                                        ..
-                                                    }) => {
+                                                    RProp::KeyValue(RKeyValueProp { ref key, .. }) => {
                                                         if pk.type_eq(key) {
                                                             continue 'l;
                                                         }

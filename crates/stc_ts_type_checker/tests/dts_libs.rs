@@ -28,19 +28,10 @@ use testing::{assert_eq, NormalizedOutput};
 #[test]
 #[ignore = "Not implemented yet"]
 fn rxjs() -> Result<(), Error> {
-    let dir = get_git_root()
-        .join("vendor")
-        .join("rxjs")
-        .join("src")
-        .canonicalize()
-        .unwrap();
+    let dir = get_git_root().join("vendor").join("rxjs").join("src").canonicalize().unwrap();
 
     tsc(&dir.join("index.ts"), &[]).unwrap();
-    test_project(
-        "rxjs",
-        &dir,
-        vec![dir.join("index.ts"), dir.join("webSocket").join("index.ts")],
-    );
+    test_project("rxjs", &dir, vec![dir.join("index.ts"), dir.join("webSocket").join("index.ts")]);
 
     Ok(())
 }
@@ -63,12 +54,7 @@ fn vite_js() {
 #[test]
 #[ignore = "Not done yet"]
 fn redux() {
-    let dir = get_git_root()
-        .join("vendor")
-        .join("redux")
-        .join("src")
-        .canonicalize()
-        .unwrap();
+    let dir = get_git_root().join("vendor").join("redux").join("src").canonicalize().unwrap();
 
     tsc(&dir.join("index.ts"), &[]).unwrap();
     test_project("redux", &dir, vec![dir.join("index.ts")]);
@@ -112,9 +98,7 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
                 ModuleConfig::None,
                 &Lib::load("es2020.full"),
             ),
-            TsConfig {
-                ..Default::default()
-            },
+            TsConfig { ..Default::default() },
             None,
             Arc::new(NodeResolver),
         );
@@ -126,9 +110,7 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
         }
 
         for err in checker.take_errors() {
-            handler
-                .struct_span_err(err.span(), &format!("{:?}", err))
-                .emit();
+            handler.struct_span_err(err.span(), &format!("{:?}", err)).emit();
         }
 
         for entry in WalkBuilder::new(dir).git_ignore(false).build() {
@@ -138,9 +120,7 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
                 continue;
             }
 
-            if !(entry.file_name().to_string_lossy().ends_with(".ts")
-                || entry.file_name().to_string_lossy().ends_with(".tsx"))
-            {
+            if !(entry.file_name().to_string_lossy().ends_with(".ts") || entry.file_name().to_string_lossy().ends_with(".tsx")) {
                 continue;
             }
 
@@ -174,10 +154,7 @@ fn test_project(_name: &str, dir: &Path, entries: Vec<PathBuf>) {
                 continue;
             }
 
-            println!(
-                "---------- Input ----------\n{}",
-                read_to_string(entry.path()).unwrap()
-            );
+            println!("---------- Input ----------\n{}", read_to_string(entry.path()).unwrap());
             println!("---------- Expected ----------\n{}", expected);
             println!("---------- Generated ----------\n{}", generated);
 
@@ -206,11 +183,7 @@ fn parse_dts(cm: &SourceMap, src: &str) -> Module {
     let mut module = parser.parse_module().unwrap();
 
     module.body.retain(|item| match item {
-        ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(NamedExport { specifiers, .. }))
-            if specifiers.is_empty() =>
-        {
-            false
-        }
+        ModuleItem::ModuleDecl(ModuleDecl::ExportNamed(NamedExport { specifiers, .. })) if specifiers.is_empty() => false,
         ModuleItem::Stmt(Stmt::Empty(..)) => false,
         _ => true,
     });
@@ -228,10 +201,7 @@ fn print(cm: &Arc<SourceMap>, m: &Module) -> NormalizedOutput {
             wr: box JsWriter::new(cm.clone(), "\n", &mut buf, None),
         };
 
-        emitter
-            .emit_module(&m)
-            .context("failed to emit module")
-            .unwrap();
+        emitter.emit_module(&m).context("failed to emit module").unwrap();
     }
     String::from_utf8(buf).unwrap().into()
 }

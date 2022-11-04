@@ -1,8 +1,7 @@
 use pmutil::{q, IdentExt, SpanExt, ToTokensExt};
 use syn::{
-    parse, punctuated::Punctuated, spanned::Spanned, Arm, Block, Data, DeriveInput, Expr,
-    ExprBlock, ExprMatch, Field, FieldPat, FieldValue, Fields, Ident, Index, Item, Member, Pat,
-    PatPath, PatStruct, Path, Stmt, Token,
+    parse, punctuated::Punctuated, spanned::Spanned, Arm, Block, Data, DeriveInput, Expr, ExprBlock, ExprMatch, Field, FieldPat,
+    FieldValue, Fields, Ident, Index, Item, Member, Pat, PatPath, PatStruct, Path, Stmt, Token,
 };
 
 /// Note: This generates `FoldWith`, `VisitWith` and `VisitMutWith` although

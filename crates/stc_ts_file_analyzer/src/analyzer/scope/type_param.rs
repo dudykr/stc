@@ -49,10 +49,7 @@ impl Analyzer<'_, '_> {
             v.params
         };
 
-        let mut v = TypeParamEscapeHandler {
-            analyzer: self,
-            declared,
-        };
+        let mut v = TypeParamEscapeHandler { analyzer: self, declared };
 
         ty.visit_mut_with(&mut v);
     }

@@ -14,13 +14,7 @@ use crate::{
 };
 
 impl Analyzer<'_, '_> {
-    pub(super) fn assign_to_class_def(
-        &mut self,
-        data: &mut AssignData,
-        opts: AssignOpts,
-        l: &ClassDef,
-        r: &Type,
-    ) -> VResult<()> {
+    pub(super) fn assign_to_class_def(&mut self, data: &mut AssignData, opts: AssignOpts, l: &ClassDef, r: &Type) -> VResult<()> {
         let r = r.normalize();
 
         match r {
@@ -46,11 +40,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !l.is_abstract && rc.is_abstract {
-                    return Err(
-                        Error::CannotAssignAbstractConstructorToNonAbstractConstructor {
-                            span: opts.span,
-                        },
-                    );
+                    return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
                 }
 
                 if !rc.is_abstract {
@@ -82,21 +72,14 @@ impl Analyzer<'_, '_> {
 
                 for (i, lm) in l.body.iter().enumerate() {
                     self.assign_class_members_to_class_member(data, opts, lm, r_body)
-                        .with_context(|| {
-                            format!(
-                                "tried to assign class members to {}th class member\n{:#?}\n{:#?}",
-                                i, lm, r_body
-                            )
-                        })?;
+                        .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}\n{:#?}", i, lm, r_body))?;
                 }
 
                 return Ok(());
             }
 
             Type::TypeLit(..) | Type::Interface(..) => {
-                let rhs = self
-                    .convert_type_to_type_lit(opts.span, Cow::Borrowed(r))?
-                    .unwrap();
+                let rhs = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(r))?.unwrap();
 
                 let mut lhs_members = vec![];
                 for lm in &l.body {
@@ -135,20 +118,11 @@ impl Analyzer<'_, '_> {
 
         Err(Error::Unimplemented {
             span: opts.span,
-            msg: format!(
-                "Assignment of non-class object to class definition\n{:#?}",
-                r
-            ),
+            msg: format!("Assignment of non-class object to class definition\n{:#?}", r),
         })
     }
 
-    pub(super) fn assign_to_class(
-        &mut self,
-        data: &mut AssignData,
-        opts: AssignOpts,
-        l: &Class,
-        r: &Type,
-    ) -> VResult<()> {
+    pub(super) fn assign_to_class(&mut self, data: &mut AssignData, opts: AssignOpts, l: &Class, r: &Type) -> VResult<()> {
         // debug_assert!(!span.is_dummy());
 
         let r = r.normalize();
@@ -181,12 +155,7 @@ impl Analyzer<'_, '_> {
 
                 for (i, lm) in l.def.body.iter().enumerate() {
                     self.assign_class_members_to_class_member(data, opts, lm, r_body)
-                        .with_context(|| {
-                            format!(
-                                "tried to assign class members to {}th class member\n{:#?}\n{:#?}",
-                                i, lm, r_body
-                            )
-                        })?;
+                        .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}\n{:#?}", i, lm, r_body))?;
                 }
 
                 if !rc.def.is_abstract {
@@ -195,9 +164,9 @@ impl Analyzer<'_, '_> {
                     // let p: Parent;
                     // `p = c` is valid
                     if let Some(parent) = &rc.def.super_class {
-                        let parent = self.instantiate_class(opts.span, &parent).context(
-                            "tried to instanitate class to asssign the super class to a class",
-                        )?;
+                        let parent = self
+                            .instantiate_class(opts.span, &parent)
+                            .context("tried to instanitate class to asssign the super class to a class")?;
                         if self.assign_to_class(data, opts, l, &parent).is_ok() {
                             return Ok(());
                         }
@@ -318,9 +287,7 @@ impl Analyzer<'_, '_> {
                                     return Ok(());
                                 }
 
-                                if rm.accessibility == Some(Accessibility::Private)
-                                    || rm.key.is_private()
-                                {
+                                if rm.accessibility == Some(Accessibility::Private) || rm.key.is_private() {
                                     return Err(Error::PrivateMethodIsDifferent { span });
                                 }
 
@@ -353,8 +320,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(Error::SimpleAssignFailed { span, cause: None })
-                    .context("failed to assign a class member to another one");
+                return Err(Error::SimpleAssignFailed { span, cause: None }).context("failed to assign a class member to another one");
             }
             ClassMember::Property(lp) => {
                 for rm in r {
@@ -368,9 +334,8 @@ impl Analyzer<'_, '_> {
                             {
                                 if let Some(lt) = &lp.value {
                                     if let Some(rt) = &rp.value {
-                                        self.assign_inner(data, &lt, &rt, opts).context(
-                                            "tried to assign a class proeprty to another",
-                                        )?;
+                                        self.assign_inner(data, &lt, &rt, opts)
+                                            .context("tried to assign a class proeprty to another")?;
                                     }
                                 }
 
@@ -378,9 +343,7 @@ impl Analyzer<'_, '_> {
                                     return Ok(());
                                 }
 
-                                if rp.accessibility == Some(Accessibility::Private)
-                                    || rp.key.is_private()
-                                {
+                                if rp.accessibility == Some(Accessibility::Private) || rp.key.is_private() {
                                     return Err(Error::PrivatePropertyIsDifferent { span });
                                 }
 
@@ -400,14 +363,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 if opts.use_missing_fields_for_class {
-                    let err = Error::MissingFields {
-                        span,
-                        fields: vec![],
-                    };
-                    return Err(Error::Errors {
-                        span,
-                        errors: vec![err],
-                    });
+                    let err = Error::MissingFields { span, fields: vec![] };
+                    return Err(Error::Errors { span, errors: vec![err] });
                 } else {
                     return Err(Error::SimpleAssignFailed { span, cause: None });
                 }

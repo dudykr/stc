@@ -5,15 +5,15 @@ use std::{
 };
 
 use stc_ts_ast_rnode::{
-    RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase,
-    ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
+    RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
+    RTsEntityName, RTsLit, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType,
-    ModuleId, Ref, TypeElement, Union, UnionMetadata,
+    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, TypeElement, Union,
+    UnionMetadata,
 };
 use stc_utils::cache::Freeze;
 use swc_atoms::js_word;
@@ -136,62 +136,54 @@ impl Analyzer<'_, '_> {
         self.cur_facts = prev_facts.clone();
 
         let rhs = self
-            .with_child(
-                ScopeKind::Flow,
-                true_facts_for_rhs.clone(),
-                |child: &mut Analyzer| -> VResult<_> {
-                    child.ctx.should_store_truthy_for_access = false;
+            .with_child(ScopeKind::Flow, true_facts_for_rhs.clone(), |child: &mut Analyzer| -> VResult<_> {
+                child.ctx.should_store_truthy_for_access = false;
 
-                    let truthy_lt;
-                    let child_ctxt = (
-                        TypeOfMode::RValue,
-                        None,
-                        match op {
-                            op!("??") | op!("&&") | op!("||") => match type_ann {
-                                Some(ty) => Some(ty),
-                                _ => match op {
-                                    op!("||") | op!("??") => {
-                                        truthy_lt = lt.clone().map(|ty| {
-                                            child.apply_type_facts_to_type(TypeFacts::Truthy, ty)
-                                        });
-                                        truthy_lt.as_ref()
-                                    }
-                                    _ => lt.as_ref(),
-                                },
+                let truthy_lt;
+                let child_ctxt = (
+                    TypeOfMode::RValue,
+                    None,
+                    match op {
+                        op!("??") | op!("&&") | op!("||") => match type_ann {
+                            Some(ty) => Some(ty),
+                            _ => match op {
+                                op!("||") | op!("??") => {
+                                    truthy_lt = lt.clone().map(|ty| child.apply_type_facts_to_type(TypeFacts::Truthy, ty));
+                                    truthy_lt.as_ref()
+                                }
+                                _ => lt.as_ref(),
                             },
-                            _ => None,
                         },
-                    );
+                        _ => None,
+                    },
+                );
 
-                    let ty = right
-                        .validate_with_args(child, child_ctxt)
-                        .and_then(|mut ty| {
-                            if ty.is_ref_type() {
-                                let ctx = Ctx {
-                                    preserve_ref: false,
-                                    ignore_expand_prevention_for_top: true,
-                                    ..child.ctx
-                                };
-                                ty = child.with_ctx(ctx).expand(
-                                    span,
-                                    ty,
-                                    ExpandOpts {
-                                        full: true,
-                                        expand_union: true,
-                                        ..Default::default()
-                                    },
-                                )?;
-                            }
+                let ty = right.validate_with_args(child, child_ctxt).and_then(|mut ty| {
+                    if ty.is_ref_type() {
+                        let ctx = Ctx {
+                            preserve_ref: false,
+                            ignore_expand_prevention_for_top: true,
+                            ..child.ctx
+                        };
+                        ty = child.with_ctx(ctx).expand(
+                            span,
+                            ty,
+                            ExpandOpts {
+                                full: true,
+                                expand_union: true,
+                                ..Default::default()
+                            },
+                        )?;
+                    }
 
-                            let span = ty.span();
-                            ty.reposition(right.span());
-
-                            Ok(ty)
-                        })?;
+                    let span = ty.span();
+                    ty.reposition(right.span());
 
                     Ok(ty)
-                },
-            )
+                })?;
+
+                Ok(ty)
+            })
             .store(&mut errors);
 
         let rt = rhs;
@@ -199,18 +191,12 @@ impl Analyzer<'_, '_> {
         self.report_errors_for_bin_expr(
             span,
             op,
-            &lt.as_ref().map(Cow::Borrowed).unwrap_or_else(|| {
-                Cow::Owned(Type::any(
-                    left.span().with_ctxt(SyntaxContext::empty()),
-                    Default::default(),
-                ))
-            }),
-            &rt.as_ref().map(Cow::Borrowed).unwrap_or_else(|| {
-                Cow::Owned(Type::any(
-                    left.span().with_ctxt(SyntaxContext::empty()),
-                    Default::default(),
-                ))
-            }),
+            &lt.as_ref()
+                .map(Cow::Borrowed)
+                .unwrap_or_else(|| Cow::Owned(Type::any(left.span().with_ctxt(SyntaxContext::empty()), Default::default()))),
+            &rt.as_ref()
+                .map(Cow::Borrowed)
+                .unwrap_or_else(|| Cow::Owned(Type::any(left.span().with_ctxt(SyntaxContext::empty()), Default::default()))),
         );
 
         if add_type_facts {
@@ -231,12 +217,7 @@ impl Analyzer<'_, '_> {
                 self.cur_facts.true_facts += true_facts_for_rhs;
 
                 for (k, v) in additional_false_facts.facts.drain() {
-                    *self
-                        .cur_facts
-                        .false_facts
-                        .facts
-                        .entry(k.clone())
-                        .or_insert(TypeFacts::None) &= v;
+                    *self.cur_facts.false_facts.facts.entry(k.clone()).or_insert(TypeFacts::None) &= v;
                 }
             }
 
@@ -268,8 +249,7 @@ impl Analyzer<'_, '_> {
                     right: &**right,
                 };
 
-                self.add_type_facts_for_typeof(span, &left, &right, is_eq)
-                    .report(&mut self.storage);
+                self.add_type_facts_for_typeof(span, &left, &right, is_eq).report(&mut self.storage);
 
                 // Try narrowing type
                 let c = Comparator {
@@ -279,8 +259,7 @@ impl Analyzer<'_, '_> {
 
                 if !self.is_valid_for_switch_case(span, &lt, &rt)? {
                     if self.ctx.in_switch_case_test {
-                        self.storage
-                            .report(Error::SwitchCaseTestNotCompatible { span })
+                        self.storage.report(Error::SwitchCaseTestNotCompatible { span })
                     } else {
                         self.storage.report(Error::NoOverlap {
                             span,
@@ -334,22 +313,12 @@ impl Analyzer<'_, '_> {
                             r.make_cheap();
 
                             if op == op!("===") {
-                                self.cur_facts
-                                    .false_facts
-                                    .excludes
-                                    .entry(name.clone())
-                                    .or_default()
-                                    .push(r.clone());
+                                self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(r.clone());
 
                                 self.add_deep_type_fact(span, name, r, true);
                             } else if !is_eq {
                                 // Remove from union
-                                self.cur_facts
-                                    .true_facts
-                                    .excludes
-                                    .entry(name.clone())
-                                    .or_default()
-                                    .push(r.clone());
+                                self.cur_facts.true_facts.excludes.entry(name.clone()).or_default().push(r.clone());
 
                                 self.add_deep_type_fact(span, name, r, false);
                             }
@@ -380,12 +349,10 @@ impl Analyzer<'_, '_> {
                         let cannot_narrow = orig_ty.is_any()
                             && match &**right {
                                 RExpr::Ident(RIdent {
-                                    sym: js_word!("Object"),
-                                    ..
+                                    sym: js_word!("Object"), ..
                                 })
                                 | RExpr::Ident(RIdent {
-                                    sym: js_word!("Function"),
-                                    ..
+                                    sym: js_word!("Function"), ..
                                 }) => true,
 
                                 _ => false,
@@ -412,10 +379,7 @@ impl Analyzer<'_, '_> {
                                     .freezed(),
                                 );
                             } else {
-                                self.cur_facts
-                                    .true_facts
-                                    .vars
-                                    .insert(Name::from(i), narrowed_ty.clone());
+                                self.cur_facts.true_facts.vars.insert(Name::from(i), narrowed_ty.clone());
 
                                 self.cur_facts
                                     .false_facts
@@ -487,10 +451,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsStringKeyword,
                         ..
                     })
-                    | Type::Lit(LitType {
-                        lit: RTsLit::Str(..),
-                        ..
-                    }) => Some(()),
+                    | Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => Some(()),
 
                     _ => None,
                 }) {
@@ -521,10 +482,7 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                if c.any(|(_, ty)| {
-                    ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                        || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-                }) {
+                if c.any(|(_, ty)| ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)) {
                     return Err(Error::TS2365 { span });
                 }
 
@@ -557,9 +515,7 @@ impl Analyzer<'_, '_> {
                 //
                 // Known numeric operations are all handled above
 
-                if self.can_be_casted_to_number_in_rhs(lt.span(), &lt)
-                    && self.can_be_casted_to_number_in_rhs(rt.span(), &rt)
-                {
+                if self.can_be_casted_to_number_in_rhs(lt.span(), &lt) && self.can_be_casted_to_number_in_rhs(rt.span(), &rt) {
                     return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
@@ -584,23 +540,14 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
-            op!(bin, "-")
-            | op!("<<")
-            | op!(">>")
-            | op!(">>>")
-            | op!("%")
-            | op!("|")
-            | op!("&")
-            | op!("^")
-            | op!("**") => {
+            op!(bin, "-") | op!("<<") | op!(">>") | op!(">>>") | op!("%") | op!("|") | op!("&") | op!("^") | op!("**") => {
                 no_unknown!();
 
                 if op == op!("**") {
                     let lt = lt.normalize();
                     let rt = rt.normalize();
 
-                    self.report_possibly_null_or_undefined(lt.span(), &lt)
-                        .report(&mut self.storage);
+                    self.report_possibly_null_or_undefined(lt.span(), &lt).report(&mut self.storage);
 
                     if lt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
                         || lt.is_str()
@@ -610,12 +557,10 @@ impl Analyzer<'_, '_> {
                         || lt.is_interface()
                         || lt.is_tpl()
                     {
-                        self.storage
-                            .report(Error::WrongTypeForLhsOfNumericOperation { span });
+                        self.storage.report(Error::WrongTypeForLhsOfNumericOperation { span });
                     }
 
-                    self.report_possibly_null_or_undefined(rt.span(), &rt)
-                        .report(&mut self.storage);
+                    self.report_possibly_null_or_undefined(rt.span(), &rt).report(&mut self.storage);
 
                     if rt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
                         || rt.is_str()
@@ -625,8 +570,7 @@ impl Analyzer<'_, '_> {
                         || rt.is_interface()
                         || rt.is_tpl()
                     {
-                        self.storage
-                            .report(Error::WrongTypeForRhsOfNumericOperation { span });
+                        self.storage.report(Error::WrongTypeForRhsOfNumericOperation { span });
                     }
                 }
 
@@ -686,18 +630,14 @@ impl Analyzer<'_, '_> {
                 if self.ctx.in_cond {
                     let left = match &**left {
                         RExpr::Lit(RLit::Str(s)) => Some(s.value.clone()),
-                        RExpr::Tpl(t) if t.quasis.len() == 1 => {
-                            t.quasis[0].cooked.clone().map(|v| (&*v).into())
-                        }
+                        RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| (&*v).into()),
                         _ => None,
                     };
                     let name = Name::try_from(&**right).ok();
 
                     if let Some(name) = name {
                         if let Some(property) = left {
-                            let new_ty = self
-                                .filter_types_with_property(&rt, &property, None)?
-                                .cheap();
+                            let new_ty = self.filter_types_with_property(&rt, &property, None)?.cheap();
 
                             self.add_deep_type_fact(span, name.clone(), new_ty.clone(), true);
                         }
@@ -726,15 +666,11 @@ impl Analyzer<'_, '_> {
                         _ => true,
                     };
 
-                if self.ctx.can_generalize_literals()
-                    && (can_generalize || self.may_generalize(&lt))
-                {
+                if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&lt)) {
                     lt = lt.generalize_lit();
                     lt = lt.force_generalize_top_level_literals();
                 }
-                if self.ctx.can_generalize_literals()
-                    && (can_generalize || self.may_generalize(&rt))
-                {
+                if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&rt)) {
                     rt = rt.generalize_lit();
                     rt = rt.force_generalize_top_level_literals();
                 }
@@ -823,13 +759,7 @@ impl Analyzer<'_, '_> {
 }
 
 impl Analyzer<'_, '_> {
-    fn add_type_facts_for_typeof(
-        &mut self,
-        span: Span,
-        l: &RExpr,
-        r: &RExpr,
-        is_eq: bool,
-    ) -> VResult<()> {
+    fn add_type_facts_for_typeof(&mut self, span: Span, l: &RExpr, r: &RExpr, is_eq: bool) -> VResult<()> {
         if !self.ctx.in_cond {
             return Ok(());
         }
@@ -852,30 +782,18 @@ impl Analyzer<'_, '_> {
                         Some((
                             name,
                             if is_eq {
-                                (
-                                    TypeFacts::typeof_eq(&*value),
-                                    TypeFacts::typeof_neq(&*value),
-                                )
+                                (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
                             } else {
-                                (
-                                    TypeFacts::typeof_neq(&*value),
-                                    TypeFacts::typeof_eq(&*value),
-                                )
+                                (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
                             },
                         ))
                     }
                     RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some((
                         name,
                         if is_eq {
-                            (
-                                TypeFacts::typeof_eq(&*value),
-                                TypeFacts::typeof_neq(&*value),
-                            )
+                            (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
                         } else {
-                            (
-                                TypeFacts::typeof_neq(&*value),
-                                TypeFacts::typeof_eq(&*value),
-                            )
+                            (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
                         },
                     )),
                     _ => None,
@@ -912,14 +830,7 @@ impl Analyzer<'_, '_> {
     ///
     /// The condition in the if statement above will be `true` if `f.geometry`
     /// is `undefined`.
-    fn add_type_facts_for_opt_chains(
-        &mut self,
-        span: Span,
-        l: &RExpr,
-        r: &RExpr,
-        lt: &Type,
-        rt: &Type,
-    ) -> VResult<()> {
+    fn add_type_facts_for_opt_chains(&mut self, span: Span, l: &RExpr, r: &RExpr, lt: &Type, rt: &Type) -> VResult<()> {
         /// Convert expression to names.
         ///
         /// This may return multiple names if there are optional chaining
@@ -978,10 +889,7 @@ impl Analyzer<'_, '_> {
             Some((names, r_ty)) => {
                 if !self.can_be_undefined(span, &r_ty)? {
                     for name in names {
-                        self.cur_facts
-                            .false_facts
-                            .facts
-                            .insert(name.clone(), TypeFacts::NEUndefined);
+                        self.cur_facts.false_facts.facts.insert(name.clone(), TypeFacts::NEUndefined);
                     }
                 }
             }
@@ -992,12 +900,7 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    fn is_valid_for_switch_case(
-        &mut self,
-        span: Span,
-        disc_ty: &Type,
-        case_ty: &Type,
-    ) -> VResult<bool> {
+    fn is_valid_for_switch_case(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> VResult<bool> {
         let disc_ty = disc_ty.normalize();
         let case_ty = case_ty.normalize();
 
@@ -1058,12 +961,7 @@ impl Analyzer<'_, '_> {
     /// If we apply `instanceof C` to `v`, `v` becomes `T`.
     /// Note that `C extends D` and `D extends C` are true because both of `C`
     /// and `D` are empty classes.
-    fn narrow_with_instanceof(
-        &mut self,
-        span: Span,
-        ty: Cow<Type>,
-        orig_ty: &Type,
-    ) -> VResult<Type> {
+    fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult<Type> {
         let orig_ty = orig_ty.normalize();
 
         match orig_ty {
@@ -1154,10 +1052,7 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )
-                    .context(
-                        "tried to check if overlap exists to calculate the type created by \
-                         instanceof",
-                    )?
+                    .context("tried to check if overlap exists to calculate the type created by instanceof")?
                 {
                     return Ok(Type::never(span, Default::default()));
                 }
@@ -1178,13 +1073,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[extra_validator]
-    fn validate_relative_comparison_operands(
-        &mut self,
-        span: Span,
-        op: BinaryOp,
-        l: &Type,
-        r: &Type,
-    ) {
+    fn validate_relative_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) {
         let marks = self.marks();
 
         let l = l.normalize();
@@ -1207,17 +1096,11 @@ impl Analyzer<'_, '_> {
                 for lm in &lt.members {
                     for rm in &rt.members {
                         match (lm, rm) {
-                            (TypeElement::Index(lm), TypeElement::Index(rm))
-                                if lm.params.type_eq(&rm.params) =>
-                            {
+                            (TypeElement::Index(lm), TypeElement::Index(rm)) if lm.params.type_eq(&rm.params) => {
                                 if let Some(lt) = &lm.type_ann {
                                     if let Some(rt) = &rm.type_ann {
-                                        if self
-                                            .assign(span, &mut Default::default(), &lt, &rt)
-                                            .is_ok()
-                                            || self
-                                                .assign(span, &mut Default::default(), &rt, &lt)
-                                                .is_ok()
+                                        if self.assign(span, &mut Default::default(), &lt, &rt).is_ok()
+                                            || self.assign(span, &mut Default::default(), &rt, &lt).is_ok()
                                         {
                                             continue;
                                         }
@@ -1317,9 +1200,7 @@ impl Analyzer<'_, '_> {
             }
 
             (Type::TypeLit(lt), Type::TypeLit(rt)) => {
-                if let Ok(Some(v)) =
-                    self.can_compare_type_elements_relatively(span, &lt.members, &rt.members)
-                {
+                if let Ok(Some(v)) = self.can_compare_type_elements_relatively(span, &lt.members, &rt.members) {
                     return Ok(v);
                 }
             }
@@ -1331,19 +1212,12 @@ impl Analyzer<'_, '_> {
 
     /// Returns Ok(Some(v)) if this method has a special rule to handle type
     /// elements.
-    fn can_compare_type_elements_relatively(
-        &mut self,
-        span: Span,
-        l: &[TypeElement],
-        r: &[TypeElement],
-    ) -> VResult<Option<bool>> {
+    fn can_compare_type_elements_relatively(&mut self, span: Span, l: &[TypeElement], r: &[TypeElement]) -> VResult<Option<bool>> {
         for lm in l {
             for rm in r {
                 match (lm, rm) {
                     (TypeElement::Method(lm), TypeElement::Method(rm)) => {
-                        if let Ok(()) =
-                            self.assign(span, &mut Default::default(), &lm.key.ty(), &rm.key.ty())
-                        {
+                        if let Ok(()) = self.assign(span, &mut Default::default(), &lm.key.ty(), &rm.key.ty()) {
                             if lm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
                                 != rm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
                             {
@@ -1408,15 +1282,9 @@ impl Analyzer<'_, '_> {
             | Type::Mapped(..)
             | Type::Ref(..) => true,
 
-            Type::Intersection(ty) => ty
-                .types
-                .iter()
-                .all(|ty| self.is_valid_lhs_of_instanceof(span, ty)),
+            Type::Intersection(ty) => ty.types.iter().all(|ty| self.is_valid_lhs_of_instanceof(span, ty)),
 
-            Type::Union(ty) => ty
-                .types
-                .iter()
-                .any(|ty| self.is_valid_lhs_of_instanceof(span, ty)),
+            Type::Union(ty) => ty.types.iter().any(|ty| self.is_valid_lhs_of_instanceof(span, ty)),
 
             _ => false,
         }
@@ -1451,11 +1319,9 @@ impl Analyzer<'_, '_> {
             | Type::Lit(..)
             | Type::Class(..)
             | Type::Ref(Ref {
-                type_name:
-                    RTsEntityName::Ident(RIdent {
-                        sym: js_word!("Object"),
-                        ..
-                    }),
+                type_name: RTsEntityName::Ident(RIdent {
+                    sym: js_word!("Object"), ..
+                }),
                 ..
             })
             | Type::Symbol(..) => {
@@ -1499,10 +1365,7 @@ impl Analyzer<'_, '_> {
                     &Type::Ref(Ref {
                         span,
                         ctxt: ModuleId::builtin(),
-                        type_name: RTsEntityName::Ident(RIdent::new(
-                            "Function".into(),
-                            span.with_ctxt(SyntaxContext::empty()),
-                        )),
+                        type_name: RTsEntityName::Ident(RIdent::new("Function".into(), span.with_ctxt(SyntaxContext::empty()))),
                         type_args: None,
                         metadata: Default::default(),
                     }),
@@ -1527,11 +1390,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// We should create a type fact for `foo` in `if (foo.type === 'bar');`.
-    fn calc_type_facts_for_equality(
-        &mut self,
-        name: Name,
-        equals_to: &Type,
-    ) -> VResult<(Name, Type)> {
+    fn calc_type_facts_for_equality(&mut self, name: Name, equals_to: &Type) -> VResult<(Name, Type)> {
         let span = equals_to.span();
 
         let mut id: RIdent = name.as_ids()[0].clone().into();
@@ -1559,36 +1418,18 @@ impl Analyzer<'_, '_> {
             sym: ids[ids.len() - 1].sym().clone(),
         };
 
-        let ty = self.type_of_name(
-            span,
-            &name.as_ids()[..name.len() - 1],
-            TypeOfMode::RValue,
-            None,
-        )?;
-        let ty = self
-            .expand_top_ref(span, Cow::Owned(ty), Default::default())?
-            .into_owned();
+        let ty = self.type_of_name(span, &name.as_ids()[..name.len() - 1], TypeOfMode::RValue, None)?;
+        let ty = self.expand_top_ref(span, Cow::Owned(ty), Default::default())?.into_owned();
 
         match ty.normalize() {
             Type::Union(u) => {
                 let mut candidates = vec![];
                 for ty in &u.types {
-                    let prop_res = self.access_property(
-                        span,
-                        ty,
-                        &prop,
-                        TypeOfMode::RValue,
-                        IdCtx::Var,
-                        Default::default(),
-                    );
+                    let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
 
                     match prop_res {
                         Ok(prop_ty) => {
-                            let prop_ty = self.expand_top_ref(
-                                prop_ty.span(),
-                                Cow::Owned(prop_ty),
-                                Default::default(),
-                            )?;
+                            let prop_ty = self.expand_top_ref(prop_ty.span(), Cow::Owned(prop_ty), Default::default())?;
                             let possible = match prop_ty.normalize() {
                                 // Type parameters might have same value.
                                 Type::Param(..) => true,
@@ -1700,16 +1541,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            op!("*")
-            | op!("/")
-            | op!("%")
-            | op!(bin, "-")
-            | op!("<<")
-            | op!(">>")
-            | op!(">>>")
-            | op!("&")
-            | op!("^")
-            | op!("|") => {
+            op!("*") | op!("/") | op!("%") | op!(bin, "-") | op!("<<") | op!(">>") | op!(">>>") | op!("&") | op!("^") | op!("|") => {
                 let mut check = |ty: &Type, is_left| {
                     if ty.is_any() {
                         return;
@@ -1724,8 +1556,7 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             ..
                         }) => {
-                            self.storage
-                                .report(Error::ObjectIsPossiblyUndefined { span: *span });
+                            self.storage.report(Error::ObjectIsPossiblyUndefined { span: *span });
                         }
 
                         Type::Keyword(KeywordType {
@@ -1733,8 +1564,7 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsNullKeyword,
                             ..
                         }) => {
-                            self.storage
-                                .report(Error::ObjectIsPossiblyNull { span: *span });
+                            self.storage.report(Error::ObjectIsPossiblyNull { span: *span });
                         }
 
                         _ => errors.push(if is_left {
@@ -1751,10 +1581,7 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsBooleanKeyword,
                             ..
                         })
-                        | Type::Lit(LitType {
-                            lit: RTsLit::Bool(..),
-                            ..
-                        }) => true,
+                        | Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => true,
                         _ => false,
                     }
                     && match rt.normalize() {
@@ -1762,10 +1589,7 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsBooleanKeyword,
                             ..
                         })
-                        | Type::Lit(LitType {
-                            lit: RTsLit::Bool(..),
-                            ..
-                        }) => true,
+                        | Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => true,
                         _ => false,
                     }
                 {
@@ -1789,8 +1613,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         ..
                     }) => {
-                        self.storage
-                            .report(Error::ObjectIsPossiblyUndefined { span });
+                        self.storage.report(Error::ObjectIsPossiblyUndefined { span });
                     }
 
                     ty => {
@@ -1812,8 +1635,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         ..
                     }) => {
-                        self.storage
-                            .report(Error::ObjectIsPossiblyUndefined { span });
+                        self.storage.report(Error::ObjectIsPossiblyUndefined { span });
                     }
 
                     _ => {
@@ -1835,9 +1657,7 @@ impl Analyzer<'_, '_> {
 
         match ty {
             Type::Ref(..) => {
-                if let Ok(ty) =
-                    self.expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default())
-                {
+                if let Ok(ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default()) {
                     return self.is_valid_lhs_of_in(&ty);
                 }
 
@@ -1865,13 +1685,9 @@ impl Analyzer<'_, '_> {
                 ..
             })
             | Type::Lit(LitType {
-                lit: RTsLit::Number(..),
-                ..
+                lit: RTsLit::Number(..), ..
             })
-            | Type::Lit(LitType {
-                lit: RTsLit::Str(..),
-                ..
-            })
+            | Type::Lit(LitType { lit: RTsLit::Str(..), .. })
             | Type::Enum(..)
             | Type::EnumVariant(..)
             | Type::Param(..)
@@ -1894,9 +1710,7 @@ impl Analyzer<'_, '_> {
 
         match ty.normalize() {
             Type::Ref(..) => {
-                if let Ok(ty) =
-                    self.expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default())
-                {
+                if let Ok(ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default()) {
                     return self.is_valid_rhs_of_in(&ty);
                 }
 
@@ -1927,9 +1741,7 @@ impl Analyzer<'_, '_> {
                 match operand {
                     RExpr::Bin(bin) => {
                         if bin.op == op!("||") || bin.op == op!("&&") {
-                            return Err(Error::NullishCoalescingMixedWithLogicalWithoutParen {
-                                span,
-                            });
+                            return Err(Error::NullishCoalescingMixedWithLogicalWithoutParen { span });
                         }
                     }
                     _ => {}
@@ -1938,9 +1750,7 @@ impl Analyzer<'_, '_> {
                 match operand {
                     RExpr::Bin(bin) => {
                         if bin.op == op!("??") {
-                            return Err(Error::NullishCoalescingMixedWithLogicalWithoutParen {
-                                span,
-                            });
+                            return Err(Error::NullishCoalescingMixedWithLogicalWithoutParen { span });
                         }
                     }
                     _ => {}
@@ -1987,17 +1797,12 @@ pub(super) fn extract_name_for_assignment(e: &RExpr, is_exact_eq: bool) -> Optio
 
 fn is_str_like_for_addition(t: &Type) -> bool {
     match t.normalize() {
-        Type::Lit(LitType {
-            lit: RTsLit::Str(..),
-            ..
-        }) => true,
+        Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => true,
         Type::Keyword(KeywordType {
             kind: TsKeywordTypeKind::TsStringKeyword,
             ..
         }) => true,
-        Type::Intersection(Intersection { types, .. }) => {
-            types.iter().any(|ty| is_str_like_for_addition(&ty))
-        }
+        Type::Intersection(Intersection { types, .. }) => types.iter().any(|ty| is_str_like_for_addition(&ty)),
         Type::Union(Union { types, .. }) => types.iter().all(|ty| is_str_like_for_addition(&ty)),
         _ => false,
     }

@@ -1,8 +1,7 @@
 use rayon::prelude::*;
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RCallExpr, RCallee, RExportAll, RExpr, RImportDecl, RImportSpecifier, RLit, RModuleItem,
-    RNamedExport, RStr, RTsExternalModuleRef,
+    RCallExpr, RCallee, RExportAll, RExpr, RImportDecl, RImportSpecifier, RLit, RModuleItem, RNamedExport, RStr, RTsExternalModuleRef,
 };
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -66,29 +65,19 @@ impl Analyzer<'_, '_> {
         Ok(None)
     }
 
-    fn insert_import_info(
-        &mut self,
-        ctxt: ModuleId,
-        dep_module_id: ModuleId,
-        ty: Type,
-    ) -> VResult<()> {
+    fn insert_import_info(&mut self, ctxt: ModuleId, dep_module_id: ModuleId, ty: Type) -> VResult<()> {
         self.imports.entry((ctxt, dep_module_id)).or_insert(ty);
 
         Ok(())
     }
 
     #[extra_validator]
-    pub(super) fn load_normal_imports(
-        &mut self,
-        module_spans: Vec<(ModuleId, Span)>,
-        items: &Vec<&RModuleItem>,
-    ) {
+    pub(super) fn load_normal_imports(&mut self, module_spans: Vec<(ModuleId, Span)>, items: &Vec<&RModuleItem>) {
         if self.is_builtin {
             return;
         }
         // We first load non-circular imports.
-        let imports =
-            ImportFinder::find_imports(&self.comments, module_spans, &self.storage, &*items);
+        let imports = ImportFinder::find_imports(&self.comments, module_spans, &self.storage, &*items);
 
         let loader = self.loader;
         let mut normal_imports = vec![];
@@ -129,8 +118,7 @@ impl Analyzer<'_, '_> {
 
             match res {
                 Ok(info) => {
-                    self.insert_import_info(ctxt, dep_id, info)
-                        .report(&mut self.storage);
+                    self.insert_import_info(ctxt, dep_id, info).report(&mut self.storage);
                 }
                 Err(err) => self.storage.report(err),
             }
@@ -158,12 +146,7 @@ impl Analyzer<'_, '_> {
                             if orig.sym() == i {
                                 for ty in types {
                                     found_entry = true;
-                                    self.storage.store_private_type(
-                                        ctxt,
-                                        id.clone(),
-                                        ty.clone(),
-                                        false,
-                                    );
+                                    self.storage.store_private_type(ctxt, id.clone(), ty.clone(), false);
                                 }
                             }
                         }
@@ -214,33 +197,15 @@ impl Analyzer<'_, '_> {
                     //
                     match &named.imported {
                         Some(imported) => {
-                            self.handle_import(
-                                named.span,
-                                base,
-                                dep,
-                                Id::from(imported),
-                                Id::from(&named.local),
-                            );
+                            self.handle_import(named.span, base, dep, Id::from(imported), Id::from(&named.local));
                         }
                         None => {
-                            self.handle_import(
-                                named.span,
-                                base,
-                                dep,
-                                Id::from(&named.local),
-                                Id::from(&named.local),
-                            );
+                            self.handle_import(named.span, base, dep, Id::from(&named.local), Id::from(&named.local));
                         }
                     }
                 }
                 RImportSpecifier::Default(default) => {
-                    self.handle_import(
-                        default.span,
-                        base,
-                        dep,
-                        Id::word(js_word!("default")),
-                        Id::from(&default.local),
-                    );
+                    self.handle_import(default.span, base, dep, Id::word(js_word!("default")), Id::from(&default.local));
                 }
                 RImportSpecifier::Namespace(ns) => {
                     if base == dep {
@@ -297,23 +262,11 @@ where
         let ctxt = self.cur_ctxt;
         let deps = find_imports_in_comments(&self.comments, span);
 
-        self.to.extend(deps.into_iter().map(|src| {
-            (
-                ctxt,
-                DepInfo {
-                    span,
-                    src: src.to_path(),
-                },
-            )
-        }));
+        self.to
+            .extend(deps.into_iter().map(|src| (ctxt, DepInfo { span, src: src.to_path() })));
     }
 
-    pub fn find_imports<T>(
-        comments: C,
-        module_span: Vec<(ModuleId, Span)>,
-        storage: &'a Storage<'a>,
-        node: &T,
-    ) -> Vec<(ModuleId, DepInfo)>
+    pub fn find_imports<T>(comments: C, module_span: Vec<(ModuleId, Span)>, storage: &'a Storage<'a>, node: &T) -> Vec<(ModuleId, DepInfo)>
     where
         T: for<'any> VisitWith<ImportFinder<'any, C>>,
     {

@@ -44,9 +44,7 @@ impl Analyzer<'_, '_> {
         // We don't apply type annotation because it can corrupt type checking.
         let mut casted_ty = e.type_ann.validate_with(self)?;
         casted_ty.make_clone_cheap();
-        let mut orig_ty = e
-            .expr
-            .validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
+        let mut orig_ty = e.expr.validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
         orig_ty.make_clone_cheap();
 
         self.validate_type_cast(e.span, orig_ty, casted_ty)
@@ -68,9 +66,7 @@ impl Analyzer<'_, '_> {
 
         // We don't apply type annotation because it can corrupt type checking.
         let casted_ty = e.type_ann.validate_with(self)?;
-        let orig_ty = e
-            .expr
-            .validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
+        let orig_ty = e.expr.validate_with_args(self, (mode, type_args, Some(&casted_ty)))?;
 
         self.validate_type_cast(e.span, orig_ty, casted_ty)
     }
@@ -109,8 +105,7 @@ impl Analyzer<'_, '_> {
         self.prevent_expansion(&mut casted_ty);
         casted_ty.make_clone_cheap();
 
-        self.validate_type_cast_inner(span, &orig_ty, &casted_ty)
-            .report(&mut self.storage);
+        self.validate_type_cast_inner(span, &orig_ty, &casted_ty).report(&mut self.storage);
 
         Ok(casted_ty)
     }
@@ -157,11 +152,7 @@ impl Analyzer<'_, '_> {
                             // }
                             let right_element = &rt.elems[i];
 
-                            let res = self.validate_type_cast_inner(
-                                span,
-                                &right_element.ty,
-                                &left_element.ty,
-                            );
+                            let res = self.validate_type_cast_inner(span, &right_element.ty, &left_element.ty);
 
                             if res.is_err() {
                                 all_castable = false;
@@ -240,13 +231,7 @@ impl Analyzer<'_, '_> {
             .convert_err(|err| Error::NonOverlappingTypeCast { span })
     }
 
-    pub(crate) fn has_overlap(
-        &mut self,
-        span: Span,
-        l: &Type,
-        r: &Type,
-        opts: CastableOpts,
-    ) -> VResult<bool> {
+    pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type, opts: CastableOpts) -> VResult<bool> {
         let l = l.normalize();
         let r = r.normalize();
 
@@ -262,21 +247,12 @@ impl Analyzer<'_, '_> {
     /// - `l`: from
     /// - `r`: to
 
-    pub(crate) fn castable(
-        &mut self,
-        span: Span,
-        from: &Type,
-        to: &Type,
-        opts: CastableOpts,
-    ) -> VResult<bool> {
+    pub(crate) fn castable(&mut self, span: Span, from: &Type, to: &Type, opts: CastableOpts) -> VResult<bool> {
         let from = from.normalize();
         let to = to.normalize();
 
         // Overlaps with all types.
-        if from.is_any()
-            || from.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-            || from.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-        {
+        if from.is_any() || from.is_kwd(TsKeywordTypeKind::TsNullKeyword) || from.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
             return Ok(true);
         }
 
@@ -287,8 +263,7 @@ impl Analyzer<'_, '_> {
         match (from, to) {
             (
                 Type::Lit(LitType {
-                    lit: RTsLit::Number(..),
-                    ..
+                    lit: RTsLit::Number(..), ..
                 }),
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
@@ -296,20 +271,14 @@ impl Analyzer<'_, '_> {
                 }),
             ) => return Ok(true),
             (
-                Type::Lit(LitType {
-                    lit: RTsLit::Str(..),
-                    ..
-                }),
+                Type::Lit(LitType { lit: RTsLit::Str(..), .. }),
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
                     ..
                 }),
             ) => return Ok(true),
             (
-                Type::Lit(LitType {
-                    lit: RTsLit::Bool(..),
-                    ..
-                }),
+                Type::Lit(LitType { lit: RTsLit::Bool(..), .. }),
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
@@ -317,8 +286,7 @@ impl Analyzer<'_, '_> {
             ) => return Ok(true),
             (
                 Type::Lit(LitType {
-                    lit: RTsLit::BigInt(..),
-                    ..
+                    lit: RTsLit::BigInt(..), ..
                 }),
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBigIntKeyword,
@@ -327,38 +295,23 @@ impl Analyzer<'_, '_> {
             ) => return Ok(true),
             (
                 Type::Lit(LitType {
-                    lit: RTsLit::Number(..),
-                    ..
+                    lit: RTsLit::Number(..), ..
                 }),
                 Type::Lit(LitType {
-                    lit: RTsLit::Number(..),
-                    ..
+                    lit: RTsLit::Number(..), ..
                 }),
             )
+            | (Type::Lit(LitType { lit: RTsLit::Str(..), .. }), Type::Lit(LitType { lit: RTsLit::Str(..), .. }))
             | (
                 Type::Lit(LitType {
-                    lit: RTsLit::Str(..),
-                    ..
+                    lit: RTsLit::BigInt(..), ..
                 }),
                 Type::Lit(LitType {
-                    lit: RTsLit::Str(..),
-                    ..
-                }),
-            )
-            | (
-                Type::Lit(LitType {
-                    lit: RTsLit::BigInt(..),
-                    ..
-                }),
-                Type::Lit(LitType {
-                    lit: RTsLit::BigInt(..),
-                    ..
+                    lit: RTsLit::BigInt(..), ..
                 }),
             ) => return Ok(false),
 
-            (Type::Function(..), Type::Interface(Interface { name, .. })) if name == "Function" => {
-                return Ok(true)
-            }
+            (Type::Function(..), Type::Interface(Interface { name, .. })) if name == "Function" => return Ok(true),
             _ => {}
         }
 
@@ -369,15 +322,11 @@ impl Analyzer<'_, '_> {
 
         match (from, to) {
             (Type::Ref(_), _) => {
-                let from = self
-                    .expand_top_ref(span, Cow::Borrowed(from), Default::default())?
-                    .freezed();
+                let from = self.expand_top_ref(span, Cow::Borrowed(from), Default::default())?.freezed();
                 return self.castable(span, &from, to, opts);
             }
             (_, Type::Ref(_)) => {
-                let to = self
-                    .expand_top_ref(span, Cow::Borrowed(to), Default::default())?
-                    .freezed();
+                let to = self.expand_top_ref(span, Cow::Borrowed(to), Default::default())?.freezed();
                 return self.castable(span, from, &to, opts);
             }
 
@@ -391,12 +340,8 @@ impl Analyzer<'_, '_> {
                                 if lm.params.type_eq(&rm.params) {
                                     if let Some(lt) = &lm.type_ann {
                                         if let Some(rt) = &rm.type_ann {
-                                            if self
-                                                .assign(span, &mut Default::default(), &lt, &rt)
-                                                .is_err()
-                                                && self
-                                                    .assign(span, &mut Default::default(), &rt, &lt)
-                                                    .is_err()
+                                            if self.assign(span, &mut Default::default(), &lt, &rt).is_err()
+                                                && self.assign(span, &mut Default::default(), &rt, &lt).is_err()
                                             {
                                                 return Ok(false);
                                             }
@@ -475,8 +420,7 @@ impl Analyzer<'_, '_> {
                 span,
                 disallow_different_classes: opts.disallow_different_classes,
                 allow_assignment_to_param_constraint: opts.allow_assignment_to_param_constraint,
-                disallow_special_assignment_to_empty_class: opts
-                    .disallow_special_assignment_to_empty_class,
+                disallow_special_assignment_to_empty_class: opts.disallow_special_assignment_to_empty_class,
                 for_castablity: true,
                 ..Default::default()
             },

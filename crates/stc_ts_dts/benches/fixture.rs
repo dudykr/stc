@@ -208,14 +208,7 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
 
             let mut module = module.clone();
             {
-                let mut analyzer = Analyzer::root(
-                    env.clone(),
-                    cm.clone(),
-                    Default::default(),
-                    box &mut storage,
-                    &NoopLoader,
-                    None,
-                );
+                let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
                 GLOBALS.set(stable_env.swc_globals(), || {
                     module.validate_with(&mut analyzer).unwrap();
                 });

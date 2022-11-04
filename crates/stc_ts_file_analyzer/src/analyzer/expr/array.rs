@@ -5,9 +5,8 @@ use stc_ts_ast_rnode::{RArrayLit, RExpr, RExprOrSpread, RInvalid, RNumber, RTsLi
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    type_id::SymbolId, Array, CommonTypeMetadata, ComputedKey, Intersection, Key, KeywordType,
-    KeywordTypeMetadata, LitType, Symbol, Tuple, TupleElement, Type, TypeParamInstantiation, Union,
-    UnionMetadata,
+    type_id::SymbolId, Array, CommonTypeMetadata, ComputedKey, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Symbol, Tuple,
+    TupleElement, Type, TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use swc_atoms::js_word;
@@ -54,10 +53,9 @@ impl Analyzer<'_, '_> {
 
         let type_ann = self.expand_type_ann(span, type_ann)?;
 
-        let mut iterator = type_ann.as_deref().and_then(|ty| {
-            self.get_iterator(span, Cow::Borrowed(ty), Default::default())
-                .ok()
-        });
+        let mut iterator = type_ann
+            .as_deref()
+            .and_then(|ty| self.get_iterator(span, Cow::Borrowed(ty), Default::default()).ok());
         iterator.make_clone_cheap();
 
         let prefer_tuple = self.ctx.prefer_tuple || self.prefer_tuple(type_ann.as_deref());
@@ -68,17 +66,12 @@ impl Analyzer<'_, '_> {
         for (idx, elem) in elems.iter().enumerate() {
             let span = elem.span();
             let ty = match elem {
-                Some(RExprOrSpread {
-                    spread: None,
-                    ref expr,
-                }) => {
-                    let elem_type_ann = iterator.as_deref().and_then(|iterator| {
-                        self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx)
-                            .ok()
-                    });
+                Some(RExprOrSpread { spread: None, ref expr }) => {
+                    let elem_type_ann = iterator
+                        .as_deref()
+                        .and_then(|iterator| self.get_element_from_iterator(span, Cow::Borrowed(iterator), idx).ok());
 
-                    let ty =
-                        expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
+                    let ty = expr.validate_with_args(self, (mode, type_args, elem_type_ann.as_deref()))?;
                     match ty.normalize() {
                         Type::TypeLit(..) => {
                             if !prefer_tuple {
@@ -132,10 +125,7 @@ impl Analyzer<'_, '_> {
                         _ => {
                             let elem_type = self
                                 .get_iterator_element_type(span, Cow::Owned(element_type), false)
-                                .context(
-                                    "tried to calculated the element type of a iterable provided \
-                                     to spread",
-                                )?
+                                .context("tried to calculated the element type of a iterable provided to spread")?
                                 .into_owned();
 
                             can_be_tuple = false;
@@ -170,9 +160,7 @@ impl Analyzer<'_, '_> {
 
         if !can_be_tuple || (type_ann.is_none() && elements.is_empty()) {
             elements.retain(|el| {
-                if el.ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-                    || el.ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                {
+                if el.ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || el.ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
                     return false;
                 }
                 true
@@ -180,13 +168,7 @@ impl Analyzer<'_, '_> {
             let mut types: Vec<_> = elements
                 .into_iter()
                 .map(|element| *element.ty)
-                .map(|ty| {
-                    if type_ann.is_none() {
-                        ty.generalize_lit()
-                    } else {
-                        ty
-                    }
-                })
+                .map(|ty| if type_ann.is_none() { ty.generalize_lit() } else { ty })
                 .collect();
             types.dedup_type();
             if types.is_empty() {
@@ -222,10 +204,9 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        let should_be_any = elements.iter().all(|el| {
-            el.ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-                || el.ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-        });
+        let should_be_any = elements
+            .iter()
+            .all(|el| el.ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) || el.ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword));
 
         if should_be_any && !self.ctx.prefer_tuple {
             elements.iter_mut().for_each(|el| {
@@ -253,12 +234,7 @@ impl Analyzer<'_, '_> {
 
 impl Analyzer<'_, '_> {
     /// Get `n`th element from the `iterator`.
-    pub(crate) fn get_element_from_iterator<'a>(
-        &mut self,
-        span: Span,
-        iterator: Cow<'a, Type>,
-        n: usize,
-    ) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_element_from_iterator<'a>(&mut self, span: Span, iterator: Cow<'a, Type>, n: usize) -> VResult<Cow<'a, Type>> {
         debug!(
             "Caculating element type of an iterator ({})",
             dump_type_as_string(&self.cm, &iterator)
@@ -294,9 +270,7 @@ impl Analyzer<'_, '_> {
                 for (idx, iterator_elem) in u.types.iter().enumerate() {
                     let res = self
                         .get_element_from_iterator(span, Cow::Borrowed(iterator_elem), n)
-                        .with_context(|| {
-                            format!("failed to get element type from {}th element", idx)
-                        })
+                        .with_context(|| format!("failed to get element type from {}th element", idx))
                         .convert_err(|err| match err {
                             Error::TupleIndexError { span, .. } => Error::TupleTooShort { span },
                             _ => err,
@@ -363,18 +337,13 @@ impl Analyzer<'_, '_> {
                 Default::default(),
                 &iterator,
                 &iterator,
-                &Key::Normal {
-                    span,
-                    sym: "next".into(),
-                },
+                &Key::Normal { span, sym: "next".into() },
                 None,
                 &[],
                 &[],
                 &[],
                 None,
-                CallOpts {
-                    ..Default::default()
-                },
+                CallOpts { ..Default::default() },
             )
             .convert_err(|err| match err {
                 Error::NoCallablePropertyWithName { span, .. }
@@ -402,10 +371,7 @@ impl Analyzer<'_, '_> {
             .access_property(
                 span,
                 &next_ret_ty,
-                &Key::Normal {
-                    span,
-                    sym: "value".into(),
-                },
+                &Key::Normal { span, sym: "value".into() },
                 TypeOfMode::RValue,
                 IdCtx::Var,
                 AccessPropertyOpts {
@@ -413,10 +379,7 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )
-            .context(
-                "tried to get the type of property named `value` to determine the type of nth \
-                 element of an iterator",
-            )?;
+            .context("tried to get the type of property named `value` to determine the type of nth element of an iterator")?;
 
         // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
         if matches!(elem_ty.normalize(), Type::Union(..)) {
@@ -442,11 +405,7 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(elem_ty))
     }
 
-    pub(crate) fn get_async_iterator_elem_type<'a>(
-        &mut self,
-        span: Span,
-        ty: Cow<'a, Type>,
-    ) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_async_iterator_elem_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> VResult<Cow<'a, Type>> {
         let ty = self
             .normalize(Some(span), ty, Default::default())
             .context("tried to normalize type to calculate element type of an async iterator")?;
@@ -457,9 +416,7 @@ impl Analyzer<'_, '_> {
 
         if !self.data.checked_for_async_iterator {
             self.data.checked_for_async_iterator = true;
-            self.env
-                .get_global_type(span, &"AsyncIterator".into())
-                .report(&mut self.storage);
+            self.env.get_global_type(span, &"AsyncIterator".into()).report(&mut self.storage);
         }
 
         let async_iterator = self
@@ -498,26 +455,19 @@ impl Analyzer<'_, '_> {
                     ReevalMode::NoReeval,
                     &async_iterator,
                     &async_iterator,
-                    &Key::Normal {
-                        span,
-                        sym: "next".into(),
-                    },
+                    &Key::Normal { span, sym: "next".into() },
                     Default::default(),
                     Default::default(),
                     Default::default(),
                     Default::default(),
                     Default::default(),
-                    CallOpts {
-                        ..Default::default()
-                    },
+                    CallOpts { ..Default::default() },
                 )
                 .context("tried to get the type of `next` of an async iterator")?;
 
             let item = self
                 .get_awaited_type(span, Cow::Owned(item_promise))
-                .context(
-                    "tried to unwrap `Promise` to calculate the element type of an async iterator",
-                )?;
+                .context("tried to unwrap `Promise` to calculate the element type of an async iterator")?;
 
             let elem_ty = self
                 .get_value_type_from_iterator_result(span, Cow::Borrowed(&item))
@@ -530,35 +480,23 @@ impl Analyzer<'_, '_> {
             .get_iterator_element_type(span, ty, true)
             .context("tried to get element of iterator as a fallback logic for async iterator")
             .convert_err(|err| match err {
-                Error::MustHaveSymbolIteratorThatReturnsIterator { span } => {
-                    Error::MustHaveSymbolAsycIteratorThatReturnsIterator { span }
-                }
+                Error::MustHaveSymbolIteratorThatReturnsIterator { span } => Error::MustHaveSymbolAsycIteratorThatReturnsIterator { span },
                 _ => err,
             })?;
 
-        if let Ok(elem_ty) = self
-            .get_awaited_type(span, Cow::Borrowed(&elem_ty))
-            .map(Cow::into_owned)
-        {
+        if let Ok(elem_ty) = self.get_awaited_type(span, Cow::Borrowed(&elem_ty)).map(Cow::into_owned) {
             return Ok(Cow::Owned(elem_ty));
         }
 
         Ok(Cow::Owned(elem_ty.into_owned()))
     }
 
-    pub(crate) fn get_value_type_from_iterator_result<'a>(
-        &mut self,
-        span: Span,
-        iterator_result: Cow<'a, Type>,
-    ) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_value_type_from_iterator_result<'a>(&mut self, span: Span, iterator_result: Cow<'a, Type>) -> VResult<Cow<'a, Type>> {
         let mut elem_ty = self
             .access_property(
                 span,
                 &iterator_result,
-                &Key::Normal {
-                    span,
-                    sym: "value".into(),
-                },
+                &Key::Normal { span, sym: "value".into() },
                 TypeOfMode::RValue,
                 IdCtx::Var,
                 AccessPropertyOpts {
@@ -567,13 +505,8 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )
-            .context(
-                "tried to get the type of property named `value` to determine the type of an \
-                 iterator",
-            )
-            .convert_err(
-                |err| Error::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() },
-            )?;
+            .context("tried to get the type of property named `value` to determine the type of an iterator")
+            .convert_err(|err| Error::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() })?;
 
         // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
         if matches!(elem_ty.normalize(), Type::Union(..)) {
@@ -605,13 +538,7 @@ impl Analyzer<'_, '_> {
         iterator: Cow<'a, Type>,
         start_index: usize,
     ) -> VResult<Cow<'a, Type>> {
-        let iterator = self.normalize(
-            span,
-            iterator,
-            NormalizeTypeOpts {
-                ..Default::default()
-            },
-        )?;
+        let iterator = self.normalize(span, iterator, NormalizeTypeOpts { ..Default::default() })?;
 
         if iterator.is_tuple() {
             let ty = iterator.into_owned().expect_tuple();
@@ -639,25 +566,13 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Owned(iterator.into_owned()))
     }
 
-    pub(crate) fn get_iterator<'a>(
-        &mut self,
-        span: Span,
-        ty: Cow<'a, Type>,
-        opts: GetIteratorOpts,
-    ) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_iterator<'a>(&mut self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
         let start = Instant::now();
-        let iterator = self
-            .get_iterator_inner(span, ty, opts)
-            .context("tried to get iterator");
+        let iterator = self.get_iterator_inner(span, ty, opts).context("tried to get iterator");
 
         let end = Instant::now();
 
-        debug!(
-            kind = "perf",
-            op = "get_iterator",
-            "get_iterator (time = {:?}",
-            end - start
-        );
+        debug!(kind = "perf", op = "get_iterator", "get_iterator (time = {:?}", end - start);
 
         let iterator = iterator?;
 
@@ -675,8 +590,7 @@ impl Analyzer<'_, '_> {
                     Default::default(),
                 ) {
                     if !return_prop_ty.is_fn_type() {
-                        self.storage
-                            .report(Error::ReturnPropertyOfIteratorMustBeMethod { span })
+                        self.storage.report(Error::ReturnPropertyOfIteratorMustBeMethod { span })
                     }
                 }
             }
@@ -686,12 +600,7 @@ impl Analyzer<'_, '_> {
         Ok(iterator)
     }
 
-    fn get_iterator_inner<'a>(
-        &mut self,
-        span: Span,
-        ty: Cow<'a, Type>,
-        opts: GetIteratorOpts,
-    ) -> VResult<Cow<'a, Type>> {
+    fn get_iterator_inner<'a>(&mut self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
         let ty_str = dump_type_as_string(&self.cm, &ty);
         debug!("[exprs/array] get_iterator({})", ty_str);
         ty.assert_valid();
@@ -729,17 +638,12 @@ impl Analyzer<'_, '_> {
                     ..
                 })
                 | Type::Lit(LitType {
-                    lit: RTsLit::Number(..),
-                    ..
+                    lit: RTsLit::Number(..), ..
                 })
                 | Type::Lit(LitType {
-                    lit: RTsLit::BigInt(..),
-                    ..
+                    lit: RTsLit::BigInt(..), ..
                 })
-                | Type::Lit(LitType {
-                    lit: RTsLit::Bool(..),
-                    ..
-                }) => return Err(Error::NotArrayType { span }),
+                | Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => return Err(Error::NotArrayType { span }),
 
                 Type::Array(..) | Type::Tuple(..) => return Ok(ty),
                 Type::Union(u) => {
@@ -751,9 +655,7 @@ impl Analyzer<'_, '_> {
                         .collect::<Result<_, _>>()
                         .convert_err(|err| match err {
                             Error::MustHaveSymbolIteratorThatReturnsIterator { span } => {
-                                Error::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray {
-                                    span,
-                                }
+                                Error::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { span }
                             }
                             _ => err,
                         })?;
@@ -809,9 +711,7 @@ impl Analyzer<'_, '_> {
             .convert_err(|err| match err {
                 Error::NoCallablePropertyWithName { span, .. }
                 | Error::NoSuchPropertyInClass { span, .. }
-                | Error::NoSuchProperty { span, .. } => {
-                    Error::MustHaveSymbolIteratorThatReturnsIterator { span }
-                }
+                | Error::NoSuchProperty { span, .. } => Error::MustHaveSymbolIteratorThatReturnsIterator { span },
                 _ => err,
             })
             .map(Cow::Owned)
@@ -826,12 +726,7 @@ impl Analyzer<'_, '_> {
     /// ## try_next_value
     ///
     /// If it's true, this method will try `ty.next().value`.
-    pub(crate) fn get_iterator_element_type<'a>(
-        &mut self,
-        span: Span,
-        ty: Cow<'a, Type>,
-        try_next_value: bool,
-    ) -> VResult<Cow<'a, Type>> {
+    pub(crate) fn get_iterator_element_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>, try_next_value: bool) -> VResult<Cow<'a, Type>> {
         let ty_str = dump_type_as_string(&self.cm, &ty);
 
         if try_next_value {
@@ -842,12 +737,7 @@ impl Analyzer<'_, '_> {
 
         let mut iterator = self
             .get_iterator(span, ty, Default::default())
-            .with_context(|| {
-                format!(
-                    "tried to get a type of an iterator to get the element type of it ({})",
-                    ty_str
-                )
-            })?;
+            .with_context(|| format!("tried to get a type of an iterator to get the element type of it ({})", ty_str))?;
         iterator.make_clone_cheap();
 
         if iterator.is_str() {
@@ -885,13 +775,7 @@ impl Analyzer<'_, '_> {
                 let types = u
                     .types
                     .iter()
-                    .map(|iterator| {
-                        self.get_iterator_element_type(
-                            iterator.span(),
-                            Cow::Borrowed(iterator),
-                            try_next_value,
-                        )
-                    })
+                    .map(|iterator| self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator), try_next_value))
                     .map(|ty| ty.map(Cow::into_owned))
                     .collect::<Result<Vec<_>, _>>()?;
 
@@ -909,13 +793,7 @@ impl Analyzer<'_, '_> {
                 let mut types = i
                     .types
                     .iter()
-                    .map(|iterator| {
-                        self.get_iterator_element_type(
-                            iterator.span(),
-                            Cow::Borrowed(iterator),
-                            try_next_value,
-                        )
-                    })
+                    .map(|iterator| self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator), try_next_value))
                     .map(|ty| ty.map(Cow::into_owned))
                     .collect::<Result<Vec<_>, _>>()?;
                 types.dedup_type();
@@ -936,11 +814,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Returns the type of `iterator.next().value`.
-    fn get_next_value_type_of_iterator(
-        &mut self,
-        span: Span,
-        iterator: Cow<Type>,
-    ) -> VResult<Type> {
+    fn get_next_value_type_of_iterator(&mut self, span: Span, iterator: Cow<Type>) -> VResult<Type> {
         let next_ret_ty = self
             .call_property(
                 span,
@@ -948,10 +822,7 @@ impl Analyzer<'_, '_> {
                 Default::default(),
                 &iterator,
                 &iterator,
-                &Key::Normal {
-                    span,
-                    sym: "next".into(),
-                },
+                &Key::Normal { span, sym: "next".into() },
                 None,
                 &[],
                 &[],

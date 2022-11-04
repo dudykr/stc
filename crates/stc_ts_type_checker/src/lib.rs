@@ -12,9 +12,7 @@ use stc_ts_ast_rnode::{RModule, RStr, RTsModuleName};
 use stc_ts_dts::{apply_mutations, cleanup_module_for_dts};
 use stc_ts_env::Env;
 use stc_ts_errors::{debug::debugger::Debugger, Error};
-use stc_ts_file_analyzer::{
-    analyzer::Analyzer, loader::Load, validator::ValidateWith, ModuleTypeData, VResult,
-};
+use stc_ts_file_analyzer::{analyzer::Analyzer, loader::Load, validator::ValidateWith, ModuleTypeData, VResult};
 use stc_ts_module_loader::ModuleGraph;
 use stc_ts_storage::{ErrorStore, File, Group, Single};
 use stc_ts_types::{ModuleId, Type};
@@ -72,13 +70,7 @@ impl Checker {
             handler,
             module_types: Default::default(),
             dts_modules: Default::default(),
-            module_graph: Arc::new(ModuleGraph::new(
-                cm,
-                Default::default(),
-                resolver,
-                parser_config,
-                env.target(),
-            )),
+            module_graph: Arc::new(ModuleGraph::new(cm, Default::default(), resolver, parser_config, env.target())),
             started: Default::default(),
             errors: Default::default(),
             debugger,
@@ -122,22 +114,14 @@ impl Checker {
             let id = self.module_graph.load_all(&entry);
 
             let end = Instant::now();
-            info!(
-                "Loading of `{}` and dependencies took {:?}",
-                entry,
-                end - start
-            );
+            info!("Loading of `{}` and dependencies took {:?}", entry, end - start);
 
             let start = Instant::now();
 
             self.analyze_module(None, entry.clone());
 
             let end = Instant::now();
-            info!(
-                "Analysis of `{}` and dependencies took {:?}",
-                entry,
-                end - start
-            );
+            info!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
 
             id.unwrap_or_else(|(id, _)| id)
         })
@@ -188,11 +172,7 @@ impl Checker {
                                     .map(|id| {
                                         let path = self.module_graph.path(id);
                                         let stmt_count = self.module_graph.stmt_count_of(id);
-                                        File {
-                                            id,
-                                            path,
-                                            stmt_count,
-                                        }
+                                        File { id, path, stmt_count }
                                     })
                                     .collect(),
                             ),
@@ -269,10 +249,7 @@ impl Checker {
                                 match res {
                                     Ok(()) => {}
                                     Err(..) => {
-                                        warn!(
-                                            "Duplicated work: `{}`: (type info is already cached)",
-                                            path
-                                        );
+                                        warn!("Duplicated work: `{}`: (type info is already cached)", path);
                                     }
                                 }
                             }
@@ -280,17 +257,10 @@ impl Checker {
                     }
 
                     let lock = self.module_types.read();
-                    return lock
-                        .get(&id)
-                        .map(|cell| cell.get().cloned())
-                        .flatten()
-                        .unwrap();
+                    return lock.get(&id).map(|cell| cell.get().cloned()).flatten().unwrap();
                 }
             }
-            info!(
-                "Request: {}\nRequested by {:?}\nCircular set: {:?}",
-                path, starter, circular_set
-            );
+            info!("Request: {}\nRequested by {:?}\nCircular set: {:?}", path, starter, circular_set);
 
             {
                 // With write lock, we ensure that OnceCell is inserted.
@@ -333,9 +303,10 @@ impl Checker {
             };
 
             let mut node_id_gen = NodeIdGenerator::default();
-            let mut module = self.module_graph.clone_module(id).unwrap_or_else(|| {
-                unreachable!("Module graph does not contains {:?}: {}", id, path)
-            });
+            let mut module = self
+                .module_graph
+                .clone_module(id)
+                .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", id, path));
             module = module.fold_with(&mut resolver(
                 self.env.shared().marks().unresolved_mark(),
                 self.env.shared().marks().top_level_mark(),
@@ -382,9 +353,7 @@ impl Checker {
 
             if early_error() {
                 for err in storage.info.errors {
-                    self.handler
-                        .struct_span_err(err.span(), &format!("{:?}", err))
-                        .emit();
+                    self.handler.struct_span_err(err.span(), &format!("{:?}", err)).emit();
                 }
             } else {
                 let mut errors = self.errors.lock();
@@ -429,12 +398,7 @@ impl Load for Checker {
         }
     }
 
-    fn load_circular_dep(
-        &self,
-        base: ModuleId,
-        dep: ModuleId,
-        _partial: &ModuleTypeData,
-    ) -> VResult<Type> {
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, _partial: &ModuleTypeData) -> VResult<Type> {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 
@@ -448,13 +412,11 @@ impl Load for Checker {
         let dep_path = self.module_graph.path(dep);
 
         if matches!(&*dep_path, FileName::Custom(..)) {
-            let ty = self.declared_modules.read().iter().find_map(|(v, ty)| {
-                if *v == dep {
-                    Some(ty.clone())
-                } else {
-                    None
-                }
-            });
+            let ty = self
+                .declared_modules
+                .read()
+                .iter()
+                .find_map(|(v, ty)| if *v == dep { Some(ty.clone()) } else { None });
 
             if let Some(ty) = ty {
                 return Ok(ty);

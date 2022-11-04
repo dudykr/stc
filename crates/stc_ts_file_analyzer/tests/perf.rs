@@ -28,19 +28,12 @@ fn profile_file(name: &str, path: &Path) {
     testing::run_test2(false, |cm, _handler| {
         let fm = cm.load_file(path).unwrap();
 
-        let env = Env::simple(
-            Default::default(),
-            EsVersion::latest(),
-            ModuleConfig::None,
-            &[Lib::Es5],
-        );
+        let env = Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &[Lib::Es5]);
 
         let mut node_id_gen = NodeIdGenerator::default();
         let mut module = {
             let lexer = Lexer::new(
-                Syntax::Typescript(TsConfig {
-                    ..Default::default()
-                }),
+                Syntax::Typescript(TsConfig { ..Default::default() }),
                 EsVersion::Es2021,
                 SourceFileInput::from(&*fm),
                 None,
@@ -66,14 +59,7 @@ fn profile_file(name: &str, path: &Path) {
         };
 
         {
-            let mut analyzer = Analyzer::root(
-                env,
-                cm.clone(),
-                Default::default(),
-                box &mut storage,
-                &NoopLoader,
-                None,
-            );
+            let mut analyzer = Analyzer::root(env, cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
         }
 
@@ -84,11 +70,5 @@ fn profile_file(name: &str, path: &Path) {
 
 #[test]
 fn profile_csstypes() {
-    profile_file(
-        "csstype",
-        &PathBuf::new()
-            .join("node_modules")
-            .join("csstype")
-            .join("index.d.ts"),
-    );
+    profile_file("csstype", &PathBuf::new().join("node_modules").join("csstype").join("index.d.ts"));
 }

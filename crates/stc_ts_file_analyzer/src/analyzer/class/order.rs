@@ -22,11 +22,7 @@ impl Analyzer<'_, '_> {
     /// `members`.
     ///
     /// Note that the boey constructor is analyzed.
-    pub(super) fn calc_eval_order_of_class_methods(
-        &mut self,
-        mut remaining_indexes: Vec<usize>,
-        members: &[RClassMember],
-    ) -> Vec<usize> {
+    pub(super) fn calc_eval_order_of_class_methods(&mut self, mut remaining_indexes: Vec<usize>, members: &[RClassMember]) -> Vec<usize> {
         let mut keys = Inliner::<Key>::default();
         let mut graph = DiGraphMap::<NodeId<Key>, ()>::default();
         // Map of an index from remaining_indexes to a node id.
@@ -43,9 +39,7 @@ impl Analyzer<'_, '_> {
 
                 RClassMember::TsIndexSignature(_) => {}
 
-                RClassMember::ClassProp(_)
-                | RClassMember::PrivateProp(_)
-                | RClassMember::Empty(_) => {
+                RClassMember::ClassProp(_) | RClassMember::PrivateProp(_) | RClassMember::Empty(_) => {
                     // unreachable!
                     continue;
                 }
@@ -133,9 +127,7 @@ impl Visit<RMemberExpr> for MethodAnalyzer {
                         self.result.depends_on.insert(Key::Id(i.into()));
                     }
                     RMemberProp::PrivateName(i) => {
-                        self.result
-                            .depends_on
-                            .insert(Key::Private(i.id.clone().into()));
+                        self.result.depends_on.insert(Key::Private(i.id.clone().into()));
                     }
                     _ => {}
                 }

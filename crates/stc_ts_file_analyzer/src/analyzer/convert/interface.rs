@@ -12,12 +12,7 @@ use crate::{
 
 impl Analyzer<'_, '_> {
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn report_error_for_wrong_interface_inheritance(
-        &mut self,
-        span: Span,
-        body: &[TypeElement],
-        parent: &[TsExpr],
-    ) {
+    pub(super) fn report_error_for_wrong_interface_inheritance(&mut self, span: Span, body: &[TypeElement], parent: &[TsExpr]) {
         if self.is_builtin {
             return;
         }
@@ -27,15 +22,8 @@ impl Analyzer<'_, '_> {
 
         for p in parent.iter() {
             let res: VResult<()> = try {
-                let parent = self.type_of_ts_entity_name(
-                    span,
-                    self.ctx.module_id,
-                    &p.expr,
-                    p.type_args.as_deref(),
-                )?;
-                let parent = self
-                    .normalize(None, Cow::Owned(parent), Default::default())?
-                    .freezed();
+                let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &p.expr, p.type_args.as_deref())?;
+                let parent = self.normalize(None, Cow::Owned(parent), Default::default())?.freezed();
 
                 if matches!(
                     parent.normalize(),
@@ -71,10 +59,7 @@ impl Analyzer<'_, '_> {
             };
 
             if let Err(err) = res {
-                self.storage.report(Error::InvalidInterfaceInheritance {
-                    span,
-                    cause: box err,
-                });
+                self.storage.report(Error::InvalidInterfaceInheritance { span, cause: box err });
                 return;
             }
         }
@@ -89,12 +74,7 @@ impl Analyzer<'_, '_> {
         for (i, p1) in parent.iter().enumerate() {
             let res: VResult<()> = try {
                 let p1_type = self
-                    .type_of_ts_entity_name(
-                        span,
-                        self.ctx.module_id,
-                        &p1.expr,
-                        p1.type_args.as_deref(),
-                    )?
+                    .type_of_ts_entity_name(span, self.ctx.module_id, &p1.expr, p1.type_args.as_deref())?
                     .freezed();
 
                 for (j, p2) in parent.iter().enumerate() {
@@ -107,12 +87,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     let p2 = self
-                        .type_of_ts_entity_name(
-                            span,
-                            self.ctx.module_id,
-                            &p2.expr,
-                            p2.type_args.as_deref(),
-                        )?
+                        .type_of_ts_entity_name(span, self.ctx.module_id, &p2.expr, p2.type_args.as_deref())?
                         .freezed();
 
                     if let Err(err) = self.assign_with_opts(
@@ -136,9 +111,7 @@ impl Analyzer<'_, '_> {
                                     _ => false,
                                 }) => {}
 
-                            _ => self
-                                .storage
-                                .report(err.convert(|err| Error::InterfaceNotCompatible { span })),
+                            _ => self.storage.report(err.convert(|err| Error::InterfaceNotCompatible { span })),
                         }
                     }
                 }

@@ -4,9 +4,9 @@ use stc_ts_env::Env;
 use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::{is_str_lit_or_union, PreventComplexSimplification};
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, CommonTypeMetadata, IndexedAccessType,
-    IndexedAccessTypeMetadata, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata,
-    Mapped, Operator, PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam, Union,
+    Array, Class, ClassDef, ClassMember, CommonTypeMetadata, IndexedAccessType, IndexedAccessTypeMetadata, Key, KeywordType,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, Operator, PropertySignature, TypeElement, TypeLit, TypeLitMetadata, TypeParam,
+    Union,
 };
 use stc_utils::ext::TypeVecExt;
 use swc_atoms::js_word;
@@ -80,9 +80,7 @@ impl Fold<Union> for Simplifier<'_> {
 
         if should_remove_null_and_undefined {
             union.types.retain(|ty| {
-                if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-                    | ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                {
+                if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) | ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
                     return false;
                 }
 
@@ -140,11 +138,7 @@ impl Fold<Type> for Simplifier<'_> {
         if self.should_skip_inference(&ty) {
             match ty.normalize() {
                 Type::IndexedAccessType(IndexedAccessType {
-                    obj_type:
-                        box Type::Param(TypeParam {
-                            constraint: Some(..),
-                            ..
-                        }),
+                    obj_type: box Type::Param(TypeParam { constraint: Some(..), .. }),
                     ..
                 }) => {
                     return ty;
@@ -231,10 +225,7 @@ impl Fold<Type> for Simplifier<'_> {
                     .unwrap();
 
                 let s = match index_type.normalize() {
-                    Type::Lit(LitType {
-                        lit: RTsLit::Str(s),
-                        ..
-                    }) => s.clone(),
+                    Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.clone(),
                     _ => {
                         return Type::IndexedAccessType(IndexedAccessType {
                             span,
@@ -290,12 +281,7 @@ impl Fold<Type> for Simplifier<'_> {
 
                 // LHS is never.
                 if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
-                    return Type::never(
-                        i.span,
-                        KeywordTypeMetadata {
-                            common: i.metadata.common,
-                        },
-                    );
+                    return Type::never(i.span, KeywordTypeMetadata { common: i.metadata.common });
                 }
             }
 
@@ -313,10 +299,7 @@ impl Fold<Type> for Simplifier<'_> {
                 let members = constraint
                     .iter_union()
                     .filter_map(|ty| match ty.normalize() {
-                        Type::Lit(LitType {
-                            lit: RTsLit::Str(s),
-                            ..
-                        }) => Some(s),
+                        Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => Some(s),
                         _ => None,
                     })
                     .map(|key| {
@@ -372,11 +355,7 @@ impl Fold<Type> for Simplifier<'_> {
                 span,
                 readonly,
                 obj_type: box Type::Intersection(obj),
-                index_type:
-                    index_type @ box Type::Lit(LitType {
-                        lit: RTsLit::Str(..),
-                        ..
-                    }),
+                index_type: index_type @ box Type::Lit(LitType { lit: RTsLit::Str(..), .. }),
                 metadata,
                 ..
             }) if obj.types.iter().all(|ty| match ty.normalize() {
@@ -446,11 +425,7 @@ impl Fold<Type> for Simplifier<'_> {
                 span,
                 readonly,
                 obj_type: box Type::Union(obj),
-                index_type:
-                    box Type::Lit(LitType {
-                        lit: RTsLit::Str(s),
-                        ..
-                    }),
+                index_type: box Type::Lit(LitType { lit: RTsLit::Str(s), .. }),
                 ..
             }) if obj.types.iter().all(|ty| match ty.normalize() {
                 Type::TypeLit(..) => true,
@@ -469,11 +444,9 @@ impl Fold<Type> for Simplifier<'_> {
                         let span = element.span();
 
                         match element {
-                            TypeElement::Property(p) if p.key == s.value => Some(
-                                p.type_ann
-                                    .map(|v| *v)
-                                    .unwrap_or_else(|| Type::any(span, Default::default())),
-                            ),
+                            TypeElement::Property(p) if p.key == s.value => {
+                                Some(p.type_ann.map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default())))
+                            }
                             _ => None,
                         }
                     })
@@ -489,11 +462,9 @@ impl Fold<Type> for Simplifier<'_> {
                 obj_type: box Type::Tuple(tuple),
                 index_type:
                     box Type::Lit(LitType {
-                        lit:
-                            RTsLit::Str(RStr {
-                                value: js_word!("length"),
-                                ..
-                            }),
+                        lit: RTsLit::Str(RStr {
+                            value: js_word!("length"), ..
+                        }),
                         ..
                     }),
                 metadata,
@@ -521,11 +492,9 @@ impl Fold<Type> for Simplifier<'_> {
                 obj_type: box Type::Array(..),
                 index_type:
                     box Type::Lit(LitType {
-                        lit:
-                            RTsLit::Str(RStr {
-                                value: js_word!("length"),
-                                ..
-                            }),
+                        lit: RTsLit::Str(RStr {
+                            value: js_word!("length"), ..
+                        }),
                         ..
                     }),
                 metadata,
@@ -553,20 +522,15 @@ impl Fold<Type> for Simplifier<'_> {
                 ..
             }) if value.parse::<usize>().is_ok() => {
                 let idx = value.parse::<usize>().unwrap();
-                return tuple
-                    .elems
-                    .into_iter()
-                    .map(|el| *el.ty)
-                    .nth(idx)
-                    .unwrap_or_else(|| {
-                        Type::never(
-                            span,
-                            KeywordTypeMetadata {
-                                common: metadata.common,
-                                ..Default::default()
-                            },
-                        )
-                    });
+                return tuple.elems.into_iter().map(|el| *el.ty).nth(idx).unwrap_or_else(|| {
+                    Type::never(
+                        span,
+                        KeywordTypeMetadata {
+                            common: metadata.common,
+                            ..Default::default()
+                        },
+                    )
+                });
             }
             Type::Union(ty) if ty.types.len() == 1 => return ty.types.into_iter().next().unwrap(),
 
@@ -617,10 +581,7 @@ impl Fold<Type> for Simplifier<'_> {
                 for member in &members {
                     for key in constraint.iter_union() {
                         let key = match key.normalize() {
-                            Type::Lit(LitType {
-                                lit: RTsLit::Str(v),
-                                ..
-                            }) => v.clone(),
+                            Type::Lit(LitType { lit: RTsLit::Str(v), .. }) => v.clone(),
                             _ => unreachable!(),
                         };
 
@@ -655,27 +616,17 @@ impl Fold<Type> for Simplifier<'_> {
                         constraint: Some(box Type::TypeLit(TypeLit { members, .. })),
                         ..
                     }),
-                index_type:
-                    box Type::Lit(LitType {
-                        lit: RTsLit::Str(v),
-                        ..
-                    }),
+                index_type: box Type::Lit(LitType { lit: RTsLit::Str(v), .. }),
                 ..
             })
             | Type::IndexedAccessType(IndexedAccessType {
                 obj_type: box Type::TypeLit(TypeLit { members, .. }),
-                index_type:
-                    box Type::Lit(LitType {
-                        lit: RTsLit::Str(v),
-                        ..
-                    }),
+                index_type: box Type::Lit(LitType { lit: RTsLit::Str(v), .. }),
                 ..
-            }) if members
-                .iter()
-                .any(|element| match element.key().as_deref() {
-                    Some(key) => *key == v.value,
-                    _ => false,
-                }) =>
+            }) if members.iter().any(|element| match element.key().as_deref() {
+                Some(key) => *key == v.value,
+                _ => false,
+            }) =>
             {
                 let el = members
                     .into_iter()
@@ -690,24 +641,17 @@ impl Fold<Type> for Simplifier<'_> {
                         unimplemented!("Generic mapped type inference involving `Call` element")
                     }
                     TypeElement::Constructor(_) => {
-                        unimplemented!(
-                            "Generic mapped type inference involving `Constructor` element"
-                        )
+                        unimplemented!("Generic mapped type inference involving `Constructor` element")
                     }
                     TypeElement::Property(p) => {
                         let span = p.span;
-                        return p
-                            .type_ann
-                            .map(|v| *v)
-                            .unwrap_or_else(|| Type::any(span, Default::default()));
+                        return p.type_ann.map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default()));
                     }
                     TypeElement::Method(_) => {
                         unimplemented!("Generic mapped type inference involving `Method` element")
                     }
                     TypeElement::Index(_) => {
-                        unimplemented!(
-                            "Generic mapped type inference involving IndexSignature element"
-                        )
+                        unimplemented!("Generic mapped type inference involving IndexSignature element")
                     }
                 }
             }
@@ -718,11 +662,7 @@ impl Fold<Type> for Simplifier<'_> {
                         def: box ClassDef { body, .. },
                         ..
                     }),
-                index_type:
-                    box Type::Lit(LitType {
-                        lit: RTsLit::Str(s),
-                        ..
-                    }),
+                index_type: box Type::Lit(LitType { lit: RTsLit::Str(s), .. }),
                 ..
             }) if body.iter().any(|member| match member {
                 ClassMember::Constructor(_) => false,
@@ -768,10 +708,7 @@ impl Fold<Type> for Simplifier<'_> {
                     .types
                     .into_iter()
                     .map(|key| match key.normalize() {
-                        Type::Lit(LitType {
-                            lit: RTsLit::Str(s),
-                            ..
-                        }) => s.clone(),
+                        Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => s.clone(),
                         _ => unreachable!(),
                     })
                     .map(|key| {

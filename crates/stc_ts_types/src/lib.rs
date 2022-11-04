@@ -27,9 +27,8 @@ use servo_arc::Arc;
 use static_assertions::assert_eq_size;
 use stc_arc_cow::freeze::Freezer;
 use stc_ts_ast_rnode::{
-    RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName,
-    RTsEnumMemberId, RTsKeywordType, RTsLit, RTsModuleName, RTsNamespaceDecl, RTsThisType,
-    RTsThisTypeOrIdent,
+    RBigInt, RExpr, RIdent, RNumber, RPat, RPrivateName, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsKeywordType, RTsLit,
+    RTsModuleName, RTsNamespaceDecl, RTsThisType, RTsThisTypeOrIdent,
 };
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
@@ -39,9 +38,7 @@ use stc_utils::{
 };
 use stc_visit::{Visit, Visitable};
 use swc_atoms::{js_word, JsWord};
-use swc_common::{
-    util::take::Take, EqIgnoreSpan, FromVariant, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP,
-};
+use swc_common::{util::take::Take, EqIgnoreSpan, FromVariant, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::{Accessibility, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use swc_ecma_utils::{
     Value,
@@ -236,11 +233,7 @@ impl Clone for Type {
                     }};
                 }
 
-                if cfg!(debug_assertions)
-                    && self.span() != DUMMY_SP
-                    && !self.is_clone_cheap()
-                    && !ALLOW_DEEP_CLONE.is_set()
-                {
+                if cfg!(debug_assertions) && self.span() != DUMMY_SP && !self.is_clone_cheap() && !ALLOW_DEEP_CLONE.is_set() {
                     let _panic_ctx = panic_ctx!(format!("{:?}", self));
 
                     if DEEP.is_set() {
@@ -954,19 +947,13 @@ impl Union {
                     continue;
                 }
                 if t1.type_eq(t2) {
-                    unreachable!(
-                        "[INVALID_TYPE]: A union type has duplicate elements: ({:?})",
-                        t1
-                    )
+                    unreachable!("[INVALID_TYPE]: A union type has duplicate elements: ({:?})", t1)
                 }
             }
         }
 
         if self.types.len() <= 1 {
-            unreachable!(
-                "[INVALID_TYPE]: A union type should have multiple items. Got {:?}",
-                self.types
-            );
+            unreachable!("[INVALID_TYPE]: A union type should have multiple items. Got {:?}", self.types);
         }
     }
 }
@@ -1004,10 +991,7 @@ impl Intersection {
                     continue;
                 }
                 if t1.type_eq(t2) {
-                    unreachable!(
-                        "[INVALID_TYPE]: An intersection type has duplicate elements: ({:?})",
-                        t1
-                    )
+                    unreachable!("[INVALID_TYPE]: An intersection type has duplicate elements: ({:?})", t1)
                 }
             }
         }
@@ -1126,9 +1110,7 @@ impl Type {
 
         let has_str = tys.iter().any(|ty| ty.is_str());
         // TODO
-        let has_bool = tys
-            .iter()
-            .any(|ty| ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword));
+        let has_bool = tys.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsBooleanKeyword));
         let has_num = tys.iter().any(|ty| ty.is_num());
 
         if (has_str && has_bool) || (has_bool && has_num) || (has_num && has_str) {
@@ -1328,27 +1310,12 @@ impl Type {
     /// TODO
     pub fn is_clone_cheap(&self) -> bool {
         match self {
-            Type::Arc(..)
-            | Type::Keyword(..)
-            | Type::Lit(..)
-            | Type::This(..)
-            | Type::StaticThis(..)
-            | Type::Symbol(..) => true,
+            Type::Arc(..) | Type::Keyword(..) | Type::Lit(..) | Type::This(..) | Type::StaticThis(..) | Type::Symbol(..) => true,
 
             // TODO(kdy1): Make this false.
-            Type::Param(TypeParam {
-                constraint,
-                default,
-                ..
-            }) => {
-                constraint
-                    .as_ref()
-                    .map(|ty| ty.is_clone_cheap())
-                    .unwrap_or(true)
-                    && default
-                        .as_ref()
-                        .map(|ty| ty.is_clone_cheap())
-                        .unwrap_or(true)
+            Type::Param(TypeParam { constraint, default, .. }) => {
+                constraint.as_ref().map(|ty| ty.is_clone_cheap()).unwrap_or(true)
+                    && default.as_ref().map(|ty| ty.is_clone_cheap()).unwrap_or(true)
             }
 
             _ => false,
@@ -1668,9 +1635,7 @@ impl Visit<Intersection> for AssertValid {
 
         for item in ty.types.iter() {
             if item.is_intersection() {
-                unreachable!(
-                    "[INVALID_TYPE]: An intersection type should not have an intersection item"
-                )
+                unreachable!("[INVALID_TYPE]: An intersection type should not have an intersection item")
             }
         }
     }
@@ -1877,30 +1842,21 @@ impl Type {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
             })
-            | Type::Lit(LitType {
-                lit: RTsLit::Str(..),
-                ..
-            }) => true,
+            | Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => true,
             _ => false,
         }
     }
 
     pub fn is_str_lit(&self) -> bool {
         match self.normalize() {
-            Type::Lit(LitType {
-                lit: RTsLit::Str(..),
-                ..
-            }) => true,
+            Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => true,
             _ => false,
         }
     }
 
     pub fn is_bool_lit(&self) -> bool {
         match self.normalize() {
-            Type::Lit(LitType {
-                lit: RTsLit::Bool(..),
-                ..
-            }) => true,
+            Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => true,
             _ => false,
         }
     }
@@ -1912,8 +1868,7 @@ impl Type {
                 ..
             })
             | Type::Lit(LitType {
-                lit: RTsLit::Number(..),
-                ..
+                lit: RTsLit::Number(..), ..
             }) => true,
             _ => false,
         }
@@ -1922,8 +1877,7 @@ impl Type {
     pub fn is_num_lit(&self) -> bool {
         match self.normalize() {
             Type::Lit(LitType {
-                lit: RTsLit::Number(..),
-                ..
+                lit: RTsLit::Number(..), ..
             }) => true,
             _ => false,
         }
@@ -1936,10 +1890,7 @@ impl Type {
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                 ..
             })
-            | Type::Lit(LitType {
-                lit: RTsLit::Bool(..),
-                ..
-            }) => true,
+            | Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => true,
             _ => false,
         }
     }
@@ -2245,9 +2196,7 @@ impl VisitMut<Type> for Freezer {
             }),
         );
 
-        *ty = Type::Arc(Freezed {
-            ty: Arc::new(new_ty),
-        })
+        *ty = Type::Arc(Freezed { ty: Arc::new(new_ty) })
     }
 }
 
@@ -2287,13 +2236,9 @@ impl Type {
                 | TsKeywordTypeKind::TsBooleanKeyword
                 | TsKeywordTypeKind::TsAnyKeyword
                 | TsKeywordTypeKind::TsIntrinsicKeyword => return Unknown,
-                TsKeywordTypeKind::TsSymbolKeyword
-                | TsKeywordTypeKind::TsBigIntKeyword
-                | TsKeywordTypeKind::TsObjectKeyword => true,
+                TsKeywordTypeKind::TsSymbolKeyword | TsKeywordTypeKind::TsBigIntKeyword | TsKeywordTypeKind::TsObjectKeyword => true,
 
-                TsKeywordTypeKind::TsUndefinedKeyword
-                | TsKeywordTypeKind::TsNullKeyword
-                | TsKeywordTypeKind::TsVoidKeyword => false,
+                TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsVoidKeyword => false,
             }),
 
             _ => Unknown,
