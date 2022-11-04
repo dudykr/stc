@@ -42,7 +42,11 @@ function extract(content: string): ErrorRef[] {
 
         const [line, column] = (data.split(')', 2)[0].split(',').map(v => parseInt(v)))
 
-        const code = data.split('error ', 2)[1]?.split(':')[0];
+        const [, type, description] = data.split(/(error|message) /, 3);
+        const code = description?.split(':')[0];
+        if (type === 'message') {
+            continue
+        }
 
         console.log(line, column, code);
         if (!line || !column || !code) {
