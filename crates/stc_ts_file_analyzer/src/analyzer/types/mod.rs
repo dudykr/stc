@@ -59,8 +59,6 @@ impl Analyzer<'_, '_> {
     ///  - [Type::Ref]
     ///  - [Type::Mapped]
     ///  - [Type::Alias]
-    ///
-    /// TOOD: Accept [Cow] to optimize performance
 
     ///
     /// # Span
