@@ -2025,13 +2025,16 @@ impl Analyzer<'_, '_> {
                     });
             }
 
-            Type::Interface(Interface { ref body, extends, .. }) => {
+            Type::Interface(Interface {
+                ref body, extends, name, ..
+            }) => {
                 if let Ok(Some(v)) = self.access_property_of_type_elements(span, &obj, prop, type_mode, body, opts) {
                     return Ok(v);
                 }
 
                 for super_ty in extends {
-                    let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, &super_ty.expr, super_ty.type_args.as_deref())?;
+                    let obj =
+                        self.type_of_ts_entity_name(span, self.ctx.module_id, &super_ty.expr.into(), super_ty.type_args.as_deref())?;
 
                     let obj = self
                         .instantiate_class(span, &obj)
@@ -2246,6 +2249,7 @@ impl Analyzer<'_, '_> {
                                                 &Key::Num(RNumber {
                                                     span: n.span,
                                                     value: (v + 1i64 - (elems.len() as i64)) as _,
+                                                    raw: None,
                                                 }),
                                                 type_mode,
                                                 id_ctx,
@@ -3388,7 +3392,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ctxt: ModuleId,
-        n: &RExpr,
+        n: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<Type> {
         self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
@@ -3399,7 +3403,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ctxt: ModuleId,
-        n: &RExpr,
+        n: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -3542,7 +3546,7 @@ impl Analyzer<'_, '_> {
                 prop: RMemberProp::Ident(prop),
                 ..
             }) => {
-                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &obj, None)?;
+                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &*obj.into(), None)?;
                 obj_ty.assert_valid();
 
                 let ctx = Ctx {
@@ -3853,7 +3857,8 @@ impl Analyzer<'_, '_> {
                 }
 
                 for parent in &ty.extends {
-                    let parent_ty = self.type_of_ts_entity_name(parent.span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref());
+                    let parent_ty =
+                        self.type_of_ts_entity_name(parent.span, self.ctx.module_id, &parent.expr.into(), parent.type_args.as_deref());
 
                     let parent_ty = match parent_ty {
                         Ok(v) => v,

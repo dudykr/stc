@@ -1,4 +1,6 @@
-use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RMemberExpr, RMemberProp, RNumber, ROptChainExpr, RParenExpr, RStr, RTsLit, RUnaryExpr};
+use stc_ts_ast_rnode::{
+    RBigInt, RBool, RExpr, RMemberExpr, RMemberProp, RNumber, ROptChainBase, ROptChainExpr, RParenExpr, RStr, RTsLit, RUnaryExpr,
+};
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RMemberExpr, RNumber, RStr, RTsLit, RUnaryExpr};
 use stc_ts_ast_rnode::{
@@ -211,7 +213,7 @@ impl Analyzer<'_, '_> {
                 ..
             })
             | RExpr::OptChain(ROptChainExpr {
-                expr: box RExpr::Member(expr),
+                base: ROptChainBase::Member(expr),
                 ..
             })
             | RExpr::Member(expr) => {
@@ -232,8 +234,14 @@ impl Analyzer<'_, '_> {
             //
             // delete (o4.b?.c.d);
             // delete (o4.b?.c.d)?.e;
-            RExpr::Paren(RParenExpr { expr, .. }) | RExpr::OptChain(ROptChainExpr { expr, .. }) => {
+            RExpr::Paren(RParenExpr { expr, .. }) => {
                 return self.validate_delete_operand(expr);
+            }
+            RExpr::OptChain(ROptChainExpr {
+                base: ROptChainBase::Member(expr),
+                ..
+            }) => {
+                return self.validate_delete_operand(&RExpr::Member(expr.clone()));
             }
 
             RExpr::Await(..) => Err(Error::InvalidDeleteOperand { span }),

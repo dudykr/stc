@@ -44,6 +44,23 @@ impl From<RTsEntityName> for RExpr {
     }
 }
 
+impl From<Box<RExpr>> for RTsEntityName {
+    fn from(v: Box<RExpr>) -> Self {
+        match *v {
+            RExpr::Ident(v) => RTsEntityName::Ident(v),
+            RExpr::Member(RMemberExpr { obj, prop, .. }) => RTsEntityName::TsQualifiedName(box RTsQualifiedName {
+                node_id: NodeId::invalid(),
+                left: obj.into(),
+                right: match prop {
+                    RMemberProp::Ident(v) => v,
+                    _ => unreachable!("invalid member expression"),
+                },
+            }),
+            _ => unreachable!("invalid expression"),
+        }
+    }
+}
+
 impl From<Atom> for RStr {
     fn from(v: Atom) -> Self {
         Self {

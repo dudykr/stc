@@ -133,7 +133,7 @@ impl Analyzer<'_, '_> {
                 callee,
                 ExtractKind::Call,
                 args,
-                type_args.as_ref(),
+                type_args.as_deref(),
                 type_ann.as_deref(),
             )
         })
@@ -180,7 +180,7 @@ impl Analyzer<'_, '_> {
                 callee,
                 ExtractKind::New,
                 args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
-                type_args.as_ref(),
+                type_args.as_deref(),
                 type_ann.as_deref(),
             )
         })
@@ -239,7 +239,7 @@ impl Analyzer<'_, '_> {
                 &e.tag,
                 ExtractKind::Call,
                 args.as_ref(),
-                e.type_params.as_ref(),
+                e.type_params.as_deref(),
                 Default::default(),
             )
         });
@@ -416,12 +416,23 @@ impl Analyzer<'_, '_> {
             }
 
             RExpr::Member(RMemberExpr {
-                obj: RCallee::Expr(ref obj),
+                obj:
+                    box RExpr::Call(RCallExpr {
+                        callee: RCallee::Expr(ref obj),
+                        ..
+                    }),
                 ref prop,
-                computed,
                 ..
             }) => {
-                let prop = self.validate_key(prop, computed)?;
+                let computed = matches!(prop, RMemberProp::Computed(..));
+                let prop = self.validate_key(
+                    &*match prop {
+                        RMemberProp::Ident(i) => Cow::Owned(RExpr::Ident(i.clone())),
+                        RMemberProp::PrivateName(i) => Cow::Owned(RExpr::PrivateName(i.clone())),
+                        RMemberProp::Computed(e) => Cow::Borrowed(&*e.expr),
+                    },
+                    computed,
+                )?;
 
                 // Validate object
                 let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
@@ -759,7 +770,7 @@ impl Analyzer<'_, '_> {
                     // Check parent interface
                     for parent in &i.extends {
                         let parent = self
-                            .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())
+                            .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.into(), parent.type_args.as_deref())
                             .context("tried to check parent interface to call a property of it")?;
                         if let Ok(v) = self.call_property(
                             span,
@@ -1680,7 +1691,7 @@ impl Analyzer<'_, '_> {
                     Err(first_err) => {
                         //  Check parent interface
                         for parent in &i.extends {
-                            let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, type_args)?;
+                            let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.into(), type_args)?;
 
                             if let Ok(v) = self.extract(
                                 span,

@@ -1346,7 +1346,8 @@ impl Analyzer<'_, '_> {
 
         for parent in &*class.implements {
             let res: VResult<_> = try {
-                let parent = self.type_of_ts_entity_name(parent.span(), self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
+                let parent =
+                    self.type_of_ts_entity_name(parent.span(), self.ctx.module_id, &parent.expr.into(), parent.type_args.as_deref())?;
 
                 self.assign_with_opts(
                     &mut Default::default(),
@@ -1678,7 +1679,7 @@ impl Analyzer<'_, '_> {
                                 });
 
                                 if has_class_in_super {
-                                    child.prepend_stmts.push(RStmt::Decl(RDecl::Var(RVarDecl {
+                                    child.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
                                         node_id: NodeId::invalid(),
                                     if has_class_in_super {
                                         child.prepend_stmts.push(RStmt::Decl(RDecl::Var(
@@ -2022,13 +2023,20 @@ impl Analyzer<'_, '_> {
                                     key.type_ann = None;
                                     let key = box RExpr::Ident(key.id);
                                     let key = RPropName::Ident(key.id);
+
                                     additional_members.push(RClassMember::ClassProp(RClassProp {
                                         node_id: NodeId::invalid(),
                                         span: p.span,
-                                        key,
+                                        key: match &p.param {
+                                            RTsParamPropParam::Ident(p) => RPropName::Ident(p.id.clone()),
+                                            RTsParamPropParam::Assign(p) => match &p.left {
+                                                //
+                                                box RPat::Ident(i) => RPropName::Ident(i.id.clone()),
+                                                _ => unreachable!("binding pattern in property initializer"),
+                                            },
+                                        },
                                         value: None,
                                         is_static: false,
-                                        computed: false,
                                         accessibility: Some(Accessibility::Private),
                                         is_abstract: false,
                                         is_optional,

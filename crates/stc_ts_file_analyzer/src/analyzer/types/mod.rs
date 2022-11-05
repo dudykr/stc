@@ -1101,7 +1101,8 @@ impl Analyzer<'_, '_> {
             let mut members = vec![];
 
             for parent in &t.extends {
-                let parent = self.type_of_ts_entity_name(parent.span(), self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
+                let parent =
+                    self.type_of_ts_entity_name(parent.span(), self.ctx.module_id, &parent.expr.into(), parent.type_args.as_deref())?;
 
                 let super_els = self.convert_type_to_type_lit(span, Cow::Owned(parent))?;
 
