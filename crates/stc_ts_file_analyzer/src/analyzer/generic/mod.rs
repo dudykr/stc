@@ -928,6 +928,18 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Tuple(param) => match arg {
+                Type::Array(arg) => {
+                    for elem in &param.elems {
+                        match elem.ty.normalize() {
+                            Type::Rest(rest) => {
+                                self.infer_type(span, inferred, &rest.ty, &arg.elem_type, opts)?;
+                            }
+                            _ => {
+                                self.infer_type(span, inferred, &elem.ty, &arg.elem_type, opts)?;
+                            }
+                        }
+                    }
+                }
                 Type::Tuple(arg) => return self.infer_type_using_tuple_and_tuple(span, inferred, param, arg, opts),
                 _ => {
                     dbg!();

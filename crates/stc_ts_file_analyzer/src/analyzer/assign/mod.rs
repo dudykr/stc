@@ -5,7 +5,7 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
-    LitType, Mapped, Operator, PropertySignature, Ref, ThisType, Tuple, Type, TypeElement, TypeLit, TypeParam,
+    LitType, Mapped, Operator, PropertySignature, Ref, RestType, ThisType, Tuple, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, debug_ctx, stack};
 use swc_atoms::js_word;
@@ -2047,13 +2047,32 @@ impl Analyzer<'_, '_> {
 
                         return Ok(());
                     }
-                    Type::Lit(..)
-                    | Type::Interface(..)
-                    | Type::TypeLit(..)
-                    | Type::Keyword(..)
-                    | Type::Array(..)
-                    | Type::Class(..)
-                    | Type::ClassDef(..)
+                    Type::Array(Array {
+                        elem_type: ref rhs_elem_type,
+                        ..
+                    }) => {
+                        if elems.len() != 1 {
+                            fail!();
+                        }
+
+                        match elems[0].ty.normalize() {
+                            Type::Rest(RestType { ty: l_ty, .. }) => {
+                                self.assign_inner(
+                                    data,
+                                    &l_ty,
+                                    rhs_elem_type,
+                                    AssignOpts {
+                                        allow_unknown_rhs: true,
+                                        ..opts
+                                    },
+                                )?;
+                            }
+                            _ => {
+                                fail!();
+                            }
+                        }
+                    }
+                    Type::Lit(..) | Type::Interface(..) | Type::TypeLit(..) | Type::Keyword(..) | Type::Class(..) | Type::ClassDef(..)
                         if !opts.allow_iterable_on_rhs =>
                     {
                         fail!()
