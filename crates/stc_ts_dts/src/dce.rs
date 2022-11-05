@@ -158,7 +158,7 @@ impl VisitMut<RFnDecl> for DceForDts<'_> {
         }
 
         node.function.return_type = self.get_mapped(&node.ident.clone().into(), |ty| match ty {
-            Type::Function(stc_ts_types::Function { ref ret_ty, .. }) => Some(RTsTypeAnn::from((**ret_ty).clone())),
+            Type::Function(stc_ts_types::Function { ref ret_ty, .. }) => Some(box RTsTypeAnn::from((**ret_ty).clone())),
             _ => None,
         });
     }
