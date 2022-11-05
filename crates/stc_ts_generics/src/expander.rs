@@ -225,6 +225,7 @@ impl GenericExpander<'_> {
                                             apply_mapped_flags(member, m.optional, m.readonly);
                                         }
 
+                                        let members = members.fold_with(self);
                                         return Type::TypeLit(TypeLit {
                                             span: ty.span,
                                             members,

@@ -19,7 +19,7 @@ impl Analyzer<'_, '_> {
     /// - Handles assignment of `Function` types.
     /// - Handles assignment of various array types.
     /// - Handles assignment of promise types.
-    pub(super) fn assign_to_builtins(&mut self, data: &mut AssignData, opts: AssignOpts, l: &Type, r: &Type) -> Option<VResult<()>> {
+    pub(super) fn assign_to_builtin(&mut self, data: &mut AssignData, opts: AssignOpts, l: &Type, r: &Type) -> Option<VResult<()>> {
         let span = opts.span;
         let l = l.normalize();
         let r = r.normalize();
@@ -115,7 +115,7 @@ impl Analyzer<'_, '_> {
                             Err(err) => return Some(Err(err)),
                         };
 
-                        if let Some(Ok(())) = self.assign_to_builtins(data, opts, l, &parent) {
+                        if let Some(Ok(())) = self.assign_to_builtin(data, opts, l, &parent) {
                             return Some(Ok(()));
                         }
                     }

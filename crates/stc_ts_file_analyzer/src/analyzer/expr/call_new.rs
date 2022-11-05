@@ -836,7 +836,7 @@ impl Analyzer<'_, '_> {
                         obj: box obj_type.clone(),
                         key: box prop.clone(),
                     },
-                    Error::NoNewSignature { span, .. } => Error::NoCallablePropertyWithName {
+                    Error::NoNewSignature { span, .. } => Error::NoConstructablePropertyWithName {
                         span,
                         obj: box obj_type.clone(),
                         key: box prop.clone(),

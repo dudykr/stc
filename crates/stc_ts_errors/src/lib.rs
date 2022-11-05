@@ -1015,6 +1015,13 @@ pub enum Error {
         callee: Box<Type>,
     },
 
+    /// TS2348
+    NoConstructablePropertyWithName {
+        span: Span,
+        obj: Box<Type>,
+        key: Box<Key>,
+    },
+
     /// TS2349
     NoCallSignature {
         span: Span,
@@ -1439,6 +1446,14 @@ impl Error {
             // TS2584: Type not found with recommendation to change target library to include `dom`.
             2318 | 2552 | 2580 | 2581 | 2582 | 2583 | 2584 => 2304,
 
+            // TS2348: Not callable, but with a suggestion to use new
+            // TS2349: Not callable
+            2348 | 2349 => 2349,
+
+            // TS2350: new cannot be used for non-void function
+            // TS2350: new cannot be used because it's not constructor
+            2350 | 2351 => 2350,
+
             // TS2339: Property not found.
             // TS2550: Property not found with a suggestion to change `lib`.
             // TS2551: Property not found with a suggestion.
@@ -1785,6 +1800,8 @@ impl Error {
             Error::NotArrayType { .. } => 2461,
             Error::NotArrayTypeNorStringType { .. } => 2495,
             Error::NotArrayTypeNorStringTypeButDownlevelIterationWouldWork { .. } => 2569,
+
+            Error::NoConstructablePropertyWithName { .. } => 2348,
 
             Error::NoCallablePropertyWithName { .. } => 2349,
 
