@@ -785,6 +785,10 @@ pub struct Operator {
 
 assert_eq_size!(Operator, [u8; 32]);
 
+/// This type has a length of n to infinite.
+///
+/// If the last element is [RestType], this type can have a length of n to
+/// infinite.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Tuple {
     pub span: Span,
