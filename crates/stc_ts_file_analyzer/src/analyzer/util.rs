@@ -132,7 +132,7 @@ impl Analyzer<'_, '_> {
 
                 for parent in &interface.extends {
                     let ctxt = self.ctx.module_id;
-                    let parent_ty = self.type_of_ts_entity_name(span, ctxt, &parent.expr, None)?;
+                    let parent_ty = self.type_of_ts_entity_name(span, ctxt, &parent.expr.into(), None)?;
                     if let Ok(ty) = self.make_instance(span, &parent_ty) {
                         return Ok(ty);
                     }

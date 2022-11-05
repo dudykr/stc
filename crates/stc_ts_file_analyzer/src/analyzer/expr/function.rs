@@ -105,6 +105,7 @@ impl Analyzer<'_, '_> {
                                             &Key::Num(RNumber {
                                                 span: param.span(),
                                                 value: idx as f64,
+                                                raw: None,
                                             }),
                                             TypeOfMode::RValue,
                                             stc_ts_types::IdCtx::Var,

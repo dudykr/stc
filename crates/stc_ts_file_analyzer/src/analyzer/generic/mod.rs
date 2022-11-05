@@ -1192,7 +1192,7 @@ impl Analyzer<'_, '_> {
                 // Body should be handled by the match expression above.
 
                 for parent in &arg.extends {
-                    let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
+                    let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.into(), parent.type_args.as_deref())?;
                     self.infer_type(span, inferred, &param, &parent, opts)?;
                 }
 
@@ -1465,8 +1465,6 @@ impl Analyzer<'_, '_> {
                                             span: *i_span,
                                             value: sym.clone(),
                                             raw: None,
-                                            has_escape: false,
-                                            kind: Default::default(),
                                         }),
                                         metadata: LitTypeMetadata {
                                             common: param.metadata.common,
@@ -1714,8 +1712,6 @@ impl Analyzer<'_, '_> {
                                                     span: *i_span,
                                                     value: i_sym.clone(),
                                                     raw: None,
-                                                    has_escape: false,
-                                                    kind: Default::default(),
                                                 }),
                                                 metadata: LitTypeMetadata {
                                                     common: param.metadata.common,

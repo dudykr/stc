@@ -1462,7 +1462,6 @@ impl Analyzer<'_, '_> {
                                 .context("tried to convert a type to an iterator to assign to a tuple")?;
                             //
                             let rhs_el = self
-                                .get_iterator_element_type(span, r, false)
                                 .get_iterator_element_type(span, r, false, Default::default())
                                 .context("tried to get the element type of an iterator assignment")?;
 
@@ -1830,7 +1829,7 @@ impl Analyzer<'_, '_> {
                 let mut errors = vec![];
                 for parent in extends {
                     let parent = self
-                        .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?
+                        .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.into(), parent.type_args.as_deref())?
                         .freezed();
 
                     // An interface can extend a class.

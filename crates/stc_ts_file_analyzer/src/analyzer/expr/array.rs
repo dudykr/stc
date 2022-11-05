@@ -323,7 +323,6 @@ impl Analyzer<'_, '_> {
                             value: n as _,
                             raw: None,
                         }),
-                        &Key::Num(RNumber { span, value: n as _ }),
                         TypeOfMode::RValue,
                         IdCtx::Var,
                         Default::default(),
@@ -789,7 +788,6 @@ impl Analyzer<'_, '_> {
                 let types = u
                     .types
                     .iter()
-                    .map(|iterator| self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator), try_next_value))
                     .map(|iterator| {
                         self.get_iterator_element_type(
                             iterator.span().or_else(|| span),
@@ -815,7 +813,6 @@ impl Analyzer<'_, '_> {
                 let mut types = i
                     .types
                     .iter()
-                    .map(|iterator| self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator), try_next_value))
                     .map(|iterator| {
                         self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator), try_next_value, Default::default())
                     })
