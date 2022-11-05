@@ -229,10 +229,11 @@ impl Analyzer<'_, '_> {
                         })
                     });
 
-                    let default = default.map(|ty| {
+                    let default_ty = default;
+                    let default = default_ty.as_ref().map(|ty| {
                         self.get_iterator(
                             span,
-                            Cow::Owned(ty),
+                            Cow::Borrowed(ty),
                             GetIteratorOpts {
                                 disallow_str: true,
                                 ..Default::default()
@@ -249,16 +250,40 @@ impl Analyzer<'_, '_> {
                         if let Some(elem) = elem {
                             let elem_ty = ty
                                 .as_ref()
-                                .try_map(|ty| -> VResult<_> {
-                                    Ok(self
-                                        .get_element_from_iterator(span, Cow::Borrowed(&ty), idx)
-                                        .with_context(|| {
-                                            format!(
-                                                "tried to get the type of {}th element from iterator to declare vars with an array pattern",
-                                                idx
-                                            )
-                                        })?
-                                        .into_owned())
+                                .try_map(|ty| -> VResult {
+                                    let result = self.get_element_from_iterator(span, Cow::Borrowed(ty), idx).with_context(|| {
+                                        format!(
+                                            "tried to get the type of {}th element from iterator to declare vars with an array pattern",
+                                            idx
+                                        )
+                                    });
+
+                                    match result {
+                                        Ok(ty) => Ok(ty.into_owned()),
+                                        Err(err) => match err.actual() {
+                                            Error::TupleIndexError { .. } => match elem {
+                                                RPat::Assign(p) => {
+                                                    let type_ann = p.left.get_ty();
+                                                    let type_ann: Option<Type> =
+                                                        type_ann.and_then(|v| v.validate_with(self).report(&mut self.storage));
+                                                    let type_ann = type_ann.or(default_ty.clone());
+
+                                                    let right = p
+                                                        .right
+                                                        .validate_with_args(
+                                                            self,
+                                                            (TypeOfMode::RValue, None, type_ann.as_ref().or(Some(&ty))),
+                                                        )
+                                                        .report(&mut self.storage)
+                                                        .unwrap_or_else(|| Type::any(span, Default::default()));
+
+                                                    Ok(right)
+                                                }
+                                                _ => Err(err),
+                                            },
+                                            _ => Err(err),
+                                        },
+                                    }
                                 })?
                                 .freezed();
 
