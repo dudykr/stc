@@ -1,54 +1,48 @@
+warning: Type
+ --> $DIR/tests/pass/fn/typeParam/typeParameterAssignabillity2/1.ts:2:9
+  |
+2 |     u = t;
+  |         ^
+  |
+  = note: T
 
-  x Type
-   ,-[$DIR/tests/pass/fn/typeParam/typeParameterAssignabillity2/1.ts:2:5]
- 2 | u = t;
-   :     ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/fn/typeParam/typeParameterAssignabillity2/1.ts:2:5
+  |
+2 |     u = t;
+  |     ^^^^^
+  |
+  = note: T
 
-Error: 
-  > T
+warning: Type
+ --> $DIR/tests/pass/fn/typeParam/typeParameterAssignabillity2/1.ts:4:9
+  |
+4 |     v = t; // ok
+  |         ^
+  |
+  = note: T
 
-  x Type
-   ,-[$DIR/tests/pass/fn/typeParam/typeParameterAssignabillity2/1.ts:2:5]
- 2 | u = t;
-   : ^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/fn/typeParam/typeParameterAssignabillity2/1.ts:4:5
+  |
+4 |     v = t; // ok
+  |     ^^^^^
+  |
+  = note: T
 
-Error: 
-  > T
+warning: Type
+ --> $DIR/tests/pass/fn/typeParam/typeParameterAssignabillity2/1.ts:6:9
+  |
+6 |     v = u; // ok
+  |         ^
+  |
+  = note: U
 
-  x Type
-   ,-[$DIR/tests/pass/fn/typeParam/typeParameterAssignabillity2/1.ts:4:5]
- 4 | v = t; // ok
-   :     ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/fn/typeParam/typeParameterAssignabillity2/1.ts:6:5
+  |
+6 |     v = u; // ok
+  |     ^^^^^
+  |
+  = note: U
 
-Error: 
-  > T
-
-  x Type
-   ,-[$DIR/tests/pass/fn/typeParam/typeParameterAssignabillity2/1.ts:4:5]
- 4 | v = t; // ok
-   : ^^^^^
-   `----
-
-Error: 
-  > T
-
-  x Type
-   ,-[$DIR/tests/pass/fn/typeParam/typeParameterAssignabillity2/1.ts:6:5]
- 6 | v = u; // ok
-   :     ^
-   `----
-
-Error: 
-  > U
-
-  x Type
-   ,-[$DIR/tests/pass/fn/typeParam/typeParameterAssignabillity2/1.ts:6:5]
- 6 | v = u; // ok
-   : ^^^^^
-   `----
-
-Error: 
-  > U

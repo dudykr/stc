@@ -1,74 +1,67 @@
+warning: Type
+ --> $DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:1:61
+  |
+1 | export var { f: [f1, f2, { f3: f4, f5 }, ,] } = { f: [1, 2, { f3: 4, f5: 0 }] };
+  |                                                             ^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              f3: 4;
+              f5: 0;
+          }
 
-  x Type
-   ,-[$DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:1:1]
- 1 | export var { f: [f1, f2, { f3: f4, f5 }, ,] } = { f: [1, 2, { f3: 4, f5: 0 }] };
-   :                                                             ^^^^^^^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:1:54
+  |
+1 | export var { f: [f1, f2, { f3: f4, f5 }, ,] } = { f: [1, 2, { f3: 4, f5: 0 }] };
+  |                                                      ^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: [1, 2, {
+                  f3: 4;
+                  f5: 0;
+              }]
 
-Error: 
-  > {
-  |     f3: 4;
-  |     f5: 0;
-  | }
+warning: Type
+ --> $DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:1:49
+  |
+1 | export var { f: [f1, f2, { f3: f4, f5 }, ,] } = { f: [1, 2, { f3: 4, f5: 0 }] };
+  |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              f: [1, 2, {
+                      f3: 4;
+                      f5: 0;
+                  }];
+          }
 
-  x Type
-   ,-[$DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:1:1]
- 1 | export var { f: [f1, f2, { f3: f4, f5 }, ,] } = { f: [1, 2, { f3: 4, f5: 0 }] };
-   :                                                      ^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:4:1
+  |
+4 | f1;
+  | ^^
+  |
+  = note: number
 
-Error: 
-  > [1, 2, {
-  |         f3: 4;
-  |         f5: 0;
-  |     }]
+warning: Type
+ --> $DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:5:1
+  |
+5 | f2;
+  | ^^
+  |
+  = note: number
 
-  x Type
-   ,-[$DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:1:1]
- 1 | export var { f: [f1, f2, { f3: f4, f5 }, ,] } = { f: [1, 2, { f3: 4, f5: 0 }] };
-   :                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:6:1
+  |
+6 | f4;
+  | ^^
+  |
+  = note: number
 
-Error: 
-  > {
-  |     f: [1, 2, {
-  |             f3: 4;
-  |             f5: 0;
-  |         }];
-  | }
+warning: Type
+ --> $DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:7:1
+  |
+7 | f5
+  | ^^
+  |
+  = note: number
 
-  x Type
-   ,-[$DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:4:1]
- 4 | f1;
-   : ^^
-   `----
-
-Error: 
-  > number
-
-  x Type
-   ,-[$DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:5:1]
- 5 | f2;
-   : ^^
-   `----
-
-Error: 
-  > number
-
-  x Type
-   ,-[$DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:6:1]
- 6 | f4;
-   : ^^
-   `----
-
-Error: 
-  > number
-
-  x Type
-   ,-[$DIR/tests/pass/vars/destructuring/destructuringVariableDeclaration1ES6-1.ts:7:1]
- 7 | f5
-   : ^^
-   `----
-
-Error: 
-  > number

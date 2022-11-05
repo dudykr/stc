@@ -1,20 +1,18 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-1.ts:2:1
+  |
+2 | o1?.["b"];
+  | ^^
+  |
+  = note: (undefined | {
+              b: string;
+          })
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-1.ts:2:1]
- 2 | o1?.["b"];
-   : ^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-1.ts:2:1
+  |
+2 | o1?.["b"];
+  | ^^^^^^^^^
+  |
+  = note: (undefined | string)
 
-Error: 
-  > (undefined | {
-  |     b: string;
-  | })
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-1.ts:2:1]
- 2 | o1?.["b"];
-   : ^^^^^^^^^
-   `----
-
-Error: 
-  > (undefined | string)

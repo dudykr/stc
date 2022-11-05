@@ -1,81 +1,72 @@
+warning: Type
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:5:12
+  |
+5 | if (typeof a !== 'string' || typeof a !== 'number') {
+  |            ^
+  |
+  = note: (string | number | boolean)
 
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:5:1]
- 5 | if (typeof a !== 'string' || typeof a !== 'number') {
-   :            ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:5:5
+  |
+5 | if (typeof a !== 'string' || typeof a !== 'number') {
+  |     ^^^^^^^^
+  |
+  = note: string
 
-Error: 
-  > (string | number | boolean)
+warning: Type
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:5:5
+  |
+5 | if (typeof a !== 'string' || typeof a !== 'number') {
+  |     ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
 
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:5:1]
- 5 | if (typeof a !== 'string' || typeof a !== 'number') {
-   :     ^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:5:37
+  |
+5 | if (typeof a !== 'string' || typeof a !== 'number') {
+  |                                     ^
+  |
+  = note: string
 
-Error: 
-  > string
+warning: Type
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:5:30
+  |
+5 | if (typeof a !== 'string' || typeof a !== 'number') {
+  |                              ^^^^^^^^
+  |
+  = note: string
 
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:5:1]
- 5 | if (typeof a !== 'string' || typeof a !== 'number') {
-   :     ^^^^^^^^^^^^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:5:30
+  |
+5 | if (typeof a !== 'string' || typeof a !== 'number') {
+  |                              ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
 
-Error: 
-  > boolean
+warning: Type
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:5:5
+  |
+5 | if (typeof a !== 'string' || typeof a !== 'number') {
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: boolean
 
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:5:1]
- 5 | if (typeof a !== 'string' || typeof a !== 'number') {
-   :                                     ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:6:5
+  |
+6 |     a
+  |     ^
+  |
+  = note: (string | number | boolean)
 
-Error: 
-  > string
+warning: Type
+ --> $DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:8:5
+  |
+8 |     a
+  |     ^
+  |
+  = note: never
 
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:5:1]
- 5 | if (typeof a !== 'string' || typeof a !== 'number') {
-   :                              ^^^^^^^^
-   `----
-
-Error: 
-  > string
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:5:1]
- 5 | if (typeof a !== 'string' || typeof a !== 'number') {
-   :                              ^^^^^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > boolean
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:5:1]
- 5 | if (typeof a !== 'string' || typeof a !== 'number') {
-   :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > boolean
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:6:5]
- 6 | a
-   : ^
-   `----
-
-Error: 
-  > (string | number | boolean)
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/ifStmt/typeof/5.ts:8:5]
- 8 | a
-   : ^
-   `----
-
-Error: 
-  > never

@@ -1,21 +1,21 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/computed/1.ts:2:6
+  |
+2 |     ["" || 0]: 0
+  |      ^^^^^^^
+  |
+  = note: (string | number)
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/object/key/computed/1.ts:2:5]
- 2 | ["" || 0]: 0
-   :  ^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/computed/1.ts:1:16
+  |
+1 |   export var o = {
+  |  ________________^
+2 | |     ["" || 0]: 0
+3 | | };
+  | |_^
+  |
+  = note: {
+              ["" || 0]: 0;
+          }
 
-Error: 
-  > (string | number)
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/object/key/computed/1.ts:1:1]
- 1 | ,-> export var o = {
- 2 | |       ["" || 0]: 0
- 3 | `-> };
-   `----
-
-Error: 
-  > {
-  |     ["" || 0]: 0;
-  | }

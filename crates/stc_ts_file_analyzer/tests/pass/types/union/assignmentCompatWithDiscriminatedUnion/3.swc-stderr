@@ -1,81 +1,74 @@
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:18:23
+   |
+18 |     const a: Style2 = { type: "A", data: "whatevs" };
+   |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: {
+               type: "A";
+               data: "whatevs";
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:18:5]
- 18 | const a: Style2 = { type: "A", data: "whatevs" };
-    :                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:20:5
+   |
+20 |     a.type; // "A" | "B"
+   |     ^
+   |
+   = note: {
+               type: ("A" | "B");
+               data: string;
+           }
 
-Error: 
-  > {
-  |     type: "A";
-  |     data: "whatevs";
-  | }
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:20:5
+   |
+20 |     a.type; // "A" | "B"
+   |     ^^^^^^
+   |
+   = note: ("A" | "B")
 
-  x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:20:5]
- 20 | a.type; // "A" | "B"
-    : ^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:21:5
+   |
+21 |     b.type; // "A" | "B"
+   |     ^
+   |
+   = note: ({
+               type: "A";
+               data: string;
+           } | {
+               type: "B";
+               data: string;
+           })
 
-Error: 
-  > {
-  |     type: ("A" | "B");
-  |     data: string;
-  | }
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:21:5
+   |
+21 |     b.type; // "A" | "B"
+   |     ^^^^^^
+   |
+   = note: ("A" | "B")
 
-  x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:20:5]
- 20 | a.type; // "A" | "B"
-    : ^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:22:9
+   |
+22 |     b = a; // should be assignable
+   |         ^
+   |
+   = note: {
+               type: ("A" | "B");
+               data: string;
+           }
 
-Error: 
-  > ("A" | "B")
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:22:5
+   |
+22 |     b = a; // should be assignable
+   |     ^^^^^
+   |
+   = note: {
+               type: ("A" | "B");
+               data: string;
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:21:5]
- 21 | b.type; // "A" | "B"
-    : ^
-    `----
-
-Error: 
-  > ({
-  |     type: "A";
-  |     data: string;
-  | } | {
-  |     type: "B";
-  |     data: string;
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:21:5]
- 21 | b.type; // "A" | "B"
-    : ^^^^^^
-    `----
-
-Error: 
-  > ("A" | "B")
-
-  x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:22:5]
- 22 | b = a; // should be assignable
-    :     ^
-    `----
-
-Error: 
-  > {
-  |     type: ("A" | "B");
-  |     data: string;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/3.ts:22:5]
- 22 | b = a; // should be assignable
-    : ^^^^^
-    `----
-
-Error: 
-  > {
-  |     type: ("A" | "B");
-  |     data: string;
-  | }

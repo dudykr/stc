@@ -1,19 +1,17 @@
+warning: Type
+ --> $DIR/tests/pass/types/conditional/conditionalTypes1/1.ts:2:13
+  |
+2 |     let e = x[0];  // {}
+  |             ^
+  |
+  = note: T extends infer U[] ? U[] : never
 
-  x Type
-   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/1.ts:2:5]
- 2 | let e = x[0];  // {}
-   :         ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/types/conditional/conditionalTypes1/1.ts:2:13
+  |
+2 |     let e = x[0];  // {}
+  |             ^^^^
+  |
+  = note: {
+          }
 
-Error: 
-  > T extends infer U[] ? U[] : never
-
-  x Type
-   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/1.ts:2:5]
- 2 | let e = x[0];  // {}
-   :         ^^^^
-   `----
-
-Error: 
-  > {
-  | }

@@ -1,66 +1,60 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-3.ts:3:1
+  |
+3 | o3["b"]?.c;
+  | ^^
+  |
+  = note: {
+              b: (undefined | {
+                  c: string;
+              });
+          }
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3.ts:3:1]
- 3 | o3["b"]?.c;
-   : ^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-3.ts:3:1
+  |
+3 | o3["b"]?.c;
+  | ^^^^^^^
+  |
+  = note: (undefined | {
+              c: string;
+          })
 
-Error: 
-  > {
-  |     b: (undefined | {
-  |         c: string;
-  |     });
-  | }
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-3.ts:3:1
+  |
+3 | o3["b"]?.c;
+  | ^^^^^^^^^^
+  |
+  = note: (undefined | string)
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3.ts:3:1]
- 3 | o3["b"]?.c;
-   : ^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-3.ts:4:1
+  |
+4 | o3.b?.["c"];
+  | ^^
+  |
+  = note: {
+              b: (undefined | {
+                  c: string;
+              });
+          }
 
-Error: 
-  > (undefined | {
-  |     c: string;
-  | })
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-3.ts:4:1
+  |
+4 | o3.b?.["c"];
+  | ^^^^
+  |
+  = note: (undefined | {
+              c: string;
+          })
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3.ts:3:1]
- 3 | o3["b"]?.c;
-   : ^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/optionalChaining/access-3.ts:4:1
+  |
+4 | o3.b?.["c"];
+  | ^^^^^^^^^^^
+  |
+  = note: (undefined | string)
 
-Error: 
-  > (undefined | string)
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3.ts:4:1]
- 4 | o3.b?.["c"];
-   : ^^
-   `----
-
-Error: 
-  > {
-  |     b: (undefined | {
-  |         c: string;
-  |     });
-  | }
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3.ts:4:1]
- 4 | o3.b?.["c"];
-   : ^^^^
-   `----
-
-Error: 
-  > (undefined | {
-  |     c: string;
-  | })
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/optionalChaining/access-3.ts:4:1]
- 4 | o3.b?.["c"];
-   : ^^^^^^^^^^^
-   `----
-
-Error: 
-  > (undefined | string)

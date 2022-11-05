@@ -1,81 +1,72 @@
+warning: Type
+ --> $DIR/tests/pass/types/this/class/chained-1.ts:3:16
+  |
+3 |         return this;
+  |                ^^^^
+  |
+  = note: this
 
-  x Type
-   ,-[$DIR/tests/pass/types/this/class/chained-1.ts:3:9]
- 3 | return this;
-   :        ^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/types/this/class/chained-1.ts:6:17
+  |
+6 | class B extends A {
+  |                 ^
+  |
+  = note: typeof A
 
-Error: 
-  > this
+warning: Type
+ --> $DIR/tests/pass/types/this/class/chained-1.ts:8:16
+  |
+8 |         return this;
+  |                ^^^^
+  |
+  = note: this
 
-  x Type
-   ,-[$DIR/tests/pass/types/this/class/chained-1.ts:6:1]
- 6 | class B extends A {
-   :                 ^
-   `----
+warning: Type
+  --> $DIR/tests/pass/types/this/class/chained-1.ts:11:17
+   |
+11 | class C extends B {
+   |                 ^
+   |
+   = note: typeof B
 
-Error: 
-  > typeof A
+warning: Type
+  --> $DIR/tests/pass/types/this/class/chained-1.ts:13:16
+   |
+13 |         return this;
+   |                ^^^^
+   |
+   = note: this
 
-  x Type
-   ,-[$DIR/tests/pass/types/this/class/chained-1.ts:8:9]
- 8 | return this;
-   :        ^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/types/this/class/chained-1.ts:17:16
+   |
+17 | export var z = c.foo().bar().baz();  // Fluent pattern
+   |                ^
+   |
+   = note: C
 
-Error: 
-  > this
+warning: Type
+  --> $DIR/tests/pass/types/this/class/chained-1.ts:17:16
+   |
+17 | export var z = c.foo().bar().baz();  // Fluent pattern
+   |                ^^^^^^^
+   |
+   = note: C
 
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/chained-1.ts:11:1]
- 11 | class C extends B {
-    :                 ^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/this/class/chained-1.ts:17:16
+   |
+17 | export var z = c.foo().bar().baz();  // Fluent pattern
+   |                ^^^^^^^^^^^^^
+   |
+   = note: C
 
-Error: 
-  > typeof B
+warning: Type
+  --> $DIR/tests/pass/types/this/class/chained-1.ts:17:16
+   |
+17 | export var z = c.foo().bar().baz();  // Fluent pattern
+   |                ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: C
 
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/chained-1.ts:13:9]
- 13 | return this;
-    :        ^^^^
-    `----
-
-Error: 
-  > this
-
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/chained-1.ts:17:1]
- 17 | export var z = c.foo().bar().baz();  // Fluent pattern
-    :                ^
-    `----
-
-Error: 
-  > C
-
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/chained-1.ts:17:1]
- 17 | export var z = c.foo().bar().baz();  // Fluent pattern
-    :                ^^^^^^^
-    `----
-
-Error: 
-  > C
-
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/chained-1.ts:17:1]
- 17 | export var z = c.foo().bar().baz();  // Fluent pattern
-    :                ^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > C
-
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/chained-1.ts:17:1]
- 17 | export var z = c.foo().bar().baz();  // Fluent pattern
-    :                ^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > C

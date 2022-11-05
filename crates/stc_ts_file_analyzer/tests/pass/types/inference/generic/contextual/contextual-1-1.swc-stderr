@@ -1,27 +1,24 @@
+warning: Type
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-1-1.ts:5:43
+  |
+5 | export const f02: <A>(x: A) => A[] = wrap(list);
+  |                                           ^^^^
+  |
+  = note: <T>(a: T) => T[]
 
-  x Type
-   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-1-1.ts:5:1]
- 5 | export const f02: <A>(x: A) => A[] = wrap(list);
-   :                                           ^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-1-1.ts:5:38
+  |
+5 | export const f02: <A>(x: A) => A[] = wrap(list);
+  |                                      ^^^^
+  |
+  = note: <A, B>(f: (a: A) => B) => (a: A) => B
 
-Error: 
-  > <T>(a: T) => T[]
+warning: Type
+ --> $DIR/tests/pass/types/inference/generic/contextual/contextual-1-1.ts:5:38
+  |
+5 | export const f02: <A>(x: A) => A[] = wrap(list);
+  |                                      ^^^^^^^^^^
+  |
+  = note: <A>(a: A) => A[]
 
-  x Type
-   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-1-1.ts:5:1]
- 5 | export const f02: <A>(x: A) => A[] = wrap(list);
-   :                                      ^^^^
-   `----
-
-Error: 
-  > <A, B>(f: (a: A) => B) => (a: A) => B
-
-  x Type
-   ,-[$DIR/tests/pass/types/inference/generic/contextual/contextual-1-1.ts:5:1]
- 5 | export const f02: <A>(x: A) => A[] = wrap(list);
-   :                                      ^^^^^^^^^^
-   `----
-
-Error: 
-  > <A>(a: A) => A[]

@@ -1,90 +1,80 @@
+warning: Type
+ --> $DIR/tests/pass/class/local/localTypes3/1.ts:3:20
+  |
+3 |         public x = x;
+  |                    ^
+  |
+  = note: X
 
-  x Type
-   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:3:9]
- 3 | public x = x;
-   :            ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/class/local/localTypes3/1.ts:6:12
+  |
+6 |     return C;
+  |            ^
+  |
+  = note: typeof C
 
-Error: 
-  > X
+warning: Type
+ --> $DIR/tests/pass/class/local/localTypes3/1.ts:8:9
+  |
+8 | let C = f(10);
+  |         ^
+  |
+  = note: <X>(x: X) => typeof C
 
-  x Type
-   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:6:5]
- 6 | return C;
-   :        ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/class/local/localTypes3/1.ts:8:9
+  |
+8 | let C = f(10);
+  |         ^^^^^
+  |
+  = note: typeof C
 
-Error: 
-  > typeof C
+warning: Type
+ --> $DIR/tests/pass/class/local/localTypes3/1.ts:9:13
+  |
+9 | let v = new C("hello");
+  |             ^
+  |
+  = note: typeof C
 
-  x Type
-   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:8:1]
- 8 | let C = f(10);
-   :         ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/class/local/localTypes3/1.ts:9:9
+  |
+9 | let v = new C("hello");
+  |         ^^^^^^^^^^^^^^
+  |
+  = note: C
 
-Error: 
-  > <X>(x: X) => typeof C
+warning: Type
+  --> $DIR/tests/pass/class/local/localTypes3/1.ts:10:1
+   |
+10 | v.x;
+   | ^
+   |
+   = note: C
 
-  x Type
-   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:8:1]
- 8 | let C = f(10);
-   :         ^^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/class/local/localTypes3/1.ts:10:1
+   |
+10 | v.x;
+   | ^^^
+   |
+   = note: number
 
-Error: 
-  > typeof C
+warning: Type
+  --> $DIR/tests/pass/class/local/localTypes3/1.ts:11:1
+   |
+11 | v.y;
+   | ^
+   |
+   = note: C
 
-  x Type
-   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:9:1]
- 9 | let v = new C("hello");
-   :             ^
-   `----
+warning: Type
+  --> $DIR/tests/pass/class/local/localTypes3/1.ts:11:1
+   |
+11 | v.y;
+   | ^^^
+   |
+   = note: string
 
-Error: 
-  > typeof C
-
-  x Type
-   ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:9:1]
- 9 | let v = new C("hello");
-   :         ^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > C
-
-  x Type
-    ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:10:1]
- 10 | v.x;
-    : ^
-    `----
-
-Error: 
-  > C
-
-  x Type
-    ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:10:1]
- 10 | v.x;
-    : ^^^
-    `----
-
-Error: 
-  > number
-
-  x Type
-    ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:11:1]
- 11 | v.y;
-    : ^
-    `----
-
-Error: 
-  > C
-
-  x Type
-    ,-[$DIR/tests/pass/class/local/localTypes3/1.ts:11:1]
- 11 | v.y;
-    : ^^^
-    `----
-
-Error: 
-  > string

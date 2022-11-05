@@ -1,99 +1,88 @@
+warning: Type
+ --> $DIR/tests/pass/class/super/infer/super-arg-1.ts:5:24
+  |
+5 | export class C extends B {
+  |                        ^
+  |
+  = note: typeof B
 
-  x Type
-   ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:5:1]
- 5 | export class C extends B {
-   :                        ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/class/super/infer/super-arg-1.ts:8:19
+  |
+8 |         super.baz(a, y);
+  |                   ^
+  |
+  = note: string
 
-Error: 
-  > typeof B
+warning: Type
+ --> $DIR/tests/pass/class/super/infer/super-arg-1.ts:8:22
+  |
+8 |         super.baz(a, y);
+  |                      ^
+  |
+  = note: number
 
-  x Type
-   ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:8:9]
- 8 | super.baz(a, y);
-   :           ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/class/super/infer/super-arg-1.ts:8:9
+  |
+8 |         super.baz(a, y);
+  |         ^^^^^^^^^
+  |
+  = note: (a: string, y?: number) => void
 
-Error: 
-  > string
+warning: Type
+ --> $DIR/tests/pass/class/super/infer/super-arg-1.ts:8:9
+  |
+8 |         super.baz(a, y);
+  |         ^^^^^^^^^^^^^^^
+  |
+  = note: void
 
-  x Type
-   ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:8:9]
- 8 | super.baz(a, y);
-   :              ^
-   `----
+warning: Type
+  --> $DIR/tests/pass/class/super/infer/super-arg-1.ts:11:24
+   |
+11 | export class D extends C {
+   |                        ^
+   |
+   = note: typeof C
 
-Error: 
-  > number
+warning: Type
+  --> $DIR/tests/pass/class/super/infer/super-arg-1.ts:13:9
+   |
+13 |         super();
+   |         ^^^^^^^
+   |
+   = note: any
 
-  x Type
-   ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:8:9]
- 8 | super.baz(a, y);
-   : ^^^^^^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/class/super/infer/super-arg-1.ts:17:9
+   |
+17 |         super.foo();
+   |         ^^^^^^^^^
+   |
+   = note: () => void
 
-Error: 
-  > (a: string, y?: number) => void
+warning: Type
+  --> $DIR/tests/pass/class/super/infer/super-arg-1.ts:17:9
+   |
+17 |         super.foo();
+   |         ^^^^^^^^^^^
+   |
+   = note: void
 
-  x Type
-   ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:8:9]
- 8 | super.baz(a, y);
-   : ^^^^^^^^^^^^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/class/super/infer/super-arg-1.ts:21:9
+   |
+21 |         super.baz("hello", 10);
+   |         ^^^^^^^^^
+   |
+   = note: (a: string, y: number) => void
 
-Error: 
-  > void
+warning: Type
+  --> $DIR/tests/pass/class/super/infer/super-arg-1.ts:21:9
+   |
+21 |         super.baz("hello", 10);
+   |         ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: void
 
-  x Type
-    ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:11:1]
- 11 | export class D extends C {
-    :                        ^
-    `----
-
-Error: 
-  > typeof C
-
-  x Type
-    ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:13:9]
- 13 | super();
-    : ^^^^^^^
-    `----
-
-Error: 
-  > any
-
-  x Type
-    ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:17:9]
- 17 | super.foo();
-    : ^^^^^^^^^
-    `----
-
-Error: 
-  > () => void
-
-  x Type
-    ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:17:9]
- 17 | super.foo();
-    : ^^^^^^^^^^^
-    `----
-
-Error: 
-  > void
-
-  x Type
-    ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:21:9]
- 21 | super.baz("hello", 10);
-    : ^^^^^^^^^
-    `----
-
-Error: 
-  > (a: string, y: number) => void
-
-  x Type
-    ,-[$DIR/tests/pass/class/super/infer/super-arg-1.ts:21:9]
- 21 | super.baz("hello", 10);
-    : ^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > void

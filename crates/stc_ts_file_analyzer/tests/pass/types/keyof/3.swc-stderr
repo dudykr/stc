@@ -1,36 +1,32 @@
+warning: Type
+  --> $DIR/tests/pass/types/keyof/3.ts:15:7
+   |
+15 | foo = keys
+   |       ^^^^
+   |
+   = note: ("a" | "c" | string | number | symbol)
 
-  x Type
-    ,-[$DIR/tests/pass/types/keyof/3.ts:15:1]
- 15 | foo = keys
-    :       ^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/keyof/3.ts:15:1
+   |
+15 | foo = keys
+   | ^^^^^^^^^^
+   |
+   = note: ("a" | "c" | string | number | symbol)
 
-Error: 
-  > ("a" | "c" | string | number | symbol)
+warning: Type
+  --> $DIR/tests/pass/types/keyof/3.ts:16:8
+   |
+16 | keys = foo
+   |        ^^^
+   |
+   = note: (string | number | symbol)
 
-  x Type
-    ,-[$DIR/tests/pass/types/keyof/3.ts:15:1]
- 15 | foo = keys
-    : ^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/keyof/3.ts:16:1
+   |
+16 | keys = foo
+   | ^^^^^^^^^^
+   |
+   = note: (string | number | symbol)
 
-Error: 
-  > ("a" | "c" | string | number | symbol)
-
-  x Type
-    ,-[$DIR/tests/pass/types/keyof/3.ts:16:1]
- 16 | keys = foo
-    :        ^^^
-    `----
-
-Error: 
-  > (string | number | symbol)
-
-  x Type
-    ,-[$DIR/tests/pass/types/keyof/3.ts:16:1]
- 16 | keys = foo
-    : ^^^^^^^^^^
-    `----
-
-Error: 
-  > (string | number | symbol)

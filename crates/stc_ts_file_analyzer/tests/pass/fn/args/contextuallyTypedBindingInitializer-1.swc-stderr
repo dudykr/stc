@@ -14,20 +14,11 @@ warning: Type
   |
   = note: string
 
-  x Type
-   ,-[$DIR/tests/pass/fn/args/contextuallyTypedBindingInitializer-1.ts:5:1]
- 5 | export function f({ show = v => v.toString() }: Show) { }
-   :                                 ^^^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/fn/args/contextuallyTypedBindingInitializer-1.ts:5:28
+  |
+5 | export function f({ show = v => v.toString() }: Show) { }
+  |                            ^^^^^^^^^^^^^^^^^
+  |
+  = note: (v: number) => string
 
-Error: 
-  > string
-
-  x Type
-   ,-[$DIR/tests/pass/fn/args/contextuallyTypedBindingInitializer-1.ts:5:1]
- 5 | export function f({ show = v => v.toString() }: Show) { }
-   :                            ^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > (v: number) => string

@@ -1,245 +1,220 @@
+warning: Type
+ --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:3:11
+  |
+3 | if (o2?.f(x)) {
+  |           ^
+  |
+  = note: (string | number)
 
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:3:1]
- 3 | if (o2?.f(x)) {
-   :           ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:3:5
+  |
+3 | if (o2?.f(x)) {
+  |     ^^
+  |
+  = note: ({
+              f(x: any): x is number;
+          } | undefined)
 
-Error: 
-  > (string | number)
+warning: Type
+ --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:3:5
+  |
+3 | if (o2?.f(x)) {
+  |     ^^^^^
+  |
+  = note: (undefined | (x: any) => x is number)
 
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:3:1]
- 3 | if (o2?.f(x)) {
-   :     ^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:3:5
+  |
+3 | if (o2?.f(x)) {
+  |     ^^^^^^^^
+  |
+  = note: x is number
 
-Error: 
-  > ({
-  |     f(x: any): x is number;
-  | } | undefined)
+warning: Type
+ --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:4:5
+  |
+4 |     x; // number
+  |     ^
+  |
+  = note: number
 
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:3:1]
- 3 | if (o2?.f(x)) {
-   :     ^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:5:5
+  |
+5 |     o2.f; // (x: any) => x is number
+  |     ^^
+  |
+  = note: {
+              f(x: any): x is number;
+          }
 
-Error: 
-  > (undefined | (x: any) => x is number)
+warning: Type
+ --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:5:5
+  |
+5 |     o2.f; // (x: any) => x is number
+  |     ^^^^
+  |
+  = note: (x: any) => x is number
 
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:3:1]
- 3 | if (o2?.f(x)) {
-   :     ^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:6:5
+  |
+6 |     o2?.f;
+  |     ^^
+  |
+  = note: {
+              f(x: any): x is number;
+          }
 
-Error: 
-  > x is number
+warning: Type
+ --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:6:5
+  |
+6 |     o2?.f;
+  |     ^^^^^
+  |
+  = note: (x: any) => x is number
 
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:4:5]
- 4 | x; // number
-   : ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:7:11
+  |
+7 |     o2?.f(x);
+  |           ^
+  |
+  = note: number
 
-Error: 
-  > number
+warning: Type
+ --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:7:5
+  |
+7 |     o2?.f(x);
+  |     ^^
+  |
+  = note: {
+              f(x: any): x is number;
+          }
 
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:5:5]
- 5 | o2.f; // (x: any) => x is number
-   : ^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:7:5
+  |
+7 |     o2?.f(x);
+  |     ^^^^^
+  |
+  = note: (x: any) => x is number
 
-Error: 
-  > {
-  |     f(x: any): x is number;
-  | }
+warning: Type
+ --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:7:5
+  |
+7 |     o2?.f(x);
+  |     ^^^^^^^^
+  |
+  = note: x is number
 
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:5:5]
- 5 | o2.f; // (x: any) => x is number
-   : ^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:10:5
+   |
+10 |     x;
+   |     ^
+   |
+   = note: string
 
-Error: 
-  > (x: any) => x is number
+warning: Type
+  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:11:5
+   |
+11 |     o2;
+   |     ^^
+   |
+   = note: ({
+               f(x: any): x is number;
+           } | undefined)
 
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:6:5]
- 6 | o2?.f;
-   : ^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:12:5
+   |
+12 |     o2?.f;
+   |     ^^
+   |
+   = note: ({
+               f(x: any): x is number;
+           } | undefined)
 
-Error: 
-  > {
-  |     f(x: any): x is number;
-  | }
+warning: Type
+  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:12:5
+   |
+12 |     o2?.f;
+   |     ^^^^^
+   |
+   = note: (undefined | (x: any) => x is number)
 
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:6:5]
- 6 | o2?.f;
-   : ^^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:13:5
+   |
+13 |     o2.f;
+   |     ^^
+   |
+   = note: ({
+               f(x: any): x is number;
+           } | undefined)
 
-Error: 
-  > (x: any) => x is number
+warning: Type
+  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:13:5
+   |
+13 |     o2.f;
+   |     ^^^^
+   |
+   = note: (x: any) => x is number
 
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:7:5]
- 7 | o2?.f(x);
-   :       ^
-   `----
+warning: Type
+  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:15:1
+   |
+15 | x;
+   | ^
+   |
+   = note: (string | number)
 
-Error: 
-  > number
+warning: Type
+  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:16:1
+   |
+16 | o2;
+   | ^^
+   |
+   = note: ({
+               f(x: any): x is number;
+           } | undefined)
 
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:7:5]
- 7 | o2?.f(x);
-   : ^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:17:1
+   |
+17 | o2?.f;
+   | ^^
+   |
+   = note: ({
+               f(x: any): x is number;
+           } | undefined)
 
-Error: 
-  > {
-  |     f(x: any): x is number;
-  | }
+warning: Type
+  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:17:1
+   |
+17 | o2?.f;
+   | ^^^^^
+   |
+   = note: (undefined | (x: any) => x is number)
 
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:7:5]
- 7 | o2?.f(x);
-   : ^^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:18:1
+   |
+18 | o2.f;
+   | ^^
+   |
+   = note: ({
+               f(x: any): x is number;
+           } | undefined)
 
-Error: 
-  > (x: any) => x is number
+warning: Type
+  --> $DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:18:1
+   |
+18 | o2.f;
+   | ^^^^
+   |
+   = note: (x: any) => x is number
 
-  x Type
-   ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:7:5]
- 7 | o2?.f(x);
-   : ^^^^^^^^
-   `----
-
-Error: 
-  > x is number
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:10:5]
- 10 | x;
-    : ^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:11:5]
- 11 | o2;
-    : ^^
-    `----
-
-Error: 
-  > ({
-  |     f(x: any): x is number;
-  | } | undefined)
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:12:5]
- 12 | o2?.f;
-    : ^^
-    `----
-
-Error: 
-  > ({
-  |     f(x: any): x is number;
-  | } | undefined)
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:12:5]
- 12 | o2?.f;
-    : ^^^^^
-    `----
-
-Error: 
-  > (undefined | (x: any) => x is number)
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:13:5]
- 13 | o2.f;
-    : ^^
-    `----
-
-Error: 
-  > ({
-  |     f(x: any): x is number;
-  | } | undefined)
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:13:5]
- 13 | o2.f;
-    : ^^^^
-    `----
-
-Error: 
-  > (x: any) => x is number
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:15:1]
- 15 | x;
-    : ^
-    `----
-
-Error: 
-  > (string | number)
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:16:1]
- 16 | o2;
-    : ^^
-    `----
-
-Error: 
-  > ({
-  |     f(x: any): x is number;
-  | } | undefined)
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:17:1]
- 17 | o2?.f;
-    : ^^
-    `----
-
-Error: 
-  > ({
-  |     f(x: any): x is number;
-  | } | undefined)
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:17:1]
- 17 | o2?.f;
-    : ^^^^^
-    `----
-
-Error: 
-  > (undefined | (x: any) => x is number)
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:18:1]
- 18 | o2.f;
-    : ^^
-    `----
-
-Error: 
-  > ({
-  |     f(x: any): x is number;
-  | } | undefined)
-
-  x Type
-    ,-[$DIR/tests/pass/types/predicate/controlFlowOptionalChain/2.ts:18:1]
- 18 | o2.f;
-    : ^^^^
-    `----
-
-Error: 
-  > (x: any) => x is number

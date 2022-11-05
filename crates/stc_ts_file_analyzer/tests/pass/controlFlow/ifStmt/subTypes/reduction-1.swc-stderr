@@ -1,120 +1,108 @@
+warning: Type
+  --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:10:16
+   |
+10 |         return {}
+   |                ^^
+   |
+   = note: {
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:10:9]
- 10 | return {}
-    :        ^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:15:45
+   |
+15 |     let v: Validator & Partial<OnChanges> = null as any;
+   |                                             ^^^^^^^^^^^
+   |
+   = note: any
 
-Error: 
-  > {
-  | }
+warning: Type
+  --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:16:9
+   |
+16 |     if (v instanceof C) {
+   |         ^
+   |
+   = note: (Validator & {
+               onChanges?: OnChanges["onChanges"];
+           })
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:15:5]
- 15 | let v: Validator & Partial<OnChanges> = null as any;
-    :                                         ^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:16:22
+   |
+16 |     if (v instanceof C) {
+   |                      ^
+   |
+   = note: typeof C
 
-Error: 
-  > any
+warning: Type
+  --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:16:9
+   |
+16 |     if (v instanceof C) {
+   |         ^^^^^^^^^^^^^^
+   |
+   = note: boolean
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:16:5]
- 16 | if (v instanceof C) {
-    :     ^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:17:9
+   |
+17 |         v // Validator & Partial<OnChanges> & C
+   |         ^
+   |
+   = note: (Validator & {
+               onChanges?: OnChanges["onChanges"];
+           })
 
-Error: 
-  > (Validator & {
-  |     onChanges?: OnChanges["onChanges"];
-  | })
+warning: Type
+  --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:19:5
+   |
+19 |     v // Validator & Partial<OnChanges> via subtype reduction
+   |     ^
+   |
+   = note: (Validator & {
+               onChanges?: OnChanges["onChanges"];
+           })
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:16:5]
- 16 | if (v instanceof C) {
-    :                  ^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:20:9
+   |
+20 |     if (v.onChanges) {
+   |         ^
+   |
+   = note: (Validator & {
+               onChanges?: OnChanges["onChanges"];
+           })
 
-Error: 
-  > typeof C
+warning: Type
+  --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:20:9
+   |
+20 |     if (v.onChanges) {
+   |         ^^^^^^^^^^^
+   |
+   = note: (changes: Record<string, unknown>) => void
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:16:5]
- 16 | if (v instanceof C) {
-    :     ^^^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:21:21
+   |
+21 |         v.onChanges({});
+   |                     ^^
+   |
+   = note: {
+           }
 
-Error: 
-  > boolean
+warning: Type
+  --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:21:9
+   |
+21 |         v.onChanges({});
+   |         ^
+   |
+   = note: (Validator & {
+               onChanges?: OnChanges["onChanges"];
+           })
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:17:9]
- 17 | v // Validator & Partial<OnChanges> & C
-    : ^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:21:9
+   |
+21 |         v.onChanges({});
+   |         ^^^^^^^^^^^^^^^
+   |
+   = note: void
 
-Error: 
-  > (Validator & {
-  |     onChanges?: OnChanges["onChanges"];
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:19:5]
- 19 | v // Validator & Partial<OnChanges> via subtype reduction
-    : ^
-    `----
-
-Error: 
-  > (Validator & {
-  |     onChanges?: OnChanges["onChanges"];
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:20:5]
- 20 | if (v.onChanges) {
-    :     ^
-    `----
-
-Error: 
-  > (Validator & {
-  |     onChanges?: OnChanges["onChanges"];
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:20:5]
- 20 | if (v.onChanges) {
-    :     ^^^^^^^^^^^
-    `----
-
-Error: 
-  > (changes: Record<string, unknown>) => void
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:21:9]
- 21 | v.onChanges({});
-    :             ^^
-    `----
-
-Error: 
-  > {
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:21:9]
- 21 | v.onChanges({});
-    : ^
-    `----
-
-Error: 
-  > (Validator & {
-  |     onChanges?: OnChanges["onChanges"];
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/ifStmt/subTypes/reduction-1.ts:21:9]
- 21 | v.onChanges({});
-    : ^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > void

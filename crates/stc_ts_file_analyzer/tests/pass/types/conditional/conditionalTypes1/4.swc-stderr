@@ -22,20 +22,3 @@ warning: Type
   |
   = note: T
 
-  x Type
-   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/4.ts:2:5]
- 2 | x = y;
-   : ^^^^^
-   `----
-
-Error: 
-  > T extends (null | undefined) ? never : T
-
-  x Type
-   ,-[$DIR/tests/pass/types/conditional/conditionalTypes1/4.ts:3:5]
- 3 | let s2: string = y;
-   :                  ^
-   `----
-
-Error: 
-  > T extends (null | undefined) ? never : T

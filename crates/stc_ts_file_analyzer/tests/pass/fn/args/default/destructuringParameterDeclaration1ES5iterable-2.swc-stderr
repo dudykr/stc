@@ -1,54 +1,49 @@
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:8:38
+  |
+8 | function b2(z = null, o = { x: 0, y: undefined }) { }
+  |                                      ^^^^^^^^^
+  |
+  = note: undefined
 
-  x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:8:1]
- 8 | function b2(z = null, o = { x: 0, y: undefined }) { }
-   :                                      ^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:8:27
+  |
+8 | function b2(z = null, o = { x: 0, y: undefined }) { }
+  |                           ^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: {
+              x: 0;
+              y: undefined;
+          }
 
-Error: 
-  > undefined
+warning: Type
+  --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:10:29
+   |
+10 | export default b2("string", { x: 200, y: "string" });
+   |                             ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: {
+               x: 200;
+               y: "string";
+           }
 
-  x Type
-   ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:8:1]
- 8 | function b2(z = null, o = { x: 0, y: undefined }) { }
-   :                           ^^^^^^^^^^^^^^^^^^^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:10:16
+   |
+10 | export default b2("string", { x: 200, y: "string" });
+   |                ^^
+   |
+   = note: (z?: any, o?: {
+               x: number;
+               y: any;
+           }) => void
 
-Error: 
-  > {
-  |     x: 0;
-  |     y: undefined;
-  | }
+warning: Type
+  --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:10:16
+   |
+10 | export default b2("string", { x: 200, y: "string" });
+   |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: void
 
-  x Type
-    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:10:1]
- 10 | export default b2("string", { x: 200, y: "string" });
-    :                             ^^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > {
-  |     x: 200;
-  |     y: "string";
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:10:1]
- 10 | export default b2("string", { x: 200, y: "string" });
-    :                ^^
-    `----
-
-Error: 
-  > (z?: any, o?: {
-  |     x: number;
-  |     y: any;
-  | }) => void
-
-  x Type
-    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-2.ts:10:1]
- 10 | export default b2("string", { x: 200, y: "string" });
-    :                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > void

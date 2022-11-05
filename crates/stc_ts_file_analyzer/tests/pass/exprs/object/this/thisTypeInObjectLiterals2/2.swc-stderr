@@ -1,335 +1,292 @@
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:17:18
+   |
+17 |     data: () => ({ x: 1, y: 2 }),
+   |                  ^^^^^^^^^^^^^^
+   |
+   = note: {
+               x: 1;
+               y: 2;
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:17:5]
- 17 | data: () => ({ x: 1, y: 2 }),
-    :              ^^^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:17:17
+   |
+17 |     data: () => ({ x: 1, y: 2 }),
+   |                 ^^^^^^^^^^^^^^^^
+   |
+   = note: {
+               x: 1;
+               y: 2;
+           }
 
-Error: 
-  > {
-  |     x: 1;
-  |     y: 2;
-  | }
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:17:11
+   |
+17 |     data: () => ({ x: 1, y: 2 }),
+   |           ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: () => {
+               x: 1;
+               y: 2;
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:17:5]
- 17 | data: () => ({ x: 1, y: 2 }),
-    :             ^^^^^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:20:20
+   |
+20 |             return this.x;
+   |                    ^^^^
+   |
+   = note: this
 
-Error: 
-  > {
-  |     x: 1;
-  |     y: 2;
-  | }
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:20:20
+   |
+20 |             return this.x;
+   |                    ^^^^^^
+   |
+   = note: any
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:17:5]
- 17 | data: () => ({ x: 1, y: 2 }),
-    :       ^^^^^^^^^^^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:18:14
+   |
+18 |       methods: {
+   |  ______________^
+19 | |         f(x: string) {
+20 | |             return this.x;
+21 | |         }
+22 | |     },
+   | |_____^
+   |
+   = note: {
+               f(x: string): any;
+           }
 
-Error: 
-  > () => {
-  |     x: 1;
-  |     y: 2;
-  | }
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:25:20
+   |
+25 |             return this.x;
+   |                    ^^^^
+   |
+   = note: this
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:20:13]
- 20 | return this.x;
-    :        ^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:25:20
+   |
+25 |             return this.x;
+   |                    ^^^^^^
+   |
+   = note: any
 
-Error: 
-  > this
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:27:16
+   |
+27 |           hello: {
+   |  ________________^
+28 | |             get() {
+29 | |                 return "hi";
+30 | |             },
+31 | |             set(value: string) {
+32 | |             }
+33 | |         }
+   | |_________^
+   |
+   = note: {
+               get(): "hi";
+               set(value: string): void;
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:20:13]
- 20 | return this.x;
-    :        ^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:23:15
+   |
+23 |       computed: {
+   |  _______________^
+24 | |         test(): number {
+25 | |             return this.x;
+26 | |         },
+...  |
+33 | |         }
+34 | |     }
+   | |_____^
+   |
+   = note: {
+               test(): number;
+               hello: {
+                   get(): "hi";
+                   set(value: string): void;
+               };
+           }
 
-Error: 
-  > any
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:16:19
+   |
+16 |   let vue = new Vue({
+   |  ___________________^
+17 | |     data: () => ({ x: 1, y: 2 }),
+18 | |     methods: {
+19 | |         f(x: string) {
+...  |
+34 | |     }
+35 | | });
+   | |_^
+   |
+   = note: {
+               data: () => {
+                   x: 1;
+                   y: 2;
+               };
+               methods: {
+                   f(x: string): any;
+               };
+               computed: {
+                   test(): number;
+                   hello: {
+                       get(): "hi";
+                       set(value: string): void;
+                   };
+               };
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:18:5]
- 18 | ,-> methods: {
- 19 | |           f(x: string) {
- 20 | |               return this.x;
- 21 | |           }
- 22 | `->     },
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:16:15
+   |
+16 | let vue = new Vue({
+   |               ^^^
+   |
+   = note: new <D, M, P>(options: VueOptions<D, M, P>) => (D & M & P)
 
-Error: 
-  > {
-  |     f(x: string): any;
-  | }
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:16:11
+   |
+16 |   let vue = new Vue({
+   |  ___________^
+17 | |     data: () => ({ x: 1, y: 2 }),
+18 | |     methods: {
+19 | |         f(x: string) {
+...  |
+34 | |     }
+35 | | });
+   | |__^
+   |
+   = note: ({
+               x: number;
+               y: number;
+           } & {
+               f(x: string): any;
+           } & {
+               test: number;
+               hello: string;
+           })
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:25:13]
- 25 | return this.x;
-    :        ^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:37:1
+   |
+37 | vue;
+   | ^^^
+   |
+   = note: ({
+               x: number;
+               y: number;
+           } & {
+               f(x: string): any;
+           } & {
+               test: number;
+               hello: string;
+           })
 
-Error: 
-  > this
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:38:1
+   |
+38 | vue.x;
+   | ^^^
+   |
+   = note: ({
+               x: number;
+               y: number;
+           } & {
+               f(x: string): any;
+           } & {
+               test: number;
+               hello: string;
+           })
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:25:13]
- 25 | return this.x;
-    :        ^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:38:1
+   |
+38 | vue.x;
+   | ^^^^^
+   |
+   = note: number
 
-Error: 
-  > any
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:39:1
+   |
+39 | vue.f("abc");
+   | ^^^
+   |
+   = note: ({
+               x: number;
+               y: number;
+           } & {
+               f(x: string): any;
+           } & {
+               test: number;
+               hello: string;
+           })
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:27:9]
- 27 | ,-> hello: {
- 28 | |               get() {
- 29 | |                   return "hi";
- 30 | |               },
- 31 | |               set(value: string) {
- 32 | |               }
- 33 | `->         }
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:39:1
+   |
+39 | vue.f("abc");
+   | ^^^^^^^^^^^^
+   |
+   = note: any
 
-Error: 
-  > {
-  |     get(): "hi";
-  |     set(value: string): void;
-  | }
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:40:1
+   |
+40 | vue.test;
+   | ^^^
+   |
+   = note: ({
+               x: number;
+               y: number;
+           } & {
+               f(x: string): any;
+           } & {
+               test: number;
+               hello: string;
+           })
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:23:5]
- 23 | ,-> computed: {
- 24 | |           test(): number {
- 25 | |               return this.x;
- 26 | |           },
- 27 | |           hello: {
- 28 | |               get() {
- 29 | |                   return "hi";
- 30 | |               },
- 31 | |               set(value: string) {
- 32 | |               }
- 33 | |           }
- 34 | `->     }
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:40:1
+   |
+40 | vue.test;
+   | ^^^^^^^^
+   |
+   = note: number
 
-Error: 
-  > {
-  |     test(): number;
-  |     hello: {
-  |         get(): "hi";
-  |         set(value: string): void;
-  |     };
-  | }
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:41:1
+   |
+41 | vue.hello;
+   | ^^^
+   |
+   = note: ({
+               x: number;
+               y: number;
+           } & {
+               f(x: string): any;
+           } & {
+               test: number;
+               hello: string;
+           })
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:16:1]
- 16 | ,-> let vue = new Vue({
- 17 | |       data: () => ({ x: 1, y: 2 }),
- 18 | |       methods: {
- 19 | |           f(x: string) {
- 20 | |               return this.x;
- 21 | |           }
- 22 | |       },
- 23 | |       computed: {
- 24 | |           test(): number {
- 25 | |               return this.x;
- 26 | |           },
- 27 | |           hello: {
- 28 | |               get() {
- 29 | |                   return "hi";
- 30 | |               },
- 31 | |               set(value: string) {
- 32 | |               }
- 33 | |           }
- 34 | |       }
- 35 | `-> });
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:41:1
+   |
+41 | vue.hello;
+   | ^^^^^^^^^
+   |
+   = note: string
 
-Error: 
-  > {
-  |     data: () => {
-  |         x: 1;
-  |         y: 2;
-  |     };
-  |     methods: {
-  |         f(x: string): any;
-  |     };
-  |     computed: {
-  |         test(): number;
-  |         hello: {
-  |             get(): "hi";
-  |             set(value: string): void;
-  |         };
-  |     };
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:16:1]
- 16 | let vue = new Vue({
-    :               ^^^
-    `----
-
-Error: 
-  > new <D, M, P>(options: VueOptions<D, M, P>) => (D & M & P)
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:16:1]
- 16 | ,-> let vue = new Vue({
- 17 | |       data: () => ({ x: 1, y: 2 }),
- 18 | |       methods: {
- 19 | |           f(x: string) {
- 20 | |               return this.x;
- 21 | |           }
- 22 | |       },
- 23 | |       computed: {
- 24 | |           test(): number {
- 25 | |               return this.x;
- 26 | |           },
- 27 | |           hello: {
- 28 | |               get() {
- 29 | |                   return "hi";
- 30 | |               },
- 31 | |               set(value: string) {
- 32 | |               }
- 33 | |           }
- 34 | |       }
- 35 | `-> });
-    `----
-
-Error: 
-  > ({
-  |     x: number;
-  |     y: number;
-  | } & {
-  |     f(x: string): any;
-  | } & {
-  |     test: number;
-  |     hello: string;
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:37:1]
- 37 | vue;
-    : ^^^
-    `----
-
-Error: 
-  > ({
-  |     x: number;
-  |     y: number;
-  | } & {
-  |     f(x: string): any;
-  | } & {
-  |     test: number;
-  |     hello: string;
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:38:1]
- 38 | vue.x;
-    : ^^^
-    `----
-
-Error: 
-  > ({
-  |     x: number;
-  |     y: number;
-  | } & {
-  |     f(x: string): any;
-  | } & {
-  |     test: number;
-  |     hello: string;
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:38:1]
- 38 | vue.x;
-    : ^^^^^
-    `----
-
-Error: 
-  > number
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:39:1]
- 39 | vue.f("abc");
-    : ^^^
-    `----
-
-Error: 
-  > ({
-  |     x: number;
-  |     y: number;
-  | } & {
-  |     f(x: string): any;
-  | } & {
-  |     test: number;
-  |     hello: string;
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:39:1]
- 39 | vue.f("abc");
-    : ^^^^^^^^^^^^
-    `----
-
-Error: 
-  > any
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:40:1]
- 40 | vue.test;
-    : ^^^
-    `----
-
-Error: 
-  > ({
-  |     x: number;
-  |     y: number;
-  | } & {
-  |     f(x: string): any;
-  | } & {
-  |     test: number;
-  |     hello: string;
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:40:1]
- 40 | vue.test;
-    : ^^^^^^^^
-    `----
-
-Error: 
-  > number
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:41:1]
- 41 | vue.hello;
-    : ^^^
-    `----
-
-Error: 
-  > ({
-  |     x: number;
-  |     y: number;
-  | } & {
-  |     f(x: string): any;
-  | } & {
-  |     test: number;
-  |     hello: string;
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/2.ts:41:1]
- 41 | vue.hello;
-    : ^^^^^^^^^
-    `----
-
-Error: 
-  > string

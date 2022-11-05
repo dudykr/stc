@@ -1,54 +1,48 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/array/class/new-1.ts:4:10
+  |
+4 | var y = [C, C];
+  |          ^
+  |
+  = note: typeof C
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:4:1]
- 4 | var y = [C, C];
-   :          ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/array/class/new-1.ts:4:13
+  |
+4 | var y = [C, C];
+  |             ^
+  |
+  = note: typeof C
 
-Error: 
-  > typeof C
+warning: Type
+ --> $DIR/tests/pass/exprs/array/class/new-1.ts:4:9
+  |
+4 | var y = [C, C];
+  |         ^^^^^^
+  |
+  = note: [typeof C, typeof C]
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:4:1]
- 4 | var y = [C, C];
-   :             ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/array/class/new-1.ts:5:14
+  |
+5 | var r3 = new y[0]();
+  |              ^
+  |
+  = note: typeof C[]
 
-Error: 
-  > typeof C
+warning: Type
+ --> $DIR/tests/pass/exprs/array/class/new-1.ts:5:14
+  |
+5 | var r3 = new y[0]();
+  |              ^^^^
+  |
+  = note: typeof C
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:4:1]
- 4 | var y = [C, C];
-   :         ^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/array/class/new-1.ts:5:10
+  |
+5 | var r3 = new y[0]();
+  |          ^^^^^^^^^^
+  |
+  = note: C
 
-Error: 
-  > [typeof C, typeof C]
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:5:1]
- 5 | var r3 = new y[0]();
-   :              ^
-   `----
-
-Error: 
-  > typeof C[]
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:5:1]
- 5 | var r3 = new y[0]();
-   :              ^^^^
-   `----
-
-Error: 
-  > typeof C
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/array/class/new-1.ts:5:1]
- 5 | var r3 = new y[0]();
-   :          ^^^^^^^^^^
-   `----
-
-Error: 
-  > C

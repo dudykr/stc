@@ -1,36 +1,32 @@
+warning: Type
+  --> $DIR/tests/pass/types/alias/base-1-2-1.ts:27:1
+   |
+27 | x13_1.x
+   | ^^^^^
+   |
+   = note: I13
 
-  x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-2-1.ts:27:1]
- 27 | x13_1.x
-    : ^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/alias/base-1-2-1.ts:27:1
+   |
+27 | x13_1.x
+   | ^^^^^^^
+   |
+   = note: string
 
-Error: 
-  > I13
+warning: Type
+  --> $DIR/tests/pass/types/alias/base-1-2-1.ts:28:1
+   |
+28 | x13_2.x
+   | ^^^^^
+   |
+   = note: I13
 
-  x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-2-1.ts:27:1]
- 27 | x13_1.x
-    : ^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/alias/base-1-2-1.ts:28:1
+   |
+28 | x13_2.x
+   | ^^^^^^^
+   |
+   = note: string
 
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-2-1.ts:28:1]
- 28 | x13_2.x
-    : ^^^^^
-    `----
-
-Error: 
-  > I13
-
-  x Type
-    ,-[$DIR/tests/pass/types/alias/base-1-2-1.ts:28:1]
- 28 | x13_2.x
-    : ^^^^^^^
-    `----
-
-Error: 
-  > string

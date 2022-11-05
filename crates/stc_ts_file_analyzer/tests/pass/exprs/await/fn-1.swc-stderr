@@ -1,27 +1,24 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/await/fn-1.ts:9:11
+  |
+9 |     await foo()
+  |           ^^^
+  |
+  = note: () => Promise<string>
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/await/fn-1.ts:9:5]
- 9 | await foo()
-   :       ^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/await/fn-1.ts:9:11
+  |
+9 |     await foo()
+  |           ^^^^^
+  |
+  = note: Promise<string>
 
-Error: 
-  > () => Promise<string>
+warning: Type
+ --> $DIR/tests/pass/exprs/await/fn-1.ts:9:5
+  |
+9 |     await foo()
+  |     ^^^^^^^^^^^
+  |
+  = note: string
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/await/fn-1.ts:9:5]
- 9 | await foo()
-   :       ^^^^^
-   `----
-
-Error: 
-  > Promise<string>
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/await/fn-1.ts:9:5]
- 9 | await foo()
-   : ^^^^^^^^^^^
-   `----
-
-Error: 
-  > string

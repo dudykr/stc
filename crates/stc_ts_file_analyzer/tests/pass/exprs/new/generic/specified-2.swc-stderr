@@ -1,72 +1,64 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:7:32
+  |
+7 | export var aGenericClass = new D<string>();
+  |                                ^
+  |
+  = note: typeof D
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/new/generic/specified-2.ts:7:1]
- 7 | export var aGenericClass = new D<string>();
-   :                                ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:7:28
+  |
+7 | export var aGenericClass = new D<string>();
+  |                            ^^^^^^^^^^^^^^^
+  |
+  = note: D
 
-Error: 
-  > typeof D
+warning: Type
+ --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:9:1
+  |
+9 | aGenericClass.source
+  | ^^^^^^^^^^^^^
+  |
+  = note: D
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/new/generic/specified-2.ts:7:1]
- 7 | export var aGenericClass = new D<string>();
-   :                            ^^^^^^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:9:1
+  |
+9 | aGenericClass.source
+  | ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: string
 
-Error: 
-  > D
+warning: Type
+  --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:10:1
+   |
+10 | aGenericClass.recurse
+   | ^^^^^^^^^^^^^
+   |
+   = note: D
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/new/generic/specified-2.ts:9:1]
- 9 | aGenericClass.source
-   : ^^^^^^^^^^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:10:1
+   |
+10 | aGenericClass.recurse
+   | ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: D
 
-Error: 
-  > D
+warning: Type
+  --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:11:1
+   |
+11 | aGenericClass.wrapped
+   | ^^^^^^^^^^^^^
+   |
+   = note: D
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/new/generic/specified-2.ts:9:1]
- 9 | aGenericClass.source
-   : ^^^^^^^^^^^^^^^^^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/exprs/new/generic/specified-2.ts:11:1
+   |
+11 | aGenericClass.wrapped
+   | ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: D
 
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/new/generic/specified-2.ts:10:1]
- 10 | aGenericClass.recurse
-    : ^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > D
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/new/generic/specified-2.ts:10:1]
- 10 | aGenericClass.recurse
-    : ^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > D
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/new/generic/specified-2.ts:11:1]
- 11 | aGenericClass.wrapped
-    : ^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > D
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/new/generic/specified-2.ts:11:1]
- 11 | aGenericClass.wrapped
-    : ^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > D

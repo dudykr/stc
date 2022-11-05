@@ -1,103 +1,92 @@
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:12:27
+   |
+12 | export const none: None = { none: '' };
+   |                           ^^^^^^^^^^^^
+   |
+   = note: {
+               none: '';
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:12:1]
- 12 | export const none: None = { none: '' };
-    :                           ^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:15:22
+   |
+15 |     return 'some' in value;
+   |                      ^^^^^
+   |
+   = note: (Some | None)
 
-Error: 
-  > {
-  |     none: '';
-  | }
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:15:12
+   |
+15 |     return 'some' in value;
+   |            ^^^^^^^^^^^^^^^
+   |
+   = note: boolean
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:15:5]
- 15 | return 'some' in value;
-    :                  ^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:19:12
+   |
+19 |     return { some };
+   |            ^^^^^^^^
+   |
+   = note: {
+               some: a;
+           }
 
-Error: 
-  > (Some | None)
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:23:42
+   |
+23 |     let x: string | number | undefined = undefined;
+   |                                          ^^^^^^^^^
+   |
+   = note: undefined
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:15:5]
- 15 | return 'some' in value;
-    :        ^^^^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:24:5
+   |
+24 |     x;  // undefined
+   |     ^
+   |
+   = note: (string | number | undefined)
 
-Error: 
-  > boolean
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:16
+   |
+25 |     if (typeof x === "boolean") {
+   |                ^
+   |
+   = note: (string | number | undefined)
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:19:5]
- 19 | return { some };
-    :        ^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:9
+   |
+25 |     if (typeof x === "boolean") {
+   |         ^^^^^^^^
+   |
+   = note: string
 
-Error: 
-  > {
-  |     some: a;
-  | }
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:9
+   |
+25 |     if (typeof x === "boolean") {
+   |         ^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: boolean
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:23:5]
- 23 | let x: string | number | undefined = undefined;
-    :                                      ^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:26:9
+   |
+26 |         x;  // nothing (boolean not in declared type)
+   |         ^
+   |
+   = note: never
 
-Error: 
-  > undefined
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/7.ts:28:5
+   |
+28 |     x;  // undefined
+   |     ^
+   |
+   = note: (string | number | undefined)
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:24:5]
- 24 | x;  // undefined
-    : ^
-    `----
-
-Error: 
-  > (string | number | undefined)
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:5]
- 25 | if (typeof x === "boolean") {
-    :            ^
-    `----
-
-Error: 
-  > (string | number | undefined)
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:5]
- 25 | if (typeof x === "boolean") {
-    :     ^^^^^^^^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:25:5]
- 25 | if (typeof x === "boolean") {
-    :     ^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > boolean
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:26:9]
- 26 | x;  // nothing (boolean not in declared type)
-    : ^
-    `----
-
-Error: 
-  > never
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/7.ts:28:5]
- 28 | x;  // undefined
-    : ^
-    `----
-
-Error: 
-  > (string | number | undefined)

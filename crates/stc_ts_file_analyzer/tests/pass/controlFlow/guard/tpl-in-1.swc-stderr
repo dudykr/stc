@@ -1,59 +1,53 @@
+warning: Type
+ --> $DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:2:5
+  |
+2 | if (`test` in obj) {
+  |     ^^^^^^
+  |
+  = note: "test"
 
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:2:1]
- 2 | if (`test` in obj) {
-   :     ^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:2:15
+  |
+2 | if (`test` in obj) {
+  |               ^^^
+  |
+  = note: ({
+              test: string;
+          } | {
+          })
 
-Error: 
-  > "test"
+warning: Type
+ --> $DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:2:5
+  |
+2 | if (`test` in obj) {
+  |     ^^^^^^^^^^^^^
+  |
+  = note: boolean
 
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:2:1]
- 2 | if (`test` in obj) {
-   :               ^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:3:5
+  |
+3 |     obj.test.slice(0)
+  |     ^^^
+  |
+  = note: {
+              test: string;
+          }
 
-Error: 
-  > ({
-  |     test: string;
-  | } | {
-  | })
+warning: Type
+ --> $DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:3:5
+  |
+3 |     obj.test.slice(0)
+  |     ^^^^^^^^
+  |
+  = note: string
 
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:2:1]
- 2 | if (`test` in obj) {
-   :     ^^^^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:3:5
+  |
+3 |     obj.test.slice(0)
+  |     ^^^^^^^^^^^^^^^^^
+  |
+  = note: string
 
-Error: 
-  > boolean
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:3:5]
- 3 | obj.test.slice(0)
-   : ^^^
-   `----
-
-Error: 
-  > {
-  |     test: string;
-  | }
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:3:5]
- 3 | obj.test.slice(0)
-   : ^^^^^^^^
-   `----
-
-Error: 
-  > string
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/guard/tpl-in-1.ts:3:5]
- 3 | obj.test.slice(0)
-   : ^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > string

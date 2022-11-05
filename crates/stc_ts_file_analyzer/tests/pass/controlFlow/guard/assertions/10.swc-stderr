@@ -1,67 +1,60 @@
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/10.ts:12:27
+   |
+12 | export const none: None = { none: '' };
+   |                           ^^^^^^^^^^^^
+   |
+   = note: {
+               none: '';
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/10.ts:12:1]
- 12 | export const none: None = { none: '' };
-    :                           ^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/10.ts:15:22
+   |
+15 |     return 'some' in value;
+   |                      ^^^^^
+   |
+   = note: (Some | None)
 
-Error: 
-  > {
-  |     none: '';
-  | }
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/10.ts:15:12
+   |
+15 |     return 'some' in value;
+   |            ^^^^^^^^^^^^^^^
+   |
+   = note: boolean
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/10.ts:15:5]
- 15 | return 'some' in value;
-    :                  ^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/10.ts:19:12
+   |
+19 |     return { some };
+   |            ^^^^^^^^
+   |
+   = note: {
+               some: a;
+           }
 
-Error: 
-  > (Some | None)
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/10.ts:24:5
+   |
+24 |     x!.slice();
+   |     ^
+   |
+   = note: string
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/10.ts:15:5]
- 15 | return 'some' in value;
-    :        ^^^^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/10.ts:24:5
+   |
+24 |     x!.slice();
+   |     ^^
+   |
+   = note: string
 
-Error: 
-  > boolean
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/10.ts:24:5
+   |
+24 |     x!.slice();
+   |     ^^^^^^^^^^
+   |
+   = note: string
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/10.ts:19:5]
- 19 | return { some };
-    :        ^^^^^^^^
-    `----
-
-Error: 
-  > {
-  |     some: a;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/10.ts:24:5]
- 24 | x!.slice();
-    : ^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/10.ts:24:5]
- 24 | x!.slice();
-    : ^^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/10.ts:24:5]
- 24 | x!.slice();
-    : ^^^^^^^^^^
-    `----
-
-Error: 
-  > string

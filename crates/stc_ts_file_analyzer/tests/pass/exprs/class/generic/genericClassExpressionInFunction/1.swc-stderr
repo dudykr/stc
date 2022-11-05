@@ -1,99 +1,88 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:6:26
+  |
+6 |     anon = class extends A<V> { }
+  |                          ^
+  |
+  = note: typeof A
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:6:5]
- 6 | anon = class extends A<V> { }
-   :                      ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:6:12
+  |
+6 |     anon = class extends A<V> { }
+  |            ^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: typeof anonymous class
 
-Error: 
-  > typeof A
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:10:22
+   |
+10 | class C extends (new B2<number>().anon) {
+   |                      ^^
+   |
+   = note: typeof B2
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:6:5]
- 6 | anon = class extends A<V> { }
-   :        ^^^^^^^^^^^^^^^^^^^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:10:18
+   |
+10 | class C extends (new B2<number>().anon) {
+   |                  ^^^^^^^^^^^^^^^^
+   |
+   = note: B2
 
-Error: 
-  > typeof anonymous class
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:10:18
+   |
+10 | class C extends (new B2<number>().anon) {
+   |                  ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: typeof anonymous class
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:10:1]
- 10 | class C extends (new B2<number>().anon) {
-    :                      ^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:10:17
+   |
+10 | class C extends (new B2<number>().anon) {
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: typeof anonymous class
 
-Error: 
-  > typeof B2
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:14:13
+   |
+14 | var c = new C();
+   |             ^
+   |
+   = note: typeof C
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:10:1]
- 10 | class C extends (new B2<number>().anon) {
-    :                  ^^^^^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:14:9
+   |
+14 | var c = new C();
+   |         ^^^^^^^
+   |
+   = note: C
 
-Error: 
-  > B2
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:15:1
+   |
+15 | c.genericVar = 12;
+   | ^
+   |
+   = note: C
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:10:1]
- 10 | class C extends (new B2<number>().anon) {
-    :                  ^^^^^^^^^^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:15:1
+   |
+15 | c.genericVar = 12;
+   | ^^^^^^^^^^^^
+   |
+   = note: number
 
-Error: 
-  > typeof anonymous class
+warning: Type
+  --> $DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:15:1
+   |
+15 | c.genericVar = 12;
+   | ^^^^^^^^^^^^^^^^^
+   |
+   = note: 12
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:10:1]
- 10 | class C extends (new B2<number>().anon) {
-    :                 ^^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > typeof anonymous class
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:14:1]
- 14 | var c = new C();
-    :             ^
-    `----
-
-Error: 
-  > typeof C
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:14:1]
- 14 | var c = new C();
-    :         ^^^^^^^
-    `----
-
-Error: 
-  > C
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:15:1]
- 15 | c.genericVar = 12;
-    : ^
-    `----
-
-Error: 
-  > C
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:15:1]
- 15 | c.genericVar = 12;
-    : ^^^^^^^^^^^^
-    `----
-
-Error: 
-  > number
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/class/generic/genericClassExpressionInFunction/1.ts:15:1]
- 15 | c.genericVar = 12;
-    : ^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > 12

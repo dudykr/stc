@@ -1,54 +1,48 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/call/predicate/union/1.ts:9:17
+  |
+9 | class C extends A {
+  |                 ^
+  |
+  = note: typeof A
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/call/predicate/union/1.ts:9:1]
- 9 | class C extends A {
-   :                 ^
-   `----
+warning: Type
+  --> $DIR/tests/pass/exprs/call/predicate/union/1.ts:17:31
+   |
+17 | let union3: boolean | B = isA(union2) || union2;
+   |                               ^^^^^^
+   |
+   = note: (C | B)
 
-Error: 
-  > typeof A
+warning: Type
+  --> $DIR/tests/pass/exprs/call/predicate/union/1.ts:17:27
+   |
+17 | let union3: boolean | B = isA(union2) || union2;
+   |                           ^^^
+   |
+   = note: (p1: any) => p1 is A
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/call/predicate/union/1.ts:17:1]
- 17 | let union3: boolean | B = isA(union2) || union2;
-    :                               ^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/call/predicate/union/1.ts:17:27
+   |
+17 | let union3: boolean | B = isA(union2) || union2;
+   |                           ^^^^^^^^^^^
+   |
+   = note: p1 is A
 
-Error: 
-  > (C | B)
+warning: Type
+  --> $DIR/tests/pass/exprs/call/predicate/union/1.ts:17:42
+   |
+17 | let union3: boolean | B = isA(union2) || union2;
+   |                                          ^^^^^^
+   |
+   = note: B
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/call/predicate/union/1.ts:17:1]
- 17 | let union3: boolean | B = isA(union2) || union2;
-    :                           ^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/call/predicate/union/1.ts:17:27
+   |
+17 | let union3: boolean | B = isA(union2) || union2;
+   |                           ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: (p1 is A | B)
 
-Error: 
-  > (p1: any) => p1 is A
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/call/predicate/union/1.ts:17:1]
- 17 | let union3: boolean | B = isA(union2) || union2;
-    :                           ^^^^^^^^^^^
-    `----
-
-Error: 
-  > p1 is A
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/call/predicate/union/1.ts:17:1]
- 17 | let union3: boolean | B = isA(union2) || union2;
-    :                                          ^^^^^^
-    `----
-
-Error: 
-  > B
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/call/predicate/union/1.ts:17:1]
- 17 | let union3: boolean | B = isA(union2) || union2;
-    :                           ^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > (p1 is A | B)

@@ -1,55 +1,51 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/new/promise/finally/1.ts:2:14
+  |
+2 |     .finally(function () { });
+  |              ^^^^^^^^^^^^^^^
+  |
+  = note: () => void
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/new/promise/finally/1.ts:2:5]
- 2 | .finally(function () { });
-   :          ^^^^^^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/new/promise/finally/1.ts:1:35
+  |
+1 | export let promise1 = new Promise(function (resolve, reject) { })
+  |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: (resolve: any, reject: any) => void
 
-Error: 
-  > () => void
+warning: Type
+ --> $DIR/tests/pass/exprs/new/promise/finally/1.ts:1:27
+  |
+1 | export let promise1 = new Promise(function (resolve, reject) { })
+  |                           ^^^^^^^
+  |
+  = note: PromiseConstructor
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/new/promise/finally/1.ts:1:1]
- 1 | export let promise1 = new Promise(function (resolve, reject) { })
-   :                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/new/promise/finally/1.ts:1:35
+  |
+1 | export let promise1 = new Promise(function (resolve, reject) { })
+  |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: (resolve: (value: (T | PromiseLike<T>)) => void, reject: (reason?: any) => void) => void
 
-Error: 
-  > (resolve: any, reject: any) => void
+warning: Type
+ --> $DIR/tests/pass/exprs/new/promise/finally/1.ts:1:23
+  |
+1 | export let promise1 = new Promise(function (resolve, reject) { })
+  |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: Promise<T>
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/new/promise/finally/1.ts:1:1]
- 1 | export let promise1 = new Promise(function (resolve, reject) { })
-   :                           ^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/new/promise/finally/1.ts:1:23
+  |
+1 |   export let promise1 = new Promise(function (resolve, reject) { })
+  |  _______________________^
+2 | |     .finally(function () { });
+  | |_____________________________^
+  |
+  = note: Promise<{
+          }>
 
-Error: 
-  > PromiseConstructor
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/new/promise/finally/1.ts:1:1]
- 1 | export let promise1 = new Promise(function (resolve, reject) { })
-   :                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > (resolve: (value: (T | PromiseLike<T>)) => void, reject: (reason?: any) => void) => void
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/new/promise/finally/1.ts:1:1]
- 1 | export let promise1 = new Promise(function (resolve, reject) { })
-   :                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > Promise<T>
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/new/promise/finally/1.ts:1:1]
- 1 | ,-> export let promise1 = new Promise(function (resolve, reject) { })
- 2 | `->     .finally(function () { });
-   `----
-
-Error: 
-  > Promise<{
-  | }>

@@ -1,185 +1,166 @@
+warning: Type
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:5:12
+  |
+5 |     return "21EC2020-3AEA-4069-A2DD-08002B30309D" as Guid;
+  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: Guid
 
-  x Type
-   ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:5:5]
- 5 | return "21EC2020-3AEA-4069-A2DD-08002B30309D" as Guid;
-   :        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:9:12
+  |
+9 |     return 12345 as SerialNo;
+  |            ^^^^^^^^^^^^^^^^^
+  |
+  = note: SerialNo
 
-Error: 
-  > Guid
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:12:37
+   |
+12 | let map1: { [x: string]: number } = {};
+   |                                     ^^
+   |
+   = note: {
+           }
 
-  x Type
-   ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:9:5]
- 9 | return 12345 as SerialNo;
-   :        ^^^^^^^^^^^^^^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:13:12
+   |
+13 | let guid = createGuid();
+   |            ^^^^^^^^^^
+   |
+   = note: () => Guid
 
-Error: 
-  > SerialNo
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:13:12
+   |
+13 | let guid = createGuid();
+   |            ^^^^^^^^^^^^
+   |
+   = note: Guid
 
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:12:1]
- 12 | let map1: { [x: string]: number } = {};
-    :                                     ^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:14:1
+   |
+14 | map1[guid] = 123;  // Can with tagged string
+   | ^^^^
+   |
+   = note: {
+               [x: string]: number;
+           }
 
-Error: 
-  > {
-  | }
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:14:6
+   |
+14 | map1[guid] = 123;  // Can with tagged string
+   |      ^^^^
+   |
+   = note: (string & {
+               $Guid: any;
+           })
 
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:13:1]
- 13 | let guid = createGuid();
-    :            ^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:14:1
+   |
+14 | map1[guid] = 123;  // Can with tagged string
+   | ^^^^^^^^^^
+   |
+   = note: number
 
-Error: 
-  > () => Guid
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:14:1
+   |
+14 | map1[guid] = 123;  // Can with tagged string
+   | ^^^^^^^^^^^^^^^^
+   |
+   = note: 123
 
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:13:1]
- 13 | let guid = createGuid();
-    :            ^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:16:37
+   |
+16 | let map2: { [x: number]: string } = {};
+   |                                     ^^
+   |
+   = note: {
+           }
 
-Error: 
-  > Guid
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:17:16
+   |
+17 | let serialNo = createSerialNo();
+   |                ^^^^^^^^^^^^^^
+   |
+   = note: () => SerialNo
 
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:14:1]
- 14 | map1[guid] = 123;  // Can with tagged string
-    : ^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:17:16
+   |
+17 | let serialNo = createSerialNo();
+   |                ^^^^^^^^^^^^^^^^
+   |
+   = note: SerialNo
 
-Error: 
-  > {
-  |     [x: string]: number;
-  | }
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:18:1
+   |
+18 | map2[serialNo] = "hello";  // Can index with tagged number
+   | ^^^^
+   |
+   = note: {
+               [x: number]: string;
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:14:1]
- 14 | map1[guid] = 123;  // Can with tagged string
-    :      ^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:18:6
+   |
+18 | map2[serialNo] = "hello";  // Can index with tagged number
+   |      ^^^^^^^^
+   |
+   = note: (number & {
+               $SerialNo: any;
+           })
 
-Error: 
-  > (string & {
-  |     $Guid: any;
-  | })
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:18:1
+   |
+18 | map2[serialNo] = "hello";  // Can index with tagged number
+   | ^^^^^^^^^^^^^^
+   |
+   = note: string
 
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:14:1]
- 14 | map1[guid] = 123;  // Can with tagged string
-    : ^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:18:1
+   |
+18 | map2[serialNo] = "hello";  // Can index with tagged number
+   | ^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: "hello"
 
-Error: 
-  > number
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:20:19
+   |
+20 | export const s4 = guid + serialNo;
+   |                   ^^^^
+   |
+   = note: (string & {
+               $Guid: any;
+           })
 
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:14:1]
- 14 | map1[guid] = 123;  // Can with tagged string
-    : ^^^^^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:20:26
+   |
+20 | export const s4 = guid + serialNo;
+   |                          ^^^^^^^^
+   |
+   = note: (number & {
+               $SerialNo: any;
+           })
 
-Error: 
-  > 123
+warning: Type
+  --> $DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:20:19
+   |
+20 | export const s4 = guid + serialNo;
+   |                   ^^^^^^^^^^^^^^^
+   |
+   = note: string
 
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:16:1]
- 16 | let map2: { [x: number]: string } = {};
-    :                                     ^^
-    `----
-
-Error: 
-  > {
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:17:1]
- 17 | let serialNo = createSerialNo();
-    :                ^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > () => SerialNo
-
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:17:1]
- 17 | let serialNo = createSerialNo();
-    :                ^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > SerialNo
-
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:18:1]
- 18 | map2[serialNo] = "hello";  // Can index with tagged number
-    : ^^^^
-    `----
-
-Error: 
-  > {
-  |     [x: number]: string;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:18:1]
- 18 | map2[serialNo] = "hello";  // Can index with tagged number
-    :      ^^^^^^^^
-    `----
-
-Error: 
-  > (number & {
-  |     $SerialNo: any;
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:18:1]
- 18 | map2[serialNo] = "hello";  // Can index with tagged number
-    : ^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:18:1]
- 18 | map2[serialNo] = "hello";  // Can index with tagged number
-    : ^^^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > "hello"
-
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:20:1]
- 20 | export const s4 = guid + serialNo;
-    :                   ^^^^
-    `----
-
-Error: 
-  > (string & {
-  |     $Guid: any;
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:20:1]
- 20 | export const s4 = guid + serialNo;
-    :                          ^^^^^^^^
-    `----
-
-Error: 
-  > (number & {
-  |     $SerialNo: any;
-  | })
-
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/operatorsAndIntersectionTypes/2.ts:20:1]
- 20 | export const s4 = guid + serialNo;
-    :                   ^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > string

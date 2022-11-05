@@ -1,99 +1,88 @@
+warning: Type
+ --> $DIR/tests/pass/types/this/class/static/members-1.ts:6:17
+  |
+6 |         var t = this;
+  |                 ^^^^
+  |
+  = note: this
 
-  x Type
-   ,-[$DIR/tests/pass/types/this/class/static/members-1.ts:6:9]
- 6 | var t = this;
-   :         ^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/types/this/class/static/members-1.ts:7:16
+  |
+7 |         return this;
+  |                ^^^^
+  |
+  = note: this
 
-Error: 
-  > this
+warning: Type
+  --> $DIR/tests/pass/types/this/class/static/members-1.ts:11:9
+   |
+11 | var t = C.bar();
+   |         ^
+   |
+   = note: typeof C
 
-  x Type
-   ,-[$DIR/tests/pass/types/this/class/static/members-1.ts:7:9]
- 7 | return this;
-   :        ^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/types/this/class/static/members-1.ts:11:9
+   |
+11 | var t = C.bar();
+   |         ^^^^^^^
+   |
+   = note: typeof C
 
-Error: 
-  > this
+warning: Type
+  --> $DIR/tests/pass/types/this/class/static/members-1.ts:13:10
+   |
+13 | var r2 = t.foo + 1;
+   |          ^
+   |
+   = note: typeof C
 
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/static/members-1.ts:11:1]
- 11 | var t = C.bar();
-    :         ^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/this/class/static/members-1.ts:13:10
+   |
+13 | var r2 = t.foo + 1;
+   |          ^^^^^
+   |
+   = note: number
 
-Error: 
-  > typeof C
+warning: Type
+  --> $DIR/tests/pass/types/this/class/static/members-1.ts:13:10
+   |
+13 | var r2 = t.foo + 1;
+   |          ^^^^^^^^^
+   |
+   = note: number
 
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/static/members-1.ts:11:1]
- 11 | var t = C.bar();
-    :         ^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/this/class/static/members-1.ts:14:10
+   |
+14 | var r3 = t.bar();
+   |          ^
+   |
+   = note: typeof C
 
-Error: 
-  > typeof C
+warning: Type
+  --> $DIR/tests/pass/types/this/class/static/members-1.ts:14:10
+   |
+14 | var r3 = t.bar();
+   |          ^^^^^^^
+   |
+   = note: typeof C
 
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/static/members-1.ts:13:1]
- 13 | var r2 = t.foo + 1;
-    :          ^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/this/class/static/members-1.ts:15:14
+   |
+15 | var r4 = new t(1);
+   |              ^
+   |
+   = note: typeof C
 
-Error: 
-  > typeof C
+warning: Type
+  --> $DIR/tests/pass/types/this/class/static/members-1.ts:15:10
+   |
+15 | var r4 = new t(1);
+   |          ^^^^^^^^
+   |
+   = note: C
 
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/static/members-1.ts:13:1]
- 13 | var r2 = t.foo + 1;
-    :          ^^^^^
-    `----
-
-Error: 
-  > number
-
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/static/members-1.ts:13:1]
- 13 | var r2 = t.foo + 1;
-    :          ^^^^^^^^^
-    `----
-
-Error: 
-  > number
-
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/static/members-1.ts:14:1]
- 14 | var r3 = t.bar();
-    :          ^
-    `----
-
-Error: 
-  > typeof C
-
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/static/members-1.ts:14:1]
- 14 | var r3 = t.bar();
-    :          ^^^^^^^
-    `----
-
-Error: 
-  > typeof C
-
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/static/members-1.ts:15:1]
- 15 | var r4 = new t(1);
-    :              ^
-    `----
-
-Error: 
-  > typeof C
-
-  x Type
-    ,-[$DIR/tests/pass/types/this/class/static/members-1.ts:15:1]
- 15 | var r4 = new t(1);
-    :          ^^^^^^^^
-    `----
-
-Error: 
-  > C

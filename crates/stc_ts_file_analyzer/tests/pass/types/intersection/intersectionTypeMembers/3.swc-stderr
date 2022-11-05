@@ -1,92 +1,89 @@
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:12:23
+   |
+12 |           doublyNested: {
+   |  _______________________^
+13 | |             d: 'yes',
+14 | |             f: 'no'
+15 | |         },
+   | |_________^
+   |
+   = note: {
+               d: 'yes';
+               f: 'no';
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:12:9]
- 12 | ,-> doublyNested: {
- 13 | |               d: 'yes',
- 14 | |               f: 'no'
- 15 | `->         },
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:16:20
+   |
+16 |         different: { e: 12 },
+   |                    ^^^^^^^^^
+   |
+   = note: {
+               e: 12;
+           }
 
-Error: 
-  > {
-  |     d: 'yes';
-  |     f: 'no';
-  | }
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:17:16
+   |
+17 |         other: { g: 101 }
+   |                ^^^^^^^^^^
+   |
+   = note: {
+               g: 101;
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:16:9]
- 16 | different: { e: 12 },
-    :            ^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:11:13
+   |
+11 |       nested: {
+   |  _____________^
+12 | |         doublyNested: {
+13 | |             d: 'yes',
+14 | |             f: 'no'
+...  |
+17 | |         other: { g: 101 }
+18 | |     }
+   | |_____^
+   |
+   = note: {
+               doublyNested: {
+                   d: 'yes';
+                   f: 'no';
+               };
+               different: {
+                   e: 12;
+               };
+               other: {
+                   g: 101;
+               };
+           }
 
-Error: 
-  > {
-  |     e: 12;
-  | }
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:10:19
+   |
+10 |   const de: D & E = {
+   |  ___________________^
+11 | |     nested: {
+12 | |         doublyNested: {
+13 | |             d: 'yes',
+...  |
+18 | |     }
+19 | | }
+   | |_^
+   |
+   = note: {
+               nested: {
+                   doublyNested: {
+                       d: 'yes';
+                       f: 'no';
+                   };
+                   different: {
+                       e: 12;
+                   };
+                   other: {
+                       g: 101;
+                   };
+               };
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:17:9]
- 17 | other: { g: 101 }
-    :        ^^^^^^^^^^
-    `----
-
-Error: 
-  > {
-  |     g: 101;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:11:5]
- 11 | ,-> nested: {
- 12 | |           doublyNested: {
- 13 | |               d: 'yes',
- 14 | |               f: 'no'
- 15 | |           },
- 16 | |           different: { e: 12 },
- 17 | |           other: { g: 101 }
- 18 | `->     }
-    `----
-
-Error: 
-  > {
-  |     doublyNested: {
-  |         d: 'yes';
-  |         f: 'no';
-  |     };
-  |     different: {
-  |         e: 12;
-  |     };
-  |     other: {
-  |         g: 101;
-  |     };
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/3.ts:10:1]
- 10 | ,-> const de: D & E = {
- 11 | |       nested: {
- 12 | |           doublyNested: {
- 13 | |               d: 'yes',
- 14 | |               f: 'no'
- 15 | |           },
- 16 | |           different: { e: 12 },
- 17 | |           other: { g: 101 }
- 18 | |       }
- 19 | `-> }
-    `----
-
-Error: 
-  > {
-  |     nested: {
-  |         doublyNested: {
-  |             d: 'yes';
-  |             f: 'no';
-  |         };
-  |         different: {
-  |             e: 12;
-  |         };
-  |         other: {
-  |             g: 101;
-  |         };
-  |     };
-  | }

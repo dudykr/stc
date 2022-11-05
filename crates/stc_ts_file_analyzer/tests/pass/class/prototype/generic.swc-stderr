@@ -1,93 +1,84 @@
+warning: Type
+ --> $DIR/tests/pass/class/prototype/generic.ts:7:23
+  |
+7 | class D<T, U> extends C<T, U> {
+  |                       ^
+  |
+  = note: typeof C
 
-  x Type
-   ,-[$DIR/tests/pass/class/prototype/generic.ts:7:1]
- 7 | class D<T, U> extends C<T, U> {
-   :                       ^
-   `----
+warning: Type
+  --> $DIR/tests/pass/class/prototype/generic.ts:12:9
+   |
+12 | var r = C.prototype; // C<any, any>
+   |         ^
+   |
+   = note: typeof C
 
-Error: 
-  > typeof C
+warning: Type
+  --> $DIR/tests/pass/class/prototype/generic.ts:12:9
+   |
+12 | var r = C.prototype; // C<any, any>
+   |         ^^^^^^^^^^^
+   |
+   = note: {
+               foo: any;
+               bar: any;
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/generic.ts:12:1]
- 12 | var r = C.prototype; // C<any, any>
-    :         ^
-    `----
+warning: Type
+  --> $DIR/tests/pass/class/prototype/generic.ts:13:10
+   |
+13 | var ra = r.foo; // any
+   |          ^
+   |
+   = note: {
+               foo: any;
+               bar: any;
+           }
 
-Error: 
-  > typeof C
+warning: Type
+  --> $DIR/tests/pass/class/prototype/generic.ts:13:10
+   |
+13 | var ra = r.foo; // any
+   |          ^^^^^
+   |
+   = note: any
 
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/generic.ts:12:1]
- 12 | var r = C.prototype; // C<any, any>
-    :         ^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/class/prototype/generic.ts:14:10
+   |
+14 | var r2 = D.prototype; // D<any, any>
+   |          ^
+   |
+   = note: typeof D
 
-Error: 
-  > {
-  |     foo: any;
-  |     bar: any;
-  | }
+warning: Type
+  --> $DIR/tests/pass/class/prototype/generic.ts:14:10
+   |
+14 | var r2 = D.prototype; // D<any, any>
+   |          ^^^^^^^^^^^
+   |
+   = note: {
+               baz: any;
+               bing: any;
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/generic.ts:13:1]
- 13 | var ra = r.foo; // any
-    :          ^
-    `----
+warning: Type
+  --> $DIR/tests/pass/class/prototype/generic.ts:15:10
+   |
+15 | var rb = r2.baz; // any
+   |          ^^
+   |
+   = note: {
+               baz: any;
+               bing: any;
+           }
 
-Error: 
-  > {
-  |     foo: any;
-  |     bar: any;
-  | }
+warning: Type
+  --> $DIR/tests/pass/class/prototype/generic.ts:15:10
+   |
+15 | var rb = r2.baz; // any
+   |          ^^^^^^
+   |
+   = note: any
 
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/generic.ts:13:1]
- 13 | var ra = r.foo; // any
-    :          ^^^^^
-    `----
-
-Error: 
-  > any
-
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/generic.ts:14:1]
- 14 | var r2 = D.prototype; // D<any, any>
-    :          ^
-    `----
-
-Error: 
-  > typeof D
-
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/generic.ts:14:1]
- 14 | var r2 = D.prototype; // D<any, any>
-    :          ^^^^^^^^^^^
-    `----
-
-Error: 
-  > {
-  |     baz: any;
-  |     bing: any;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/generic.ts:15:1]
- 15 | var rb = r2.baz; // any
-    :          ^^
-    `----
-
-Error: 
-  > {
-  |     baz: any;
-  |     bing: any;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/generic.ts:15:1]
- 15 | var rb = r2.baz; // any
-    :          ^^^^^^
-    `----
-
-Error: 
-  > any

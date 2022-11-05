@@ -1,99 +1,88 @@
+warning: Type
+  --> $DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:44
+   |
+11 |     [{ [(a = 1)]: b } = [9, a] as const] = [], f();
+   |                                            ^^
+   |
+   = note: any[]
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:5]
- 11 | [{ [(a = 1)]: b } = [9, a] as const] = [], f();
-    :                                        ^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:29
+   |
+11 |     [{ [(a = 1)]: b } = [9, a] as const] = [], f();
+   |                             ^
+   |
+   = note: 0
 
-Error: 
-  > any[]
+warning: Type
+  --> $DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:25
+   |
+11 |     [{ [(a = 1)]: b } = [9, a] as const] = [], f();
+   |                         ^^^^^^
+   |
+   = note: [9, 0]
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:5]
- 11 | [{ [(a = 1)]: b } = [9, a] as const] = [], f();
-    :                         ^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:25
+   |
+11 |     [{ [(a = 1)]: b } = [9, a] as const] = [], f();
+   |                         ^^^^^^^^^^^^^^^
+   |
+   = note: [9, 0]
 
-Error: 
-  > 0
+warning: Type
+  --> $DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:10
+   |
+11 |     [{ [(a = 1)]: b } = [9, a] as const] = [], f();
+   |          ^^^^^
+   |
+   = note: 1
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:5]
- 11 | [{ [(a = 1)]: b } = [9, a] as const] = [], f();
-    :                     ^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:9
+   |
+11 |     [{ [(a = 1)]: b } = [9, a] as const] = [], f();
+   |         ^^^^^^^
+   |
+   = note: 1
 
-Error: 
-  > [9, 0]
+warning: Type
+  --> $DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:5
+   |
+11 |     [{ [(a = 1)]: b } = [9, a] as const] = [], f();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: any[]
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:5]
- 11 | [{ [(a = 1)]: b } = [9, a] as const] = [], f();
-    :                     ^^^^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:48
+   |
+11 |     [{ [(a = 1)]: b } = [9, a] as const] = [], f();
+   |                                                ^
+   |
+   = note: () => void
 
-Error: 
-  > [9, 0]
+warning: Type
+  --> $DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:48
+   |
+11 |     [{ [(a = 1)]: b } = [9, a] as const] = [], f();
+   |                                                ^^^
+   |
+   = note: void
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:5]
- 11 | [{ [(a = 1)]: b } = [9, a] as const] = [], f();
-    :      ^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:5
+   |
+11 |     [{ [(a = 1)]: b } = [9, a] as const] = [], f();
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: void
 
-Error: 
-  > 1
+warning: Type
+  --> $DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:12:19
+   |
+12 |     const bb: 0 = b;
+   |                   ^
+   |
+   = note: 0
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:5]
- 11 | [{ [(a = 1)]: b } = [9, a] as const] = [], f();
-    :     ^^^^^^^
-    `----
-
-Error: 
-  > 1
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:5]
- 11 | [{ [(a = 1)]: b } = [9, a] as const] = [], f();
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > any[]
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:5]
- 11 | [{ [(a = 1)]: b } = [9, a] as const] = [], f();
-    :                                            ^
-    `----
-
-Error: 
-  > () => void
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:5]
- 11 | [{ [(a = 1)]: b } = [9, a] as const] = [], f();
-    :                                            ^^^
-    `----
-
-Error: 
-  > void
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:11:5]
- 11 | [{ [(a = 1)]: b } = [9, a] as const] = [], f();
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > void
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/pattern/order/controlFlowAssignmentPatternOrder/3.ts:12:5]
- 12 | const bb: 0 = b;
-    :               ^
-    `----
-
-Error: 
-  > 0

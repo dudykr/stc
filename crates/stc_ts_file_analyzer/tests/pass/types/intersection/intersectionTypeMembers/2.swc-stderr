@@ -1,36 +1,32 @@
+warning: Type
+ --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/2.ts:8:9
+  |
+8 | var s = f("hello");
+  |         ^
+  |
+  = note: ((x: string) => string & (x: number) => number)
 
-  x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/2.ts:8:1]
- 8 | var s = f("hello");
-   :         ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/2.ts:8:9
+  |
+8 | var s = f("hello");
+  |         ^^^^^^^^^^
+  |
+  = note: string
 
-Error: 
-  > ((x: string) => string & (x: number) => number)
+warning: Type
+ --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/2.ts:9:9
+  |
+9 | var n = f(42);
+  |         ^
+  |
+  = note: ((x: string) => string & (x: number) => number)
 
-  x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/2.ts:8:1]
- 8 | var s = f("hello");
-   :         ^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/types/intersection/intersectionTypeMembers/2.ts:9:9
+  |
+9 | var n = f(42);
+  |         ^^^^^
+  |
+  = note: number
 
-Error: 
-  > string
-
-  x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/2.ts:9:1]
- 9 | var n = f(42);
-   :         ^
-   `----
-
-Error: 
-  > ((x: string) => string & (x: number) => number)
-
-  x Type
-   ,-[$DIR/tests/pass/types/intersection/intersectionTypeMembers/2.ts:9:1]
- 9 | var n = f(42);
-   :         ^^^^^
-   `----
-
-Error: 
-  > number

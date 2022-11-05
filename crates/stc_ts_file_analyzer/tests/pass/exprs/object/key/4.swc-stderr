@@ -1,39 +1,37 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/4.ts:6:10
+  |
+6 |     set [s + n](v) { },
+  |          ^
+  |
+  = note: string
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/object/key/4.ts:6:5]
- 6 | set [s + n](v) { },
-   :      ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/4.ts:6:14
+  |
+6 |     set [s + n](v) { },
+  |              ^
+  |
+  = note: number
 
-Error: 
-  > string
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/4.ts:6:10
+  |
+6 |     set [s + n](v) { },
+  |          ^^^^^
+  |
+  = note: string
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/object/key/4.ts:6:5]
- 6 | set [s + n](v) { },
-   :          ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/object/key/4.ts:5:9
+  |
+5 |   var v = {
+  |  _________^
+6 | |     set [s + n](v) { },
+7 | | }
+  | |_^
+  |
+  = note: {
+              [s + n]: any;
+          }
 
-Error: 
-  > number
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/object/key/4.ts:6:5]
- 6 | set [s + n](v) { },
-   :      ^^^^^
-   `----
-
-Error: 
-  > string
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/object/key/4.ts:5:1]
- 5 | ,-> var v = {
- 6 | |       set [s + n](v) { },
- 7 | `-> }
-   `----
-
-Error: 
-  > {
-  |     [s + n]: any;
-  | }

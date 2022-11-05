@@ -1,59 +1,56 @@
+warning: Type
+  --> $DIR/tests/pass/exprs/object/spread/readonly/1.ts:8:39
+   |
+8  |   export const obj: Readonly<ObjType> = {
+   |  _______________________________________^
+9  | |     foo: 'bar',
+10 | |     baz: 'qux',
+11 | |     quux: 'quuz',
+12 | | }
+   | |_^
+   |
+   = note: {
+               foo: 'bar';
+               baz: 'qux';
+               quux: 'quuz';
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:8:1]
-  8 | ,-> export const obj: Readonly<ObjType> = {
-  9 | |       foo: 'bar',
- 10 | |       baz: 'qux',
- 11 | |       quux: 'quuz',
- 12 | `-> }
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/object/spread/readonly/1.ts:14:33
+   |
+14 | export const { foo, ...rest } = obj
+   |                                 ^^^
+   |
+   = note: {
+               readonly foo: string;
+               readonly baz: string;
+               readonly quux: string;
+           }
 
-Error: 
-  > {
-  |     foo: 'bar';
-  |     baz: 'qux';
-  |     quux: 'quuz';
-  | }
+warning: Type
+  --> $DIR/tests/pass/exprs/object/spread/readonly/1.ts:16:8
+   |
+16 | delete rest.baz
+   |        ^^^^
+   |
+   = note: {
+               readonly baz: string;
+               readonly quux: string;
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:14:1]
- 14 | export const { foo, ...rest } = obj
-    :                                 ^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/exprs/object/spread/readonly/1.ts:16:8
+   |
+16 | delete rest.baz
+   |        ^^^^^^^^
+   |
+   = note: string
 
-Error: 
-  > {
-  |     readonly foo: string;
-  |     readonly baz: string;
-  |     readonly quux: string;
-  | }
+warning: Type
+  --> $DIR/tests/pass/exprs/object/spread/readonly/1.ts:16:1
+   |
+16 | delete rest.baz
+   | ^^^^^^^^^^^^^^^
+   |
+   = note: boolean
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:16:1]
- 16 | delete rest.baz
-    :        ^^^^
-    `----
-
-Error: 
-  > {
-  |     readonly baz: string;
-  |     readonly quux: string;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:16:1]
- 16 | delete rest.baz
-    :        ^^^^^^^^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/object/spread/readonly/1.ts:16:1]
- 16 | delete rest.baz
-    : ^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > boolean

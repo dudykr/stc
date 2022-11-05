@@ -1,99 +1,88 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:5:14
+  |
+5 |     return g(x);
+  |              ^
+  |
+  = note: T
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:5:5]
- 5 | return g(x);
-   :          ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:5:12
+  |
+5 |     return g(x);
+  |            ^
+  |
+  = note: (x: T) => T
 
-Error: 
-  > T
+warning: Type
+ --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:5:12
+  |
+5 |     return g(x);
+  |            ^^^^
+  |
+  = note: T
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:5:5]
- 5 | return g(x);
-   :        ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:19
+  |
+8 | var f = fun((x => x), (x => x), 10);
+  |                   ^
+  |
+  = note: any
 
-Error: 
-  > (x: T) => T
+warning: Type
+ --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:14
+  |
+8 | var f = fun((x => x), (x => x), 10);
+  |              ^^^^^^
+  |
+  = note: (x: any) => any
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:5:5]
- 5 | return g(x);
-   :        ^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:13
+  |
+8 | var f = fun((x => x), (x => x), 10);
+  |             ^^^^^^^^
+  |
+  = note: (x: any) => any
 
-Error: 
-  > T
+warning: Type
+ --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:29
+  |
+8 | var f = fun((x => x), (x => x), 10);
+  |                             ^
+  |
+  = note: any
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:1]
- 8 | var f = fun((x => x), (x => x), 10);
-   :                   ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:24
+  |
+8 | var f = fun((x => x), (x => x), 10);
+  |                        ^^^^^^
+  |
+  = note: (x: any) => any
 
-Error: 
-  > any
+warning: Type
+ --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:23
+  |
+8 | var f = fun((x => x), (x => x), 10);
+  |                       ^^^^^^^^
+  |
+  = note: (x: any) => any
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:1]
- 8 | var f = fun((x => x), (x => x), 10);
-   :              ^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:9
+  |
+8 | var f = fun((x => x), (x => x), 10);
+  |         ^^^
+  |
+  = note: (<T>(g: (x: T) => T, x: T) => T | <T>(g: (x: T) => T, h: (y: T) => T, x: T) => T | <T>(g: (x: T) => T, x: T) => T)
 
-Error: 
-  > (x: any) => any
+warning: Type
+ --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:9
+  |
+8 | var f = fun((x => x), (x => x), 10);
+  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: number
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:1]
- 8 | var f = fun((x => x), (x => x), 10);
-   :             ^^^^^^^^
-   `----
-
-Error: 
-  > (x: any) => any
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:1]
- 8 | var f = fun((x => x), (x => x), 10);
-   :                             ^
-   `----
-
-Error: 
-  > any
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:1]
- 8 | var f = fun((x => x), (x => x), 10);
-   :                        ^^^^^^
-   `----
-
-Error: 
-  > (x: any) => any
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:1]
- 8 | var f = fun((x => x), (x => x), 10);
-   :                       ^^^^^^^^
-   `----
-
-Error: 
-  > (x: any) => any
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:1]
- 8 | var f = fun((x => x), (x => x), 10);
-   :         ^^^
-   `----
-
-Error: 
-  > (<T>(g: (x: T) => T, x: T) => T | <T>(g: (x: T) => T, h: (y: T) => T, x: T) => T | <T>(g: (x: T) => T, x: T) => T)
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/2.ts:8:1]
- 8 | var f = fun((x => x), (x => x), 10);
-   :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > number

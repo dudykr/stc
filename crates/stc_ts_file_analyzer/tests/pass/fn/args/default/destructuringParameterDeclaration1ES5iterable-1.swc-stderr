@@ -1,45 +1,40 @@
+warning: Type
+  --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-1.ts:12:18
+   |
+12 | function b1(z = [undefined, null]) { };
+   |                  ^^^^^^^^^
+   |
+   = note: undefined
 
-  x Type
-    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-1.ts:12:1]
- 12 | function b1(z = [undefined, null]) { };
-    :                  ^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-1.ts:12:17
+   |
+12 | function b1(z = [undefined, null]) { };
+   |                 ^^^^^^^^^^^^^^^^^
+   |
+   = note: [any, any]
 
-Error: 
-  > undefined
+warning: Type
+  --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-1.ts:15:19
+   |
+15 | export default b1([1, 2, 3]);  // z is widen to the type any[]
+   |                   ^^^^^^^^^
+   |
+   = note: [1, 2, 3]
 
-  x Type
-    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-1.ts:12:1]
- 12 | function b1(z = [undefined, null]) { };
-    :                 ^^^^^^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-1.ts:15:16
+   |
+15 | export default b1([1, 2, 3]);  // z is widen to the type any[]
+   |                ^^
+   |
+   = note: (z?: any[]) => void
 
-Error: 
-  > [any, any]
+warning: Type
+  --> $DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-1.ts:15:16
+   |
+15 | export default b1([1, 2, 3]);  // z is widen to the type any[]
+   |                ^^^^^^^^^^^^^
+   |
+   = note: void
 
-  x Type
-    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-1.ts:15:1]
- 15 | export default b1([1, 2, 3]);  // z is widen to the type any[]
-    :                   ^^^^^^^^^
-    `----
-
-Error: 
-  > [1, 2, 3]
-
-  x Type
-    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-1.ts:15:1]
- 15 | export default b1([1, 2, 3]);  // z is widen to the type any[]
-    :                ^^
-    `----
-
-Error: 
-  > (z?: any[]) => void
-
-  x Type
-    ,-[$DIR/tests/pass/fn/args/default/destructuringParameterDeclaration1ES5iterable-1.ts:15:1]
- 15 | export default b1([1, 2, 3]);  // z is widen to the type any[]
-    :                ^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > void

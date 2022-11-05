@@ -1,24 +1,22 @@
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/2.ts:14:9
+   |
+14 |     t = s;
+   |         ^
+   |
+   = note: {
+               a: (0 | 2);
+               b: 4;
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/2.ts:14:5]
- 14 | t = s;
-    :     ^
-    `----
+warning: Type
+  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/2.ts:14:5
+   |
+14 |     t = s;
+   |     ^^^^^
+   |
+   = note: {
+               a: (0 | 2);
+               b: 4;
+           }
 
-Error: 
-  > {
-  |     a: (0 | 2);
-  |     b: 4;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/2.ts:14:5]
- 14 | t = s;
-    : ^^^^^
-    `----
-
-Error: 
-  > {
-  |     a: (0 | 2);
-  |     b: 4;
-  | }

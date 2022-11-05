@@ -1,103 +1,92 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:7:31
+  |
+7 |     const strings: string[] = [];
+  |                               ^^
+  |
+  = note: []
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:7:5]
- 7 | const strings: string[] = [];
-   :                           ^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:8:23
+  |
+8 |     for (const key in item) {
+  |                       ^^^^
+  |
+  = note: {
+              [P in keyof T]: T[P];
+          }
 
-Error: 
-  > []
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:9:23
+  |
+9 |         const value = item[key];
+  |                       ^^^^
+  |
+  = note: {
+              [P in keyof T]: T[P];
+          }
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:8:5]
- 8 | for (const key in item) {
-   :                   ^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:9:28
+  |
+9 |         const value = item[key];
+  |                            ^^^
+  |
+  = note: string
 
-Error: 
-  > {
-  |     [P in keyof T]: T[P];
-  | }
+warning: Type
+ --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:9:23
+  |
+9 |         const value = item[key];
+  |                       ^^^^^^^^^
+  |
+  = note: T[P]
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:9:9]
- 9 | const value = item[key];
-   :               ^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:10:20
+   |
+10 |         if (typeof value === "string") {
+   |                    ^^^^^
+   |
+   = note: T[P]
 
-Error: 
-  > {
-  |     [P in keyof T]: T[P];
-  | }
+warning: Type
+  --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:10:13
+   |
+10 |         if (typeof value === "string") {
+   |             ^^^^^^^^^^^^
+   |
+   = note: string
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:9:9]
- 9 | const value = item[key];
-   :                    ^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:10:13
+   |
+10 |         if (typeof value === "string") {
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: boolean
 
-Error: 
-  > string
+warning: Type
+  --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:11:26
+   |
+11 |             strings.push(value);
+   |                          ^^^^^
+   |
+   = note: string
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:9:9]
- 9 | const value = item[key];
-   :               ^^^^^^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:11:13
+   |
+11 |             strings.push(value);
+   |             ^^^^^^^
+   |
+   = note: string[]
 
-Error: 
-  > T[P]
+warning: Type
+  --> $DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:11:13
+   |
+11 |             strings.push(value);
+   |             ^^^^^^^^^^^^^^^^^^^
+   |
+   = note: number
 
-  x Type
-    ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:10:9]
- 10 | if (typeof value === "string") {
-    :            ^^^^^
-    `----
-
-Error: 
-  > T[P]
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:10:9]
- 10 | if (typeof value === "string") {
-    :     ^^^^^^^^^^^^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:10:9]
- 10 | if (typeof value === "string") {
-    :     ^^^^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > boolean
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:11:13]
- 11 | strings.push(value);
-    :              ^^^^^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:11:13]
- 11 | strings.push(value);
-    : ^^^^^^^
-    `----
-
-Error: 
-  > string[]
-
-  x Type
-    ,-[$DIR/tests/pass/exprs/bin/cmp/typeof/typeParam/3.ts:11:13]
- 11 | strings.push(value);
-    : ^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > number

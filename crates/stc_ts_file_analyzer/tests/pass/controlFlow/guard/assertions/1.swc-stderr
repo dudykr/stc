@@ -1,275 +1,246 @@
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:12:27
+   |
+12 | export const none: None = { none: '' };
+   |                           ^^^^^^^^^^^^
+   |
+   = note: {
+               none: '';
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:12:1]
- 12 | export const none: None = { none: '' };
-    :                           ^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:15:22
+   |
+15 |     return 'some' in value;
+   |                      ^^^^^
+   |
+   = note: (Some | None)
 
-Error: 
-  > {
-  |     none: '';
-  | }
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:15:12
+   |
+15 |     return 'some' in value;
+   |            ^^^^^^^^^^^^^^^
+   |
+   = note: boolean
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:15:5]
- 15 | return 'some' in value;
-    :                  ^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:19:12
+   |
+19 |     return { some };
+   |            ^^^^^^^^
+   |
+   = note: {
+               some: a;
+           }
 
-Error: 
-  > (Some | None)
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:23:31
+   |
+23 |     let result: Optional<r> = none;
+   |                               ^^^^
+   |
+   = note: None
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:15:5]
- 15 | return 'some' in value;
-    :        ^^^^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:24:5
+   |
+24 |     result;  // None
+   |     ^^^^^^
+   |
+   = note: None
 
-Error: 
-  > boolean
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:25:12
+   |
+25 |     while (cond) {
+   |            ^^^^
+   |
+   = note: boolean
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:19:5]
- 19 | return { some };
-    :        ^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:26:9
+   |
+26 |         result;  // Some<r> | None
+   |         ^^^^^^
+   |
+   = note: None
 
-Error: 
-  > {
-  |     some: a;
-  | }
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:34
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                                  ^^^^^^
+   |
+   = note: None
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:23:5]
- 23 | let result: Optional<r> = none;
-    :                           ^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:27
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                           ^^^^^^
+   |
+   = note: <a>(value: Optional<a>) => value is Some<a>
 
-Error: 
-  > None
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:27
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                           ^^^^^^^^^^^^^^
+   |
+   = note: value is Some<a>
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:24:5]
- 24 | result;  // None
-    : ^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:44
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                                            ^^^^^^
+   |
+   = note: (None & Some)
 
-Error: 
-  > None
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:44
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                                            ^^^^^^^^^^^
+   |
+   = note: a
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:25:5]
- 25 | while (cond) {
-    :        ^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:58
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                                                          ^^^^^^^^
+   |
+   = note: () => r
 
-Error: 
-  > boolean
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:58
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                                                          ^^^^^^^^^^
+   |
+   = note: r
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:26:9]
- 26 | result;  // Some<r> | None
-    : ^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:27
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: (a | r)
 
-Error: 
-  > None
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:18
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                  ^^^^^^^^
+   |
+   = note: <a>(some: a) => {
+               some: a;
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :                          ^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:18
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: {
+               some: (a | r);
+           }
 
-Error: 
-  > None
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: {
+               some: (a | r);
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :                   ^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:28:9
+   |
+28 |         result;  // Some<r>
+   |         ^^^^^^
+   |
+   = note: (Some | None)
 
-Error: 
-  > <a>(value: Optional<a>) => value is Some<a>
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:26:9
+   |
+26 |         result;  // Some<r> | None
+   |         ^^^^^^
+   |
+   = note: (Some | None)
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :                   ^^^^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:34
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                                  ^^^^^^
+   |
+   = note: (Some | None)
 
-Error: 
-  > value is Some<a>
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:27
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                           ^^^^^^^^^^^^^^
+   |
+   = note: value is Some<r>
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :                                    ^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:44
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                                            ^^^^^^
+   |
+   = note: Some
 
-Error: 
-  > (None & Some)
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:44
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                                            ^^^^^^^^^^^
+   |
+   = note: r
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :                                    ^^^^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:27
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: r
 
-Error: 
-  > a
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:18
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: {
+               some: r;
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :                                                  ^^^^^^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9
+   |
+27 |         result = someFrom(isSome(result) ? result.some : makeSome());
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: {
+               some: r;
+           }
 
-Error: 
-  > () => r
+warning: Type
+  --> $DIR/tests/pass/controlFlow/guard/assertions/1.ts:28:9
+   |
+28 |         result;  // Some<r>
+   |         ^^^^^^
+   |
+   = note: Some
 
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :                                                  ^^^^^^^^^^
-    `----
-
-Error: 
-  > r
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > (a | r)
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :          ^^^^^^^^
-    `----
-
-Error: 
-  > <a>(some: a) => {
-  |     some: a;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > {
-  |     some: (a | r);
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > {
-  |     some: (a | r);
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:28:9]
- 28 | result;  // Some<r>
-    : ^^^^^^
-    `----
-
-Error: 
-  > (Some | None)
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:26:9]
- 26 | result;  // Some<r> | None
-    : ^^^^^^
-    `----
-
-Error: 
-  > (Some | None)
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :                          ^^^^^^
-    `----
-
-Error: 
-  > (Some | None)
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :                   ^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > value is Some<r>
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :                                    ^^^^^^
-    `----
-
-Error: 
-  > Some
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :                                    ^^^^^^^^^^^
-    `----
-
-Error: 
-  > r
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > r
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > {
-  |     some: r;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:27:9]
- 27 | result = someFrom(isSome(result) ? result.some : makeSome());
-    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    `----
-
-Error: 
-  > {
-  |     some: r;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/controlFlow/guard/assertions/1.ts:28:9]
- 28 | result;  // Some<r>
-    : ^^^^^^
-    `----
-
-Error: 
-  > Some

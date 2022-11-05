@@ -1,50 +1,48 @@
+warning: Type
+  --> $DIR/tests/pass/vars/destructuring/object/rest/1.ts:7:32
+   |
+7  |   const obj: Readonly<ObjType> = {
+   |  ________________________________^
+8  | |     foo: 'bar',
+9  | |     baz: 'qux',
+10 | |     quux: 'quuz',
+11 | | }
+   | |_^
+   |
+   = note: {
+               foo: 'bar';
+               baz: 'qux';
+               quux: 'quuz';
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/vars/destructuring/object/rest/1.ts:7:1]
-  7 | ,-> const obj: Readonly<ObjType> = {
-  8 | |       foo: 'bar',
-  9 | |       baz: 'qux',
- 10 | |       quux: 'quuz',
- 11 | `-> }
-    `----
+warning: Type
+  --> $DIR/tests/pass/vars/destructuring/object/rest/1.ts:13:33
+   |
+13 | export const { foo, ...rest } = obj
+   |                                 ^^^
+   |
+   = note: {
+               readonly foo: string;
+               readonly baz: string;
+               readonly quux: string;
+           }
 
-Error: 
-  > {
-  |     foo: 'bar';
-  |     baz: 'qux';
-  |     quux: 'quuz';
-  | }
+warning: Type
+  --> $DIR/tests/pass/vars/destructuring/object/rest/1.ts:15:1
+   |
+15 | foo
+   | ^^^
+   |
+   = note: string
 
-  x Type
-    ,-[$DIR/tests/pass/vars/destructuring/object/rest/1.ts:13:1]
- 13 | export const { foo, ...rest } = obj
-    :                                 ^^^
-    `----
+warning: Type
+  --> $DIR/tests/pass/vars/destructuring/object/rest/1.ts:16:1
+   |
+16 | rest
+   | ^^^^
+   |
+   = note: {
+               readonly baz: string;
+               readonly quux: string;
+           }
 
-Error: 
-  > {
-  |     readonly foo: string;
-  |     readonly baz: string;
-  |     readonly quux: string;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/vars/destructuring/object/rest/1.ts:15:1]
- 15 | foo
-    : ^^^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/vars/destructuring/object/rest/1.ts:16:1]
- 16 | rest
-    : ^^^^
-    `----
-
-Error: 
-  > {
-  |     readonly baz: string;
-  |     readonly quux: string;
-  | }

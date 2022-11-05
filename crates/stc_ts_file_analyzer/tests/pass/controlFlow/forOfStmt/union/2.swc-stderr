@@ -1,18 +1,16 @@
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forOfStmt/union/2.ts:2:17
+  |
+2 | for (const v of union) {
+  |                 ^^^^^
+  |
+  = note: (string | string[])
 
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/union/2.ts:2:1]
- 2 | for (const v of union) {
-   :                 ^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/controlFlow/forOfStmt/union/2.ts:3:5
+  |
+3 |     v
+  |     ^
+  |
+  = note: string
 
-Error: 
-  > (string | string[])
-
-  x Type
-   ,-[$DIR/tests/pass/controlFlow/forOfStmt/union/2.ts:3:5]
- 3 | v
-   : ^
-   `----
-
-Error: 
-  > string

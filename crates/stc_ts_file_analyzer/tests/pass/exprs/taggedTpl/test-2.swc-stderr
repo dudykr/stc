@@ -1,27 +1,24 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/taggedTpl/test-2.ts:4:18
+  |
+4 | export const a = foo`my${'test'}s${'foo'}`
+  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: TemplateStringsArray
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/taggedTpl/test-2.ts:4:1]
- 4 | export const a = foo`my${'test'}s${'foo'}`
-   :                  ^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/taggedTpl/test-2.ts:4:18
+  |
+4 | export const a = foo`my${'test'}s${'foo'}`
+  |                  ^^^
+  |
+  = note: (a: TemplateStringsArray, b: string, c: string) => void
 
-Error: 
-  > TemplateStringsArray
+warning: Type
+ --> $DIR/tests/pass/exprs/taggedTpl/test-2.ts:4:18
+  |
+4 | export const a = foo`my${'test'}s${'foo'}`
+  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: void
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/taggedTpl/test-2.ts:4:1]
- 4 | export const a = foo`my${'test'}s${'foo'}`
-   :                  ^^^
-   `----
-
-Error: 
-  > (a: TemplateStringsArray, b: string, c: string) => void
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/taggedTpl/test-2.ts:4:1]
- 4 | export const a = foo`my${'test'}s${'foo'}`
-   :                  ^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > void

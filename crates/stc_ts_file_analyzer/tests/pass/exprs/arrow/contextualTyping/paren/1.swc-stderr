@@ -1,99 +1,88 @@
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:4:49
+  |
+4 | export var lambda1: FuncType = x => { x<number>(undefined); return x; };
+  |                                                 ^^^^^^^^^
+  |
+  = note: undefined
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:4:1]
- 4 | export var lambda1: FuncType = x => { x<number>(undefined); return x; };
-   :                                                 ^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:4:39
+  |
+4 | export var lambda1: FuncType = x => { x<number>(undefined); return x; };
+  |                                       ^
+  |
+  = note: <T>(p: T) => T
 
-Error: 
-  > undefined
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:4:39
+  |
+4 | export var lambda1: FuncType = x => { x<number>(undefined); return x; };
+  |                                       ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: number
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:4:1]
- 4 | export var lambda1: FuncType = x => { x<number>(undefined); return x; };
-   :                                       ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:4:68
+  |
+4 | export var lambda1: FuncType = x => { x<number>(undefined); return x; };
+  |                                                                    ^
+  |
+  = note: <T>(p: T) => T
 
-Error: 
-  > <T>(p: T) => T
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:4:32
+  |
+4 | export var lambda1: FuncType = x => { x<number>(undefined); return x; };
+  |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: (x: <T>(p: T) => T) => <T>(p: T) => T
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:4:1]
- 4 | export var lambda1: FuncType = x => { x<number>(undefined); return x; };
-   :                                       ^^^^^^^^^^^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:5:50
+  |
+5 | export var lambda2: FuncType = (x => { x<number>(undefined); return x; });
+  |                                                  ^^^^^^^^^
+  |
+  = note: undefined
 
-Error: 
-  > number
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:5:40
+  |
+5 | export var lambda2: FuncType = (x => { x<number>(undefined); return x; });
+  |                                        ^
+  |
+  = note: <T>(p: T) => T
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:4:1]
- 4 | export var lambda1: FuncType = x => { x<number>(undefined); return x; };
-   :                                                                    ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:5:40
+  |
+5 | export var lambda2: FuncType = (x => { x<number>(undefined); return x; });
+  |                                        ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: number
 
-Error: 
-  > <T>(p: T) => T
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:5:69
+  |
+5 | export var lambda2: FuncType = (x => { x<number>(undefined); return x; });
+  |                                                                     ^
+  |
+  = note: <T>(p: T) => T
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:4:1]
- 4 | export var lambda1: FuncType = x => { x<number>(undefined); return x; };
-   :                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:5:33
+  |
+5 | export var lambda2: FuncType = (x => { x<number>(undefined); return x; });
+  |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: (x: <T>(p: T) => T) => <T>(p: T) => T
 
-Error: 
-  > (x: <T>(p: T) => T) => <T>(p: T) => T
+warning: Type
+ --> $DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:5:32
+  |
+5 | export var lambda2: FuncType = (x => { x<number>(undefined); return x; });
+  |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: (x: <T>(p: T) => T) => <T>(p: T) => T
 
-  x Type
-   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:5:1]
- 5 | export var lambda2: FuncType = (x => { x<number>(undefined); return x; });
-   :                                                  ^^^^^^^^^
-   `----
-
-Error: 
-  > undefined
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:5:1]
- 5 | export var lambda2: FuncType = (x => { x<number>(undefined); return x; });
-   :                                        ^
-   `----
-
-Error: 
-  > <T>(p: T) => T
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:5:1]
- 5 | export var lambda2: FuncType = (x => { x<number>(undefined); return x; });
-   :                                        ^^^^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > number
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:5:1]
- 5 | export var lambda2: FuncType = (x => { x<number>(undefined); return x; });
-   :                                                                     ^
-   `----
-
-Error: 
-  > <T>(p: T) => T
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:5:1]
- 5 | export var lambda2: FuncType = (x => { x<number>(undefined); return x; });
-   :                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > (x: <T>(p: T) => T) => <T>(p: T) => T
-
-  x Type
-   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/paren/1.ts:5:1]
- 5 | export var lambda2: FuncType = (x => { x<number>(undefined); return x; });
-   :                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   `----
-
-Error: 
-  > (x: <T>(p: T) => T) => <T>(p: T) => T

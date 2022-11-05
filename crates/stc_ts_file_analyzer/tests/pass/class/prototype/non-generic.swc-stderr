@@ -1,89 +1,80 @@
+warning: Type
+ --> $DIR/tests/pass/class/prototype/non-generic.ts:5:17
+  |
+5 | class D extends C {
+  |                 ^
+  |
+  = note: typeof C
 
-  x Type
-   ,-[$DIR/tests/pass/class/prototype/non-generic.ts:5:1]
- 5 | class D extends C {
-   :                 ^
-   `----
+warning: Type
+ --> $DIR/tests/pass/class/prototype/non-generic.ts:9:9
+  |
+9 | var r = C.prototype;
+  |         ^
+  |
+  = note: typeof C
 
-Error: 
-  > typeof C
+warning: Type
+ --> $DIR/tests/pass/class/prototype/non-generic.ts:9:9
+  |
+9 | var r = C.prototype;
+  |         ^^^^^^^^^^^
+  |
+  = note: {
+              foo: string;
+          }
 
-  x Type
-   ,-[$DIR/tests/pass/class/prototype/non-generic.ts:9:1]
- 9 | var r = C.prototype;
-   :         ^
-   `----
+warning: Type
+  --> $DIR/tests/pass/class/prototype/non-generic.ts:10:1
+   |
+10 | r.foo;
+   | ^
+   |
+   = note: {
+               foo: string;
+           }
 
-Error: 
-  > typeof C
+warning: Type
+  --> $DIR/tests/pass/class/prototype/non-generic.ts:10:1
+   |
+10 | r.foo;
+   | ^^^^^
+   |
+   = note: string
 
-  x Type
-   ,-[$DIR/tests/pass/class/prototype/non-generic.ts:9:1]
- 9 | var r = C.prototype;
-   :         ^^^^^^^^^^^
-   `----
+warning: Type
+  --> $DIR/tests/pass/class/prototype/non-generic.ts:11:10
+   |
+11 | var r2 = D.prototype;
+   |          ^
+   |
+   = note: typeof D
 
-Error: 
-  > {
-  |     foo: string;
-  | }
+warning: Type
+  --> $DIR/tests/pass/class/prototype/non-generic.ts:11:10
+   |
+11 | var r2 = D.prototype;
+   |          ^^^^^^^^^^^
+   |
+   = note: {
+               bar: string;
+           }
 
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:10:1]
- 10 | r.foo;
-    : ^
-    `----
+warning: Type
+  --> $DIR/tests/pass/class/prototype/non-generic.ts:12:1
+   |
+12 | r2.bar;
+   | ^^
+   |
+   = note: {
+               bar: string;
+           }
 
-Error: 
-  > {
-  |     foo: string;
-  | }
+warning: Type
+  --> $DIR/tests/pass/class/prototype/non-generic.ts:12:1
+   |
+12 | r2.bar;
+   | ^^^^^^
+   |
+   = note: string
 
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:10:1]
- 10 | r.foo;
-    : ^^^^^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:11:1]
- 11 | var r2 = D.prototype;
-    :          ^
-    `----
-
-Error: 
-  > typeof D
-
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:11:1]
- 11 | var r2 = D.prototype;
-    :          ^^^^^^^^^^^
-    `----
-
-Error: 
-  > {
-  |     bar: string;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:12:1]
- 12 | r2.bar;
-    : ^^
-    `----
-
-Error: 
-  > {
-  |     bar: string;
-  | }
-
-  x Type
-    ,-[$DIR/tests/pass/class/prototype/non-generic.ts:12:1]
- 12 | r2.bar;
-    : ^^^^^^
-    `----
-
-Error: 
-  > string
