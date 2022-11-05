@@ -672,7 +672,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if let Some(res) = self.assign_to_builtins(data, opts, &to, &rhs) {
+        if let Some(res) = self.assign_to_builtin(data, opts, &to, &rhs) {
             return res;
         }
 
