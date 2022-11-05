@@ -1755,7 +1755,8 @@ impl Visit<Intersection> for AssertValid {
 }
 
 impl Type {
-    /// Panics if type is invalid.
+    /// Panics if type is invalid. This is debug-build only and it's noop on a
+    /// release build.
     ///
     /// # Validity
     ///
