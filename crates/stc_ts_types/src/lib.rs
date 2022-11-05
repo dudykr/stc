@@ -517,6 +517,10 @@ pub struct Symbol {
 
 assert_eq_size!(Symbol, [u8; 48]);
 
+/// Type of form `...T` .
+///
+///
+/// Note: Tuple like `[...T]` is identical to `T[]`.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct RestType {
     pub span: Span,
