@@ -899,6 +899,7 @@ pub enum Error {
         // Span of rhs
         span: Span,
         left: Span,
+        ty: Option<Box<Type>>,
     },
 
     /// TS2304
