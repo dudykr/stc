@@ -1108,8 +1108,12 @@ impl Analyzer<'_, '_> {
             let mut members = vec![];
 
             for parent in &t.extends {
-                let parent =
-                    self.type_of_ts_entity_name(parent.span(), self.ctx.module_id, &parent.expr.into(), parent.type_args.as_deref())?;
+                let parent = self.type_of_ts_entity_name(
+                    parent.span(),
+                    self.ctx.module_id,
+                    &parent.expr.clone().into(),
+                    parent.type_args.as_deref(),
+                )?;
 
                 let super_els = self.convert_type_to_type_lit(span, Cow::Owned(parent))?;
 
@@ -1295,6 +1299,7 @@ impl Analyzer<'_, '_> {
                         key: Key::Num(RNumber {
                             span: e.span,
                             value: idx as f64,
+                            raw: None,
                         }),
                         optional: false,
                         params: Default::default(),
@@ -1594,8 +1599,7 @@ impl Analyzer<'_, '_> {
                             lit: RTsLit::Str(RStr {
                                 span: arg.params[0].span(),
                                 value: new_val.into(),
-                                has_escape: false,
-                                kind: Default::default(),
+                                raw: None,
                             }),
                             metadata: LitTypeMetadata {
                                 common: arg.params[0].metadata(),

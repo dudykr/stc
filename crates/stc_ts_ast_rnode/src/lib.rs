@@ -47,12 +47,12 @@ impl From<RTsEntityName> for RExpr {
 impl From<Box<RExpr>> for RTsEntityName {
     fn from(v: Box<RExpr>) -> Self {
         match *v {
-            RExpr::Ident(v) => RTsEntityName::Ident(v),
+            RExpr::Ident(v) => RTsEntityName::Ident(v.clone()),
             RExpr::Member(RMemberExpr { obj, prop, .. }) => RTsEntityName::TsQualifiedName(box RTsQualifiedName {
                 node_id: NodeId::invalid(),
                 left: obj.into(),
                 right: match prop {
-                    RMemberProp::Ident(v) => v,
+                    RMemberProp::Ident(v) => v.clone(),
                     _ => unreachable!("invalid member expression"),
                 },
             }),

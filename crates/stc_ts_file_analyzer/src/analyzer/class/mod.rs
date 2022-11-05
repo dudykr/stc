@@ -1323,8 +1323,12 @@ impl Analyzer<'_, '_> {
 
         for parent in &*class.implements {
             let res: VResult<_> = try {
-                let parent =
-                    self.type_of_ts_entity_name(parent.span(), self.ctx.module_id, &parent.expr.into(), parent.type_args.as_deref())?;
+                let parent = self.type_of_ts_entity_name(
+                    parent.span(),
+                    self.ctx.module_id,
+                    &parent.expr.clone().into(),
+                    parent.type_args.as_deref(),
+                )?;
 
                 self.assign_with_opts(
                     &mut Default::default(),

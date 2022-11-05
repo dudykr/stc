@@ -630,7 +630,7 @@ impl Analyzer<'_, '_> {
                 if self.ctx.in_cond {
                     let left = match &**left {
                         RExpr::Lit(RLit::Str(s)) => Some(s.value.clone()),
-                        RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| v.value),
+                        RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| (&*v).into()),
                         _ => None,
                     };
                     let name = Name::try_from(&**right).ok();

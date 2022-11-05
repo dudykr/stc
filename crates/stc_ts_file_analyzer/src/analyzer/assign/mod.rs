@@ -1829,7 +1829,7 @@ impl Analyzer<'_, '_> {
                 let mut errors = vec![];
                 for parent in extends {
                     let parent = self
-                        .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.into(), parent.type_args.as_deref())?
+                        .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.clone().into(), parent.type_args.as_deref())?
                         .freezed();
 
                     // An interface can extend a class.

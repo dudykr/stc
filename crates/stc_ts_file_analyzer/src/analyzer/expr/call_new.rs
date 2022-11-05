@@ -331,18 +331,6 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {}
 
-            RExpr::Member(RMemberExpr { ref obj, ref prop, .. }) => {
-                let computed = matches!(prop, RMemberProp::Computed(..));
-                let prop = self.validate_key(
-                    &*match prop {
-                        RMemberProp::Ident(i) => Cow::Owned(RExpr::Ident(i.clone())),
-                        RMemberProp::PrivateName(i) => Cow::Owned(RExpr::PrivateName(i.clone())),
-                        RMemberProp::Computed(e) => Cow::Borrowed(&*e.expr),
-                    },
-                    computed,
-                )?;
-            }
-
             RExpr::Member(RMemberExpr {
                 obj:
                     box RExpr::Call(RCallExpr {
@@ -675,7 +663,7 @@ impl Analyzer<'_, '_> {
                     // Check parent interface
                     for parent in &i.extends {
                         let parent = self
-                            .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.into(), parent.type_args.as_deref())
+                            .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.clone().into(), parent.type_args.as_deref())
                             .context("tried to check parent interface to call a property of it")?;
                         if let Ok(v) = self.call_property(
                             span,
@@ -1594,7 +1582,7 @@ impl Analyzer<'_, '_> {
                     Err(first_err) => {
                         //  Check parent interface
                         for parent in &i.extends {
-                            let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.into(), type_args)?;
+                            let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.clone().into(), type_args)?;
 
                             if let Ok(v) = self.extract(
                                 span,
