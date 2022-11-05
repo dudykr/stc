@@ -163,7 +163,7 @@ impl Analyzer<'_, '_> {
                 let is_symbol_call = match &**init {
                     RExpr::Call(RCallExpr {
                         callee:
-                            RExprOrSuper::Expr(box RExpr::Ident(RIdent {
+                            RCallee::Expr(box RExpr::Ident(RIdent {
                                 sym: js_word!("Symbol"), ..
                             RCallee::Expr(box RExpr::Ident(RIdent {
                                 sym: js_word!("Symbol"), ..

@@ -413,6 +413,18 @@ impl Analyzer<'_, '_> {
                     },
                     computed,
                 )?;
+            }
+
+            RExpr::Member(RMemberExpr {
+                obj: RCallee::Expr(ref obj),
+                ref prop,
+                computed,
+                ..
+            }) => {
+                let prop = self.validate_key(prop, computed)?;
+
+                // Validate object
+                let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
                 {
                     // Handle toString()
 

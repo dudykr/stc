@@ -19,6 +19,9 @@ use stc_ts_ast_rnode::{
     RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, RParenExpr, RPat,
     RPatOrExpr, RSeqExpr, RStr, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr,
     RUnaryExpr,
+    RAssignExpr, RBindingIdent, RCallee, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, RParenExpr,
+    RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit,
+    RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
@@ -572,7 +575,7 @@ pub(crate) struct AccessPropertyOpts {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RSeqExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RSeqExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
         let RSeqExpr { span, ref exprs, .. } = *e;
     fn validate(
         &mut self,
@@ -3598,6 +3601,9 @@ impl Analyzer<'_, '_> {
         let mut should_be_optional = false;
         let mut obj_ty = {
             is_obj_opt_chain = is_obj_opt_chaining(&obj);
+        let mut obj_ty = match *obj {
+            RCallee::Expr(ref obj) => {
+                is_obj_opt_chain = is_obj_opt_chaining(&obj);
 
             let obj_ctx = Ctx {
                 allow_module_var: true,
@@ -3626,6 +3632,20 @@ impl Analyzer<'_, '_> {
             }
 
             obj_ty
+            RCallee::Super(RSuper { span, .. }) => {
+                if self.scope.cannot_use_this_because_super_not_called() {
+                    self.storage.report(Error::SuperUsedBeforeCallingSuper { span })
+                }
+
+                self.report_error_for_super_reference_in_compute_keys(span, false);
+
+                if let Some(v) = self.scope.get_super_class() {
+                    v.clone()
+                } else {
+                    self.storage.report(Error::SuperInClassWithoutSuper { span });
+                    Type::any(span, Default::default())
+                }
+            }
         };
 
         obj_ty.make_clone_cheap();
