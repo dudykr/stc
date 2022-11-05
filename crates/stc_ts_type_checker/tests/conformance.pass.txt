@@ -1988,6 +1988,7 @@ types/literal/literalTypesWidenInParameterPosition.ts
 types/literal/numericLiteralTypes1.ts
 types/literal/numericLiteralTypes2.ts
 types/literal/numericLiteralTypes3.ts
+types/literal/numericStringLiteralTypes.ts
 types/literal/stringEnumLiteralTypes1.ts
 types/literal/stringEnumLiteralTypes2.ts
 types/literal/stringLiteralsAssertionsInEqualityComparisons01.ts
