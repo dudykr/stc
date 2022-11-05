@@ -187,7 +187,11 @@ impl Checker {
                             .map(|module| {
                                 RModule::from_orig(
                                     &mut node_id_gen,
-                                    module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark())),
+                                    module.fold_with(&mut resolver(
+                                        self.env.shared().marks().unresolved_mark(),
+                                        self.env.shared().marks().top_level_mark(),
+                                        true,
+                                    )),
                                 )
                             })
                             .collect::<Vec<_>>();
@@ -303,7 +307,11 @@ impl Checker {
                 .module_graph
                 .clone_module(id)
                 .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", id, path));
-            module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
+            module = module.fold_with(&mut resolver(
+                self.env.shared().marks().unresolved_mark(),
+                self.env.shared().marks().top_level_mark(),
+                true,
+            ));
 
             let _panic = panic_ctx!(format!("Span of module = ({:?})", module.span));
 
