@@ -1235,6 +1235,7 @@ expressions/contextualTyping/taggedTemplateContextualTyping1.ts
 expressions/contextualTyping/taggedTemplateContextualTyping2.ts
 expressions/elementAccess/letIdentifierInElementAccess01.ts
 expressions/elementAccess/stringEnumInElementAccess01.ts
+expressions/functionCalls/forgottenNew.ts
 expressions/functionCalls/grammarAmbiguities.ts
 expressions/functionCalls/newWithSpreadES5.ts
 expressions/functionCalls/newWithSpreadES6.ts
@@ -2018,6 +2019,7 @@ types/members/objectTypePropertyAccess.ts
 types/members/objectTypeWithCallSignatureAppearsToBeFunctionType.ts
 types/members/objectTypeWithCallSignatureHidingMembersOfExtendedFunction.ts
 types/members/objectTypeWithCallSignatureHidingMembersOfFunction.ts
+types/members/objectTypeWithConstructSignatureAppearsToBeFunctionType.ts
 types/members/objectTypeWithConstructSignatureHidingMembersOfExtendedFunction.ts
 types/members/objectTypeWithConstructSignatureHidingMembersOfFunction.ts
 types/members/objectTypeWithConstructSignatureHidingMembersOfFunctionAssignmentCompat.ts
@@ -2114,6 +2116,8 @@ types/rest/objectRestReadonly.ts
 types/specifyingTypes/predefinedTypes/objectTypesWithPredefinedTypesAsName.ts
 types/specifyingTypes/typeLiterals/arrayLiteral.ts
 types/specifyingTypes/typeLiterals/arrayOfFunctionTypes3.ts
+types/specifyingTypes/typeLiterals/arrayTypeOfFunctionTypes.ts
+types/specifyingTypes/typeLiterals/arrayTypeOfFunctionTypes2.ts
 types/specifyingTypes/typeLiterals/functionLiteral.ts
 types/specifyingTypes/typeLiterals/functionLiteralForOverloads.ts
 types/specifyingTypes/typeLiterals/functionLiteralForOverloads2.ts
