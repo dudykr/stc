@@ -1446,6 +1446,10 @@ impl Error {
             // TS2584: Type not found with recommendation to change target library to include `dom`.
             2318 | 2552 | 2580 | 2581 | 2582 | 2583 | 2584 => 2304,
 
+            // TS2350: new cannot be used for non-void function
+            // TS2350: new cannot be used because it's not constructor
+            2350 | 2351 => 2350,
+
             // TS2339: Property not found.
             // TS2550: Property not found with a suggestion to change `lib`.
             // TS2551: Property not found with a suggestion.
