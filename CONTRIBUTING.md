@@ -34,6 +34,27 @@ If you are done, please file a pull request on GitHub.
 
 See [the readme of the file analyzer](./crates/stc_ts_file_analyzer/) for more details.
 
+### Debugging tips
+
+- `print_backtrace()`
+
+If you think some code should not be invoked but seems like it's invoked, you can use `print_backtrace()`.
+It will automatically exclude useless items from the stack trace.
+
+- Matching over `Type`
+
+To avoid performance drop caused by cloning, stc uses `Type::Arc` to share memory.
+But there's a downside for this - you have to call `normalize()` while matching.
+
+e.g.
+
+```rust
+match ty.normalize() {
+}
+```
+
+Note that this is different from `self.normalize(ty)` of `Analyzer`, which is used to expand special types like references, queries, mapped, etc..
+
 ### Updating performance stats
 
 You can run `./scripts/release-time.sh` from `./crates/stc_ts_type_checker` to update timing stats file.
