@@ -462,6 +462,11 @@ pub struct ComputedKey {
 
 assert_eq_size!(ComputedKey, [u8; 32]);
 
+/// Special type to denote instance of various types.
+///
+/// This is normalized on any operations. `Analyzer#normalize()` will normalize
+/// this variant.
+///
 /// Used to handle code like
 ///
 ///
