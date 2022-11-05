@@ -86,6 +86,7 @@ impl Analyzer<'_, '_> {
                                 RTsLit::Tpl(v) => {
                                     RExpr::Lit(RLit::Str(v.quasis[0].cooked.clone().unwrap_or_else(|| v.quasis[0].raw.clone())).into())
                                 }
+                                RTsLit::Tpl(v) => RExpr::Lit(v.quasis.into_iter().next().unwrap().raw.into()),
                                 RTsLit::BigInt(v) => RExpr::Lit(RLit::BigInt(v)),
                             }
                         })

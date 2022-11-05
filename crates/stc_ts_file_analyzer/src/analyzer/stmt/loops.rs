@@ -297,7 +297,7 @@ impl Analyzer<'_, '_> {
 
             // Type annotation on lhs of for in/of loops is invalid.
             match left {
-                RVarDeclOrPat::VarDecl(RVarDecl { decls, .. }) => {
+                RVarDeclOrPat::VarDecl(box RVarDecl { decls, .. }) => {
                     if decls.len() >= 1 {
                         if decls[0].name.get_ty().is_some() {
                             match kind {

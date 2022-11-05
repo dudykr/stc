@@ -22,6 +22,9 @@ use stc_ts_ast_rnode::{
     RAssignExpr, RBindingIdent, RCallee, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, RParenExpr,
     RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit,
     RTsNonNullExpr, RUnaryExpr,
+    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, RParenExpr, RPat,
+    RPatOrExpr, RSeqExpr, RStr, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr,
+    RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
@@ -2033,8 +2036,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 for super_ty in extends {
-                    let obj =
-                        self.type_of_ts_entity_name(span, self.ctx.module_id, &super_ty.expr.into(), super_ty.type_args.as_deref())?;
+                    let obj = self.type_of_ts_entity_name(
+                        span,
+                        self.ctx.module_id,
+                        &super_ty.expr.clone().into(),
+                        super_ty.type_args.as_deref(),
+                    )?;
 
                     let obj = self
                         .instantiate_class(span, &obj)
@@ -3419,7 +3426,7 @@ impl Analyzer<'_, '_> {
         }
 
         match n {
-            RExpr::Ident(i) => {
+            RTsEntityName::Ident(ref i) => {
                 if i.sym == js_word!("Array") {
                     if let Some(type_args) = type_args {
                         // TODO(kdy1): Validate number of args.
@@ -3541,12 +3548,8 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 }))
             }
-            RExpr::Member(RMemberExpr {
-                obj,
-                prop: RMemberProp::Ident(prop),
-                ..
-            }) => {
-                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &*obj.into(), None)?;
+            RTsEntityName::TsQualifiedName(ref qname) => {
+                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &qname.left, None)?;
                 obj_ty.assert_valid();
 
                 let ctx = Ctx {
@@ -3569,8 +3572,8 @@ impl Analyzer<'_, '_> {
                     span,
                     &obj_ty,
                     &Key::Normal {
-                        span: prop.span,
-                        sym: prop.sym.clone(),
+                        span: qname.right.span,
+                        sym: qname.right.sym.clone(),
                     },
                     TypeOfMode::RValue,
                     IdCtx::Type,
@@ -3578,7 +3581,6 @@ impl Analyzer<'_, '_> {
                 )
                 .context("tried to resolve type from a ts entity name")
             }
-            _ => todo!("type_of_ts_entity_name: {:?}", n),
         }
     }
 
@@ -3857,8 +3859,12 @@ impl Analyzer<'_, '_> {
                 }
 
                 for parent in &ty.extends {
-                    let parent_ty =
-                        self.type_of_ts_entity_name(parent.span, self.ctx.module_id, &parent.expr.into(), parent.type_args.as_deref());
+                    let parent_ty = self.type_of_ts_entity_name(
+                        parent.span,
+                        self.ctx.module_id,
+                        &parent.expr.clone().into(),
+                        parent.type_args.as_deref(),
+                    );
 
                     let parent_ty = match parent_ty {
                         Ok(v) => v,

@@ -844,8 +844,12 @@ impl Analyzer<'_, '_> {
             Type::Interface(ri) => {
                 let res: VResult<_> = try {
                     for parent in &ri.extends {
-                        let parent =
-                            self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.into(), parent.type_args.as_deref())?;
+                        let parent = self.type_of_ts_entity_name(
+                            span,
+                            self.ctx.module_id,
+                            &parent.expr.clone().into(),
+                            parent.type_args.as_deref(),
+                        )?;
 
                         // An interface can extend a class.
                         let parent = self.instantiate_class(span, &parent)?;

@@ -237,12 +237,6 @@ impl Analyzer<'_, '_> {
             RExpr::Paren(RParenExpr { expr, .. }) => {
                 return self.validate_delete_operand(expr);
             }
-            RExpr::OptChain(ROptChainExpr {
-                base: ROptChainBase::Member(expr),
-                ..
-            }) => {
-                return self.validate_delete_operand(&RExpr::Member(expr.clone()));
-            }
 
             RExpr::Await(..) => Err(Error::InvalidDeleteOperand { span }),
 

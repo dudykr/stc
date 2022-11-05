@@ -770,7 +770,7 @@ impl Analyzer<'_, '_> {
                     // Check parent interface
                     for parent in &i.extends {
                         let parent = self
-                            .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.into(), parent.type_args.as_deref())
+                            .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.clone().into(), parent.type_args.as_deref())
                             .context("tried to check parent interface to call a property of it")?;
                         if let Ok(v) = self.call_property(
                             span,
@@ -1691,7 +1691,7 @@ impl Analyzer<'_, '_> {
                     Err(first_err) => {
                         //  Check parent interface
                         for parent in &i.extends {
-                            let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.into(), type_args)?;
+                            let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.clone().into(), type_args)?;
 
                             if let Ok(v) = self.extract(
                                 span,
