@@ -7,7 +7,7 @@ use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, ModuleId, Operator, PropertySignature, Ref,
-    Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union, UnionMetadata,
+    TplType, Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, ext::SpanExt};
 use swc_atoms::js_word;
@@ -649,6 +649,25 @@ impl Analyzer<'_, '_> {
                     return self
                         .assign_to_type_elements(data, opts, lhs_span, lhs, &rhs, lhs_metadata)
                         .context("tried to assign using expanded builtin type");
+                }
+
+                Type::Tpl(TplType { span: rhs_span, .. }) => {
+                    if lhs.len() == 0 {
+                        return Ok(());
+                    }
+
+                    return self.assign_to_type_elements(
+                        data,
+                        opts,
+                        lhs_span,
+                        lhs,
+                        &Type::Keyword(KeywordType {
+                            span: *rhs_span,
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                            metadata: Default::default(),
+                        }),
+                        lhs_metadata,
+                    );
                 }
 
                 _ => {
