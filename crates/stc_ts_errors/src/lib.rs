@@ -1015,6 +1015,13 @@ pub enum Error {
         callee: Box<Type>,
     },
 
+    /// TS2348
+    NoConstructablePropertyWithName {
+        span: Span,
+        obj: Box<Type>,
+        key: Box<Key>,
+    },
+
     /// TS2349
     NoCallSignature {
         span: Span,
@@ -1785,6 +1792,8 @@ impl Error {
             Error::NotArrayType { .. } => 2461,
             Error::NotArrayTypeNorStringType { .. } => 2495,
             Error::NotArrayTypeNorStringTypeButDownlevelIterationWouldWork { .. } => 2569,
+
+            Error::NoConstructablePropertyWithName { .. } => 2348,
 
             Error::NoCallablePropertyWithName { .. } => 2349,
 
