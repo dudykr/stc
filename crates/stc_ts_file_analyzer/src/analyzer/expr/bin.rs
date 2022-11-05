@@ -335,6 +335,12 @@ impl Analyzer<'_, '_> {
                         //
                         // Type guards involving type parameters produce intersection types
                         let mut orig_ty = self.type_of_var(i, TypeOfMode::RValue, None)?;
+                        if !self.is_valid_lhs_of_instanceof(span, &orig_ty) {
+                            self.storage.report(Error::InvalidLhsInInstanceOf {
+                                ty: box lt.clone(),
+                                span: left.span(),
+                            })
+                        }
                         orig_ty.make_clone_cheap();
 
                         //
@@ -1071,6 +1077,11 @@ impl Analyzer<'_, '_> {
                     )
                     .context("tried to check if overlap exists to calculate the type created by instanceof")?
                 {
+                    if ty.is_class() {
+                        if orig_ty.is_kwd(TsKeywordTypeKind::TsAnyKeyword) || orig_ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
+                            return Ok(ty.into_owned());
+                        }
+                    }
                     return Ok(Type::never(span, Default::default()));
                 }
             }
