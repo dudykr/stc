@@ -342,6 +342,7 @@ impl Analyzer<'_, '_> {
                             })
                         }
                         orig_ty.make_clone_cheap();
+
                         //
                         let ty = self.validate_rhs_of_instanceof(span, &rt, rt.clone());
 
@@ -985,6 +986,7 @@ impl Analyzer<'_, '_> {
     /// and `D` are empty classes.
     fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult {
         let orig_ty = orig_ty.normalize();
+
         match orig_ty {
             Type::Ref(..) | Type::Query(..) => {
                 let orig_ty = self.normalize(None, Cow::Borrowed(orig_ty), Default::default())?;
