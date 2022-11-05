@@ -1,4 +1,4 @@
-use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, ROptChainExpr, RParenExpr, RStr, RTsLit, RUnaryExpr};
+use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RMemberExpr, RMemberProp, RNumber, ROptChainExpr, RParenExpr, RStr, RTsLit, RUnaryExpr};
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
 use swc_atoms::js_word;

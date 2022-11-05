@@ -344,7 +344,7 @@ impl Analyzer<'_, '_> {
             }
 
             RExpr::Member(RMemberExpr {
-                obj: RExprOrSuper::Expr(ref obj),
+                obj: RCallee::Expr(ref obj),
                 ref prop,
                 computed,
                 ..

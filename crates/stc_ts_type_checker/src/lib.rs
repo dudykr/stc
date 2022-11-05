@@ -390,7 +390,7 @@ impl Load for Checker {
         }
     }
 
-    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, _partial: &ModuleTypeData) -> VResult {
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, _partial: &ModuleTypeData) -> VResult<Type> {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 

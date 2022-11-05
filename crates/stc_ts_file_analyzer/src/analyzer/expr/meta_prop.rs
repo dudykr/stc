@@ -8,7 +8,7 @@ use crate::{analyzer::Analyzer, VResult};
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RMetaPropExpr) -> VResult {
+    fn validate(&mut self, e: &RMetaPropExpr) -> VResult<Type> {
         match e.kind {
             swc_ecma_ast::MetaPropKind::NewTarget => {
                 if !self.ctx.allow_new_target {

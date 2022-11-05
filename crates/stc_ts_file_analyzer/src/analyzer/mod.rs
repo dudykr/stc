@@ -718,7 +718,7 @@ impl Load for NoopLoader {
         unreachable!()
     }
 
-    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> VResult {
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> VResult<Type> {
         unreachable!()
     }
 

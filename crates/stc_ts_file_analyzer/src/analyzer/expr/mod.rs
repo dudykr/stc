@@ -8,9 +8,9 @@ use std::{
 use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, RParenExpr, RPat,
-    RPatOrExpr, RSeqExpr, RStr, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr,
-    RUnaryExpr,
+    RAssignExpr, RBindingIdent, RCallee, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, RParenExpr,
+    RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit,
+    RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
@@ -94,7 +94,13 @@ impl Default for TypeOfMode {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RExpr, mode: TypeOfMode, type_args: Option<&TypeParamInstantiation>, type_ann: Option<&Type>) -> VResult {
+    fn validate(
+        &mut self,
+        e: &RExpr,
+        mode: TypeOfMode,
+        type_args: Option<&TypeParamInstantiation>,
+        type_ann: Option<&Type>,
+    ) -> VResult<Type> {
         self.record(e);
 
         let _stack = stack::start(64);
@@ -532,7 +538,7 @@ pub(crate) struct AccessPropertyOpts {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RSeqExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RSeqExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
         let RSeqExpr { span, ref exprs, .. } = *e;
 
         assert!(exprs.len() >= 1);
@@ -2857,7 +2863,7 @@ impl Analyzer<'_, '_> {
 
     /// Returned type reflects conditional type facts.
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn type_of_var(&mut self, i: &RIdent, type_mode: TypeOfMode, type_args: Option<&TypeParamInstantiation>) -> VResult {
+    pub(super) fn type_of_var(&mut self, i: &RIdent, type_mode: TypeOfMode, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
         let span = i.span();
         let id: Id = i.into();
         let name: Name = i.into();
@@ -3519,7 +3525,7 @@ impl Analyzer<'_, '_> {
         let mut is_obj_opt_chain = false;
         let mut should_be_optional = false;
         let mut obj_ty = match *obj {
-            RExprOrSuper::Expr(ref obj) => {
+            RCallee::Expr(ref obj) => {
                 is_obj_opt_chain = is_obj_opt_chaining(&obj);
 
                 let obj_ctx = Ctx {
@@ -3551,7 +3557,7 @@ impl Analyzer<'_, '_> {
                 obj_ty
             }
 
-            RExprOrSuper::Super(RSuper { span, .. }) => {
+            RCallee::Super(RSuper { span, .. }) => {
                 if self.scope.cannot_use_this_because_super_not_called() {
                     self.storage.report(Error::SuperUsedBeforeCallingSuper { span })
                 }
