@@ -80,8 +80,10 @@ impl Tester<'_, '_> {
             );
             let mut parser = Parser::new_from(lexer);
 
-            let module = parser.parse_module().unwrap().fold_with(&mut ts_resolver(MARKS.top_level_mark()));
-
+            let module = parser
+                .parse_module()
+                .unwrap()
+                .fold_with(&mut resolver(MARKS.unresolved_mark(), MARKS.top_level_mark(), true));
             RModule::from_orig(&mut NodeIdGenerator::invalid(), module)
         })
     }
