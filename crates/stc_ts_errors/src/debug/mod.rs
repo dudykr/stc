@@ -125,6 +125,10 @@ pub fn assert_no_ref(ty: &Type) {
     }
 }
 
+/// Prints stack trace of current function
+///
+/// Use this when if you think a wrong code is called, but **it should not be
+/// called**.
 pub fn print_backtrace() {
     if cfg!(debug_assertions) {
         let s = dump_backtrace();

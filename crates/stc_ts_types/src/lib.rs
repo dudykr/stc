@@ -462,6 +462,11 @@ pub struct ComputedKey {
 
 assert_eq_size!(ComputedKey, [u8; 32]);
 
+/// Special type to denote instance of various types.
+///
+/// This is normalized on any operations. `Analyzer#normalize()` will normalize
+/// this variant.
+///
 /// Used to handle code like
 ///
 ///
@@ -512,6 +517,10 @@ pub struct Symbol {
 
 assert_eq_size!(Symbol, [u8; 48]);
 
+/// Type of form `...T` .
+///
+///
+/// Note: Tuple like `[...T]` is identical to `T[]`.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct RestType {
     pub span: Span,
@@ -776,6 +785,10 @@ pub struct Operator {
 
 assert_eq_size!(Operator, [u8; 32]);
 
+/// This type has a length of n to infinite.
+///
+/// If the last element is [RestType], this type can have a length of n to
+/// infinite.
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Tuple {
     pub span: Span,
@@ -1746,7 +1759,8 @@ impl Visit<Intersection> for AssertValid {
 }
 
 impl Type {
-    /// Panics if type is invalid.
+    /// Panics if type is invalid. This is debug-build only and it's noop on a
+    /// release build.
     ///
     /// # Validity
     ///
