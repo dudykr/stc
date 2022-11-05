@@ -422,11 +422,17 @@ impl Analyzer<'_, '_> {
             Type::Instance(Instance { ty, .. }) => {
                 // Normalize further
                 if ty.is_ref_type() {
+                    let normalized = self.normalize_for_assign(span, ty).context("failed to normalize instance type")?;
+
+                    if normalized.is_keyword() {
+                        return Ok(normalized);
+                    }
+                }
+
+                if ty.is_mapped() {
                     let ty = self.normalize_for_assign(span, ty).context("failed to normalize instance type")?;
 
-                    if ty.is_keyword() {
-                        return Ok(ty);
-                    }
+                    return Ok(ty);
                 }
             }
             _ => {}
