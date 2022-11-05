@@ -76,36 +76,36 @@ impl Analyzer<'_, '_> {
             None
         };
 
+        ty.assert_valid();
+
+        let actual_span = span.unwrap_or_else(|| ty.span());
+        if !self.is_builtin {
+            debug_assert!(!actual_span.is_dummy(), "Cannot normalize a type with dummy span\n{:?}", ty);
+        }
+
+        match ty.normalize() {
+            Type::Lit(..)
+            | Type::TypeLit(..)
+            | Type::Interface(..)
+            | Type::Class(..)
+            | Type::ClassDef(..)
+            | Type::Tuple(..)
+            | Type::Function(..)
+            | Type::Constructor(..)
+            | Type::EnumVariant(..)
+            | Type::Enum(..)
+            | Type::Param(_)
+            | Type::Module(_)
+            | Type::Tpl(..) => return Ok(ty),
+            _ => {}
+        }
+
         #[cfg(debug_assertions)]
         let input = dump_type_as_string(&self.cm, &ty);
 
         let res = (|| {
-            ty.assert_valid();
-
-            let actual_span = span.unwrap_or_else(|| ty.span());
-            if !self.is_builtin {
-                debug_assert!(!actual_span.is_dummy(), "Cannot normalize a type with dummy span\n{:?}", ty);
-            }
-
             let _stack = stack::track(actual_span)?;
             let _context = debug_ctx!(format!("Normalize: {}", dump_type_as_string(&self.cm, &ty)));
-
-            match ty.normalize() {
-                Type::Lit(..)
-                | Type::TypeLit(..)
-                | Type::Interface(..)
-                | Type::Class(..)
-                | Type::ClassDef(..)
-                | Type::Tuple(..)
-                | Type::Function(..)
-                | Type::Constructor(..)
-                | Type::EnumVariant(..)
-                | Type::Enum(..)
-                | Type::Param(_)
-                | Type::Module(_)
-                | Type::Tpl(..) => return Ok(ty),
-                _ => {}
-            }
 
             if matches!(&*ty, Type::Arc(..)) {
                 let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
