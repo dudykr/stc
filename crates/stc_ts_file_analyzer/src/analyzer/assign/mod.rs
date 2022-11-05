@@ -2205,7 +2205,7 @@ impl Analyzer<'_, '_> {
         }
 
         match (to, rhs) {
-            (Type::Tpl(l), r) => return self.assign_to_tpl(l, r, opts).context("tried to assign to a template type"),
+            (Type::Tpl(l), r) => return self.assign_to_tpl(data, l, r, opts).context("tried to assign to a template type"),
             (
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,

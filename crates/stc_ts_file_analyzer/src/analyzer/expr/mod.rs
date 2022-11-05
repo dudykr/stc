@@ -22,7 +22,7 @@ pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Key, KeywordType,
     KeywordTypeMetadata, LitType, LitTypeMetadata, Method, ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
-    QueryTypeMetadata, StaticThis, ThisType,
+    QueryTypeMetadata, StaticThis, ThisType, TplType, TplTypeMetadata,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use swc_atoms::js_word;
@@ -250,7 +250,7 @@ impl Analyzer<'_, '_> {
                 RExpr::Paren(RParenExpr { ref expr, .. }) => expr.validate_with_args(self, (mode, type_args, type_ann)),
 
                 RExpr::Tpl(ref e) => {
-                    return e.validate_with(self);
+                    return e.validate_with_args(self, type_ann);
                 }
 
                 RExpr::TsNonNull(RTsNonNullExpr { span, ref expr, .. }) => {
@@ -3781,7 +3781,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RTpl) -> VResult {
+    fn validate(&mut self, e: &RTpl, type_ann: Option<&Type>) -> VResult {
         e.exprs.visit_with(self);
 
         if e.exprs.is_empty() {
@@ -3790,6 +3790,29 @@ impl Analyzer<'_, '_> {
                 lit: RTsLit::Str(e.quasis[0].cooked.clone().unwrap_or_else(|| e.quasis[0].raw.clone())),
                 metadata: Default::default(),
             }));
+        }
+
+        if let Some(type_ann) = type_ann {
+            match self
+                .normalize(None, Cow::Borrowed(type_ann.normalize_instance()), Default::default())?
+                .as_ref()
+                .normalize()
+            {
+                Type::Tpl(TplType { span, quasis, types, .. }) => {
+                    return Ok(Type::Tpl(TplType {
+                        span: *span,
+                        quasis: quasis.clone(),
+                        types: types.clone(),
+                        metadata: TplTypeMetadata {
+                            common: CommonTypeMetadata {
+                                prevent_generalization: true,
+                                ..Default::default()
+                            },
+                        },
+                    }))
+                }
+                _ => {}
+            }
         }
 
         Ok(Type::Keyword(KeywordType {
