@@ -146,6 +146,7 @@ classes/classDeclarations/classAbstractKeyword/classAbstractOverrideWithAbstract
 classes/classDeclarations/classAbstractKeyword/classAbstractSingleLineDecl.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractSuperCalls.ts
 classes/classDeclarations/classAbstractKeyword/classAbstractUsingAbstractMethod1.ts
+classes/classDeclarations/classAndInterfaceMerge.d.ts
 classes/classDeclarations/classAndInterfaceWithSameName.ts
 classes/classDeclarations/classBody/classWithEmptyBody.ts
 classes/classDeclarations/classDeclarationLoop.ts
@@ -1533,6 +1534,7 @@ parser/ecmascript5/ClassDeclarations/parserClassDeclaration23.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration24.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration25.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration26.ts
+parser/ecmascript5/ClassDeclarations/parserClassDeclaration7.d.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration8.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration9.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclarationIndexSignature1.ts
@@ -1547,6 +1549,7 @@ parser/ecmascript5/EnumDeclarations/parserEnum3.ts
 parser/ecmascript5/EnumDeclarations/parserEnum6.ts
 parser/ecmascript5/EnumDeclarations/parserEnum7.ts
 parser/ecmascript5/EnumDeclarations/parserEnumDeclaration1.ts
+parser/ecmascript5/EnumDeclarations/parserEnumDeclaration2.d.ts
 parser/ecmascript5/EnumDeclarations/parserEnumDeclaration3.ts
 parser/ecmascript5/EnumDeclarations/parserEnumDeclaration5.ts
 parser/ecmascript5/EnumDeclarations/parserEnumDeclaration6.ts
@@ -1584,6 +1587,7 @@ parser/ecmascript5/Expressions/parserUnaryExpression3.ts
 parser/ecmascript5/Expressions/parserUnaryExpression4.ts
 parser/ecmascript5/Expressions/parserUnaryExpression6.ts
 parser/ecmascript5/Expressions/parserUnaryExpression7.ts
+parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration1.d.ts
 parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration3.ts
 parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration4.ts
 parser/ecmascript5/FunctionDeclarations/parserFunctionDeclaration5.ts
@@ -1653,6 +1657,7 @@ parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration10.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration11.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration12.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration2.ts
+parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration3.d.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration4.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration6.ts
 parser/ecmascript5/ModuleDeclarations/parserModuleDeclaration7.ts
@@ -1775,6 +1780,7 @@ parser/ecmascript5/VariableDeclarations/parserVariableDeclaration1.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration11.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration2.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration3.ts
+parser/ecmascript5/VariableDeclarations/parserVariableDeclaration4.d.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration7.ts
 parser/ecmascript5/VariableDeclarations/parserVariableDeclaration9.ts
 parser/ecmascript5/parserAdditiveExpression1.ts
