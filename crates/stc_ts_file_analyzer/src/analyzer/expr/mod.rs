@@ -2075,7 +2075,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if opts.disallow_inexact && metadata.inexact {
+                if !opts.disallow_inexact && metadata.inexact {
                     return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
