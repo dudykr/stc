@@ -506,6 +506,7 @@ impl Analyzer<'_, '_> {
                                         AccessPropertyOpts {
                                             disallow_indexing_array_with_string: true,
                                             disallow_creating_indexed_type_from_ty_els: true,
+                                            disallow_inexact: true,
                                             ..Default::default()
                                         },
                                     )
@@ -514,7 +515,19 @@ impl Analyzer<'_, '_> {
 
                             let default_prop_ty = default.as_ref().and_then(|ty| {
                                 self.with_ctx(ctx)
-                                    .access_property(span, &ty, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                                    .access_property(
+                                        span,
+                                        &ty,
+                                        &key,
+                                        TypeOfMode::RValue,
+                                        IdCtx::Var,
+                                        AccessPropertyOpts {
+                                            disallow_indexing_array_with_string: true,
+                                            disallow_creating_indexed_type_from_ty_els: true,
+                                            disallow_inexact: true,
+                                            ..Default::default()
+                                        },
+                                    )
                                     .ok()
                             });
 
