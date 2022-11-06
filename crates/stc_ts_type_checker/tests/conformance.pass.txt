@@ -1373,7 +1373,6 @@ expressions/unaryOperators/voidOperator/voidOperatorWithBooleanType.ts
 expressions/unaryOperators/voidOperator/voidOperatorWithEnumType.ts
 expressions/unaryOperators/voidOperator/voidOperatorWithNumberType.ts
 expressions/unaryOperators/voidOperator/voidOperatorWithStringType.ts
-expressions/valuesAndReferences/assignments.ts
 externalModules/asiPreventsParsingAsAmbientExternalModule01.ts
 externalModules/asiPreventsParsingAsAmbientExternalModule02.ts
 externalModules/es6/es6modulekind.ts
