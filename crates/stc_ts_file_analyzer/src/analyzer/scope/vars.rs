@@ -120,7 +120,17 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let mut ty = opt_union(span, ty, default);
+                let mut ty = match (default, ty) {
+                    (Some(default), Some(ty)) => {
+                        if let Some(true) = self.extends(span, &default, &ty, Default::default()) {
+                            Some(ty)
+                        } else {
+                            opt_union(span, Some(ty), Some(default))
+                        }
+                    }
+                    (default, ty) => opt_union(span, ty, default),
+                };
+
                 ty.make_clone_cheap();
 
                 if let Some(ty) = &ty {
