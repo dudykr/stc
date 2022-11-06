@@ -119,7 +119,7 @@ fn main() -> Result<(), Error> {
             }
             let end = Instant::now();
 
-            log::info!("Checking 1000 times took {:?}", end - start);
+            log::info!("Checking took {:?}", end - start);
 
             {
                 let start = Instant::now();

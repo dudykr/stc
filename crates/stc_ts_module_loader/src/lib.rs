@@ -56,6 +56,7 @@ where
 
     id_generator: ModuleIdGenerator,
     loaded: DashMap<ModuleId, Result<ModuleRecord, ()>, FxBuildHasher>,
+    started: DashMap<ModuleId, Arc<Module>, FxBuildHasher>,
     resolver: TsResolver<R>,
 
     errors: Mutex<Vec<Error>>,
@@ -89,6 +90,7 @@ where
             comments,
             id_generator: Default::default(),
             loaded: Default::default(),
+            started: Default::default(),
             resolver: TsResolver::new(resolver),
             errors: Default::default(),
             parsing_errors: Default::default(),
@@ -199,6 +201,12 @@ where
     fn load_including_deps(&self, path: &Arc<FileName>, resolve_all: bool) {
         let id = self.id_generator.generate(path);
 
+        if resolve_all {
+            if self.started.remove(&id).is_none() {
+                return;
+            }
+        }
+
         let loaded = self.load(path, resolve_all);
         let loaded = match loaded {
             Ok(v) => v,
@@ -230,6 +238,7 @@ where
                 let id = self.id_generator.generate(&dep_path);
 
                 self.load_including_deps(&dep_path, resolve_all);
+
                 id
             })
             .collect::<Vec<_>>();
@@ -252,8 +261,14 @@ where
     fn load(&self, filename: &Arc<FileName>, resolve_all: bool) -> Result<Option<LoadResult>, Error> {
         let module_id = self.id_generator.generate(filename);
 
-        if self.loaded.contains_key(&module_id) {
-            return Ok(None);
+        if resolve_all {
+            if self.loaded.contains_key(&module_id) {
+                return Ok(None);
+            }
+        } else {
+            if self.started.contains_key(&module_id) {
+                return Ok(None);
+            }
         }
 
         debug!("Loading {:?}: {}", module_id, filename);
@@ -276,6 +291,10 @@ where
         }
 
         let module = self.load_one_module(filename)?;
+
+        if !resolve_all {
+            self.started.insert(module_id, module.clone());
+        }
 
         let _panic = panic_ctx!(format!("ModuleGraph.load({}, span = {:?})", filename, module.span));
 
