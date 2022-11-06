@@ -414,7 +414,8 @@ impl Analyzer<'_, '_> {
                                 },
                                 Error::NotVariable { ty, .. } => match ty {
                                     Some(ty) => match ty.normalize() {
-                                        Type::Module(..) => Error::CannotAssignToModule { span },
+                                        Type::Module(..) => Error::CannotAssignToNamespace { span },
+                                        Type::Namespace(..) => Error::CannotAssignToModule { span },
                                         Type::ClassDef(..) => Error::CannotAssignToClass { span },
                                         Type::Enum(..) => Error::CannotAssignToEnum { span },
                                         _ => err,
