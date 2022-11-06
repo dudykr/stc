@@ -413,7 +413,7 @@ impl Analyzer<'_, '_> {
                                     _ => err,
                                 },
                                 Error::NotVariable { ty, .. } => match ty {
-                                    Some(ty) => match **ty {
+                                    Some(ty) => match ty.normalize() {
                                         Type::Module(..) => Error::CannotAssignToModule { span },
                                         Type::ClassDef(..) => Error::CannotAssignToClass { span },
                                         Type::Enum(..) => Error::CannotAssignToEnum { span },
@@ -2907,7 +2907,7 @@ impl Analyzer<'_, '_> {
             return Err(Error::NotVariable {
                 span,
                 left: span,
-                ty: Some(box ty.normalize().clone()),
+                ty: Some(box ty.clone()),
             });
         }
         ty.assert_valid();
