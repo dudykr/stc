@@ -510,7 +510,7 @@ impl Analyzer<'_, '_> {
         match m.init.as_deref() {
             Some(RExpr::Ident(..)) => {}
             Some(e) => {
-                if type_of_expr(&e).is_none() {
+                if type_of_expr(&e).is_none() && !matches!(e, RExpr::Tpl(..) | RExpr::Bin(..) | RExpr::Member(..)) {
                     self.storage.report(Error::ComputedMemberInEnumWithStrMember { span: m.span })
                 }
             }

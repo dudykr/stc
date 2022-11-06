@@ -337,18 +337,7 @@ impl Analyzer<'_, '_> {
 
         // TypeScript functions are bivariant if strict_function_types is false.
         if !self.env.rule().strict_function_types || opts.is_params_of_method_definition {
-            if self
-                .assign_params(
-                    data,
-                    AssignOpts {
-                        is_params_of_method_definition: false,
-                        ..opts
-                    },
-                    &r_params,
-                    &l_params,
-                )
-                .is_ok()
-            {
+            if self.assign_params(data, AssignOpts { ..opts }, &r_params, &l_params).is_ok() {
                 return Ok(());
             }
         }
@@ -382,7 +371,7 @@ impl Analyzer<'_, '_> {
                     for_overload: false,
                     allow_assignment_of_void: Some(opts.allow_assignment_of_void.unwrap_or(true)),
                     allow_assignment_to_void: !opts.for_overload,
-                    is_params_of_method_definition: false,
+
                     ..opts
                 };
 
@@ -415,8 +404,6 @@ impl Analyzer<'_, '_> {
         l: &Function,
         r: &Type,
     ) -> VResult<()> {
-        opts.is_params_of_method_definition = false;
-
         let span = opts.span;
         let r = r.normalize();
 

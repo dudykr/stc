@@ -12,7 +12,7 @@ use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection, Intrinsic, IntrinsicKind, Key,
     KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref,
-    ThisType, ThisTypeMetadata, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    ThisType, ThisTypeMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -811,24 +811,6 @@ impl Analyzer<'_, '_> {
                     .collect::<Result<_, _>>()?;
 
                 Type::Union(Union { types, ..ty }).fixed()
-            }
-
-            Type::Array(ty) => {
-                let elem_type = box self.instantiate_for_normalization(span, &ty.elem_type)?;
-                Type::Array(Array { elem_type, ..ty })
-            }
-
-            Type::Tuple(ty) => {
-                let elems = ty
-                    .elems
-                    .into_iter()
-                    .map(|e| -> VResult<_> {
-                        let ty = box self.instantiate_for_normalization(span, &e.ty)?;
-                        Ok(TupleElement { ty, ..e })
-                    })
-                    .collect::<Result<_, _>>()?;
-
-                Type::Tuple(Tuple { elems, ..ty })
             }
 
             _ => ty,

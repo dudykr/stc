@@ -376,7 +376,6 @@ impl Analyzer<'_, '_> {
         if self.is_builtin {
             return Ok(());
         }
-        opts.is_params_of_method_definition = false;
 
         left.assert_valid();
         right.assert_valid();
@@ -486,8 +485,6 @@ impl Analyzer<'_, '_> {
     fn assign_inner(&mut self, data: &mut AssignData, left: &Type, right: &Type, mut opts: AssignOpts) -> VResult<()> {
         left.assert_valid();
         right.assert_valid();
-
-        opts.is_params_of_method_definition = false;
 
         let l = dump_type_as_string(&self.cm, &left);
         let r = dump_type_as_string(&self.cm, &right);

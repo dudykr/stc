@@ -256,6 +256,15 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
+        match to {
+            Type::TypeLit(to) => {
+                if to.members.is_empty() {
+                    return Ok(true);
+                }
+            }
+            _ => {}
+        }
+
         if from.type_eq(to) {
             return Ok(true);
         }
