@@ -68,5 +68,5 @@ warning: Type
 3 | const bb: 0 | 8 = b;
   |                   ^
   |
-  = note: (8 | 0)
+  = note: 8
 

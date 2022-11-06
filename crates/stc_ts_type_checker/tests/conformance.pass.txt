@@ -2041,6 +2041,7 @@ types/never/neverType.ts
 types/never/neverUnionIntersection.ts
 types/nonPrimitive/assignObjectToNonPrimitive.ts
 types/nonPrimitive/nonPrimitiveAccessProperty.ts
+types/nonPrimitive/nonPrimitiveAndEmptyObject.ts
 types/nonPrimitive/nonPrimitiveAsProperty.ts
 types/nonPrimitive/nonPrimitiveAssignError.ts
 types/nonPrimitive/nonPrimitiveInFunction.ts
