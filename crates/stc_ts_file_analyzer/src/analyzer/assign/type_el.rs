@@ -126,7 +126,7 @@ impl Analyzer<'_, '_> {
 
                         for (index, r) in rhs_members.iter().enumerate().rev() {
                             match r {
-                                TypeElement::Property(p) => {
+                                TypeElement::Property(p @ PropertySignature { optional: false, .. }) => {
                                     if used_keys.iter().any(|prev| prev.type_eq(&p.key)) {
                                         continue;
                                     }
