@@ -114,14 +114,14 @@ impl Checker {
             let id = self.module_graph.load_all(&entry);
 
             let end = Instant::now();
-            info!("Loading of `{}` and dependencies took {:?}", entry, end - start);
+            log::debug!("Loading of `{}` and dependencies took {:?}", entry, end - start);
 
             let start = Instant::now();
 
             self.analyze_module(None, entry.clone());
 
             let end = Instant::now();
-            info!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
+            log::debug!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
 
             id.unwrap_or_else(|(id, _)| id)
         })
