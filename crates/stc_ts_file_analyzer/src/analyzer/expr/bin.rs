@@ -613,6 +613,22 @@ impl Analyzer<'_, '_> {
             op!("<=") | op!("<") | op!(">=") | op!(">") => {
                 no_unknown!();
 
+                if let Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                }) = rt
+                {
+                    return Err(Error::UndefinedInRelativeComparison { span: rt.span() });
+                }
+
+                if let Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                }) = lt
+                {
+                    return Err(Error::UndefinedInRelativeComparison { span: lt.span() });
+                }
+
                 let mut check_for_invalid_operand = |ty: &Type| {
                     let res: VResult<_> = try {
                         self.deny_null_or_undefined(ty.span(), ty)?;
