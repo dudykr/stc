@@ -201,8 +201,10 @@ where
     fn load_including_deps(&self, path: &Arc<FileName>, resolve_all: bool) {
         let id = self.id_generator.generate(path);
 
-        if self.started.remove(&id).is_none() {
-            return;
+        if resolve_all {
+            if self.started.remove(&id).is_none() {
+                return;
+            }
         }
 
         let loaded = self.load(path, resolve_all);
@@ -290,7 +292,9 @@ where
 
         let module = self.load_one_module(filename)?;
 
-        self.started.insert(module_id, module.clone());
+        if !resolve_all {
+            self.started.insert(module_id, module.clone());
+        }
 
         let _panic = panic_ctx!(format!("ModuleGraph.load({}, span = {:?})", filename, module.span));
 
