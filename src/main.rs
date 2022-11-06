@@ -17,14 +17,14 @@ use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::TsConfig;
 use tracing_subscriber::EnvFilter;
 
-use crate::check::IterateCommand;
+use crate::check::TestCommand;
 
 mod check;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "stc", about = "Super fast type checker for typescript", author, rename_all = "camel")]
 enum Command {
-    Iterate(IterateCommand),
+    Test(TestCommand),
 }
 
 fn main() -> Result<(), Error> {
@@ -59,7 +59,7 @@ fn main() -> Result<(), Error> {
     }
 
     match command {
-        Command::Iterate(cmd) => {
+        Command::Test(cmd) => {
             let libs = {
                 let start = Instant::now();
 
@@ -103,7 +103,7 @@ fn main() -> Result<(), Error> {
             let mut errors = vec![];
 
             let start = Instant::now();
-            for _ in 0..1000 {
+            {
                 let mut checker = Checker::new(
                     cm.clone(),
                     handler.clone(),

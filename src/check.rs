@@ -1,9 +1,10 @@
 use structopt::StructOpt;
 
-/// Iterate 1000 times to profile.
+/// Perform type checking, but this command is not public api and is only used
+/// for testing.
 #[derive(Debug, StructOpt)]
 #[structopt(rename_all = "camel-case")]
-pub struct IterateCommand {
+pub struct TestCommand {
     #[structopt(name = "file")]
     pub file: String,
 
