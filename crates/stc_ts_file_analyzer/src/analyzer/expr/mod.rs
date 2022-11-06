@@ -2026,7 +2026,7 @@ impl Analyzer<'_, '_> {
                 });
             }
 
-            Type::TypeLit(TypeLit { ref members, .. }) => {
+            Type::TypeLit(TypeLit { ref members, metadata, .. }) => {
                 if let Some(v) = self.access_property_of_type_elements(span, &obj, prop, type_mode, members, opts)? {
                     return Ok(v);
                 }
@@ -2069,7 +2069,13 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                dbg!();
+                if metadata.inexact {
+                    return Ok(Type::Keyword(KeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        metadata: Default::default(),
+                    }));
+                }
 
                 return Err(Error::NoSuchProperty {
                     span,
