@@ -868,7 +868,6 @@ impl Analyzer<'_, '_> {
         rhs: &[TypeElement],
     ) -> VResult<()> {
         let span = opts.span;
-        opts.is_params_of_method_definition = false;
 
         let mut errors = vec![];
 
