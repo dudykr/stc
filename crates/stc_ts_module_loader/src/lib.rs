@@ -201,6 +201,10 @@ where
     fn load_including_deps(&self, path: &Arc<FileName>, resolve_all: bool) {
         let id = self.id_generator.generate(path);
 
+        if self.started.remove(&id).is_none() {
+            return;
+        }
+
         let loaded = self.load(path, resolve_all);
         let loaded = match loaded {
             Ok(v) => v,
@@ -232,6 +236,7 @@ where
                 let id = self.id_generator.generate(&dep_path);
 
                 self.load_including_deps(&dep_path, resolve_all);
+
                 id
             })
             .collect::<Vec<_>>();
