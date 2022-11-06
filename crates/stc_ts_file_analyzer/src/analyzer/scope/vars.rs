@@ -122,7 +122,7 @@ impl Analyzer<'_, '_> {
 
                 let mut ty = match (default, ty) {
                     (Some(default), Some(ty)) => {
-                        if self.extends(span, &default, &ty, Default::default()).is_some() {
+                        if let Some(true) = self.extends(span, &default, &ty, Default::default()) {
                             Some(ty)
                         } else {
                             opt_union(span, Some(ty), Some(default))
