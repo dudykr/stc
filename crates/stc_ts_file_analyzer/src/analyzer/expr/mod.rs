@@ -531,6 +531,12 @@ pub(crate) struct AccessPropertyOpts {
     pub use_undefined_for_tuple_index_error: bool,
 
     pub for_validation_of_indexed_access_type: bool,
+
+    /// If `true`, `access_property` will not return undefined for object
+    /// literal types created with a spread.
+    ///
+    /// This is true for destructuring variable declarations.
+    pub disallow_inexact: bool,
 }
 
 #[validator]
@@ -2069,7 +2075,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if metadata.inexact {
+                if opts.disallow_inexact && metadata.inexact {
                     return Ok(Type::Keyword(KeywordType {
                         span,
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
