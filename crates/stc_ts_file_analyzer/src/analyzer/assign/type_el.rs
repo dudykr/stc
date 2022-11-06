@@ -119,17 +119,21 @@ impl Analyzer<'_, '_> {
                     metadata: rhs_metadata,
                     ..
                 }) => {
+                    // Exclude duplicate properties on rhs
                     let valid_rhs_indexes = {
                         let mut v = vec![];
                         let mut used_keys: Vec<Key> = vec![];
 
                         for (index, r) in rhs_members.iter().enumerate().rev() {
-                            if let Some(key) = r.key() {
-                                if used_keys.iter().any(|prev| prev.type_eq(key)) {
-                                    continue;
-                                }
+                            match r {
+                                TypeElement::Property(p) => {
+                                    if used_keys.iter().any(|prev| prev.type_eq(&p.key)) {
+                                        continue;
+                                    }
 
-                                used_keys.push(key.clone());
+                                    used_keys.push(p.key.clone());
+                                }
+                                _ => {}
                             }
 
                             v.push(index);
