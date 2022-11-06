@@ -716,6 +716,21 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2708
+    CannotAssignToModule {
+        span: Span,
+    },
+
+    /// TS2629
+    CannotAssignToClass {
+        span: Span,
+    },
+
+    /// TS2628
+    CannotAssignToEnum {
+        span: Span,
+    },
+
     /// TS2630
     CannotAssignToFunction {
         span: Span,
@@ -884,6 +899,7 @@ pub enum Error {
         // Span of rhs
         span: Span,
         left: Span,
+        ty: Option<Box<Type>>,
     },
 
     /// TS2304
@@ -1652,6 +1668,9 @@ impl Error {
             Error::ExprInvalidForUpdateArg { .. } => 2357,
 
             Error::CannotAssignToNonVariable { .. } => 2539,
+            Error::CannotAssignToModule { .. } => 2708,
+            Error::CannotAssignToClass { .. } => 2629,
+            Error::CannotAssignToEnum { .. } => 2628,
             Error::CannotAssignToFunction { .. } => 2630,
 
             Error::AssignedWrapperToPrimitive { .. } => 2322,
