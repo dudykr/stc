@@ -103,7 +103,7 @@ fn main() -> Result<(), Error> {
             let mut errors = vec![];
 
             let start = Instant::now();
-            for _ in 0..1000 {
+            {
                 let mut checker = Checker::new(
                     cm.clone(),
                     handler.clone(),

@@ -1,6 +1,6 @@
 use structopt::StructOpt;
 
-/// Iterate 1000 times to profile.
+/// Iterate 1 times to profile.
 #[derive(Debug, StructOpt)]
 #[structopt(rename_all = "camel-case")]
 pub struct IterateCommand {
