@@ -813,24 +813,6 @@ impl Analyzer<'_, '_> {
                 Type::Union(Union { types, ..ty }).fixed()
             }
 
-            Type::Array(ty) => {
-                let elem_type = box self.instantiate_for_normalization(span, &ty.elem_type)?;
-                Type::Array(Array { elem_type, ..ty })
-            }
-
-            Type::Tuple(ty) => {
-                let elems = ty
-                    .elems
-                    .into_iter()
-                    .map(|e| -> VResult<_> {
-                        let ty = box self.instantiate_for_normalization(span, &e.ty)?;
-                        Ok(TupleElement { ty, ..e })
-                    })
-                    .collect::<Result<_, _>>()?;
-
-                Type::Tuple(Tuple { elems, ..ty })
-            }
-
             _ => ty,
         })
     }
