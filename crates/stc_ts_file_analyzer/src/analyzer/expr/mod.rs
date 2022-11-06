@@ -421,7 +421,10 @@ impl Analyzer<'_, '_> {
                                     },
                                     _ => err,
                                 },
-                                _ => err,
+                                _ => {
+                                    skip_right = false;
+                                    err
+                                }
                             }
                         })
                         .report(&mut analyzer.storage);
