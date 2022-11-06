@@ -8,5 +8,4 @@ const funcUnionTupleRest: TupleUnionFunc = (...params) => {
   return num;
 };
 
-
-export { }
+export {};

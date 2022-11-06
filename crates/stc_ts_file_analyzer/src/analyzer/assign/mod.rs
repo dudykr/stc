@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow::Cow, collections::HashMap, fmt::Debug};
 
 use stc_ts_ast_rnode::{RBool, RIdent, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
@@ -2006,18 +2006,82 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     }
                 }
-                //
+
                 match *rhs.normalize() {
                     Type::Tuple(Tuple { elems: ref rhs_elems, .. }) => {
-                        // TODO: Handle Type::Rest
-
                         if elems.len() < rhs_elems.len() {
+                            if let Some(last_element) = elems.last() {
+                                if let Type::Rest(v) = last_element.ty.normalize() {
+                                    let rest_type = v.ty.normalize();
+
+                                    match rest_type {
+                                        Type::Ref(v) => {
+                                            let ref_type =
+                                                self.expand_top_ref(v.span, std::borrow::Cow::Borrowed(rest_type), Default::default());
+
+                                            return Ok(());
+                                        } // TODO: Expand union + check properly
+                                        Type::Union(..) => return Ok(()), // TODO: Expand union + check properly
+                                        Type::Array(..) | Type::Tuple(..) => {}
+                                        _ => return Err(Error::TupleRestElementMustBeArrayType { span: last_element.span }),
+                                    }
+
+                                    let inner_type = match rest_type {
+                                        Type::Array(Array { ref elem_type, .. }) => vec![elem_type],
+                                        Type::Tuple(Tuple { ref elems, .. }) => elems.iter().map(|e| &e.ty).collect(),
+                                        _ => unreachable!(),
+                                    };
+
+                                    for (i, v) in rhs_elems.iter().skip(elems.len() - 1).enumerate() {
+                                        let inner_type = inner_type.get(i).unwrap_or(inner_type.last().unwrap()).normalize();
+
+                                        let r = self.assign_inner(data, inner_type, v.ty.normalize(), opts);
+
+                                        if let Err(err) = r {
+                                            // handle the error here
+                                        }
+                                    }
+
+                                    return Ok(());
+                                }
+                            }
+
                             return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
                         }
 
-                        // TODO: Handle Type::Rest
-
                         if elems.len() > rhs_elems.len() {
+                            if let Some(last_element) = rhs_elems.last() {
+                                if let Type::Rest(RestType { ref ty, .. }) = last_element.ty.normalize() {
+                                    let rest_type = ty.normalize();
+
+                                    println!("REST TYPE: {:?}", rest_type);
+
+                                    match rest_type {
+                                        Type::Union(..) => return Ok(()), // TODO: Expand union + check properly
+                                        Type::Array(..) | Type::Tuple(..) => {}
+                                        _ => return Err(Error::TupleRestElementMustBeArrayType { span: last_element.span }),
+                                    }
+
+                                    let inner_type = match rest_type {
+                                        Type::Array(Array { ref elem_type, .. }) => vec![elem_type],
+                                        Type::Tuple(Tuple { ref elems, .. }) => elems.iter().map(|e| &e.ty).collect(),
+                                        _ => unreachable!(),
+                                    };
+
+                                    for (i, v) in elems.iter().skip(rhs_elems.len() - 1).enumerate() {
+                                        let inner_type = inner_type.get(i).unwrap_or(inner_type.last().unwrap()).normalize();
+
+                                        let r = self.assign_inner(data, inner_type, v.ty.normalize(), opts);
+
+                                        if let Err(err) = r {
+                                            // handle the error here
+                                        }
+                                    }
+
+                                    return Ok(());
+                                }
+                            }
+
                             return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
                         }
 

@@ -201,6 +201,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2574
+    TupleRestElementMustBeArrayType {
+        span: Span,
+    },
+
     /// TS17013
     InvalidUsageOfNewTarget {
         span: Span,
