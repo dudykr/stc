@@ -119,8 +119,38 @@ impl Analyzer<'_, '_> {
                     metadata: rhs_metadata,
                     ..
                 }) => {
+                    // Exclude duplicate properties on rhs
+                    let valid_rhs_indexes = {
+                        let mut v = vec![];
+                        let mut used_keys: Vec<Key> = vec![];
+
+                        for (index, r) in rhs_members.iter().enumerate().rev() {
+                            match r {
+                                TypeElement::Property(p @ PropertySignature { optional: false, .. }) => {
+                                    if used_keys.iter().any(|prev| prev.type_eq(&p.key)) {
+                                        continue;
+                                    }
+
+                                    used_keys.push(p.key.clone());
+                                }
+                                _ => {}
+                            }
+
+                            v.push(index);
+                        }
+
+                        v
+                    };
+
+                    let rhs_members = rhs_members
+                        .into_iter()
+                        .enumerate()
+                        .filter(|(index, _)| valid_rhs_indexes.contains(index))
+                        .map(|(_, v)| v.clone())
+                        .collect::<Vec<_>>();
+
                     let allow_unknown_rhs = opts.allow_unknown_rhs || rhs_metadata.inexact;
-                    for r in rhs_members {
+                    for r in &rhs_members {
                         if !allow_unknown_rhs {
                             // optional members do not have effect.
                             match r {
@@ -139,7 +169,7 @@ impl Analyzer<'_, '_> {
                         &mut unhandled_rhs,
                         lhs,
                         lhs_metadata,
-                        rhs_members,
+                        &rhs_members,
                     )
                     .with_context(|| {
                         format!(

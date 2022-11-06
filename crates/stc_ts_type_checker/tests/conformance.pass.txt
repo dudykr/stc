@@ -2132,6 +2132,7 @@ types/spread/objectSpreadComputedProperty.ts
 types/spread/objectSpreadNoTransform.ts
 types/spread/objectSpreadRepeatedComplexity.ts
 types/spread/objectSpreadRepeatedNullCheckPerf.ts
+types/spread/objectSpreadStrictNull.ts
 types/spread/spreadContextualTypedBindingPattern.ts
 types/spread/spreadExcessProperty.ts
 types/spread/spreadNonPrimitive.ts
