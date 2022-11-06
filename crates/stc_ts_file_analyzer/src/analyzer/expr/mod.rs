@@ -405,14 +405,27 @@ impl Analyzer<'_, '_> {
                             mark_var_as_truthy = true;
                             ty
                         })
-                        .map_err(|v| {
-                            match v.actual() {
-                                Error::CannotAssignToNonVariable { .. } => {
-                                    skip_right = true;
+                        .convert_err(|err| {
+                            skip_right = true;
+                            match err.actual() {
+                                Error::CannotAssignToNonVariable { .. } => match analyzer.scope.vars.get(&i.into()) {
+                                    Some(v) if v.kind == VarKind::Fn => Error::CannotAssignToFunction { span },
+                                    _ => err,
+                                },
+                                Error::NotVariable { ty, .. } => match ty {
+                                    Some(ty) => match ty.normalize() {
+                                        Type::Module(..) => Error::CannotAssignToModule { span },
+                                        Type::ClassDef(..) => Error::CannotAssignToClass { span },
+                                        Type::Enum(..) => Error::CannotAssignToEnum { span },
+                                        _ => err,
+                                    },
+                                    _ => err,
+                                },
+                                _ => {
+                                    skip_right = false;
+                                    err
                                 }
-                                _ => {}
                             }
-                            v
                         })
                         .report(&mut analyzer.storage);
 
@@ -2891,7 +2904,11 @@ impl Analyzer<'_, '_> {
         let mut modules = vec![];
         let mut ty = self.type_of_raw_var(i, type_mode)?;
         if type_mode == TypeOfMode::LValue && (ty.is_class_def() || ty.is_enum_type()) {
-            return Err(Error::NotVariable { span, left: span });
+            return Err(Error::NotVariable {
+                span,
+                left: span,
+                ty: Some(box ty.clone()),
+            });
         }
         ty.assert_valid();
         if let Some(type_args) = type_args {
@@ -2924,7 +2941,13 @@ impl Analyzer<'_, '_> {
             if let Some(types) = self.find_type(self.ctx.module_id, &id)? {
                 for ty in types {
                     match ty.normalize() {
-                        Type::Module(..) => return Err(Error::NotVariable { span, left: span }),
+                        Type::Module(..) => {
+                            return Err(Error::NotVariable {
+                                span,
+                                left: span,
+                                ty: Some(box ty.normalize().clone()),
+                            })
+                        }
                         _ => {}
                     }
                 }
@@ -3079,7 +3102,11 @@ impl Analyzer<'_, '_> {
         match i.sym {
             js_word!("undefined") => {
                 match type_mode {
-                    TypeOfMode::LValue => self.storage.report(Error::NotVariable { span, left: span }),
+                    TypeOfMode::LValue => self.storage.report(Error::NotVariable {
+                        span,
+                        left: span,
+                        ty: None,
+                    }),
                     TypeOfMode::RValue => {}
                 }
                 return Ok(Type::undefined(span, Default::default()));
