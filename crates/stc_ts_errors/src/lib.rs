@@ -1325,7 +1325,7 @@ pub enum Error {
         span: Span,
     },
 
-    MustHaveSymbolAsycIteratorThatReturnsIterator {
+    MustHaveSymbolAsyncIteratorThatReturnsIterator {
         span: Span,
     },
 
@@ -1721,7 +1721,7 @@ impl Error {
 
             Error::MustHaveSymbolIteratorThatReturnsIterator { .. } => 2488,
 
-            Error::MustHaveSymbolAsycIteratorThatReturnsIterator { .. } => 2504,
+            Error::MustHaveSymbolAsyncIteratorThatReturnsIterator { .. } => 2504,
 
             Error::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { .. } => 2548,
 
