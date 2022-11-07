@@ -479,7 +479,7 @@ impl Analyzer<'_, '_> {
             .get_iterator_element_type(span, ty, true, Default::default())
             .context("tried to get element of iterator as a fallback logic for async iterator")
             .convert_err(|err| match err {
-                Error::MustHaveSymbolIteratorThatReturnsIterator { span } => Error::MustHaveSymbolAsycIteratorThatReturnsIterator { span },
+                Error::MustHaveSymbolIteratorThatReturnsIterator { span } => Error::MustHaveSymbolAsyncIteratorThatReturnsIterator { span },
                 _ => err,
             })?;
 

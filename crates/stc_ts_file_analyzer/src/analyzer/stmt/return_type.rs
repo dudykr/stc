@@ -450,10 +450,15 @@ impl Analyzer<'_, '_> {
             .freezed();
 
             if let Some(declared) = self.scope.declared_return_type().cloned() {
-                match self
-                    .get_iterator_element_type(span, Cow::Owned(declared), true, Default::default())
-                    .map(Cow::into_owned)
-                    .map(Freeze::freezed)
+                match if self.ctx.in_async {
+                    self.get_async_iterator_element_type(e.span, Cow::Owned(declared))
+                        .context("tried to get an element type from an async iterator for normal yield")
+                } else {
+                    self.get_iterator_element_type(e.span, Cow::Owned(declared), true, GetIteratorOpts { ..Default::default() })
+                        .context("tried to get an element type from an iterator for normal yield")
+                }
+                .map(Cow::into_owned)
+                .map(Freeze::freezed)
                 {
                     Ok(declared) => {
                         match self.assign_with_opts(
