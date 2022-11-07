@@ -119,6 +119,8 @@ impl Analyzer<'_, '_> {
                     metadata: rhs_metadata,
                     ..
                 }) => {
+                    let allow_unknown_rhs = opts.allow_unknown_rhs || rhs_metadata.inexact;
+
                     // Exclude duplicate properties on rhs
                     let valid_rhs_indexes = {
                         let mut v = vec![];
@@ -149,15 +151,25 @@ impl Analyzer<'_, '_> {
                         .map(|(_, v)| v.clone())
                         .collect::<Vec<_>>();
 
-                    let allow_unknown_rhs = opts.allow_unknown_rhs || rhs_metadata.inexact;
-                    for r in &rhs_members {
-                        if !allow_unknown_rhs {
+                    if !allow_unknown_rhs {
+                        let mut done = vec![];
+
+                        for r in &rhs_members {
                             // optional members do not have effect.
                             match r {
                                 TypeElement::Property(PropertySignature { optional: true, .. })
                                 | TypeElement::Method(MethodSignature { optional: true, .. }) => continue,
                                 _ => {}
                             }
+
+                            if let Some(key) = r.key() {
+                                if done.iter().any(|prev: &Key| prev.type_eq(key)) {
+                                    continue;
+                                }
+
+                                done.push(key.clone());
+                            }
+
                             unhandled_rhs.push(r.span());
                         }
                     }
