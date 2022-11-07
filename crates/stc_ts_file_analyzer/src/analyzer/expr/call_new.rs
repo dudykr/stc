@@ -2599,7 +2599,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            self.validate_arg_types(&expanded_param_types, &spread_arg_types);
+            self.validate_arg_types(&expanded_param_types, &spread_arg_types, true);
 
             if self.ctx.is_instantiating_class {
                 for tp in type_params.iter() {
@@ -2669,7 +2669,7 @@ impl Analyzer<'_, '_> {
             return Ok(ty);
         }
 
-        self.validate_arg_types(&params, &spread_arg_types);
+        self.validate_arg_types(&params, &spread_arg_types, type_params.is_some());
 
         print_type("Return", &self.cm, &ret_ty);
 
@@ -2688,8 +2688,17 @@ impl Analyzer<'_, '_> {
         return Ok(ret_ty);
     }
 
-    fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread]) {
+    fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread], is_generic: bool) {
         info!("[exprs] Validating arguments");
+
+        macro_rules! report_err {
+            ($err:expr) => {{
+                self.storage.report($err);
+                if is_generic {
+                    return;
+                }
+            }};
+        };
 
         let marks = self.marks();
 
@@ -2717,7 +2726,7 @@ impl Analyzer<'_, '_> {
             if arg.spread.is_some() {
                 if let Some(rest_idx) = rest_idx {
                     if idx < rest_idx {
-                        self.storage.report(Error::ExpectedAtLeastNArgsButGotMOrMore {
+                        report_err!(Error::ExpectedAtLeastNArgsButGotMOrMore {
                             span: arg.span(),
                             min: rest_idx - 1,
                         })
@@ -2752,7 +2761,7 @@ impl Analyzer<'_, '_> {
                             let param_ty = match param_ty {
                                 Ok(v) => v,
                                 Err(err) => {
-                                    self.storage.report(err);
+                                    report_err!(err);
                                     continue;
                                 }
                             }
@@ -2784,7 +2793,13 @@ impl Analyzer<'_, '_> {
                                             })
                                             .context("tried to assign to first element of a tuple type of a parameter");
 
-                                        res.report(&mut self.storage);
+                                        match res {
+                                            Ok(_) => {}
+                                            Err(err) => {
+                                                report_err!(err);
+                                                continue;
+                                            }
+                                        };
 
                                         for param_elem in param_ty.elems.iter().skip(1) {
                                             let arg = match args_iter.next() {
@@ -2816,7 +2831,13 @@ impl Analyzer<'_, '_> {
                                                 })
                                                 .context("tried to assign to element of a tuple type of a parameter");
 
-                                            res.report(&mut self.storage);
+                                            match res {
+                                                Ok(_) => {}
+                                                Err(err) => {
+                                                    report_err!(err);
+                                                    continue;
+                                                }
+                                            };
                                         }
 
                                         // Skip default type checking logic.
@@ -2857,7 +2878,7 @@ impl Analyzer<'_, '_> {
                                         }
                                         .context("tried assigning elem type of an array because parameter is declared as a rest pattern")
                                     });
-                                    self.storage.report(err);
+                                    report_err!(err);
                                     continue;
                                 }
                                 _ => {
@@ -2906,7 +2927,7 @@ impl Analyzer<'_, '_> {
                             })
                             .context("arg is spread");
                         if let Err(err) = res {
-                            self.storage.report(err)
+                            report_err!(err);
                         }
                     } else {
                         let allow_unknown_rhs = arg.ty.metadata().resolved_from_var
@@ -2955,7 +2976,7 @@ impl Analyzer<'_, '_> {
                                 }
                                 .context("tried basical argument assignment")
                             });
-                            self.storage.report(err);
+                            report_err!(err);
                         }
                     }
                 }
