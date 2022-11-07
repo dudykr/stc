@@ -2,8 +2,6 @@
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(test)]
-// Disabled because .d.ts is currently broken
-#![cfg(disabled)]
 
 extern crate test;
 
@@ -40,8 +38,12 @@ use swc_ecma_utils::drop_span;
 use swc_ecma_visit::{Fold, FoldWith};
 use testing::{assert_eq, NormalizedOutput, StdErr};
 
-#[testing_macros::fixture("fixture/**/*.ts", exclude(".*.d\\.ts"))]
+#[testing_macros::fixture("tests/fixture/**/*.ts", exclude(".*.d\\.ts"))]
 fn fixture(input: PathBuf) {
+    // Disabled as .d.ts generation is currently broken
+    if true {
+        return;
+    }
     do_test(&input).unwrap();
 }
 

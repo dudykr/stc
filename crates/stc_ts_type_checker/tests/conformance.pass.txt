@@ -2038,6 +2038,7 @@ types/members/objectTypeWithStringNamedNumericProperty.ts
 types/members/objectTypeWithStringNamedPropertyOfIllegalCharacters.ts
 types/members/typesWithOptionalProperty.ts
 types/members/typesWithPublicConstructor.ts
+types/members/typesWithSpecializedCallSignatures.ts
 types/members/typesWithSpecializedConstructSignatures.ts
 types/namedTypes/classWithOnlyPublicMembersEquivalentToInterface.ts
 types/namedTypes/classWithOnlyPublicMembersEquivalentToInterface2.ts
@@ -2202,6 +2203,7 @@ types/tuple/castingTuple.ts
 types/tuple/contextualTypeWithTuple.ts
 types/tuple/emptyTuples/emptyTuplesTypeAssertion01.ts
 types/tuple/emptyTuples/emptyTuplesTypeAssertion02.ts
+types/tuple/indexerWithTuple.ts
 types/tuple/strictTupleLength.ts
 types/tuple/tupleElementTypes1.ts
 types/tuple/tupleElementTypes2.ts

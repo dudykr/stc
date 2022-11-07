@@ -1905,8 +1905,9 @@ impl Analyzer<'_, '_> {
                         self.assign_to_type_elements(data, opts, span, &lhs.members, rhs, Default::default())
                             .with_context(|| {
                                 format!(
-                                    "tried to assign a type to an interface to check if unknown rhs exists\nLHS: {}",
-                                    dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
+                                    "tried to assign a type to an interface to check if unknown rhs exists\nLHS: {}\nRHS: {}",
+                                    dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned())),
+                                    dump_type_as_string(&self.cm, rhs)
                                 )
                             })?;
                     }
