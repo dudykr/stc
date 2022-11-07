@@ -920,8 +920,15 @@ pub enum Error {
         span: Span,
     },
 
-    // TS2493
+    /// TS2493
     TupleIndexError {
+        span: Span,
+        len: u64,
+        index: i64,
+    },
+
+    /// TS2514
+    NegativeTupleIndex {
         span: Span,
         len: u64,
         index: i64,
@@ -1646,6 +1653,7 @@ impl Error {
             Error::ComputedMemberInEnumWithStrMember { .. } => 2553,
 
             Error::TupleIndexError { .. } => 2493,
+            Error::NegativeTupleIndex { .. } => 2514,
             Error::InvalidLValue { .. } => 2540,
 
             Error::TS2378 { .. } => 2378,
