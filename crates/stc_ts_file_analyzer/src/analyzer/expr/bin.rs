@@ -613,17 +613,31 @@ impl Analyzer<'_, '_> {
             op!("<=") | op!("<") | op!(">=") | op!(">") => {
                 no_unknown!();
 
-                let mut check_for_invalid_operand = |ty: &Type| {
-                    let res: VResult<_> = try {
-                        self.deny_null_or_undefined(ty.span(), ty)?;
+                if let Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                }) = rt
+                {
+                    self.storage.report(Error::UndefinedInRelativeComparison { span: rt.span() });
+                } else if let Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                }) = lt
+                {
+                    self.storage.report(Error::UndefinedInRelativeComparison { span: lt.span() });
+                } else {
+                    let mut check_for_invalid_operand = |ty: &Type| {
+                        let res: VResult<_> = try {
+                            self.deny_null_or_undefined(ty.span(), ty)?;
+                        };
+                        res.report(&mut self.storage);
                     };
-                    res.report(&mut self.storage);
-                };
 
-                check_for_invalid_operand(&lt);
-                check_for_invalid_operand(&rt);
+                    check_for_invalid_operand(&lt);
+                    check_for_invalid_operand(&rt);
 
-                self.validate_relative_comparison_operands(span, op, &lt, &rt);
+                    self.validate_relative_comparison_operands(span, op, &lt, &rt);
+                }
 
                 return Ok(Type::Keyword(KeywordType {
                     span,

@@ -392,6 +392,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS18050
+    UndefinedInRelativeComparison {
+        span: Span,
+    },
+
     /// TS2333
     ThisInConstructorParam {
         span: Span,
@@ -1804,6 +1809,8 @@ impl Error {
             Error::ConstructorIsKeyword { .. } => 18012,
 
             Error::PrivateIdUsedAsMethodName { .. } => 18022,
+
+            Error::UndefinedInRelativeComparison { .. } => 18050,
 
             Error::CannotDeletePrivateProperty { .. } => 18011,
 
