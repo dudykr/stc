@@ -2430,17 +2430,8 @@ impl Analyzer<'_, '_> {
                         return Ok(Type::any(span, Default::default()));
                     }
 
-                    if this.is_this() {
+                    if this.normalize_instance().is_this() {
                         unreachable!("this() should not be `this`")
-                    }
-
-                    match this.normalize() {
-                        Type::Instance(ty) => {
-                            if ty.ty.is_this() {
-                                unreachable!("this() should not be `this`")
-                            }
-                        }
-                        _ => {}
                     }
 
                     return self.access_property(span, &this, prop, type_mode, id_ctx, opts);
