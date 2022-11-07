@@ -618,28 +618,26 @@ impl Analyzer<'_, '_> {
                     ..
                 }) = rt
                 {
-                    return Err(Error::UndefinedInRelativeComparison { span: rt.span() });
-                }
-
-                if let Type::Keyword(KeywordType {
+                    self.storage.report(Error::UndefinedInRelativeComparison { span: rt.span() });
+                } else if let Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 }) = lt
                 {
-                    return Err(Error::UndefinedInRelativeComparison { span: lt.span() });
-                }
-
-                let mut check_for_invalid_operand = |ty: &Type| {
-                    let res: VResult<_> = try {
-                        self.deny_null_or_undefined(ty.span(), ty)?;
+                    self.storage.report(Error::UndefinedInRelativeComparison { span: lt.span() });
+                } else {
+                    let mut check_for_invalid_operand = |ty: &Type| {
+                        let res: VResult<_> = try {
+                            self.deny_null_or_undefined(ty.span(), ty)?;
+                        };
+                        res.report(&mut self.storage);
                     };
-                    res.report(&mut self.storage);
-                };
 
-                check_for_invalid_operand(&lt);
-                check_for_invalid_operand(&rt);
+                    check_for_invalid_operand(&lt);
+                    check_for_invalid_operand(&rt);
 
-                self.validate_relative_comparison_operands(span, op, &lt, &rt);
+                    self.validate_relative_comparison_operands(span, op, &lt, &rt);
+                }
 
                 return Ok(Type::Keyword(KeywordType {
                     span,
