@@ -1850,3 +1850,10 @@ pub(crate) fn left(t: &RTsEntityName) -> &RIdent {
         RTsEntityName::Ident(i) => i,
     }
 }
+
+pub(crate) fn left_of_expr(t: &RExpr) -> &RIdent {
+    match t {
+        RExpr::Member(t) => left_of_expr(&t.obj),
+        RExpr::Ident(i) => i,
+    }
+}

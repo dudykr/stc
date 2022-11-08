@@ -5,8 +5,9 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RBindingIdent, RCallExpr, RCallee, RExpr, RExprOrSpread, RIdent, RInvalid, RLit, RMemberExpr, RNewExpr, RObjectPat, RPat,
-    RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
+    RArrayPat, RBindingIdent, RCallExpr, RCallee, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid, RLit, RMemberExpr,
+    RMemberProp, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType,
+    RTsTypeParamInstantiation, RTsTypeRef,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
@@ -24,7 +25,7 @@ use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::TsKeywordTypeKind;
+use swc_ecma_ast::{ComputedPropName, TsKeywordTypeKind};
 use tracing::{debug, info, warn};
 use ty::TypeExt;
 
@@ -319,8 +320,11 @@ impl Analyzer<'_, '_> {
 
             // Use general callee validation.
             RExpr::Member(RMemberExpr {
-                prop: box RExpr::Lit(RLit::Num(..)),
-                computed: true,
+                prop:
+                    RMemberProp::Computed(RComputedPropName {
+                        expr: box RExpr::Lit(RLit::Num(..)),
+                        ..
+                    }),
                 ..
             }) => {}
 
