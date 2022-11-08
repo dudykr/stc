@@ -2899,6 +2899,9 @@ impl Analyzer<'_, '_> {
             if ty.is_enum_type() {
                 return Err(Error::CannotAssignToEnum { span });
             }
+            if ty.is_class_def() {
+                return Err(Error::CannotAssignToClass { span });
+            }
 
             return Err(Error::NotVariable {
                 span,
