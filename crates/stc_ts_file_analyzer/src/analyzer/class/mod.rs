@@ -1625,7 +1625,7 @@ impl Analyzer<'_, '_> {
                                 });
 
                                 if has_class_in_super {
-                                    child.prepend_stmts.push(RStmt::Decl(RDecl::Var(RVarDecl {
+                                    child.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
                                         node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
                                         kind: VarDeclKind::Const,
@@ -1635,7 +1635,7 @@ impl Analyzer<'_, '_> {
                                             span: i.span,
                                             name: RPat::Ident(RBindingIdent {
                                                 node_id: NodeId::invalid(),
-                                                type_ann: Some(RTsTypeAnn {
+                                                type_ann: Some(box RTsTypeAnn {
                                                     node_id: NodeId::invalid(),
                                                     span: DUMMY_SP,
                                                     type_ann: box super_ty.into(),
@@ -1647,7 +1647,7 @@ impl Analyzer<'_, '_> {
                                         }],
                                     })));
                                 } else {
-                                    child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(RTsTypeAliasDecl {
+                                    child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(box RTsTypeAliasDecl {
                                         node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
                                         declare: false,

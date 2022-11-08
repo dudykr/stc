@@ -298,20 +298,17 @@ impl Evaluator<'_> {
             (RTsLit::Str(l), RTsLit::Str(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
-                has_escape: l.has_escape || r.has_escape,
-                kind: Default::default(),
+                raw: None,
             }),
             (RTsLit::Number(l), RTsLit::Str(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
-                has_escape: r.has_escape,
-                kind: Default::default(),
+                raw: None,
             }),
             (RTsLit::Str(l), RTsLit::Number(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
-                has_escape: l.has_escape,
-                kind: Default::default(),
+                raw: None,
             }),
             _ => Err(Error::InvalidEnumInit { span })?,
         })

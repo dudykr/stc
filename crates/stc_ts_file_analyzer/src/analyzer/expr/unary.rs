@@ -123,7 +123,6 @@ impl Analyzer<'_, '_> {
                                 lit: RTsLit::Number(RNumber {
                                     span,
                                     value: if *op == op!(unary, "-") { -(*value) } else { *value },
-                                    value: if *op == op!(unary, "-") { -(*value) } else { *value },
                                     raw: None,
                                 }),
                                 metadata: Default::default(),
