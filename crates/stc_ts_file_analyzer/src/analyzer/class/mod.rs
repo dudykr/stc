@@ -59,7 +59,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         readonly: bool,
         is_static: bool,
-        type_ann: &Option<RTsTypeAnn>,
+        type_ann: &Option<Box<RTsTypeAnn>>,
         value: &Option<Box<RExpr>>,
     ) -> VResult<Option<Type>> {
         let mut ty = try_opt!(type_ann.validate_with(self));
@@ -228,7 +228,7 @@ impl Analyzer<'_, '_> {
             value,
             is_static: p.is_static,
             accessibility: p.accessibility,
-            is_abstract: p.is_abstract,
+            is_abstract: false,
             is_optional: p.is_optional,
             readonly: p.readonly,
             definite: p.definite,
@@ -819,7 +819,7 @@ impl Analyzer<'_, '_> {
                 RClassMember::Method(
                     m @ RClassMethod {
                         kind: MethodKind::Method,
-                        function: RFunction { body: Some(..), .. },
+                        function: box RFunction { body: Some(..), .. },
                         ..
                     },
                 ) => {
@@ -827,7 +827,7 @@ impl Analyzer<'_, '_> {
                 }
                 RClassMember::PrivateMethod(
                     m @ RPrivateMethod {
-                        function: RFunction { body: Some(..), .. },
+                        function: box RFunction { body: Some(..), .. },
                         ..
                     },
                 ) => {
