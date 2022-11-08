@@ -3635,33 +3635,28 @@ impl Analyzer<'_, '_> {
         } else {
             if self.ctx.in_cond && self.ctx.should_store_truthy_for_access {
                 // Add type facts.
-                match obj {
-                    RExprOrSuper::Expr(obj) => {
-                        if let Some(name) = extract_name_for_assignment(obj, false) {
-                            let next_ty = self
-                                .filter_types_with_property(
-                                    &obj_ty,
-                                    match &prop {
-                                        Key::Normal { sym, .. } => sym,
-                                        _ => unreachable!(),
-                                    },
-                                    Some(TypeFacts::Truthy),
-                                )
-                                .report(&mut self.storage)
-                                .map(|ty| ty.cheap());
-                            if let Some(next_ty) = next_ty {
-                                self.cur_facts
-                                    .false_facts
-                                    .excludes
-                                    .entry(name.clone())
-                                    .or_default()
-                                    .push(next_ty.clone());
+                if let Some(name) = extract_name_for_assignment(obj, false) {
+                    let next_ty = self
+                        .filter_types_with_property(
+                            &obj_ty,
+                            match &prop {
+                                Key::Normal { sym, .. } => sym,
+                                _ => unreachable!(),
+                            },
+                            Some(TypeFacts::Truthy),
+                        )
+                        .report(&mut self.storage)
+                        .map(|ty| ty.cheap());
+                    if let Some(next_ty) = next_ty {
+                        self.cur_facts
+                            .false_facts
+                            .excludes
+                            .entry(name.clone())
+                            .or_default()
+                            .push(next_ty.clone());
 
-                                self.add_deep_type_fact(span, name, next_ty, true);
-                            }
-                        }
+                        self.add_deep_type_fact(span, name, next_ty, true);
                     }
-                    _ => {}
                 }
             }
 
