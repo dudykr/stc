@@ -1243,9 +1243,9 @@ impl Analyzer<'_, '_> {
         let mut errors = Errors::default();
         let is_symbol_access = match *key {
             RExpr::Member(RMemberExpr {
-                obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent {
+                obj: box RExpr::Ident(RIdent {
                     sym: js_word!("Symbol"), ..
-                })),
+                }),
                 ..
             }) => true,
             _ => false,
@@ -2269,7 +2269,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Instantate fully
-    pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> VResult {
+    pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         Ok(match ty.normalize() {

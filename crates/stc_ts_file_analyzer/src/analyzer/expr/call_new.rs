@@ -71,7 +71,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RCallExpr, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RCallExpr, type_ann: Option<&Type>) -> VResult<Type> {
         self.record(e);
 
         let RCallExpr {
