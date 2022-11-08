@@ -23,7 +23,7 @@ use swc_common::{errors::Handler, FileName, SourceMap, Spanned, DUMMY_SP};
 use swc_ecma_ast::Module;
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::TsConfig;
-use swc_ecma_transforms::resolver;
+use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use tracing::{info, warn};
 
@@ -115,7 +115,6 @@ impl Checker {
 
             let end = Instant::now();
             log::debug!("Loading of `{}` and dependencies took {:?}", entry, end - start);
-            info!("Loading of `{}` and dependencies took {:?}", entry, end - start);
 
             let start = Instant::now();
 
@@ -123,7 +122,6 @@ impl Checker {
 
             let end = Instant::now();
             log::debug!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
-            info!("Analysis of `{}` and dependencies took {:?}", entry, end - start);
 
             id.unwrap_or_else(|(id, _)| id)
         })
@@ -190,11 +188,6 @@ impl Checker {
                                 RModule::from_orig(
                                     &mut node_id_gen,
                                     module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark())),
-                                    module.fold_with(&mut resolver(
-                                        self.env.shared().marks().unresolved_mark(),
-                                        self.env.shared().marks().top_level_mark(),
-                                        true,
-                                    )),
                                 )
                             })
                             .collect::<Vec<_>>();
@@ -241,7 +234,8 @@ impl Checker {
                                     name: RTsModuleName::Str(RStr {
                                         span: DUMMY_SP,
                                         value: format!("{:?}", module_id).into(),
-                                        raw: None,
+                                        has_escape: false,
+                                        kind: Default::default(),
                                     }),
                                     exports: box data,
                                     metadata: Default::default(),
@@ -311,14 +305,6 @@ impl Checker {
                 .clone_module(id)
                 .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", id, path));
             module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
-            let mut module = self.module_graph.clone_module(id).unwrap_or_else(|| {
-                unreachable!("Module graph does not contains {:?}: {}", id, path)
-            });
-            module = module.fold_with(&mut resolver(
-                self.env.shared().marks().unresolved_mark(),
-                self.env.shared().marks().top_level_mark(),
-                true,
-            ));
 
             let _panic = panic_ctx!(format!("Span of module = ({:?})", module.span));
 
@@ -372,7 +358,8 @@ impl Checker {
                 name: RTsModuleName::Str(RStr {
                     span: DUMMY_SP,
                     value: format!("{:?}", id).into(),
-                    raw: None,
+                    has_escape: false,
+                    kind: Default::default(),
                 }),
                 exports: box storage.info.exports,
                 metadata: Default::default(),
@@ -406,13 +393,6 @@ impl Load for Checker {
     }
 
     fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, _partial: &ModuleTypeData) -> VResult {
-    fn load_circular_dep(
-        &self,
-        base: ModuleId,
-        dep: ModuleId,
-        _partial: &ModuleTypeData,
-    ) -> VResult<Type> {
-    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, _partial: &ModuleTypeData) -> VResult<Type> {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 
@@ -421,7 +401,7 @@ impl Load for Checker {
         return Ok(data);
     }
 
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult<Type> {
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 

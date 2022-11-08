@@ -140,7 +140,6 @@ pub trait BuiltInGen: Sized {
                                                 .type_params
                                                 .validate_with(analyzer)
                                                 .map(|opt| box opt.expect("builtin: failed to parse type params of a class")),
-                                                .map(|opt| box opt.expect("builtin: failed to parse type parmas of a class")),
                                             implements: c.class.implements.validate_with(analyzer).map(Box::new).unwrap(),
                                             metadata: Default::default(),
                                         }))
