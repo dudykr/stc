@@ -3354,7 +3354,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ctxt: ModuleId,
-        n: &RTsEntityName,
+        n: &RExpr,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<Type> {
         self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
@@ -3365,7 +3365,7 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ctxt: ModuleId,
-        n: &RTsEntityName,
+        n: &RExpr,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
