@@ -5,16 +5,8 @@ use std::{
 };
 
 use stc_ts_ast_rnode::{
-    RBinExpr, RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit,
-    RUnaryExpr,
-    RBinExpr, RExpr, RIdent, RLit, RMemberExpr, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
-    RTsEntityName, RTsLit, RUnaryExpr,
-    RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainExpr,
-    RPat, RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
-    RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase,
-    ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
-    RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
-    RTsEntityName, RTsLit, RUnaryExpr,
+    RBinExpr, RComputedPropName, RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat,
+    RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -665,9 +657,7 @@ impl Analyzer<'_, '_> {
                     let left = match &**left {
                         RExpr::Lit(RLit::Str(s)) => Some(s.value.clone()),
                         RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| v.value),
-                        RExpr::Tpl(t) if t.quasis.len() == 1 => {
-                            t.quasis[0].cooked.clone().map(|v| (&*v).into())
-                        }
+                        RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| (&*v).into()),
                         RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| (&*v).into()),
                         _ => None,
                     };

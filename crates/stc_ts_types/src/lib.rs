@@ -2,7 +2,6 @@
 //!
 //! The visitor is too slow to compile every time I make change.
 #![deny(deprecated)]
-#![deny(unused)]
 #![allow(incomplete_features)]
 #![feature(box_syntax)]
 #![feature(box_patterns)]

@@ -185,7 +185,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn get_element_type_of_for_in(&mut self, rhs: &Type) -> VResult<Type> {
+    fn get_element_type_of_for_in(&mut self, rhs: &Type) -> VResult {
         let rhs = self
             .normalize(
                 None,
@@ -289,7 +289,6 @@ impl Analyzer<'_, '_> {
 
             child.ctx.allow_ref_declaring = match left {
                 RVarDeclOrPat::VarDecl(RVarDecl {
-                RVarDeclOrPat::VarDecl(box RVarDecl {
                     kind: VarDeclKind::Var, ..
                 }) => true,
                 _ => false,
@@ -297,26 +296,7 @@ impl Analyzer<'_, '_> {
 
             // Type annotation on lhs of for in/of loops is invalid.
             match left {
-                RVarDeclOrPat::VarDecl(box RVarDecl { decls, .. }) => {
-                    if decls.len() >= 1 {
-                        if decls[0].name.get_ty().is_some() {
-                            match kind {
-                                ForHeadKind::In => {
-                                    child.storage.report(Error::TypeAnnOnLhsOfForInLoops { span: decls[0].span });
-                                }
-                                ForHeadKind::Of { .. } => {
-                                    child.storage.report(Error::TypeAnnOnLhsOfForOfLoops { span: decls[0].span });
-                child.ctx.allow_ref_declaring = match left {
-                    RVarDeclOrPat::VarDecl(box RVarDecl {
-                        kind: VarDeclKind::Var,
-                        ..
-                    }) => true,
-                    _ => false,
-                };
-
-            // Type annotation on lhs of for in/of loops is invalid.
-            match left {
-                RVarDeclOrPat::VarDecl(box RVarDecl { decls, .. }) => {
+                RVarDeclOrPat::VarDecl(RVarDecl { decls, .. }) => {
                     if decls.len() >= 1 {
                         if decls[0].name.get_ty().is_some() {
                             match kind {
@@ -365,7 +345,6 @@ impl Analyzer<'_, '_> {
             let mut elem_ty = match kind {
                 ForHeadKind::Of { is_awaited: false } => child
                     .get_iterator_element_type(rhs.span(), Cow::Owned(rty), false, Default::default())
-                    .get_iterator_element_type(rhs.span(), Cow::Owned(rty), false)
                     .convert_err(|err| match err {
                         Error::NotArrayType { span }
                             if match rhs {
@@ -383,7 +362,6 @@ impl Analyzer<'_, '_> {
 
                 ForHeadKind::Of { is_awaited: true } => child
                     .get_async_iterator_element_type(rhs.span(), Cow::Owned(rty))
-                    .get_async_iterator_elem_type(rhs.span(), Cow::Owned(rty))
                     .context("tried to get element type of an async iteratror")
                     .report(&mut child.storage)
                     .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default()))),

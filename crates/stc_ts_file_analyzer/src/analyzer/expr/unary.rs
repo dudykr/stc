@@ -2,12 +2,6 @@ use stc_ts_ast_rnode::{
     RBigInt, RBool, RExpr, RMemberExpr, RMemberProp, RNumber, ROptChainBase, ROptChainExpr, RParenExpr, RStr, RTsLit, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
-use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RMemberExpr, RNumber, RStr, RTsLit, RUnaryExpr};
-use stc_ts_ast_rnode::{
-    RBigInt, RBool, RExpr, RMemberExpr, RMemberProp, RNumber, RStr, RTsLit, RUnaryExpr,
-};
-use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RMemberExpr, RMemberProp, RNumber, RStr, RTsLit, RUnaryExpr};
-use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};
@@ -129,11 +123,7 @@ impl Analyzer<'_, '_> {
                                 lit: RTsLit::Number(RNumber {
                                     span,
                                     value: if *op == op!(unary, "-") { -(*value) } else { *value },
-                                    value: if *op == op!(unary, "-") {
-                                        -(*value)
-                                    } else {
-                                        *value
-                                    },
+                                    value: if *op == op!(unary, "-") { -(*value) } else { *value },
                                     raw: None,
                                 }),
                                 metadata: Default::default(),

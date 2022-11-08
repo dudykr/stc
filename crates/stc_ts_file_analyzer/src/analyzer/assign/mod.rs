@@ -6,7 +6,6 @@ use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
     LitType, Mapped, Operator, PropertySignature, Ref, RestType, ThisType, Tuple, Type, TypeElement, TypeLit, TypeParam,
-    LitType, Mapped, Operator, PropertySignature, Ref, ThisType, Tuple, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, debug_ctx, stack};
 use swc_atoms::js_word;
@@ -382,7 +381,6 @@ impl Analyzer<'_, '_> {
 
     /// Assign `right` to `left`. You can just use default for [AssignData].
     pub(crate) fn assign_with_opts(&mut self, data: &mut AssignData, mut opts: AssignOpts, left: &Type, right: &Type) -> VResult<()> {
-    pub(crate) fn assign_with_opts(&mut self, data: &mut AssignData, opts: AssignOpts, left: &Type, right: &Type) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
@@ -432,7 +430,6 @@ impl Analyzer<'_, '_> {
                 // Normalize further
                 if ty.is_ref_type() {
                     let normalized = self.normalize_for_assign(span, ty).context("failed to normalize instance type")?;
-                    let ty = self.normalize_for_assign(span, ty).context("failed to normalize instance type")?;
 
                     if normalized.is_keyword() {
                         return Ok(normalized);
@@ -494,7 +491,6 @@ impl Analyzer<'_, '_> {
     }
 
     fn assign_inner(&mut self, data: &mut AssignData, left: &Type, right: &Type, mut opts: AssignOpts) -> VResult<()> {
-    fn assign_inner(&mut self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
         left.assert_valid();
         right.assert_valid();
 
@@ -1478,7 +1474,6 @@ impl Analyzer<'_, '_> {
                             //
                             let rhs_el = self
                                 .get_iterator_element_type(span, r, false, Default::default())
-                                .get_iterator_element_type(span, r, false)
                                 .context("tried to get the element type of an iterator assignment")?;
 
                             self.assign_with_opts(
@@ -1845,7 +1840,7 @@ impl Analyzer<'_, '_> {
                 let mut errors = vec![];
                 for parent in extends {
                     let parent = self
-                        .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.clone().into(), parent.type_args.as_deref())?
+                        .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?
                         .freezed();
 
                     // An interface can extend a class.
@@ -1921,8 +1916,6 @@ impl Analyzer<'_, '_> {
                                     "tried to assign a type to an interface to check if unknown rhs exists\nLHS: {}\nRHS: {}",
                                     dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned())),
                                     dump_type_as_string(&self.cm, rhs)
-                                    "tried to assign a type to an interface to check if unknown rhs exists\nLHS: {}",
-                                    dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
                                 )
                             })?;
                     }
@@ -2219,7 +2212,6 @@ impl Analyzer<'_, '_> {
 
         match (to, rhs) {
             (Type::Tpl(l), r) => return self.assign_to_tpl(data, l, r, opts).context("tried to assign to a template type"),
-            (Type::Tpl(l), r) => return self.assign_to_tpl(l, r, opts).context("tried to assign to a template type"),
             (
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsStringKeyword,
@@ -2267,7 +2259,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[context("tried to extract keys")]
-    fn extract_keys(&mut self, span: Span, ty: &Type) -> VResult<Type> {
+    fn extract_keys(&mut self, span: Span, ty: &Type) -> VResult {
         let ty = self.normalize(
             Some(span),
             Cow::Borrowed(&ty),
@@ -2294,8 +2286,9 @@ impl Analyzer<'_, '_> {
                                 span: *span,
                                 lit: RTsLit::Str(RStr {
                                     span: *span,
+                                    has_escape: false,
+                                    kind: Default::default(),
                                     value: key.clone(),
-                                    raw: None,
                                 }),
                                 metadata: Default::default(),
                             }));

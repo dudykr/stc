@@ -593,11 +593,6 @@ impl From<super::ClassMember> for RTsTypeElement {
                     span: DUMMY_SP,
                     type_ann: box (*m.ret_ty).into(),
                 }),
-                type_ann: Some(Box::new(RTsTypeAnn {
-                    node_id: NodeId::invalid(),
-                    span: DUMMY_SP,
-                    type_ann: box (*m.ret_ty).into(),
-                })),
                 type_params: m.type_params.map(From::from).map(Box::new),
             }),
             super::ClassMember::Property(p) => RTsTypeElement::TsPropertySignature(RTsPropertySignature {

@@ -55,7 +55,6 @@ impl Analyzer<'_, '_> {
                 } else {
                     unimplemented!(
                         "Reporting errors when type parameter count and type argument count differs\nParams={:#?}\nArgs: {:#?}",
-                        "Reporting errors when type parameter count and type argument count difffers\nParams={:#?}\nArgs: {:#?}",
                         type_params,
                         type_args
                     )
@@ -107,7 +106,6 @@ impl Analyzer<'_, '_> {
     /// Returns `Some(true)` if `child` extends `parent`.
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn extends(&mut self, span: Span, child: &Type, parent: &Type, opts: ExtendsOpts) -> Option<bool> {
-    pub(crate) fn extends(&mut self, span: Span, opts: ExtendsOpts, child: &Type, parent: &Type) -> Option<bool> {
         let child = child.normalize();
         let parent = parent.normalize();
 
@@ -335,7 +333,6 @@ impl Analyzer<'_, '_> {
                         .elems
                         .iter()
                         .all(|child_element| self.extends(span, &child_element.ty, &parent_array.elem_type, opts) == Some(true))
-                        .all(|child_element| self.extends(span, opts, &child_element.ty, &parent_array.elem_type) == Some(true))
                     {
                         return Some(true);
                     }

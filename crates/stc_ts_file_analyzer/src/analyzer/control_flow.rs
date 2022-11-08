@@ -544,7 +544,7 @@ impl Analyzer<'_, '_> {
     /// Returns the type of discriminant.
     ///
     /// TODO(kdy1): Implement this.
-    fn report_errors_for_incomparable_switch_cases(&mut self, s: &RSwitchStmt) -> VResult<Type> {
+    fn report_errors_for_incomparable_switch_cases(&mut self, s: &RSwitchStmt) -> VResult {
         let discriminant_ty = s.discriminant.validate_with_default(self)?;
         for case in &s.cases {
             if let Some(test) = &case.test {
@@ -916,7 +916,6 @@ impl Analyzer<'_, '_> {
                                 // Rest element is special.
                                 let type_for_rest_arg = self
                                     .get_rest_elements(None, ty, i)
-                                    .get_lefting_elements(None, ty, i)
                                     .context("tried to get lefting elements of an iterator to assign using a rest pattern")?;
 
                                 self.try_assign_pat_with_opts(
@@ -1034,7 +1033,6 @@ impl Analyzer<'_, '_> {
                                         return Err(Error::InvalidRestPatternInOptionalChain { span: r.span });
                                     }
 
-                                RPat::Expr(_) => {
                                     self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
 
@@ -1276,7 +1274,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RCondExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
+    fn validate(&mut self, e: &RCondExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
         self.record(e);
 
         let RCondExpr {

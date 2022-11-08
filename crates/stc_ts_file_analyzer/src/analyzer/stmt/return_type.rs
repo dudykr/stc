@@ -24,7 +24,6 @@ use crate::{
         util::ResultExt,
         Analyzer, Ctx,
     },
-    analyzer::{assign::AssignOpts, expr::TypeOfMode, scope::ExpandOpts, util::ResultExt, Analyzer, Ctx},
     ty::{Array, Type, TypeExt},
     validator,
     validator::ValidateWith,
@@ -177,7 +176,6 @@ impl Analyzer<'_, '_> {
                     if let Some(declared) = self.scope.declared_return_type().cloned() {
                         // TODO(kdy1): Change this to `get_iterable_element_type`
                         if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true, Default::default()) {
-                        if let Ok(el_ty) = self.get_iterator_element_type(span, Cow::Owned(declared), true) {
                             types.push(el_ty.into_owned());
                         }
                     }
@@ -430,7 +428,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RYieldExpr) -> VResult<Type> {
+    fn validate(&mut self, e: &RYieldExpr) -> VResult {
         let span = e.span;
 
         if let Some(res) = e.arg.validate_with_default(self) {
@@ -665,7 +663,8 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                                     lit: RTsLit::Str(RStr {
                                                         span: i_span,
                                                         value: key.clone(),
-                                                        raw: None,
+                                                        has_escape: false,
+                                                        kind: Default::default(),
                                                     }),
                                                     metadata: Default::default(),
                                                 });

@@ -690,7 +690,7 @@ impl Analyzer<'_, '_> {
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> VResult<Type> {
+    pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> VResult {
         if !self.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "expand: {:#?} cannot be expanded because it has empty span", ty);
         }
@@ -720,7 +720,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> VResult<Type> {
+    pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> VResult {
         let type_params = take(&mut self.scope.type_params);
         let res = self.expand_type_params(&type_params, ty, Default::default());
         self.scope.type_params = type_params;
@@ -897,7 +897,7 @@ impl Analyzer<'_, '_> {
         self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty, default_ty)
     }
 
-    pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> VResult<Type> {
+    pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> VResult {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot resolve `typeof` with a dummy span");
         }
@@ -2369,7 +2369,7 @@ impl Expander<'_, '_, '_> {
             _ => ty.fold_children_with(self),
         };
 
-        let res: VResult<Type> = try {
+        let res: VResult = try {
             match ty.normalize() {
                 Type::Ref(r) => {
                     let ty = self.expand_ref(r.clone(), was_top_level)?;
@@ -2452,7 +2452,6 @@ impl Expander<'_, '_, '_> {
                                 .enumerate()
                                 .map(|(idx, mut element)| {
                                     if let Some(v) = self.analyzer.extends(span, &element.ty, &extends_type, Default::default()) {
-                                    if let Some(v) = self.analyzer.extends(span, Default::default(), &element.ty, &extends_type) {
                                         let ty = if v { true_type } else { false_type };
 
                                         let (unwrapped, ty) = unwrap_type(&ty);
@@ -2487,7 +2486,6 @@ impl Expander<'_, '_, '_> {
                     }
 
                     if let Some(v) = self.analyzer.extends(span, &obj_type, &extends_type, Default::default()) {
-                    if let Some(v) = self.analyzer.extends(span, Default::default(), &obj_type, &extends_type) {
                         let ty = if v { true_type } else { false_type };
                         let (_, mut ty) = unwrap_type(&**ty);
 

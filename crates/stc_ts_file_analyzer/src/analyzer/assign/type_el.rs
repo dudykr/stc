@@ -8,7 +8,6 @@ use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, ModuleId, Operator, PropertySignature, Ref,
     TplType, Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union, UnionMetadata,
-    Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, ext::SpanExt};
 use swc_atoms::js_word;

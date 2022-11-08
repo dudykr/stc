@@ -720,7 +720,6 @@ impl Load for NoopLoader {
     }
 
     fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> VResult {
-    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> VResult<Type> {
         unreachable!()
     }
 
@@ -852,7 +851,6 @@ impl Analyzer<'_, '_> {
             let ty = match node.module_ref {
                 RTsModuleRef::TsEntityName(ref e) => analyzer
                     .type_of_ts_entity_name(node.span, analyzer.ctx.module_id, e, None)
-                    .type_of_ts_entity_name(node.span, analyzer.ctx.module_id, &e.clone().into(), None)
                     .unwrap_or_else(|err| {
                         analyzer.storage.report(err);
                         Type::any(node.span, Default::default())

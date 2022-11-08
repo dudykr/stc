@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap, convert::TryFrom};
+use std::{borrow::Cow, collections::HashMap};
 
 use fxhash::FxHashMap;
 use itertools::Itertools;
@@ -13,7 +13,6 @@ use stc_ts_types::{
     ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection, Intrinsic, IntrinsicKind, Key,
     KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref,
     ThisType, ThisTypeMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
-    ThisType, ThisTypeMetadata, Tuple, TupleElement, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -103,13 +102,6 @@ impl Analyzer<'_, '_> {
         let input = dump_type_as_string(&self.cm, &ty);
 
         let res = (|| {
-            ty.assert_valid();
-
-            let actual_span = span.unwrap_or_else(|| ty.span());
-            if !self.is_builtin {
-                debug_assert!(!actual_span.is_dummy(), "Cannot normalize a type with dummy span\n{:?}", ty);
-            }
-
             let _stack = stack::track(actual_span)?;
             let _context = debug_ctx!(format!("Normalize: {}", dump_type_as_string(&self.cm, &ty)));
 
@@ -281,7 +273,6 @@ impl Analyzer<'_, '_> {
                         extends_type.make_clone_cheap();
 
                         if let Some(v) = self.extends(ty.span(), &check_type, &extends_type, Default::default()) {
-                        if let Some(v) = self.extends(ty.span(), Default::default(), &check_type, &extends_type) {
                             let ty = if v { &c.true_type } else { &c.false_type };
                             // TODO(kdy1): Optimize
                             let ty = self
@@ -322,7 +313,6 @@ impl Analyzer<'_, '_> {
                                 let mut types = vec![];
                                 for check_type in &check_type_union.types {
                                     let res = self.extends(ty.span(), &check_type, &extends_type, Default::default());
-                                    let res = self.extends(ty.span(), Default::default(), &check_type, &extends_type);
                                     if let Some(v) = res {
                                         if v {
                                             if !c.true_type.is_never() {
@@ -379,7 +369,6 @@ impl Analyzer<'_, '_> {
                                         let mut types = vec![];
                                         for check_type in &check_type_union.types {
                                             let res = self.extends(ty.span(), &check_type, &extends_type, Default::default());
-                                            let res = self.extends(ty.span(), Default::default(), &check_type, &extends_type);
                                             if let Some(v) = res {
                                                 if v {
                                                     if !c.true_type.is_never() {
@@ -639,7 +628,6 @@ impl Analyzer<'_, '_> {
                 //
                 let can_match = check_type_union.types.iter().any(|check_type_constraint| {
                     self.extends(span, check_type_constraint, extends_type, Default::default())
-                    self.extends(span, Default::default(), check_type_constraint, extends_type)
                         .unwrap_or(true)
                 });
 
@@ -650,7 +638,6 @@ impl Analyzer<'_, '_> {
             _ => {
                 //
                 if let Some(extends) = self.extends(span, &check_type_constraint, extends_type, ExtendsOpts { ..Default::default() }) {
-                if let Some(extends) = self.extends(span, ExtendsOpts { ..Default::default() }, &check_type_constraint, extends_type) {
                     if extends {
                         return Ok(Some(true_type.into_owned()));
                     } else {
@@ -1101,12 +1088,7 @@ impl Analyzer<'_, '_> {
             let mut members = vec![];
 
             for parent in &t.extends {
-                let parent = self.type_of_ts_entity_name(
-                    parent.span(),
-                    self.ctx.module_id,
-                    &parent.expr.clone().into(),
-                    parent.type_args.as_deref(),
-                )?;
+                let parent = self.type_of_ts_entity_name(parent.span(), self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
 
                 let super_els = self.convert_type_to_type_lit(span, Cow::Owned(parent))?;
 
@@ -1292,7 +1274,6 @@ impl Analyzer<'_, '_> {
                         key: Key::Num(RNumber {
                             span: e.span,
                             value: idx as f64,
-                            raw: None,
                         }),
                         optional: false,
                         params: Default::default(),
@@ -1549,7 +1530,7 @@ impl Analyzer<'_, '_> {
         v
     }
 
-    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> VResult<Type> {
+    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> VResult {
         let arg = &ty.type_args;
 
         match ty.kind {
@@ -1594,7 +1575,6 @@ impl Analyzer<'_, '_> {
                                 value: new_val.into(),
                                 has_escape: false,
                                 kind: Default::default(),
-                                raw: None,
                             }),
                             metadata: LitTypeMetadata {
                                 common: arg.params[0].metadata(),
@@ -1602,15 +1582,6 @@ impl Analyzer<'_, '_> {
                             },
                         }));
                     }
-                            value: new_val.into(),
-                            raw: None,
-                        }),
-                        metadata: LitTypeMetadata {
-                            common: arg.params[0].metadata(),
-                            ..Default::default()
-                        },
-                    }));
-                }
 
                     _ => {}
                 }
@@ -1624,7 +1595,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn report_error_for_unresolve_type(
         &mut self,
         span: Span,
-        type_name: &RExpr,
+        type_name: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<()> {
         if self.is_builtin {
@@ -1643,13 +1614,9 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
         let span = l.span.or_else(|| span);
-        let name = match Name::try_from(type_name) {
-            Ok(v) => v,
-            Err(_) => return Ok(()),
-        };
 
         match type_name {
-            RExpr::Member(_) => {
+            RTsEntityName::TsQualifiedName(_) => {
                 if let Ok(var) = self.type_of_var(&l, TypeOfMode::RValue, None) {
                     if var.is_module() {
                         return Ok(());
@@ -1658,19 +1625,18 @@ impl Analyzer<'_, '_> {
 
                 Err(Error::NamspaceNotFound {
                     span,
-                    name: box name,
+                    name: box type_name.clone().into(),
                     ctxt: self.ctx.module_id,
                     type_args: type_args.cloned().map(Box::new),
                 })
             }
-            RExpr::Ident(i) if &*i.sym == "globalThis" => return Ok(()),
-            RExpr::Ident(_) => Err(Error::TypeNotFound {
+            RTsEntityName::Ident(i) if &*i.sym == "globalThis" => return Ok(()),
+            RTsEntityName::Ident(_) => Err(Error::TypeNotFound {
                 span,
-                name: box name,
+                name: box type_name.clone().into(),
                 ctxt: self.ctx.module_id,
                 type_args: type_args.cloned().map(Box::new),
             }),
-            _ => Ok(()),
         }
     }
 
@@ -1872,10 +1838,9 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(crate) fn left(t: &RExpr) -> &RIdent {
+pub(crate) fn left(t: &RTsEntityName) -> &RIdent {
     match t {
-        RExpr::Ident(i) => i,
-        RExpr::Member(m) => left(&m.obj),
-        _ => todo!("left: {:?}", t),
+        RTsEntityName::TsQualifiedName(t) => left(&t.left),
+        RTsEntityName::Ident(i) => i,
     }
 }

@@ -166,7 +166,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline]
-    fn validate(&mut self, ann: &RTsTypeAnn) -> VResult<Type> {
+    fn validate(&mut self, ann: &RTsTypeAnn) -> VResult {
         self.record(ann);
 
         let ctx = Ctx {
@@ -263,12 +263,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &RTsInterfaceDecl) -> VResult<Type> {
-        let ty = self.with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<_> {
-            match &*d.id.sym {
-                "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
-                    child.storage.report(Error::InvalidInterfaceName { span: d.id.span });
-    fn validate(&mut self, d: &RTsInterfaceDecl) -> VResult<Type> {
+    fn validate(&mut self, d: &RTsInterfaceDecl) -> VResult {
         let ty = self.with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<_> {
             match &*d.id.sym {
                 "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
@@ -704,14 +699,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsParenthesizedType) -> VResult<Type> {
+    fn validate(&mut self, t: &RTsParenthesizedType) -> VResult {
         t.type_ann.validate_with(self)
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsTypeRef) -> VResult<Type> {
+    fn validate(&mut self, t: &RTsTypeRef) -> VResult {
         self.record(t);
 
         let span = t.span;
@@ -774,7 +769,7 @@ impl Analyzer<'_, '_> {
             }
 
             if !reported_type_not_found {
-                self.report_error_for_unresolve_type(t.span, &t.type_name.clone().into(), type_args.as_deref())
+                self.report_error_for_unresolve_type(t.span, &t.type_name, type_args.as_deref())
                     .report(&mut self.storage);
             }
         }
@@ -963,7 +958,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &RTsType) -> VResult<Type> {
+    fn validate(&mut self, ty: &RTsType) -> VResult {
         self.record(ty);
 
         let _ctx = debug_ctx!(format!("validate\nTsType: {:?}", ty));

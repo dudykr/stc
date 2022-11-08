@@ -39,10 +39,7 @@ impl Debugger {
     pub fn dump_type(&self, span: Span, ty: &Type) {
         let ty_str = self.dump(ty);
         self.handler.struct_span_warn(span, "Type").note(&ty_str).emit();
-        self.handler
-            .struct_span_err(span, "Type")
-            .note(&ty_str)
-            .emit();
+        self.handler.struct_span_err(span, "Type").note(&ty_str).emit();
         self.handler.struct_span_err(span, "Type").note(&ty_str).emit();
     }
 }

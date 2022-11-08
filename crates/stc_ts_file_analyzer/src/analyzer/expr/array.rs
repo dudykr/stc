@@ -48,7 +48,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult<Type> {
+    ) -> VResult {
         let marks = self.marks();
 
         let span = arr.span;
@@ -128,7 +128,6 @@ impl Analyzer<'_, '_> {
                         _ => {
                             let elem_type = self
                                 .get_iterator_element_type(span, Cow::Owned(element_type), false, Default::default())
-                                .get_iterator_element_type(span, Cow::Owned(element_type), false)
                                 .context("tried to calculated the element type of a iterable provided to spread")?
                                 .into_owned();
 
@@ -320,11 +319,6 @@ impl Analyzer<'_, '_> {
                         span,
                         &iterator,
                         &Key::Num(RNumber { span, value: n as _ }),
-                        &Key::Num(RNumber {
-                            span,
-                            value: n as _,
-                            raw: None,
-                        }),
                         TypeOfMode::RValue,
                         IdCtx::Var,
                         Default::default(),
@@ -411,7 +405,6 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn get_async_iterator_element_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> VResult<Cow<'a, Type>> {
-    pub(crate) fn get_async_iterator_elem_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>) -> VResult<Cow<'a, Type>> {
         let ty = self
             .normalize(Some(span), ty, Default::default())
             .context("tried to normalize type to calculate element type of an async iterator")?;
@@ -487,7 +480,6 @@ impl Analyzer<'_, '_> {
             .context("tried to get element of iterator as a fallback logic for async iterator")
             .convert_err(|err| match err {
                 Error::MustHaveSymbolIteratorThatReturnsIterator { span } => Error::MustHaveSymbolAsyncIteratorThatReturnsIterator { span },
-                Error::MustHaveSymbolIteratorThatReturnsIterator { span } => Error::MustHaveSymbolAsycIteratorThatReturnsIterator { span },
                 _ => err,
             })?;
 
@@ -546,7 +538,6 @@ impl Analyzer<'_, '_> {
         start_index: usize,
     ) -> VResult<Cow<'a, Type>> {
         let mut iterator = self.normalize(span, iterator, NormalizeTypeOpts { ..Default::default() })?;
-        let iterator = self.normalize(span, iterator, NormalizeTypeOpts { ..Default::default() })?;
 
         if iterator.is_tuple() {
             iterator.make_clone_cheap();
@@ -744,7 +735,6 @@ impl Analyzer<'_, '_> {
         try_next_value: bool,
         opts: GetIteratorOpts,
     ) -> VResult<Cow<'a, Type>> {
-    pub(crate) fn get_iterator_element_type<'a>(&mut self, span: Span, ty: Cow<'a, Type>, try_next_value: bool) -> VResult<Cow<'a, Type>> {
         let ty_str = dump_type_as_string(&self.cm, &ty);
 
         if try_next_value {
@@ -755,7 +745,6 @@ impl Analyzer<'_, '_> {
 
         let mut iterator = self
             .get_iterator(span, ty, opts)
-            .get_iterator(span, ty, Default::default())
             .with_context(|| format!("tried to get a type of an iterator to get the element type of it ({})", ty_str))?;
         iterator.make_clone_cheap();
 
@@ -802,7 +791,6 @@ impl Analyzer<'_, '_> {
                             Default::default(),
                         )
                     })
-                    .map(|iterator| self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator), try_next_value))
                     .map(|ty| ty.map(Cow::into_owned))
                     .collect::<Result<Vec<_>, _>>()?;
 
@@ -823,7 +811,6 @@ impl Analyzer<'_, '_> {
                     .map(|iterator| {
                         self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator), try_next_value, Default::default())
                     })
-                    .map(|iterator| self.get_iterator_element_type(iterator.span(), Cow::Borrowed(iterator), try_next_value))
                     .map(|ty| ty.map(Cow::into_owned))
                     .collect::<Result<Vec<_>, _>>()?;
                 types.dedup_type();

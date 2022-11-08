@@ -12,10 +12,6 @@ use stc_ts_ast_rnode::{
     RParamOrTsParamProp, RPat, RPrivateName, RPrivateProp, RPropName, RStmt, RTsEntityName, RTsEnumDecl, RTsIndexSignature,
     RTsInterfaceDecl, RTsKeywordType, RTsModuleDecl, RTsParamProp, RTsParamPropParam, RTsPropertySignature, RTsType, RTsTypeAliasDecl,
     RTsTypeAnn, RVarDecl, RVarDeclarator,
-    RFnDecl, RIdent, RImportDecl, RImportSpecifier, RMemberExpr, RModuleDecl, RModuleItem, RNamedExport, RParamOrTsParamProp, RPat,
-    RFnDecl, RIdent, RImportDecl, RImportSpecifier, RLit, RMemberExpr, RModuleDecl, RModuleItem, RNamedExport, RParamOrTsParamProp, RPat,
-    RPrivateName, RPrivateProp, RPropName, RStmt, RTsEntityName, RTsEnumDecl, RTsIndexSignature, RTsInterfaceDecl, RTsKeywordType,
-    RTsModuleDecl, RTsParamProp, RTsParamPropParam, RTsPropertySignature, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_types::{Id, ModuleTypeData};
 use stc_ts_utils::{find_ids_in_pat, MapWithMut};
@@ -216,7 +212,13 @@ impl VisitMut<RClassMember> for Dts {
                     *m = RClassMember::ClassProp(RClassProp {
                         node_id: NodeId::invalid(),
                         span: method.span,
-                        key: method.key.clone(),
+                        key: match &method.key {
+                            RPropName::Ident(i) => box RExpr::Ident(i.clone()),
+                            RPropName::Str(s) => box RExpr::Ident(RIdent::new(s.value.clone(), s.span)),
+                            RPropName::Num(n) => box RExpr::Lit(RLit::Num(n.clone())),
+                            RPropName::Computed(e) => e.expr.clone(),
+                            RPropName::BigInt(n) => box RExpr::Lit(RLit::BigInt(n.clone())),
+                        },
                         value: None,
                         type_ann: None,
                         is_static: method.is_static,
@@ -369,9 +371,6 @@ impl VisitMut<Vec<RModuleItem>> for Dts {
                     | RDecl::TsEnum(RTsEnumDecl { id: ident, .. })
                     | RDecl::TsTypeAlias(RTsTypeAliasDecl { id: ident, .. })
                     | RDecl::TsInterface(RTsInterfaceDecl { id: ident, .. }) => self.used_types.contains(&Id::from(ident)),
-                    | RDecl::TsEnum(box RTsEnumDecl { id: ident, .. })
-                    | RDecl::TsTypeAlias(box RTsTypeAliasDecl { id: ident, .. })
-                    | RDecl::TsInterface(box RTsInterfaceDecl { id: ident, .. }) => self.used_types.contains(&Id::from(ident)),
                     // Handled by `visit_mut_var_decl`
                     RDecl::Var(decl) => !decl.decls.is_empty(),
                     RDecl::TsModule(_) => true,
@@ -507,16 +506,11 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                                             node_id: NodeId::invalid(),
                                             span: Default::default(),
                                             declare: false,
-                                            key: match &p.param {
-                                                RTsParamPropParam::Ident(p) => RPropName::Ident(p.id.clone()),
+                                            key: box match &p.param {
+                                                RTsParamPropParam::Ident(p) => RExpr::Ident(p.id.clone()),
                                                 RTsParamPropParam::Assign(p) => match &p.left {
                                                     //
                                                     box RPat::Ident(i) => RExpr::Ident(i.id.clone()),
-                                            key: match &p.param {
-                                                RTsParamPropParam::Ident(p) => RPropName::Ident(p.id.clone()),
-                                                RTsParamPropParam::Assign(p) => match &p.left {
-                                                    //
-                                                    box RPat::Ident(i) => RPropName::Ident(i.id.clone()),
                                                     _ => unreachable!("binding pattern in property initializer"),
                                                 },
                                             },

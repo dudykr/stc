@@ -20,7 +20,6 @@ impl Analyzer<'_, '_> {
     /// - Handles assignment of various array types.
     /// - Handles assignment of promise types.
     pub(super) fn assign_to_builtin(&mut self, data: &mut AssignData, opts: AssignOpts, l: &Type, r: &Type) -> Option<VResult<()>> {
-    pub(super) fn assign_to_builtins(&mut self, data: &mut AssignData, opts: AssignOpts, l: &Type, r: &Type) -> Option<VResult<()>> {
         let span = opts.span;
         let l = l.normalize();
         let r = r.normalize();
@@ -100,19 +99,12 @@ impl Analyzer<'_, '_> {
                     for parent in &ri.extends {
                         match parent.expr {
                             RTsEntityName::Ident(RIdent {
-                        match *parent.expr {
-                            RExpr::Ident(RIdent {
                                 sym: js_word!("Function"), ..
                             }) => return Some(Ok(())),
                             _ => {}
                         }
 
-                        let parent = self.type_of_ts_entity_name(
-                            opts.span,
-                            self.ctx.module_id,
-                            &parent.expr.clone().into(),
-                            parent.type_args.as_deref(),
-                        );
+                        let parent = self.type_of_ts_entity_name(opts.span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref());
                         let parent = match parent {
                             Ok(ty) => ty,
                             Err(err) => return Some(Err(err)),

@@ -596,7 +596,6 @@ impl Analyzer<'_, '_> {
                         if !orig.eq_ignore_span(&constraint.as_ref().unwrap()) {
                             print_backtrace();
                             unreachable!(
-                            panic!(
                                 "Cannot override T in `T extends <literal>`\nOrig: {:?}\nConstraints: {:?}",
                                 orig, constraint
                             )
@@ -1205,8 +1204,7 @@ impl Analyzer<'_, '_> {
                 // Body should be handled by the match expression above.
 
                 for parent in &arg.extends {
-                    let parent =
-                        self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.clone().into(), parent.type_args.as_deref())?;
+                    let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
                     self.infer_type(span, inferred, &param, &parent, opts)?;
                 }
 
@@ -1480,27 +1478,12 @@ impl Analyzer<'_, '_> {
                                             value: sym.clone(),
                                             has_escape: false,
                                             kind: Default::default(),
-                                            raw: None,
                                         }),
                                         metadata: LitTypeMetadata {
                                             common: param.metadata.common,
                                             ..Default::default()
                                         },
                                     })),
-                                    Key::Normal { span: i_span, sym } => {
-                                        key_types.push(Type::Lit(LitType {
-                                            span: param.span,
-                                            lit: RTsLit::Str(RStr {
-                                                span: *i_span,
-                                                value: sym.clone(),
-                                                raw: None,
-                                            }),
-                                            metadata: LitTypeMetadata {
-                                                common: param.metadata.common,
-                                                ..Default::default()
-                                            },
-                                        }))
-                                    }
                                     Key::Num(n) => {
                                         key_types.push(Type::Lit(LitType {
                                             span: param.span,
@@ -1566,7 +1549,6 @@ impl Analyzer<'_, '_> {
                                                 .foldable()
                                                 .fold_with(&mut SingleTypeParamReplacer { name: &name, to: param_ty })
                                                 .cheap();
-                                                .fold_with(&mut SingleTypeParamReplacer { name: &name, to: param_ty });
 
                                             self.infer_type(span, inferred, &mapped_param_ty, arg_prop_ty, opts)?;
                                         }
@@ -1744,33 +1726,12 @@ impl Analyzer<'_, '_> {
                                                     value: i_sym.clone(),
                                                     has_escape: false,
                                                     kind: Default::default(),
-                                                    raw: None,
                                                 }),
                                                 metadata: LitTypeMetadata {
                                                     common: param.metadata.common,
                                                     ..Default::default()
                                                 },
                                             })),
-                                    let key_ty =
-                                        arg.members.iter().filter_map(|element| match element {
-                                            TypeElement::Property(p) => match &p.key {
-                                                Key::Normal {
-                                                    span: i_span,
-                                                    sym: i_sym,
-                                                } => Some(Type::Lit(LitType {
-                                                    span: param.span,
-                                                    lit: RTsLit::Str(RStr {
-                                                        span: *i_span,
-                                                        value: i_sym.clone(),
-                                                        raw: None,
-                                                    }),
-                                                    metadata: LitTypeMetadata {
-                                                        common: param.metadata.common,
-                                                        ..Default::default()
-                                                    },
-                                                })),
-                                                _ => None,
-                                            }, // TODO(kdy1): Handle method element
                                             _ => None,
                                         }, // TODO(kdy1): Handle method element
                                         _ => None,
@@ -2049,8 +2010,6 @@ impl Analyzer<'_, '_> {
                             Type::TypeLit(arg_lit) => {
                                 let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).cheap();
                                 print_type(&"reversed", &self.cm, &reversed_param_ty);
-                                let revesed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default());
-                                print_type(&"reversed", &self.cm, &revesed_param_ty);
 
                                 self.infer_type(span, inferred, &reversed_param_ty, arg, opts)?;
 
@@ -2208,13 +2167,6 @@ impl Analyzer<'_, '_> {
 /// Handles renaming of the type parameters.
 impl Analyzer<'_, '_> {
     pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult {
-    pub(super) fn rename_type_params(
-        &mut self,
-        span: Span,
-        mut ty: Type,
-        type_ann: Option<&Type>,
-    ) -> VResult<Type> {
-    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult<Type> {
         if self.is_builtin {
             return Ok(ty);
         }
