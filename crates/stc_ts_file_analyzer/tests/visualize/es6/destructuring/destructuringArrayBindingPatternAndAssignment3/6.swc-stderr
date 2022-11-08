@@ -1,0 +1,52 @@
+warning: Type
+ --> $DIR/tests/visualize/es6/destructuring/destructuringArrayBindingPatternAndAssignment3/6.ts:2:4
+  |
+2 | })([1])
+  |    ^^^
+  |
+  = note: [1]
+
+warning: Type
+ --> $DIR/tests/visualize/es6/destructuring/destructuringArrayBindingPatternAndAssignment3/6.ts:1:20
+  |
+1 | (function ([f, g = f, h = i, i = f]) { // error for h = i
+  |                    ^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/visualize/es6/destructuring/destructuringArrayBindingPatternAndAssignment3/6.ts:1:34
+  |
+1 | (function ([f, g = f, h = i, i = f]) { // error for h = i
+  |                                  ^
+  |
+  = note: any
+
+warning: Type
+ --> $DIR/tests/visualize/es6/destructuring/destructuringArrayBindingPatternAndAssignment3/6.ts:1:2
+  |
+1 |   (function ([f, g = f, h = i, i = f]) { // error for h = i
+  |  __^
+2 | | })([1])
+  | |_^
+  |
+  = note: ([f, g = f, h = i, i = f]: [any, any, any, any]) => void
+
+warning: Type
+ --> $DIR/tests/visualize/es6/destructuring/destructuringArrayBindingPatternAndAssignment3/6.ts:1:1
+  |
+1 | / (function ([f, g = f, h = i, i = f]) { // error for h = i
+2 | | })([1])
+  | |__^
+  |
+  = note: ([f, g = f, h = i, i = f]: [any, any, any, any]) => void
+
+warning: Type
+ --> $DIR/tests/visualize/es6/destructuring/destructuringArrayBindingPatternAndAssignment3/6.ts:1:1
+  |
+1 | / (function ([f, g = f, h = i, i = f]) { // error for h = i
+2 | | })([1])
+  | |_______^
+  |
+  = note: void
+
