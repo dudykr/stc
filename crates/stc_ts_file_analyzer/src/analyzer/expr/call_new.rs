@@ -25,7 +25,7 @@ use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::{ComputedPropName, TsKeywordTypeKind};
+use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, info, warn};
 use ty::TypeExt;
 

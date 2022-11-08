@@ -8,8 +8,8 @@ use std::{
 use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RNull, RNumber, RParenExpr, RPat, RPatOrExpr,
-    RSeqExpr, RStr, RSuper, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
+    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, RParenExpr, RPat,
+    RPatOrExpr, RSeqExpr, RStr, RSuper, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
@@ -27,7 +27,7 @@ use stc_ts_types::{
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
+use swc_ecma_ast::{op, EsVersion, MemberExpr, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
 use tracing::{debug, info, warn, Level};
 use ty::TypeExt;
 
@@ -3371,7 +3371,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match *n {
+        match &*n {
             RExpr::Ident(ref i) => {
                 if i.sym == js_word!("Array") {
                     if let Some(type_args) = type_args {
@@ -3494,8 +3494,12 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 }))
             }
-            RTsEntityName::TsQualifiedName(ref qname) => {
-                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &qname.left, None)?;
+            RExpr::Member(RMemberExpr {
+                obj,
+                prop: RMemberProp::Ident(right),
+                ..
+            }) => {
+                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &obj, None)?;
                 obj_ty.assert_valid();
 
                 let ctx = Ctx {
@@ -3518,8 +3522,8 @@ impl Analyzer<'_, '_> {
                     span,
                     &obj_ty,
                     &Key::Normal {
-                        span: qname.right.span,
-                        sym: qname.right.sym.clone(),
+                        span: right.span,
+                        sym: right.sym.clone(),
                     },
                     TypeOfMode::RValue,
                     IdCtx::Type,
