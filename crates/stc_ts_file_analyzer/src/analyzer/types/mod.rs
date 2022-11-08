@@ -676,12 +676,24 @@ impl Analyzer<'_, '_> {
         let is_num = types.iter().any(|ty| ty.is_num());
         let is_bool = types.iter().any(|ty| ty.is_bool());
         let is_enum_variant = types.iter().any(|ty| ty.is_enum_variant());
+
+        if is_enum_variant{
+            let mut enum_is_string = false;
+
+            for elem in types.iter(){
+                match self.expand_enum_variant(elem.clone()){
+                    Ok(Type::Lit(LitType { lit: RTsLit::Str(..), .. })) => { enum_is_string = true; break;}
+                    _ => {}
+                }
+            }
+            if enum_is_string && u32::from(is_num) + u32::from(is_bool) >= 1 {
+                return never!();
+            } else if u32::from(is_str) + u32::from(is_bool) >= 1 {
+                return never!();
+            }
+        }
         
         if u32::from(is_str) + u32::from(is_num) + u32::from(is_bool) >= 2 {
-            return never!();
-        }
-
-        if u32::from(is_str) + u32::from(is_enum_variant) + u32::from(is_bool) >= 2 {
             return never!();
         }
         
