@@ -278,7 +278,6 @@ pub trait EnvFactory {
     fn new(env: StableEnv, rule: Rule, target: EsVersion, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Env;
     fn simple(rule: Rule, target: EsVersion, module: ModuleConfig, libs: &[Lib]) -> Env {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);
-        static CACHE: Lazy<DashMap<Vec<Lib>, Arc<OnceCell<Arc<BuiltIn>>>, ahash::RandomState>> = Lazy::new(Default::default);
         static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>, ahash::RandomState>> = Lazy::new(Default::default);
 
         // TODO(kdy1): Include `env` in cache
