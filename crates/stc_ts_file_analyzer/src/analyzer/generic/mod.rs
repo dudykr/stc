@@ -1723,8 +1723,7 @@ impl Analyzer<'_, '_> {
                                                 lit: RTsLit::Str(RStr {
                                                     span: *i_span,
                                                     value: i_sym.clone(),
-                                                    has_escape: false,
-                                                    kind: Default::default(),
+                                                    raw: None,
                                                 }),
                                                 metadata: LitTypeMetadata {
                                                     common: param.metadata.common,

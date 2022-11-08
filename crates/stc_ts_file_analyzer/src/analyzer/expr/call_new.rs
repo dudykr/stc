@@ -324,12 +324,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {}
 
-            RExpr::Member(RMemberExpr {
-                obj: RExprOrSuper::Expr(ref obj),
-                ref prop,
-                computed,
-                ..
-            }) => {
+            RExpr::Member(RMemberExpr { ref obj, ref prop, .. }) => {
                 let prop = self.validate_key(prop, computed)?;
 
                 // Validate object
