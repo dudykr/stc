@@ -690,7 +690,7 @@ impl Analyzer<'_, '_> {
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> VResult {
+    pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> VResult<Type> {
         if !self.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "expand: {:#?} cannot be expanded because it has empty span", ty);
         }
@@ -720,7 +720,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> VResult {
+    pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> VResult<Type> {
         let type_params = take(&mut self.scope.type_params);
         let res = self.expand_type_params(&type_params, ty, Default::default());
         self.scope.type_params = type_params;
@@ -897,7 +897,7 @@ impl Analyzer<'_, '_> {
         self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty, default_ty)
     }
 
-    pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> VResult {
+    pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> VResult<Type> {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot resolve `typeof` with a dummy span");
         }

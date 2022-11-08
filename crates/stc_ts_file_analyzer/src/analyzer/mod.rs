@@ -719,11 +719,11 @@ impl Load for NoopLoader {
         unreachable!()
     }
 
-    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> VResult {
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> VResult<Type> {
         unreachable!()
     }
 
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult {
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult<Type> {
         unreachable!()
     }
 
@@ -925,7 +925,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &RTsNamespaceDecl) -> VResult {
+    fn validate(&mut self, decl: &RTsNamespaceDecl) -> VResult<Type> {
         let is_builtin = self.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;
