@@ -364,16 +364,6 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RExprOrSuper) -> VResult<Type> {
-        match e {
-            RExprOrSuper::Expr(e) => e.validate_with_default(self),
-            RExprOrSuper::Super(s) => Ok(Type::any(s.span, Default::default())),
-        }
-    }
-}
-
-#[validator]
-impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RParenExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
         e.expr.validate_with_args(self, (mode, None, type_ann))
     }
