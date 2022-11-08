@@ -39,7 +39,7 @@ You can invoke single conformance test case by using `./scripts/test.sh` from `.
 ```
 
 will run conformance tests which have `staticIndexSignature` in their test name.
-You can use filename, too and with in you can run single test.
+You can use filename, too and with it you can run single test.
 
 ### Directories for testing
 
