@@ -2259,7 +2259,7 @@ impl Analyzer<'_, '_> {
     }
 
     #[context("tried to extract keys")]
-    fn extract_keys(&mut self, span: Span, ty: &Type) -> VResult {
+    fn extract_keys(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let ty = self.normalize(
             Some(span),
             Cow::Borrowed(&ty),
