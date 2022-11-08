@@ -1305,6 +1305,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2556
+    SpreadMustBeTupleOrPassedToRest {
+        span: Span,
+    },
+
     /// TS2703
     InvalidDeleteOperand {
         span: Span,
@@ -1639,6 +1644,7 @@ impl Error {
             Error::ExpectedAtLeastNArgsButGotM { .. } => 2555,
             Error::ExpectedNArgsButGotMOrMore { .. } => 2556,
             Error::ExpectedAtLeastNArgsButGotMOrMore { .. } => 2557,
+            Error::SpreadMustBeTupleOrPassedToRest { .. } => 2556,
 
             Error::ReferencedInInit { .. } => 2372,
 

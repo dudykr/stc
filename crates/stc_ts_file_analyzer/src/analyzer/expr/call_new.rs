@@ -2726,10 +2726,18 @@ impl Analyzer<'_, '_> {
             if arg.spread.is_some() {
                 if let Some(rest_idx) = rest_idx {
                     if idx < rest_idx {
-                        report_err!(Error::ExpectedAtLeastNArgsButGotMOrMore {
-                            span: arg.span(),
-                            min: rest_idx - 1,
-                        })
+                        match arg.ty.normalize() {
+                            Type::Tuple(..) => {
+                                report_err!(Error::ExpectedAtLeastNArgsButGotMOrMore {
+                                    span: arg.span(),
+                                    min: rest_idx - 1,
+                                })
+                            }
+
+                            _ => {
+                                report_err!(Error::SpreadMustBeTupleOrPassedToRest { span: arg.span() })
+                            }
+                        }
                     }
                 }
             }
