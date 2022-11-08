@@ -2006,7 +2006,17 @@ impl Analyzer<'_, '_> {
                         // TODO: Handle Type::Rest
 
                         if elems.len() > rhs_elems.len() {
-                            return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
+                            let elems_without_default = elems
+                                .into_iter()
+                                .filter(|el| match *el.ty {
+                                    Type::Optional(..) => true,
+                                    _ => false,
+                                })
+                                .collect::<Vec<_>>();
+
+                            if elems_without_default.len() > rhs_elems.len() {
+                                return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
+                            }
                         }
 
                         let mut errors = vec![];
