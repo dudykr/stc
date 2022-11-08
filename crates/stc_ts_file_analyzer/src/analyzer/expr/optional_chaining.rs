@@ -20,7 +20,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &ROptChainExpr, type_ann: Option<&Type>) -> VResult<Type> {
         let span = node.span;
 
-        match &*node.expr {
+        match &*node.base {
             RExpr::Member(me) => {
                 let prop = self.validate_key(&me.prop, me.computed)?;
                 let obj = me.obj.validate_with(self)?;

@@ -351,8 +351,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 for parent in &ty.extends {
-                    let parent =
-                        self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr.clone().into(), parent.type_args.as_deref())?;
+                    let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
                     if let Some(parent_keys) = self.get_property_names_for_mapped_type(span, &parent)? {
                         keys.extend(parent_keys);
                     }

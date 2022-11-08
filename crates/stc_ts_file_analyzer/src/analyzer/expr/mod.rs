@@ -1805,8 +1805,7 @@ impl Analyzer<'_, '_> {
                         lit: RTsLit::Str(RStr {
                             span: *span,
                             value: sym.clone(),
-                            has_escape: false,
-                            kind: Default::default(),
+                            raw: None,
                         }),
                         metadata: Default::default(),
                     }),
@@ -2211,6 +2210,7 @@ impl Analyzer<'_, '_> {
                                                 &Key::Num(RNumber {
                                                     span: n.span,
                                                     value: (v + 1i64 - (elems.len() as i64)) as _,
+                                                    raw: None,
                                                 }),
                                                 type_mode,
                                                 id_ctx,
