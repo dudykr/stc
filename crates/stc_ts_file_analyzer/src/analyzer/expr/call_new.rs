@@ -430,7 +430,30 @@ impl Analyzer<'_, '_> {
                     }
                     _ => {}
                 }
-                callee_ty
+
+                match callee_ty.normalize() {
+                    Type::Union(u) => {
+                        let types = u
+                            .types
+                            .iter()
+                            .cloned()
+                            .filter(|callee| !matches!(callee.normalize(), Type::Module(..) | Type::Namespace(..)))
+                            .collect::<Vec<_>>();
+
+                        match types.len() {
+                            0 => Type::never(
+                                u.span,
+                                KeywordTypeMetadata {
+                                    common: u.metadata.common,
+                                    ..Default::default()
+                                },
+                            ),
+                            1 => types.into_iter().next().unwrap(),
+                            _ => Type::Union(Union { types, ..*u }),
+                        }
+                    }
+                    _ => callee_ty,
+                }
             };
 
             if let Some(type_args) = &type_args {
