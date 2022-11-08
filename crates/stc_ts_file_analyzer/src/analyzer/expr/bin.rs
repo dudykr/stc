@@ -614,13 +614,13 @@ impl Analyzer<'_, '_> {
                 no_unknown!();
 
                 if let Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) = rt
                 {
                     self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: rt.span() });
                 } else if let Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) = lt
                 {
