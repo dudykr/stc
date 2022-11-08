@@ -1606,7 +1606,7 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsNullKeyword,
                             ..
                         }) => {
-                            self.storage.report(Error::ObjectIsPossiblyNull { span: *span });
+                            self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: *span });
                         }
 
                         _ => errors.push(if is_left {
