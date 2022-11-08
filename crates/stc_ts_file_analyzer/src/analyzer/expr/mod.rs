@@ -3372,7 +3372,7 @@ impl Analyzer<'_, '_> {
         }
 
         match *n {
-            RTsEntityName::Ident(ref i) => {
+            RExpr::Ident(ref i) => {
                 if i.sym == js_word!("Array") {
                     if let Some(type_args) = type_args {
                         // TODO(kdy1): Validate number of args.
@@ -3533,11 +3533,7 @@ impl Analyzer<'_, '_> {
     /// TODO(kdy1): Expand type arguments if provided.
     fn type_of_member_expr(&mut self, expr: &RMemberExpr, type_mode: TypeOfMode) -> VResult<Type> {
         let RMemberExpr {
-            ref obj,
-            computed,
-            ref prop,
-            span,
-            ..
+            ref obj, ref prop, span, ..
         } = *expr;
 
         let name: Option<Name> = expr.try_into().ok();
