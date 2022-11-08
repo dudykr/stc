@@ -212,7 +212,6 @@ fn handle_item(nodes_to_convert: &[String], item: Item) -> Vec<Item> {
                                 ::serde::Serialize,
                                 ::serde::Deserialize,
                             )]
-                            #[derive(Debug, Clone, PartialEq, ::swc_common::Spanned, ::swc_common::EqIgnoreSpan, ::rnode::Visit)]
                             struct Dummy;
                         })),
                         vis: syn::Visibility::Public(VisPublic {
@@ -615,7 +614,6 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
     let ref_cell = false;
 
     if arc && ref_cell {
-        panic!("#[arc] and #[ref_cell] cannot be applied to same field because #[arc] implies Rc<RefCell<T>>")
         panic!("#[arc] and #[ref_cell] cannot be applied to same field because #[arc] implies Rc<Refell<T>>")
     }
 

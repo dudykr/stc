@@ -5,7 +5,6 @@ use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RBlockStmt, RClassDecl, RClassMember, RClassMethod, RClassProp, RDecl, REmptyStmt, RExpr, RFnDecl, RFunction, RInvalid, RLit,
     RModuleDecl, RModuleItem, RPat, RPropName, RStmt, RTsEnumDecl, RTsEnumMember, RTsKeywordType, RTsModuleDecl, RTsType, RTsTypeAliasDecl,
-    RModuleDecl, RModuleItem, RPat, RStmt, RTsEnumDecl, RTsEnumMember, RTsKeywordType, RTsModuleDecl, RTsType, RTsTypeAliasDecl,
     RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_types::{Id, ModuleTypeData, Type};
