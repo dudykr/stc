@@ -117,7 +117,7 @@ impl Analyzer<'_, '_> {
                 callee,
                 ExtractKind::Call,
                 args,
-                type_args.as_ref(),
+                type_args.as_deref(),
                 type_ann.as_deref(),
             )
         })

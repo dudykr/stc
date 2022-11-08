@@ -242,6 +242,7 @@ impl Evaluator<'_> {
                                     op!("~") => (!(v as i32)) as f64,
                                     _ => Err(Error::InvalidEnumInit { span })?,
                                 },
+                                raw: None,
                             }))
                         }
                         RTsLit::Str(_) => {}
@@ -261,7 +262,11 @@ impl Evaluator<'_> {
             }
         } else {
             if let Some(value) = default {
-                return Ok(RTsLit::Number(RNumber { span, value: value as _ }));
+                return Ok(RTsLit::Number(RNumber {
+                    span,
+                    value: value as _,
+                    raw: None,
+                }));
             }
         }
 
@@ -293,6 +298,8 @@ impl Evaluator<'_> {
                         op!(">>>") => ((l.round() as u64) >> (r.round() as u64)) as _,
                         _ => Err(Error::InvalidEnumInit { span })?,
                     },
+
+                    raw: None,
                 })
             }
             (RTsLit::Str(l), RTsLit::Str(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
