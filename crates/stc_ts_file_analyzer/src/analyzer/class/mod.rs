@@ -489,13 +489,6 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match c.kind {
-            MethodKind::Method => {
-                self.storage.report(Error::PrivateIdUsedAsMethodName { span: c.key.id.span });
-            }
-            _ => {}
-        }
-
         let key = c.key.validate_with(self).map(Key::Private)?;
         let key_span = key.span();
 
