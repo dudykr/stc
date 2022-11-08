@@ -8,10 +8,9 @@ use fxhash::FxHashSet;
 use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RAssignPat, RBlockStmt, RClass, RClassDecl, RClassMember, RClassProp, RDecl, RExportDecl, RExportDefaultExpr, RExpr,
-    RFnDecl, RIdent, RImportDecl, RImportSpecifier, RLit, RMemberExpr, RMemberProp, RModuleDecl, RModuleItem, RNamedExport,
-    RParamOrTsParamProp, RPat, RPrivateName, RPrivateProp, RPropName, RStmt, RTsEntityName, RTsEnumDecl, RTsIndexSignature,
-    RTsInterfaceDecl, RTsKeywordType, RTsModuleDecl, RTsParamProp, RTsParamPropParam, RTsPropertySignature, RTsType, RTsTypeAliasDecl,
-    RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RFnDecl, RIdent, RImportDecl, RImportSpecifier, RMemberExpr, RMemberProp, RModuleDecl, RModuleItem, RNamedExport, RParamOrTsParamProp,
+    RPat, RPrivateName, RPrivateProp, RPropName, RStmt, RTsEntityName, RTsEnumDecl, RTsIndexSignature, RTsInterfaceDecl, RTsKeywordType,
+    RTsModuleDecl, RTsParamProp, RTsParamPropParam, RTsPropertySignature, RTsType, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_types::{Id, ModuleTypeData};
 use stc_ts_utils::{find_ids_in_pat, MapWithMut};
@@ -204,10 +203,6 @@ impl VisitMut<RClassMember> for Dts {
         match m {
             RClassMember::Method(method) => {
                 if let Some(Accessibility::Private) = method.accessibility {
-                    let computed = match method.key {
-                        RPropName::Computed(..) => true,
-                        _ => false,
-                    };
                     // Converts a private method to a private property without type.
                     *m = RClassMember::ClassProp(RClassProp {
                         node_id: NodeId::invalid(),
