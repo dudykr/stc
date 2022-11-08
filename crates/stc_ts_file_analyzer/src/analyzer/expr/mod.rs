@@ -2896,6 +2896,13 @@ impl Analyzer<'_, '_> {
         let mut modules = vec![];
         let mut ty = self.type_of_raw_var(i, type_mode)?;
         if type_mode == TypeOfMode::LValue && (ty.is_class_def() || ty.is_enum_type()) {
+            if ty.is_enum_type() {
+                return Err(Error::CannotAssignToEnum { span });
+            }
+            if ty.is_class_def() {
+                return Err(Error::CannotAssignToClass { span });
+            }
+
             return Err(Error::NotVariable {
                 span,
                 left: span,
