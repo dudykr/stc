@@ -1196,7 +1196,10 @@ impl Analyzer<'_, '_> {
         }
 
         //
-        if l.is_type_param() || r.is_type_param() {
+        if l.is_type_param() && !r.is_type_param() {
+            return Ok(true);
+        }
+        if !l.is_type_param() && r.is_type_param() {
             return Ok(true);
         }
 
