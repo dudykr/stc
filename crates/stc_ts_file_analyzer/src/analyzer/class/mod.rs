@@ -7,9 +7,9 @@ use std::{
 use itertools::Itertools;
 use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, VisitWith};
 use stc_ts_ast_rnode::{
-    RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp, RComputedPropName, RConstructor,
-    RDecl, RExpr, RFunction, RIdent, RLit, RMemberExpr, RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStmt,
-    RTsEntityName, RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp, RConstructor, RDecl, RExpr,
+    RFunction, RIdent, RMemberExpr, RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStmt, RTsEntityName,
+    RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{DebugExt, Error, Errors};
@@ -143,9 +143,9 @@ impl Analyzer<'_, '_> {
         let marks = self.marks();
         self.record(p);
 
-        if !p.computed && p.is_static {
-            match &*p.key {
-                RExpr::Ident(i) => {
+        if p.is_static {
+            match &p.key {
+                RPropName::Ident(i) => {
                     if &*i.sym == "prototype" {
                         self.storage.report(Error::StaticPropertyCannotBeNamedPrototype { span: i.span })
                     }
@@ -155,8 +155,8 @@ impl Analyzer<'_, '_> {
         }
 
         // Verify key if key is computed
-        if p.computed {
-            self.validate_computed_prop_key(p.span, &p.key);
+        if let RPropName::Computed(p) = &p.key {
+            self.validate_computed_prop_key(p.span, &p.expr);
         }
 
         let value = self
@@ -835,8 +835,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 RClassMember::ClassProp(RClassProp {
-                    computed: false,
-                    key: box RExpr::Ident(key),
+                    key: RPropName::Ident(key),
                     is_static,
                     ..
                 }) => {
@@ -847,17 +846,7 @@ impl Analyzer<'_, '_> {
                 RClassMember::ClassProp(m) => {
                     is_props.insert(keys.len());
 
-                    let key = match &*m.key {
-                        RExpr::Lit(RLit::Num(v)) => Cow::Owned(RPropName::Ident(RIdent::new(
-                            v.value.to_string().into(),
-                            v.span.with_ctxt(SyntaxContext::empty()),
-                        ))),
-                        _ => Cow::Owned(RPropName::Computed(RComputedPropName {
-                            node_id: NodeId::invalid(),
-                            span: DUMMY_SP,
-                            expr: m.key.clone(),
-                        })),
-                    };
+                    let key = Cow::Borrowed(&m.key);
                     keys.push((key, m.is_static));
                 }
                 RClassMember::PrivateProp(m) => {
@@ -1803,14 +1792,13 @@ impl Analyzer<'_, '_> {
                                         _ => unreachable!("TypeScript parameter property with pattern other than an identifier"),
                                     };
                                     key.type_ann = None;
-                                    let key = box RExpr::Ident(key.id);
+                                    let key = RPropName::Ident(key.id);
                                     additional_members.push(RClassMember::ClassProp(RClassProp {
                                         node_id: NodeId::invalid(),
                                         span: p.span,
                                         key,
                                         value: None,
                                         is_static: false,
-                                        computed: false,
                                         accessibility: Some(Accessibility::Private),
                                         is_abstract: false,
                                         is_optional,
