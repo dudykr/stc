@@ -614,17 +614,17 @@ impl Analyzer<'_, '_> {
                 no_unknown!();
 
                 if let Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) = rt
                 {
-                    self.storage.report(Error::UndefinedInRelativeComparison { span: rt.span() });
+                    self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: rt.span() });
                 } else if let Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
                     ..
                 }) = lt
                 {
-                    self.storage.report(Error::UndefinedInRelativeComparison { span: lt.span() });
+                    self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: lt.span() });
                 } else {
                     let mut check_for_invalid_operand = |ty: &Type| {
                         let res: VResult<_> = try {
@@ -1598,7 +1598,7 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             ..
                         }) => {
-                            self.storage.report(Error::ObjectIsPossiblyUndefined { span: *span });
+                            self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: *span });
                         }
 
                         Type::Keyword(KeywordType {
@@ -1606,7 +1606,7 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsNullKeyword,
                             ..
                         }) => {
-                            self.storage.report(Error::ObjectIsPossiblyNull { span: *span });
+                            self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: *span });
                         }
 
                         _ => errors.push(if is_left {
