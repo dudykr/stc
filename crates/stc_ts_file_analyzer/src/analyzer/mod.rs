@@ -371,9 +371,8 @@ impl Analyzer<'_, '_> {
             span,
             RTsModuleName::Str(RStr {
                 span: DUMMY_SP,
-                has_escape: false,
-                kind: Default::default(),
                 value: js_word!(""),
+                raw: None,
             }),
             data,
         ))
