@@ -212,8 +212,16 @@ impl Analyzer<'_, '_> {
 
         match op {
             op!("*=") | op!("**=") | op!("/=") | op!("%=") | op!("-=") => {
-                self.deny_null_or_undefined(rhs.span(), rhs)
-                    .context("checking operands of a numeric assignment")?;
+                if let Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
+                    ..
+                }) = rhs
+                {
+                    self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: rhs.span() });
+                } else {
+                    self.deny_null_or_undefined(rhs.span(), rhs)
+                        .context("checking operands of a numeric assignment")?;
+                }
 
                 match lhs {
                     Type::TypeLit(..) => return Err(Error::WrongTypeForLhsOfNumericOperation { span }),
