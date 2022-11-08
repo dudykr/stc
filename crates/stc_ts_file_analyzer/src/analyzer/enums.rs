@@ -78,7 +78,11 @@ impl Analyzer<'_, '_> {
                                 RTsLit::Number(v) => RExpr::Lit(RLit::Num(v)),
                                 RTsLit::Str(v) => RExpr::Lit(RLit::Str(v)),
                                 RTsLit::Bool(v) => RExpr::Lit(RLit::Bool(v)),
-                                RTsLit::Tpl(v) => RExpr::Lit(RLit::Str(From::from(&*v.quasis.into_iter().next().unwrap().raw))),
+                                RTsLit::Tpl(v) => RExpr::Lit(RLit::Str(RStr {
+                                    span: v.span,
+                                    value: From::from(&*v.quasis.into_iter().next().unwrap().raw),
+                                    raw: None,
+                                })),
                                 RTsLit::BigInt(v) => RExpr::Lit(RLit::BigInt(v)),
                             }
                         })

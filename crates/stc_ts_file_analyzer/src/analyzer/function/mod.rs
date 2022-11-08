@@ -277,8 +277,6 @@ impl Analyzer<'_, '_> {
     /// If the referred type has default type parameter, we have to include it
     /// in function type of output (.d.ts)
     fn qualify_ref_type_args(&mut self, span: Span, mut ty: Ref) -> VResult<Ref> {
-        let actual_ty = self.type_of_ts_entity_name(span, self.ctx.module_id, &ty.type_name, ty.type_args.as_deref())?;
-        let actual_ty = self.type_of_ts_entity_name(span, self.ctx.module_id, &ty.type_name.clone().into(), ty.type_args.as_deref())?;
         let actual_ty = self.type_of_ts_entity_name(span, self.ctx.module_id, &ty.type_name.clone().into(), ty.type_args.as_deref())?;
 
         // TODO(kdy1): PERF
