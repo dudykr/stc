@@ -437,7 +437,7 @@ impl Analyzer<'_, '_> {
                             .types
                             .iter()
                             .cloned()
-                            .filter(|callee| !matches!(callee.normalize(), Type::Module(..)))
+                            .filter(|callee| !matches!(callee.normalize(), Type::Module(..) | Type::Namespace(..)))
                             .collect::<Vec<_>>();
 
                         match types.len() {
@@ -448,7 +448,7 @@ impl Analyzer<'_, '_> {
                                     ..Default::default()
                                 },
                             ),
-                            1 => types[0].clone(),
+                            1 => types.into_iter().next().unwrap(),
                             _ => Type::Union(Union { types, ..*u }),
                         }
                     }
