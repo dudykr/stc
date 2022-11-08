@@ -1195,6 +1195,14 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
+        //
+        if l.is_type_param() && !r.is_type_param() {
+            return Ok(true);
+        }
+        if !l.is_type_param() && r.is_type_param() {
+            return Ok(true);
+        }
+
         let c = Comparator { left: l, right: r };
 
         if let Some(v) = c.take_if_any_matches(|l, r| {
