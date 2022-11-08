@@ -8,7 +8,7 @@ use fxhash::FxHashSet;
 use rnode::{NodeId, Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RAssignPat, RBlockStmt, RClass, RClassDecl, RClassMember, RClassProp, RDecl, RExportDecl, RExportDefaultExpr, RExpr,
-    RExprOrSuper, RFnDecl, RIdent, RImportDecl, RImportSpecifier, RLit, RMemberExpr, RModuleDecl, RModuleItem, RNamedExport,
+    RFnDecl, RIdent, RImportDecl, RImportSpecifier, RLit, RMemberExpr, RMemberProp, RModuleDecl, RModuleItem, RNamedExport,
     RParamOrTsParamProp, RPat, RPrivateName, RPrivateProp, RPropName, RStmt, RTsEntityName, RTsEnumDecl, RTsIndexSignature,
     RTsInterfaceDecl, RTsKeywordType, RTsModuleDecl, RTsParamProp, RTsParamPropParam, RTsPropertySignature, RTsType, RTsTypeAliasDecl,
     RTsTypeAnn, RVarDecl, RVarDeclarator,
@@ -98,9 +98,9 @@ impl Visit<RDecl> for TypeUsageCollector {
                     match decl {
                         RDecl::Class(RClassDecl { ident, .. })
                         | RDecl::Fn(RFnDecl { ident, .. })
-                        | RDecl::TsInterface(RTsInterfaceDecl { id: ident, .. })
-                        | RDecl::TsTypeAlias(RTsTypeAliasDecl { id: ident, .. })
-                        | RDecl::TsEnum(RTsEnumDecl { id: ident, .. }) => {
+                        | RDecl::TsInterface(box RTsInterfaceDecl { id: ident, .. })
+                        | RDecl::TsTypeAlias(box RTsTypeAliasDecl { id: ident, .. })
+                        | RDecl::TsEnum(box RTsEnumDecl { id: ident, .. }) => {
                             if !self.used_types.contains(&ident.into()) {
                                 return;
                             }
@@ -154,8 +154,8 @@ impl Visit<RClass> for TypeUsageCollector {
             match e {
                 RExpr::Ident(i) => return Some(i.into()),
                 RExpr::Member(RMemberExpr {
-                    obj: RExprOrSuper::Expr(e),
-                    computed: false,
+                    obj: e,
+                    prop: RMemberProp::Ident(..) | RMemberProp::PrivateName(..),
                     ..
                 }) => return left_most(&e),
                 _ => None,
