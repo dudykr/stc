@@ -1,0 +1,32 @@
+warning: Type
+ --> $DIR/tests/pass/types/intersection/intersectionReductionStrict/3.ts:9:6
+  |
+9 | t1 = t2;
+  |      ^^
+  |
+  = note: undefined
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/intersectionReductionStrict/3.ts:9:1
+  |
+9 | t1 = t2;
+  | ^^^^^^^
+  |
+  = note: undefined
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionReductionStrict/3.ts:10:6
+   |
+10 | t2 = t1;
+   |      ^^
+   |
+   = note: undefined
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionReductionStrict/3.ts:10:1
+   |
+10 | t2 = t1;
+   | ^^^^^^^
+   |
+   = note: undefined
+

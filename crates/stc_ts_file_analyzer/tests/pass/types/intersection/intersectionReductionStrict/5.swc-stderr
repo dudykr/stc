@@ -1,0 +1,21 @@
+warning: Type
+ --> $DIR/tests/pass/types/intersection/intersectionReductionStrict/5.ts:9:22
+  |
+9 | ): Container<"a"> => t;
+  |                      ^
+  |
+  = note: {
+              type: "a";
+          }
+
+warning: Type
+ --> $DIR/tests/pass/types/intersection/intersectionReductionStrict/5.ts:7:12
+  |
+7 |   const f2 = (
+  |  ____________^
+8 | |   t: Container<"a"> | (Container<"b"> & Container<"c">)
+9 | | ): Container<"a"> => t;
+  | |______________________^
+  |
+  = note: (t: (Container<"a"> | (Container<"b"> & Container<"c">))) => Container<"a">
+
