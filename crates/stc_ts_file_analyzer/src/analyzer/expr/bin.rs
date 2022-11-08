@@ -618,13 +618,13 @@ impl Analyzer<'_, '_> {
                     ..
                 }) = rt
                 {
-                    self.storage.report(Error::UndefinedInRelativeComparison { span: rt.span() });
+                    self.storage.report(Error::UndefinedIsNotValidOperand { span: rt.span() });
                 } else if let Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
                 }) = lt
                 {
-                    self.storage.report(Error::UndefinedInRelativeComparison { span: lt.span() });
+                    self.storage.report(Error::UndefinedIsNotValidOperand { span: lt.span() });
                 } else {
                     let mut check_for_invalid_operand = |ty: &Type| {
                         let res: VResult<_> = try {
@@ -1598,7 +1598,7 @@ impl Analyzer<'_, '_> {
                             kind: TsKeywordTypeKind::TsUndefinedKeyword,
                             ..
                         }) => {
-                            self.storage.report(Error::ObjectIsPossiblyUndefined { span: *span });
+                            self.storage.report(Error::UndefinedIsNotValidOperand { span: *span });
                         }
 
                         Type::Keyword(KeywordType {

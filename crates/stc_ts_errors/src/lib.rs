@@ -393,7 +393,7 @@ pub enum Error {
     },
 
     /// TS18050
-    UndefinedInRelativeComparison {
+    UndefinedIsNotValidOperand {
         span: Span,
     },
 
@@ -1816,7 +1816,7 @@ impl Error {
 
             Error::PrivateIdUsedAsMethodName { .. } => 18022,
 
-            Error::UndefinedInRelativeComparison { .. } => 18050,
+            Error::UndefinedIsNotValidOperand { .. } => 18050,
 
             Error::CannotDeletePrivateProperty { .. } => 18011,
 
