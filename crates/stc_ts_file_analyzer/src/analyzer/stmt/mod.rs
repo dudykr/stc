@@ -156,7 +156,7 @@ impl Analyzer<'_, '_> {
                 let type_args = try_opt!(parent.type_args.validate_with(self));
                 let span = parent.span;
 
-                self.report_error_for_unresolve_type(span, &parent.expr.clone().into(), type_args.as_ref())?;
+                self.report_error_for_unresolve_type(span, &parent.expr, type_args.as_ref())?;
             };
 
             res.report(&mut self.storage);

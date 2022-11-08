@@ -27,7 +27,7 @@ use stc_ts_types::{
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
-use swc_ecma_ast::{op, EsVersion, MemberExpr, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
+use swc_ecma_ast::{op, EsVersion, TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp, VarDeclKind};
 use tracing::{debug, info, warn, Level};
 use ty::TypeExt;
 

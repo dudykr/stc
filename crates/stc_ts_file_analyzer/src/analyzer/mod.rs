@@ -849,7 +849,7 @@ impl Analyzer<'_, '_> {
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
             let ty = match node.module_ref {
                 RTsModuleRef::TsEntityName(ref e) => analyzer
-                    .type_of_ts_entity_name(node.span, analyzer.ctx.module_id, e, None)
+                    .type_of_ts_entity_name(node.span, analyzer.ctx.module_id, &e.clone().into(), None)
                     .unwrap_or_else(|err| {
                         analyzer.storage.report(err);
                         Type::any(node.span, Default::default())
