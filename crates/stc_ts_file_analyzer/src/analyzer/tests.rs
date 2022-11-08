@@ -15,7 +15,6 @@ use stc_utils::stack;
 use swc_common::{input::SourceFileInput, FileName, SourceMap, SyntaxContext};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
-use swc_ecma_transforms::resolver::ts_resolver;
 use swc_ecma_visit::FoldWith;
 use testing::StdErr;
 use tracing::Level;
