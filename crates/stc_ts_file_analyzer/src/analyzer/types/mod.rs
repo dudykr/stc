@@ -1614,9 +1614,15 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
         let span = l.span.or_else(|| span);
+        let name = Name::try_from(type_name);
+
+        let name = match name {
+            Ok(v) => v,
+            _ => return Ok(()),
+        };
 
         match type_name {
-            RTsEntityName::TsQualifiedName(_) => {
+            RExpr::Member(_) => {
                 if let Ok(var) = self.type_of_var(&l, TypeOfMode::RValue, None) {
                     if var.is_module() {
                         return Ok(());
@@ -1625,15 +1631,15 @@ impl Analyzer<'_, '_> {
 
                 Err(Error::NamspaceNotFound {
                     span,
-                    name: box type_name.clone().into(),
+                    name: box name.into(),
                     ctxt: self.ctx.module_id,
                     type_args: type_args.cloned().map(Box::new),
                 })
             }
-            RTsEntityName::Ident(i) if &*i.sym == "globalThis" => return Ok(()),
-            RTsEntityName::Ident(_) => Err(Error::TypeNotFound {
+            RExpr::Ident(i) if &*i.sym == "globalThis" => return Ok(()),
+            RExpr::Ident(_) => Err(Error::TypeNotFound {
                 span,
-                name: box type_name.clone().into(),
+                name: box name.into(),
                 ctxt: self.ctx.module_id,
                 type_args: type_args.cloned().map(Box::new),
             }),
