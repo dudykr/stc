@@ -2281,6 +2281,7 @@ impl Analyzer<'_, '_> {
                             lit: RTsLit::Number(RNumber {
                                 span,
                                 value: elems.len() as _,
+                                raw: None,
                             }),
                             metadata: Default::default(),
                         }));
@@ -2669,7 +2670,7 @@ impl Analyzer<'_, '_> {
                 expr: box QueryExpr::TsEntityName(name),
                 ..
             }) => {
-                let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, name, None)?;
+                let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, &name.clone().into(), None)?;
                 return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
             }
 

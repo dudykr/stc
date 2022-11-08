@@ -368,6 +368,7 @@ impl Analyzer<'_, '_> {
                                             &Key::Num(RNumber {
                                                 span: elem.span(),
                                                 value: idx as f64,
+                                                raw: None,
                                             }),
                                             TypeOfMode::RValue,
                                             IdCtx::Var,
@@ -387,6 +388,7 @@ impl Analyzer<'_, '_> {
                                             &Key::Num(RNumber {
                                                 span: elem.span(),
                                                 value: idx as f64,
+                                                raw: None,
                                             }),
                                             TypeOfMode::RValue,
                                             IdCtx::Var,
@@ -778,8 +780,7 @@ impl Analyzer<'_, '_> {
                                 lit: RTsLit::Str(RStr {
                                     span: *span,
                                     value: sym.clone(),
-                                    has_escape: false,
-                                    kind: Default::default(),
+                                    raw: None,
                                 }),
                                 metadata: Default::default(),
                             })),

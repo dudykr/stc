@@ -117,7 +117,7 @@ struct MethodAnalyzer {
 impl Visit<RMemberExpr> for MethodAnalyzer {
     fn visit(&mut self, e: &RMemberExpr) {
         e.obj.visit_with(self);
-        if e.computed {
+        if matches!(e.prop, RMemberProp::Computed(..)) {
             e.prop.visit_with(self);
         }
 
