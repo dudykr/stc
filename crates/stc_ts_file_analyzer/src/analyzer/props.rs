@@ -159,7 +159,7 @@ impl Analyzer<'_, '_> {
             }
 
             if check_for_validity && check_for_symbol_form && is_symbol_access {
-                match ty.normalize() {
+                match ty.normalize_instance() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
@@ -169,7 +169,7 @@ impl Analyzer<'_, '_> {
                         op: TsTypeOperatorOp::Unique,
                         ty,
                         ..
-                    }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
+                    }) if ty.normalize_instance().is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
                     _ => {
                         //
                         analyzer.storage.report(Error::NonSymbolComputedPropInFormOfSymbol { span });
