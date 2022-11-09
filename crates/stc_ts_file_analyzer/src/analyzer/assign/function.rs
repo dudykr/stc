@@ -728,25 +728,26 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_params(&mut self, data: &mut AssignData, opts: AssignOpts, l: &[FnParam], r: &[FnParam]) -> VResult<()> {
         let span = opts.span;
 
-        let li = l.iter().filter(|p| match p.pat {
-            RPat::Ident(RBindingIdent {
-                id: RIdent { sym: js_word!("this"), .. },
-                ..
-            }) => false,
-            _ => true,
+        let li = l.iter().filter(|p| {
+            !matches!(
+                p.pat,
+                RPat::Ident(RBindingIdent {
+                    id: RIdent { sym: js_word!("this"), .. },
+                    ..
+                })
+            )
         });
-        let ri = r.iter().filter(|p| match p.pat {
-            RPat::Ident(RBindingIdent {
-                id: RIdent { sym: js_word!("this"), .. },
-                ..
-            }) => false,
-            _ => true,
+        let ri = r.iter().filter(|p| {
+            !matches!(
+                p.pat,
+                RPat::Ident(RBindingIdent {
+                    id: RIdent { sym: js_word!("this"), .. },
+                    ..
+                })
+            )
         });
 
-        let l_has_rest = l.iter().any(|p| match p.pat {
-            RPat::Rest(..) => true,
-            _ => false,
-        });
+        let l_has_rest = l.iter().any(|p| matches!(p.pat, RPat::Rest(..)));
 
         // TODO(kdy1): Consider optional parameters.
 

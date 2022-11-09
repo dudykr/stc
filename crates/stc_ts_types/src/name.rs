@@ -25,8 +25,14 @@ impl Name {
         self.0[0].clone()
     }
 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.0.len()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 
     pub fn as_ids(&self) -> &[Id] {

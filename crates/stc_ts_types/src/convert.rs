@@ -540,7 +540,7 @@ impl From<super::Class> for RTsType {
         RTsTypeRef {
             node_id: NodeId::invalid(),
             span: t.span,
-            type_name: RTsEntityName::Ident(t.def.name.unwrap_or(Id::word("anonymous class".into())).into()),
+            type_name: RTsEntityName::Ident(t.def.name.unwrap_or_else(|| Id::word("anonymous class".into())).into()),
             type_params: None,
         }
         .into()
