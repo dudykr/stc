@@ -242,7 +242,7 @@ impl Analyzer<'_, '_> {
         let mut reported_null_or_undefined = false;
 
         match op {
-            op!("**") => {
+            op!("**") | op!("<=") | op!("<") | op!(">=") | op!(">") => {
                 if matches!(
                     &*e.left,
                     RExpr::Lit(RLit::Null(..))
@@ -647,25 +647,7 @@ impl Analyzer<'_, '_> {
             op!("<=") | op!("<") | op!(">=") | op!(">") => {
                 no_unknown!();
 
-                let mut skip = false;
-                if let Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
-                    ..
-                }) = rt
-                {
-                    skip = true;
-                    self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: rt.span() });
-                }
-                if let Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
-                    ..
-                }) = lt
-                {
-                    skip = true;
-                    self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: lt.span() });
-                }
-
-                if !skip {
+                if !reported_null_or_undefined {
                     let mut check_for_invalid_operand = |ty: &Type| {
                         let res: VResult<_> = try {
                             self.deny_null_or_undefined(ty.span(), ty)?;
