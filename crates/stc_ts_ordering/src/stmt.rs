@@ -2,9 +2,9 @@
 
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RBindingIdent, RDecl, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RMemberProp, RModuleDecl, RModuleItem, RProp, RStmt,
-    RTsEntityName, RTsExprWithTypeArgs, RTsIndexSignature, RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl, RVarDeclOrExpr,
-    RVarDeclOrPat, RVarDeclarator,
+    RBindingIdent, RDecl, RExpr, RForInStmt, RForOfStmt, RIdent, RMemberExpr, RMemberProp, RModuleDecl, RModuleItem, ROptChainBase,
+    ROptChainExpr, RProp, RStmt, RTsEntityName, RTsExprWithTypeArgs, RTsIndexSignature, RTsModuleDecl, RTsModuleName, RTsTypeRef, RVarDecl,
+    RVarDeclOrExpr, RVarDeclOrPat, RVarDeclarator,
 };
 use stc_ts_types::{Id, IdCtx};
 use stc_ts_utils::{find_ids_in_pat, AsModuleDecl};
@@ -351,7 +351,11 @@ fn left(t: &RTsEntityName) -> &RIdent {
 fn left_of_expr(e: &RExpr) -> &RIdent {
     match e {
         RExpr::Ident(i) => i,
-        RExpr::Member(m) => left_of_expr(&m.obj),
+        RExpr::Member(m)
+        | RExpr::OptChain(ROptChainExpr {
+            base: ROptChainBase::Member(m),
+            ..
+        }) => left_of_expr(&m.obj),
         _ => unreachable!(),
     }
 }
