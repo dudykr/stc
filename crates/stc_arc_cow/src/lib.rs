@@ -1,3 +1,4 @@
+#![allow(clippy::partialeq_ne_impl)]
 #![allow(incomplete_features)]
 #![feature(specialization)]
 
