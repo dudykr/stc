@@ -614,7 +614,9 @@ impl Analyzer<'_, '_> {
                         self.storage.report(Error::WrongTypeForLhsOfNumericOperation { span });
                     }
 
-                    self.report_possibly_null_or_undefined(rt.span(), &rt).report(&mut self.storage);
+                    if !reported_null_or_undefined {
+                        self.report_possibly_null_or_undefined(rt.span(), &rt).report(&mut self.storage);
+                    }
 
                     if rt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
                         || rt.is_str()
