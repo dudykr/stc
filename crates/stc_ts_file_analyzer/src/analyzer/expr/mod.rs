@@ -9,8 +9,8 @@ use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, RParenExpr, RPat,
-    RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr,
-    RUnaryExpr,
+    RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit,
+    RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
@@ -3556,7 +3556,7 @@ impl Analyzer<'_, '_> {
         let mut is_obj_opt_chain = false;
         let mut should_be_optional = false;
         let mut obj_ty = match *obj {
-            RExprOrSuper::Expr(ref obj) => {
+            ref obj => {
                 is_obj_opt_chain = is_obj_opt_chaining(&obj);
 
                 let obj_ctx = Ctx {
@@ -3586,21 +3586,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 obj_ty
-            }
-
-            RExprOrSuper::Super(RSuper { span, .. }) => {
-                if self.scope.cannot_use_this_because_super_not_called() {
-                    self.storage.report(Error::SuperUsedBeforeCallingSuper { span })
-                }
-
-                self.report_error_for_super_reference_in_compute_keys(span, false);
-
-                if let Some(v) = self.scope.get_super_class() {
-                    v.clone()
-                } else {
-                    self.storage.report(Error::SuperInClassWithoutSuper { span });
-                    Type::any(span, Default::default())
-                }
             }
         };
         obj_ty.make_clone_cheap();
@@ -3691,54 +3676,12 @@ impl Analyzer<'_, '_> {
             ref obj, ref prop, span, ..
         } = *expr;
 
-        let name: Option<Name> = expr.try_into().ok();
-
-        if let TypeOfMode::RValue = type_mode {
-            if let Some(name) = &name {
-                if let Some(ty) = self.scope.get_type_from_name(name) {
-                    return Ok(ty);
-                }
-            }
-        }
-
         let mut errors = Errors::default();
 
         let mut is_obj_opt_chain = false;
         let mut should_be_optional = false;
         let mut obj_ty = match *obj {
-            RExprOrSuper::Expr(ref obj) => {
-                is_obj_opt_chain = is_obj_opt_chaining(&obj);
-
-                let obj_ctx = Ctx {
-                    allow_module_var: true,
-                    in_opt_chain: is_obj_opt_chain,
-                    should_store_truthy_for_access: self.ctx.in_cond && !is_obj_opt_chain,
-                    ..self.ctx
-                };
-
-                let obj_ty = match obj.validate_with_default(&mut *self.with_ctx(obj_ctx)) {
-                    Ok(ty) => ty,
-                    Err(err) => {
-                        // Recover error if possible.
-                        if computed {
-                            errors.push(err);
-                            Type::any(span, Default::default())
-                        } else {
-                            return Err(err);
-                        }
-                    }
-                };
-
-                obj_ty.assert_valid();
-
-                if is_obj_opt_chain {
-                    should_be_optional = self.is_obj_optional(&obj_ty)?;
-                }
-
-                obj_ty
-            }
-
-            RExprOrSuper::Super(RSuper { span, .. }) => {
+            RSuper { span, .. } => {
                 if self.scope.cannot_use_this_because_super_not_called() {
                     self.storage.report(Error::SuperUsedBeforeCallingSuper { span })
                 }
@@ -3760,11 +3703,10 @@ impl Analyzer<'_, '_> {
         let mut prop = self
             .validate_key(
                 &match prop {
-                    RMemberProp::Ident(i) => RExpr::Ident(i.clone()),
-                    RMemberProp::Computed(c) => *c.expr.clone(),
-                    RMemberProp::PrivateName(p) => RExpr::PrivateName(p.clone()),
+                    RSuperProp::Ident(i) => RExpr::Ident(i.clone()),
+                    RSuperProp::Computed(c) => *c.expr.clone(),
                 },
-                matches!(prop, RMemberProp::Computed(_)),
+                matches!(prop, RSuperProp::Computed(_)),
             )
             .report(&mut self.storage)
             .unwrap_or_else(|| {
