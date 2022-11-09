@@ -1523,6 +1523,14 @@ impl Error {
             // TS7034; No implicit any for "in some locations where its type cannot be determined."
             7005 | 7006 | 7008 | 7031 | 7032 | 7033 | 7034 => 7005,
 
+            // TS2532: Object is possibly 'undefined'.
+            // TS18048: {} is possibly 'undefined'.
+            2532 | 18048 => 2532,
+
+            // TS2531: Object is possibly 'null'.
+            // TS18047: {} is possibly 'null'.
+            2531 | 18047 => 2531,
+
             _ => code,
         }
     }
