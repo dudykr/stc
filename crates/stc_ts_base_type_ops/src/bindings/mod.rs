@@ -170,7 +170,7 @@ impl Visit<RTsModuleDecl> for KnownTypeVisitor {
 
         match &d.id {
             RTsModuleName::Ident(i) => {
-                self.add(&i);
+                self.add(i);
             }
             RTsModuleName::Str(_) => {}
         }

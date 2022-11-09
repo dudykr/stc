@@ -46,7 +46,7 @@ where
             if let Some(cmt_text) = c
                 .text
                 .trim()
-                .strip_prefix("/")
+                .strip_prefix('/')
                 .map(|s| s.trim())
                 .and_then(|s| s.strip_prefix("<reference"))
                 .and_then(|s| s.strip_suffix("\" />"))

@@ -29,7 +29,6 @@ impl VisitMut<RStmt> for RealImplRemover {
                     if let Some(prev_name) = name {
                         if prev_name.sym == decl.ident.sym {
                             *node = RStmt::Empty(REmptyStmt { span: DUMMY_SP });
-                            return;
                         }
                     }
                 }
@@ -51,7 +50,6 @@ impl VisitMut<RModuleItem> for RealImplRemover {
                     if let Some(prev_name) = name {
                         if prev_name.sym == decl.ident.sym {
                             *node = RModuleItem::Stmt(RStmt::Empty(REmptyStmt { span: DUMMY_SP }));
-                            return;
                         }
                     }
                 }
@@ -78,9 +76,9 @@ impl VisitMut<Vec<RClassMember>> for RealImplRemover {
                             return false;
                         }
                     }
-                    return true;
+                    true
                 }
-                _ => return true,
+                _ => true,
             },
             _ => true,
         });

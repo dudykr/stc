@@ -41,7 +41,7 @@ impl GenericExpander<'_> {
 
         {
             let mut checker = GenericChecker {
-                params: &self.params,
+                params: self.params,
                 found: false,
             };
             ty.visit_with(&mut checker);
@@ -59,7 +59,7 @@ impl GenericExpander<'_> {
                         info!(
                             "generic_expand: Expanding type parameter `{}` => {}",
                             param.name,
-                            dump_type_as_string(&self.cm, &ty)
+                            dump_type_as_string(&self.cm, ty)
                         );
 
                         // If it's not self-referential, we fold it again.
@@ -88,18 +88,15 @@ impl GenericExpander<'_> {
                 if i.sym == js_word!("Array") {
                     return Type::Array(Array {
                         span,
-                        elem_type: box type_args
-                            .as_ref()
-                            .and_then(|args| args.params.iter().next().cloned())
-                            .unwrap_or_else(|| {
-                                Type::any(
-                                    span,
-                                    KeywordTypeMetadata {
-                                        common: metadata.common,
-                                        ..Default::default()
-                                    },
-                                )
-                            }),
+                        elem_type: box type_args.as_ref().and_then(|args| args.params.first().cloned()).unwrap_or_else(|| {
+                            Type::any(
+                                span,
+                                KeywordTypeMetadata {
+                                    common: metadata.common,
+                                    ..Default::default()
+                                },
+                            )
+                        }),
                         metadata: ArrayMetadata {
                             common: metadata.common,
                             ..Default::default()
@@ -114,10 +111,10 @@ impl GenericExpander<'_> {
 
                 info!("Generic expander: Ref: {}", Id::from(i));
 
-                return ty.fold_children_with(self);
+                ty.fold_children_with(self)
             }
 
-            Type::Instance(..) | Type::Ref(..) => return ty.fold_children_with(self),
+            Type::Instance(..) | Type::Ref(..) => ty.fold_children_with(self),
 
             Type::Param(mut param) => {
                 param = param.fold_with(self);
@@ -126,25 +123,25 @@ impl GenericExpander<'_> {
                     warn!("generic_expand: Failed to found type parameter instantiation: {}", param.name,);
                 }
 
-                return Type::Param(param);
+                Type::Param(param)
             }
 
             // Alias returns other than self.
             Type::Alias(mut alias) => {
                 alias = alias.fold_with(self);
 
-                return *alias.ty;
+                *alias.ty
             }
 
             Type::Interface(mut i) => {
                 i = i.fold_with(self);
 
-                return Type::Interface(i);
+                Type::Interface(i)
             }
             Type::Class(mut c) => {
                 c = c.fold_with(self);
 
-                return Type::Class(c);
+                Type::Class(c)
             }
 
             Type::Conditional(mut c) => {
@@ -154,7 +151,7 @@ impl GenericExpander<'_> {
                 //     return if v { *c.true_type } else { *c.false_type };
                 // }
 
-                return Type::Conditional(c);
+                Type::Conditional(c)
             }
 
             Type::Mapped(mut m @ Mapped { ty: Some(..), .. }) => {
@@ -185,7 +182,7 @@ impl GenericExpander<'_> {
                                                     type_ann: m.ty.clone().fold_with(&mut MappedHandler {
                                                         key: &p.key,
                                                         param_name: &param.name,
-                                                        prop_ty: &*p
+                                                        prop_ty: &p
                                                             .type_ann
                                                             .clone()
                                                             .unwrap_or_else(|| box Type::any(p.span, Default::default())),
@@ -354,7 +351,7 @@ impl GenericExpander<'_> {
                             ty,
                             ..
                         }) => match ty.normalize() {
-                            Type::Keyword(..) if m.optional == None && m.readonly == None => return *ty.clone(),
+                            Type::Keyword(..) if m.optional.is_none() && m.readonly.is_none() => return *ty.clone(),
                             Type::TypeLit(TypeLit {
                                 span,
                                 members,
@@ -377,7 +374,7 @@ impl GenericExpander<'_> {
                                                 key: method.key.clone(),
                                                 optional: method.optional,
                                                 params: vec![],
-                                                type_ann: m.ty.clone().map(|v| v),
+                                                type_ann: m.ty.clone(),
                                                 type_params: None,
                                                 metadata: Default::default(),
                                                 accessor: Default::default(),
@@ -412,10 +409,10 @@ impl GenericExpander<'_> {
                     }
                 }
 
-                return Type::Mapped(m);
+                Type::Mapped(m)
             }
 
-            Type::This(..) | Type::Keyword(..) | Type::TypeLit(..) | Type::Lit(..) => return ty.fold_children_with(self),
+            Type::This(..) | Type::Keyword(..) | Type::TypeLit(..) | Type::Lit(..) => ty.fold_children_with(self),
 
             Type::IndexedAccessType(ty) => {
                 let mut ty = ty.fold_with(self);
@@ -471,7 +468,7 @@ impl GenericExpander<'_> {
             | Type::Optional(..)
             | Type::Rest(..)
             | Type::Mapped(..)
-            | Type::Tpl(..) => return ty.fold_children_with(self),
+            | Type::Tpl(..) => ty.fold_children_with(self),
 
             _ => ty,
         }
@@ -498,7 +495,7 @@ impl Fold<Type> for GenericExpander<'_> {
         {
             let mut v = TypeParamNameUsageFinder::default();
             ty.visit_with(&mut v);
-            let will_expand = v.params.iter().any(|param| self.params.contains_key(&param));
+            let will_expand = v.params.iter().any(|param| self.params.contains_key(param));
             if !will_expand {
                 return ty;
             }

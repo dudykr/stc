@@ -63,7 +63,7 @@ fn profile_file(path: &Path) {
         };
 
         {
-            let mut analyzer = Analyzer::root(env, cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(env, cm, Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
         }
 

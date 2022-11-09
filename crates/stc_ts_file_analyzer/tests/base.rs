@@ -102,7 +102,7 @@ fn validate(input: &Path) -> Vec<StcError> {
                 // Don't print logs from builtin modules.
                 let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-                let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
+                let mut analyzer = Analyzer::root(env.clone(), cm, Default::default(), box &mut storage, &NoopLoader, None);
                 module.visit_with(&mut analyzer);
             }
 
@@ -118,7 +118,7 @@ fn validate(input: &Path) -> Vec<StcError> {
                 return Ok(());
             }
 
-            return Err(());
+            Err(())
         })
         .expect_err("");
 
@@ -193,7 +193,7 @@ fn errors(input: PathBuf) {
             // Don't print logs from builtin modules.
             let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-            let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(env.clone(), cm, Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
         }
 
@@ -213,7 +213,7 @@ fn errors(input: PathBuf) {
             return Ok(());
         }
 
-        return Err(());
+        Err(())
     })
     .unwrap_err();
 }
@@ -263,7 +263,7 @@ fn pass_only(input: PathBuf) {
             // Don't print logs from builtin modules.
             let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-            let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(env.clone(), cm, Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
         }
 
@@ -280,7 +280,7 @@ fn pass_only(input: PathBuf) {
             return Err(());
         }
 
-        return Ok(());
+        Ok(())
     })
     .unwrap();
 }
@@ -312,7 +312,7 @@ fn invoke_tsc(input: &Path) -> Vec<TscError> {
         .arg("--noEmit")
         .arg("--lib")
         .arg("es2020")
-        .arg(&input)
+        .arg(input)
         .output()
         .expect("failed to invoke tsc");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -468,7 +468,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
 
         panic!("Failed to validate.\n{}\n{}", res.replace("$DIR/", "/"), file_name.display())
     } else {
-        return Some(res);
+        Some(res)
     }
 }
 

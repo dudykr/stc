@@ -260,10 +260,8 @@ where
             if self.loaded.contains_key(&module_id) {
                 return Ok(None);
             }
-        } else {
-            if self.started.contains_key(&module_id) {
-                return Ok(None);
-            }
+        } else if self.started.contains_key(&module_id) {
+            return Ok(None);
         }
 
         debug!("Loading {:?}: {}", module_id, filename);
@@ -330,12 +328,12 @@ where
             }
         };
 
-        let fm = self.cm.load_file(&path)?;
+        let fm = self.cm.load_file(path)?;
         let lexer = Lexer::new(
             Syntax::Typescript(TsConfig {
                 dts: path.as_os_str().to_string_lossy().ends_with(".d.ts"),
                 tsx: path.extension().map(|v| v == "tsx").unwrap_or(false),
-                ..self.parser_config.clone()
+                ..self.parser_config
             }),
             self.target,
             StringInput::from(&*fm),

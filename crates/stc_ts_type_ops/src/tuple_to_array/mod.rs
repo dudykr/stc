@@ -29,14 +29,14 @@ impl Fold<Type> for TupleToArray {
                 }
 
                 let elem_type = box Type::new_union(span, types);
-                return Type::Array(Array {
+                Type::Array(Array {
                     span,
                     elem_type,
                     metadata: ArrayMetadata {
                         common: tuple.metadata.common,
                         ..Default::default()
                     },
-                });
+                })
             }
 
             _ => ty,

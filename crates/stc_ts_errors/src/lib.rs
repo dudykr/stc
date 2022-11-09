@@ -35,7 +35,7 @@ impl Errors {
     fn validate(&self, err: &Error) {
         if let Ok(var) = std::env::var("DBG_ERROR") {
             let s = format!("{:?}", err);
-            if var != "" && s.contains(&var) {
+            if !var.is_empty() && s.contains(&var) {
                 crate::debug::print_backtrace();
             }
         }
@@ -53,7 +53,7 @@ impl Errors {
         }
 
         let code = err.code();
-        if 5000 <= code && code < 6000 {
+        if (5000..6000).contains(&code) {
             // This is error for invalid options.
         } else if err.span().is_dummy() {
             unreachable!("Error with a dummy span found: {:?}", err)

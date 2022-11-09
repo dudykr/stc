@@ -50,14 +50,12 @@ impl Visit<RFnDecl> for AmbientFunctionHandler<'_, '_> {
                 }
             }
             self.last_ambient_name = Some(node.ident.clone());
-        } else {
-            if let Some(ref name) = self.last_ambient_name {
-                if node.ident.sym == name.sym {
-                    self.last_ambient_name = None;
-                } else {
-                    self.errors.report(Error::TS2389 { span: node.ident.span });
-                    self.last_ambient_name = None;
-                }
+        } else if let Some(ref name) = self.last_ambient_name {
+            if node.ident.sym == name.sym {
+                self.last_ambient_name = None;
+            } else {
+                self.errors.report(Error::TS2389 { span: node.ident.span });
+                self.last_ambient_name = None;
             }
         }
     }

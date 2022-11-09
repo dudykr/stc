@@ -22,7 +22,7 @@ pub fn parse(fm: &SourceFile, comments: &dyn Comments, unresolved_mark: Mark, to
             no_early_errors: false,
         }),
         EsVersion::latest(),
-        SourceFileInput::from(&*fm),
+        SourceFileInput::from(fm),
         Some(comments),
     );
     let mut parser = Parser::new_from(lexer);
@@ -31,7 +31,6 @@ pub fn parse(fm: &SourceFile, comments: &dyn Comments, unresolved_mark: Mark, to
         .map_err(|err| {
             HANDLER.with(|handler| {
                 err.into_diagnostic(handler).emit();
-                ()
             })
         })
         .unwrap();

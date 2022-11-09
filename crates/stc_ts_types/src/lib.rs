@@ -1949,7 +1949,7 @@ impl<'a> Iterator for Iter<'a> {
             Type::Union(ref u) => {
                 let ty = u.types.get(self.idx);
                 self.idx += 1;
-                return Some(ty?);
+                ty
             }
 
             _ if self.idx == 0 => {

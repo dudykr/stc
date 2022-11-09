@@ -201,7 +201,7 @@ fn print(cm: &Arc<SourceMap>, m: &Module) -> NormalizedOutput {
             wr: box JsWriter::new(cm.clone(), "\n", &mut buf, None),
         };
 
-        emitter.emit_module(&m).context("failed to emit module").unwrap();
+        emitter.emit_module(m).context("failed to emit module").unwrap();
     }
     String::from_utf8(buf).unwrap().into()
 }

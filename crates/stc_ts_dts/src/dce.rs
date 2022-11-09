@@ -25,16 +25,16 @@ pub(super) struct DceForDts<'a> {
 }
 
 impl DceForDts<'_> {
-    fn get_mapped<F, T>(&self, sym: &Id, mut pred: F) -> Option<T>
+    fn get_mapped<F, T>(&self, sym: &Id, pred: F) -> Option<T>
     where
         F: FnMut(&Type) -> Option<T>,
     {
         if let Some(types) = self.info.private_types.get(sym) {
-            for ty in &*types {
+            for ty in types {
                 debug_assert!(ty.is_clone_cheap(), "All exported types must be freezed: {:?}", ty);
             }
 
-            types.iter().filter_map(|ty| pred(ty)).next()
+            types.iter().filter_map(pred).next()
         } else {
             None
         }
@@ -224,16 +224,14 @@ impl VisitMut<RTsEnumDecl> for DceForDts<'_> {
                         init: if is_all_lit {
                             if has_no_init {
                                 Some(member.val.clone())
-                            } else {
-                                if should_init_only_first {
-                                    if i == 0 {
-                                        Some(member.val.clone())
-                                    } else {
-                                        None
-                                    }
-                                } else {
+                            } else if should_init_only_first {
+                                if i == 0 {
                                     Some(member.val.clone())
+                                } else {
+                                    None
                                 }
+                            } else {
+                                Some(member.val.clone())
                             }
                         } else {
                             None
@@ -374,14 +372,11 @@ impl VisitMut<RModuleItem> for DceForDts<'_> {
                 if self.used.get(&i.id.clone().into()).is_none() {
                     self.forced_module = true;
                     *node = RStmt::Empty(REmptyStmt { span }).into();
-                    return;
                 }
-                return;
             }
 
             RModuleItem::ModuleDecl(RModuleDecl::ExportDecl(export)) if self.in_declare => {
                 *node = RModuleItem::Stmt(RStmt::Decl(export.decl.take()));
-                return;
             }
             _ => {}
         }

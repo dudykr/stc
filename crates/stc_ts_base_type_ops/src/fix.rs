@@ -151,13 +151,11 @@ impl Fixer {
                             ..Default::default()
                         },
                     );
-                    return;
                 }
                 1 => {
                     let mut elem = u.types.drain(..).next().unwrap();
                     elem.respan(u.span);
                     *ty = elem;
-                    return;
                 }
                 _ => {}
             },
@@ -171,13 +169,11 @@ impl Fixer {
                             ..Default::default()
                         },
                     );
-                    return;
                 }
                 1 => {
                     let mut elem = i.types.drain(..).next().unwrap();
                     elem.respan(i.span);
                     *ty = elem;
-                    return;
                 }
                 _ => {}
             },

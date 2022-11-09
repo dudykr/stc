@@ -94,8 +94,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
             let mut target = EsVersion::default();
 
             let module = parser.parse_module().map_err(|e| {
-                e.into_diagnostic(&handler).emit();
-                ()
+                e.into_diagnostic(handler).emit();
             })?;
 
             let mut libs = vec![Lib::Es5];
@@ -108,7 +107,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
                 Some(ref cmts) => {
                     for cmt in cmts.iter() {
                         let s = cmt.text.trim();
-                        if !s.starts_with("@") {
+                        if !s.starts_with('@') {
                             continue;
                         }
                         let s = &s[1..]; // '@'
@@ -174,7 +173,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
                             // TODO
                         } else if s.starts_with("lib:") {
                             let mut ls = HashSet::<_>::default();
-                            for v in s["lib:".len()..].trim().split(",") {
+                            for v in s["lib:".len()..].trim().split(',') {
                                 ls.extend(Lib::load(v))
                             }
                             libs = ls.into_iter().collect()
@@ -220,8 +219,8 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
                     ..ts_config
                 },
                 Some(Debugger {
-                    cm: cm.clone(),
-                    handler: type_info_handler.clone(),
+                    cm,
+                    handler: type_info_handler,
                 }),
                 Arc::new(NodeResolver),
             );
@@ -284,7 +283,7 @@ impl Fold for Spanner {
 fn new_handler(cm: Arc<SourceMap>) -> (Handler, BufferedError) {
     let buf: BufferedError = Default::default();
 
-    let e = EmitterWriter::new(Box::new(buf.clone()), Some(cm.clone()), false, true);
+    let e = EmitterWriter::new(Box::new(buf.clone()), Some(cm), false, true);
 
     let handler = Handler::with_emitter_and_flags(
         Box::new(e),

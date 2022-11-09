@@ -79,7 +79,7 @@ struct Stats {
 }
 
 fn is_all_test_enabled() -> bool {
-    env::var("TEST").map(|s| s == "").unwrap_or(false)
+    env::var("TEST").map(|s| s.is_empty()).unwrap_or(false)
 }
 
 fn print_matched_errors() -> bool {
@@ -87,9 +87,9 @@ fn print_matched_errors() -> bool {
 }
 
 fn record_time(line_count: usize, time_of_check: Duration, full_time: Duration) {
-    static TOTAL_CHECK: Lazy<Mutex<Duration>> = Lazy::new(|| Default::default());
-    static TOTAL_FULL: Lazy<Mutex<Duration>> = Lazy::new(|| Default::default());
-    static LINES: Lazy<Mutex<usize>> = Lazy::new(|| Default::default());
+    static TOTAL_CHECK: Lazy<Mutex<Duration>> = Lazy::new(Default::default);
+    static TOTAL_FULL: Lazy<Mutex<Duration>> = Lazy::new(Default::default);
+    static LINES: Lazy<Mutex<usize>> = Lazy::new(Default::default);
 
     if cfg!(debug_assertions) {
         return;
@@ -136,7 +136,7 @@ fn record_time(line_count: usize, time_of_check: Duration, full_time: Duration) 
 
 /// Add stats and return total stats.
 fn record_stat(stats: Stats) -> Stats {
-    static STATS: Lazy<Mutex<Stats>> = Lazy::new(|| Default::default());
+    static STATS: Lazy<Mutex<Stats>> = Lazy::new(Default::default);
 
     if !cfg!(debug_assertions) {
         return stats;
@@ -317,10 +317,10 @@ fn parse_targets(s: &str) -> Vec<EsVersion> {
         "esnext" => return vec![EsVersion::Es2020],
         _ => {}
     }
-    if !s.contains(",") {
+    if !s.contains(',') {
         panic!("failed to parse `{}` as targets", s)
     }
-    s.split(",").map(|s| s.trim()).flat_map(parse_targets).collect()
+    s.split(',').map(|s| s.trim()).flat_map(parse_targets).collect()
 }
 
 fn parse_test(file_name: &Path) -> Vec<TestSpec> {
@@ -349,8 +349,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
         let mut targets = vec![(EsVersion::default(), false)];
 
         let program = parser.parse_program().map_err(|e| {
-            e.into_diagnostic(&handler).emit();
-            ()
+            e.into_diagnostic(handler).emit();
         })?;
 
         for line in fm.src.lines() {
@@ -388,19 +387,19 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
         let cmts = comments.leading.get(&span.lo());
         match cmts {
             Some(ref cmts) => {
-                let directive_start = cmts.iter().position(|cmt| cmt.text.trim().starts_with("@")).unwrap_or(0);
+                let directive_start = cmts.iter().position(|cmt| cmt.text.trim().starts_with('@')).unwrap_or(0);
                 let cmt_start_line = if directive_start == 0 {
                     0
                 } else {
                     cmts.iter()
-                        .find(|cmt| cmt.text.trim().starts_with("@"))
+                        .find(|cmt| cmt.text.trim().starts_with('@'))
                         .map(|cmt| cm.lookup_char_pos(cmt.span.hi).line)
                         .unwrap_or(0)
                 };
 
                 for cmt in cmts.iter().skip(directive_start) {
                     let s = cmt.text.trim();
-                    if !s.starts_with("@") {
+                    if !s.starts_with('@') {
                         if had_comment {
                             err_shift_n = cm.lookup_char_pos(cmt.span.hi).line - 1 - cmt_start_line;
                             break;
@@ -451,7 +450,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                     } else if s.starts_with("lib:") {
                         let s = s["lib:".len()..].trim();
                         let mut ls = HashSet::<_>::default();
-                        for v in s.split(",") {
+                        for v in s.split(',') {
                             ls.extend(Lib::load(&v.to_lowercase().replace("es6", "es2015")))
                         }
                         libs = ls.into_iter().collect()
@@ -517,12 +516,10 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         EsVersion::Es2021 => Lib::load("es2021.full"),
                         EsVersion::Es2022 => Lib::load("es2022.full"),
                     }
+                } else if specified {
+                    libs_with_deps(&libs)
                 } else {
-                    if specified {
-                        libs_with_deps(&libs)
-                    } else {
-                        libs.clone()
-                    }
+                    libs.clone()
                 };
 
                 TestSpec {
@@ -543,7 +540,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 fn do_test(file_name: &Path) -> Result<(), StdErr> {
     let file_stem = file_name.file_stem().unwrap();
     let fname = file_name.display().to_string();
-    let mut expected_errors = load_expected_errors(&file_name).unwrap();
+    let mut expected_errors = load_expected_errors(file_name).unwrap();
     expected_errors.sort();
 
     let specs = parse_test(file_name);
@@ -589,7 +586,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
                 let handler = Arc::new(handler);
                 let mut checker = Checker::new(
-                    cm.clone(),
+                    cm,
                     handler.clone(),
                     Env::simple(rule, target, module_config, &libs),
                     TsConfig {
@@ -627,7 +624,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                     return Ok(());
                 }
 
-                return Err(());
+                Err(())
             })
             .expect_err("");
 
@@ -635,7 +632,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         if !cfg!(debug_assertions) {
             let line_cnt = {
-                let content = fs::read_to_string(&file_name).unwrap();
+                let content = fs::read_to_string(file_name).unwrap();
 
                 content.lines().count()
             };
@@ -715,7 +712,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         // Print per-test stats so we can prevent regressions.
         if cfg!(debug_assertions) {
-            print_per_test_stat(&file_name, &stats);
+            print_per_test_stat(file_name, &stats);
         }
 
         let total_stats = record_stat(stats);
