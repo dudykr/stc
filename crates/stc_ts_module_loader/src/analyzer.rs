@@ -76,11 +76,8 @@ where
     fn visit_ts_module_decl(&mut self, n: &TsModuleDecl) {
         n.visit_children_with(self);
 
-        match &n.id {
-            TsModuleName::Str(s) => {
-                self.declared_modules.push(s.value.clone());
-            }
-            _ => {}
+        if let TsModuleName::Str(s) = &n.id {
+            self.declared_modules.push(s.value.clone());
         }
     }
 }
