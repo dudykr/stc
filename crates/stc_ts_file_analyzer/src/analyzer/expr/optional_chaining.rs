@@ -1,4 +1,4 @@
-use stc_ts_ast_rnode::{RExpr, RMemberExpr, ROptChainBase, ROptChainExpr};
+use stc_ts_ast_rnode::{RExpr, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr};
 use stc_ts_errors::DebugExt;
 use stc_ts_types::Type;
 use stc_utils::ext::TypeVecExt;
@@ -22,7 +22,14 @@ impl Analyzer<'_, '_> {
 
         match &node.base {
             ROptChainBase::Member(me) => {
-                let prop = self.validate_key(&me.prop, me.computed)?;
+                let prop = self.validate_key(
+                    &match &me.prop {
+                        RMemberProp::Ident(i) => RExpr::Ident(i.clone()),
+                        RMemberProp::Computed(c) => *c.expr.clone(),
+                        RMemberProp::PrivateName(p) => RExpr::PrivateName(p.clone()),
+                    },
+                    matches!(me.prop, RMemberProp::Computed(_)),
+                )?;
                 let obj = me.obj.validate_with(self)?;
 
                 let is_obj_optional = self.is_obj_optional(&obj)?;
