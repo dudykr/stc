@@ -9,9 +9,6 @@ interface C {
 }
 var c: C;
 
-var a: { opt: Base; }
-var b = { opt: new Base() }
-
 // sources
 interface D {
     opt?: Base;
@@ -24,15 +21,7 @@ interface F {
 }
 var d: D;
 var e: E;
-var f: F;
 
 c = d; // error
 c = e; // error
-
-a = d; // error
-a = e; // error
-
-b = d; // error
-b = e; // error
-
 export { }
