@@ -364,7 +364,11 @@ fn _assert_send_sync() {
 #[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Is, Spanned, Serialize, Deserialize)]
 pub enum Key {
     Computed(ComputedKey),
-    Normal { span: Span, sym: JsWord },
+    Normal {
+        #[use_eq_ignore_span]
+        span: Span,
+        sym: JsWord,
+    },
     Num(RNumber),
     BigInt(RBigInt),
     Private(PrivateName),
