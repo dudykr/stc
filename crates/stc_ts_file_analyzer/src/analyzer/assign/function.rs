@@ -750,29 +750,28 @@ impl Analyzer<'_, '_> {
         let required_non_void_li = li.clone().filter(|i| i.required && !i.ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
         let required_non_void_ri = ri.clone().filter(|i| i.required && !i.ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword));
 
-        if opts.for_overload {
-            if required_li.clone().count() > required_ri.clone().count() {
-                return Err(Error::SimpleAssignFailed { span, cause: None }).context("l.params.required.len > r.params.required.len");
-            }
+        if opts.for_overload && required_li.clone().count() > required_ri.clone().count() {
+            return Err(Error::SimpleAssignFailed { span, cause: None }).context("l.params.required.len > r.params.required.len");
         }
 
         // Don't ask why.
-        if li.clone().count() < required_ri.clone().count() {
-            if !l_has_rest && required_non_void_li.clone().count() < required_non_void_ri.clone().count() {
-                // I don't know why, but overload signature does not need to match overloaded
-                // signature.
-                if opts.for_overload {
-                    return Ok(());
-                }
-
-                return Err(Error::SimpleAssignFailed { span, cause: None }).with_context(|| {
-                    format!(
-                        "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: {:?}\nRight: {:?}\n",
-                        required_non_void_li.collect_vec(),
-                        required_non_void_ri.collect_vec()
-                    )
-                });
+        if li.clone().count() < required_ri.clone().count()
+            && !l_has_rest
+            && required_non_void_li.clone().count() < required_non_void_ri.clone().count()
+        {
+            // I don't know why, but overload signature does not need to match overloaded
+            // signature.
+            if opts.for_overload {
+                return Ok(());
             }
+
+            return Err(Error::SimpleAssignFailed { span, cause: None }).with_context(|| {
+                format!(
+                    "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: {:?}\nRight: {:?}\n",
+                    required_non_void_li.collect_vec(),
+                    required_non_void_ri.collect_vec()
+                )
+            });
         }
 
         for pair in li.zip_longest(ri) {

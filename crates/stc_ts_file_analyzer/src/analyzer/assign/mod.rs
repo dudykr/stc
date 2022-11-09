@@ -182,12 +182,8 @@ impl Analyzer<'_, '_> {
         let lhs = l.normalize();
         let rhs = r.normalize();
 
-        if op == op!("+=") {
-            if lhs.is_enum_variant() {
-                if rhs.is_type_lit() || rhs.is_bool() || rhs.is_symbol() || rhs.is_unique_symbol() {
-                    return Err(Error::OperatorCannotBeAppliedToTypes { span });
-                }
-            }
+        if op == op!("+=") && lhs.is_enum_variant() && (rhs.is_type_lit() || rhs.is_bool() || rhs.is_symbol() || rhs.is_unique_symbol()) {
+            return Err(Error::OperatorCannotBeAppliedToTypes { span });
         }
 
         match op {
@@ -266,10 +262,8 @@ impl Analyzer<'_, '_> {
         }
 
         // Addition to a string converts rhs into string.
-        if op == op!("+=") {
-            if lhs.is_str() {
-                return Ok(());
-            }
+        if op == op!("+=") && lhs.is_str() {
+            return Ok(());
         }
 
         if lhs.is_num() || lhs.is_enum_variant() {
