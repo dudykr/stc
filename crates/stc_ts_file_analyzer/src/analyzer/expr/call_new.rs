@@ -2970,16 +2970,9 @@ impl Analyzer<'_, '_> {
                                     ..Default::default()
                                 },
                             )
-                            .convert_err(|err| match err {
-                                _ => {
-                                    println!("NEWERR");
-                                    dbg!(&err);
-
-                                    Error::WrongArgType {
-                                        span: err.span(),
-                                        inner: box err,
-                                    }
-                                }
+                            .convert_err(|err| Error::WrongArgType {
+                                span: err.span(),
+                                inner: box err,
                             })
                             .context("arg is spread");
                         if let Err(err) = res {
