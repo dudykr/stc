@@ -336,10 +336,10 @@ impl Analyzer<'_, '_> {
         };
 
         // TypeScript functions are bivariant if strict_function_types is false.
-        if !self.env.rule().strict_function_types || opts.is_params_of_method_definition {
-            if self.assign_params(data, AssignOpts { ..opts }, &r_params, &l_params).is_ok() {
-                return Ok(());
-            }
+        if (!self.env.rule().strict_function_types || opts.is_params_of_method_definition)
+            && self.assign_params(data, AssignOpts { ..opts }, &r_params, &l_params).is_ok()
+        {
+            return Ok(());
         }
 
         // () => void
@@ -396,14 +396,7 @@ impl Analyzer<'_, '_> {
     /// b = a; // error
     /// ```
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn assign_to_function(
-        &mut self,
-        data: &mut AssignData,
-        mut opts: AssignOpts,
-        lt: &Type,
-        l: &Function,
-        r: &Type,
-    ) -> VResult<()> {
+    pub(super) fn assign_to_function(&mut self, data: &mut AssignData, opts: AssignOpts, lt: &Type, l: &Function, r: &Type) -> VResult<()> {
         let span = opts.span;
         let r = r.normalize();
 

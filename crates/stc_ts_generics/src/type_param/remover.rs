@@ -16,14 +16,14 @@ use swc_common::util::move_map::MoveMap;
 /// ```ts
 /// const arrayMap: <A, B>(f: (x: A) => B) => (a: A[]) => B[];
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct TypeParamRemover<'a> {
     scope: Scope<'a>,
 }
 
 impl TypeParamRemover<'static> {
     pub fn new() -> Self {
-        Self { scope: Default::default() }
+        Self::default()
     }
 }
 

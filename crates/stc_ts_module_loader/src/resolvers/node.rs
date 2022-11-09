@@ -1,3 +1,5 @@
+#![allow(clippy::manual_flatten)]
+
 use std::{
     fs::File,
     io::BufReader,

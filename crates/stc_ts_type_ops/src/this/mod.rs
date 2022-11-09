@@ -17,11 +17,8 @@ impl Visit<Type> for ThisFinder {
     fn visit(&mut self, ty: &Type) {
         ty.visit_children_with(self);
 
-        match ty {
-            Type::This(..) => {
-                self.found = true;
-            }
-            _ => {}
+        if let Type::This(..) = ty {
+            self.found = true;
         }
     }
 }
