@@ -1,6 +1,4 @@
 #![feature(box_syntax)]
-// Disabled because this is currently broken
-#![cfg(disabled)]
 
 use std::{
     path::{Path, PathBuf},
@@ -73,6 +71,7 @@ fn profile_file(name: &str, path: &Path) {
 }
 
 #[test]
+#[ignore = "Currently broken"]
 fn profile_csstypes() {
     profile_file("csstype", &PathBuf::new().join("node_modules").join("csstype").join("index.d.ts"));
 }
