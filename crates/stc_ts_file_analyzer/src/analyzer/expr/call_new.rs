@@ -103,6 +103,7 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::any(span, Default::default()));
             }
             RCallee::Expr(callee) => callee,
+            RCallee::Import(..) => todo!("dynamic import"),
         };
 
         let is_callee_iife = is_fn_expr(&callee);

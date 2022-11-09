@@ -1643,6 +1643,7 @@ impl Analyzer<'_, '_> {
                 ctxt: self.ctx.module_id,
                 type_args: type_args.cloned().map(Box::new),
             }),
+            _ => Ok(()),
         }
     }
 
@@ -1851,9 +1852,11 @@ pub(crate) fn left(t: &RTsEntityName) -> &RIdent {
     }
 }
 
-pub(crate) fn left_of_expr(t: &RExpr) -> &RIdent {
+pub(crate) fn left_of_expr(t: &RExpr) -> Option<&RIdent> {
     match t {
         RExpr::Member(t) => left_of_expr(&t.obj),
-        RExpr::Ident(i) => i,
+        RExpr::Ident(i) => Some(i),
+
+        _ => None,
     }
 }

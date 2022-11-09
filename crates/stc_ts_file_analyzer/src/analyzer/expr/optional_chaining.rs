@@ -57,8 +57,6 @@ impl Analyzer<'_, '_> {
             }
 
             ROptChainBase::Call(ce) => ce.validate_with_args(self, type_ann),
-
-            _ => unreachable!("Onvalid optional chaining expression found",),
         }
     }
 }

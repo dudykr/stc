@@ -3532,6 +3532,9 @@ impl Analyzer<'_, '_> {
                 )
                 .context("tried to resolve type from a ts entity name")
             }
+            _ => {
+                todo!("type_of_ts_entity_name: {:?}", n)
+            }
         }
     }
 
