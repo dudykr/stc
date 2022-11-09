@@ -494,7 +494,6 @@ assert_eq_size!(Instance, [u8; 32]);
 pub struct LitType {
     pub span: Span,
 
-    #[use_eq_ignore_span]
     pub lit: RTsLit,
     pub metadata: LitTypeMetadata,
 }
@@ -726,7 +725,6 @@ pub struct Method {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ClassProperty {
     pub span: Span,
-    #[use_eq_ignore_span]
     pub key: Key,
     pub value: Option<Box<Type>>,
     pub is_static: bool,
