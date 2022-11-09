@@ -3754,7 +3754,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
 
-        let mut ty = self
+        let ty = self
             .with_ctx(prop_access_ctx)
             .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var, Default::default())
             .context("tried to access property of an object to calculate type of a member expression")?;

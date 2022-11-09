@@ -396,14 +396,7 @@ impl Analyzer<'_, '_> {
     /// b = a; // error
     /// ```
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn assign_to_function(
-        &mut self,
-        data: &mut AssignData,
-        mut opts: AssignOpts,
-        lt: &Type,
-        l: &Function,
-        r: &Type,
-    ) -> VResult<()> {
+    pub(super) fn assign_to_function(&mut self, data: &mut AssignData, opts: AssignOpts, lt: &Type, l: &Function, r: &Type) -> VResult<()> {
         let span = opts.span;
         let r = r.normalize();
 

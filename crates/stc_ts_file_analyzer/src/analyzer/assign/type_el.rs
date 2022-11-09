@@ -874,7 +874,7 @@ impl Analyzer<'_, '_> {
     fn handle_assignment_of_type_elements_to_type_elements(
         &mut self,
         data: &mut AssignData,
-        mut opts: AssignOpts,
+        opts: AssignOpts,
         missing_fields: &mut Vec<TypeElement>,
         unhandled_rhs: &mut Vec<Span>,
         lhs: &[TypeElement],
