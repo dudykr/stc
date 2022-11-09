@@ -2945,6 +2945,11 @@ impl Analyzer<'_, '_> {
                     }
 
                     if arg.spread.is_some() {
+                        if let Err(err) = self.get_iterator_element_type(arg.span(), Cow::Borrowed(&arg.ty), false, Default::default()) {
+                            report_err!(Error::SpreadMustBeTupleOrPassedToRest { span: arg.span() });
+                            continue;
+                        }
+
                         match arg.ty.normalize() {
                             Type::Array(arg) => {
                                 // We should change type if the parameter is a rest parameter.
@@ -2965,9 +2970,16 @@ impl Analyzer<'_, '_> {
                                     ..Default::default()
                                 },
                             )
-                            .convert_err(|err| Error::WrongArgType {
-                                span: err.span(),
-                                inner: box err,
+                            .convert_err(|err| match err {
+                                _ => {
+                                    println!("NEWERR");
+                                    dbg!(&err);
+
+                                    Error::WrongArgType {
+                                        span: err.span(),
+                                        inner: box err,
+                                    }
+                                }
                             })
                             .context("arg is spread");
                         if let Err(err) = res {
