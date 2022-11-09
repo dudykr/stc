@@ -44,7 +44,7 @@
     "workbench.action.debug.start",
     "workbench.action.debug.run"
   ],
-  "rust-analyzer.checkOnSave.command": "check",
+  "rust-analyzer.checkOnSave.command": "clippy",
   "debug.allowBreakpointsEverywhere": true,
   "rust-analyzer.debug.openDebugPane": true,
 }
