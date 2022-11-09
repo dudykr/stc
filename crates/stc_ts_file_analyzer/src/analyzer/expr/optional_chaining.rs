@@ -30,7 +30,7 @@ impl Analyzer<'_, '_> {
                     },
                     matches!(me.prop, RMemberProp::Computed(_)),
                 )?;
-                let obj = me.obj.validate_with(self)?;
+                let obj = me.obj.validate_with_default(self)?;
 
                 let is_obj_optional = self.is_obj_optional(&obj)?;
 

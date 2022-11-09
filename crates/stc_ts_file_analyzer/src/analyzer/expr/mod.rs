@@ -3540,6 +3540,7 @@ impl Analyzer<'_, '_> {
         let RMemberExpr {
             ref obj, ref prop, span, ..
         } = *expr;
+        let computed = matches!(prop, RMemberProp::Computed(_));
 
         let name: Option<Name> = expr.try_into().ok();
 
@@ -3599,7 +3600,7 @@ impl Analyzer<'_, '_> {
                     RMemberProp::Computed(c) => *c.expr.clone(),
                     RMemberProp::PrivateName(p) => RExpr::PrivateName(p.clone()),
                 },
-                matches!(prop, RMemberProp::Computed(_)),
+                computed,
             )
             .report(&mut self.storage)
             .unwrap_or_else(|| {
@@ -3675,6 +3676,7 @@ impl Analyzer<'_, '_> {
         let RSuperPropExpr {
             ref obj, ref prop, span, ..
         } = *expr;
+        let computed = matches!(prop, RSuperProp::Computed(_));
 
         let mut errors = Errors::default();
 
@@ -3706,7 +3708,7 @@ impl Analyzer<'_, '_> {
                     RSuperProp::Ident(i) => RExpr::Ident(i.clone()),
                     RSuperProp::Computed(c) => *c.expr.clone(),
                 },
-                matches!(prop, RSuperProp::Computed(_)),
+                computed,
             )
             .report(&mut self.storage)
             .unwrap_or_else(|| {
@@ -3728,14 +3730,6 @@ impl Analyzer<'_, '_> {
             .with_ctx(prop_access_ctx)
             .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var, Default::default())
             .context("tried to access property of an object to calculate type of a member expression")?;
-
-        if !self.is_builtin {
-            if let Some(name) = name {
-                ty = self.apply_type_facts(&name, ty);
-
-                self.exclude_types_using_fact(span, &name, &mut ty);
-            }
-        }
 
         let ty = if computed {
             ty
