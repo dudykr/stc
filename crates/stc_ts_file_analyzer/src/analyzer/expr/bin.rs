@@ -1598,7 +1598,6 @@ impl Analyzer<'_, '_> {
                             ..
                         }) => {
                             self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: *span });
-                            self.storage.report(Error::ObjectIsPossiblyUndefined { span: *span });
                         }
 
                         Type::Keyword(KeywordType {
@@ -1607,7 +1606,6 @@ impl Analyzer<'_, '_> {
                             ..
                         }) => {
                             self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: *span });
-                            self.storage.report(Error::ObjectIsPossiblyNull { span: *span });
                         }
 
                         _ => errors.push(if is_left {
