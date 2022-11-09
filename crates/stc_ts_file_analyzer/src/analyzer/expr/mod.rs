@@ -3667,6 +3667,7 @@ impl Analyzer<'_, '_> {
                 if let Some(name) = extract_name_for_assignment(obj, false) {
                     let next_ty = self
                         .filter_types_with_property(
+                            span,
                             &obj_ty,
                             match &prop {
                                 Key::Normal { sym, .. } => sym,

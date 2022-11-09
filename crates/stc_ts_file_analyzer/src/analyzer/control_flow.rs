@@ -1130,18 +1130,24 @@ impl Analyzer<'_, '_> {
     /// Otherwise, this method calculates type facts created by `if (a.foo) ;`.
     /// In this case, this method tests if `type_facts` matches the type of
     /// property and returns `never` if it does not.
-    pub(super) fn filter_types_with_property(&mut self, src: &Type, property: &JsWord, type_facts: Option<TypeFacts>) -> VResult<Type> {
+    pub(super) fn filter_types_with_property(
+        &mut self,
+        span: Span,
+        src: &Type,
+        property: &JsWord,
+        type_facts: Option<TypeFacts>,
+    ) -> VResult<Type> {
         src.assert_valid();
 
         match src.normalize() {
             Type::Ref(..) => {
                 let src = self.expand_top_ref(src.span(), Cow::Borrowed(src), Default::default())?;
-                return self.filter_types_with_property(&src, property, type_facts);
+                return self.filter_types_with_property(span, &src, property, type_facts);
             }
             Type::Union(ty) => {
                 let mut new_types = vec![];
                 for ty in &ty.types {
-                    let ty = self.filter_types_with_property(&ty, property, type_facts)?;
+                    let ty = self.filter_types_with_property(span, &ty, property, type_facts)?;
                     new_types.push(ty);
                 }
                 new_types.retain(|ty| !ty.is_never());
@@ -1162,7 +1168,7 @@ impl Analyzer<'_, '_> {
 
         let prop_res = self
             .access_property(
-                src.span(),
+                src.span().or_else(|| span),
                 src,
                 &Key::Normal {
                     span: DUMMY_SP,
