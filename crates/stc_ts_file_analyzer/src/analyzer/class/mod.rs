@@ -172,11 +172,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RPrivateProp) -> VResult<ClassProperty> {
-        match p.key.id.sym {
-            js_word!("constructor") => {
-                self.storage.report(Error::ConstructorIsKeyword { span: p.key.id.span });
-            }
-            _ => {}
+        if let js_word!("constructor") = p.key.id.sym {
+            self.storage.report(Error::ConstructorIsKeyword { span: p.key.id.span });
         }
 
         let key = Key::Private(p.key.clone().into());
