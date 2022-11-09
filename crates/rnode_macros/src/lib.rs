@@ -288,12 +288,22 @@ fn handle_enum_variant_fields(nodes_to_convert: &[String], enum_name: Option<&Id
             handle_field(
                 nodes_to_convert,
                 &field.attrs,
-                &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span())),
+                &field
+                    .ident
+                    .clone()
+                    .unwrap_or_else(|| Ident::new(&format!("_{}", idx), field.ident.span())),
                 &field.ty,
             ),
         )
     }) {
-        let binding = &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span()));
+        let binding = &{
+            let this = field.ident.clone();
+            let default = Ident::new(&format!("_{}", idx), field.ident.span());
+            match this {
+                Some(x) => x,
+                None => default,
+            }
+        };
 
         bindings.push(binding.clone());
 
@@ -453,12 +463,26 @@ fn handle_struct_fields(attrs: &[Attribute], nodes_to_convert: &[String], struct
             handle_field(
                 nodes_to_convert,
                 &field.attrs,
-                &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span())),
+                &{
+                    let this = field.ident.clone();
+                    let default = Ident::new(&format!("_{}", idx), field.ident.span());
+                    match this {
+                        Some(x) => x,
+                        None => default,
+                    }
+                },
                 &field.ty,
             ),
         )
     }) {
-        let binding = &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span()));
+        let binding = &{
+            let this = field.ident.clone();
+            let default = Ident::new(&format!("_{}", idx), field.ident.span());
+            match this {
+                Some(x) => x,
+                None => default,
+            }
+        };
 
         bindings.push(binding.clone());
 
@@ -584,17 +608,14 @@ impl Fold for OptionReplacer<'_> {
     fn fold_type(&mut self, ty: Type) -> Type {
         let ty = fold_type(self, ty);
 
-        match &ty {
-            Type::Path(inner_path) => {
-                //
-                if let Some(inner_name) = inner_path.path.get_ident() {
-                    let is_rnode = self.nodes_to_convert.iter().any(|n| inner_name == &*format!("R{}", n));
-                    if is_rnode {
-                        return q!(Vars { inner_name }, (Option<inner_name>)).parse();
-                    }
+        if let Type::Path(inner_path) = &ty {
+            //
+            if let Some(inner_name) = inner_path.path.get_ident() {
+                let is_rnode = self.nodes_to_convert.iter().any(|n| inner_name == &*format!("R{}", n));
+                if is_rnode {
+                    return q!(Vars { inner_name }, (Option<inner_name>)).parse();
                 }
             }
-            _ => {}
         }
 
         ty
@@ -618,37 +639,34 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
     }
 
     // If type can be converted to RNode, do it.
-    match ty {
-        Type::Path(path_ty) => {
-            if let Some(name) = path_ty.path.get_ident() {
-                let rnode_name = Path::from(Ident::new(&format!("R{}", name), path_ty.path.span()));
-                if nodes_to_convert.iter().any(|n| name == n) {
-                    return RNodeField {
-                        ty: Type::Path(TypePath {
-                            path: rnode_name,
-                            qself: None,
-                        }),
-                        from_orig: q!(
-                            Vars { match_binding },
-                            ({
-                                use rnode::IntoRNode;
-                                match_binding.into_rnode(id_gen)
-                            })
-                        )
-                        .parse(),
-                        to_orig: q!(
-                            Vars { match_binding },
-                            ({
-                                use rnode::RNode;
-                                match_binding.into_orig()
-                            })
-                        )
-                        .parse(),
-                    };
-                }
+    if let Type::Path(path_ty) = ty {
+        if let Some(name) = path_ty.path.get_ident() {
+            let rnode_name = Path::from(Ident::new(&format!("R{}", name), path_ty.path.span()));
+            if nodes_to_convert.iter().any(|n| name == n) {
+                return RNodeField {
+                    ty: Type::Path(TypePath {
+                        path: rnode_name,
+                        qself: None,
+                    }),
+                    from_orig: q!(
+                        Vars { match_binding },
+                        ({
+                            use rnode::IntoRNode;
+                            match_binding.into_rnode(id_gen)
+                        })
+                    )
+                    .parse(),
+                    to_orig: q!(
+                        Vars { match_binding },
+                        ({
+                            use rnode::RNode;
+                            match_binding.into_orig()
+                        })
+                    )
+                    .parse(),
+                };
             }
         }
-        _ => {}
     }
 
     if arc {
@@ -901,25 +919,22 @@ fn prefix_type_name(ty: &Type) -> Type {
 }
 
 fn extract_generic<'a>(name: &str, ty: &'a Type) -> Option<&'a Type> {
-    match ty {
-        Type::Path(p) => {
-            let last = p.path.segments.last().unwrap();
+    if let Type::Path(p) = ty {
+        let last = p.path.segments.last().unwrap();
 
-            if !last.arguments.is_empty() && last.ident == name {
-                match &last.arguments {
-                    PathArguments::AngleBracketed(tps) => {
-                        let arg = tps.args.first().unwrap();
+        if !last.arguments.is_empty() && last.ident == name {
+            match &last.arguments {
+                PathArguments::AngleBracketed(tps) => {
+                    let arg = tps.args.first().unwrap();
 
-                        match arg {
-                            GenericArgument::Type(arg) => return Some(arg),
-                            _ => unimplemented!("generic parameter other than type"),
-                        }
+                    match arg {
+                        GenericArgument::Type(arg) => return Some(arg),
+                        _ => unimplemented!("generic parameter other than type"),
                     }
-                    _ => unimplemented!("Box() -> T or Box without a type parameter"),
                 }
+                _ => unimplemented!("Box() -> T or Box without a type parameter"),
             }
         }
-        _ => {}
     }
 
     None
