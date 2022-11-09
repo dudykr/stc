@@ -380,7 +380,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Assign `right` to `left`. You can just use default for [AssignData].
-    pub(crate) fn assign_with_opts(&mut self, data: &mut AssignData, mut opts: AssignOpts, left: &Type, right: &Type) -> VResult<()> {
+    pub(crate) fn assign_with_opts(&mut self, data: &mut AssignData, opts: AssignOpts, left: &Type, right: &Type) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
@@ -490,7 +490,7 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Borrowed(ty))
     }
 
-    fn assign_inner(&mut self, data: &mut AssignData, left: &Type, right: &Type, mut opts: AssignOpts) -> VResult<()> {
+    fn assign_inner(&mut self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
         left.assert_valid();
         right.assert_valid();
 

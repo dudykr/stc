@@ -2,8 +2,6 @@
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(test)]
-// Disabled because .d.ts is currently broken
-#![cfg(disabled)]
 
 extern crate test;
 
@@ -31,8 +29,13 @@ use swc_ecma_utils::drop_span;
 use swc_ecma_visit::{Fold, FoldWith};
 use testing::{assert_eq, NormalizedOutput, StdErr};
 
-#[testing_macros::fixture("dts/**/*.ts", exclude(".*.d\\.ts"))]
+#[testing_macros::fixture("tests/dts/**/*.ts", exclude(".*.d\\.ts"))]
 fn fixture(input: PathBuf) {
+    // Currently disabled because .d.ts is broken
+    if true {
+        return;
+    }
+
     do_test(&input).unwrap();
 }
 
@@ -251,10 +254,8 @@ fn get_correct_dts(path: &Path) -> (Arc<String>, Module) {
             Syntax::Typescript(TsConfig {
                 tsx: true,
                 decorators: true,
-                dynamic_import: true,
                 dts: true,
                 no_early_errors: true,
-                import_assertions: false,
             }),
             SourceFileInput::from(&*fm),
             None,
@@ -298,7 +299,7 @@ impl Normalizer {
                 TsType::TsTypeOperator(_) => 15000,
                 TsType::TsIndexedAccessType(_) => 16000,
                 TsType::TsMappedType(_) => 17000,
-                TsType::TsLitType(ty) => match ty.lit {
+                TsType::TsLitType(ty) => match &ty.lit {
                     TsLit::Number(v) => 18000 + v.value.round() as usize,
                     TsLit::Str(_) => 18100,
                     TsLit::Bool(_) => 18200,

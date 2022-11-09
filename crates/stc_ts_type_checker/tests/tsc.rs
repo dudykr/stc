@@ -121,6 +121,7 @@ fn record_time(line_count: usize, time_of_check: Duration, full_time: Duration) 
         }
     );
 
+    #[allow(dead_code)]
     #[derive(Debug)]
     struct Timings {
         lines: usize,
