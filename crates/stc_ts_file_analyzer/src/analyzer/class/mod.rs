@@ -213,13 +213,13 @@ impl Analyzer<'_, '_> {
             && !self.ctx.ignore_errors
             && self.ctx.in_class_with_super
             && c.body.is_some()
-            && match super_class.map(Type::normalize) {
+            && !matches!(
+                super_class.map(Type::normalize),
                 Some(Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
-                })) => false,
-                _ => true,
-            }
+                }))
+            )
         {
             let mut v = ConstructorSuperCallFinder::default();
             c.visit_with(&mut v);
@@ -250,8 +250,8 @@ impl Analyzer<'_, '_> {
                     let mut has_optional = false;
                     for p in params.iter() {
                         if has_optional {
-                            match p {
-                                RParamOrTsParamProp::Param(RParam { pat, .. }) => match pat {
+                            if let RParamOrTsParamProp::Param(RParam { pat, .. }) = p {
+                                match pat {
                                     RPat::Ident(RBindingIdent {
                                         id: RIdent { optional: true, .. },
                                         ..
@@ -260,25 +260,22 @@ impl Analyzer<'_, '_> {
                                     _ => {
                                         child.storage.report(Error::TS1016 { span: p.span() });
                                     }
-                                },
-                                _ => {}
+                                }
                             }
                         }
 
-                        match *p {
-                            RParamOrTsParamProp::Param(RParam {
-                                pat:
-                                    RPat::Ident(RBindingIdent {
-                                        id: RIdent { optional, .. },
-                                        ..
-                                    }),
-                                ..
-                            }) => {
-                                if optional {
-                                    has_optional = true;
-                                }
+                        if let RParamOrTsParamProp::Param(RParam {
+                            pat:
+                                RPat::Ident(RBindingIdent {
+                                    id: RIdent { optional, .. },
+                                    ..
+                                }),
+                            ..
+                        }) = *p
+                        {
+                            if optional {
+                                has_optional = true;
                             }
-                            _ => {}
                         }
                     }
                 }

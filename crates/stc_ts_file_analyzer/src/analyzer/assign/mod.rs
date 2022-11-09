@@ -484,12 +484,12 @@ impl Analyzer<'_, '_> {
         Ok(Cow::Borrowed(ty))
     }
 
-    fn assign_inner(&mut self, data: &mut AssignData, left: &Type, right: &Type, mut opts: AssignOpts) -> VResult<()> {
+    fn assign_inner(&mut self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
         left.assert_valid();
         right.assert_valid();
 
-        let l = dump_type_as_string(&self.cm, &left);
-        let r = dump_type_as_string(&self.cm, &right);
+        let l = dump_type_as_string(&self.cm, left);
+        let r = dump_type_as_string(&self.cm, right);
 
         let _panic_ctx = debug_ctx!(format!("left = {}", l));
         let _panic_ctx = debug_ctx!(format!("right = {}", r));
