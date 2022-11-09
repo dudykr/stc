@@ -282,14 +282,11 @@ impl Visit<RBindingIdent> for DepAnalyzer {
 
 impl Visit<RExpr> for DepAnalyzer {
     fn visit(&mut self, node: &RExpr) {
-        match node {
-            RExpr::Ident(i) => {
-                self.used.insert(TypedId {
-                    kind: IdCtx::Var,
-                    id: i.into(),
-                });
-            }
-            _ => {}
+        if let RExpr::Ident(i) = node {
+            self.used.insert(TypedId {
+                kind: IdCtx::Var,
+                id: i.into(),
+            });
         }
 
         node.visit_children_with(self);
@@ -300,14 +297,11 @@ impl Visit<RProp> for DepAnalyzer {
     fn visit(&mut self, p: &RProp) {
         p.visit_children_with(self);
 
-        match p {
-            RProp::Shorthand(i) => {
-                self.used.insert(TypedId {
-                    kind: IdCtx::Var,
-                    id: i.into(),
-                });
-            }
-            _ => {}
+        if let RProp::Shorthand(i) = p {
+            self.used.insert(TypedId {
+                kind: IdCtx::Var,
+                id: i.into(),
+            });
         }
     }
 }

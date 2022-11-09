@@ -325,9 +325,8 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RTsParamProp) -> VResult<FnParam> {
         if self.ctx.in_declare {
-            match p.param {
-                RTsParamPropParam::Assign(..) => self.storage.report(Error::InitializerDisallowedInAmbientContext { span: p.span }),
-                _ => {}
+            if let RTsParamPropParam::Assign(..) = p.param {
+                self.storage.report(Error::InitializerDisallowedInAmbientContext { span: p.span })
             }
         }
 

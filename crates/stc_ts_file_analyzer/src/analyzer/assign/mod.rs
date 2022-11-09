@@ -288,10 +288,8 @@ impl Analyzer<'_, '_> {
 
         match lhs {
             Type::TypeLit(lhs) => {
-                if lhs.members.is_empty() {
-                    if rhs.is_str() {
-                        return Ok(());
-                    }
+                if lhs.members.is_empty() && rhs.is_str() {
+                    return Ok(());
                 }
             }
             _ => {}
@@ -709,10 +707,8 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if opts.allow_assignment_of_param {
-            if rhs.is_type_param() {
-                return Ok(());
-            }
+        if opts.allow_assignment_of_param && rhs.is_type_param() {
+            return Ok(());
         }
 
         match rhs {
@@ -750,10 +746,8 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 _ => {
-                    if opts.for_castablity {
-                        if rhs.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
-                            return Ok(());
-                        }
+                    if opts.for_castablity && rhs.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
+                        return Ok(());
                     }
                 }
             },
@@ -789,10 +783,8 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if to.is_str() || to.is_num() {
-            if rhs.is_type_lit() {
-                fail!()
-            }
+        if (to.is_str() || to.is_num()) && rhs.is_type_lit() {
+            fail!()
         }
 
         // Allow v = null and v = undefined if strict null check is false
@@ -1164,10 +1156,8 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if opts.allow_assignment_of_void.unwrap_or_default() {
-            if rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
-                return Ok(());
-            }
+        if opts.allow_assignment_of_void.unwrap_or_default() && rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+            return Ok(());
         }
 
         match rhs {
@@ -1496,22 +1486,23 @@ impl Analyzer<'_, '_> {
             // let a: string | number = 'string';
             Type::Union(lu) => {
                 // true | false = boolean
-                if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
-                    if lu.types.iter().any(|ty| match ty.normalize() {
+                if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword)
+                    && lu.types.iter().any(|ty| match ty.normalize() {
                         Type::Lit(LitType {
                             lit: RTsLit::Bool(RBool { value: true, .. }),
                             ..
                         }) => true,
                         _ => false,
-                    }) && lu.types.iter().any(|ty| match ty.normalize() {
+                    })
+                    && lu.types.iter().any(|ty| match ty.normalize() {
                         Type::Lit(LitType {
                             lit: RTsLit::Bool(RBool { value: false, .. }),
                             ..
                         }) => true,
                         _ => false,
-                    }) {
-                        return Ok(());
-                    }
+                    })
+                {
+                    return Ok(());
                 }
 
                 match rhs {

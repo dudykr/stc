@@ -226,19 +226,23 @@ impl Analyzer<'_, '_> {
                 Type::Tuple(..) | Type::Array(..) | Type::EnumVariant(..) if lhs.is_empty() => return Ok(()),
 
                 Type::Array(..) | Type::Tuple(..) => {
-                    if opts.allow_assignment_of_array_to_optional_type_lit {
-                        if lhs.iter().all(|el| match el {
-                            TypeElement::Property(PropertySignature { optional: true, .. })
-                            | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
-                            _ => false,
-                        }) {
-                            return Ok(());
-                        }
+                    if opts.allow_assignment_of_array_to_optional_type_lit
+                        && lhs.iter().all(|el| {
+                            matches!(
+                                el,
+                                TypeElement::Property(PropertySignature { optional: true, .. })
+                                    | TypeElement::Method(MethodSignature { optional: true, .. })
+                            )
+                        })
+                    {
+                        return Ok(());
                     }
-                    if lhs.iter().any(|member| match member {
-                        TypeElement::Property(PropertySignature { optional: true, .. })
-                        | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
-                        _ => false,
+                    if lhs.iter().any(|member| {
+                        matches!(
+                            member,
+                            TypeElement::Property(PropertySignature { optional: true, .. })
+                                | TypeElement::Method(MethodSignature { optional: true, .. })
+                        )
                     }) {
                         return Err(Error::SimpleAssignFailed { span, cause: None });
                     }
@@ -874,7 +878,7 @@ impl Analyzer<'_, '_> {
     fn handle_assignment_of_type_elements_to_type_elements(
         &mut self,
         data: &mut AssignData,
-        mut opts: AssignOpts,
+        opts: AssignOpts,
         missing_fields: &mut Vec<TypeElement>,
         unhandled_rhs: &mut Vec<Span>,
         lhs: &[TypeElement],
@@ -1008,18 +1012,15 @@ impl Analyzer<'_, '_> {
                             match lm {
                                 TypeElement::Property(ref lp) => match rm {
                                     TypeElement::Property(ref rp) => {
-                                        if lp.accessibility != rp.accessibility {
-                                            if lp.accessibility == Some(Accessibility::Private)
-                                                || rp.accessibility == Some(Accessibility::Private)
-                                            {
-                                                return Err(Error::AssignFailedDueToAccessibility { span });
-                                            }
+                                        if lp.accessibility != rp.accessibility
+                                            && (lp.accessibility == Some(Accessibility::Private)
+                                                || rp.accessibility == Some(Accessibility::Private))
+                                        {
+                                            return Err(Error::AssignFailedDueToAccessibility { span });
                                         }
 
-                                        if !opts.for_castablity {
-                                            if !lp.optional && rp.optional {
-                                                return Err(Error::AssignFailedDueToOptionalityDifference { span });
-                                            }
+                                        if !opts.for_castablity && !lp.optional && rp.optional {
+                                            return Err(Error::AssignFailedDueToOptionalityDifference { span });
                                         }
 
                                         // Allow assigning undefined to optional properties.
@@ -1390,10 +1391,8 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if done {
-            if errors.is_empty() {
-                return Ok(());
-            }
+        if done && errors.is_empty() {
+            return Ok(());
         }
 
         if !errors.is_empty() {

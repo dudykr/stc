@@ -10,11 +10,8 @@ impl Visit<RAssignExpr> for YieldValueUsageFinder {
     fn visit(&mut self, e: &RAssignExpr) {
         e.visit_children_with(self);
 
-        match &*e.right {
-            RExpr::Yield(..) => {
-                self.found = true;
-            }
-            _ => {}
+        if let RExpr::Yield(..) = &*e.right {
+            self.found = true;
         }
     }
 }
@@ -23,11 +20,8 @@ impl Visit<RVarDeclarator> for YieldValueUsageFinder {
     fn visit(&mut self, v: &RVarDeclarator) {
         v.visit_children_with(self);
 
-        match v.init.as_deref() {
-            Some(RExpr::Yield(..)) => {
-                self.found = true;
-            }
-            _ => {}
+        if let Some(RExpr::Yield(..)) = v.init.as_deref() {
+            self.found = true;
         }
     }
 }
