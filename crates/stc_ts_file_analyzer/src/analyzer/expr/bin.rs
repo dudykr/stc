@@ -553,7 +553,21 @@ impl Analyzer<'_, '_> {
                     let lt = lt.normalize();
                     let rt = rt.normalize();
 
-                    self.report_possibly_null_or_undefined(lt.span(), &lt).report(&mut self.storage);
+                    if lt.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                        || lt.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                        || rt.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                        || rt.is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                    {
+                        if lt.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || lt.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
+                            self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: lt.span() })
+                        }
+
+                        if rt.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || rt.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
+                            self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: rt.span() })
+                        }
+                    } else {
+                        self.report_possibly_null_or_undefined(lt.span(), &lt).report(&mut self.storage);
+                    }
 
                     if lt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
                         || lt.is_str()
