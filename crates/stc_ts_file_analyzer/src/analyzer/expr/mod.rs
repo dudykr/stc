@@ -3553,7 +3553,8 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         metadata: Default::default(),
                     }),
-                ]))
+                ])
+                .cheap())
             }
 
             _ => {
