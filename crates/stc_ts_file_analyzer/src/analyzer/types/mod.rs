@@ -1603,6 +1603,10 @@ impl Analyzer<'_, '_> {
         }
 
         let l = left_of_expr(&type_name);
+        let l = match l {
+            Some(v) => v,
+            _ => return Ok(()),
+        };
         let top_id: Id = l.into();
 
         let is_resolved = self.data.bindings.types.contains(&top_id)

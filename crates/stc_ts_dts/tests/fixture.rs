@@ -295,10 +295,8 @@ fn get_correct_dts(path: &Path) -> (Arc<String>, Module) {
             Syntax::Typescript(TsConfig {
                 tsx: true,
                 decorators: true,
-                dynamic_import: true,
                 dts: true,
                 no_early_errors: true,
-                import_assertions: false,
             }),
             SourceFileInput::from(&*fm),
             None,
@@ -342,7 +340,7 @@ impl Normalizer {
                 TsType::TsTypeOperator(_) => 15000,
                 TsType::TsIndexedAccessType(_) => 16000,
                 TsType::TsMappedType(_) => 17000,
-                TsType::TsLitType(ty) => match ty.lit {
+                TsType::TsLitType(ty) => match ty.lit.clone() {
                     TsLit::Number(v) => 18000 + v.value.round() as usize,
                     TsLit::Str(_) => 18100,
                     TsLit::Bool(_) => 18200,
