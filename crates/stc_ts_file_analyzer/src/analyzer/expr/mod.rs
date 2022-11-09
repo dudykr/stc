@@ -3731,39 +3731,6 @@ impl Analyzer<'_, '_> {
             .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var, Default::default())
             .context("tried to access property of an object to calculate type of a member expression")?;
 
-        let ty = if computed {
-            ty
-        } else {
-            if self.ctx.in_cond && self.ctx.should_store_truthy_for_access {
-                // Add type facts.
-                if let Some(name) = extract_name_for_assignment(obj, false) {
-                    let next_ty = self
-                        .filter_types_with_property(
-                            &obj_ty,
-                            match &prop {
-                                Key::Normal { sym, .. } => sym,
-                                _ => unreachable!(),
-                            },
-                            Some(TypeFacts::Truthy),
-                        )
-                        .report(&mut self.storage)
-                        .map(|ty| ty.cheap());
-                    if let Some(next_ty) = next_ty {
-                        self.cur_facts
-                            .false_facts
-                            .excludes
-                            .entry(name.clone())
-                            .or_default()
-                            .push(next_ty.clone());
-
-                        self.add_deep_type_fact(span, name, next_ty, true);
-                    }
-                }
-            }
-
-            ty
-        };
-
         if should_be_optional {
             Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
         } else {
@@ -3914,7 +3881,11 @@ impl Analyzer<'_, '_> {
         if e.exprs.is_empty() {
             return Ok(Type::Lit(LitType {
                 span: e.span,
-                lit: RTsLit::Str(e.quasis[0].cooked.clone().unwrap_or_else(|| e.quasis[0].raw.clone())),
+                lit: RTsLit::Str(RStr {
+                    span: e.span,
+                    value: (&*e.quasis[0].cooked.clone().unwrap_or_else(|| e.quasis[0].raw.clone())).into(),
+                    raw: None,
+                }),
                 metadata: Default::default(),
             }));
         }
