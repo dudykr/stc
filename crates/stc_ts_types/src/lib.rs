@@ -3,6 +3,7 @@
 //! The visitor is too slow to compile every time I make change.
 #![deny(deprecated)]
 #![allow(incomplete_features)]
+#![allow(clippy::needless_update)]
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(specialization)]
@@ -791,9 +792,8 @@ assert_eq_size!(Operator, [u8; 32]);
 
 impl TypeEq for Operator {
     fn type_eq(&self, other: &Self) -> bool {
-        match self.op {
-            TsTypeOperatorOp::Unique => return false,
-            _ => {}
+        if let TsTypeOperatorOp::Unique = self.op {
+            return false;
         }
 
         self.op == other.op && self.ty.type_eq(&other.ty)
@@ -1223,7 +1223,7 @@ impl Type {
         let has_bool = tys.iter().any(|ty| ty.is_bool());
         let has_num = tys.iter().any(|ty| ty.is_num());
 
-        if (has_str && has_bool) || (has_bool && has_num) || (has_num && has_str) {
+        if u32::from(has_str) + u32::from(has_bool) + u32::from(has_num) > 1 {
             return Type::never(span, Default::default());
         }
 
@@ -1489,7 +1489,7 @@ impl Type {
         self.is_kwd(TsKeywordTypeKind::TsNeverKeyword)
     }
 
-    pub fn never<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+    pub fn never(span: Span, metadata: KeywordTypeMetadata) -> Self {
         Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsNeverKeyword,
@@ -1497,7 +1497,7 @@ impl Type {
         })
     }
 
-    pub fn undefined<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+    pub fn undefined(span: Span, metadata: KeywordTypeMetadata) -> Self {
         Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsUndefinedKeyword,
@@ -1505,7 +1505,7 @@ impl Type {
         })
     }
 
-    pub fn any<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+    pub fn any(span: Span, metadata: KeywordTypeMetadata) -> Self {
         Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -1513,7 +1513,7 @@ impl Type {
         })
     }
 
-    pub fn void<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+    pub fn void(span: Span, metadata: KeywordTypeMetadata) -> Self {
         Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsVoidKeyword,
@@ -1521,7 +1521,7 @@ impl Type {
         })
     }
 
-    pub fn unknown<'any>(span: Span, metadata: KeywordTypeMetadata) -> Self {
+    pub fn unknown(span: Span, metadata: KeywordTypeMetadata) -> Self {
         Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsUnknownKeyword,
@@ -1916,12 +1916,9 @@ impl Type {
     /// `Type::Static` is normalized.
     #[instrument(skip(self))]
     pub fn normalize_mut(&mut self) -> &mut Type {
-        match self {
-            Type::Arc(Freezed { ty }) => {
-                let ty = Arc::make_mut(ty);
-                *self = replace(ty, Type::any(DUMMY_SP, Default::default()));
-            }
-            _ => {}
+        if let Type::Arc(Freezed { ty }) = self {
+            let ty = Arc::make_mut(ty);
+            *self = replace(ty, Type::any(DUMMY_SP, Default::default()));
         }
 
         self
@@ -1967,62 +1964,55 @@ impl FusedIterator for Iter<'_> {}
 impl Type {
     /// Returns true if `self` is a `string` or a string literal.
     pub fn is_str(&self) -> bool {
-        match self.normalize() {
+        matches!(
+            self.normalize(),
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsStringKeyword,
                 ..
-            })
-            | Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => true,
-            _ => false,
-        }
+            }) | Type::Lit(LitType { lit: RTsLit::Str(..), .. })
+        )
     }
 
     pub fn is_str_lit(&self) -> bool {
-        match self.normalize() {
-            Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => true,
-            _ => false,
-        }
+        matches!(self.normalize(), Type::Lit(LitType { lit: RTsLit::Str(..), .. }))
     }
 
     pub fn is_bool_lit(&self) -> bool {
-        match self.normalize() {
-            Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => true,
-            _ => false,
-        }
+        matches!(self.normalize(), Type::Lit(LitType { lit: RTsLit::Bool(..), .. }))
     }
 
     pub fn is_num(&self) -> bool {
-        match self.normalize() {
+        matches!(
+            self.normalize(),
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsNumberKeyword,
                 ..
+            }) | Type::Lit(LitType {
+                lit: RTsLit::Number(..),
+                ..
             })
-            | Type::Lit(LitType {
-                lit: RTsLit::Number(..), ..
-            }) => true,
-            _ => false,
-        }
+        )
     }
 
     pub fn is_num_lit(&self) -> bool {
-        match self.normalize() {
+        matches!(
+            self.normalize(),
             Type::Lit(LitType {
-                lit: RTsLit::Number(..), ..
-            }) => true,
-            _ => false,
-        }
+                lit: RTsLit::Number(..),
+                ..
+            })
+        )
     }
 
     /// Returns true if `self` is a `boolean` or a boolean literal.
     pub fn is_bool(&self) -> bool {
-        match self.normalize() {
+        matches!(
+            self.normalize(),
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                 ..
-            })
-            | Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => true,
-            _ => false,
-        }
+            }) | Type::Lit(LitType { lit: RTsLit::Bool(..), .. })
+        )
     }
 }
 

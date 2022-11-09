@@ -4,6 +4,7 @@
 #![allow(incomplete_features)]
 #![allow(unused_variables)]
 #![allow(dead_code)]
+#![allow(clippy::needless_update)]
 
 use swc_common::TypeEq;
 

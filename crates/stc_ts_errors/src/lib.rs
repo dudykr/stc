@@ -1,3 +1,4 @@
+#![allow(clippy::only_used_in_recursion)]
 #![allow(incomplete_features)]
 #![deny(variant_size_differences)]
 #![feature(box_syntax)]
@@ -1960,20 +1961,20 @@ impl Error {
     }
 
     pub fn is_property_not_found(&self) -> bool {
-        match self.actual() {
+        matches!(
+            self.actual(),
             Error::NoSuchProperty { .. }
-            | Error::NoSuchPropertyInClass { .. }
-            | Error::NoSuchPropertyInModule { .. }
-            | Error::NoSuchPropertyInThis { .. } => true,
-            _ => false,
-        }
+                | Error::NoSuchPropertyInClass { .. }
+                | Error::NoSuchPropertyInModule { .. }
+                | Error::NoSuchPropertyInThis { .. }
+        )
     }
 
     pub fn is_var_not_found(&self) -> bool {
-        match self.actual() {
-            Self::NoSuchVar { .. } | Self::NoSuchVarButThisHasSuchProperty { .. } | Self::NoSuchVarForShorthand { .. } => true,
-            _ => false,
-        }
+        matches!(
+            self.actual(),
+            Self::NoSuchVar { .. } | Self::NoSuchVarButThisHasSuchProperty { .. } | Self::NoSuchVarForShorthand { .. }
+        )
     }
 
     pub fn is_assign_failure(&self) -> bool {
@@ -1981,10 +1982,7 @@ impl Error {
     }
 
     pub fn is_type_not_found(&self) -> bool {
-        match self.actual() {
-            Self::NoSuchType { .. } | Self::NoSuchTypeButVarExists { .. } => true,
-            _ => false,
-        }
+        matches!(self.actual(), Self::NoSuchType { .. } | Self::NoSuchTypeButVarExists { .. })
     }
 
     fn msg(&self) -> Cow<'static, str> {

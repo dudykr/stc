@@ -144,68 +144,65 @@ impl UnionNormalizer {
         let mut extra_members = vec![];
         //
         for (type_idx, ty) in u.types.iter().enumerate() {
-            match ty.normalize() {
-                Type::TypeLit(ty) => {
-                    inexact |= ty.metadata.inexact;
-                    prev_specified |= ty.metadata.specified;
+            if let Type::TypeLit(ty) = ty.normalize() {
+                inexact |= ty.metadata.inexact;
+                prev_specified |= ty.metadata.specified;
 
-                    for (i, m) in ty.members.iter().enumerate() {
-                        //
-                        match m {
-                            TypeElement::Call(CallSignature {
-                                type_params,
-                                params,
-                                ret_ty,
-                                ..
-                            }) => {
-                                let mut params = params.clone();
+                for (i, m) in ty.members.iter().enumerate() {
+                    //
+                    match m {
+                        TypeElement::Call(CallSignature {
+                            type_params,
+                            params,
+                            ret_ty,
+                            ..
+                        }) => {
+                            let mut params = params.clone();
 
-                                if let Some(type_params) = type_params {
-                                    if let Some(prev) = new_type_params.get(&i) {
-                                        // We replace new type params with previous type param.
-                                        let inferred = prev
-                                            .params
-                                            .iter()
-                                            .cloned()
-                                            .map(Type::Param)
-                                            .zip(type_params.params.iter())
-                                            .map(|(prev, new)| (new.name.clone(), prev))
-                                            .collect();
+                            if let Some(type_params) = type_params {
+                                if let Some(prev) = new_type_params.get(&i) {
+                                    // We replace new type params with previous type param.
+                                    let inferred = prev
+                                        .params
+                                        .iter()
+                                        .cloned()
+                                        .map(Type::Param)
+                                        .zip(type_params.params.iter())
+                                        .map(|(prev, new)| (new.name.clone(), prev))
+                                        .collect();
 
-                                        params = params.fold_with(&mut TypeParamReplacer {
-                                            inferred,
-                                            include_type_params: true,
-                                        });
-                                    } else {
-                                        new_type_params.entry(i).or_insert_with(|| type_params.clone());
-                                    }
+                                    params = params.fold_with(&mut TypeParamReplacer {
+                                        inferred,
+                                        include_type_params: true,
+                                    });
+                                } else {
+                                    new_type_params.entry(i).or_insert_with(|| type_params.clone());
                                 }
-
-                                // Parameters are intersectioned, and return
-                                // types are unioned.
-
-                                for (idx, param) in params.into_iter().enumerate() {
-                                    let new_params = new_params.entry(i).or_default();
-                                    if new_params.len() <= idx {
-                                        new_params.extend(repeat(vec![]).take(idx + 1 - new_params.len()));
-                                    }
-
-                                    new_params[idx].push(param);
-                                }
-
-                                new_return_types.entry(i).or_default().extend(ret_ty.clone().map(|v| *v));
                             }
-                            _ => {
-                                if extra_members.len() <= type_idx {
-                                    extra_members.extend(repeat(vec![]).take(type_idx + 1 - extra_members.len()));
+
+                            // Parameters are intersectioned, and return
+                            // types are unioned.
+
+                            for (idx, param) in params.into_iter().enumerate() {
+                                let new_params = new_params.entry(i).or_default();
+                                if new_params.len() <= idx {
+                                    new_params.extend(repeat(vec![]).take(idx + 1 - new_params.len()));
                                 }
 
-                                extra_members[type_idx].push(m.clone())
+                                new_params[idx].push(param);
                             }
+
+                            new_return_types.entry(i).or_default().extend(ret_ty.clone().map(|v| *v));
+                        }
+                        _ => {
+                            if extra_members.len() <= type_idx {
+                                extra_members.extend(repeat(vec![]).take(type_idx + 1 - extra_members.len()));
+                            }
+
+                            extra_members[type_idx].push(m.clone())
                         }
                     }
                 }
-                _ => {}
             }
         }
 

@@ -129,7 +129,9 @@ impl TypeStore for Single<'_> {
 
         match self.info.exports.private_vars.get(&orig_name).cloned() {
             Some(ty) => match self.info.exports.vars.insert(id.sym().clone(), ty) {
-                Some(..) => {}
+                Some(..) => {
+                    // TODO: Handle this error
+                }
                 None => {}
             },
             None => {

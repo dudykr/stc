@@ -65,13 +65,11 @@ impl VisitMut<RClass> for Operator<'_> {
         c.visit_mut_children_with(self);
 
         if let Some(ClassMut {
-            super_class,
+            super_class: Some(super_class),
             additional_members: _,
         }) = self.mutations.for_classes.remove(&c.node_id)
         {
-            if let Some(super_class) = super_class {
-                c.super_class = Some(super_class);
-            }
+            c.super_class = Some(super_class);
         }
     }
 }
@@ -80,10 +78,8 @@ impl VisitMut<RFunction> for Operator<'_> {
     fn visit_mut(&mut self, f: &mut RFunction) {
         f.visit_mut_children_with(self);
 
-        if let Some(FunctionMut { ret_ty }) = self.mutations.for_fns.remove(&f.node_id) {
-            if let Some(ret_ty) = ret_ty {
-                f.return_type = Some(box ret_ty.into())
-            }
+        if let Some(FunctionMut { ret_ty: Some(ret_ty) }) = self.mutations.for_fns.remove(&f.node_id) {
+            f.return_type = Some(box ret_ty.into())
         }
     }
 }

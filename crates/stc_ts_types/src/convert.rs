@@ -581,10 +581,7 @@ impl From<super::ClassMember> for RTsTypeElement {
                 node_id: NodeId::invalid(),
                 span: m.span,
                 readonly: false,
-                computed: match &m.key {
-                    Key::Computed(_) => true,
-                    _ => false,
-                },
+                computed: matches!(&m.key, Key::Computed(_)),
                 key: m.key.into_expr(),
                 optional: m.is_optional,
                 params: m.params.into_iter().map(From::from).collect(),

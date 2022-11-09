@@ -50,8 +50,8 @@ impl TscError {
                     }
                     2 => {
                         for (j, item) in item.split(' ').enumerate() {
-                            if item.starts_with("TS") {
-                                error.code = item[2..].parse().expect("failed to parse ts error code");
+                            if let Some(item) = item.strip_prefix("TS") {
+                                error.code = item.parse().expect("failed to parse ts error code");
                                 continue;
                             }
 
