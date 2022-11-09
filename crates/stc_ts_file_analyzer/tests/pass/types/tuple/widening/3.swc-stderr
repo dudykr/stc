@@ -1,53 +1,57 @@
-warning: Type
- --> $DIR/tests/pass/types/tuple/widening/3.ts:2:24
-  |
-2 |     let intermediate = bar();
-  |                        ^^^
-  |
-  = note: typeof bar
 
-warning: Type
- --> $DIR/tests/pass/types/tuple/widening/3.ts:2:24
-  |
-2 |     let intermediate = bar();
-  |                        ^^^^^
-  |
-  = note: any
+  x Type
+   ,-[$DIR/tests/pass/types/tuple/widening/3.ts:2:5]
+ 2 | let intermediate = bar();
+   :                    ^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/tuple/widening/3.ts:3:20
-  |
-3 |     intermediate = [""];
-  |                    ^^^^
-  |
-  = note: [""]
+Error: 
+  > typeof bar
 
-warning: Type
- --> $DIR/tests/pass/types/tuple/widening/3.ts:3:5
-  |
-3 |     intermediate = [""];
-  |     ^^^^^^^^^^^^^^^^^^^
-  |
-  = note: [""]
+  x Type
+   ,-[$DIR/tests/pass/types/tuple/widening/3.ts:2:5]
+ 2 | let intermediate = bar();
+   :                    ^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/tuple/widening/3.ts:4:12
-  |
-4 |     return ['foo'];
-  |            ^^^^^^^
-  |
-  = note: ['foo']
+Error: 
+  > any
 
-warning: Type
- --> $DIR/tests/pass/types/tuple/widening/3.ts:1:31
-  |
-1 |   export var foo: () => [any] = function bar() {
-  |  _______________________________^
-2 | |     let intermediate = bar();
-3 | |     intermediate = [""];
-4 | |     return ['foo'];
-5 | | };
-  | |_^
-  |
-  = note: () => [string]
+  x Type
+   ,-[$DIR/tests/pass/types/tuple/widening/3.ts:3:5]
+ 3 | intermediate = [""];
+   :                ^^^^
+   `----
 
+Error: 
+  > [""]
+
+  x Type
+   ,-[$DIR/tests/pass/types/tuple/widening/3.ts:3:5]
+ 3 | intermediate = [""];
+   : ^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > [""]
+
+  x Type
+   ,-[$DIR/tests/pass/types/tuple/widening/3.ts:4:5]
+ 4 | return ['foo'];
+   :        ^^^^^^^
+   `----
+
+Error: 
+  > ['foo']
+
+  x Type
+   ,-[$DIR/tests/pass/types/tuple/widening/3.ts:1:1]
+ 1 | ,-> export var foo: () => [any] = function bar() {
+ 2 | |       let intermediate = bar();
+ 3 | |       intermediate = [""];
+ 4 | |       return ['foo'];
+ 5 | `-> };
+   `----
+
+Error: 
+  > () => [string]

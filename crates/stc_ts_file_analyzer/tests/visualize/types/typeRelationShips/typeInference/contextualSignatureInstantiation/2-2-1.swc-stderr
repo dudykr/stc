@@ -1,40 +1,45 @@
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:5
-   |
-12 | baz(b, b, g);      // Should be number | string
-   |     ^
-   |
-   = note: (number | string)
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:8
-   |
-12 | baz(b, b, g);      // Should be number | string
-   |        ^
-   |
-   = note: (number | string)
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:1]
+ 12 | baz(b, b, g);      // Should be number | string
+    :     ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:11
-   |
-12 | baz(b, b, g);      // Should be number | string
-   |           ^
-   |
-   = note: <T>(x: T, y: T) => T
+Error: 
+  > (number | string)
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:1
-   |
-12 | baz(b, b, g);      // Should be number | string
-   | ^^^
-   |
-   = note: <T, U>(x: T, y: T, cb: (x: T, y: T) => U) => U
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:1]
+ 12 | baz(b, b, g);      // Should be number | string
+    :        ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:1
-   |
-12 | baz(b, b, g);      // Should be number | string
-   | ^^^^^^^^^^^^
-   |
-   = note: (number | string)
+Error: 
+  > (number | string)
 
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:1]
+ 12 | baz(b, b, g);      // Should be number | string
+    :           ^
+    `----
+
+Error: 
+  > <T>(x: T, y: T) => T
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:1]
+ 12 | baz(b, b, g);      // Should be number | string
+    : ^^^
+    `----
+
+Error: 
+  > <T, U>(x: T, y: T, cb: (x: T, y: T) => U) => U
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2-2-1.ts:12:1]
+ 12 | baz(b, b, g);      // Should be number | string
+    : ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (number | string)

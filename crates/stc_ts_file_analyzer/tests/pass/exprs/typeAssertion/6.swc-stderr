@@ -1,56 +1,63 @@
-warning: Type
- --> $DIR/tests/pass/exprs/typeAssertion/6.ts:7:42
-  |
-7 |     let x: string | number | undefined = undefined;
-  |                                          ^^^^^^^^^
-  |
-  = note: undefined
 
-warning: Type
- --> $DIR/tests/pass/exprs/typeAssertion/6.ts:8:5
-  |
-8 |     x;  // undefined
-  |     ^
-  |
-  = note: (string | number | undefined)
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/6.ts:7:5]
+ 7 | let x: string | number | undefined = undefined;
+   :                                      ^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/typeAssertion/6.ts:9:16
-  |
-9 |     if (typeof x === "boolean") {
-  |                ^
-  |
-  = note: (string | number | undefined)
+Error: 
+  > undefined
 
-warning: Type
- --> $DIR/tests/pass/exprs/typeAssertion/6.ts:9:9
-  |
-9 |     if (typeof x === "boolean") {
-  |         ^^^^^^^^
-  |
-  = note: string
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/6.ts:8:5]
+ 8 | x;  // undefined
+   : ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/typeAssertion/6.ts:9:9
-  |
-9 |     if (typeof x === "boolean") {
-  |         ^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: boolean
+Error: 
+  > (string | number | undefined)
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/6.ts:10:9
-   |
-10 |         x;  // nothing (boolean not in declared type)
-   |         ^
-   |
-   = note: never
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/6.ts:9:5]
+ 9 | if (typeof x === "boolean") {
+   :            ^
+   `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/6.ts:12:5
-   |
-12 |     x;  // undefined
-   |     ^
-   |
-   = note: (string | number | undefined)
+Error: 
+  > (string | number | undefined)
 
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/6.ts:9:5]
+ 9 | if (typeof x === "boolean") {
+   :     ^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/6.ts:9:5]
+ 9 | if (typeof x === "boolean") {
+   :     ^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/6.ts:10:9]
+ 10 | x;  // nothing (boolean not in declared type)
+    : ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/6.ts:12:5]
+ 12 | x;  // undefined
+    : ^
+    `----
+
+Error: 
+  > (string | number | undefined)

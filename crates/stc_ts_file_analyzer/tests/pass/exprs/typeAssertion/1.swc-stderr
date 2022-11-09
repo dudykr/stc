@@ -1,144 +1,162 @@
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:11:5
-   |
-11 |     x;  // number
-   |     ^
-   |
-   = note: number
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:12:12
-   |
-12 |     while (cond) {
-   |            ^^^^
-   |
-   = note: boolean
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:11:5]
+ 11 | x;  // number
+    : ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:13:9
-   |
-13 |         x;  // number, then string | number
-   |         ^
-   |
-   = note: number
+Error: 
+  > number
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:20
-   |
-14 |         x = typeof x === "string" ? x.slice() : "abc";
-   |                    ^
-   |
-   = note: number
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:12:5]
+ 12 | while (cond) {
+    :        ^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:13
-   |
-14 |         x = typeof x === "string" ? x.slice() : "abc";
-   |             ^^^^^^^^
-   |
-   = note: string
+Error: 
+  > boolean
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:13
-   |
-14 |         x = typeof x === "string" ? x.slice() : "abc";
-   |             ^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: boolean
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:13:9]
+ 13 | x;  // number, then string | number
+    : ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:37
-   |
-14 |         x = typeof x === "string" ? x.slice() : "abc";
-   |                                     ^
-   |
-   = note: never
+Error: 
+  > number
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:13
-   |
-14 |         x = typeof x === "string" ? x.slice() : "abc";
-   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: (any | "abc")
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:14:9]
+ 14 | x = typeof x === "string" ? x.slice() : "abc";
+    :            ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:9
-   |
-14 |         x = typeof x === "string" ? x.slice() : "abc";
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: (any | "abc")
+Error: 
+  > number
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:15:9
-   |
-15 |         x;  // string
-   |         ^
-   |
-   = note: (string | number | boolean)
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:14:9]
+ 14 | x = typeof x === "string" ? x.slice() : "abc";
+    :     ^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:13:9
-   |
-13 |         x;  // number, then string | number
-   |         ^
-   |
-   = note: (string | number | boolean)
+Error: 
+  > string
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:20
-   |
-14 |         x = typeof x === "string" ? x.slice() : "abc";
-   |                    ^
-   |
-   = note: (string | number | boolean)
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:14:9]
+ 14 | x = typeof x === "string" ? x.slice() : "abc";
+    :     ^^^^^^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:37
-   |
-14 |         x = typeof x === "string" ? x.slice() : "abc";
-   |                                     ^
-   |
-   = note: string
+Error: 
+  > boolean
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:37
-   |
-14 |         x = typeof x === "string" ? x.slice() : "abc";
-   |                                     ^^^^^^^^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:14:9]
+ 14 | x = typeof x === "string" ? x.slice() : "abc";
+    :                             ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:13
-   |
-14 |         x = typeof x === "string" ? x.slice() : "abc";
-   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: (string | "abc")
+Error: 
+  > never
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:14:9
-   |
-14 |         x = typeof x === "string" ? x.slice() : "abc";
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: (string | "abc")
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:14:9]
+ 14 | x = typeof x === "string" ? x.slice() : "abc";
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:15:9
-   |
-15 |         x;  // string
-   |         ^
-   |
-   = note: string
+Error: 
+  > (any | "abc")
 
-warning: Type
-  --> $DIR/tests/pass/exprs/typeAssertion/1.ts:17:5
-   |
-17 |     x;
-   |     ^
-   |
-   = note: (string | number)
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:14:9]
+ 14 | x = typeof x === "string" ? x.slice() : "abc";
+    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
 
+Error: 
+  > (any | "abc")
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:15:9]
+ 15 | x;  // string
+    : ^
+    `----
+
+Error: 
+  > (string | number | boolean)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:13:9]
+ 13 | x;  // number, then string | number
+    : ^
+    `----
+
+Error: 
+  > (string | number | boolean)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:14:9]
+ 14 | x = typeof x === "string" ? x.slice() : "abc";
+    :            ^
+    `----
+
+Error: 
+  > (string | number | boolean)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:14:9]
+ 14 | x = typeof x === "string" ? x.slice() : "abc";
+    :                             ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:14:9]
+ 14 | x = typeof x === "string" ? x.slice() : "abc";
+    :                             ^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:14:9]
+ 14 | x = typeof x === "string" ? x.slice() : "abc";
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (string | "abc")
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:14:9]
+ 14 | x = typeof x === "string" ? x.slice() : "abc";
+    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (string | "abc")
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:15:9]
+ 15 | x;  // string
+    : ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/typeAssertion/1.ts:17:5]
+ 17 | x;
+    : ^
+    `----
+
+Error: 
+  > (string | number)

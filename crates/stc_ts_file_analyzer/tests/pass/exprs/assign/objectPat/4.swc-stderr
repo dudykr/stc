@@ -1,28 +1,31 @@
-warning: Type
- --> $DIR/tests/pass/exprs/assign/objectPat/4.ts:6:41
-  |
-6 |     let { [k1]: a1, [k2]: a2, ...r1 } = obj;
-  |                                         ^^^
-  |
-  = note: {
-              a: string;
-              b: number;
-              c: boolean;
-          }
 
-warning: Type
- --> $DIR/tests/pass/exprs/assign/objectPat/4.ts:6:12
-  |
-6 |     let { [k1]: a1, [k2]: a2, ...r1 } = obj;
-  |            ^^
-  |
-  = note: K1
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/4.ts:6:5]
+ 6 | let { [k1]: a1, [k2]: a2, ...r1 } = obj;
+   :                                     ^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/assign/objectPat/4.ts:6:22
-  |
-6 |     let { [k1]: a1, [k2]: a2, ...r1 } = obj;
-  |                      ^^
-  |
-  = note: K2
+Error: 
+  > {
+  |     a: string;
+  |     b: number;
+  |     c: boolean;
+  | }
 
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/4.ts:6:5]
+ 6 | let { [k1]: a1, [k2]: a2, ...r1 } = obj;
+   :        ^^
+   `----
+
+Error: 
+  > K1
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/4.ts:6:5]
+ 6 | let { [k1]: a1, [k2]: a2, ...r1 } = obj;
+   :                  ^^
+   `----
+
+Error: 
+  > K2

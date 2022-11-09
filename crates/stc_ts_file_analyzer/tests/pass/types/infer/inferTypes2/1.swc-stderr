@@ -1,25 +1,28 @@
-warning: Type
- --> $DIR/tests/pass/types/infer/inferTypes2/1.ts:3:16
-  |
-3 |     return foo(obj);
-  |                ^^^
-  |
-  = note: T
 
-warning: Type
- --> $DIR/tests/pass/types/infer/inferTypes2/1.ts:3:12
-  |
-3 |     return foo(obj);
-  |            ^^^
-  |
-  = note: <T>(obj: T) => T extends () => infer P ? P : never
+  x Type
+   ,-[$DIR/tests/pass/types/infer/inferTypes2/1.ts:3:5]
+ 3 | return foo(obj);
+   :            ^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/infer/inferTypes2/1.ts:3:12
-  |
-3 |     return foo(obj);
-  |            ^^^^^^^^
-  |
-  = note: T extends () => infer P ? {
-          } : never
+Error: 
+  > T
 
+  x Type
+   ,-[$DIR/tests/pass/types/infer/inferTypes2/1.ts:3:5]
+ 3 | return foo(obj);
+   :        ^^^
+   `----
+
+Error: 
+  > <T>(obj: T) => T extends () => infer P ? P : never
+
+  x Type
+   ,-[$DIR/tests/pass/types/infer/inferTypes2/1.ts:3:5]
+ 3 | return foo(obj);
+   :        ^^^^^^^^
+   `----
+
+Error: 
+  > T extends () => infer P ? {
+  | } : never

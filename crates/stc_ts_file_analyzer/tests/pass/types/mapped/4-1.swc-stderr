@@ -1,48 +1,54 @@
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-1.ts:14:1
-   |
-14 | e1.foo
-   | ^^
-   |
-   = note: E1
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-1.ts:14:1
-   |
-14 | e1.foo
-   | ^^^^^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-1.ts:14:1]
+ 14 | e1.foo
+    : ^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-1.ts:15:1
-   |
-15 | e1.bar
-   | ^^
-   |
-   = note: E1
+Error: 
+  > E1
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-1.ts:15:1
-   |
-15 | e1.bar
-   | ^^^^^^
-   |
-   = note: any
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-1.ts:14:1]
+ 14 | e1.foo
+    : ^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-1.ts:16:1
-   |
-16 | e1.baz
-   | ^^
-   |
-   = note: E1
+Error: 
+  > string
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-1.ts:16:1
-   |
-16 | e1.baz
-   | ^^^^^^
-   |
-   = note: any
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-1.ts:15:1]
+ 15 | e1.bar
+    : ^^
+    `----
 
+Error: 
+  > E1
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-1.ts:15:1]
+ 15 | e1.bar
+    : ^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-1.ts:16:1]
+ 16 | e1.baz
+    : ^^
+    `----
+
+Error: 
+  > E1
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-1.ts:16:1]
+ 16 | e1.baz
+    : ^^^^^^
+    `----
+
+Error: 
+  > any

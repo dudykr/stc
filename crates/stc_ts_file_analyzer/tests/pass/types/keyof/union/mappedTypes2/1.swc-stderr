@@ -1,8 +1,9 @@
-warning: Type
-  --> $DIR/tests/pass/types/keyof/union/mappedTypes2/1.ts:16:1
-   |
-16 | k
-   | ^
-   |
-   = note: "name"
 
+  x Type
+    ,-[$DIR/tests/pass/types/keyof/union/mappedTypes2/1.ts:16:1]
+ 16 | k
+    : ^
+    `----
+
+Error: 
+  > "name"

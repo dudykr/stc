@@ -1,40 +1,44 @@
-warning: Type
- --> $DIR/tests/pass/types/mapped/2.ts:4:11
-  |
-4 |     obj = x;
-  |           ^
-  |
-  = note: {
-              [P in keyof T]?: T[P];
-          }
 
-warning: Type
- --> $DIR/tests/pass/types/mapped/2.ts:4:5
-  |
-4 |     obj = x;
-  |     ^^^^^^^
-  |
-  = note: {
-              [P in keyof T]?: T[P];
-          }
+  x Type
+   ,-[$DIR/tests/pass/types/mapped/2.ts:4:5]
+ 4 | obj = x;
+   :       ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/mapped/2.ts:5:11
-  |
-5 |     obj = y;
-  |           ^
-  |
-  = note: {
-              readonly [P in keyof T]: T[P];
-          }
+Error: 
+  > {
+  |     [P in keyof T]?: T[P];
+  | }
 
-warning: Type
- --> $DIR/tests/pass/types/mapped/2.ts:5:5
-  |
-5 |     obj = y;
-  |     ^^^^^^^
-  |
-  = note: {
-              readonly [P in keyof T]: T[P];
-          }
+  x Type
+   ,-[$DIR/tests/pass/types/mapped/2.ts:4:5]
+ 4 | obj = x;
+   : ^^^^^^^
+   `----
 
+Error: 
+  > {
+  |     [P in keyof T]?: T[P];
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/mapped/2.ts:5:5]
+ 5 | obj = y;
+   :       ^
+   `----
+
+Error: 
+  > {
+  |     readonly [P in keyof T]: T[P];
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/mapped/2.ts:5:5]
+ 5 | obj = y;
+   : ^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     readonly [P in keyof T]: T[P];
+  | }

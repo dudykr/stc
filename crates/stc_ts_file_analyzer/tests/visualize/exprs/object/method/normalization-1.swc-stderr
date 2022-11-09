@@ -1,78 +1,86 @@
-warning: Type
- --> $DIR/tests/visualize/exprs/object/method/normalization-1.ts:5:11
-  |
-5 | var z2 = [a2, b2, c2];
-  |           ^^
-  |
-  = note: {
-              (x: string) : string;
-          }
 
-warning: Type
- --> $DIR/tests/visualize/exprs/object/method/normalization-1.ts:5:15
-  |
-5 | var z2 = [a2, b2, c2];
-  |               ^^
-  |
-  = note: {
-              (x: string) : string;
-          }
+  x Type
+   ,-[$DIR/tests/visualize/exprs/object/method/normalization-1.ts:5:1]
+ 5 | var z2 = [a2, b2, c2];
+   :           ^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/exprs/object/method/normalization-1.ts:5:19
-  |
-5 | var z2 = [a2, b2, c2];
-  |                   ^^
-  |
-  = note: {
-              (x: number) : number;
-          }
+Error: 
+  > {
+  |     (x: string) : string;
+  | }
 
-warning: Type
- --> $DIR/tests/visualize/exprs/object/method/normalization-1.ts:5:10
-  |
-5 | var z2 = [a2, b2, c2];
-  |          ^^^^^^^^^^^^
-  |
-  = note: {
-              (x: never) : (string | number);
-          }[]
+  x Type
+   ,-[$DIR/tests/visualize/exprs/object/method/normalization-1.ts:5:1]
+ 5 | var z2 = [a2, b2, c2];
+   :               ^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/exprs/object/method/normalization-1.ts:6:10
-  |
-6 | var r6 = z2[0];
-  |          ^^
-  |
-  = note: {
-              (x: never) : (string | number);
-          }[]
+Error: 
+  > {
+  |     (x: string) : string;
+  | }
 
-warning: Type
- --> $DIR/tests/visualize/exprs/object/method/normalization-1.ts:6:10
-  |
-6 | var r6 = z2[0];
-  |          ^^^^^
-  |
-  = note: {
-              (x: never) : (string | number);
-          }
+  x Type
+   ,-[$DIR/tests/visualize/exprs/object/method/normalization-1.ts:5:1]
+ 5 | var z2 = [a2, b2, c2];
+   :                   ^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/exprs/object/method/normalization-1.ts:7:17
-  |
-7 | export var r7 = r6('');
-  |                 ^^
-  |
-  = note: {
-              (x: never) : (string | number);
-          }
+Error: 
+  > {
+  |     (x: number) : number;
+  | }
 
-warning: Type
- --> $DIR/tests/visualize/exprs/object/method/normalization-1.ts:7:17
-  |
-7 | export var r7 = r6('');
-  |                 ^^^^^^
-  |
-  = note: (string | number)
+  x Type
+   ,-[$DIR/tests/visualize/exprs/object/method/normalization-1.ts:5:1]
+ 5 | var z2 = [a2, b2, c2];
+   :          ^^^^^^^^^^^^
+   `----
 
+Error: 
+  > {
+  |     (x: never) : (string | number);
+  | }[]
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/object/method/normalization-1.ts:6:1]
+ 6 | var r6 = z2[0];
+   :          ^^
+   `----
+
+Error: 
+  > {
+  |     (x: never) : (string | number);
+  | }[]
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/object/method/normalization-1.ts:6:1]
+ 6 | var r6 = z2[0];
+   :          ^^^^^
+   `----
+
+Error: 
+  > {
+  |     (x: never) : (string | number);
+  | }
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/object/method/normalization-1.ts:7:1]
+ 7 | export var r7 = r6('');
+   :                 ^^
+   `----
+
+Error: 
+  > {
+  |     (x: never) : (string | number);
+  | }
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/object/method/normalization-1.ts:7:1]
+ 7 | export var r7 = r6('');
+   :                 ^^^^^^
+   `----
+
+Error: 
+  > (string | number)

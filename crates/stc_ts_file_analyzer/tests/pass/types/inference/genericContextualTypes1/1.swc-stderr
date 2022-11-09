@@ -1,40 +1,45 @@
-warning: Type
- --> $DIR/tests/pass/types/inference/genericContextualTypes1/1.ts:3:69
-  |
-3 | export const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
-  |                                                                     ^
-  |
-  = note: (x: T) => U
 
-warning: Type
- --> $DIR/tests/pass/types/inference/genericContextualTypes1/1.ts:3:63
-  |
-3 | export const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
-  |                                                               ^
-  |
-  = note: T[]
+  x Type
+   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/1.ts:3:1]
+ 3 | export const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+   :                                                                     ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/inference/genericContextualTypes1/1.ts:3:63
-  |
-3 | export const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
-  |                                                               ^^^^^^^^
-  |
-  = note: U[]
+Error: 
+  > (x: T) => U
 
-warning: Type
- --> $DIR/tests/pass/types/inference/genericContextualTypes1/1.ts:3:51
-  |
-3 | export const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
-  |                                                   ^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (a: T[]) => U[]
+  x Type
+   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/1.ts:3:1]
+ 3 | export const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+   :                                                               ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/inference/genericContextualTypes1/1.ts:3:25
-  |
-3 | export const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
-  |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: <T, U>(f: (x: T) => U) => (a: T[]) => U[]
+Error: 
+  > T[]
 
+  x Type
+   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/1.ts:3:1]
+ 3 | export const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+   :                                                               ^^^^^^^^
+   `----
+
+Error: 
+  > U[]
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/1.ts:3:1]
+ 3 | export const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+   :                                                   ^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (a: T[]) => U[]
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/genericContextualTypes1/1.ts:3:1]
+ 3 | export const arrayMap = <T, U>(f: (x: T) => U) => (a: T[]) => a.map(f);
+   :                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > <T, U>(f: (x: T) => U) => (a: T[]) => U[]

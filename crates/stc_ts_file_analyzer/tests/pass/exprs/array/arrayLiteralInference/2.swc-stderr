@@ -1,40 +1,44 @@
-warning: Type
- --> $DIR/tests/pass/exprs/array/arrayLiteralInference/2.ts:4:39
-  |
-4 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
-  |                                       ^^^^^^^^^^^
-  |
-  = note: {
-              x: true;
-          }
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/arrayLiteralInference/2.ts:4:52
-  |
-4 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
-  |                                                    ^^^^^^^^^^^^
-  |
-  = note: {
-              x: false;
-          }
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/2.ts:4:1]
+ 4 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+   :                                       ^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/arrayLiteralInference/2.ts:4:35
-  |
-4 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
-  |                                   ^^^
-  |
-  = note: <T>(...args: T[]) => T[]
+Error: 
+  > {
+  |     x: true;
+  | }
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/arrayLiteralInference/2.ts:4:35
-  |
-4 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
-  |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (({
-              x: true;
-          } | {
-              x: false;
-          }))[]
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/2.ts:4:1]
+ 4 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+   :                                                    ^^^^^^^^^^^^
+   `----
 
+Error: 
+  > {
+  |     x: false;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/2.ts:4:1]
+ 4 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+   :                                   ^^^
+   `----
+
+Error: 
+  > <T>(...args: T[]) => T[]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/2.ts:4:1]
+ 4 | export let b1: { x: boolean }[] = foo({ x: true }, { x: false });
+   :                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (({
+  |     x: true;
+  | } | {
+  |     x: false;
+  | }))[]

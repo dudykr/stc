@@ -1,18 +1,20 @@
-warning: Type
- --> $DIR/tests/pass/types/intersection/intersectionReduction/7.ts:7:99
-  |
-7 | export const f4 = (t: number | (Container<"b"> & { dataB: boolean } & Container<"a">)): number => t;
-  |                                                                                                   ^
-  |
-  = note: number
 
-warning: Type
- --> $DIR/tests/pass/types/intersection/intersectionReduction/7.ts:7:19
-  |
-7 | export const f4 = (t: number | (Container<"b"> & { dataB: boolean } & Container<"a">)): number => t;
-  |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (t: (number | (Container<"b"> & {
-              dataB: boolean;
-          } & Container<"a">))) => number
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/7.ts:7:1]
+ 7 | export const f4 = (t: number | (Container<"b"> & { dataB: boolean } & Container<"a">)): number => t;
+   :                                                                                                   ^
+   `----
 
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReduction/7.ts:7:1]
+ 7 | export const f4 = (t: number | (Container<"b"> & { dataB: boolean } & Container<"a">)): number => t;
+   :                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (t: (number | (Container<"b"> & {
+  |     dataB: boolean;
+  | } & Container<"a">))) => number

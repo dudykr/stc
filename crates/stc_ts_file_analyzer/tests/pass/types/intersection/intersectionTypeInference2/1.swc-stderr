@@ -1,27 +1,30 @@
-warning: Type
- --> $DIR/tests/pass/types/intersection/intersectionTypeInference2/1.ts:6:3
-  |
-6 | f(a);  // never
-  |   ^
-  |
-  = note: never
 
-warning: Type
- --> $DIR/tests/pass/types/intersection/intersectionTypeInference2/1.ts:6:1
-  |
-6 | f(a);  // never
-  | ^
-  |
-  = note: <T>(x: {
-              prop: T;
-          }) => T
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/1.ts:6:1]
+ 6 | f(a);  // never
+   :   ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/intersection/intersectionTypeInference2/1.ts:6:1
-  |
-6 | f(a);  // never
-  | ^^^^
-  |
-  = note: {
-          }
+Error: 
+  > never
 
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/1.ts:6:1]
+ 6 | f(a);  // never
+   : ^
+   `----
+
+Error: 
+  > <T>(x: {
+  |     prop: T;
+  | }) => T
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionTypeInference2/1.ts:6:1]
+ 6 | f(a);  // never
+   : ^^^^
+   `----
+
+Error: 
+  > {
+  | }

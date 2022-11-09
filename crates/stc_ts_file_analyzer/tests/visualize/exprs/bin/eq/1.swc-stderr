@@ -1,260 +1,291 @@
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:13:9
-   |
-13 | var x = { p1: 10, p2: 20, p3: 30 };
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: {
-               p1: 10;
-               p2: 20;
-               p3: 30;
-           }
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:14:18
-   |
-14 | var y: I1 & I3 = x;
-   |                  ^
-   |
-   = note: {
-               p1: number;
-               p2: number;
-               p3: number;
-           }
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:13:1]
+ 13 | var x = { p1: 10, p2: 20, p3: 30 };
+    :         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:15:13
-   |
-15 | var z: I2 = x;
-   |             ^
-   |
-   = note: {
-               p1: number;
-               p2: number;
-               p3: number;
-           }
+Error: 
+  > {
+  |     p1: 10;
+  |     p2: 20;
+  |     p3: 30;
+  | }
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:17:5
-   |
-17 | if (y === z || z === y) {
-   |     ^
-   |
-   = note: (I1 & I3)
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:14:1]
+ 14 | var y: I1 & I3 = x;
+    :                  ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:17:11
-   |
-17 | if (y === z || z === y) {
-   |           ^
-   |
-   = note: I2
+Error: 
+  > {
+  |     p1: number;
+  |     p2: number;
+  |     p3: number;
+  | }
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:17:5
-   |
-17 | if (y === z || z === y) {
-   |     ^^^^^^^
-   |
-   = note: boolean
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:15:1]
+ 15 | var z: I2 = x;
+    :             ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:17:16
-   |
-17 | if (y === z || z === y) {
-   |                ^
-   |
-   = note: I2
+Error: 
+  > {
+  |     p1: number;
+  |     p2: number;
+  |     p3: number;
+  | }
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:17:22
-   |
-17 | if (y === z || z === y) {
-   |                      ^
-   |
-   = note: (I1 & I3)
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:17:1]
+ 17 | if (y === z || z === y) {
+    :     ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:17:16
-   |
-17 | if (y === z || z === y) {
-   |                ^^^^^^^
-   |
-   = note: boolean
+Error: 
+  > (I1 & I3)
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:17:5
-   |
-17 | if (y === z || z === y) {
-   |     ^^^^^^^^^^^^^^^^^^
-   |
-   = note: boolean
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:17:1]
+ 17 | if (y === z || z === y) {
+    :           ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:19:10
-   |
-19 | else if (y !== z || z !== y) {
-   |          ^
-   |
-   = note: (I1 & I3)
+Error: 
+  > I2
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:19:16
-   |
-19 | else if (y !== z || z !== y) {
-   |                ^
-   |
-   = note: I2
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:17:1]
+ 17 | if (y === z || z === y) {
+    :     ^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:19:10
-   |
-19 | else if (y !== z || z !== y) {
-   |          ^^^^^^^
-   |
-   = note: boolean
+Error: 
+  > boolean
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:19:21
-   |
-19 | else if (y !== z || z !== y) {
-   |                     ^
-   |
-   = note: I2
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:17:1]
+ 17 | if (y === z || z === y) {
+    :                ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:19:27
-   |
-19 | else if (y !== z || z !== y) {
-   |                           ^
-   |
-   = note: never
+Error: 
+  > I2
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:19:21
-   |
-19 | else if (y !== z || z !== y) {
-   |                     ^^^^^^^
-   |
-   = note: boolean
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:17:1]
+ 17 | if (y === z || z === y) {
+    :                      ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:19:10
-   |
-19 | else if (y !== z || z !== y) {
-   |          ^^^^^^^^^^^^^^^^^^
-   |
-   = note: boolean
+Error: 
+  > (I1 & I3)
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:21:10
-   |
-21 | else if (y == z || z == y) {
-   |          ^
-   |
-   = note: never
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:17:1]
+ 17 | if (y === z || z === y) {
+    :                ^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:21:15
-   |
-21 | else if (y == z || z == y) {
-   |               ^
-   |
-   = note: never
+Error: 
+  > boolean
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:21:10
-   |
-21 | else if (y == z || z == y) {
-   |          ^^^^^^
-   |
-   = note: boolean
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:17:1]
+ 17 | if (y === z || z === y) {
+    :     ^^^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:21:20
-   |
-21 | else if (y == z || z == y) {
-   |                    ^
-   |
-   = note: never
+Error: 
+  > boolean
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:21:25
-   |
-21 | else if (y == z || z == y) {
-   |                         ^
-   |
-   = note: never
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:19:1]
+ 19 | else if (y !== z || z !== y) {
+    :          ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:21:20
-   |
-21 | else if (y == z || z == y) {
-   |                    ^^^^^^
-   |
-   = note: boolean
+Error: 
+  > (I1 & I3)
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:21:10
-   |
-21 | else if (y == z || z == y) {
-   |          ^^^^^^^^^^^^^^^^
-   |
-   = note: boolean
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:19:1]
+ 19 | else if (y !== z || z !== y) {
+    :                ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:23:10
-   |
-23 | else if (y != z || z != y) {
-   |          ^
-   |
-   = note: never
+Error: 
+  > I2
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:23:15
-   |
-23 | else if (y != z || z != y) {
-   |               ^
-   |
-   = note: never
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:19:1]
+ 19 | else if (y !== z || z !== y) {
+    :          ^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:23:10
-   |
-23 | else if (y != z || z != y) {
-   |          ^^^^^^
-   |
-   = note: boolean
+Error: 
+  > boolean
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:23:20
-   |
-23 | else if (y != z || z != y) {
-   |                    ^
-   |
-   = note: never
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:19:1]
+ 19 | else if (y !== z || z !== y) {
+    :                     ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:23:25
-   |
-23 | else if (y != z || z != y) {
-   |                         ^
-   |
-   = note: never
+Error: 
+  > I2
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:23:20
-   |
-23 | else if (y != z || z != y) {
-   |                    ^^^^^^
-   |
-   = note: boolean
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:19:1]
+ 19 | else if (y !== z || z !== y) {
+    :                           ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/eq/1.ts:23:10
-   |
-23 | else if (y != z || z != y) {
-   |          ^^^^^^^^^^^^^^^^
-   |
-   = note: boolean
+Error: 
+  > never
 
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:19:1]
+ 19 | else if (y !== z || z !== y) {
+    :                     ^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:19:1]
+ 19 | else if (y !== z || z !== y) {
+    :          ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:21:1]
+ 21 | else if (y == z || z == y) {
+    :          ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:21:1]
+ 21 | else if (y == z || z == y) {
+    :               ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:21:1]
+ 21 | else if (y == z || z == y) {
+    :          ^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:21:1]
+ 21 | else if (y == z || z == y) {
+    :                    ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:21:1]
+ 21 | else if (y == z || z == y) {
+    :                         ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:21:1]
+ 21 | else if (y == z || z == y) {
+    :                    ^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:21:1]
+ 21 | else if (y == z || z == y) {
+    :          ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:23:1]
+ 23 | else if (y != z || z != y) {
+    :          ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:23:1]
+ 23 | else if (y != z || z != y) {
+    :               ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:23:1]
+ 23 | else if (y != z || z != y) {
+    :          ^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:23:1]
+ 23 | else if (y != z || z != y) {
+    :                    ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:23:1]
+ 23 | else if (y != z || z != y) {
+    :                         ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:23:1]
+ 23 | else if (y != z || z != y) {
+    :                    ^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/eq/1.ts:23:1]
+ 23 | else if (y != z || z != y) {
+    :          ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean

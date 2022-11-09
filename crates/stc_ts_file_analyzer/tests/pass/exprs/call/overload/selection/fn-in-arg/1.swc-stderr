@@ -1,72 +1,81 @@
-warning: Type
- --> $DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:5:14
-  |
-5 |     return g(x);
-  |              ^
-  |
-  = note: T
 
-warning: Type
- --> $DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:5:12
-  |
-5 |     return g(x);
-  |            ^
-  |
-  = note: (x: T) => T
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:5:5]
+ 5 | return g(x);
+   :          ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:5:12
-  |
-5 |     return g(x);
-  |            ^^^^
-  |
-  = note: T
+Error: 
+  > T
 
-warning: Type
- --> $DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:8:25
-  |
-8 | export var e = fun(x => x, x => x, 10);
-  |                         ^
-  |
-  = note: any
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:5:5]
+ 5 | return g(x);
+   :        ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:8:20
-  |
-8 | export var e = fun(x => x, x => x, 10);
-  |                    ^^^^^^
-  |
-  = note: (x: any) => any
+Error: 
+  > (x: T) => T
 
-warning: Type
- --> $DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:8:33
-  |
-8 | export var e = fun(x => x, x => x, 10);
-  |                                 ^
-  |
-  = note: any
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:5:5]
+ 5 | return g(x);
+   :        ^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:8:28
-  |
-8 | export var e = fun(x => x, x => x, 10);
-  |                            ^^^^^^
-  |
-  = note: (x: any) => any
+Error: 
+  > T
 
-warning: Type
- --> $DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:8:16
-  |
-8 | export var e = fun(x => x, x => x, 10);
-  |                ^^^
-  |
-  = note: (<T>(g: (x: T) => T, x: T) => T | <T>(g: (x: T) => T, h: (y: T) => T, x: T) => T | <T>(g: (x: T) => T, x: T) => T)
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:8:1]
+ 8 | export var e = fun(x => x, x => x, 10);
+   :                         ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:8:16
-  |
-8 | export var e = fun(x => x, x => x, 10);
-  |                ^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: number
+Error: 
+  > any
 
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:8:1]
+ 8 | export var e = fun(x => x, x => x, 10);
+   :                    ^^^^^^
+   `----
+
+Error: 
+  > (x: any) => any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:8:1]
+ 8 | export var e = fun(x => x, x => x, 10);
+   :                                 ^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:8:1]
+ 8 | export var e = fun(x => x, x => x, 10);
+   :                            ^^^^^^
+   `----
+
+Error: 
+  > (x: any) => any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:8:1]
+ 8 | export var e = fun(x => x, x => x, 10);
+   :                ^^^
+   `----
+
+Error: 
+  > (<T>(g: (x: T) => T, x: T) => T | <T>(g: (x: T) => T, h: (y: T) => T, x: T) => T | <T>(g: (x: T) => T, x: T) => T)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/call/overload/selection/fn-in-arg/1.ts:8:1]
+ 8 | export var e = fun(x => x, x => x, 10);
+   :                ^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number

@@ -1,68 +1,76 @@
-warning: Type
- --> $DIR/tests/visualize/override/symbol/call.ts:4:6
-  |
-4 |     [Symbol.iterator]() { }
-  |      ^^^^^^
-  |
-  = note: {
-              iterator: symbol;
-          }
 
-warning: Type
- --> $DIR/tests/visualize/override/symbol/call.ts:4:6
-  |
-4 |     [Symbol.iterator]() { }
-  |      ^^^^^^^^^^^^^^^
-  |
-  = note: symbol
+  x Type
+   ,-[$DIR/tests/visualize/override/symbol/call.ts:4:5]
+ 4 | [Symbol.iterator]() { }
+   :  ^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/override/symbol/call.ts:7:9
-  |
-7 | (new C)[Symbol.iterator](0)
-  |         ^^^^^^
-  |
-  = note: {
-              iterator: symbol;
-          }
+Error: 
+  > {
+  |     iterator: symbol;
+  | }
 
-warning: Type
- --> $DIR/tests/visualize/override/symbol/call.ts:7:9
-  |
-7 | (new C)[Symbol.iterator](0)
-  |         ^^^^^^^^^^^^^^^
-  |
-  = note: symbol
+  x Type
+   ,-[$DIR/tests/visualize/override/symbol/call.ts:4:5]
+ 4 | [Symbol.iterator]() { }
+   :  ^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/override/symbol/call.ts:7:6
-  |
-7 | (new C)[Symbol.iterator](0)
-  |      ^
-  |
-  = note: typeof C
+Error: 
+  > symbol
 
-warning: Type
- --> $DIR/tests/visualize/override/symbol/call.ts:7:2
-  |
-7 | (new C)[Symbol.iterator](0)
-  |  ^^^^^
-  |
-  = note: C
+  x Type
+   ,-[$DIR/tests/visualize/override/symbol/call.ts:7:1]
+ 7 | (new C)[Symbol.iterator](0)
+   :         ^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/override/symbol/call.ts:7:1
-  |
-7 | (new C)[Symbol.iterator](0)
-  | ^^^^^^^
-  |
-  = note: C
+Error: 
+  > {
+  |     iterator: symbol;
+  | }
 
-warning: Type
- --> $DIR/tests/visualize/override/symbol/call.ts:7:1
-  |
-7 | (new C)[Symbol.iterator](0)
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: void
+  x Type
+   ,-[$DIR/tests/visualize/override/symbol/call.ts:7:1]
+ 7 | (new C)[Symbol.iterator](0)
+   :         ^^^^^^^^^^^^^^^
+   `----
 
+Error: 
+  > symbol
+
+  x Type
+   ,-[$DIR/tests/visualize/override/symbol/call.ts:7:1]
+ 7 | (new C)[Symbol.iterator](0)
+   :      ^
+   `----
+
+Error: 
+  > typeof C
+
+  x Type
+   ,-[$DIR/tests/visualize/override/symbol/call.ts:7:1]
+ 7 | (new C)[Symbol.iterator](0)
+   :  ^^^^^
+   `----
+
+Error: 
+  > C
+
+  x Type
+   ,-[$DIR/tests/visualize/override/symbol/call.ts:7:1]
+ 7 | (new C)[Symbol.iterator](0)
+   : ^^^^^^^
+   `----
+
+Error: 
+  > C
+
+  x Type
+   ,-[$DIR/tests/visualize/override/symbol/call.ts:7:1]
+ 7 | (new C)[Symbol.iterator](0)
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > void

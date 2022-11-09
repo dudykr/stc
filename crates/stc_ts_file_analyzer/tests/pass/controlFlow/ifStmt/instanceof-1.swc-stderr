@@ -1,40 +1,45 @@
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:5:5
-  |
-5 | if (result instanceof RegExp) {
-  |     ^^^^^^
-  |
-  = note: I
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:5:23
-  |
-5 | if (result instanceof RegExp) {
-  |                       ^^^^^^
-  |
-  = note: RegExpConstructor
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:5:1]
+ 5 | if (result instanceof RegExp) {
+   :     ^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:5:5
-  |
-5 | if (result instanceof RegExp) {
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: boolean
+Error: 
+  > I
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:6:5
-  |
-6 |     result;
-  |     ^^^^^^
-  |
-  = note: RegExpConstructor
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:5:1]
+ 5 | if (result instanceof RegExp) {
+   :                       ^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:8:5
-  |
-8 |     result;
-  |     ^^^^^^
-  |
-  = note: I
+Error: 
+  > RegExpConstructor
 
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:5:1]
+ 5 | if (result instanceof RegExp) {
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:6:5]
+ 6 | result;
+   : ^^^^^^
+   `----
+
+Error: 
+  > RegExpConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:8:5]
+ 8 | result;
+   : ^^^^^^
+   `----
+
+Error: 
+  > I

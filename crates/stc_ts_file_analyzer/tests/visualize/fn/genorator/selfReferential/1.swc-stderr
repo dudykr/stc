@@ -1,26 +1,29 @@
-warning: Type
- --> $DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:16
-  |
-2 |     var v = { [yield]: foo }
-  |                ^^^^^
-  |
-  = note: any
 
-warning: Type
- --> $DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:24
-  |
-2 |     var v = { [yield]: foo }
-  |                        ^^^
-  |
-  = note: typeof foo
+  x Type
+   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:5]
+ 2 | var v = { [yield]: foo }
+   :            ^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:13
-  |
-2 |     var v = { [yield]: foo }
-  |             ^^^^^^^^^^^^^^^^
-  |
-  = note: {
-              [yield]: typeof foo;
-          }
+Error: 
+  > any
 
+  x Type
+   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:5]
+ 2 | var v = { [yield]: foo }
+   :                    ^^^
+   `----
+
+Error: 
+  > typeof foo
+
+  x Type
+   ,-[$DIR/tests/visualize/fn/genorator/selfReferential/1.ts:2:5]
+ 2 | var v = { [yield]: foo }
+   :         ^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     [yield]: typeof foo;
+  | }

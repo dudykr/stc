@@ -1,24 +1,27 @@
-warning: Type
- --> $DIR/tests/pass/exprs/typeAssertion/9.ts:9:5
-  |
-9 |     x!.slice();
-  |     ^
-  |
-  = note: string
 
-warning: Type
- --> $DIR/tests/pass/exprs/typeAssertion/9.ts:9:5
-  |
-9 |     x!.slice();
-  |     ^^
-  |
-  = note: string
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/9.ts:9:5]
+ 9 | x!.slice();
+   : ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/typeAssertion/9.ts:9:5
-  |
-9 |     x!.slice();
-  |     ^^^^^^^^^^
-  |
-  = note: string
+Error: 
+  > string
 
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/9.ts:9:5]
+ 9 | x!.slice();
+   : ^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/typeAssertion/9.ts:9:5]
+ 9 | x!.slice();
+   : ^^^^^^^^^^
+   `----
+
+Error: 
+  > string

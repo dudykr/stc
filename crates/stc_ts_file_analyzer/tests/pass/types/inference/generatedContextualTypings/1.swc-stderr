@@ -1,128 +1,144 @@
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:2:24
-  |
-2 | class Derived1 extends Base { private m; }
-  |                        ^^^^
-  |
-  = note: typeof Base
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:3:24
-  |
-3 | class Derived2 extends Base { private n; }
-  |                        ^^^^
-  |
-  = note: typeof Base
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:2:1]
+ 2 | class Derived1 extends Base { private m; }
+   :                        ^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:5:13
-  |
-5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
-  |             ^^^^
-  |
-  = note: typeof Base
+Error: 
+  > typeof Base
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:5:9
-  |
-5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
-  |         ^^^^^^^^^^
-  |
-  = note: Base
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:3:1]
+ 3 | class Derived2 extends Base { private n; }
+   :                        ^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:5:30
-  |
-5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
-  |                              ^^^^^^^^
-  |
-  = note: typeof Derived1
+Error: 
+  > typeof Base
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:5:26
-  |
-5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
-  |                          ^^^^^^^^^^^^^^
-  |
-  = note: Derived1
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:5:1]
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :             ^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:5:51
-  |
-5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
-  |                                                   ^^^^^^^^
-  |
-  = note: typeof Derived2
+Error: 
+  > typeof Base
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:5:47
-  |
-5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
-  |                                               ^^^^^^^^^^^^^^
-  |
-  = note: Derived2
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:5:1]
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :         ^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:7:80
-  |
-7 | export class x87 { constructor(parm: () => Base[] = function named() { return [d1, d2] }) { } }
-  |                                                                                ^^
-  |
-  = note: Derived1
+Error: 
+  > Base
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:7:84
-  |
-7 | export class x87 { constructor(parm: () => Base[] = function named() { return [d1, d2] }) { } }
-  |                                                                                    ^^
-  |
-  = note: Derived2
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:5:1]
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                              ^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:7:79
-  |
-7 | export class x87 { constructor(parm: () => Base[] = function named() { return [d1, d2] }) { } }
-  |                                                                               ^^^^^^^^
-  |
-  = note: [Derived1, Derived2]
+Error: 
+  > typeof Derived1
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:7:53
-  |
-7 | export class x87 { constructor(parm: () => Base[] = function named() { return [d1, d2] }) { } }
-  |                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: () => [Derived1, Derived2]
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:5:1]
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                          ^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:8:83
-  |
-8 | export class x90 { constructor(parm: { (): Base[]; } = function named() { return [d1, d2] }) { } }
-  |                                                                                   ^^
-  |
-  = note: Derived1
+Error: 
+  > Derived1
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:8:87
-  |
-8 | export class x90 { constructor(parm: { (): Base[]; } = function named() { return [d1, d2] }) { } }
-  |                                                                                       ^^
-  |
-  = note: Derived2
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:5:1]
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                                                   ^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:8:82
-  |
-8 | export class x90 { constructor(parm: { (): Base[]; } = function named() { return [d1, d2] }) { } }
-  |                                                                                  ^^^^^^^^
-  |
-  = note: [Derived1, Derived2]
+Error: 
+  > typeof Derived2
 
-warning: Type
- --> $DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:8:56
-  |
-8 | export class x90 { constructor(parm: { (): Base[]; } = function named() { return [d1, d2] }) { } }
-  |                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: () => [Derived1, Derived2]
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:5:1]
+ 5 | var b = new Base(), d1 = new Derived1(), d2 = new Derived2();
+   :                                               ^^^^^^^^^^^^^^
+   `----
 
+Error: 
+  > Derived2
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:7:1]
+ 7 | export class x87 { constructor(parm: () => Base[] = function named() { return [d1, d2] }) { } }
+   :                                                                                ^^
+   `----
+
+Error: 
+  > Derived1
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:7:1]
+ 7 | export class x87 { constructor(parm: () => Base[] = function named() { return [d1, d2] }) { } }
+   :                                                                                    ^^
+   `----
+
+Error: 
+  > Derived2
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:7:1]
+ 7 | export class x87 { constructor(parm: () => Base[] = function named() { return [d1, d2] }) { } }
+   :                                                                               ^^^^^^^^
+   `----
+
+Error: 
+  > [Derived1, Derived2]
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:7:1]
+ 7 | export class x87 { constructor(parm: () => Base[] = function named() { return [d1, d2] }) { } }
+   :                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > () => [Derived1, Derived2]
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:8:1]
+ 8 | export class x90 { constructor(parm: { (): Base[]; } = function named() { return [d1, d2] }) { } }
+   :                                                                                   ^^
+   `----
+
+Error: 
+  > Derived1
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:8:1]
+ 8 | export class x90 { constructor(parm: { (): Base[]; } = function named() { return [d1, d2] }) { } }
+   :                                                                                       ^^
+   `----
+
+Error: 
+  > Derived2
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:8:1]
+ 8 | export class x90 { constructor(parm: { (): Base[]; } = function named() { return [d1, d2] }) { } }
+   :                                                                                  ^^^^^^^^
+   `----
+
+Error: 
+  > [Derived1, Derived2]
+
+  x Type
+   ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/1.ts:8:1]
+ 8 | export class x90 { constructor(parm: { (): Base[]; } = function named() { return [d1, d2] }) { } }
+   :                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > () => [Derived1, Derived2]

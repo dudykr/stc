@@ -1,40 +1,45 @@
-warning: Type
- --> $DIR/tests/visualize/tuple-1-2.ts:1:12
-  |
-1 | var temp = ["s", "t", "r"];
-  |            ^^^^^^^^^^^^^^^
-  |
-  = note: ["s", "t", "r"]
 
-warning: Type
- --> $DIR/tests/visualize/tuple-1-2.ts:2:13
-  |
-2 | var temp1 = [1, 2, 3];
-  |             ^^^^^^^^^
-  |
-  = note: [1, 2, 3]
+  x Type
+   ,-[$DIR/tests/visualize/tuple-1-2.ts:1:1]
+ 1 | var temp = ["s", "t", "r"];
+   :            ^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/tuple-1-2.ts:5:23
-  |
-5 | var c2: myArray = [...temp1, ...temp];
-  |                       ^^^^^
-  |
-  = note: number[]
+Error: 
+  > ["s", "t", "r"]
 
-warning: Type
- --> $DIR/tests/visualize/tuple-1-2.ts:5:33
-  |
-5 | var c2: myArray = [...temp1, ...temp];
-  |                                 ^^^^
-  |
-  = note: string[]
+  x Type
+   ,-[$DIR/tests/visualize/tuple-1-2.ts:2:1]
+ 2 | var temp1 = [1, 2, 3];
+   :             ^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/tuple-1-2.ts:5:19
-  |
-5 | var c2: myArray = [...temp1, ...temp];
-  |                   ^^^^^^^^^^^^^^^^^^^
-  |
-  = note: ((number | string))[]
+Error: 
+  > [1, 2, 3]
 
+  x Type
+   ,-[$DIR/tests/visualize/tuple-1-2.ts:5:1]
+ 5 | var c2: myArray = [...temp1, ...temp];
+   :                       ^^^^^
+   `----
+
+Error: 
+  > number[]
+
+  x Type
+   ,-[$DIR/tests/visualize/tuple-1-2.ts:5:1]
+ 5 | var c2: myArray = [...temp1, ...temp];
+   :                                 ^^^^
+   `----
+
+Error: 
+  > string[]
+
+  x Type
+   ,-[$DIR/tests/visualize/tuple-1-2.ts:5:1]
+ 5 | var c2: myArray = [...temp1, ...temp];
+   :                   ^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > ((number | string))[]

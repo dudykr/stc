@@ -1,24 +1,27 @@
-warning: Type
- --> $DIR/tests/pass/exprs/array/from.ts:6:30
-  |
-6 | export const c1 = Array.from(a)
-  |                              ^
-  |
-  = note: Set
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/from.ts:6:19
-  |
-6 | export const c1 = Array.from(a)
-  |                   ^^^^^
-  |
-  = note: ArrayConstructor
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/from.ts:6:1]
+ 6 | export const c1 = Array.from(a)
+   :                              ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/from.ts:6:19
-  |
-6 | export const c1 = Array.from(a)
-  |                   ^^^^^^^^^^^^^
-  |
-  = note: A[]
+Error: 
+  > Set
 
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/from.ts:6:1]
+ 6 | export const c1 = Array.from(a)
+   :                   ^^^^^
+   `----
+
+Error: 
+  > ArrayConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/from.ts:6:1]
+ 6 | export const c1 = Array.from(a)
+   :                   ^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > A[]

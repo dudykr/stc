@@ -1,32 +1,36 @@
-warning: Type
-  --> $DIR/tests/pass/types/keyof/2.ts:19:5
-   |
-19 | c = keys
-   |     ^^^^
-   |
-   = note: "c"
 
-warning: Type
-  --> $DIR/tests/pass/types/keyof/2.ts:19:1
-   |
-19 | c = keys
-   | ^^^^^^^^
-   |
-   = note: "c"
+  x Type
+    ,-[$DIR/tests/pass/types/keyof/2.ts:19:1]
+ 19 | c = keys
+    :     ^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/keyof/2.ts:20:8
-   |
-20 | keys = c
-   |        ^
-   |
-   = note: 'c'
+Error: 
+  > "c"
 
-warning: Type
-  --> $DIR/tests/pass/types/keyof/2.ts:20:1
-   |
-20 | keys = c
-   | ^^^^^^^^
-   |
-   = note: 'c'
+  x Type
+    ,-[$DIR/tests/pass/types/keyof/2.ts:19:1]
+ 19 | c = keys
+    : ^^^^^^^^
+    `----
 
+Error: 
+  > "c"
+
+  x Type
+    ,-[$DIR/tests/pass/types/keyof/2.ts:20:1]
+ 20 | keys = c
+    :        ^
+    `----
+
+Error: 
+  > 'c'
+
+  x Type
+    ,-[$DIR/tests/pass/types/keyof/2.ts:20:1]
+ 20 | keys = c
+    : ^^^^^^^^
+    `----
+
+Error: 
+  > 'c'

@@ -1,56 +1,63 @@
-warning: Type
- --> $DIR/tests/pass/class/member/static/factory-1.ts:4:20
-  |
-4 |         return new this();
-  |                    ^^^^
-  |
-  = note: this
 
-warning: Type
- --> $DIR/tests/pass/class/member/static/factory-1.ts:4:16
-  |
-4 |         return new this();
-  |                ^^^^^^^^^^
-  |
-  = note: this
+  x Type
+   ,-[$DIR/tests/pass/class/member/static/factory-1.ts:4:9]
+ 4 | return new this();
+   :            ^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/class/member/static/factory-1.ts:8:23
-  |
-8 | class Derived extends Base {
-  |                       ^^^^
-  |
-  = note: typeof Base
+Error: 
+  > this
 
-warning: Type
-  --> $DIR/tests/pass/class/member/static/factory-1.ts:11:9
-   |
-11 | var d = Derived.create();
-   |         ^^^^^^^
-   |
-   = note: typeof Derived
+  x Type
+   ,-[$DIR/tests/pass/class/member/static/factory-1.ts:4:9]
+ 4 | return new this();
+   :        ^^^^^^^^^^
+   `----
 
-warning: Type
-  --> $DIR/tests/pass/class/member/static/factory-1.ts:11:9
-   |
-11 | var d = Derived.create();
-   |         ^^^^^^^^^^^^^^^^
-   |
-   = note: Derived
+Error: 
+  > this
 
-warning: Type
-  --> $DIR/tests/pass/class/member/static/factory-1.ts:13:1
-   |
-13 | d.foo();
-   | ^
-   |
-   = note: Derived
+  x Type
+   ,-[$DIR/tests/pass/class/member/static/factory-1.ts:8:1]
+ 8 | class Derived extends Base {
+   :                       ^^^^
+   `----
 
-warning: Type
-  --> $DIR/tests/pass/class/member/static/factory-1.ts:13:1
-   |
-13 | d.foo();
-   | ^^^^^^^
-   |
-   = note: number
+Error: 
+  > typeof Base
 
+  x Type
+    ,-[$DIR/tests/pass/class/member/static/factory-1.ts:11:1]
+ 11 | var d = Derived.create();
+    :         ^^^^^^^
+    `----
+
+Error: 
+  > typeof Derived
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/static/factory-1.ts:11:1]
+ 11 | var d = Derived.create();
+    :         ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > Derived
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/static/factory-1.ts:13:1]
+ 13 | d.foo();
+    : ^
+    `----
+
+Error: 
+  > Derived
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/static/factory-1.ts:13:1]
+ 13 | d.foo();
+    : ^^^^^^^
+    `----
+
+Error: 
+  > number

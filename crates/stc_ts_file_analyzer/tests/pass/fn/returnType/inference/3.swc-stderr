@@ -1,27 +1,28 @@
-warning: Type
- --> $DIR/tests/pass/fn/returnType/inference/3.ts:2:12
-  |
-2 |     return f();
-  |            ^
-  |
-  = note: typeof f
 
-warning: Type
- --> $DIR/tests/pass/fn/returnType/inference/3.ts:2:12
-  |
-2 |     return f();
-  |            ^^^
-  |
-  = note: any
+  x Type
+   ,-[$DIR/tests/pass/fn/returnType/inference/3.ts:2:5]
+ 2 | return f();
+   :        ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/fn/returnType/inference/3.ts:1:21
-  |
-1 |   export var a: any = function f() {
-  |  _____________________^
-2 | |     return f();
-3 | | };
-  | |_^
-  |
-  = note: () => any
+Error: 
+  > typeof f
 
+  x Type
+   ,-[$DIR/tests/pass/fn/returnType/inference/3.ts:2:5]
+ 2 | return f();
+   :        ^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/fn/returnType/inference/3.ts:1:1]
+ 1 | ,-> export var a: any = function f() {
+ 2 | |       return f();
+ 3 | `-> };
+   `----
+
+Error: 
+  > () => any
