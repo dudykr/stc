@@ -182,11 +182,9 @@ impl Analyzer<'_, '_> {
             .validate_type_of_class_property(p.span, p.readonly, p.is_static, &p.type_ann, &p.value)?
             .map(Box::new);
 
-        if !self.ctx.in_declare && self.rule().no_implicit_any {
-            if value.is_none() {
-                self.storage
-                    .report(Error::ImplicitAny { span: key.span() }.context("private class proerty"))
-            }
+        if !self.ctx.in_declare && self.rule().no_implicit_any && value.is_none() {
+            self.storage
+                .report(Error::ImplicitAny { span: key.span() }.context("private class proerty"))
         }
 
         Ok(ClassProperty {
