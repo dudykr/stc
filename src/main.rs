@@ -64,7 +64,7 @@ fn main() -> Result<(), Error> {
                 let start = Instant::now();
 
                 let mut libs = match cmd.libs {
-                    Some(libs) => libs.iter().map(|s| Lib::load(&s)).flatten().collect::<Vec<_>>(),
+                    Some(libs) => libs.iter().flat_map(|s| Lib::load(s)).collect::<Vec<_>>(),
                     None => Lib::load("es5"),
                 };
                 libs.sort();
@@ -105,15 +105,15 @@ fn main() -> Result<(), Error> {
             let start = Instant::now();
             {
                 let mut checker = Checker::new(
-                    cm.clone(),
+                    cm,
                     handler.clone(),
-                    env.clone(),
+                    env,
                     TsConfig { ..Default::default() },
                     None,
                     Arc::new(NodeResolver),
                 );
 
-                checker.check(Arc::new(FileName::Real(path.clone())));
+                checker.check(Arc::new(FileName::Real(path)));
 
                 errors.extend(checker.take_errors());
             }
