@@ -330,10 +330,7 @@ impl Analyzer<'_, '_> {
                         ClassMember::Constructor(_) => {}
                         ClassMember::Method(_) => {}
                         ClassMember::Property(rp) => {
-                            if lp.is_static == rp.is_static
-                                && lp.is_static == rp.is_static
-                                && self.key_matches(span, &lp.key, &rp.key, false)
-                            {
+                            if lp.is_static == rp.is_static && self.key_matches(span, &lp.key, &rp.key, false) {
                                 if let Some(lt) = &lp.value {
                                     if let Some(rt) = &rp.value {
                                         self.assign_inner(data, &lt, &rt, opts)

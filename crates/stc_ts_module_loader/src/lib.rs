@@ -111,7 +111,7 @@ where
         let module_id = self.id_generator.generate(entry);
 
         let res = {
-            let mut analyzer = GraphAnalyzer::new(&*self);
+            let mut analyzer = GraphAnalyzer::new(self);
             analyzer.load(module_id);
             analyzer.into_result()
         };
@@ -153,10 +153,7 @@ where
     pub fn get_circular(&self, id: ModuleId) -> Option<Vec<ModuleId>> {
         let deps = self.deps.read();
 
-        deps.cycles
-            .iter()
-            .find_map(|set| if set.contains(&id) { Some(set) } else { None })
-            .cloned()
+        deps.cycles.iter().find(|set| set.contains(&id)).cloned()
     }
 
     pub fn id(&self, path: &Arc<FileName>) -> ModuleId {
@@ -201,10 +198,8 @@ where
     fn load_including_deps(&self, path: &Arc<FileName>, resolve_all: bool) {
         let id = self.id_generator.generate(path);
 
-        if resolve_all {
-            if self.started.remove(&id).is_none() {
-                return;
-            }
+        if resolve_all && self.started.remove(&id).is_none() {
+            return;
         }
 
         let loaded = self.load(path, resolve_all);
