@@ -242,7 +242,21 @@ impl Analyzer<'_, '_> {
         let mut reported_null_or_undefined = false;
 
         match op {
-            op!("**") | op!("<=") | op!("<") | op!(">=") | op!(">") => {
+            op!("**")
+            | op!("<=")
+            | op!("<")
+            | op!(">=")
+            | op!(">")
+            | op!("*")
+            | op!("/")
+            | op!("%")
+            | op!(bin, "-")
+            | op!("<<")
+            | op!(">>")
+            | op!(">>>")
+            | op!("&")
+            | op!("^")
+            | op!("|") => {
                 if matches!(
                     &*e.left,
                     RExpr::Lit(RLit::Null(..))
@@ -1610,19 +1624,9 @@ impl Analyzer<'_, '_> {
                     match ty.normalize() {
                         Type::Keyword(KeywordType {
                             span,
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
                             ..
-                        }) => {
-                            self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: *span });
-                        }
-
-                        Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsNullKeyword,
-                            ..
-                        }) => {
-                            self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: *span });
-                        }
+                        }) => {}
 
                         _ => errors.push(if is_left {
                             Error::WrongTypeForLhsOfNumericOperation { span: ty.span() }
