@@ -326,6 +326,7 @@ es6/Symbols/symbolDeclarationEmit7.ts
 es6/Symbols/symbolDeclarationEmit8.ts
 es6/Symbols/symbolDeclarationEmit9.ts
 es6/Symbols/symbolProperty1.ts
+es6/Symbols/symbolProperty10.ts
 es6/Symbols/symbolProperty11.ts
 es6/Symbols/symbolProperty12.ts
 es6/Symbols/symbolProperty13.ts
@@ -1179,6 +1180,7 @@ expressions/binaryOperators/comparisonOperator/comparisonOperatorWithIntersectio
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipObjectsOnIndexSignature.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipObjectsOnInstantiatedCallSignature.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipObjectsOnInstantiatedConstructorSignature.ts
+expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipObjectsOnOptionalProperty.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipObjectsOnProperty.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipPrimitiveType.ts
 expressions/binaryOperators/comparisonOperator/comparisonOperatorWithNoRelationshipTypeParameter.ts
@@ -1977,8 +1979,6 @@ types/intersection/intersectionTypeMembers.ts
 types/intersection/operatorsAndIntersectionTypes.ts
 types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
-types/literal/booleanLiteralTypes1.ts
-types/literal/booleanLiteralTypes2.ts
 types/literal/enumLiteralTypes1.ts
 types/literal/enumLiteralTypes2.ts
 types/literal/literalTypes1.ts
@@ -2166,6 +2166,7 @@ types/stringLiteral/stringLiteralTypesOverloadAssignability02.ts
 types/stringLiteral/stringLiteralTypesOverloadAssignability03.ts
 types/stringLiteral/stringLiteralTypesOverloadAssignability04.ts
 types/stringLiteral/stringLiteralTypesOverloadAssignability05.ts
+types/stringLiteral/stringLiteralTypesOverloads01.ts
 types/stringLiteral/stringLiteralTypesOverloads02.ts
 types/stringLiteral/stringLiteralTypesOverloads03.ts
 types/stringLiteral/stringLiteralTypesOverloads04.ts
@@ -2192,6 +2193,7 @@ types/tuple/castingTuple.ts
 types/tuple/contextualTypeWithTuple.ts
 types/tuple/emptyTuples/emptyTuplesTypeAssertion01.ts
 types/tuple/emptyTuples/emptyTuplesTypeAssertion02.ts
+types/tuple/strictTupleLength.ts
 types/tuple/tupleElementTypes1.ts
 types/tuple/tupleElementTypes2.ts
 types/tuple/tupleElementTypes3.ts
@@ -2259,6 +2261,7 @@ types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMember
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers4.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembers5.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembersNumericNames.ts
+types/typeRelationships/assignmentCompatibility/assignmentCompatWithObjectMembersOptionality.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithStringIndexer.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithStringIndexer2.ts
 types/typeRelationships/assignmentCompatibility/assignmentCompatWithStringIndexer3.ts
@@ -2290,6 +2293,8 @@ types/typeRelationships/comparable/equalityStrictNulls.ts
 types/typeRelationships/comparable/equalityWithIntersectionTypes01.ts
 types/typeRelationships/comparable/equalityWithUnionTypes01.ts
 types/typeRelationships/comparable/independentPropertyVariance.ts
+types/typeRelationships/comparable/optionalProperties01.ts
+types/typeRelationships/comparable/optionalProperties02.ts
 types/typeRelationships/comparable/switchCaseWithIntersectionTypes01.ts
 types/typeRelationships/comparable/switchCaseWithUnionTypes01.ts
 types/typeRelationships/comparable/typeAssertionsWithUnionTypes01.ts
@@ -2311,6 +2316,7 @@ types/typeRelationships/subtypesAndSuperTypes/subtypingWithConstructSignatures4.
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithConstructSignatures5.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithObjectMembers4.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithObjectMembersOptionality.ts
+types/typeRelationships/subtypesAndSuperTypes/subtypingWithObjectMembersOptionality2.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithObjectMembersOptionality3.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithObjectMembersOptionality4.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithOptionalProperties.ts
@@ -2402,7 +2408,6 @@ types/union/contextualTypeWithUnionTypeCallSignatures.ts
 types/union/contextualTypeWithUnionTypeIndexSignatures.ts
 types/union/contextualTypeWithUnionTypeMembers.ts
 types/union/discriminatedUnionTypes1.ts
-types/union/discriminatedUnionTypes2.ts
 types/union/discriminatedUnionTypes3.ts
 types/union/unionTypeCallSignatures2.ts
 types/union/unionTypeCallSignatures3.ts

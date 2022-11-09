@@ -767,8 +767,8 @@ pub enum Error {
     NoOverlap {
         span: Span,
         value: bool,
-        left: Span,
-        right: Span,
+        left: Box<Type>,
+        right: Box<Type>,
     },
 
     CannotAssignToReadonlyProperty {

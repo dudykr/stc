@@ -264,8 +264,8 @@ impl Analyzer<'_, '_> {
                         self.storage.report(Error::NoOverlap {
                             span,
                             value: true,
-                            left: lt.span(),
-                            right: rt.span(),
+                            left: box lt.clone(),
+                            right: box rt.clone(),
                         })
                     }
                 }

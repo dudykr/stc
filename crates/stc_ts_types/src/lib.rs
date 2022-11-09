@@ -364,7 +364,11 @@ fn _assert_send_sync() {
 #[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Is, Spanned, Serialize, Deserialize)]
 pub enum Key {
     Computed(ComputedKey),
-    Normal { span: Span, sym: JsWord },
+    Normal {
+        #[use_eq_ignore_span]
+        span: Span,
+        sym: JsWord,
+    },
     Num(RNumber),
     BigInt(RBigInt),
     Private(PrivateName),
@@ -494,7 +498,6 @@ assert_eq_size!(Instance, [u8; 32]);
 pub struct LitType {
     pub span: Span,
 
-    #[use_eq_ignore_span]
     pub lit: RTsLit,
     pub metadata: LitTypeMetadata,
 }
@@ -726,7 +729,6 @@ pub struct Method {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ClassProperty {
     pub span: Span,
-    #[use_eq_ignore_span]
     pub key: Key,
     pub value: Option<Box<Type>>,
     pub is_static: bool,
