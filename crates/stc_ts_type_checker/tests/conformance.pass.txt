@@ -1370,6 +1370,7 @@ expressions/unaryOperators/voidOperator/voidOperatorWithBooleanType.ts
 expressions/unaryOperators/voidOperator/voidOperatorWithEnumType.ts
 expressions/unaryOperators/voidOperator/voidOperatorWithNumberType.ts
 expressions/unaryOperators/voidOperator/voidOperatorWithStringType.ts
+expressionsSymbols/ES5SymbolType1.ts
 externalModules/asiPreventsParsingAsAmbientExternalModule01.ts
 externalModules/asiPreventsParsingAsAmbientExternalModule02.ts
 externalModules/es6/es6modulekind.ts
@@ -2166,6 +2167,7 @@ types/stringLiteral/stringLiteralTypesOverloadAssignability02.ts
 types/stringLiteral/stringLiteralTypesOverloadAssignability03.ts
 types/stringLiteral/stringLiteralTypesOverloadAssignability04.ts
 types/stringLiteral/stringLiteralTypesOverloadAssignability05.ts
+types/stringLiteral/stringLiteralTypesOverloads01.ts
 types/stringLiteral/stringLiteralTypesOverloads02.ts
 types/stringLiteral/stringLiteralTypesOverloads03.ts
 types/stringLiteral/stringLiteralTypesOverloads04.ts
@@ -2192,6 +2194,7 @@ types/tuple/castingTuple.ts
 types/tuple/contextualTypeWithTuple.ts
 types/tuple/emptyTuples/emptyTuplesTypeAssertion01.ts
 types/tuple/emptyTuples/emptyTuplesTypeAssertion02.ts
+types/tuple/strictTupleLength.ts
 types/tuple/tupleElementTypes1.ts
 types/tuple/tupleElementTypes2.ts
 types/tuple/tupleElementTypes3.ts
