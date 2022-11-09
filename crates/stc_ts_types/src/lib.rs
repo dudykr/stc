@@ -365,9 +365,9 @@ fn _assert_send_sync() {
 pub enum Key {
     Computed(ComputedKey),
     Normal { span: Span, sym: JsWord },
-    Num(#[use_eq_ignore_span] RNumber),
-    BigInt(#[use_eq_ignore_span] RBigInt),
-    Private(#[use_eq_ignore_span] PrivateName),
+    Num(RNumber),
+    BigInt(RBigInt),
+    Private(PrivateName),
 }
 
 impl Key {

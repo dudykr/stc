@@ -99,13 +99,33 @@ type_eq!(RTsKeywordType);
 type_eq!(RTsThisType);
 type_eq!(RTsLitType);
 type_eq!(RTsThisTypeOrIdent);
-type_eq!(RStr);
 type_eq!(RIdent);
 type_eq!(RTsEntityName);
 type_eq!(RTsNamespaceDecl);
 type_eq!(RTsEnumMemberId);
 type_eq!(RExpr);
 type_eq!(RPropName);
+
+impl TypeEq for RStr {
+    #[inline]
+    fn type_eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl TypeEq for RNumber {
+    #[inline]
+    fn type_eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl TypeEq for RBigInt {
+    #[inline]
+    fn type_eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
 
 define_rnode!({
     pub struct Class {
