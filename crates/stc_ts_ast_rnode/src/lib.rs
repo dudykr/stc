@@ -97,7 +97,6 @@ macro_rules! type_eq {
 
 type_eq!(RTsKeywordType);
 type_eq!(RTsThisType);
-type_eq!(RTsLitType);
 type_eq!(RTsThisTypeOrIdent);
 type_eq!(RIdent);
 type_eq!(RTsEntityName);
@@ -124,6 +123,24 @@ impl TypeEq for RBigInt {
     #[inline]
     fn type_eq(&self, other: &Self) -> bool {
         self.value == other.value
+    }
+}
+
+impl TypeEq for RTsLitType {
+    fn type_eq(&self, other: &Self) -> bool {
+        self.lit.type_eq(&other.lit)
+    }
+}
+
+impl TypeEq for RTsLit {
+    fn type_eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (RTsLit::Str(a), RTsLit::Str(b)) => a.type_eq(b),
+            (RTsLit::Number(a), RTsLit::Number(b)) => a.type_eq(b),
+            (RTsLit::Bool(a), RTsLit::Bool(b)) => a == b,
+            (RTsLit::BigInt(a), RTsLit::BigInt(b)) => a.type_eq(b),
+            _ => false,
+        }
     }
 }
 
