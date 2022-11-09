@@ -17,8 +17,8 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_simple_ast_validations::consturctor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
-    Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam, Id, Intersection,
-    Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
+    rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
+    Id, Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
 };
 use stc_utils::{cache::Freeze, AHashSet};
 use swc_atoms::js_word;
@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let key = self.validate_key(&p.key, p.computed)?;
+        let key = self.validate_key(&rprop_name_to_expr(p.key.clone()), matches!(p.key, RPropName::Computed(..)))?;
 
         Ok(ClassProperty {
             span: p.span,

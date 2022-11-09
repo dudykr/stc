@@ -329,7 +329,14 @@ impl Analyzer<'_, '_> {
             }) => {}
 
             RExpr::Member(RMemberExpr { ref obj, ref prop, .. }) => {
-                let prop = self.validate_key(prop, computed)?;
+                let prop = self.validate_key(
+                    &match prop {
+                        RMemberProp::Ident(i) => RExpr::Ident(i.clone()),
+                        RMemberProp::Computed(c) => *c.expr.clone(),
+                        RMemberProp::PrivateName(p) => RExpr::PrivateName(p.clone()),
+                    },
+                    matches!(prop, RMemberProp::Computed(..)),
+                )?;
 
                 // Validate object
                 let mut obj_type = obj.validate_with_default(self)?.generalize_lit();

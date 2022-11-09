@@ -3606,14 +3606,24 @@ impl Analyzer<'_, '_> {
 
         self.storage.report_all(errors);
 
-        let mut prop = self.validate_key(prop, computed).report(&mut self.storage).unwrap_or_else(|| {
-            let span = prop.span().with_ctxt(SyntaxContext::empty());
-            Key::Computed(ComputedKey {
-                span,
-                expr: box RExpr::Invalid(RInvalid { span }),
-                ty: box Type::any(span, Default::default()),
-            })
-        });
+        let mut prop = self
+            .validate_key(
+                &match prop {
+                    RMemberProp::Ident(i) => RExpr::Ident(i.clone()),
+                    RMemberProp::Computed(c) => *c.expr.clone(),
+                    RMemberProp::PrivateName(p) => RExpr::PrivateName(p.clone()),
+                },
+                matches!(prop, RMemberProp::Computed(_)),
+            )
+            .report(&mut self.storage)
+            .unwrap_or_else(|| {
+                let span = prop.span().with_ctxt(SyntaxContext::empty());
+                Key::Computed(ComputedKey {
+                    span,
+                    expr: box RExpr::Invalid(RInvalid { span }),
+                    ty: box Type::any(span, Default::default()),
+                })
+            });
         prop.make_clone_cheap();
 
         let prop_access_ctx = Ctx {
