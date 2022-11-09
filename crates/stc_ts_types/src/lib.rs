@@ -778,7 +778,7 @@ impl Debug for Conditional {
 }
 
 /// TODO(kdy1): Remove this and create `keyof`, `unique` and `readonly` types.
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, Visit, Serialize, Deserialize)]
 pub struct Operator {
     pub span: Span,
     #[use_eq]
@@ -788,6 +788,17 @@ pub struct Operator {
 }
 
 assert_eq_size!(Operator, [u8; 32]);
+
+impl TypeEq for Operator {
+    fn type_eq(&self, other: &Self) -> bool {
+        match self.op {
+            TsTypeOperatorOp::Unique => return false,
+            _ => {}
+        }
+
+        self.op == other.op && self.ty.type_eq(&other.ty)
+    }
+}
 
 /// This type has a length of n to infinite.
 ///
