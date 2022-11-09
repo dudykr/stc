@@ -1005,6 +1005,10 @@ es6/unicodeExtendedEscapes/unicodeExtendedEscapesInStrings08_ES5.ts
 es6/unicodeExtendedEscapes/unicodeExtendedEscapesInStrings08_ES6.ts
 es6/unicodeExtendedEscapes/unicodeExtendedEscapesInStrings09_ES5.ts
 es6/unicodeExtendedEscapes/unicodeExtendedEscapesInStrings09_ES6.ts
+es6/unicodeExtendedEscapes/unicodeExtendedEscapesInStrings10_ES5.ts
+es6/unicodeExtendedEscapes/unicodeExtendedEscapesInStrings10_ES6.ts
+es6/unicodeExtendedEscapes/unicodeExtendedEscapesInStrings11_ES5.ts
+es6/unicodeExtendedEscapes/unicodeExtendedEscapesInStrings11_ES6.ts
 es6/unicodeExtendedEscapes/unicodeExtendedEscapesInStrings13_ES5.ts
 es6/unicodeExtendedEscapes/unicodeExtendedEscapesInStrings13_ES6.ts
 es6/unicodeExtendedEscapes/unicodeExtendedEscapesInStrings15_ES5.ts
@@ -1031,6 +1035,10 @@ es6/unicodeExtendedEscapes/unicodeExtendedEscapesInTemplates08_ES5.ts
 es6/unicodeExtendedEscapes/unicodeExtendedEscapesInTemplates08_ES6.ts
 es6/unicodeExtendedEscapes/unicodeExtendedEscapesInTemplates09_ES5.ts
 es6/unicodeExtendedEscapes/unicodeExtendedEscapesInTemplates09_ES6.ts
+es6/unicodeExtendedEscapes/unicodeExtendedEscapesInTemplates10_ES5.ts
+es6/unicodeExtendedEscapes/unicodeExtendedEscapesInTemplates10_ES6.ts
+es6/unicodeExtendedEscapes/unicodeExtendedEscapesInTemplates11_ES5.ts
+es6/unicodeExtendedEscapes/unicodeExtendedEscapesInTemplates11_ES6.ts
 es6/unicodeExtendedEscapes/unicodeExtendedEscapesInTemplates13_ES5.ts
 es6/unicodeExtendedEscapes/unicodeExtendedEscapesInTemplates13_ES6.ts
 es6/unicodeExtendedEscapes/unicodeExtendedEscapesInTemplates15_ES5.ts
@@ -1855,6 +1863,7 @@ parser/ecmascript6/Iterators/parserForOfStatement16.ts
 parser/ecmascript6/Iterators/parserForOfStatement17.ts
 parser/ecmascript6/Iterators/parserForOfStatement18.ts
 parser/ecmascript6/Iterators/parserForOfStatement19.ts
+parser/ecmascript6/Iterators/parserForOfStatement23.ts
 parser/ecmascript6/Iterators/parserForOfStatement5.ts
 parser/ecmascript6/Iterators/parserForOfStatement8.ts
 parser/ecmascript6/Iterators/parserForOfStatement9.ts
@@ -1974,6 +1983,7 @@ types/any/anyPropertyAccess.ts
 types/any/assignAnyToEveryType.ts
 types/any/assignEveryTypeToAny.ts
 types/conditional/inferTypes2.ts
+types/conditional/inferTypesWithExtends1.ts
 types/conditional/variance.ts
 types/contextualTypes/asyncFunctions/contextuallyTypeAsyncFunctionAwaitOperand.ts
 types/contextualTypes/asyncFunctions/contextuallyTypeAsyncFunctionReturnType.ts
@@ -2029,6 +2039,7 @@ types/literal/stringLiteralsWithSwitchStatements03.ts
 types/literal/stringLiteralsWithSwitchStatements04.ts
 types/literal/stringLiteralsWithTypeAssertions01.ts
 types/literal/templateLiteralTypesPatternsPrefixSuffixAssignability.ts
+types/localTypes/localTypes1.ts
 types/localTypes/localTypes2.ts
 types/localTypes/localTypes3.ts
 types/localTypes/localTypes5.ts
@@ -2108,6 +2119,7 @@ types/objectTypeLiteral/methodSignatures/methodSignaturesWithOverloads.ts
 types/objectTypeLiteral/methodSignatures/methodSignaturesWithOverloads2.ts
 types/objectTypeLiteral/objectTypeLiteralSyntax.ts
 types/objectTypeLiteral/propertySignatures/propertyNameWithoutTypeAnnotation.ts
+types/objectTypeLiteral/propertySignatures/propertyNamesOfReservedWords.ts
 types/objectTypeLiteral/propertySignatures/stringNamedPropertyAccess.ts
 types/primitives/boolean/assignFromBooleanInterface.ts
 types/primitives/boolean/assignFromBooleanInterface2.ts
