@@ -244,14 +244,14 @@ where
             .collect::<Vec<_>>();
 
         if resolve_all {
-            let _res = self.loaded.insert(
+            let res = self.loaded.insert(
                 id,
                 Ok(ModuleRecord {
                     module: loaded.module,
                     deps: dep_module_ids,
                 }),
             );
-            // assert_eq!(res, None, "duplicate?");
+            assert!(res.is_none(), "duplicate?");
         }
     }
 
@@ -380,10 +380,11 @@ where
     type ModuleId = ModuleId;
 
     fn deps_of(&self, module_id: Self::ModuleId) -> Vec<Self::ModuleId> {
-        let m = self
-            .loaded
-            .get(&module_id)
-            .unwrap_or_else(|| unreachable!("{:?} is not loaded", module_id));
+        let m = self.loaded.get(&module_id).unwrap_or_else(|| {
+            //
+            let path = self.id_generator.path(module_id);
+            unreachable!("{:?}({:?}) is not loaded", module_id, path)
+        });
 
         match &*m {
             Ok(m) => m.deps.clone(),
