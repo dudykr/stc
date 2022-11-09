@@ -371,9 +371,8 @@ impl Analyzer<'_, '_> {
             span,
             RTsModuleName::Str(RStr {
                 span: DUMMY_SP,
-                has_escape: false,
-                kind: Default::default(),
                 value: js_word!(""),
+                raw: None,
             }),
             data,
         ))
@@ -719,11 +718,11 @@ impl Load for NoopLoader {
         unreachable!()
     }
 
-    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> VResult {
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> VResult<Type> {
         unreachable!()
     }
 
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult {
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult<Type> {
         unreachable!()
     }
 
@@ -850,7 +849,7 @@ impl Analyzer<'_, '_> {
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
             let ty = match node.module_ref {
                 RTsModuleRef::TsEntityName(ref e) => analyzer
-                    .type_of_ts_entity_name(node.span, analyzer.ctx.module_id, e, None)
+                    .type_of_ts_entity_name(node.span, analyzer.ctx.module_id, &e.clone().into(), None)
                     .unwrap_or_else(|err| {
                         analyzer.storage.report(err);
                         Type::any(node.span, Default::default())
@@ -925,7 +924,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &RTsNamespaceDecl) -> VResult {
+    fn validate(&mut self, decl: &RTsNamespaceDecl) -> VResult<Type> {
         let is_builtin = self.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;

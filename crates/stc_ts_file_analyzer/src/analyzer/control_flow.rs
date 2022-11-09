@@ -544,7 +544,7 @@ impl Analyzer<'_, '_> {
     /// Returns the type of discriminant.
     ///
     /// TODO(kdy1): Implement this.
-    fn report_errors_for_incomparable_switch_cases(&mut self, s: &RSwitchStmt) -> VResult {
+    fn report_errors_for_incomparable_switch_cases(&mut self, s: &RSwitchStmt) -> VResult<Type> {
         let discriminant_ty = s.discriminant.validate_with_default(self)?;
         for case in &s.cases {
             if let Some(test) = &case.test {
@@ -1274,7 +1274,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RCondExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RCondExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
         self.record(e);
 
         let RCondExpr {

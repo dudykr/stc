@@ -1,32 +1,36 @@
-warning: Type
- --> $DIR/tests/pass/exprs/array/infer-2.ts:2:34
-  |
-2 | export let b2: boolean[][] = foo([true], [false]);
-  |                                  ^^^^^^
-  |
-  = note: [true]
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/infer-2.ts:2:42
-  |
-2 | export let b2: boolean[][] = foo([true], [false]);
-  |                                          ^^^^^^^
-  |
-  = note: [false]
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/infer-2.ts:2:1]
+ 2 | export let b2: boolean[][] = foo([true], [false]);
+   :                                  ^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/infer-2.ts:2:30
-  |
-2 | export let b2: boolean[][] = foo([true], [false]);
-  |                              ^^^
-  |
-  = note: <T>(...args: T[]) => T[]
+Error: 
+  > [true]
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/infer-2.ts:2:30
-  |
-2 | export let b2: boolean[][] = foo([true], [false]);
-  |                              ^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (([true] | [false]))[]
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/infer-2.ts:2:1]
+ 2 | export let b2: boolean[][] = foo([true], [false]);
+   :                                          ^^^^^^^
+   `----
 
+Error: 
+  > [false]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/infer-2.ts:2:1]
+ 2 | export let b2: boolean[][] = foo([true], [false]);
+   :                              ^^^
+   `----
+
+Error: 
+  > <T>(...args: T[]) => T[]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/infer-2.ts:2:1]
+ 2 | export let b2: boolean[][] = foo([true], [false]);
+   :                              ^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (([true] | [false]))[]

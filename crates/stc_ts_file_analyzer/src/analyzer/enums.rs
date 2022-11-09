@@ -78,7 +78,11 @@ impl Analyzer<'_, '_> {
                                 RTsLit::Number(v) => RExpr::Lit(RLit::Num(v)),
                                 RTsLit::Str(v) => RExpr::Lit(RLit::Str(v)),
                                 RTsLit::Bool(v) => RExpr::Lit(RLit::Bool(v)),
-                                RTsLit::Tpl(v) => RExpr::Lit(RLit::Str(v.quasis.into_iter().next().unwrap().raw)),
+                                RTsLit::Tpl(v) => RExpr::Lit(RLit::Str(RStr {
+                                    span: v.span,
+                                    value: From::from(&*v.quasis.into_iter().next().unwrap().raw),
+                                    raw: None,
+                                })),
                                 RTsLit::BigInt(v) => RExpr::Lit(RLit::BigInt(v)),
                             }
                         })
@@ -242,6 +246,7 @@ impl Evaluator<'_> {
                                     op!("~") => (!(v as i32)) as f64,
                                     _ => Err(Error::InvalidEnumInit { span })?,
                                 },
+                                raw: None,
                             }))
                         }
                         RTsLit::Str(_) => {}
@@ -261,7 +266,11 @@ impl Evaluator<'_> {
             }
         } else {
             if let Some(value) = default {
-                return Ok(RTsLit::Number(RNumber { span, value: value as _ }));
+                return Ok(RTsLit::Number(RNumber {
+                    span,
+                    value: value as _,
+                    raw: None,
+                }));
             }
         }
 
@@ -293,25 +302,24 @@ impl Evaluator<'_> {
                         op!(">>>") => ((l.round() as u64) >> (r.round() as u64)) as _,
                         _ => Err(Error::InvalidEnumInit { span })?,
                     },
+
+                    raw: None,
                 })
             }
             (RTsLit::Str(l), RTsLit::Str(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
-                has_escape: l.has_escape || r.has_escape,
-                kind: Default::default(),
+                raw: None,
             }),
             (RTsLit::Number(l), RTsLit::Str(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
-                has_escape: r.has_escape,
-                kind: Default::default(),
+                raw: None,
             }),
             (RTsLit::Str(l), RTsLit::Number(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
-                has_escape: l.has_escape,
-                kind: Default::default(),
+                raw: None,
             }),
             _ => Err(Error::InvalidEnumInit { span })?,
         })
@@ -530,7 +538,7 @@ impl Analyzer<'_, '_> {
     /// declare const e: E;
     /// const a = o[e]
     /// ```
-    pub(super) fn expand_enum(&mut self, ty: Type) -> VResult {
+    pub(super) fn expand_enum(&mut self, ty: Type) -> VResult<Type> {
         let e = match ty.normalize() {
             Type::Enum(e) => e,
             _ => return Ok(ty),
@@ -562,7 +570,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult {
+    pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult<Type> {
         match ty.normalize() {
             Type::EnumVariant(ref ev) => {
                 if let Some(variant_name) = &ev.name {

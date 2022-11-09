@@ -185,7 +185,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn get_element_type_of_for_in(&mut self, rhs: &Type) -> VResult {
+    fn get_element_type_of_for_in(&mut self, rhs: &Type) -> VResult<Type> {
         let rhs = self
             .normalize(
                 None,
@@ -288,7 +288,7 @@ impl Analyzer<'_, '_> {
             child.scope.declaring.extend(created_vars);
 
             child.ctx.allow_ref_declaring = match left {
-                RVarDeclOrPat::VarDecl(RVarDecl {
+                RVarDeclOrPat::VarDecl(box RVarDecl {
                     kind: VarDeclKind::Var, ..
                 }) => true,
                 _ => false,
@@ -296,7 +296,7 @@ impl Analyzer<'_, '_> {
 
             // Type annotation on lhs of for in/of loops is invalid.
             match left {
-                RVarDeclOrPat::VarDecl(RVarDecl { decls, .. }) => {
+                RVarDeclOrPat::VarDecl(box RVarDecl { decls, .. }) => {
                     if decls.len() >= 1 {
                         if decls[0].name.get_ty().is_some() {
                             match kind {

@@ -71,6 +71,23 @@ impl Simplifier<'_> {
 
 impl Fold<Union> for Simplifier<'_> {
     fn fold(&mut self, mut union: Union) -> Union {
+        let should_remove_null_and_undefined = union.types.iter().any(|ty| match ty.normalize() {
+            Type::TypeLit(..) => true,
+            Type::Ref(..) => true,
+            Type::Function(..) => true,
+            _ => false,
+        });
+
+        if should_remove_null_and_undefined {
+            union.types.retain(|ty| {
+                if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) | ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+                    return false;
+                }
+
+                true
+            });
+        }
+
         let has_array = union.types.iter().any(|ty| match ty.normalize() {
             Type::Array(..) => true,
             _ => false,
@@ -458,6 +475,7 @@ impl Fold<Type> for Simplifier<'_> {
                     lit: RTsLit::Number(RNumber {
                         span,
                         value: tuple.elems.len() as _,
+                        raw: None,
                     }),
                     metadata: LitTypeMetadata {
                         common: CommonTypeMetadata {

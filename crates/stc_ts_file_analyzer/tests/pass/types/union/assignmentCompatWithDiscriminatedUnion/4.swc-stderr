@@ -1,34 +1,38 @@
-warning: Type
-  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/4.ts:14:30
-   |
-14 |         return draw({ color: currentColor });
-   |                              ^^^^^^^^^^^^
-   |
-   = note: ('blue' | 'yellow' | undefined)
 
-warning: Type
-  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/4.ts:14:21
-   |
-14 |         return draw({ color: currentColor });
-   |                     ^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: {
-               color: ('blue' | 'yellow' | undefined);
-           }
+  x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/4.ts:14:9]
+ 14 | return draw({ color: currentColor });
+    :                      ^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/4.ts:14:16
-   |
-14 |         return draw({ color: currentColor });
-   |                ^^^^
-   |
-   = note: (val: (Blue | Yellow)) => void
+Error: 
+  > ('blue' | 'yellow' | undefined)
 
-warning: Type
-  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/4.ts:14:16
-   |
-14 |         return draw({ color: currentColor });
-   |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: void
+  x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/4.ts:14:9]
+ 14 | return draw({ color: currentColor });
+    :             ^^^^^^^^^^^^^^^^^^^^^^^
+    `----
 
+Error: 
+  > {
+  |     color: ('blue' | 'yellow' | undefined);
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/4.ts:14:9]
+ 14 | return draw({ color: currentColor });
+    :        ^^^^
+    `----
+
+Error: 
+  > (val: (Blue | Yellow)) => void
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/4.ts:14:9]
+ 14 | return draw({ color: currentColor });
+    :        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > void

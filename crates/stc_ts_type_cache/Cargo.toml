@@ -12,4 +12,4 @@ stc_ts_types = {path = "../stc_ts_types"}
 stc_ts_utils = {path = "../stc_ts_utils"}
 stc_utils = {path = "../stc_utils"}
 stc_visit = {path = "../stc_visit"}
-swc_common = {version = "0.14.6", features = ["concurrent", "tty-emitter"]}
+swc_common = { version = "0.29.13", features = ["concurrent", "tty-emitter"] }

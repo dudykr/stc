@@ -1,190 +1,199 @@
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-3.ts:14:1
-   |
-14 | ee.foo
-   | ^^
-   |
-   = note: E3
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-3.ts:14:1
-   |
-14 | ee.foo
-   | ^^^^^^
-   |
-   = note: {
-               toString?: string["toString"];
-               charAt?: string["charAt"];
-               charCodeAt?: string["charCodeAt"];
-               concat?: string["concat"];
-               indexOf?: string["indexOf"];
-               lastIndexOf?: string["lastIndexOf"];
-               localeCompare?: string["localeCompare"];
-               match?: string["match"];
-               replace?: string["replace"];
-               replace?: string["replace"];
-               search?: string["search"];
-               slice?: string["slice"];
-               split?: string["split"];
-               substring?: string["substring"];
-               toLowerCase?: string["toLowerCase"];
-               toLocaleLowerCase?: string["toLocaleLowerCase"];
-               toUpperCase?: string["toUpperCase"];
-               toLocaleUpperCase?: string["toLocaleUpperCase"];
-               trim?: string["trim"];
-               length?: string["length"];
-               substr?: string["substr"];
-               valueOf?: string["valueOf"];
-               [index: number]: string[number];
-               localeCompare?: string["localeCompare"];
-               codePointAt?: string["codePointAt"];
-               includes?: string["includes"];
-               endsWith?: string["endsWith"];
-               normalize?: string["normalize"];
-               normalize?: string["normalize"];
-               repeat?: string["repeat"];
-               startsWith?: string["startsWith"];
-               anchor?: string["anchor"];
-               big?: string["big"];
-               blink?: string["blink"];
-               bold?: string["bold"];
-               fixed?: string["fixed"];
-               fontcolor?: string["fontcolor"];
-               fontsize?: string["fontsize"];
-               fontsize?: string["fontsize"];
-               italics?: string["italics"];
-               link?: string["link"];
-               small?: string["small"];
-               strike?: string["strike"];
-               sub?: string["sub"];
-               sup?: string["sup"];
-               [Symbol.iterator]?: string[symbol];
-               match?: string["match"];
-               replace?: string["replace"];
-               replace?: string["replace"];
-               search?: string["search"];
-               split?: string["split"];
-               padStart?: string["padStart"];
-               padEnd?: string["padEnd"];
-               trimEnd?: string["trimEnd"];
-               trimStart?: string["trimStart"];
-               trimLeft?: string["trimLeft"];
-               trimRight?: string["trimRight"];
-               matchAll?: string["matchAll"];
-           }
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-3.ts:14:1]
+ 14 | ee.foo
+    : ^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-3.ts:15:1
-   |
-15 | ee.foo.substring
-   | ^^
-   |
-   = note: E3
+Error: 
+  > E3
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-3.ts:15:1
-   |
-15 | ee.foo.substring
-   | ^^^^^^
-   |
-   = note: {
-               toString?: string["toString"];
-               charAt?: string["charAt"];
-               charCodeAt?: string["charCodeAt"];
-               concat?: string["concat"];
-               indexOf?: string["indexOf"];
-               lastIndexOf?: string["lastIndexOf"];
-               localeCompare?: string["localeCompare"];
-               match?: string["match"];
-               replace?: string["replace"];
-               replace?: string["replace"];
-               search?: string["search"];
-               slice?: string["slice"];
-               split?: string["split"];
-               substring?: string["substring"];
-               toLowerCase?: string["toLowerCase"];
-               toLocaleLowerCase?: string["toLocaleLowerCase"];
-               toUpperCase?: string["toUpperCase"];
-               toLocaleUpperCase?: string["toLocaleUpperCase"];
-               trim?: string["trim"];
-               length?: string["length"];
-               substr?: string["substr"];
-               valueOf?: string["valueOf"];
-               [index: number]: string[number];
-               localeCompare?: string["localeCompare"];
-               codePointAt?: string["codePointAt"];
-               includes?: string["includes"];
-               endsWith?: string["endsWith"];
-               normalize?: string["normalize"];
-               normalize?: string["normalize"];
-               repeat?: string["repeat"];
-               startsWith?: string["startsWith"];
-               anchor?: string["anchor"];
-               big?: string["big"];
-               blink?: string["blink"];
-               bold?: string["bold"];
-               fixed?: string["fixed"];
-               fontcolor?: string["fontcolor"];
-               fontsize?: string["fontsize"];
-               fontsize?: string["fontsize"];
-               italics?: string["italics"];
-               link?: string["link"];
-               small?: string["small"];
-               strike?: string["strike"];
-               sub?: string["sub"];
-               sup?: string["sup"];
-               [Symbol.iterator]?: string[symbol];
-               match?: string["match"];
-               replace?: string["replace"];
-               replace?: string["replace"];
-               search?: string["search"];
-               split?: string["split"];
-               padStart?: string["padStart"];
-               padEnd?: string["padEnd"];
-               trimEnd?: string["trimEnd"];
-               trimStart?: string["trimStart"];
-               trimLeft?: string["trimLeft"];
-               trimRight?: string["trimRight"];
-               matchAll?: string["matchAll"];
-           }
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-3.ts:14:1]
+ 14 | ee.foo
+    : ^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-3.ts:15:1
-   |
-15 | ee.foo.substring
-   | ^^^^^^^^^^^^^^^^
-   |
-   = note: (undefined | (start: number, end?: number) => string)
+Error: 
+  > {
+  |     toString?: string["toString"];
+  |     charAt?: string["charAt"];
+  |     charCodeAt?: string["charCodeAt"];
+  |     concat?: string["concat"];
+  |     indexOf?: string["indexOf"];
+  |     lastIndexOf?: string["lastIndexOf"];
+  |     localeCompare?: string["localeCompare"];
+  |     match?: string["match"];
+  |     replace?: string["replace"];
+  |     replace?: string["replace"];
+  |     search?: string["search"];
+  |     slice?: string["slice"];
+  |     split?: string["split"];
+  |     substring?: string["substring"];
+  |     toLowerCase?: string["toLowerCase"];
+  |     toLocaleLowerCase?: string["toLocaleLowerCase"];
+  |     toUpperCase?: string["toUpperCase"];
+  |     toLocaleUpperCase?: string["toLocaleUpperCase"];
+  |     trim?: string["trim"];
+  |     length?: string["length"];
+  |     substr?: string["substr"];
+  |     valueOf?: string["valueOf"];
+  |     readonly [index: number]: string[number];
+  |     localeCompare?: string["localeCompare"];
+  |     codePointAt?: string["codePointAt"];
+  |     includes?: string["includes"];
+  |     endsWith?: string["endsWith"];
+  |     normalize?: string["normalize"];
+  |     normalize?: string["normalize"];
+  |     repeat?: string["repeat"];
+  |     startsWith?: string["startsWith"];
+  |     anchor?: string["anchor"];
+  |     big?: string["big"];
+  |     blink?: string["blink"];
+  |     bold?: string["bold"];
+  |     fixed?: string["fixed"];
+  |     fontcolor?: string["fontcolor"];
+  |     fontsize?: string["fontsize"];
+  |     fontsize?: string["fontsize"];
+  |     italics?: string["italics"];
+  |     link?: string["link"];
+  |     small?: string["small"];
+  |     strike?: string["strike"];
+  |     sub?: string["sub"];
+  |     sup?: string["sup"];
+  |     [Symbol.iterator]?: string[symbol];
+  |     match?: string["match"];
+  |     replace?: string["replace"];
+  |     replace?: string["replace"];
+  |     search?: string["search"];
+  |     split?: string["split"];
+  |     padStart?: string["padStart"];
+  |     padEnd?: string["padEnd"];
+  |     trimEnd?: string["trimEnd"];
+  |     trimStart?: string["trimStart"];
+  |     trimLeft?: string["trimLeft"];
+  |     trimRight?: string["trimRight"];
+  |     matchAll?: string["matchAll"];
+  | }
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-3.ts:16:1
-   |
-16 | ee.bar
-   | ^^
-   |
-   = note: E3
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-3.ts:15:1]
+ 15 | ee.foo.substring
+    : ^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-3.ts:16:1
-   |
-16 | ee.bar
-   | ^^^^^^
-   |
-   = note: any
+Error: 
+  > E3
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-3.ts:17:1
-   |
-17 | ee.baz
-   | ^^
-   |
-   = note: E3
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-3.ts:15:1]
+ 15 | ee.foo.substring
+    : ^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/4-3.ts:17:1
-   |
-17 | ee.baz
-   | ^^^^^^
-   |
-   = note: any
+Error: 
+  > {
+  |     toString?: string["toString"];
+  |     charAt?: string["charAt"];
+  |     charCodeAt?: string["charCodeAt"];
+  |     concat?: string["concat"];
+  |     indexOf?: string["indexOf"];
+  |     lastIndexOf?: string["lastIndexOf"];
+  |     localeCompare?: string["localeCompare"];
+  |     match?: string["match"];
+  |     replace?: string["replace"];
+  |     replace?: string["replace"];
+  |     search?: string["search"];
+  |     slice?: string["slice"];
+  |     split?: string["split"];
+  |     substring?: string["substring"];
+  |     toLowerCase?: string["toLowerCase"];
+  |     toLocaleLowerCase?: string["toLocaleLowerCase"];
+  |     toUpperCase?: string["toUpperCase"];
+  |     toLocaleUpperCase?: string["toLocaleUpperCase"];
+  |     trim?: string["trim"];
+  |     length?: string["length"];
+  |     substr?: string["substr"];
+  |     valueOf?: string["valueOf"];
+  |     readonly [index: number]: string[number];
+  |     localeCompare?: string["localeCompare"];
+  |     codePointAt?: string["codePointAt"];
+  |     includes?: string["includes"];
+  |     endsWith?: string["endsWith"];
+  |     normalize?: string["normalize"];
+  |     normalize?: string["normalize"];
+  |     repeat?: string["repeat"];
+  |     startsWith?: string["startsWith"];
+  |     anchor?: string["anchor"];
+  |     big?: string["big"];
+  |     blink?: string["blink"];
+  |     bold?: string["bold"];
+  |     fixed?: string["fixed"];
+  |     fontcolor?: string["fontcolor"];
+  |     fontsize?: string["fontsize"];
+  |     fontsize?: string["fontsize"];
+  |     italics?: string["italics"];
+  |     link?: string["link"];
+  |     small?: string["small"];
+  |     strike?: string["strike"];
+  |     sub?: string["sub"];
+  |     sup?: string["sup"];
+  |     [Symbol.iterator]?: string[symbol];
+  |     match?: string["match"];
+  |     replace?: string["replace"];
+  |     replace?: string["replace"];
+  |     search?: string["search"];
+  |     split?: string["split"];
+  |     padStart?: string["padStart"];
+  |     padEnd?: string["padEnd"];
+  |     trimEnd?: string["trimEnd"];
+  |     trimStart?: string["trimStart"];
+  |     trimLeft?: string["trimLeft"];
+  |     trimRight?: string["trimRight"];
+  |     matchAll?: string["matchAll"];
+  | }
 
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-3.ts:15:1]
+ 15 | ee.foo.substring
+    : ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (undefined | (start: number, end?: number) => string)
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-3.ts:16:1]
+ 16 | ee.bar
+    : ^^
+    `----
+
+Error: 
+  > E3
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-3.ts:16:1]
+ 16 | ee.bar
+    : ^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-3.ts:17:1]
+ 17 | ee.baz
+    : ^^
+    `----
+
+Error: 
+  > E3
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/4-3.ts:17:1]
+ 17 | ee.baz
+    : ^^^^^^
+    `----
+
+Error: 
+  > any

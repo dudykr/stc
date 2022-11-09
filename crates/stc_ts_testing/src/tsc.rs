@@ -126,7 +126,6 @@ impl TsTestCase {
         let lexer = Lexer::new(
             Syntax::Typescript(TsConfig {
                 tsx: file_name.to_string_lossy().contains("tsx"),
-                dynamic_import: true,
                 ..Default::default()
             }),
             EsVersion::latest(),

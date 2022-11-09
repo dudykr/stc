@@ -5,7 +5,7 @@ use std::{
 
 use rnode::NodeId;
 use serde::{Deserialize, Serialize};
-use stc_ts_ast_rnode::{RIdent, RTsEntityName};
+use stc_ts_ast_rnode::{RIdent, RModuleExportName, RTsEntityName};
 use stc_visit::Visit;
 use swc_atoms::JsWord;
 use swc_common::{EqIgnoreSpan, SyntaxContext, TypeEq, DUMMY_SP};
@@ -137,5 +137,23 @@ impl Debug for Id {
 impl PartialEq<str> for Id {
     fn eq(&self, other: &str) -> bool {
         self.sym == *other
+    }
+}
+
+impl From<RModuleExportName> for Id {
+    fn from(v: RModuleExportName) -> Self {
+        match v {
+            RModuleExportName::Ident(i) => i.into(),
+            RModuleExportName::Str(s) => Id::word(s.value),
+        }
+    }
+}
+
+impl From<&'_ RModuleExportName> for Id {
+    fn from(v: &RModuleExportName) -> Self {
+        match v {
+            RModuleExportName::Ident(i) => i.into(),
+            RModuleExportName::Str(s) => Id::word(s.value.clone()),
+        }
     }
 }

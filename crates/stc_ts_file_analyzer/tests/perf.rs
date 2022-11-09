@@ -21,7 +21,7 @@ use stc_ts_types::ModuleId;
 use swc_common::{input::SourceFileInput, FileName, GLOBALS};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
-use swc_ecma_transforms::resolver::ts_resolver;
+use swc_ecma_transforms::resolver;
 use swc_ecma_visit::FoldWith;
 
 fn profile_file(name: &str, path: &Path) {
@@ -43,7 +43,11 @@ fn profile_file(name: &str, path: &Path) {
             parser.parse_module().unwrap()
         };
         module = GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut ts_resolver(env.shared().marks().top_level_mark()))
+            module.fold_with(&mut resolver(
+                env.shared().marks().unresolved_mark(),
+                env.shared().marks().top_level_mark(),
+                true,
+            ))
         });
         let module = RModule::from_orig(&mut node_id_gen, module);
 

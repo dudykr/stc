@@ -1,16 +1,19 @@
-warning: Type
-  --> $DIR/tests/visualize/types/union/call-1.ts:11:1
-   |
-11 | fUnion(""); // All constituents can be called by passing a single string.
-   | ^^^^^^
-   |
-   = note: ((s: string) => void | (s?: string) => void | (...s: string[]) => void | (s: string, s2?: string) => void | (s?: string, n?: number) => void | (s?: string, ...n: number[]) => void | (s: string, ...sRest: string[]) => void)
 
-warning: Type
-  --> $DIR/tests/visualize/types/union/call-1.ts:11:1
-   |
-11 | fUnion(""); // All constituents can be called by passing a single string.
-   | ^^^^^^^^^^
-   |
-   = note: void
+  x Type
+    ,-[$DIR/tests/visualize/types/union/call-1.ts:11:1]
+ 11 | fUnion(""); // All constituents can be called by passing a single string.
+    : ^^^^^^
+    `----
 
+Error: 
+  > ((s: string) => void | (s?: string) => void | (...s: string[]) => void | (s: string, s2?: string) => void | (s?: string, n?: number) => void | (s?: string, ...n: number[]) => void | (s:
+  | string, ...sRest: string[]) => void)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/union/call-1.ts:11:1]
+ 11 | fUnion(""); // All constituents can be called by passing a single string.
+    : ^^^^^^^^^^
+    `----
+
+Error: 
+  > void

@@ -1,40 +1,45 @@
-warning: Type
- --> $DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:6:9
-  |
-6 |     if (v instanceof C) {
-  |         ^
-  |
-  = note: (T | U)
 
-warning: Type
- --> $DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:6:22
-  |
-6 |     if (v instanceof C) {
-  |                      ^
-  |
-  = note: typeof C
+  x Type
+   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:6:5]
+ 6 | if (v instanceof C) {
+   :     ^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:6:9
-  |
-6 |     if (v instanceof C) {
-  |         ^^^^^^^^^^^^^^
-  |
-  = note: boolean
+Error: 
+  > (T | U)
 
-warning: Type
- --> $DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:7:22
-  |
-7 |         const x: T = v;
-  |                      ^
-  |
-  = note: T
+  x Type
+   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:6:5]
+ 6 | if (v instanceof C) {
+   :                  ^
+   `----
 
-warning: Type
-  --> $DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:10:22
-   |
-10 |         const y: U = v;
-   |                      ^
-   |
-   = note: U
+Error: 
+  > typeof C
 
+  x Type
+   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:6:5]
+ 6 | if (v instanceof C) {
+   :     ^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:7:9]
+ 7 | const x: T = v;
+   :              ^
+   `----
+
+Error: 
+  > T
+
+  x Type
+    ,-[$DIR/tests/visualize/exprs/bin/instanceof/type-param/1.ts:10:9]
+ 10 | const y: U = v;
+    :              ^
+    `----
+
+Error: 
+  > U

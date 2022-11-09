@@ -5,8 +5,8 @@ use std::{
 };
 
 use stc_ts_ast_rnode::{
-    RBinExpr, RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit,
-    RUnaryExpr,
+    RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
+    RTsEntityName, RTsLit, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -41,7 +41,7 @@ use crate::{
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RBinExpr, type_ann: Option<&Type>) -> VResult<Type> {
         let RBinExpr {
             span,
             op,
@@ -656,7 +656,9 @@ impl Analyzer<'_, '_> {
                 if self.ctx.in_cond {
                     let left = match &**left {
                         RExpr::Lit(RLit::Str(s)) => Some(s.value.clone()),
-                        RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| v.value),
+                        RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| (&*v).into()),
+                        RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| (&*v).into()),
+                        RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| (&*v).into()),
                         _ => None,
                     };
                     let name = Name::try_from(&**right).ok();
@@ -804,7 +806,7 @@ impl Analyzer<'_, '_> {
                 info!("cond_facts: typeof {:?}", name);
                 match r {
                     RExpr::Tpl(RTpl { quasis, .. }) if quasis.len() == 1 => {
-                        let value = &quasis[0].cooked.as_ref()?.value;
+                        let value = &quasis[0].cooked.as_ref()?;
                         Some((
                             name,
                             if is_eq {
@@ -864,34 +866,17 @@ impl Analyzer<'_, '_> {
         fn non_undefined_names(e: &RExpr) -> Vec<Name> {
             match e {
                 RExpr::OptChain(ROptChainExpr {
-                    expr:
-                        box RExpr::Member(
-                            e @ RMemberExpr {
-                                obj: RExprOrSuper::Expr(..),
-                                ..
-                            },
-                        ),
+                    base: ROptChainBase::Member(me),
                     ..
                 }) => {
-                    let mut names = non_undefined_names(match &e.obj {
-                        RExprOrSuper::Super(_) => unreachable!(),
-                        RExprOrSuper::Expr(v) => &v,
-                    });
+                    let mut names = non_undefined_names(&me.obj);
 
                     names.extend(e.try_into().ok());
                     names
                 }
 
-                RExpr::Member(
-                    e @ RMemberExpr {
-                        obj: RExprOrSuper::Expr(..),
-                        ..
-                    },
-                ) => {
-                    let mut names = non_undefined_names(match &e.obj {
-                        RExprOrSuper::Super(_) => unreachable!(),
-                        RExprOrSuper::Expr(v) => &v,
-                    });
+                RExpr::Member(e) => {
+                    let mut names = non_undefined_names(&e.obj);
 
                     names.extend(e.try_into().ok());
                     names
@@ -1004,7 +989,7 @@ impl Analyzer<'_, '_> {
     /// If we apply `instanceof C` to `v`, `v` becomes `T`.
     /// Note that `C extends D` and `D extends C` are true because both of `C`
     /// and `D` are empty classes.
-    fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult {
+    fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult<Type> {
         let orig_ty = orig_ty.normalize();
 
         match orig_ty {
@@ -1832,17 +1817,15 @@ pub(super) fn extract_name_for_assignment(e: &RExpr, is_exact_eq: bool) -> Optio
                 _ => None,
             },
         },
-        RExpr::Member(RMemberExpr {
-            obj: RExprOrSuper::Expr(obj),
-            prop,
-            computed,
-            ..
-        }) => {
+        RExpr::Member(RMemberExpr { obj, prop, .. }) => {
             let mut name = extract_name_for_assignment(obj, is_exact_eq)?;
 
-            name.push(match &**prop {
-                RExpr::Ident(i) if !*computed => i.sym.clone(),
-                RExpr::Lit(RLit::Str(s)) if *computed => s.value.clone(),
+            name.push(match prop {
+                RMemberProp::Ident(i) => i.sym.clone(),
+                RMemberProp::Computed(RComputedPropName {
+                    expr: box RExpr::Lit(RLit::Str(s)),
+                    ..
+                }) => s.value.clone(),
                 _ => return None,
             });
 

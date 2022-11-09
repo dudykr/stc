@@ -1,40 +1,45 @@
-warning: Type
- --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:4:1
-  |
-4 | x = "";
-  | ^^^^^^
-  |
-  = note: ""
 
-warning: Type
- --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:5:5
-  |
-5 | x = x.length;
-  |     ^
-  |
-  = note: string
+  x Type
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:4:1]
+ 4 | x = "";
+   : ^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:5:5
-  |
-5 | x = x.length;
-  |     ^^^^^^^^
-  |
-  = note: number
+Error: 
+  > ""
 
-warning: Type
- --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:5:1
-  |
-5 | x = x.length;
-  | ^^^^^^^^^^^^
-  |
-  = note: number
+  x Type
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:5:1]
+ 5 | x = x.length;
+   :     ^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:6:1
-  |
-6 | x; // number
-  | ^
-  |
-  = note: number
+Error: 
+  > string
 
+  x Type
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:5:1]
+ 5 | x = x.length;
+   :     ^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:5:1]
+ 5 | x = x.length;
+   : ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/assign/typeNarrowing/simple-2.ts:6:1]
+ 6 | x; // number
+   : ^
+   `----
+
+Error: 
+  > number

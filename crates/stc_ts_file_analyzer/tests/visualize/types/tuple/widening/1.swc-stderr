@@ -1,24 +1,27 @@
-warning: Type
- --> $DIR/tests/visualize/types/tuple/widening/1.ts:3:21
-  |
-3 | export var b = a = [undefined, null];
-  |                     ^^^^^^^^^
-  |
-  = note: undefined
 
-warning: Type
- --> $DIR/tests/visualize/types/tuple/widening/1.ts:3:20
-  |
-3 | export var b = a = [undefined, null];
-  |                    ^^^^^^^^^^^^^^^^^
-  |
-  = note: [any, any]
+  x Type
+   ,-[$DIR/tests/visualize/types/tuple/widening/1.ts:3:1]
+ 3 | export var b = a = [undefined, null];
+   :                     ^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/types/tuple/widening/1.ts:3:16
-  |
-3 | export var b = a = [undefined, null];
-  |                ^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: [any, any]
+Error: 
+  > undefined
 
+  x Type
+   ,-[$DIR/tests/visualize/types/tuple/widening/1.ts:3:1]
+ 3 | export var b = a = [undefined, null];
+   :                    ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > [any, any]
+
+  x Type
+   ,-[$DIR/tests/visualize/types/tuple/widening/1.ts:3:1]
+ 3 | export var b = a = [undefined, null];
+   :                ^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > [any, any]

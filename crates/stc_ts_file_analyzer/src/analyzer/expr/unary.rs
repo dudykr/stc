@@ -1,4 +1,6 @@
-use stc_ts_ast_rnode::{RBigInt, RBool, RExpr, RExprOrSuper, RMemberExpr, RNumber, ROptChainExpr, RParenExpr, RStr, RTsLit, RUnaryExpr};
+use stc_ts_ast_rnode::{
+    RBigInt, RBool, RExpr, RMemberExpr, RMemberProp, RNumber, ROptChainBase, ROptChainExpr, RParenExpr, RStr, RTsLit, RUnaryExpr,
+};
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
 use swc_atoms::js_word;
@@ -15,7 +17,7 @@ use crate::{
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RUnaryExpr) -> VResult {
+    fn validate(&mut self, e: &RUnaryExpr) -> VResult<Type> {
         let RUnaryExpr { span, op, arg, .. } = e;
         let span = *span;
 
@@ -90,12 +92,7 @@ impl Analyzer<'_, '_> {
                         .cloned()
                         .map(|value| LitType {
                             span,
-                            lit: RTsLit::Str(RStr {
-                                span,
-                                value,
-                                has_escape: false,
-                                kind: Default::default(),
-                            }),
+                            lit: RTsLit::Str(RStr { span, value, raw: None }),
                             metadata: Default::default(),
                         })
                         .map(Type::Lit)
@@ -116,7 +113,7 @@ impl Analyzer<'_, '_> {
                 if let Some(arg) = &arg {
                     match arg.normalize() {
                         Type::Lit(LitType {
-                            lit: RTsLit::Number(RNumber { span, value }),
+                            lit: RTsLit::Number(RNumber { span, value, raw: None }),
                             ..
                         }) => {
                             let span = *span;
@@ -126,6 +123,7 @@ impl Analyzer<'_, '_> {
                                 lit: RTsLit::Number(RNumber {
                                     span,
                                     value: if *op == op!(unary, "-") { -(*value) } else { *value },
+                                    raw: None,
                                 }),
                                 metadata: Default::default(),
                             }));
@@ -194,9 +192,8 @@ impl Analyzer<'_, '_> {
         let span = arg.span();
         match &*arg {
             RExpr::Member(RMemberExpr {
-                obj: RExprOrSuper::Expr(box RExpr::This(..)),
-                computed: false,
-                prop: box RExpr::PrivateName(..),
+                obj: box RExpr::This(..),
+                prop: RMemberProp::PrivateName(..),
                 ..
             }) => Err(Error::CannotDeletePrivateProperty { span }),
 
@@ -205,7 +202,7 @@ impl Analyzer<'_, '_> {
                 ..
             })
             | RExpr::OptChain(ROptChainExpr {
-                expr: box RExpr::Member(expr),
+                base: ROptChainBase::Member(expr),
                 ..
             })
             | RExpr::Member(expr) => {
@@ -226,7 +223,7 @@ impl Analyzer<'_, '_> {
             //
             // delete (o4.b?.c.d);
             // delete (o4.b?.c.d)?.e;
-            RExpr::Paren(RParenExpr { expr, .. }) | RExpr::OptChain(ROptChainExpr { expr, .. }) => {
+            RExpr::Paren(RParenExpr { expr, .. }) => {
                 return self.validate_delete_operand(expr);
             }
 
@@ -310,7 +307,7 @@ fn negate(ty: Type) -> Type {
             RTsLit::Tpl(ref v) => {
                 return Type::Lit(LitType {
                     lit: RTsLit::Bool(RBool {
-                        value: v.quasis.iter().next().as_ref().unwrap().raw.value != js_word!(""),
+                        value: !v.quasis.iter().next().as_ref().unwrap().raw.is_empty(),
                         span: v.span,
                     }),
                     span,
@@ -320,8 +317,9 @@ fn negate(ty: Type) -> Type {
             RTsLit::BigInt(ref v) => {
                 return Type::Lit(LitType {
                     lit: RTsLit::BigInt(RBigInt {
-                        value: -v.value.clone(),
+                        value: box -(*v.value.clone()),
                         span: v.span,
+                        raw: None,
                     }),
                     span,
                     metadata,

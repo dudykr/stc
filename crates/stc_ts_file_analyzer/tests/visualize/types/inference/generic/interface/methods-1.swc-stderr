@@ -1,131 +1,147 @@
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:14:17
-   |
-14 | export var r4 = i.foo('', 1); // string
-   |                 ^
-   |
-   = note: I
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:14:17
-   |
-14 | export var r4 = i.foo('', 1); // string
-   |                 ^^^^^^^^^^^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:14:1]
+ 14 | export var r4 = i.foo('', 1); // string
+    :                 ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:15:17
-   |
-15 | export var r5 = i.foo2('', 1); // number
-   |                 ^
-   |
-   = note: I
+Error: 
+  > I
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:15:17
-   |
-15 | export var r5 = i.foo2('', 1); // number
-   |                 ^^^^^^^^^^^^^
-   |
-   = note: number
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:14:1]
+ 14 | export var r4 = i.foo('', 1); // string
+    :                 ^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:16:17
-   |
-16 | export var r6 = i.foo3(true, 1); // boolean
-   |                 ^
-   |
-   = note: I
+Error: 
+  > string
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:16:17
-   |
-16 | export var r6 = i.foo3(true, 1); // boolean
-   |                 ^^^^^^^^^^^^^^^
-   |
-   = note: boolean
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:15:1]
+ 15 | export var r5 = i.foo2('', 1); // number
+    :                 ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:17:17
-   |
-17 | export var r7 = i.foo4('', true); // string
-   |                 ^
-   |
-   = note: I
+Error: 
+  > I
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:17:17
-   |
-17 | export var r7 = i.foo4('', true); // string
-   |                 ^^^^^^^^^^^^^^^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:15:1]
+ 15 | export var r5 = i.foo2('', 1); // number
+    :                 ^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:18:17
-   |
-18 | export var r8 = i.foo5(true, 1); // boolean
-   |                 ^
-   |
-   = note: I
+Error: 
+  > number
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:18:17
-   |
-18 | export var r8 = i.foo5(true, 1); // boolean
-   |                 ^^^^^^^^^^^^^^^
-   |
-   = note: boolean
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:16:1]
+ 16 | export var r6 = i.foo3(true, 1); // boolean
+    :                 ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:19:17
-   |
-19 | export var r9 = i.foo6(); // {}
-   |                 ^
-   |
-   = note: I
+Error: 
+  > I
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:19:17
-   |
-19 | export var r9 = i.foo6(); // {}
-   |                 ^^^^^^^^
-   |
-   = note: {
-           }
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:16:1]
+ 16 | export var r6 = i.foo3(true, 1); // boolean
+    :                 ^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:20:18
-   |
-20 | export var r10 = i.foo7(''); // {}
-   |                  ^
-   |
-   = note: I
+Error: 
+  > boolean
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:20:18
-   |
-20 | export var r10 = i.foo7(''); // {}
-   |                  ^^^^^^^^^^
-   |
-   = note: {
-           }
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:17:1]
+ 17 | export var r7 = i.foo4('', true); // string
+    :                 ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:21:18
-   |
-21 | export var r11 = i.foo8(); // {}
-   |                  ^
-   |
-   = note: I
+Error: 
+  > I
 
-warning: Type
-  --> $DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:21:18
-   |
-21 | export var r11 = i.foo8(); // {}
-   |                  ^^^^^^^^
-   |
-   = note: {
-           }
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:17:1]
+ 17 | export var r7 = i.foo4('', true); // string
+    :                 ^^^^^^^^^^^^^^^^
+    `----
 
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:18:1]
+ 18 | export var r8 = i.foo5(true, 1); // boolean
+    :                 ^
+    `----
+
+Error: 
+  > I
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:18:1]
+ 18 | export var r8 = i.foo5(true, 1); // boolean
+    :                 ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:19:1]
+ 19 | export var r9 = i.foo6(); // {}
+    :                 ^
+    `----
+
+Error: 
+  > I
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:19:1]
+ 19 | export var r9 = i.foo6(); // {}
+    :                 ^^^^^^^^
+    `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:20:1]
+ 20 | export var r10 = i.foo7(''); // {}
+    :                  ^
+    `----
+
+Error: 
+  > I
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:20:1]
+ 20 | export var r10 = i.foo7(''); // {}
+    :                  ^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  | }
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:21:1]
+ 21 | export var r11 = i.foo8(); // {}
+    :                  ^
+    `----
+
+Error: 
+  > I
+
+  x Type
+    ,-[$DIR/tests/visualize/types/inference/generic/interface/methods-1.ts:21:1]
+ 21 | export var r11 = i.foo8(); // {}
+    :                  ^^^^^^^^
+    `----
+
+Error: 
+  > {
+  | }

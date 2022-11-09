@@ -1476,8 +1476,7 @@ impl Analyzer<'_, '_> {
                                         lit: RTsLit::Str(RStr {
                                             span: *i_span,
                                             value: sym.clone(),
-                                            has_escape: false,
-                                            kind: Default::default(),
+                                            raw: None,
                                         }),
                                         metadata: LitTypeMetadata {
                                             common: param.metadata.common,
@@ -1724,8 +1723,7 @@ impl Analyzer<'_, '_> {
                                                 lit: RTsLit::Str(RStr {
                                                     span: *i_span,
                                                     value: i_sym.clone(),
-                                                    has_escape: false,
-                                                    kind: Default::default(),
+                                                    raw: None,
                                                 }),
                                                 metadata: LitTypeMetadata {
                                                     common: param.metadata.common,
@@ -2166,7 +2164,7 @@ impl Analyzer<'_, '_> {
 
 /// Handles renaming of the type parameters.
 impl Analyzer<'_, '_> {
-    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult {
+    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult<Type> {
         if self.is_builtin {
             return Ok(ty);
         }

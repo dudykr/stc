@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         // We don't apply type annotation because it can corrupt type checking.
         let mut casted_ty = e.type_ann.validate_with(self)?;
         casted_ty.make_clone_cheap();
@@ -59,7 +59,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         if e.node_id.is_invalid() {
             return e.type_ann.validate_with(self);
         }
@@ -86,7 +86,7 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// results in error.
-    fn validate_type_cast(&mut self, span: Span, orig_ty: Type, casted_ty: Type) -> VResult {
+    fn validate_type_cast(&mut self, span: Span, orig_ty: Type, casted_ty: Type) -> VResult<Type> {
         let mut orig_ty = self.expand(
             span,
             orig_ty,

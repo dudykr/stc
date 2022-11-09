@@ -1,44 +1,48 @@
-warning: Type
-  --> $DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/2.ts:10:7
-   |
-10 | ta2 = sa1;
-   |       ^^^
-   |
-   = note: {
-               x: (A & B);
-           }
 
-warning: Type
-  --> $DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/2.ts:10:1
-   |
-10 | ta2 = sa1;
-   | ^^^^^^^^^
-   |
-   = note: {
-               x: (A & B);
-           }
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/2.ts:10:1]
+ 10 | ta2 = sa1;
+    :       ^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/2.ts:11:7
-   |
-11 | ta2 = sa2;
-   |       ^^^
-   |
-   = note: ({
-               x: A;
-           } & {
-               x: B;
-           })
+Error: 
+  > {
+  |     x: (A & B);
+  | }
 
-warning: Type
-  --> $DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/2.ts:11:1
-   |
-11 | ta2 = sa2;
-   | ^^^^^^^^^
-   |
-   = note: ({
-               x: A;
-           } & {
-               x: B;
-           })
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/2.ts:10:1]
+ 10 | ta2 = sa1;
+    : ^^^^^^^^^
+    `----
 
+Error: 
+  > {
+  |     x: (A & B);
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/2.ts:11:1]
+ 11 | ta2 = sa2;
+    :       ^^^
+    `----
+
+Error: 
+  > ({
+  |     x: A;
+  | } & {
+  |     x: B;
+  | })
+
+  x Type
+    ,-[$DIR/tests/pass/types/intersection/intersectionWithIndexSignatures/2.ts:11:1]
+ 11 | ta2 = sa2;
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > ({
+  |     x: A;
+  | } & {
+  |     x: B;
+  | })

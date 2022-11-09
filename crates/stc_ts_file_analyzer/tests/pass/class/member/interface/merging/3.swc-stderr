@@ -1,40 +1,45 @@
-warning: Type
-  --> $DIR/tests/pass/class/member/interface/merging/3.ts:15:21
-   |
-15 | class Child extends BaseClass {
-   |                     ^^^^^^^^^
-   |
-   = note: typeof BaseClass
 
-warning: Type
-  --> $DIR/tests/pass/class/member/interface/merging/3.ts:26:1
-   |
-26 | a.baseNumber
-   | ^
-   |
-   = note: IChild
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/3.ts:15:1]
+ 15 | class Child extends BaseClass {
+    :                     ^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/class/member/interface/merging/3.ts:26:1
-   |
-26 | a.baseNumber
-   | ^^^^^^^^^^^^
-   |
-   = note: number
+Error: 
+  > typeof BaseClass
 
-warning: Type
-  --> $DIR/tests/pass/class/member/interface/merging/3.ts:27:1
-   |
-27 | a.classNumber
-   | ^
-   |
-   = note: IChild
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/3.ts:26:1]
+ 26 | a.baseNumber
+    : ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/class/member/interface/merging/3.ts:27:1
-   |
-27 | a.classNumber
-   | ^^^^^^^^^^^^^
-   |
-   = note: number
+Error: 
+  > IChild
 
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/3.ts:26:1]
+ 26 | a.baseNumber
+    : ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/3.ts:27:1]
+ 27 | a.classNumber
+    : ^
+    `----
+
+Error: 
+  > IChild
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/3.ts:27:1]
+ 27 | a.classNumber
+    : ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number

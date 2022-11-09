@@ -2,7 +2,6 @@
 //!
 //! The visitor is too slow to compile every time I make change.
 #![deny(deprecated)]
-#![deny(unused)]
 #![allow(incomplete_features)]
 #![feature(box_syntax)]
 #![feature(box_patterns)]
@@ -366,9 +365,9 @@ fn _assert_send_sync() {
 pub enum Key {
     Computed(ComputedKey),
     Normal { span: Span, sym: JsWord },
-    Num(#[use_eq_ignore_span] RNumber),
-    BigInt(#[use_eq_ignore_span] RBigInt),
-    Private(#[use_eq_ignore_span] PrivateName),
+    Num(RNumber),
+    BigInt(RBigInt),
+    Private(PrivateName),
 }
 
 impl Key {
@@ -398,7 +397,7 @@ impl From<RPrivateName> for PrivateName {
     }
 }
 
-assert_eq_size!(Key, [u8; 56]);
+assert_eq_size!(Key, [u8; 40]);
 
 impl Key {
     pub fn ty(&self) -> Cow<Type> {
@@ -409,8 +408,7 @@ impl Key {
                 lit: RTsLit::Str(RStr {
                     span: *span,
                     value: sym.clone(),
-                    has_escape: false,
-                    kind: Default::default(),
+                    raw: None,
                 }),
                 metadata: Default::default(),
             })),
@@ -453,11 +451,17 @@ impl PartialEq<str> for Key {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Spanned, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, Visit, Spanned, Serialize, Deserialize)]
 pub struct ComputedKey {
     pub span: Span,
     pub expr: Box<RExpr>,
     pub ty: Box<Type>,
+}
+
+impl TypeEq for ComputedKey {
+    fn type_eq(&self, other: &Self) -> bool {
+        self.ty.type_eq(&other.ty)
+    }
 }
 
 assert_eq_size!(ComputedKey, [u8; 32]);
@@ -613,7 +617,7 @@ pub struct ImportType {
     pub metadata: ImportTypeMetadata,
 }
 
-assert_eq_size!(ImportType, [u8; 88]);
+assert_eq_size!(ImportType, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Namespace {
@@ -632,7 +636,7 @@ pub struct Module {
     pub metadata: ModuleTypeMetadata,
 }
 
-assert_eq_size!(Module, [u8; 64]);
+assert_eq_size!(Module, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Enum {
@@ -774,7 +778,7 @@ impl Debug for Conditional {
 }
 
 /// TODO(kdy1): Remove this and create `keyof`, `unique` and `readonly` types.
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, Visit, Serialize, Deserialize)]
 pub struct Operator {
     pub span: Span,
     #[use_eq]
@@ -784,6 +788,17 @@ pub struct Operator {
 }
 
 assert_eq_size!(Operator, [u8; 32]);
+
+impl TypeEq for Operator {
+    fn type_eq(&self, other: &Self) -> bool {
+        match self.op {
+            TsTypeOperatorOp::Unique => return false,
+            _ => {}
+        }
+
+        self.op == other.op && self.ty.type_eq(&other.ty)
+    }
+}
 
 /// This type has a length of n to infinite.
 ///
@@ -854,7 +869,7 @@ pub struct TypeParamDecl {
 pub struct TsExpr {
     pub span: Span,
     #[use_eq_ignore_span]
-    pub expr: RTsEntityName,
+    pub expr: Box<RExpr>,
     pub type_args: Option<Box<TypeParamInstantiation>>,
 }
 
@@ -1862,6 +1877,8 @@ impl Type {
 
 impl Type {
     /// Converts this type to foldable type.
+    ///
+    /// TODO(kdy1): Remove if possible
     pub fn foldable(mut self) -> Type {
         self.normalize_mut();
         self
@@ -2337,9 +2354,9 @@ impl Type {
             Type::Lit(ty) => Known(match &ty.lit {
                 RTsLit::Number(v) => v.value != 0.0,
                 RTsLit::Str(v) => v.value != *"",
-                RTsLit::Tpl(v) => v.quasis.first().unwrap().raw.value != *"",
+                RTsLit::Tpl(v) => v.quasis.first().unwrap().raw != *"",
                 RTsLit::Bool(v) => v.value,
-                RTsLit::BigInt(v) => v.value != BigInt::zero(),
+                RTsLit::BigInt(v) => *v.value != BigInt::zero(),
             }),
             Type::Keyword(KeywordType { kind, .. }) => Known(match kind {
                 TsKeywordTypeKind::TsNeverKeyword

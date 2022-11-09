@@ -1,48 +1,54 @@
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/assign-1.ts:6:12
-  |
-6 | if (typeof x === "string") {
-  |            ^
-  |
-  = note: (number | string | boolean)
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/assign-1.ts:6:5
-  |
-6 | if (typeof x === "string") {
-  |     ^^^^^^^^
-  |
-  = note: string
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/assign-1.ts:6:1]
+ 6 | if (typeof x === "string") {
+   :            ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/assign-1.ts:6:5
-  |
-6 | if (typeof x === "string") {
-  |     ^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: boolean
+Error: 
+  > (number | string | boolean)
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/assign-1.ts:9:5
-  |
-9 |     x = 10;
-  |     ^^^^^^
-  |
-  = note: 10
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/assign-1.ts:6:1]
+ 6 | if (typeof x === "string") {
+   :     ^^^^^^^^
+   `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/ifStmt/assign-1.ts:10:13
-   |
-10 |     var b = x;
-   |             ^
-   |
-   = note: number
+Error: 
+  > string
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/ifStmt/assign-1.ts:11:5
-   |
-11 |     b
-   |     ^
-   |
-   = note: number
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/assign-1.ts:6:1]
+ 6 | if (typeof x === "string") {
+   :     ^^^^^^^^^^^^^^^^^^^^^
+   `----
 
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/assign-1.ts:9:5]
+ 9 | x = 10;
+   : ^^^^^^
+   `----
+
+Error: 
+  > 10
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/assign-1.ts:10:5]
+ 10 | var b = x;
+    :         ^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/ifStmt/assign-1.ts:11:5]
+ 11 | b
+    : ^
+    `----
+
+Error: 
+  > number

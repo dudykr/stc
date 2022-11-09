@@ -1,24 +1,27 @@
-warning: Type
- --> $DIR/tests/pass/exprs/array/typeInference/1.ts:1:26
-  |
-1 | export const a = ['foo', undefined, null]
-  |                          ^^^^^^^^^
-  |
-  = note: undefined
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/typeInference/1.ts:1:18
-  |
-1 | export const a = ['foo', undefined, null]
-  |                  ^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: ['foo', undefined, null]
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/typeInference/1.ts:1:1]
+ 1 | export const a = ['foo', undefined, null]
+   :                          ^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/typeInference/1.ts:2:1
-  |
-2 | a
-  | ^
-  |
-  = note: string[]
+Error: 
+  > undefined
 
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/typeInference/1.ts:1:1]
+ 1 | export const a = ['foo', undefined, null]
+   :                  ^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > ['foo', undefined, null]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/typeInference/1.ts:2:1]
+ 2 | a
+   : ^
+   `----
+
+Error: 
+  > string[]

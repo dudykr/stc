@@ -48,7 +48,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         let marks = self.marks();
 
         let span = arr.span;
@@ -318,7 +318,12 @@ impl Analyzer<'_, '_> {
                     .access_property(
                         span,
                         &iterator,
-                        &Key::Num(RNumber { span, value: n as _ }),
+                        &Key::Num(RNumber {
+                            span,
+                            value: n as _,
+
+                            raw: None,
+                        }),
                         TypeOfMode::RValue,
                         IdCtx::Var,
                         Default::default(),

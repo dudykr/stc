@@ -14,18 +14,18 @@ debug = []
 either = "1.6.1"
 fxhash = "0.2.1"
 indexmap = "1.6.2"
-petgraph = "0.5.1"
+petgraph = "0.6.2"
 rayon = "1.5.1"
 rnode = {path = "../rnode"}
 stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
 stc_ts_types = {path = "../stc_ts_types"}
 stc_ts_utils = {path = "../stc_ts_utils"}
-swc_atoms = "0.2.9"
-swc_common = "0.14.6"
-swc_fast_graph = "0.1.0"
-swc_graph_analyzer = "0.1.1"
-tracing = "0.1.29"
+swc_atoms = "0.4.24"
+swc_common = "0.29.13"
+swc_fast_graph = "0.17.14"
+swc_graph_analyzer = "0.18.14"
+tracing = "0.1.37"
 
 [dev-dependencies]
 stc_ts_testing = {path = "../stc_ts_testing"}
-testing = "0.15.1"
+testing = "0.31.13"

@@ -1,98 +1,109 @@
-warning: Type
- --> $DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:6:15
-  |
-6 |     const b = k in obj;
-  |               ^
-  |
-  = note: K
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:6:20
-  |
-6 |     const b = k in obj;
-  |                    ^^^
-  |
-  = note: {
-              [P in K]: T;
-          }
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:6:5]
+ 6 | const b = k in obj;
+   :           ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:6:15
-  |
-6 |     const b = k in obj;
-  |               ^^^^^^^^
-  |
-  = note: boolean
+Error: 
+  > K
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:8:16
-  |
-8 |     for (k1 in obj) {
-  |                ^^^
-  |
-  = note: {
-              [P in K]: T;
-          }
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:6:5]
+ 6 | const b = k in obj;
+   :                ^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:9:18
-  |
-9 |         let x1 = obj[k1];
-  |                  ^^^
-  |
-  = note: {
-              [P in K]: T;
-          }
+Error: 
+  > {
+  |     [P in K]: T;
+  | }
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:9:22
-  |
-9 |         let x1 = obj[k1];
-  |                      ^^
-  |
-  = note: K
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:6:5]
+ 6 | const b = k in obj;
+   :           ^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:9:18
-  |
-9 |         let x1 = obj[k1];
-  |                  ^^^^^^^
-  |
-  = note: T
+Error: 
+  > boolean
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:11:20
-   |
-11 |     for (let k2 in obj) {
-   |                    ^^^
-   |
-   = note: {
-               [P in K]: T;
-           }
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:8:5]
+ 8 | for (k1 in obj) {
+   :            ^^^
+   `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:12:18
-   |
-12 |         let x2 = obj[k2];
-   |                  ^^^
-   |
-   = note: {
-               [P in K]: T;
-           }
+Error: 
+  > {
+  |     [P in K]: T;
+  | }
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:12:22
-   |
-12 |         let x2 = obj[k2];
-   |                      ^^
-   |
-   = note: P
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:9:9]
+ 9 | let x1 = obj[k1];
+   :          ^^^
+   `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:12:18
-   |
-12 |         let x2 = obj[k2];
-   |                  ^^^^^^^
-   |
-   = note: T
+Error: 
+  > {
+  |     [P in K]: T;
+  | }
 
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:9:9]
+ 9 | let x1 = obj[k1];
+   :              ^^
+   `----
+
+Error: 
+  > K
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:9:9]
+ 9 | let x1 = obj[k1];
+   :          ^^^^^^^
+   `----
+
+Error: 
+  > T
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:11:5]
+ 11 | for (let k2 in obj) {
+    :                ^^^
+    `----
+
+Error: 
+  > {
+  |     [P in K]: T;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:12:9]
+ 12 | let x2 = obj[k2];
+    :          ^^^
+    `----
+
+Error: 
+  > {
+  |     [P in K]: T;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:12:9]
+ 12 | let x2 = obj[k2];
+    :              ^^
+    `----
+
+Error: 
+  > P
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/forInStmt/simple/1.ts:12:9]
+ 12 | let x2 = obj[k2];
+    :          ^^^^^^^
+    `----
+
+Error: 
+  > T

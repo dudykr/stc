@@ -1,144 +1,162 @@
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:5:14
-  |
-5 |     return g(x);
-  |              ^
-  |
-  = note: T
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:5:12
-  |
-5 |     return g(x);
-  |            ^
-  |
-  = note: (x: T) => T
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:5:5]
+ 5 | return g(x);
+   :          ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:5:12
-  |
-5 |     return g(x);
-  |            ^^^^
-  |
-  = note: T
+Error: 
+  > T
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:21
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                     ^^^^
-  |
-  = note: Math
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:5:5]
+ 5 | return g(x);
+   :        ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:21
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                     ^^^^^^^^^^^^^
-  |
-  = note: number
+Error: 
+  > (x: T) => T
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:21
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                     ^^^^^^^^^^^^^^^^^^^
-  |
-  = note: boolean
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:5:5]
+ 5 | return g(x);
+   :        ^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:49
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                                                 ^
-  |
-  = note: any
+Error: 
+  > T
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:44
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                                            ^^^^^^
-  |
-  = note: (x: any) => any
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                     ^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:43
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                                           ^^^^^^^^
-  |
-  = note: (x: any) => any
+Error: 
+  > Math
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:60
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                                                            ^^^^^^^^^
-  |
-  = note: undefined
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                     ^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:55
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                                                       ^^^^^^^^^^^^^^
-  |
-  = note: (x: any) => undefined
+Error: 
+  > number
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:54
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                                                      ^^^^^^^^^^^^^^^^
-  |
-  = note: (x: any) => undefined
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                     ^^^^^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:21
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: ((x: any) => any | (x: any) => undefined)
+Error: 
+  > boolean
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:20
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: ((x: any) => any | (x: any) => undefined)
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                                                 ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:78
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                                                                              ^
-  |
-  = note: any
+Error: 
+  > any
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:73
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                                                                         ^^^^^^
-  |
-  = note: (x: any) => any
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                                            ^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:16
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                ^^^
-  |
-  = note: (<T>(g: (x: T) => T, x: T) => T | <T>(g: (x: T) => T, h: (y: T) => T, x: T) => T | <T>(g: (x: T) => T, x: T) => T)
+Error: 
+  > (x: any) => any
 
-warning: Type
- --> $DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:16
-  |
-8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
-  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: number
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                                           ^^^^^^^^
+   `----
 
+Error: 
+  > (x: any) => any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                                                            ^^^^^^^^^
+   `----
+
+Error: 
+  > undefined
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                                                       ^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (x: any) => undefined
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                                                      ^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (x: any) => undefined
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > ((x: any) => any | (x: any) => undefined)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > ((x: any) => any | (x: any) => undefined)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                                                                              ^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                                                                         ^^^^^^
+   `----
+
+Error: 
+  > (x: any) => any
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                ^^^
+   `----
+
+Error: 
+  > (<T>(g: (x: T) => T, x: T) => T | <T>(g: (x: T) => T, h: (y: T) => T, x: T) => T | <T>(g: (x: T) => T, x: T) => T)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/contextualTyping/parenthesizedContexualTyping1/5.ts:8:1]
+ 8 | export var k = fun((Math.random() < 0.5 ? (x => x) : (x => undefined)), x => x, 10);
+   :                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number

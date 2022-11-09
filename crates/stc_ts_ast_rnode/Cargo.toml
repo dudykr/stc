@@ -8,11 +8,11 @@ version = "0.1.0"
 [lib]
 
 [dependencies]
-num-bigint = "0.2"
+num-bigint = "0.4.3"
 rnode = {path = "../rnode"}
 serde = { version = "1.0.147", features = ["derive"] }
 stc_utils = {path = "../stc_utils"}
 stc_visit = {path = "../stc_visit"}
-swc_atoms = "0.2.9"
-swc_common = "0.14.6"
-swc_ecma_ast = "0.58.0"
+swc_atoms = "0.4.24"
+swc_common = "0.29.13"
+swc_ecma_ast = "0.94.18"

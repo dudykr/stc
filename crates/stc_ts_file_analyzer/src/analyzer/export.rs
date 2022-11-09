@@ -1,7 +1,8 @@
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RBindingIdent, RDecl, RDefaultDecl, RExportAll, RExportDecl, RExportDefaultDecl, RExportDefaultExpr, RExportNamedSpecifier,
-    RExportSpecifier, RExpr, RIdent, RNamedExport, RPat, RStmt, RTsExportAssignment, RTsModuleName, RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RExportSpecifier, RExpr, RIdent, RModuleExportName, RNamedExport, RPat, RStmt, RTsExportAssignment, RTsModuleName, RTsTypeAnn,
+    RVarDecl, RVarDeclarator,
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -250,7 +251,7 @@ impl Analyzer<'_, '_> {
                         sym: "_default".into(),
                         optional: false,
                     },
-                    type_ann: Some(RTsTypeAnn {
+                    type_ann: Some(box RTsTypeAnn {
                         node_id: NodeId::invalid(),
                         span: DUMMY_SP,
                         type_ann: ty.clone().into(),
@@ -259,7 +260,7 @@ impl Analyzer<'_, '_> {
                 init: None,
                 definite: false,
             };
-            self.prepend_stmts.push(RStmt::Decl(RDecl::Var(RVarDecl {
+            self.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
                 node_id: NodeId::invalid(),
                 span: DUMMY_SP,
                 kind: VarDeclKind::Const,
@@ -317,8 +318,15 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx).validate_with(|a| {
-            a.type_of_var(&node.orig, TypeOfMode::RValue, None)
-                .context("failed to reexport with named export specifier")?;
+            a.type_of_var(
+                &match &node.orig {
+                    RModuleExportName::Ident(v) => v.clone(),
+                    RModuleExportName::Str(v) => RIdent::new(v.value.clone(), v.span),
+                },
+                TypeOfMode::RValue,
+                None,
+            )
+            .context("failed to reexport with named export specifier")?;
 
             Ok(())
         });

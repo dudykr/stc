@@ -15,7 +15,7 @@ use stc_utils::stack;
 use swc_common::{input::SourceFileInput, FileName, SourceMap, SyntaxContext};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
-use swc_ecma_transforms::resolver::ts_resolver;
+use swc_ecma_transforms::resolver;
 use swc_ecma_visit::FoldWith;
 use testing::StdErr;
 use tracing::Level;
@@ -71,10 +71,9 @@ impl Tester<'_, '_> {
                 Syntax::Typescript(TsConfig {
                     tsx: false,
                     decorators: true,
-                    dynamic_import: true,
+
                     dts: false,
                     no_early_errors: false,
-                    import_assertions: false,
                 }),
                 EsVersion::latest(),
                 StringInput::from(&*fm),
@@ -82,7 +81,10 @@ impl Tester<'_, '_> {
             );
             let mut parser = Parser::new_from(lexer);
 
-            let module = parser.parse_module().unwrap().fold_with(&mut ts_resolver(MARKS.top_level_mark()));
+            let module = parser
+                .parse_module()
+                .unwrap()
+                .fold_with(&mut resolver(MARKS.unresolved_mark(), MARKS.top_level_mark(), true));
 
             RModule::from_orig(&mut NodeIdGenerator::invalid(), module)
         })
@@ -119,7 +121,11 @@ where
             parser.parse_module().unwrap()
         };
         module = swc_common::GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut ts_resolver(env.shared().marks().top_level_mark()))
+            module.fold_with(&mut resolver(
+                env.shared().marks().unresolved_mark(),
+                env.shared().marks().top_level_mark(),
+                true,
+            ))
         });
         let span = module.span;
         let module = RModule::from_orig(&mut node_id_gen, module);

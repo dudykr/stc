@@ -1,48 +1,54 @@
-warning: Type
-  --> $DIR/tests/pass/exprs/call/overload/typeLit/2.ts:10:12
-   |
-10 |     return cb;
-   |            ^^
-   |
-   = note: typeof a
 
-warning: Type
-  --> $DIR/tests/pass/exprs/call/overload/typeLit/2.ts:13:28
-   |
-13 | var r2 = foo4(<T>(x: T) => x);
-   |                            ^
-   |
-   = note: T
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/overload/typeLit/2.ts:10:5]
+ 10 | return cb;
+    :        ^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/call/overload/typeLit/2.ts:13:15
-   |
-13 | var r2 = foo4(<T>(x: T) => x);
-   |               ^^^^^^^^^^^^^^
-   |
-   = note: <T>(x: T) => T
+Error: 
+  > typeof a
 
-warning: Type
-  --> $DIR/tests/pass/exprs/call/overload/typeLit/2.ts:13:10
-   |
-13 | var r2 = foo4(<T>(x: T) => x);
-   |          ^^^^
-   |
-   = note: (cb: typeof a) => typeof a
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/overload/typeLit/2.ts:13:1]
+ 13 | var r2 = foo4(<T>(x: T) => x);
+    :                            ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/call/overload/typeLit/2.ts:13:10
-   |
-13 | var r2 = foo4(<T>(x: T) => x);
-   |          ^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: typeof a
+Error: 
+  > T
 
-warning: Type
-  --> $DIR/tests/pass/exprs/call/overload/typeLit/2.ts:14:1
-   |
-14 | r2
-   | ^^
-   |
-   = note: typeof a
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/overload/typeLit/2.ts:13:1]
+ 13 | var r2 = foo4(<T>(x: T) => x);
+    :               ^^^^^^^^^^^^^^
+    `----
 
+Error: 
+  > <T>(x: T) => T
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/overload/typeLit/2.ts:13:1]
+ 13 | var r2 = foo4(<T>(x: T) => x);
+    :          ^^^^
+    `----
+
+Error: 
+  > (cb: typeof a) => typeof a
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/overload/typeLit/2.ts:13:1]
+ 13 | var r2 = foo4(<T>(x: T) => x);
+    :          ^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > typeof a
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/call/overload/typeLit/2.ts:14:1]
+ 14 | r2
+    : ^^
+    `----
+
+Error: 
+  > typeof a

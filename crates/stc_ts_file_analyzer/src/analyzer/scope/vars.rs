@@ -260,7 +260,7 @@ impl Analyzer<'_, '_> {
                         if let Some(elem) = elem {
                             let elem_ty = ty
                                 .as_ref()
-                                .try_map(|ty| -> VResult {
+                                .try_map(|ty| -> VResult<Type> {
                                     let result = self.get_element_from_iterator(span, Cow::Borrowed(ty), idx).with_context(|| {
                                         format!(
                                             "tried to get the type of {}th element from iterator to declare vars with an array pattern",
@@ -368,6 +368,7 @@ impl Analyzer<'_, '_> {
                                             &Key::Num(RNumber {
                                                 span: elem.span(),
                                                 value: idx as f64,
+                                                raw: None,
                                             }),
                                             TypeOfMode::RValue,
                                             IdCtx::Var,
@@ -387,6 +388,7 @@ impl Analyzer<'_, '_> {
                                             &Key::Num(RNumber {
                                                 span: elem.span(),
                                                 value: idx as f64,
+                                                raw: None,
                                             }),
                                             TypeOfMode::RValue,
                                             IdCtx::Var,
@@ -778,8 +780,7 @@ impl Analyzer<'_, '_> {
                                 lit: RTsLit::Str(RStr {
                                     span: *span,
                                     value: sym.clone(),
-                                    has_escape: false,
-                                    kind: Default::default(),
+                                    raw: None,
                                 }),
                                 metadata: Default::default(),
                             })),

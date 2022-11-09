@@ -33,7 +33,7 @@ use swc_common::{input::SourceFileInput, FileName, SyntaxContext, GLOBALS};
 use swc_ecma_ast::{EsVersion, Ident, Module, TsIntersectionType, TsKeywordTypeKind, TsLit, TsLitType, TsType, TsUnionType};
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
-use swc_ecma_transforms::resolver::ts_resolver;
+use swc_ecma_transforms::resolver;
 use swc_ecma_utils::drop_span;
 use swc_ecma_visit::{Fold, FoldWith};
 use testing::{assert_eq, NormalizedOutput, StdErr};
@@ -106,7 +106,11 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let mut parser = Parser::new_from(lexer);
         let module = parser.parse_module().unwrap();
         let module = GLOBALS.set(stable_env.swc_globals(), || {
-            module.fold_with(&mut ts_resolver(stable_env.marks().top_level_mark()))
+            module.fold_with(&mut resolver(
+                stable_env.marks().unresolved_mark(),
+                stable_env.marks().top_level_mark(),
+                true,
+            ))
         });
         let mut module = RModule::from_orig(&mut node_id_gen, module);
         let mut mutations;
@@ -291,10 +295,8 @@ fn get_correct_dts(path: &Path) -> (Arc<String>, Module) {
             Syntax::Typescript(TsConfig {
                 tsx: true,
                 decorators: true,
-                dynamic_import: true,
                 dts: true,
                 no_early_errors: true,
-                import_assertions: false,
             }),
             SourceFileInput::from(&*fm),
             None,
@@ -338,7 +340,7 @@ impl Normalizer {
                 TsType::TsTypeOperator(_) => 15000,
                 TsType::TsIndexedAccessType(_) => 16000,
                 TsType::TsMappedType(_) => 17000,
-                TsType::TsLitType(ty) => match ty.lit {
+                TsType::TsLitType(ty) => match ty.lit.clone() {
                     TsLit::Number(v) => 18000 + v.value.round() as usize,
                     TsLit::Str(_) => 18100,
                     TsLit::Bool(_) => 18200,

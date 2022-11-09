@@ -1,41 +1,46 @@
-warning: Type
- --> $DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:1:28
-  |
-1 | export function foo<T>(x = class { prop: T }): T {
-  |                            ^^^^^^^^^^^^^^^^^
-  |
-  = note: typeof anonymous class
 
-warning: Type
- --> $DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:2:12
-  |
-2 |     return undefined;
-  |            ^^^^^^^^^
-  |
-  = note: undefined
+  x Type
+   ,-[$DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:1:1]
+ 1 | export function foo<T>(x = class { prop: T }): T {
+   :                            ^^^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:6:5
-  |
-6 | foo(class { static prop = "hello" }).length;
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: typeof anonymous class
+Error: 
+  > typeof anonymous class
 
-warning: Type
- --> $DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:6:1
-  |
-6 | foo(class { static prop = "hello" }).length;
-  | ^^^
-  |
-  = note: <T>(x?: typeof anonymous class) => T
+  x Type
+   ,-[$DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:2:5]
+ 2 | return undefined;
+   :        ^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:6:1
-  |
-6 | foo(class { static prop = "hello" }).length;
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: {
-          }
+Error: 
+  > undefined
 
+  x Type
+   ,-[$DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:6:1]
+ 6 | foo(class { static prop = "hello" }).length;
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > typeof anonymous class
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:6:1]
+ 6 | foo(class { static prop = "hello" }).length;
+   : ^^^
+   `----
+
+Error: 
+  > <T>(x?: typeof anonymous class) => T
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/class/static/typeArgumentInferenceWithClassExpression2/1.ts:6:1]
+ 6 | foo(class { static prop = "hello" }).length;
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  | }

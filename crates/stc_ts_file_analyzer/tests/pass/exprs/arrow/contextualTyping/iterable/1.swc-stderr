@@ -1,32 +1,36 @@
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/contextualTyping/iterable/1.ts:1:58
-  |
-1 | export var iter: Iterable<(x: string) => number> = [s => s.length];
-  |                                                          ^
-  |
-  = note: string
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/contextualTyping/iterable/1.ts:1:58
-  |
-1 | export var iter: Iterable<(x: string) => number> = [s => s.length];
-  |                                                          ^^^^^^^^
-  |
-  = note: number
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/iterable/1.ts:1:1]
+ 1 | export var iter: Iterable<(x: string) => number> = [s => s.length];
+   :                                                          ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/contextualTyping/iterable/1.ts:1:53
-  |
-1 | export var iter: Iterable<(x: string) => number> = [s => s.length];
-  |                                                     ^^^^^^^^^^^^^
-  |
-  = note: (s: string) => number
+Error: 
+  > string
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/contextualTyping/iterable/1.ts:1:52
-  |
-1 | export var iter: Iterable<(x: string) => number> = [s => s.length];
-  |                                                    ^^^^^^^^^^^^^^^
-  |
-  = note: [(s: string) => number]
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/iterable/1.ts:1:1]
+ 1 | export var iter: Iterable<(x: string) => number> = [s => s.length];
+   :                                                          ^^^^^^^^
+   `----
 
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/iterable/1.ts:1:1]
+ 1 | export var iter: Iterable<(x: string) => number> = [s => s.length];
+   :                                                     ^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (s: string) => number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/contextualTyping/iterable/1.ts:1:1]
+ 1 | export var iter: Iterable<(x: string) => number> = [s => s.length];
+   :                                                    ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > [(s: string) => number]

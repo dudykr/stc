@@ -1274,6 +1274,7 @@ impl Analyzer<'_, '_> {
                         key: Key::Num(RNumber {
                             span: e.span,
                             value: idx as f64,
+                            raw: None,
                         }),
                         optional: false,
                         params: Default::default(),
@@ -1530,7 +1531,7 @@ impl Analyzer<'_, '_> {
         v
     }
 
-    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> VResult {
+    pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> VResult<Type> {
         let arg = &ty.type_args;
 
         match ty.kind {
@@ -1573,8 +1574,7 @@ impl Analyzer<'_, '_> {
                             lit: RTsLit::Str(RStr {
                                 span: arg.params[0].span(),
                                 value: new_val.into(),
-                                has_escape: false,
-                                kind: Default::default(),
+                                raw: None,
                             }),
                             metadata: LitTypeMetadata {
                                 common: arg.params[0].metadata(),
@@ -1595,14 +1595,18 @@ impl Analyzer<'_, '_> {
     pub(crate) fn report_error_for_unresolve_type(
         &mut self,
         span: Span,
-        type_name: &RTsEntityName,
+        type_name: &RExpr,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
 
-        let l = left(&type_name);
+        let l = left_of_expr(&type_name);
+        let l = match l {
+            Some(v) => v,
+            _ => return Ok(()),
+        };
         let top_id: Id = l.into();
 
         let is_resolved = self.data.bindings.types.contains(&top_id)
@@ -1614,9 +1618,15 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
         let span = l.span.or_else(|| span);
+        let name = Name::try_from(type_name);
+
+        let name = match name {
+            Ok(v) => v,
+            _ => return Ok(()),
+        };
 
         match type_name {
-            RTsEntityName::TsQualifiedName(_) => {
+            RExpr::Member(_) => {
                 if let Ok(var) = self.type_of_var(&l, TypeOfMode::RValue, None) {
                     if var.is_module() {
                         return Ok(());
@@ -1625,18 +1635,19 @@ impl Analyzer<'_, '_> {
 
                 Err(Error::NamspaceNotFound {
                     span,
-                    name: box type_name.clone().into(),
+                    name: box name.into(),
                     ctxt: self.ctx.module_id,
                     type_args: type_args.cloned().map(Box::new),
                 })
             }
-            RTsEntityName::Ident(i) if &*i.sym == "globalThis" => return Ok(()),
-            RTsEntityName::Ident(_) => Err(Error::TypeNotFound {
+            RExpr::Ident(i) if &*i.sym == "globalThis" => return Ok(()),
+            RExpr::Ident(_) => Err(Error::TypeNotFound {
                 span,
-                name: box type_name.clone().into(),
+                name: box name.into(),
                 ctxt: self.ctx.module_id,
                 type_args: type_args.cloned().map(Box::new),
             }),
+            _ => Ok(()),
         }
     }
 
@@ -1842,5 +1853,14 @@ pub(crate) fn left(t: &RTsEntityName) -> &RIdent {
     match t {
         RTsEntityName::TsQualifiedName(t) => left(&t.left),
         RTsEntityName::Ident(i) => i,
+    }
+}
+
+pub(crate) fn left_of_expr(t: &RExpr) -> Option<&RIdent> {
+    match t {
+        RExpr::Member(t) => left_of_expr(&t.obj),
+        RExpr::Ident(i) => Some(i),
+
+        _ => None,
     }
 }

@@ -11,7 +11,7 @@ use stc_ts_types::{
 };
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
 use swc_atoms::JsWord;
-use swc_common::{Spanned, DUMMY_SP};
+use swc_common::DUMMY_SP;
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::instrument;
 

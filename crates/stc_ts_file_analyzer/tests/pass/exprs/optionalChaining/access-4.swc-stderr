@@ -1,120 +1,130 @@
-warning: Type
- --> $DIR/tests/pass/exprs/optionalChaining/access-4.ts:3:1
-  |
-3 | o4.b?.["c"].d?.e;
-  | ^^
-  |
-  = note: {
-              b?: {
-                  c: {
-                      d?: {
-                          e: string;
-                      };
-                  };
-              };
-          }
 
-warning: Type
- --> $DIR/tests/pass/exprs/optionalChaining/access-4.ts:3:1
-  |
-3 | o4.b?.["c"].d?.e;
-  | ^^^^
-  |
-  = note: (undefined | {
-              c: {
-                  d?: {
-                      e: string;
-                  };
-              };
-          })
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-4.ts:3:1]
+ 3 | o4.b?.["c"].d?.e;
+   : ^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/optionalChaining/access-4.ts:3:1
-  |
-3 | o4.b?.["c"].d?.e;
-  | ^^^^^^^^^^^
-  |
-  = note: (undefined | {
-              d?: {
-                  e: string;
-              };
-          })
+Error: 
+  > {
+  |     b?: {
+  |         c: {
+  |             d?: {
+  |                 e: string;
+  |             };
+  |         };
+  |     };
+  | }
 
-warning: Type
- --> $DIR/tests/pass/exprs/optionalChaining/access-4.ts:3:1
-  |
-3 | o4.b?.["c"].d?.e;
-  | ^^^^^^^^^^^^^
-  |
-  = note: (undefined | {
-              e: string;
-          })
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-4.ts:3:1]
+ 3 | o4.b?.["c"].d?.e;
+   : ^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/optionalChaining/access-4.ts:3:1
-  |
-3 | o4.b?.["c"].d?.e;
-  | ^^^^^^^^^^^^^^^^
-  |
-  = note: (undefined | string)
+Error: 
+  > (undefined | {
+  |     c: {
+  |         d?: {
+  |             e: string;
+  |         };
+  |     };
+  | })
 
-warning: Type
- --> $DIR/tests/pass/exprs/optionalChaining/access-4.ts:4:1
-  |
-4 | o4.b?.["c"].d?.["e"];
-  | ^^
-  |
-  = note: {
-              b?: {
-                  c: {
-                      d?: {
-                          e: string;
-                      };
-                  };
-              };
-          }
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-4.ts:3:1]
+ 3 | o4.b?.["c"].d?.e;
+   : ^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/optionalChaining/access-4.ts:4:1
-  |
-4 | o4.b?.["c"].d?.["e"];
-  | ^^^^
-  |
-  = note: (undefined | {
-              c: {
-                  d?: {
-                      e: string;
-                  };
-              };
-          })
+Error: 
+  > (undefined | {
+  |     d?: {
+  |         e: string;
+  |     };
+  | })
 
-warning: Type
- --> $DIR/tests/pass/exprs/optionalChaining/access-4.ts:4:1
-  |
-4 | o4.b?.["c"].d?.["e"];
-  | ^^^^^^^^^^^
-  |
-  = note: (undefined | {
-              d?: {
-                  e: string;
-              };
-          })
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-4.ts:3:1]
+ 3 | o4.b?.["c"].d?.e;
+   : ^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/optionalChaining/access-4.ts:4:1
-  |
-4 | o4.b?.["c"].d?.["e"];
-  | ^^^^^^^^^^^^^
-  |
-  = note: (undefined | {
-              e: string;
-          })
+Error: 
+  > (undefined | {
+  |     e: string;
+  | })
 
-warning: Type
- --> $DIR/tests/pass/exprs/optionalChaining/access-4.ts:4:1
-  |
-4 | o4.b?.["c"].d?.["e"];
-  | ^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (undefined | string)
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-4.ts:3:1]
+ 3 | o4.b?.["c"].d?.e;
+   : ^^^^^^^^^^^^^^^^
+   `----
 
+Error: 
+  > (undefined | string)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-4.ts:4:1]
+ 4 | o4.b?.["c"].d?.["e"];
+   : ^^
+   `----
+
+Error: 
+  > {
+  |     b?: {
+  |         c: {
+  |             d?: {
+  |                 e: string;
+  |             };
+  |         };
+  |     };
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-4.ts:4:1]
+ 4 | o4.b?.["c"].d?.["e"];
+   : ^^^^
+   `----
+
+Error: 
+  > (undefined | {
+  |     c: {
+  |         d?: {
+  |             e: string;
+  |         };
+  |     };
+  | })
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-4.ts:4:1]
+ 4 | o4.b?.["c"].d?.["e"];
+   : ^^^^^^^^^^^
+   `----
+
+Error: 
+  > (undefined | {
+  |     d?: {
+  |         e: string;
+  |     };
+  | })
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-4.ts:4:1]
+ 4 | o4.b?.["c"].d?.["e"];
+   : ^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (undefined | {
+  |     e: string;
+  | })
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-4.ts:4:1]
+ 4 | o4.b?.["c"].d?.["e"];
+   : ^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (undefined | string)

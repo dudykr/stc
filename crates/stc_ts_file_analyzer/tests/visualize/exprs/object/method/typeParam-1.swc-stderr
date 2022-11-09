@@ -1,11 +1,12 @@
-warning: Type
- --> $DIR/tests/visualize/exprs/object/method/typeParam-1.ts:3:1
-  |
-3 | a2;
-  | ^^
-  |
-  = note: {
-              <T>(x: T) : number;
-              (x: string) : string;
-          }
 
+  x Type
+   ,-[$DIR/tests/visualize/exprs/object/method/typeParam-1.ts:3:1]
+ 3 | a2;
+   : ^^
+   `----
+
+Error: 
+  > {
+  |     <T>(x: T) : number;
+  |     (x: string) : string;
+  | }

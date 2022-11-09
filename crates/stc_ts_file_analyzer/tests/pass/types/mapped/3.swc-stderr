@@ -1,18 +1,20 @@
-warning: Type
- --> $DIR/tests/pass/types/mapped/3.ts:2:9
-  |
-2 |     x = {};
-  |         ^^
-  |
-  = note: {
-          }
 
-warning: Type
- --> $DIR/tests/pass/types/mapped/3.ts:2:5
-  |
-2 |     x = {};
-  |     ^^^^^^
-  |
-  = note: {
-          }
+  x Type
+   ,-[$DIR/tests/pass/types/mapped/3.ts:2:5]
+ 2 | x = {};
+   :     ^^
+   `----
 
+Error: 
+  > {
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/mapped/3.ts:2:5]
+ 2 | x = {};
+   : ^^^^^^
+   `----
+
+Error: 
+  > {
+  | }

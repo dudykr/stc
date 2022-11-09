@@ -5,8 +5,9 @@ use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{Fold, FoldWith, NodeId, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RBindingIdent, RCallExpr, RExpr, RExprOrSpread, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr, RNewExpr, RObjectPat,
-    RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType, RTsTypeParamInstantiation, RTsTypeRef,
+    RArrayPat, RBindingIdent, RCallExpr, RCallee, RComputedPropName, RExpr, RExprOrSpread, RIdent, RInvalid, RLit, RMemberExpr,
+    RMemberProp, RNewExpr, RObjectPat, RPat, RStr, RTaggedTpl, RTsAsExpr, RTsEntityName, RTsLit, RTsThisTypeOrIdent, RTsType,
+    RTsTypeParamInstantiation, RTsTypeRef,
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
@@ -71,7 +72,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RCallExpr, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RCallExpr, type_ann: Option<&Type>) -> VResult<Type> {
         self.record(e);
 
         let RCallExpr {
@@ -86,7 +87,7 @@ impl Analyzer<'_, '_> {
         type_ann.make_clone_cheap();
 
         let callee = match callee {
-            RExprOrSuper::Super(..) => {
+            RCallee::Super(..) => {
                 self.report_error_for_super_refs_without_supers(span, true);
                 self.report_error_for_super_reference_in_compute_keys(span, true);
 
@@ -101,7 +102,8 @@ impl Analyzer<'_, '_> {
 
                 return Ok(Type::any(span, Default::default()));
             }
-            RExprOrSuper::Expr(callee) => callee,
+            RCallee::Expr(callee) => callee,
+            RCallee::Import(..) => todo!("dynamic import"),
         };
 
         let is_callee_iife = is_fn_expr(&callee);
@@ -117,7 +119,7 @@ impl Analyzer<'_, '_> {
                 callee,
                 ExtractKind::Call,
                 args,
-                type_args.as_ref(),
+                type_args.as_deref(),
                 type_ann.as_deref(),
             )
         })
@@ -126,7 +128,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RNewExpr, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RNewExpr, type_ann: Option<&Type>) -> VResult<Type> {
         self.record(e);
 
         let RNewExpr {
@@ -149,7 +151,7 @@ impl Analyzer<'_, '_> {
                 callee,
                 ExtractKind::New,
                 args.as_ref().map(|v| &**v).unwrap_or_else(|| &mut []),
-                type_args.as_ref(),
+                type_args.as_deref(),
                 type_ann.as_deref(),
             )
         })
@@ -158,7 +160,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RTaggedTpl) -> VResult {
+    fn validate(&mut self, e: &RTaggedTpl) -> VResult<Type> {
         let span = e.span;
 
         let tpl_str_arg = {
@@ -189,7 +191,7 @@ impl Analyzer<'_, '_> {
                 &e.tag,
                 ExtractKind::Call,
                 args.as_ref(),
-                e.type_params.as_ref(),
+                e.type_params.as_deref(),
                 Default::default(),
             )
         });
@@ -220,7 +222,7 @@ impl Analyzer<'_, '_> {
         args: &[RExprOrSpread],
         type_args: Option<&RTsTypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         debug_assert_eq!(self.scope.kind(), ScopeKind::Call);
 
         let marks = self.marks();
@@ -319,18 +321,23 @@ impl Analyzer<'_, '_> {
 
             // Use general callee validation.
             RExpr::Member(RMemberExpr {
-                prop: box RExpr::Lit(RLit::Num(..)),
-                computed: true,
+                prop:
+                    RMemberProp::Computed(RComputedPropName {
+                        expr: box RExpr::Lit(RLit::Num(..)),
+                        ..
+                    }),
                 ..
             }) => {}
 
-            RExpr::Member(RMemberExpr {
-                obj: RExprOrSuper::Expr(ref obj),
-                ref prop,
-                computed,
-                ..
-            }) => {
-                let prop = self.validate_key(prop, computed)?;
+            RExpr::Member(RMemberExpr { ref obj, ref prop, .. }) => {
+                let prop = self.validate_key(
+                    &match prop {
+                        RMemberProp::Ident(i) => RExpr::Ident(i.clone()),
+                        RMemberProp::Computed(c) => *c.expr.clone(),
+                        RMemberProp::PrivateName(p) => RExpr::PrivateName(p.clone()),
+                    },
+                    matches!(prop, RMemberProp::Computed(..)),
+                )?;
 
                 // Validate object
                 let mut obj_type = obj.validate_with_default(self)?.generalize_lit();
@@ -526,7 +533,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
         opts: CallOpts,
-    ) -> VResult {
+    ) -> VResult<Type> {
         obj_type.assert_valid();
 
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -1115,7 +1122,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
         opts: CallOpts,
-    ) -> VResult {
+    ) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         // Candidates of the method call.
@@ -1247,7 +1254,7 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
         opts: CallOpts,
-    ) -> VResult {
+    ) -> VResult<Type> {
         if !self.is_builtin {
             ty.assert_valid();
         }
@@ -1685,7 +1692,7 @@ impl Analyzer<'_, '_> {
         spread_arg_types: &[TypeOrSpread],
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         let callee_span = callee_ty.span();
 
         let candidates = members
@@ -1760,7 +1767,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         self.get_return_type(
             span,
             ExtractKind::Call,
@@ -1943,7 +1950,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let has_spread = arg_types.len() != spread_arg_types.len();
@@ -2316,7 +2323,7 @@ impl Analyzer<'_, '_> {
         arg_types: &[TypeOrSpread],
         spread_arg_types: &[TypeOrSpread],
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         // TODO(kdy1): Optimize by skipping clone if `this type` is not used.
@@ -3060,7 +3067,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn narrow_type_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult {
+    fn narrow_type_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let orig_ty = self

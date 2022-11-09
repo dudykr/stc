@@ -1,112 +1,126 @@
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:15:13
-   |
-15 | var b = foo(g);            // Error, number and string are disjoint types
-   |             ^
-   |
-   = note: <T>(x: T, y: T) => T
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:15:9
-   |
-15 | var b = foo(g);            // Error, number and string are disjoint types
-   |         ^^^
-   |
-   = note: <T>(cb: (x: number, y: string) => T) => T
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:15:1]
+ 15 | var b = foo(g);            // Error, number and string are disjoint types
+    :             ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:15:9
-   |
-15 | var b = foo(g);            // Error, number and string are disjoint types
-   |         ^^^^^^
-   |
-   = note: unknown
+Error: 
+  > <T>(x: T, y: T) => T
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:16:23
-   |
-16 | var b = bar(1, "one", g);  // Error, number and string are disjoint types
-   |                       ^
-   |
-   = note: <T>(x: T, y: T) => T
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:15:1]
+ 15 | var b = foo(g);            // Error, number and string are disjoint types
+    :         ^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:16:9
-   |
-16 | var b = bar(1, "one", g);  // Error, number and string are disjoint types
-   |         ^^^
-   |
-   = note: <T, U, V>(x: T, y: U, cb: (x: T, y: U) => V) => V
+Error: 
+  > <T>(cb: (x: number, y: string) => T) => T
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:16:9
-   |
-16 | var b = bar(1, "one", g);  // Error, number and string are disjoint types
-   |         ^^^^^^^^^^^^^^^^
-   |
-   = note: unknown
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:15:1]
+ 15 | var b = foo(g);            // Error, number and string are disjoint types
+    :         ^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:17:23
-   |
-17 | var b = bar("one", 1, g);  // Error, number and string are disjoint types
-   |                       ^
-   |
-   = note: <T>(x: T, y: T) => T
+Error: 
+  > unknown
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:17:9
-   |
-17 | var b = bar("one", 1, g);  // Error, number and string are disjoint types
-   |         ^^^
-   |
-   = note: <T, U, V>(x: T, y: U, cb: (x: T, y: U) => V) => V
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:16:1]
+ 16 | var b = bar(1, "one", g);  // Error, number and string are disjoint types
+    :                       ^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:17:9
-   |
-17 | var b = bar("one", 1, g);  // Error, number and string are disjoint types
-   |         ^^^^^^^^^^^^^^^^
-   |
-   = note: unknown
+Error: 
+  > <T>(x: T, y: T) => T
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:18:13
-   |
-18 | var b = baz(b, b, g);      // Should be number | string
-   |             ^
-   |
-   = note: (number | string)
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:16:1]
+ 16 | var b = bar(1, "one", g);  // Error, number and string are disjoint types
+    :         ^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:18:16
-   |
-18 | var b = baz(b, b, g);      // Should be number | string
-   |                ^
-   |
-   = note: (number | string)
+Error: 
+  > <T, U, V>(x: T, y: U, cb: (x: T, y: U) => V) => V
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:18:19
-   |
-18 | var b = baz(b, b, g);      // Should be number | string
-   |                   ^
-   |
-   = note: <T>(x: T, y: T) => T
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:16:1]
+ 16 | var b = bar(1, "one", g);  // Error, number and string are disjoint types
+    :         ^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:18:9
-   |
-18 | var b = baz(b, b, g);      // Should be number | string
-   |         ^^^
-   |
-   = note: <T, U>(x: T, y: T, cb: (x: T, y: T) => U) => U
+Error: 
+  > unknown
 
-warning: Type
-  --> $DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:18:9
-   |
-18 | var b = baz(b, b, g);      // Should be number | string
-   |         ^^^^^^^^^^^^
-   |
-   = note: (number | string)
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:17:1]
+ 17 | var b = bar("one", 1, g);  // Error, number and string are disjoint types
+    :                       ^
+    `----
 
+Error: 
+  > <T>(x: T, y: T) => T
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:17:1]
+ 17 | var b = bar("one", 1, g);  // Error, number and string are disjoint types
+    :         ^^^
+    `----
+
+Error: 
+  > <T, U, V>(x: T, y: U, cb: (x: T, y: U) => V) => V
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:17:1]
+ 17 | var b = bar("one", 1, g);  // Error, number and string are disjoint types
+    :         ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > unknown
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:18:1]
+ 18 | var b = baz(b, b, g);      // Should be number | string
+    :             ^
+    `----
+
+Error: 
+  > (number | string)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:18:1]
+ 18 | var b = baz(b, b, g);      // Should be number | string
+    :                ^
+    `----
+
+Error: 
+  > (number | string)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:18:1]
+ 18 | var b = baz(b, b, g);      // Should be number | string
+    :                   ^
+    `----
+
+Error: 
+  > <T>(x: T, y: T) => T
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:18:1]
+ 18 | var b = baz(b, b, g);      // Should be number | string
+    :         ^^^
+    `----
+
+Error: 
+  > <T, U>(x: T, y: T, cb: (x: T, y: T) => U) => U
+
+  x Type
+    ,-[$DIR/tests/visualize/types/typeRelationShips/typeInference/contextualSignatureInstantiation/2.ts:18:1]
+ 18 | var b = baz(b, b, g);      // Should be number | string
+    :         ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (number | string)

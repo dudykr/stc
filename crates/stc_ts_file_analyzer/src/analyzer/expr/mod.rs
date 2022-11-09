@@ -8,8 +8,9 @@ use std::{
 use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RExprOrSuper, RIdent, RInvalid, RLit, RMemberExpr, RNull, RNumber, RParenExpr, RPat,
-    RPatOrExpr, RSeqExpr, RStr, RSuper, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
+    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, ROptChainBase,
+    ROptChainExpr, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName,
+    RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
@@ -93,7 +94,13 @@ impl Default for TypeOfMode {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RExpr, mode: TypeOfMode, type_args: Option<&TypeParamInstantiation>, type_ann: Option<&Type>) -> VResult {
+    fn validate(
+        &mut self,
+        e: &RExpr,
+        mode: TypeOfMode,
+        type_args: Option<&TypeParamInstantiation>,
+        type_ann: Option<&Type>,
+    ) -> VResult<Type> {
         self.record(e);
 
         let _stack = stack::start(64);
@@ -107,7 +114,7 @@ impl Analyzer<'_, '_> {
             _ => false,
         };
 
-        let mut ty = (|| -> VResult {
+        let mut ty = (|| -> VResult<Type> {
             match e {
                 RExpr::TaggedTpl(e) => e.validate_with(self),
 
@@ -294,6 +301,10 @@ impl Analyzer<'_, '_> {
                     return self.type_of_member_expr(expr, mode);
                 }
 
+                RExpr::SuperProp(ref expr) => {
+                    return self.type_of_super_prop_expr(expr, mode);
+                }
+
                 RExpr::MetaProp(e) => return e.validate_with(self),
 
                 RExpr::Invalid(ref i) => return Ok(Type::any(i.span(), Default::default())),
@@ -358,24 +369,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RExprOrSuper) -> VResult {
-        match e {
-            RExprOrSuper::Expr(e) => e.validate_with_default(self),
-            RExprOrSuper::Super(s) => Ok(Type::any(s.span, Default::default())),
-        }
-    }
-}
-
-#[validator]
-impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RParenExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RParenExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
         e.expr.validate_with_args(self, (mode, None, type_ann))
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RAssignExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RAssignExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
         let ctx = Ctx {
             pat_mode: PatMode::Assign,
             ..self.ctx
@@ -555,7 +556,7 @@ pub(crate) struct AccessPropertyOpts {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RSeqExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RSeqExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
         let RSeqExpr { span, ref exprs, .. } = *e;
 
         assert!(exprs.len() >= 1);
@@ -1033,7 +1034,7 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
         opts: AccessPropertyOpts,
-    ) -> VResult {
+    ) -> VResult<Type> {
         if !self.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "access_property: called with a dummy span");
         }
@@ -1194,7 +1195,7 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         id_ctx: IdCtx,
         opts: AccessPropertyOpts,
-    ) -> VResult {
+    ) -> VResult<Type> {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy());
 
@@ -1809,8 +1810,7 @@ impl Analyzer<'_, '_> {
                         lit: RTsLit::Str(RStr {
                             span: *span,
                             value: sym.clone(),
-                            has_escape: false,
-                            kind: Default::default(),
+                            raw: None,
                         }),
                         metadata: Default::default(),
                     }),
@@ -2215,6 +2215,7 @@ impl Analyzer<'_, '_> {
                                                 &Key::Num(RNumber {
                                                     span: n.span,
                                                     value: (v + 1i64 - (elems.len() as i64)) as _,
+                                                    raw: None,
                                                 }),
                                                 type_mode,
                                                 id_ctx,
@@ -2285,6 +2286,7 @@ impl Analyzer<'_, '_> {
                             lit: RTsLit::Number(RNumber {
                                 span,
                                 value: elems.len() as _,
+                                raw: None,
                             }),
                             metadata: Default::default(),
                         }));
@@ -2673,7 +2675,7 @@ impl Analyzer<'_, '_> {
                 expr: box QueryExpr::TsEntityName(name),
                 ..
             }) => {
-                let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, name, None)?;
+                let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, &name.clone().into(), None)?;
                 return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
             }
 
@@ -2835,7 +2837,7 @@ impl Analyzer<'_, '_> {
         name: &[Id],
         type_mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         assert!(name.len() > 0, "Cannot determine type of empty name");
 
         let mut id: RIdent = name[0].clone().into();
@@ -2877,7 +2879,7 @@ impl Analyzer<'_, '_> {
 
     /// Returned type reflects conditional type facts.
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn type_of_var(&mut self, i: &RIdent, type_mode: TypeOfMode, type_args: Option<&TypeParamInstantiation>) -> VResult {
+    pub(super) fn type_of_var(&mut self, i: &RIdent, type_mode: TypeOfMode, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
         let span = i.span();
         let id: Id = i.into();
         let name: Name = i.into();
@@ -3015,7 +3017,7 @@ impl Analyzer<'_, '_> {
 
     /// Returned type does not reflects conditional type facts. (like Truthy /
     /// exclusion)
-    fn type_of_raw_var(&mut self, i: &RIdent, type_mode: TypeOfMode) -> VResult {
+    fn type_of_raw_var(&mut self, i: &RIdent, type_mode: TypeOfMode) -> VResult<Type> {
         info!("({}) type_of_raw_var({})", self.scope.depth(), Id::from(i));
 
         // See documentation on Analyzer.cur_module_name to understand what we are doing
@@ -3348,9 +3350,9 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ctxt: ModuleId,
-        n: &RTsEntityName,
+        n: &RExpr,
         type_args: Option<&TypeParamInstantiation>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
     }
 
@@ -3359,9 +3361,9 @@ impl Analyzer<'_, '_> {
         &mut self,
         span: Span,
         ctxt: ModuleId,
-        n: &RTsEntityName,
+        n: &RExpr,
         type_args: Option<&TypeParamInstantiation>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
         {
             let res = self.report_error_for_unresolve_type(span, &n, type_args);
@@ -3374,8 +3376,8 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match *n {
-            RTsEntityName::Ident(ref i) => {
+        match &*n {
+            RExpr::Ident(ref i) => {
                 if i.sym == js_word!("Array") {
                     if let Some(type_args) = type_args {
                         // TODO(kdy1): Validate number of args.
@@ -3497,32 +3499,20 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 }))
             }
-            RTsEntityName::TsQualifiedName(ref qname) => {
-                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &qname.left, None)?;
-                obj_ty.assert_valid();
-
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ..self.ctx
-                };
-                let obj_ty = self.with_ctx(ctx).expand(
-                    span,
-                    obj_ty,
-                    ExpandOpts {
-                        full: true,
-                        expand_union: true,
-                        ..Default::default()
-                    },
-                )?;
+            RExpr::Member(RMemberExpr {
+                obj,
+                prop: RMemberProp::Ident(right),
+                ..
+            }) => {
+                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &obj, None)?;
                 obj_ty.assert_valid();
 
                 self.access_property(
                     span,
                     &obj_ty,
                     &Key::Normal {
-                        span: qname.right.span,
-                        sym: qname.right.sym.clone(),
+                        span: right.span,
+                        sym: right.sym.clone(),
                     },
                     TypeOfMode::RValue,
                     IdCtx::Type,
@@ -3530,18 +3520,55 @@ impl Analyzer<'_, '_> {
                 )
                 .context("tried to resolve type from a ts entity name")
             }
+            RExpr::OptChain(ROptChainExpr {
+                base:
+                    ROptChainBase::Member(RMemberExpr {
+                        obj,
+                        prop: RMemberProp::Ident(right),
+                        ..
+                    }),
+                ..
+            }) => {
+                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &obj, None)?;
+                obj_ty.assert_valid();
+
+                let ty = self
+                    .access_property(
+                        span,
+                        &obj_ty,
+                        &Key::Normal {
+                            span: right.span,
+                            sym: right.sym.clone(),
+                        },
+                        TypeOfMode::RValue,
+                        IdCtx::Type,
+                        Default::default(),
+                    )
+                    .context("tried to resolve type from an optional ts entity name")?;
+
+                Ok(Type::union(vec![
+                    ty,
+                    Type::Keyword(KeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        metadata: Default::default(),
+                    }),
+                ])
+                .cheap())
+            }
+
+            _ => {
+                todo!("type_of_ts_entity_name: {:?}", n)
+            }
         }
     }
 
     /// TODO(kdy1): Expand type arguments if provided.
-    fn type_of_member_expr(&mut self, expr: &RMemberExpr, type_mode: TypeOfMode) -> VResult {
+    fn type_of_member_expr(&mut self, expr: &RMemberExpr, type_mode: TypeOfMode) -> VResult<Type> {
         let RMemberExpr {
-            ref obj,
-            computed,
-            ref prop,
-            span,
-            ..
+            ref obj, ref prop, span, ..
         } = *expr;
+        let computed = matches!(prop, RMemberProp::Computed(_));
 
         let name: Option<Name> = expr.try_into().ok();
 
@@ -3558,7 +3585,7 @@ impl Analyzer<'_, '_> {
         let mut is_obj_opt_chain = false;
         let mut should_be_optional = false;
         let mut obj_ty = match *obj {
-            RExprOrSuper::Expr(ref obj) => {
+            ref obj => {
                 is_obj_opt_chain = is_obj_opt_chaining(&obj);
 
                 let obj_ctx = Ctx {
@@ -3589,34 +3616,29 @@ impl Analyzer<'_, '_> {
 
                 obj_ty
             }
-
-            RExprOrSuper::Super(RSuper { span, .. }) => {
-                if self.scope.cannot_use_this_because_super_not_called() {
-                    self.storage.report(Error::SuperUsedBeforeCallingSuper { span })
-                }
-
-                self.report_error_for_super_reference_in_compute_keys(span, false);
-
-                if let Some(v) = self.scope.get_super_class() {
-                    v.clone()
-                } else {
-                    self.storage.report(Error::SuperInClassWithoutSuper { span });
-                    Type::any(span, Default::default())
-                }
-            }
         };
         obj_ty.make_clone_cheap();
 
         self.storage.report_all(errors);
 
-        let mut prop = self.validate_key(prop, computed).report(&mut self.storage).unwrap_or_else(|| {
-            let span = prop.span().with_ctxt(SyntaxContext::empty());
-            Key::Computed(ComputedKey {
-                span,
-                expr: box RExpr::Invalid(RInvalid { span }),
-                ty: box Type::any(span, Default::default()),
-            })
-        });
+        let mut prop = self
+            .validate_key(
+                &match prop {
+                    RMemberProp::Ident(i) => RExpr::Ident(i.clone()),
+                    RMemberProp::Computed(c) => *c.expr.clone(),
+                    RMemberProp::PrivateName(p) => RExpr::PrivateName(p.clone()),
+                },
+                computed,
+            )
+            .report(&mut self.storage)
+            .unwrap_or_else(|| {
+                let span = prop.span().with_ctxt(SyntaxContext::empty());
+                Key::Computed(ComputedKey {
+                    span,
+                    expr: box RExpr::Invalid(RInvalid { span }),
+                    ty: box Type::any(span, Default::default()),
+                })
+            });
         prop.make_clone_cheap();
 
         let prop_access_ctx = Ctx {
@@ -3642,38 +3664,100 @@ impl Analyzer<'_, '_> {
         } else {
             if self.ctx.in_cond && self.ctx.should_store_truthy_for_access {
                 // Add type facts.
-                match obj {
-                    RExprOrSuper::Expr(obj) => {
-                        if let Some(name) = extract_name_for_assignment(obj, false) {
-                            let next_ty = self
-                                .filter_types_with_property(
-                                    &obj_ty,
-                                    match &prop {
-                                        Key::Normal { sym, .. } => sym,
-                                        _ => unreachable!(),
-                                    },
-                                    Some(TypeFacts::Truthy),
-                                )
-                                .report(&mut self.storage)
-                                .map(|ty| ty.cheap());
-                            if let Some(next_ty) = next_ty {
-                                self.cur_facts
-                                    .false_facts
-                                    .excludes
-                                    .entry(name.clone())
-                                    .or_default()
-                                    .push(next_ty.clone());
+                if let Some(name) = extract_name_for_assignment(obj, false) {
+                    let next_ty = self
+                        .filter_types_with_property(
+                            &obj_ty,
+                            match &prop {
+                                Key::Normal { sym, .. } => sym,
+                                _ => unreachable!(),
+                            },
+                            Some(TypeFacts::Truthy),
+                        )
+                        .report(&mut self.storage)
+                        .map(|ty| ty.cheap());
+                    if let Some(next_ty) = next_ty {
+                        self.cur_facts
+                            .false_facts
+                            .excludes
+                            .entry(name.clone())
+                            .or_default()
+                            .push(next_ty.clone());
 
-                                self.add_deep_type_fact(span, name, next_ty, true);
-                            }
-                        }
+                        self.add_deep_type_fact(span, name, next_ty, true);
                     }
-                    _ => {}
                 }
             }
 
             ty
         };
+
+        if should_be_optional {
+            Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
+        } else {
+            Ok(ty)
+        }
+    }
+
+    /// TODO(kdy1): Expand type arguments if provided.
+    fn type_of_super_prop_expr(&mut self, expr: &RSuperPropExpr, type_mode: TypeOfMode) -> VResult<Type> {
+        let RSuperPropExpr {
+            ref obj, ref prop, span, ..
+        } = *expr;
+        let computed = matches!(prop, RSuperProp::Computed(_));
+
+        let mut errors = Errors::default();
+
+        let mut is_obj_opt_chain = false;
+        let mut should_be_optional = false;
+        let mut obj_ty = match *obj {
+            RSuper { span, .. } => {
+                if self.scope.cannot_use_this_because_super_not_called() {
+                    self.storage.report(Error::SuperUsedBeforeCallingSuper { span })
+                }
+
+                self.report_error_for_super_reference_in_compute_keys(span, false);
+
+                if let Some(v) = self.scope.get_super_class() {
+                    v.clone()
+                } else {
+                    self.storage.report(Error::SuperInClassWithoutSuper { span });
+                    Type::any(span, Default::default())
+                }
+            }
+        };
+        obj_ty.make_clone_cheap();
+
+        self.storage.report_all(errors);
+
+        let mut prop = self
+            .validate_key(
+                &match prop {
+                    RSuperProp::Ident(i) => RExpr::Ident(i.clone()),
+                    RSuperProp::Computed(c) => *c.expr.clone(),
+                },
+                computed,
+            )
+            .report(&mut self.storage)
+            .unwrap_or_else(|| {
+                let span = prop.span().with_ctxt(SyntaxContext::empty());
+                Key::Computed(ComputedKey {
+                    span,
+                    expr: box RExpr::Invalid(RInvalid { span }),
+                    ty: box Type::any(span, Default::default()),
+                })
+            });
+        prop.make_clone_cheap();
+
+        let prop_access_ctx = Ctx {
+            in_opt_chain: self.ctx.in_opt_chain || is_obj_opt_chain,
+            ..self.ctx
+        };
+
+        let mut ty = self
+            .with_ctx(prop_access_ctx)
+            .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var, Default::default())
+            .context("tried to access property of an object to calculate type of a member expression")?;
 
         if should_be_optional {
             Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
@@ -3819,13 +3903,17 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RTpl, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RTpl, type_ann: Option<&Type>) -> VResult<Type> {
         e.exprs.visit_with(self);
 
         if e.exprs.is_empty() {
             return Ok(Type::Lit(LitType {
                 span: e.span,
-                lit: RTsLit::Str(e.quasis[0].cooked.clone().unwrap_or_else(|| e.quasis[0].raw.clone())),
+                lit: RTsLit::Str(RStr {
+                    span: e.span,
+                    value: (&*e.quasis[0].cooked.clone().unwrap_or_else(|| e.quasis[0].raw.clone())).into(),
+                    raw: None,
+                }),
                 metadata: Default::default(),
             }));
         }
@@ -3868,7 +3956,7 @@ fn is_valid_lhs(l: &RPatOrExpr) -> Result<(), Error> {
             return Err(Error::InvalidLhsOfAssignOptionalProp { span: e.span() });
         }
         match e {
-            RExpr::Ident(..) | RExpr::Member(..) => Ok(()),
+            RExpr::Ident(..) | RExpr::Member(..) | RExpr::SuperProp(..) => Ok(()),
             RExpr::Paren(e) => is_valid_lhs_expr(&e.expr),
             _ => Err(Error::InvalidLhsOfAssign { span: e.span() }),
         }

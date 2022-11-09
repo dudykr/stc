@@ -1,56 +1,63 @@
-warning: Type
- --> $DIR/tests/pass/class/member/interface/merging/5-call.ts:6:21
-  |
-6 | class Child extends BaseClass {
-  |                     ^^^^^^^^^
-  |
-  = note: typeof BaseClass
 
-warning: Type
-  --> $DIR/tests/pass/class/member/interface/merging/5-call.ts:17:1
-   |
-17 | a.baseNumber
-   | ^
-   |
-   = note: IChild
+  x Type
+   ,-[$DIR/tests/pass/class/member/interface/merging/5-call.ts:6:1]
+ 6 | class Child extends BaseClass {
+   :                     ^^^^^^^^^
+   `----
 
-warning: Type
-  --> $DIR/tests/pass/class/member/interface/merging/5-call.ts:17:1
-   |
-17 | a.baseNumber
-   | ^^^^^^^^^^^^
-   |
-   = note: number
+Error: 
+  > typeof BaseClass
 
-warning: Type
-  --> $DIR/tests/pass/class/member/interface/merging/5-call.ts:18:1
-   |
-18 | a.classNumber
-   | ^
-   |
-   = note: IChild
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/5-call.ts:17:1]
+ 17 | a.baseNumber
+    : ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/class/member/interface/merging/5-call.ts:18:1
-   |
-18 | a.classNumber
-   | ^^^^^^^^^^^^^
-   |
-   = note: number
+Error: 
+  > IChild
 
-warning: Type
-  --> $DIR/tests/pass/class/member/interface/merging/5-call.ts:19:1
-   |
-19 | a()
-   | ^
-   |
-   = note: IChild
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/5-call.ts:17:1]
+ 17 | a.baseNumber
+    : ^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/class/member/interface/merging/5-call.ts:19:1
-   |
-19 | a()
-   | ^^^
-   |
-   = note: string
+Error: 
+  > number
 
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/5-call.ts:18:1]
+ 18 | a.classNumber
+    : ^
+    `----
+
+Error: 
+  > IChild
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/5-call.ts:18:1]
+ 18 | a.classNumber
+    : ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/5-call.ts:19:1]
+ 19 | a()
+    : ^
+    `----
+
+Error: 
+  > IChild
+
+  x Type
+    ,-[$DIR/tests/pass/class/member/interface/merging/5-call.ts:19:1]
+ 19 | a()
+    : ^^^
+    `----
+
+Error: 
+  > string
