@@ -3935,7 +3935,7 @@ fn is_valid_lhs(l: &RPatOrExpr) -> Result<(), Error> {
             return Err(Error::InvalidLhsOfAssignOptionalProp { span: e.span() });
         }
         match e {
-            RExpr::Ident(..) | RExpr::Member(..) => Ok(()),
+            RExpr::Ident(..) | RExpr::Member(..) | RExpr::SuperProp(..) => Ok(()),
             RExpr::Paren(e) => is_valid_lhs_expr(&e.expr),
             _ => Err(Error::InvalidLhsOfAssign { span: e.span() }),
         }
