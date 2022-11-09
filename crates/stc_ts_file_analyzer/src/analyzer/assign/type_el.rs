@@ -136,7 +136,7 @@ impl Analyzer<'_, '_> {
                                     used_keys.push(p.key.clone());
                                 }
                                 TypeElement::Property(PropertySignature { optional: true, .. })
-                                | TypeElement::Method(MethodSignature { optional: true, .. }) => continue,
+                                | TypeElement::Method(MethodSignature { optional: true, .. }) => {}
                                 _ => {}
                             }
 
