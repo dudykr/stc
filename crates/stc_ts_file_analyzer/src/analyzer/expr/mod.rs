@@ -8,9 +8,9 @@ use std::{
 use optional_chaining::is_obj_opt_chaining;
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
-    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, RParenExpr, RPat,
-    RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName, RTsEnumMemberId, RTsLit,
-    RTsNonNullExpr, RUnaryExpr,
+    RAssignExpr, RBindingIdent, RClassExpr, RExpr, RIdent, RInvalid, RLit, RMemberExpr, RMemberProp, RNull, RNumber, ROptChainBase,
+    ROptChainExpr, RParenExpr, RPat, RPatOrExpr, RSeqExpr, RStr, RSuper, RSuperProp, RSuperPropExpr, RThisExpr, RTpl, RTsEntityName,
+    RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
 use stc_ts_errors::{
@@ -3507,22 +3507,6 @@ impl Analyzer<'_, '_> {
                 let obj_ty = self.type_of_ts_entity_name(span, ctxt, &obj, None)?;
                 obj_ty.assert_valid();
 
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ..self.ctx
-                };
-                let obj_ty = self.with_ctx(ctx).expand(
-                    span,
-                    obj_ty,
-                    ExpandOpts {
-                        full: true,
-                        expand_union: true,
-                        ..Default::default()
-                    },
-                )?;
-                obj_ty.assert_valid();
-
                 self.access_property(
                     span,
                     &obj_ty,
@@ -3536,6 +3520,42 @@ impl Analyzer<'_, '_> {
                 )
                 .context("tried to resolve type from a ts entity name")
             }
+            RExpr::OptChain(ROptChainExpr {
+                base:
+                    ROptChainBase::Member(RMemberExpr {
+                        obj,
+                        prop: RMemberProp::Ident(right),
+                        ..
+                    }),
+                ..
+            }) => {
+                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &obj, None)?;
+                obj_ty.assert_valid();
+
+                let ty = self
+                    .access_property(
+                        span,
+                        &obj_ty,
+                        &Key::Normal {
+                            span: right.span,
+                            sym: right.sym.clone(),
+                        },
+                        TypeOfMode::RValue,
+                        IdCtx::Type,
+                        Default::default(),
+                    )
+                    .context("tried to resolve type from an optional ts entity name")?;
+
+                Ok(Type::union(vec![
+                    ty,
+                    Type::Keyword(KeywordType {
+                        span,
+                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                        metadata: Default::default(),
+                    }),
+                ]))
+            }
+
             _ => {
                 todo!("type_of_ts_entity_name: {:?}", n)
             }
