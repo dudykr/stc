@@ -270,6 +270,7 @@ controlFlow/controlFlowIfStatement.ts
 controlFlow/controlFlowInstanceOfGuardPrimitives.ts
 controlFlow/controlFlowInstanceofExtendsFunction.ts
 controlFlow/controlFlowIteration.ts
+controlFlow/controlFlowOptionalChain2.ts
 controlFlow/controlFlowParameter.ts
 controlFlow/controlFlowStringIndex.ts
 controlFlow/controlFlowSuperPropertyAccess.ts
