@@ -20,20 +20,17 @@ impl VisitMut<RStmt> for RealImplRemover {
     fn visit_mut(&mut self, node: &mut RStmt) {
         node.visit_mut_children_with(self);
 
-        match node {
-            RStmt::Decl(RDecl::Fn(ref decl)) => {
-                if decl.function.body.is_none() {
-                    self.last_ambient_fn_name = Some(decl.ident.clone());
-                } else {
-                    let name = self.last_ambient_fn_name.take();
-                    if let Some(prev_name) = name {
-                        if prev_name.sym == decl.ident.sym {
-                            *node = RStmt::Empty(REmptyStmt { span: DUMMY_SP });
-                        }
+        if let RStmt::Decl(RDecl::Fn(ref decl)) = node {
+            if decl.function.body.is_none() {
+                self.last_ambient_fn_name = Some(decl.ident.clone());
+            } else {
+                let name = self.last_ambient_fn_name.take();
+                if let Some(prev_name) = name {
+                    if prev_name.sym == decl.ident.sym {
+                        *node = RStmt::Empty(REmptyStmt { span: DUMMY_SP });
                     }
                 }
             }
-            _ => {}
         }
     }
 }

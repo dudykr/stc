@@ -1,3 +1,4 @@
+#![allow(clippy::derive_partial_eq_without_eq)]
 #![feature(box_syntax)]
 
 use rnode::{define_rnode, NodeId};

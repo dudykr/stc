@@ -1,3 +1,5 @@
+#![allow(clippy::wrong_self_convention)]
+
 use swc_common::{Span, TypeEq};
 use tracing::instrument;
 
