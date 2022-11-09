@@ -239,6 +239,38 @@ impl Analyzer<'_, '_> {
             debug_assert!(!rt.span().is_dummy());
         }
 
+        let mut reported_null_or_undefined = false;
+
+        match op {
+            op!("**") => {
+                if matches!(
+                    &*e.left,
+                    RExpr::Lit(RLit::Null(..))
+                        | RExpr::Ident(RIdent {
+                            sym: js_word!("undefined"),
+                            ..
+                        })
+                ) {
+                    self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: e.left.span() });
+                    reported_null_or_undefined = true;
+                }
+
+                if matches!(
+                    &*e.right,
+                    RExpr::Lit(RLit::Null(..))
+                        | RExpr::Ident(RIdent {
+                            sym: js_word!("undefined"),
+                            ..
+                        })
+                ) {
+                    self.storage
+                        .report(Error::UndefinedOrNullIsNotValidOperand { span: e.right.span() });
+                    reported_null_or_undefined = true;
+                }
+            }
+            _ => {}
+        }
+
         // Handle control-flow based typing
         match op {
             op!("===") | op!("!==") | op!("==") | op!("!=") => {
@@ -553,19 +585,7 @@ impl Analyzer<'_, '_> {
                     let lt = lt.normalize();
                     let rt = rt.normalize();
 
-                    if lt.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                        || lt.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-                        || rt.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                        || rt.is_kwd(TsKeywordTypeKind::TsNullKeyword)
-                    {
-                        if lt.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || lt.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
-                            self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: lt.span() })
-                        }
-
-                        if rt.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || rt.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
-                            self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: rt.span() })
-                        }
-                    } else {
+                    if !reported_null_or_undefined {
                         self.report_possibly_null_or_undefined(lt.span(), &lt).report(&mut self.storage);
                     }
 
