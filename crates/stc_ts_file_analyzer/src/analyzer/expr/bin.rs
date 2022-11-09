@@ -239,6 +239,52 @@ impl Analyzer<'_, '_> {
             debug_assert!(!rt.span().is_dummy());
         }
 
+        let mut reported_null_or_undefined = false;
+
+        match op {
+            op!("**")
+            | op!("<=")
+            | op!("<")
+            | op!(">=")
+            | op!(">")
+            | op!("*")
+            | op!("/")
+            | op!("%")
+            | op!(bin, "-")
+            | op!("<<")
+            | op!(">>")
+            | op!(">>>")
+            | op!("&")
+            | op!("^")
+            | op!("|") => {
+                if matches!(
+                    &*e.left,
+                    RExpr::Lit(RLit::Null(..))
+                        | RExpr::Ident(RIdent {
+                            sym: js_word!("undefined"),
+                            ..
+                        })
+                ) {
+                    self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: e.left.span() });
+                    reported_null_or_undefined = true;
+                }
+
+                if matches!(
+                    &*e.right,
+                    RExpr::Lit(RLit::Null(..))
+                        | RExpr::Ident(RIdent {
+                            sym: js_word!("undefined"),
+                            ..
+                        })
+                ) {
+                    self.storage
+                        .report(Error::UndefinedOrNullIsNotValidOperand { span: e.right.span() });
+                    reported_null_or_undefined = true;
+                }
+            }
+            _ => {}
+        }
+
         // Handle control-flow based typing
         match op {
             op!("===") | op!("!==") | op!("==") | op!("!=") => {
@@ -553,7 +599,9 @@ impl Analyzer<'_, '_> {
                     let lt = lt.normalize();
                     let rt = rt.normalize();
 
-                    self.report_possibly_null_or_undefined(lt.span(), &lt).report(&mut self.storage);
+                    if !reported_null_or_undefined {
+                        self.report_possibly_null_or_undefined(lt.span(), &lt).report(&mut self.storage);
+                    }
 
                     if lt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
                         || lt.is_str()
@@ -566,7 +614,9 @@ impl Analyzer<'_, '_> {
                         self.storage.report(Error::WrongTypeForLhsOfNumericOperation { span });
                     }
 
-                    self.report_possibly_null_or_undefined(rt.span(), &rt).report(&mut self.storage);
+                    if !reported_null_or_undefined {
+                        self.report_possibly_null_or_undefined(rt.span(), &rt).report(&mut self.storage);
+                    }
 
                     if rt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
                         || rt.is_str()
@@ -613,25 +663,7 @@ impl Analyzer<'_, '_> {
             op!("<=") | op!("<") | op!(">=") | op!(">") => {
                 no_unknown!();
 
-                let mut skip = false;
-                if let Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
-                    ..
-                }) = rt
-                {
-                    skip = true;
-                    self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: rt.span() });
-                }
-                if let Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
-                    ..
-                }) = lt
-                {
-                    skip = true;
-                    self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: lt.span() });
-                }
-
-                if !skip {
+                if !reported_null_or_undefined {
                     let mut check_for_invalid_operand = |ty: &Type| {
                         let res: VResult<_> = try {
                             self.deny_null_or_undefined(ty.span(), ty)?;
@@ -1594,19 +1626,9 @@ impl Analyzer<'_, '_> {
                     match ty.normalize() {
                         Type::Keyword(KeywordType {
                             span,
-                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
                             ..
-                        }) => {
-                            self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: *span });
-                        }
-
-                        Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsNullKeyword,
-                            ..
-                        }) => {
-                            self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: *span });
-                        }
+                        }) => {}
 
                         _ => errors.push(if is_left {
                             Error::WrongTypeForLhsOfNumericOperation { span: ty.span() }
