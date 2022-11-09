@@ -1,16 +1,18 @@
-warning: Type
- --> $DIR/tests/pass/exprs/new/generic/interface-1.ts:9:33
-  |
-9 | export var anInterface: I = new C()
-  |                                 ^
-  |
-  = note: typeof C
 
-warning: Type
- --> $DIR/tests/pass/exprs/new/generic/interface-1.ts:9:29
-  |
-9 | export var anInterface: I = new C()
-  |                             ^^^^^^^
-  |
-  = note: C
+  x Type
+   ,-[$DIR/tests/pass/exprs/new/generic/interface-1.ts:9:1]
+ 9 | export var anInterface: I = new C()
+   :                                 ^
+   `----
 
+Error: 
+  > typeof C
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/new/generic/interface-1.ts:9:1]
+ 9 | export var anInterface: I = new C()
+   :                             ^^^^^^^
+   `----
+
+Error: 
+  > C
