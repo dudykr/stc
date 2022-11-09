@@ -30,6 +30,20 @@ jobs:
 
       - run: cargo fmt --all -- --check
 
+  cargo-clippy:
+    name: Cargo clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # We explicitly do this to cache properly.
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: clippy
+
+      - run: cargo clippy --all --all-targets -- -D warnings
+
   cargo-test:
     name: Cargo test
     runs-on: ubuntu-latest
