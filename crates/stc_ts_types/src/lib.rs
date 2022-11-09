@@ -451,11 +451,17 @@ impl PartialEq<str> for Key {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Spanned, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, Visit, Spanned, Serialize, Deserialize)]
 pub struct ComputedKey {
     pub span: Span,
     pub expr: Box<RExpr>,
     pub ty: Box<Type>,
+}
+
+impl TypeEq for ComputedKey {
+    fn type_eq(&self, other: &Self) -> bool {
+        self.ty.type_eq(&other.ty)
+    }
 }
 
 assert_eq_size!(ComputedKey, [u8; 32]);
