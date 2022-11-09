@@ -136,11 +136,8 @@ impl Visit<RExportDecl> for TypeUsageCollector {
 
 impl Visit<RExportDefaultExpr> for TypeUsageCollector {
     fn visit(&mut self, export: &RExportDefaultExpr) {
-        match &*export.expr {
-            RExpr::Ident(i) => {
-                self.used_vars.insert(i.into());
-            }
-            _ => {}
+        if let RExpr::Ident(i) = &*export.expr {
+            self.used_vars.insert(i.into());
         }
     }
 }
@@ -161,14 +158,11 @@ impl Visit<RClass> for TypeUsageCollector {
             }
         }
 
-        match &class.super_class {
-            Some(e) => {
-                if let Some(id) = left_most(e) {
-                    self.used_types.insert(id.clone());
-                    self.used_vars.insert(id);
-                }
+        if let Some(e) = &class.super_class {
+            if let Some(id) = left_most(e) {
+                self.used_types.insert(id.clone());
+                self.used_vars.insert(id);
             }
-            _ => {}
         }
     }
 }
@@ -200,31 +194,27 @@ struct Dts {
 
 impl VisitMut<RClassMember> for Dts {
     fn visit_mut(&mut self, m: &mut RClassMember) {
-        match m {
-            RClassMember::Method(method) => {
-                if let Some(Accessibility::Private) = method.accessibility {
-                    // Converts a private method to a private property without type.
-                    *m = RClassMember::ClassProp(RClassProp {
-                        node_id: NodeId::invalid(),
-                        span: method.span,
-                        key: method.key.clone(),
-                        value: None,
-                        type_ann: None,
-                        is_static: method.is_static,
-                        decorators: Default::default(),
-                        accessibility: Some(Accessibility::Private),
-                        is_abstract: false,
-                        is_optional: method.is_optional,
-                        readonly: false,
-                        declare: false,
-                        definite: false,
-                        is_override: false,
-                    });
-                    return;
-                }
+        if let RClassMember::Method(method) = m {
+            if let Some(Accessibility::Private) = method.accessibility {
+                // Converts a private method to a private property without type.
+                *m = RClassMember::ClassProp(RClassProp {
+                    node_id: NodeId::invalid(),
+                    span: method.span,
+                    key: method.key.clone(),
+                    value: None,
+                    type_ann: None,
+                    is_static: method.is_static,
+                    decorators: Default::default(),
+                    accessibility: Some(Accessibility::Private),
+                    is_abstract: false,
+                    is_optional: method.is_optional,
+                    readonly: false,
+                    declare: false,
+                    definite: false,
+                    is_override: false,
+                });
+                return;
             }
-
-            _ => {}
         }
         m.visit_mut_children_with(self);
     }
@@ -263,17 +253,14 @@ impl VisitMut<Vec<RVarDeclarator>> for Dts {
                     ..
                 }) => {
                     //
-                    for elem in elems.into_iter() {
-                        match elem {
-                            Some(name) => decls.push(RVarDeclarator {
-                                node_id: NodeId::invalid(),
-                                span,
-                                name,
-                                init: None,
-                                definite: false,
-                            }),
-                            None => {}
-                        }
+                    for name in elems.into_iter().flatten() {
+                        decls.push(RVarDeclarator {
+                            node_id: NodeId::invalid(),
+                            span,
+                            name,
+                            init: None,
+                            definite: false,
+                        })
                     }
                 }
                 // TODO

@@ -246,10 +246,8 @@ impl Fold<Type> for Generalizer {
             Type::IndexedAccessType(IndexedAccessType { index_type, .. }) if is_str_lit_or_union(&index_type) => return ty,
             _ => {}
         }
-        if !self.force {
-            if is_literals(&ty) {
-                return ty;
-            }
+        if !self.force && is_literals(&ty) {
+            return ty;
         }
 
         let force = match ty.normalize() {

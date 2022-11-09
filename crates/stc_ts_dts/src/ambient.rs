@@ -38,20 +38,17 @@ impl VisitMut<RModuleItem> for RealImplRemover {
     fn visit_mut(&mut self, node: &mut RModuleItem) {
         node.visit_mut_children_with(self);
 
-        match &node {
-            RModuleItem::ModuleDecl(RModuleDecl::ExportDecl(RExportDecl { decl: RDecl::Fn(decl), .. })) => {
-                if decl.function.body.is_none() {
-                    self.last_ambient_fn_name = Some(decl.ident.clone());
-                } else {
-                    let name = self.last_ambient_fn_name.take();
-                    if let Some(prev_name) = name {
-                        if prev_name.sym == decl.ident.sym {
-                            *node = RModuleItem::Stmt(RStmt::Empty(REmptyStmt { span: DUMMY_SP }));
-                        }
+        if let RModuleItem::ModuleDecl(RModuleDecl::ExportDecl(RExportDecl { decl: RDecl::Fn(decl), .. })) = &node {
+            if decl.function.body.is_none() {
+                self.last_ambient_fn_name = Some(decl.ident.clone());
+            } else {
+                let name = self.last_ambient_fn_name.take();
+                if let Some(prev_name) = name {
+                    if prev_name.sym == decl.ident.sym {
+                        *node = RModuleItem::Stmt(RStmt::Empty(REmptyStmt { span: DUMMY_SP }));
                     }
                 }
             }
-            _ => {}
         }
     }
 }

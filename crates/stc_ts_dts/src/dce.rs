@@ -67,21 +67,17 @@ impl VisitMut<RVarDecl> for DceForDts<'_> {
         node.visit_mut_children_with(self);
         node.declare = true;
 
-        node.decls.retain(|v| match v.name {
-            RPat::Invalid(..) => false,
-            _ => true,
-        });
+        node.decls.retain(|v| !matches!(v.name, RPat::Invalid(..)));
 
         if node.kind != VarDeclKind::Const {
-            node.decls.iter_mut().for_each(|node| match node.init {
-                Some(box RExpr::Lit(RLit::Num(..))) => {
+            node.decls.iter_mut().for_each(|node| {
+                if let Some(box RExpr::Lit(RLit::Num(..))) = node.init {
                     node.init = None;
                     node.name.set_ty(Some(box RTsType::TsKeywordType(RTsKeywordType {
                         span: DUMMY_SP,
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                     })))
                 }
-                _ => {}
             });
         }
     }
@@ -115,19 +111,16 @@ impl VisitMut<RVarDeclarator> for DceForDts<'_> {
             return;
         }
 
-        match node.name {
-            RPat::Ident(ref mut i) => {
-                if i.type_ann.is_none() {
-                    if let Some(ty) = self.info.private_vars.get(&i.id.clone().into()) {
-                        i.type_ann = Some(box RTsTypeAnn {
-                            node_id: NodeId::invalid(),
-                            span: DUMMY_SP,
-                            type_ann: box ty.clone().into(),
-                        });
-                    }
+        if let RPat::Ident(ref mut i) = node.name {
+            if i.type_ann.is_none() {
+                if let Some(ty) = self.info.private_vars.get(&i.id.clone().into()) {
+                    i.type_ann = Some(box RTsTypeAnn {
+                        node_id: NodeId::invalid(),
+                        span: DUMMY_SP,
+                        type_ann: box ty.clone().into(),
+                    });
                 }
             }
-            _ => {}
         }
 
         if node.init.is_none() {
@@ -140,9 +133,8 @@ impl VisitMut<RPat> for DceForDts<'_> {
     fn visit_mut(&mut self, node: &mut RPat) {
         node.visit_mut_children_with(self);
 
-        match node {
-            RPat::Assign(a) => *node = a.left.take(),
-            _ => {}
+        if let RPat::Assign(a) = node {
+            *node = a.left.take()
         }
     }
 }
@@ -195,18 +187,11 @@ impl VisitMut<RTsEnumDecl> for DceForDts<'_> {
         }
 
         let _: Option<()> = self.get_mapped(&node.id.clone().into(), |ty| {
-            match ty {
-                Type::Enum(e) => {
-                    //
-                    if e.members.iter().any(|m| match *m.val {
-                        RExpr::Tpl(..) | RExpr::Lit(..) => false,
-
-                        _ => true,
-                    }) {
-                        is_all_lit = false;
-                    }
+            if let Type::Enum(e) = ty {
+                //
+                if e.members.iter().any(|m| !matches!(*m.val, RExpr::Tpl(..) | RExpr::Lit(..))) {
+                    is_all_lit = false;
                 }
-                _ => {}
             }
 
             None
@@ -243,7 +228,7 @@ impl VisitMut<RTsEnumDecl> for DceForDts<'_> {
         });
 
         node.declare = !self.in_declare;
-        node.members = members.unwrap_or(node.members.take());
+        node.members = members.unwrap_or_else(|| node.members.take());
     }
 }
 
@@ -256,35 +241,33 @@ impl VisitMut<RTsTypeAliasDecl> for DceForDts<'_> {
 
 impl VisitMut<RClassMember> for DceForDts<'_> {
     fn visit_mut(&mut self, node: &mut RClassMember) {
-        match node {
-            RClassMember::Method(RClassMethod {
-                span,
-                key,
-                is_static,
+        if let RClassMember::Method(RClassMethod {
+            span,
+            key,
+            is_static,
+            accessibility: Some(Accessibility::Private),
+            is_abstract,
+            is_optional,
+            ..
+        }) = node
+        {
+            *node = RClassMember::ClassProp(RClassProp {
+                node_id: NodeId::invalid(),
+                span: *span,
+                declare: false,
+                key: key.take(),
+                value: None,
+                type_ann: None,
+                is_static: *is_static,
+                decorators: vec![],
                 accessibility: Some(Accessibility::Private),
-                is_abstract,
-                is_optional,
-                ..
-            }) => {
-                *node = RClassMember::ClassProp(RClassProp {
-                    node_id: NodeId::invalid(),
-                    span: *span,
-                    declare: false,
-                    key: key.take(),
-                    value: None,
-                    type_ann: None,
-                    is_static: *is_static,
-                    decorators: vec![],
-                    accessibility: Some(Accessibility::Private),
-                    is_abstract: *is_abstract,
-                    is_optional: *is_optional,
-                    readonly: false,
-                    definite: false,
-                    is_override: false,
-                });
-                return;
-            }
-            _ => {}
+                is_abstract: *is_abstract,
+                is_optional: *is_optional,
+                readonly: false,
+                definite: false,
+                is_override: false,
+            });
+            return;
         }
 
         node.visit_mut_children_with(self)
