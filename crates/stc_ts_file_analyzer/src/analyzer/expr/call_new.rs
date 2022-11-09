@@ -1590,7 +1590,7 @@ impl Analyzer<'_, '_> {
                     type_args,
                     type_ann,
                 ) {
-                    Ok(ty) => return Ok(ty.clone()),
+                    Ok(ty) => return Ok(ty),
                     Err(first_err) => {
                         //  Check parent interface
                         for parent in &i.extends {

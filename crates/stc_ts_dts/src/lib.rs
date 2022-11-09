@@ -439,17 +439,14 @@ impl VisitMut<RPat> for Dts {
     fn visit_mut(&mut self, pat: &mut RPat) {
         pat.visit_mut_children_with(self);
 
-        match pat {
-            RPat::Assign(assign) => {
-                *pat = assign.left.take();
-                match pat {
-                    RPat::Ident(pat) => pat.id.optional = true,
-                    RPat::Array(pat) => pat.optional = true,
-                    RPat::Object(pat) => pat.optional = true,
-                    _ => {}
-                }
+        if let RPat::Assign(assign) = pat {
+            *pat = assign.left.take();
+            match pat {
+                RPat::Ident(pat) => pat.id.optional = true,
+                RPat::Array(pat) => pat.optional = true,
+                RPat::Object(pat) => pat.optional = true,
+                _ => {}
             }
-            _ => {}
         }
     }
 }
@@ -457,10 +454,7 @@ impl VisitMut<RPat> for Dts {
 impl VisitMut<Vec<RClassMember>> for Dts {
     fn visit_mut(&mut self, members: &mut Vec<RClassMember>) {
         // Remove empty members.
-        members.retain(|member| match member {
-            RClassMember::Empty(..) => false,
-            _ => true,
-        });
+        members.retain(|member| !matches!(member, RClassMember::Empty(..)));
 
         members.visit_mut_children_with(self);
 
@@ -474,51 +468,48 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                 match m {
                     RClassMember::Constructor(ref mut c) => {
                         for p in c.params.iter_mut() {
-                            match p {
-                                RParamOrTsParamProp::TsParamProp(ref mut p) => {
-                                    if p.accessibility.is_some() || p.readonly {
-                                        props.push(RClassMember::ClassProp(RClassProp {
-                                            node_id: NodeId::invalid(),
-                                            span: Default::default(),
-                                            declare: false,
-                                            key: match &p.param {
-                                                RTsParamPropParam::Ident(p) => RPropName::Ident(p.id.clone()),
-                                                RTsParamPropParam::Assign(p) => match &p.left {
-                                                    //
-                                                    box RPat::Ident(i) => RPropName::Ident(i.id.clone()),
-                                                    _ => unreachable!("binding pattern in property initializer"),
-                                                },
+                            if let RParamOrTsParamProp::TsParamProp(ref mut p) = p {
+                                if p.accessibility.is_some() || p.readonly {
+                                    props.push(RClassMember::ClassProp(RClassProp {
+                                        node_id: NodeId::invalid(),
+                                        span: Default::default(),
+                                        declare: false,
+                                        key: match &p.param {
+                                            RTsParamPropParam::Ident(p) => RPropName::Ident(p.id.clone()),
+                                            RTsParamPropParam::Assign(p) => match &p.left {
+                                                //
+                                                box RPat::Ident(i) => RPropName::Ident(i.id.clone()),
+                                                _ => unreachable!("binding pattern in property initializer"),
                                             },
-                                            value: None,
-                                            type_ann: None,
-                                            is_static: false,
-                                            decorators: vec![],
-                                            accessibility: p.accessibility,
-                                            is_abstract: false,
-                                            is_optional: false,
-                                            readonly: p.readonly,
-                                            definite: false,
-                                            is_override: false,
-                                        }));
-                                    }
-
-                                    p.accessibility = None;
-                                    p.readonly = false;
-
-                                    match &mut p.param {
-                                        RTsParamPropParam::Ident(_) => {}
-                                        RTsParamPropParam::Assign(RAssignPat {
-                                            left: box RPat::Ident(i), ..
-                                        }) => {
-                                            // Original pattern has default value, so it should be
-                                            // option
-                                            i.id.optional = true;
-                                            p.param = RTsParamPropParam::Ident(i.clone());
-                                        }
-                                        _ => {}
-                                    }
+                                        },
+                                        value: None,
+                                        type_ann: None,
+                                        is_static: false,
+                                        decorators: vec![],
+                                        accessibility: p.accessibility,
+                                        is_abstract: false,
+                                        is_optional: false,
+                                        readonly: p.readonly,
+                                        definite: false,
+                                        is_override: false,
+                                    }));
                                 }
-                                _ => {}
+
+                                p.accessibility = None;
+                                p.readonly = false;
+
+                                match &mut p.param {
+                                    RTsParamPropParam::Ident(_) => {}
+                                    RTsParamPropParam::Assign(RAssignPat {
+                                        left: box RPat::Ident(i), ..
+                                    }) => {
+                                        // Original pattern has default value, so it should be
+                                        // option
+                                        i.id.optional = true;
+                                        p.param = RTsParamPropParam::Ident(i.clone());
+                                    }
+                                    _ => {}
+                                }
                             }
                         }
                     }
@@ -527,12 +518,10 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                             m.accessibility = None;
                         }
 
-                        match &m.key {
-                            RPropName::Computed(e) => match &*e.expr {
-                                RExpr::Bin(..) => continue,
-                                _ => {}
-                            },
-                            _ => {}
+                        if let RPropName::Computed(e) = &m.key {
+                            if let RExpr::Bin(..) = &*e.expr {
+                                continue;
+                            }
                         }
                     }
 

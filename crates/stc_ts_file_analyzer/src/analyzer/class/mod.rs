@@ -1006,11 +1006,9 @@ impl Analyzer<'_, '_> {
                             continue;
                         }
 
-                        if last {
-                            if name.unwrap().eq_ignore_span(&m.key) {
-                                spans.push((span, m.is_abstract));
-                                last_was_abstract = m.is_abstract;
-                            }
+                        if last && name.unwrap().eq_ignore_span(&m.key) {
+                            spans.push((span, m.is_abstract));
+                            last_was_abstract = m.is_abstract;
                         }
 
                         if last || !name.unwrap().eq_ignore_span(&m.key) {
@@ -1019,7 +1017,7 @@ impl Analyzer<'_, '_> {
                             let spans_for_error = take(&mut spans);
 
                             {
-                                let has_abstract = spans_for_error.iter().any(|(_, v)| *v == true);
+                                let has_abstract = spans_for_error.iter().any(|(_, v)| *v);
                                 let has_concrete = spans_for_error.iter().any(|(_, v)| *v == false);
 
                                 if has_abstract && has_concrete {
@@ -1554,27 +1552,24 @@ impl Analyzer<'_, '_> {
                                         .types
                                         .iter()
                                         .map(|ty| {
-                                            match ty.normalize() {
-                                                Type::Class(c) => {
-                                                    has_class_in_super = true;
-                                                    // class A -> typeof A
-                                                    return c
-                                                        .def
-                                                        .name
-                                                        .as_ref()
-                                                        .map(|id| {
-                                                            Type::Query(QueryType {
-                                                                span: c.span,
-                                                                expr: box QueryExpr::TsEntityName(id.clone().into()),
-                                                                metadata: QueryTypeMetadata {
-                                                                    common: c.metadata.common,
-                                                                    ..Default::default()
-                                                                },
-                                                            })
+                                            if let Type::Class(c) = ty.normalize() {
+                                                has_class_in_super = true;
+                                                // class A -> typeof A
+                                                return c
+                                                    .def
+                                                    .name
+                                                    .as_ref()
+                                                    .map(|id| {
+                                                        Type::Query(QueryType {
+                                                            span: c.span,
+                                                            expr: box QueryExpr::TsEntityName(id.clone().into()),
+                                                            metadata: QueryTypeMetadata {
+                                                                common: c.metadata.common,
+                                                                ..Default::default()
+                                                            },
                                                         })
-                                                        .expect("Super class should be named");
-                                                }
-                                                _ => {}
+                                                    })
+                                                    .expect("Super class should be named");
                                             }
 
                                             ty.clone()
