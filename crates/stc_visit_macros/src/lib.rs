@@ -161,7 +161,7 @@ fn make_arm(path: &Path, fields: &Fields) -> Set<Arm> {
             expr: q!(Vars { val: &val }, { val }).parse(),
         });
 
-        let exprs = make_visit_expr(&val, &f);
+        let exprs = make_visit_expr(&val, f);
         stmts.push(Set {
             fold: q!(
                 Vars {

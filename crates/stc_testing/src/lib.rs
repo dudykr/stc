@@ -21,8 +21,12 @@ pub fn get_git_root() -> PathBuf {
 
 /// Used for loading golden txt files.
 pub fn load_txt(path: &str) -> Vec<String> {
-    let s = read_to_string(&path).expect("failed to load txt file");
-    s.lines().map(|s| s.trim()).filter(|&s| s != "").map(|s| s.to_string()).collect()
+    let s = read_to_string(path).expect("failed to load txt file");
+    s.lines()
+        .map(|s| s.trim())
+        .filter(|&s| !s.is_empty())
+        .map(|s| s.to_string())
+        .collect()
 }
 
 pub fn logger(level: Level) -> impl tracing::Subscriber {

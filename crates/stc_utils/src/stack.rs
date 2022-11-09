@@ -53,5 +53,5 @@ fn with_ctx<T>(f: impl FnOnce(&mut usize) -> T) -> T {
     thread_local! {
         static CTX: RefCell<usize> = RefCell::new(0);
     }
-    CTX.with(|ctx| f(&mut *ctx.borrow_mut()))
+    CTX.with(|ctx| f(&mut ctx.borrow_mut()))
 }

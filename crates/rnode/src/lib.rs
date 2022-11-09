@@ -136,17 +136,11 @@ where
     type Orig = Option<R::Orig>;
 
     fn from_orig(g: &mut NodeIdGenerator, orig: Self::Orig) -> Self {
-        match orig {
-            Some(v) => Some(R::from_orig(g, v)),
-            None => None,
-        }
+        orig.map(|v| R::from_orig(g, v))
     }
 
     fn into_orig(self) -> Self::Orig {
-        match self {
-            Some(v) => Some(v.into_orig()),
-            None => None,
-        }
+        self.map(|v| v.into_orig())
     }
 }
 

@@ -97,9 +97,6 @@ where
     V: ?Sized + Fold<T>,
 {
     fn fold_children_with(self, visitor: &mut V) -> Self {
-        match self {
-            Some(value) => Some(visitor.fold(value)),
-            None => None,
-        }
+        self.map(|value| visitor.fold(value))
     }
 }

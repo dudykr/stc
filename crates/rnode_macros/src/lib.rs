@@ -625,7 +625,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
                 if nodes_to_convert.iter().any(|n| name == n) {
                     return RNodeField {
                         ty: Type::Path(TypePath {
-                            path: rnode_name.clone(),
+                            path: rnode_name,
                             qself: None,
                         }),
                         from_orig: q!(
@@ -652,8 +652,8 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
     }
 
     if arc {
-        if let Some(ty) = extract_opt(&ty) {
-            if let Some(ty) = extract_box(&ty) {
+        if let Some(ty) = extract_opt(ty) {
+            if let Some(ty) = extract_box(ty) {
                 let inner = handle_field(nodes_to_convert, &[], match_binding, ty);
                 // Option<Box<T>>
                 return RNodeField {
@@ -717,7 +717,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
         unimplemented!("rnode: #[arc] for {:?}", ty);
     }
 
-    if let Some(ty) = extract_box(&ty) {
+    if let Some(ty) = extract_box(ty) {
         let res = handle_field(nodes_to_convert, attrs, match_binding, ty);
 
         return RNodeField {
@@ -746,7 +746,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
         };
     }
 
-    if let Some(ty) = extract_opt(&ty) {
+    if let Some(ty) = extract_opt(ty) {
         let info = handle_field(nodes_to_convert, &[], match_binding, ty);
 
         return RNodeField {
@@ -770,7 +770,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
         };
     }
 
-    if let Some(ty) = extract_vec(&ty) {
+    if let Some(ty) = extract_vec(ty) {
         let mut info = handle_field(nodes_to_convert, attrs, match_binding, ty);
         info.ty = q!(Vars { ty: &info.ty }, (Vec<ty>)).parse();
 
@@ -804,7 +804,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
     // Vec<T> -> Vec<Arc<T>>
     // T -> Arc<T>
     if arc {
-        if let Some(ty) = extract_vec(&ty) {
+        if let Some(ty) = extract_vec(ty) {
             return RNodeField {
                 from_orig: q!(Vars { match_binding }, {
                     match_binding.into_iter().map(std::sync::Arc::new).collect()
@@ -823,7 +823,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
     }
 
     if ref_cell {
-        if let Some(ty) = extract_vec(&ty) {
+        if let Some(ty) = extract_vec(ty) {
             return RNodeField {
                 from_orig: q!(Vars { match_binding }, { match_binding.into_iter().collect() }).parse(),
                 to_orig: q!(Vars { match_binding }, { match_binding }).parse(),
@@ -858,12 +858,7 @@ fn handle_variant(variant: &Variant) -> RNodeVariant {
                         .into_pairs()
                         .map(|mut pair| {
                             let f = pair.value_mut();
-                            f.attrs = f
-                                .attrs
-                                .iter()
-                                .filter(|attr| !attr.path.is_ident("arc") && !attr.path.is_ident("refcell"))
-                                .cloned()
-                                .collect();
+                            f.attrs.retain(|attr| !attr.path.is_ident("arc") && !attr.path.is_ident("refcell"));
 
                             let new_ty = prefix_type_name(&f.ty);
                             f.ty = new_ty;
@@ -899,7 +894,7 @@ fn prefix_type_name(ty: &Type) -> Type {
         Type::Path(p) => {
             let new_name = p.path.get_ident().unwrap().new_ident_with(|s| format!("R{}", s));
 
-            return q!(Vars { new_name }, (new_name)).parse();
+            q!(Vars { new_name }, (new_name)).parse()
         }
         _ => unimplemented!("field type other than `Path`"),
     }
@@ -910,19 +905,17 @@ fn extract_generic<'a>(name: &str, ty: &'a Type) -> Option<&'a Type> {
         Type::Path(p) => {
             let last = p.path.segments.last().unwrap();
 
-            if !last.arguments.is_empty() {
-                if last.ident == name {
-                    match &last.arguments {
-                        PathArguments::AngleBracketed(tps) => {
-                            let arg = tps.args.first().unwrap();
+            if !last.arguments.is_empty() && last.ident == name {
+                match &last.arguments {
+                    PathArguments::AngleBracketed(tps) => {
+                        let arg = tps.args.first().unwrap();
 
-                            match arg {
-                                GenericArgument::Type(arg) => return Some(arg),
-                                _ => unimplemented!("generic parameter other than type"),
-                            }
+                        match arg {
+                            GenericArgument::Type(arg) => return Some(arg),
+                            _ => unimplemented!("generic parameter other than type"),
                         }
-                        _ => unimplemented!("Box() -> T or Box without a type parameter"),
                     }
+                    _ => unimplemented!("Box() -> T or Box without a type parameter"),
                 }
             }
         }

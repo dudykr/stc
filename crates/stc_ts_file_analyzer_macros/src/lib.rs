@@ -153,7 +153,7 @@ pub fn validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
                     let ty = &*pat_ty.ty;
 
                     // Find `T`
-                    if node_type == None {
+                    if node_type.is_none() {
                         match ty {
                             Type::Reference(ty) if ty.mutability.is_none() => {
                                 node_type = Some(ty.elem.clone());

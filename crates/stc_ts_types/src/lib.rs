@@ -212,7 +212,7 @@ impl Clone for Type {
             Type::Keyword(ty) => ty.clone().into(),
             Type::StaticThis(ty) => ty.clone().into(),
             Type::This(ty) => ty.clone().into(),
-            Type::Symbol(ty) => ty.clone().into(),
+            Type::Symbol(ty) => (*ty).into(),
 
             _ => {
                 scoped_thread_local!(static DEEP: ());
@@ -501,7 +501,7 @@ pub struct LitType {
 
 assert_eq_size!(LitType, [u8; 96]);
 
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct KeywordType {
     pub span: Span,
 
@@ -1127,7 +1127,7 @@ pub struct TypeParam {
 }
 
 /// FooEnum.A
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub span: Span,
     pub ctxt: ModuleId,
@@ -1949,12 +1949,12 @@ impl<'a> Iterator for Iter<'a> {
             Type::Union(ref u) => {
                 let ty = u.types.get(self.idx);
                 self.idx += 1;
-                return Some(&*ty?);
+                return Some(ty?);
             }
 
             _ if self.idx == 0 => {
                 self.idx = 1;
-                Some(&self.ty)
+                Some(self.ty)
             }
 
             _ => None,

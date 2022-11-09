@@ -32,7 +32,7 @@ pub fn span(_: String) -> () {}
 /// Add a context to created errors and configures a context for panic.
 #[cfg(debug_assertions)]
 pub fn span(msg: String) -> ContextGuard {
-    let msg = msg.to_string();
+    let msg = msg;
     with_ctx(|ctx| ctx.push(msg.clone()));
     ContextGuard {
         _panic_ctxt: panic_context::new(msg),
@@ -53,5 +53,5 @@ fn with_ctx<T>(f: impl FnOnce(&mut Vec<String>) -> T) -> T {
     thread_local! {
         static CTX: RefCell<Vec<String>> = RefCell::new(Vec::new());
     }
-    CTX.with(|ctx| f(&mut *ctx.borrow_mut()))
+    CTX.with(|ctx| f(&mut ctx.borrow_mut()))
 }
