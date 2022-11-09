@@ -278,15 +278,14 @@ pub trait EnvFactory {
     fn new(env: StableEnv, rule: Rule, target: EsVersion, module: ModuleConfig, builtin: Arc<BuiltIn>) -> Env;
     fn simple(rule: Rule, target: EsVersion, module: ModuleConfig, libs: &[Lib]) -> Env {
         static STABLE_ENV: Lazy<StableEnv> = Lazy::new(Default::default);
-        static CACHE: Lazy<DashMap<Vec<Lib>, OnceCell<Arc<BuiltIn>>, ahash::RandomState>> = Lazy::new(Default::default);
+        static CACHE: Lazy<DashMap<Vec<Lib>, Arc<OnceCell<Arc<BuiltIn>>>, ahash::RandomState>> = Lazy::new(Default::default);
 
         // TODO(kdy1): Include `env` in cache
         let mut libs = libs.to_vec();
         libs.sort();
         libs.dedup();
 
-        CACHE.entry(libs.clone()).or_default();
-        let cell = CACHE.get(&libs).unwrap().value().clone();
+        let cell = CACHE.entry(libs.clone()).or_default().clone();
 
         let builtin = swc_common::GLOBALS.set(STABLE_ENV.swc_globals(), || {
             let builtin = cell.get_or_init(|| {
