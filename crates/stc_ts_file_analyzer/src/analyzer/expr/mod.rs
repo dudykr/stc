@@ -301,6 +301,10 @@ impl Analyzer<'_, '_> {
                     return self.type_of_member_expr(expr, mode);
                 }
 
+                RExpr::SuperProp(ref expr) => {
+                    return self.type_of_super_prop_expr(expr, mode);
+                }
+
                 RExpr::MetaProp(e) => return e.validate_with(self),
 
                 RExpr::Invalid(ref i) => return Ok(Type::any(i.span(), Default::default())),
