@@ -346,12 +346,12 @@ impl Analyzer<'_, '_> {
                 return self
                     .assign_with_opts(
                         &mut Default::default(),
+                        lhs,
+                        rhs,
                         AssignOpts {
                             span,
                             ..Default::default()
                         },
-                        lhs,
-                        rhs,
                     )
                     .convert_err(|err| Error::InvalidOpAssign {
                         span,
@@ -370,17 +370,17 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign(&mut self, span: Span, data: &mut AssignData, left: &Type, right: &Type) -> VResult<()> {
         self.assign_with_opts(
             data,
+            left,
+            right,
             AssignOpts {
                 span,
                 ..Default::default()
             },
-            left,
-            right,
         )
     }
 
     /// Assign `right` to `left`. You can just use default for [AssignData].
-    pub(crate) fn assign_with_opts(&mut self, data: &mut AssignData, opts: AssignOpts, left: &Type, right: &Type) -> VResult<()> {
+    pub(crate) fn assign_with_opts(&mut self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
@@ -677,7 +677,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if let Some(res) = self.assign_to_builtin(data, opts, &to, &rhs) {
+        if let Some(res) = self.assign_to_builtin(data, &to, &rhs, opts) {
             return res;
         }
 
@@ -696,12 +696,12 @@ impl Analyzer<'_, '_> {
 
         match (to, rhs) {
             (Type::Rest(lr), r) => match lr.ty.normalize() {
-                Type::Array(la) => return self.assign_with_opts(data, opts, &la.elem_type, &r),
+                Type::Array(la) => return self.assign_with_opts(data, &la.elem_type, &r, opts),
                 _ => {}
             },
 
             (l, Type::Rest(rr)) => match rr.ty.normalize() {
-                Type::Array(ra) => return self.assign_with_opts(data, opts, &l, &ra.elem_type),
+                Type::Array(ra) => return self.assign_with_opts(data, &l, &ra.elem_type, opts),
                 _ => {}
             },
 
@@ -869,10 +869,10 @@ impl Analyzer<'_, '_> {
         match (to, rhs) {
             (Type::Conditional(lc), Type::Conditional(rc)) => {
                 if lc.check_type.type_eq(&rc.check_type) && lc.extends_type.type_eq(&rc.extends_type) {
-                    self.assign_with_opts(data, opts, &lc.true_type, &rc.true_type)
+                    self.assign_with_opts(data, &lc.true_type, &rc.true_type, opts)
                         .context("tried to assign the true type of a conditional type to it of similar conditional type")?;
 
-                    self.assign_with_opts(data, opts, &lc.false_type, &rc.false_type)
+                    self.assign_with_opts(data, &lc.false_type, &rc.false_type, opts)
                         .context("tried to assign the true type of a conditional type to it of similar conditional type")?;
 
                     return Ok(());
@@ -886,12 +886,12 @@ impl Analyzer<'_, '_> {
                     match (l_variance, r_variance) {
                         (Variance::Covariant, Variance::Covariant) => {
                             return self
-                                .assign_with_opts(data, opts, &lc.check_type, &rc.check_type)
+                                .assign_with_opts(data, &lc.check_type, &rc.check_type, opts)
                                 .context("tried assignment of covariant types")
                         }
                         (Variance::Contravariant, Variance::Contravariant) => {
                             return self
-                                .assign_with_opts(data, opts, &rc.check_type, &lc.check_type)
+                                .assign_with_opts(data, &rc.check_type, &lc.check_type, opts)
                                 .context("tried assignment of contravariant types")
                         }
                         _ => {
@@ -908,18 +908,18 @@ impl Analyzer<'_, '_> {
 
         match (to, rhs) {
             (_, Type::Conditional(rc)) => {
-                self.assign_with_opts(data, opts, to, &rc.true_type)
+                self.assign_with_opts(data, to, &rc.true_type, opts)
                     .context("tried to assign the true type of a conditional type to lhs")?;
-                self.assign_with_opts(data, opts, to, &rc.false_type)
+                self.assign_with_opts(data, to, &rc.false_type, opts)
                     .context("tried to assign the false type of a conditional type to lhs")?;
 
                 return Ok(());
             }
 
             (Type::Conditional(lc), _) => {
-                self.assign_with_opts(data, opts, &lc.true_type, &rhs)
+                self.assign_with_opts(data, &lc.true_type, &rhs, opts)
                     .context("tried to assign to the true type")?;
-                self.assign_with_opts(data, opts, &lc.false_type, &rhs)
+                self.assign_with_opts(data, &lc.false_type, &rhs, opts)
                     .context("tried to assign to the false type")?;
 
                 return Ok(());
@@ -1046,12 +1046,12 @@ impl Analyzer<'_, '_> {
                     match self
                         .assign_with_opts(
                             data,
+                            &ty,
+                            rhs,
                             AssignOpts {
                                 allow_unknown_rhs: true,
                                 ..opts
                             },
-                            &ty,
-                            rhs,
                         )
                         .context("tried to assign to an element of an intersection type")
                         .convert_err(|err| Error::SimpleAssignFailed {
@@ -1073,7 +1073,7 @@ impl Analyzer<'_, '_> {
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
 
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(data, opts, lhs.span, &lhs.members, &rhs, lhs.metadata)
+                        self.assign_to_type_elements(data, lhs.span, &lhs.members, &rhs, lhs.metadata, opts)
                             .with_context(|| {
                                 format!(
                                     "tried to check if unknown rhs exists while assigning to an intersection type:\nLHS: {}",
@@ -1108,7 +1108,7 @@ impl Analyzer<'_, '_> {
                 | Type::Class(..)
                 | Type::Predicate(..) => {
                     return self
-                        .assign_to_class(data, opts, l, rhs)
+                        .assign_to_class(data, l, rhs, opts)
                         .context("tried to assign a type to an instance of a class")
                 }
                 Type::Array(..) | Type::ClassDef(..) => {
@@ -1118,7 +1118,7 @@ impl Analyzer<'_, '_> {
             },
             Type::ClassDef(l) => {
                 return self
-                    .assign_to_class_def(data, opts, l, rhs)
+                    .assign_to_class_def(data, l, rhs, opts)
                     .context("tried to assign a type to a class definition")
             }
 
@@ -1155,7 +1155,7 @@ impl Analyzer<'_, '_> {
                 _ => fail!(),
             },
 
-            Type::Query(ref to) => return self.assign_to_query_type(data, opts, to, &rhs),
+            Type::Query(ref to) => return self.assign_to_query_type(data, to, &rhs, opts),
 
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::ReadOnly,
@@ -1163,7 +1163,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 return self
-                    .assign_with_opts(data, opts, &ty, rhs)
+                    .assign_with_opts(data, &ty, rhs, opts)
                     .context("tried to assign a type to an operand of readonly type")
             }
 
@@ -1188,7 +1188,7 @@ impl Analyzer<'_, '_> {
 
             Type::Query(rhs) => {
                 return self
-                    .assign_query_type_to_type(data, opts, to, &rhs)
+                    .assign_query_type_to_type(data, to, &rhs, opts)
                     .context("tried to assign a query type to another type")
             }
 
@@ -1292,12 +1292,12 @@ impl Analyzer<'_, '_> {
 
                             self.assign_with_opts(
                                 data,
+                                to,
+                                rhs,
                                 AssignOpts {
                                     allow_unknown_rhs: true,
                                     ..opts
                                 },
-                                to,
-                                rhs,
                             )
                         })
                         .collect::<Result<_, _>>()
@@ -1309,7 +1309,7 @@ impl Analyzer<'_, '_> {
                 let errors = r
                     .types
                     .iter()
-                    .filter_map(|rhs| match self.assign_with_opts(data, opts, to, rhs) {
+                    .filter_map(|rhs| match self.assign_with_opts(data, to, rhs, opts) {
                         Ok(()) => None,
                         Err(err) => Some(err),
                     })
@@ -1387,7 +1387,7 @@ impl Analyzer<'_, '_> {
         }
 
         match to {
-            Type::Mapped(to) => return self.assign_to_mapped(data, opts, to, rhs),
+            Type::Mapped(to) => return self.assign_to_mapped(data, to, rhs, opts),
             Type::Param(TypeParam {
                 constraint: Some(ref c), ..
             }) => {
@@ -1455,7 +1455,7 @@ impl Analyzer<'_, '_> {
                                         ..
                                     }) => {
                                         if let Some(type_ann) = &m.type_ann {
-                                            return self.assign_with_opts(data, opts, elem_type, type_ann);
+                                            return self.assign_with_opts(data, elem_type, type_ann, opts);
                                         }
                                     }
                                     _ => {}
@@ -1478,12 +1478,12 @@ impl Analyzer<'_, '_> {
 
                             self.assign_with_opts(
                                 data,
+                                elem_type,
+                                &rhs_el,
                                 AssignOpts {
                                     allow_iterable_on_rhs: false,
                                     ..opts
                                 },
-                                elem_type,
-                                &rhs_el,
                             )?;
                         };
 
@@ -1571,12 +1571,12 @@ impl Analyzer<'_, '_> {
                     .map(|to| {
                         self.assign_with_opts(
                             data,
+                            &to,
+                            rhs,
                             AssignOpts {
                                 allow_unknown_rhs_if_expanded: true,
                                 ..opts
                             },
-                            &to,
-                            rhs,
                         )
                         .context("tried to assign a type to a union")
                     })
@@ -1825,15 +1825,15 @@ impl Analyzer<'_, '_> {
 
                 self.assign_to_type_elements(
                     data,
+                    span,
+                    &body,
+                    rhs,
+                    Default::default(),
                     AssignOpts {
                         allow_unknown_rhs: true,
                         allow_assignment_of_array_to_optional_type_lit: true,
                         ..opts
                     },
-                    span,
-                    &body,
-                    rhs,
-                    Default::default(),
                 )
                 .context("tried to assign a type to an interface")?;
 
@@ -1848,12 +1848,12 @@ impl Analyzer<'_, '_> {
 
                     let res = self.assign_with_opts(
                         data,
+                        &parent,
+                        &rhs,
                         AssignOpts {
                             allow_unknown_rhs: true,
                             ..opts
                         },
-                        &parent,
-                        &rhs,
                     );
 
                     errors.extend(res.err());
@@ -1910,7 +1910,7 @@ impl Analyzer<'_, '_> {
                 if !opts.allow_unknown_rhs && !opts.allow_unknown_rhs_if_expanded {
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(data, opts, span, &lhs.members, rhs, Default::default())
+                        self.assign_to_type_elements(data, span, &lhs.members, rhs, Default::default(), opts)
                             .with_context(|| {
                                 format!(
                                     "tried to assign a type to an interface to check if unknown rhs exists\nLHS: {}\nRHS: {}",
@@ -1936,7 +1936,7 @@ impl Analyzer<'_, '_> {
 
             Type::TypeLit(TypeLit { ref members, metadata, .. }) => {
                 return self
-                    .assign_to_type_elements(data, opts, span, &members, rhs, *metadata)
+                    .assign_to_type_elements(data, span, &members, rhs, *metadata, opts)
                     .context("tried to assign a type to type elements");
             }
 
@@ -1964,7 +1964,7 @@ impl Analyzer<'_, '_> {
 
             Type::Function(lf) => match rhs {
                 Type::Function(..) | Type::TypeLit(..) | Type::Interface(..) => {
-                    return self.assign_to_function(data, opts, to, lf, rhs).with_context(|| {
+                    return self.assign_to_function(data, to, lf, rhs, opts).with_context(|| {
                         format!(
                             "tried to assign to a function type: {}",
                             dump_type_as_string(&self.cm, &Type::Function(lf.clone()))
@@ -2098,12 +2098,12 @@ impl Analyzer<'_, '_> {
 
                                 self.assign_with_opts(
                                     data,
+                                    &elem.ty,
+                                    &r_ty,
                                     AssignOpts {
                                         allow_iterable_on_rhs: false,
                                         ..opts
                                     },
-                                    &elem.ty,
-                                    &r_ty,
                                 )?;
                             }
 
@@ -2115,7 +2115,7 @@ impl Analyzer<'_, '_> {
 
             Type::Constructor(ref lc) => {
                 return self
-                    .assign_to_constructor(data, opts, to, &lc, rhs)
+                    .assign_to_constructor(data, to, &lc, rhs, opts)
                     .context("tried to assign to a constructor type")
             }
 
@@ -2192,13 +2192,13 @@ impl Analyzer<'_, '_> {
                 return self
                     .assign_with_opts(
                         data,
-                        opts,
                         &Type::Keyword(KeywordType {
                             span: DUMMY_SP,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
                         }),
                         rhs,
+                        opts,
                     )
                     .context("tried to assign a type to a `keyof TypeParam`")
             }
@@ -2320,7 +2320,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// Currently only literals and unions are supported for `keys`.
-    fn assign_keys(&mut self, data: &mut AssignData, opts: AssignOpts, keys: &Type, rhs: &Type) -> VResult<()> {
+    fn assign_keys(&mut self, data: &mut AssignData, keys: &Type, rhs: &Type, opts: AssignOpts) -> VResult<()> {
         let keys = keys.normalize();
         let rhs = rhs.normalize();
 
@@ -2329,17 +2329,17 @@ impl Analyzer<'_, '_> {
 
         self.assign_with_opts(
             data,
+            &keys,
+            &rhs_keys,
             AssignOpts {
                 allow_unknown_rhs: true,
                 ..opts
             },
-            &keys,
-            &rhs_keys,
         )
         .context("tried to assign keys")
     }
 
-    fn assign_to_mapped(&mut self, data: &mut AssignData, opts: AssignOpts, l: &Mapped, r: &Type) -> VResult<()> {
+    fn assign_to_mapped(&mut self, data: &mut AssignData, l: &Mapped, r: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         let mut r = self
             .normalize(Some(span), Cow::Borrowed(&r), NormalizeTypeOpts { ..Default::default() })
@@ -2361,7 +2361,7 @@ impl Analyzer<'_, '_> {
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                     {
-                        self.assign_to_mapped(data, opts, l, &r)
+                        self.assign_to_mapped(data, l, &r, opts)
                             .context("tried to assign a type to a mapped type by converting it to a type literal")?;
                         return Ok(());
                     }
@@ -2369,7 +2369,7 @@ impl Analyzer<'_, '_> {
 
                 Type::TypeLit(rt) => {
                     match &l.type_param.constraint {
-                        Some(constraint) => self.assign_keys(data, opts, &constraint, &r)?,
+                        Some(constraint) => self.assign_keys(data, &constraint, &r, opts)?,
                         None => {}
                     }
 
@@ -2378,7 +2378,7 @@ impl Analyzer<'_, '_> {
                         match member {
                             TypeElement::Property(prop) => {
                                 if let Some(prop_ty) = &prop.type_ann {
-                                    self.assign_with_opts(data, opts, &l_ty, &prop_ty)?;
+                                    self.assign_with_opts(data, &l_ty, &prop_ty, opts)?;
                                 }
                             }
                             _ => Err(Error::Unimplemented {

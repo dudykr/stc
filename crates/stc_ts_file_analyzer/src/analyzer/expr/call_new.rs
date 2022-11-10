@@ -2826,13 +2826,13 @@ impl Analyzer<'_, '_> {
                                         let res = self
                                             .assign_with_opts(
                                                 &mut Default::default(),
+                                                &param_ty.elems[0].ty,
+                                                &arg.ty,
                                                 AssignOpts {
                                                     span: arg.span(),
                                                     allow_iterable_on_rhs: true,
                                                     ..Default::default()
                                                 },
-                                                &param_ty.elems[0].ty,
-                                                &arg.ty,
                                             )
                                             .convert_err(|err| Error::WrongArgType {
                                                 span: arg.span(),
@@ -2864,13 +2864,13 @@ impl Analyzer<'_, '_> {
                                             let res = self
                                                 .assign_with_opts(
                                                     &mut Default::default(),
+                                                    &param_elem.ty,
+                                                    &arg.ty,
                                                     AssignOpts {
                                                         span: arg.span(),
                                                         allow_iterable_on_rhs: true,
                                                         ..Default::default()
                                                     },
-                                                    &param_elem.ty,
-                                                    &arg.ty,
                                                 )
                                                 .convert_err(|err| Error::WrongArgType {
                                                     span: arg.span(),
@@ -2897,13 +2897,13 @@ impl Analyzer<'_, '_> {
                             if arg.spread.is_some() {
                                 if let Ok(()) = self.assign_with_opts(
                                     &mut Default::default(),
+                                    &param.ty,
+                                    &arg.ty,
                                     AssignOpts {
                                         span: arg.span(),
                                         allow_iterable_on_rhs: true,
                                         ..Default::default()
                                     },
-                                    &param.ty,
-                                    &arg.ty,
                                 ) {
                                     continue;
                                 }
@@ -2931,13 +2931,13 @@ impl Analyzer<'_, '_> {
                                 _ => {
                                     if let Ok(()) = self.assign_with_opts(
                                         &mut Default::default(),
+                                        &param.ty,
+                                        &arg.ty,
                                         AssignOpts {
                                             span: arg.span(),
                                             allow_iterable_on_rhs: true,
                                             ..Default::default()
                                         },
-                                        &param.ty,
-                                        &arg.ty,
                                     ) {
                                         continue;
                                     }
@@ -2961,12 +2961,12 @@ impl Analyzer<'_, '_> {
                         let res = self
                             .assign_with_opts(
                                 &mut Default::default(),
+                                &param.ty,
+                                &arg.ty,
                                 AssignOpts {
                                     span: arg.span(),
                                     ..Default::default()
                                 },
-                                &param.ty,
-                                &arg.ty,
                             )
                             .convert_err(|err| Error::WrongArgType {
                                 span: err.span(),
@@ -2984,14 +2984,14 @@ impl Analyzer<'_, '_> {
                             };
                         if let Err(err) = self.assign_with_opts(
                             &mut Default::default(),
+                            &param.ty,
+                            &arg.ty,
                             AssignOpts {
                                 span: arg.span(),
                                 allow_unknown_rhs,
                                 use_missing_fields_for_class: true,
                                 ..Default::default()
                             },
-                            &param.ty,
-                            &arg.ty,
                         ) {
                             let err = err.convert(|err| {
                                 match err {
@@ -3287,14 +3287,14 @@ impl Analyzer<'_, '_> {
                         if analyzer
                             .assign_with_opts(
                                 &mut Default::default(),
+                                &param.ty,
+                                &arg.ty,
                                 AssignOpts {
                                     span,
                                     allow_unknown_rhs: true,
                                     allow_assignment_to_param: true,
                                     ..Default::default()
                                 },
-                                &param.ty,
-                                &arg.ty,
                             )
                             .is_err()
                         {

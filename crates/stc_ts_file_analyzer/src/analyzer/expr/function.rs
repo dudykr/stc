@@ -200,13 +200,13 @@ impl Analyzer<'_, '_> {
                 if let Some(ref inferred) = inferred_return_type {
                     child.assign_with_opts(
                         &mut Default::default(),
+                        declared,
+                        inferred,
                         AssignOpts {
                             span,
                             allow_assignment_of_void: Some(true),
                             ..Default::default()
                         },
-                        declared,
-                        inferred,
                     )?;
                 }
             }

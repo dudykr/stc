@@ -15,13 +15,13 @@ use crate::{
 };
 
 impl Analyzer<'_, '_> {
-    pub(super) fn assign_to_class_def(&mut self, data: &mut AssignData, opts: AssignOpts, l: &ClassDef, r: &Type) -> VResult<()> {
+    pub(super) fn assign_to_class_def(&mut self, data: &mut AssignData, l: &ClassDef, r: &Type, opts: AssignOpts) -> VResult<()> {
         let r = r.normalize();
 
         match r {
             Type::Ref(..) => {
                 let r = self.expand_top_ref(opts.span, Cow::Borrowed(r), Default::default())?;
-                return self.assign_to_class_def(data, opts, l, &r);
+                return self.assign_to_class_def(data, l, &r, opts);
             }
 
             Type::Query(r_ty) => match &*r_ty.expr {
@@ -30,7 +30,7 @@ impl Analyzer<'_, '_> {
                         .resolve_typeof(opts.span, e)
                         .context("tried to resolve typeof for assignment")?;
 
-                    return self.assign_to_class_def(data, opts, l, &rhs);
+                    return self.assign_to_class_def(data, l, &rhs, opts);
                 }
                 QueryExpr::Import(_) => {}
             },
@@ -50,7 +50,7 @@ impl Analyzer<'_, '_> {
                     // let p: Parent;
                     // `p = c` is valid
                     if let Some(parent) = &rc.super_class {
-                        if self.assign_to_class_def(data, opts, l, &parent).is_ok() {
+                        if self.assign_to_class_def(data, l, &parent, opts).is_ok() {
                             return Ok(());
                         }
                     }
@@ -72,7 +72,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 for (i, lm) in l.body.iter().enumerate() {
-                    self.assign_class_members_to_class_member(data, opts, lm, r_body)
+                    self.assign_class_members_to_class_member(data, lm, r_body, opts)
                         .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}\n{:#?}", i, lm, r_body))?;
                 }
 
@@ -97,17 +97,17 @@ impl Analyzer<'_, '_> {
 
                 self.assign_to_type_elements(
                     data,
-                    AssignOpts {
-                        allow_unknown_rhs: true,
-                        is_assigning_to_class_members: true,
-                        ..opts
-                    },
                     l.span,
                     &lhs_members,
                     &r,
                     TypeLitMetadata {
                         specified: true,
                         ..Default::default()
+                    },
+                    AssignOpts {
+                        allow_unknown_rhs: true,
+                        is_assigning_to_class_members: true,
+                        ..opts
                     },
                 )
                 .context("tried to assign type elements to a class member")?;
@@ -123,7 +123,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    pub(super) fn assign_to_class(&mut self, data: &mut AssignData, opts: AssignOpts, l: &Class, r: &Type) -> VResult<()> {
+    pub(super) fn assign_to_class(&mut self, data: &mut AssignData, l: &Class, r: &Type, opts: AssignOpts) -> VResult<()> {
         // debug_assert!(!span.is_dummy());
 
         let r = r.normalize();
@@ -132,7 +132,7 @@ impl Analyzer<'_, '_> {
             Type::Ref(..) => {
                 let mut r = self.expand_top_ref(opts.span, Cow::Borrowed(r), Default::default())?;
                 r.make_clone_cheap();
-                return self.assign_to_class(data, opts, l, &r);
+                return self.assign_to_class(data, l, &r, opts);
             }
 
             Type::Class(rc) => {
@@ -156,7 +156,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 for (i, lm) in l.def.body.iter().enumerate() {
-                    self.assign_class_members_to_class_member(data, opts, lm, r_body)
+                    self.assign_class_members_to_class_member(data, lm, r_body, opts)
                         .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}\n{:#?}", i, lm, r_body))?;
                 }
 
@@ -169,7 +169,7 @@ impl Analyzer<'_, '_> {
                         let parent = self
                             .instantiate_class(opts.span, &parent)
                             .context("tried to instantiated class to assign the super class to a class")?;
-                        if self.assign_to_class(data, opts, l, &parent).is_ok() {
+                        if self.assign_to_class(data, l, &parent, opts).is_ok() {
                             return Ok(());
                         }
                     }
@@ -201,17 +201,17 @@ impl Analyzer<'_, '_> {
 
                 self.assign_to_type_elements(
                     data,
-                    AssignOpts {
-                        allow_unknown_rhs: true,
-                        is_assigning_to_class_members: true,
-                        ..opts
-                    },
                     l.span,
                     &lhs_members,
                     &r,
                     TypeLitMetadata {
                         specified: true,
                         ..Default::default()
+                    },
+                    AssignOpts {
+                        allow_unknown_rhs: true,
+                        is_assigning_to_class_members: true,
+                        ..opts
                     },
                 )
                 .context("tried to assign type elements to class members")?;
@@ -259,9 +259,9 @@ impl Analyzer<'_, '_> {
     fn assign_class_members_to_class_member(
         &mut self,
         data: &mut AssignData,
-        opts: AssignOpts,
         l: &ClassMember,
         r: &[ClassMember],
+        opts: AssignOpts,
     ) -> VResult<()> {
         let span = opts.span;
 
@@ -270,7 +270,7 @@ impl Analyzer<'_, '_> {
                 for rm in r {
                     match rm {
                         ClassMember::Constructor(rc) => {
-                            self.assign_params(data, opts, &lc.params, &rc.params)?;
+                            self.assign_params(data, &lc.params, &rc.params, opts)?;
                             // TODO(kdy1): Validate parameters and etc..
                             return Ok(());
                         }
@@ -295,7 +295,6 @@ impl Analyzer<'_, '_> {
 
                                 self.assign_to_fn_like(
                                     data,
-                                    opts,
                                     true,
                                     lm.type_params.as_ref(),
                                     &lm.params,
@@ -303,6 +302,7 @@ impl Analyzer<'_, '_> {
                                     rm.type_params.as_ref(),
                                     &rm.params,
                                     Some(&rm.ret_ty),
+                                    opts,
                                 )
                                 .context("tried to assign a class method to another one")?;
 

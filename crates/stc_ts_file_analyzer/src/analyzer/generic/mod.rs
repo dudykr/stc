@@ -677,12 +677,12 @@ impl Analyzer<'_, '_> {
                                 if let Some(prev) = e.iter().find(|prev| {
                                     self.assign_with_opts(
                                         &mut Default::default(),
+                                        prev,
+                                        &arg,
                                         AssignOpts {
                                             span,
                                             ..Default::default()
                                         },
-                                        prev,
-                                        &arg,
                                     )
                                     .is_ok()
                                 }) {
@@ -702,12 +702,12 @@ impl Analyzer<'_, '_> {
                                     if self
                                         .assign_with_opts(
                                             &mut Default::default(),
+                                            &arg,
+                                            prev,
                                             AssignOpts {
                                                 span,
                                                 ..Default::default()
                                             },
-                                            &arg,
-                                            prev,
                                         )
                                         .is_ok()
                                     {

@@ -2593,12 +2593,12 @@ impl Analyzer<'_, '_> {
                         if let Ok(index_type) = self.keyof(span, &ty) {
                             if let Ok(()) = self.assign_with_opts(
                                 &mut Default::default(),
+                                &index_type,
+                                &prop.ty(),
                                 AssignOpts {
                                     span,
                                     ..Default::default()
                                 },
-                                &index_type,
-                                &prop.ty(),
                             ) {
                                 return Ok(m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default())));
                             }

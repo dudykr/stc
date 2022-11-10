@@ -1299,12 +1299,12 @@ impl Analyzer<'_, '_> {
 
                             let params_res = self.assign_params(
                                 &mut Default::default(),
+                                &lm.params,
+                                &rm.params,
                                 AssignOpts {
                                     span,
                                     ..Default::default()
                                 },
-                                &lm.params,
-                                &rm.params,
                             );
 
                             if params_res.is_err() {
@@ -1314,13 +1314,13 @@ impl Analyzer<'_, '_> {
                             let ret_ty_res = match (lm.ret_ty.as_deref(), rm.ret_ty.as_deref()) {
                                 (Some(lt), Some(rt)) => self.assign_with_opts(
                                     &mut Default::default(),
+                                    &lt,
+                                    &rt,
                                     AssignOpts {
                                         span,
                                         allow_unknown_rhs: true,
                                         ..Default::default()
                                     },
-                                    &lt,
-                                    &rt,
                                 ),
                                 _ => Ok(()),
                             };

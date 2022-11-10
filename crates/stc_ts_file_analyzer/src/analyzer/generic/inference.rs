@@ -248,12 +248,12 @@ impl Analyzer<'_, '_> {
                             if self
                                 .assign_with_opts(
                                     &mut Default::default(),
+                                    &ty,
+                                    prev,
                                     AssignOpts {
                                         span,
                                         ..Default::default()
                                     },
-                                    &ty,
-                                    prev,
                                 )
                                 .is_ok()
                             {

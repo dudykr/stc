@@ -185,13 +185,13 @@ impl Analyzer<'_, '_> {
                 if let Some(left) = &type_ann {
                     self.assign_with_opts(
                         &mut Default::default(),
+                        &left,
+                        &right,
                         AssignOpts {
                             span: p.right.span(),
                             allow_assignment_to_param_constraint: false,
                             ..Default::default()
                         },
-                        &left,
-                        &right,
                     )
                     .report(&mut self.storage);
                 }
