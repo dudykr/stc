@@ -223,7 +223,7 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                Type::Array(arr) => {
+                Type::Array(..) | Type::Tuple(..) => {
                     return self
                         .keyof(
                             span,
