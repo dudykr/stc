@@ -369,14 +369,14 @@ impl Analyzer<'_, '_> {
                     return self
                         .assign_to_type_elements(
                             data,
-                            AssignOpts {
-                                allow_unknown_rhs: true,
-                                ..opts
-                            },
                             lhs_span,
                             lhs,
                             &rhs,
                             lhs_metadata,
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
                         )
                         .convert_err(|err| match err {
                             Error::Errors { span, .. } => Error::SimpleAssignFailed {

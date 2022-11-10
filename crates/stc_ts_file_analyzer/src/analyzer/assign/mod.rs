@@ -1108,7 +1108,7 @@ impl Analyzer<'_, '_> {
                 | Type::Class(..)
                 | Type::Predicate(..) => {
                     return self
-                        .assign_to_class(data, opts, l, rhs)
+                        .assign_to_class(data, l, rhs, opts)
                         .context("tried to assign a type to an instance of a class")
                 }
                 Type::Array(..) | Type::ClassDef(..) => {
@@ -1118,7 +1118,7 @@ impl Analyzer<'_, '_> {
             },
             Type::ClassDef(l) => {
                 return self
-                    .assign_to_class_def(data, opts, l, rhs)
+                    .assign_to_class_def(data, l, rhs, opts)
                     .context("tried to assign a type to a class definition")
             }
 
@@ -1155,7 +1155,7 @@ impl Analyzer<'_, '_> {
                 _ => fail!(),
             },
 
-            Type::Query(ref to) => return self.assign_to_query_type(data, opts, to, &rhs),
+            Type::Query(ref to) => return self.assign_to_query_type(data, to, &rhs, opts),
 
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::ReadOnly,
@@ -1163,7 +1163,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 return self
-                    .assign_with_opts(data, opts, &ty, rhs)
+                    .assign_with_opts(data, &ty, rhs, opts)
                     .context("tried to assign a type to an operand of readonly type")
             }
 
@@ -1188,7 +1188,7 @@ impl Analyzer<'_, '_> {
 
             Type::Query(rhs) => {
                 return self
-                    .assign_query_type_to_type(data, opts, to, &rhs)
+                    .assign_query_type_to_type(data, to, &rhs, opts)
                     .context("tried to assign a query type to another type")
             }
 
@@ -1292,12 +1292,12 @@ impl Analyzer<'_, '_> {
 
                             self.assign_with_opts(
                                 data,
+                                to,
+                                rhs,
                                 AssignOpts {
                                     allow_unknown_rhs: true,
                                     ..opts
                                 },
-                                to,
-                                rhs,
                             )
                         })
                         .collect::<Result<_, _>>()
@@ -1309,7 +1309,7 @@ impl Analyzer<'_, '_> {
                 let errors = r
                     .types
                     .iter()
-                    .filter_map(|rhs| match self.assign_with_opts(data, opts, to, rhs) {
+                    .filter_map(|rhs| match self.assign_with_opts(data, to, rhs, opts) {
                         Ok(()) => None,
                         Err(err) => Some(err),
                     })
