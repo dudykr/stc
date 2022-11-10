@@ -677,7 +677,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if let Some(res) = self.assign_to_builtin(data, opts, &to, &rhs) {
+        if let Some(res) = self.assign_to_builtin(data, &to, &rhs, opts) {
             return res;
         }
 
@@ -1046,12 +1046,12 @@ impl Analyzer<'_, '_> {
                     match self
                         .assign_with_opts(
                             data,
+                            &ty,
+                            rhs,
                             AssignOpts {
                                 allow_unknown_rhs: true,
                                 ..opts
                             },
-                            &ty,
-                            rhs,
                         )
                         .context("tried to assign to an element of an intersection type")
                         .convert_err(|err| Error::SimpleAssignFailed {
@@ -1073,7 +1073,7 @@ impl Analyzer<'_, '_> {
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
 
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(data, opts, lhs.span, &lhs.members, &rhs, lhs.metadata)
+                        self.assign_to_type_elements(data, lhs.span, &lhs.members, &rhs, lhs.metadata, opts)
                             .with_context(|| {
                                 format!(
                                     "tried to check if unknown rhs exists while assigning to an intersection type:\nLHS: {}",

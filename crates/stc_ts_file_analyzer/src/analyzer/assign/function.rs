@@ -585,7 +585,7 @@ impl Analyzer<'_, '_> {
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {
                     return self
-                        .assign_to_constructor(data, opts, lt, l, &ty)
+                        .assign_to_constructor(data, lt, l, &ty, opts)
                         .context("tried to assign an expanded type to a constructor type");
                 }
             }

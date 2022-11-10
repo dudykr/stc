@@ -19,7 +19,7 @@ impl Analyzer<'_, '_> {
                     .resolve_typeof(opts.span, e)
                     .context("tried to resolve typeof for assignment")?;
 
-                return self.assign_with_opts(data, opts, &to, rhs);
+                return self.assign_with_opts(data, &to, rhs, opts);
             }
             QueryExpr::Import(_) => {
                 unimplemented!("assignment of query type with import")
@@ -36,7 +36,7 @@ impl Analyzer<'_, '_> {
                     .resolve_typeof(opts.span, e)
                     .context("tried to resolve typeof for assignment")?;
 
-                return self.assign_with_opts(data, opts, to, &rhs);
+                return self.assign_with_opts(data, to, &rhs, opts);
             }
             QueryExpr::Import(_) => {
                 unimplemented!("assignment of query type with import")

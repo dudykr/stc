@@ -181,12 +181,12 @@ impl Analyzer<'_, '_> {
 
                     self.handle_assignment_of_type_elements_to_type_elements(
                         data,
-                        AssignOpts { allow_unknown_rhs, ..opts },
                         &mut missing_fields,
                         &mut unhandled_rhs,
                         lhs,
                         lhs_metadata,
                         &rhs_members,
+                        AssignOpts { allow_unknown_rhs, ..opts },
                     )
                     .with_context(|| {
                         format!(
@@ -307,14 +307,14 @@ impl Analyzer<'_, '_> {
 
                                 if let Ok(()) = self.assign_to_type_elements(
                                     data,
-                                    AssignOpts {
-                                        allow_unknown_rhs: true,
-                                        ..opts
-                                    },
                                     lhs_span,
                                     lhs,
                                     &rhs,
                                     lhs_metadata,
+                                    AssignOpts {
+                                        allow_unknown_rhs: true,
+                                        ..opts
+                                    },
                                 ) {
                                     return Ok(());
                                 }
@@ -328,14 +328,14 @@ impl Analyzer<'_, '_> {
                                 return self
                                     .assign_to_type_elements(
                                         data,
-                                        AssignOpts {
-                                            allow_unknown_rhs: true,
-                                            ..opts
-                                        },
                                         lhs_span,
                                         lhs,
                                         &rhs,
                                         lhs_metadata,
+                                        AssignOpts {
+                                            allow_unknown_rhs: true,
+                                            ..opts
+                                        },
                                     )
                                     .context("tried to assign a tuple as type literal to type elements");
                             }
