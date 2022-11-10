@@ -1223,9 +1223,11 @@ impl Analyzer<'_, '_> {
                                 TypeElement::Property(r_prop) => {
                                     done = true;
 
-                                    if self
-                                        .assign(span, &mut Default::default(), &li.params[0].ty, &r_prop.key.ty())
-                                        .is_ok()
+                                    let opts = AssignOpts {
+                                        span: r_prop.span.or_else(|| opts.span),
+                                        ..opts
+                                    };
+                                    if self.assign_inner(data, &li.params[0].ty, &r_prop.key.ty(), opts).is_ok()
                                         || li.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
                                     {
                                         if let Some(l_index_ret_ty) = &li.type_ann {
