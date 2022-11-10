@@ -63,6 +63,7 @@ mod constraint_reducer;
 mod function;
 mod jsx;
 mod meta_prop;
+mod misc;
 mod object;
 pub(crate) mod optional_chaining;
 mod type_cast;
@@ -319,6 +320,8 @@ impl Analyzer<'_, '_> {
                 RExpr::OptChain(expr) => expr.validate_with_args(self, type_ann),
 
                 RExpr::TsConstAssertion(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
+
+                RExpr::TsSatisfies(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
 
                 _ => unimplemented!("typeof ({:?})", e),
             }
