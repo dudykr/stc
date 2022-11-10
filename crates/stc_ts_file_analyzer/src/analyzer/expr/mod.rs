@@ -223,6 +223,13 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                     }));
                 }
+                RExpr::Lit(RLit::BigInt(v)) => {
+                    return Ok(Type::Lit(LitType {
+                        span: v.span,
+                        lit: RTsLit::BigInt(v.clone()),
+                        metadata: Default::default(),
+                    }));
+                }
                 RExpr::Lit(RLit::Null(RNull { span })) => {
                     if self.ctx.in_export_default_expr {
                         // TODO(kdy1): strict mode
