@@ -1836,6 +1836,7 @@ impl Analyzer<'_, '_> {
                     AssignOpts {
                         allow_unknown_rhs: true,
                         allow_assignment_of_array_to_optional_type_lit: true,
+                        report_object_instead_of_fields: true,
                         ..opts
                     },
                 )
@@ -1914,14 +1915,24 @@ impl Analyzer<'_, '_> {
                 if !opts.allow_unknown_rhs && !opts.allow_unknown_rhs_if_expanded {
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(data, span, &lhs.members, rhs, Default::default(), opts)
-                            .with_context(|| {
-                                format!(
-                                    "tried to assign a type to an interface to check if unknown rhs exists\nLHS: {}\nRHS: {}",
-                                    dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned())),
-                                    dump_type_as_string(&self.cm, rhs)
-                                )
-                            })?;
+                        self.assign_to_type_elements(
+                            data,
+                            span,
+                            &lhs.members,
+                            rhs,
+                            Default::default(),
+                            AssignOpts {
+                                report_object_instead_of_fields: true,
+                                ..opts
+                            },
+                        )
+                        .with_context(|| {
+                            format!(
+                                "tried to assign a type to an interface to check if unknown rhs exists\nLHS: {}\nRHS: {}",
+                                dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned())),
+                                dump_type_as_string(&self.cm, rhs)
+                            )
+                        })?;
                     }
                 }
 
