@@ -19,7 +19,7 @@ export RUST_BACKTRACE=1
 export RUST_MIN_STACK=$((16 * 1024 * 1024))
 
 # We prevent regression using faster checks
-./scripts/bash.sh
+./scripts/base.sh
 
 RUST_LOG=off TEST='' DONT_PRINT_MATCHED=1 cargo test --test tsc \
   | tee /dev/stderr \
