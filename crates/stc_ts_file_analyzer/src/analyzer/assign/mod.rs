@@ -150,6 +150,10 @@ pub(crate) struct AssignOpts {
 
     // Method definitions are bivariant (method shorthand)
     pub is_params_of_method_definition: bool,
+
+    /// If true, [Error::ObjectAssignFailed] will be used instead of
+    /// [Error::Errors]
+    pub report_object_instead_of_fields: bool,
 }
 
 #[derive(Default)]

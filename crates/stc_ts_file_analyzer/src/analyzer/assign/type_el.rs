@@ -211,7 +211,7 @@ impl Analyzer<'_, '_> {
                     })
                     .store(&mut errors);
 
-                    if !errors.is_empty() {
+                    if !errors.is_empty() && !opts.report_object_instead_of_fields {
                         return Err(Error::Errors {
                             span,
                             errors: Error::flatten(errors),
