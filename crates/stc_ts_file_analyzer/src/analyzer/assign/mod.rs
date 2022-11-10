@@ -1387,7 +1387,7 @@ impl Analyzer<'_, '_> {
         }
 
         match to {
-            Type::Mapped(to) => return self.assign_to_mapped(data, opts, to, rhs),
+            Type::Mapped(to) => return self.assign_to_mapped(data, to, rhs, opts),
             Type::Param(TypeParam {
                 constraint: Some(ref c), ..
             }) => {
@@ -1455,7 +1455,7 @@ impl Analyzer<'_, '_> {
                                         ..
                                     }) => {
                                         if let Some(type_ann) = &m.type_ann {
-                                            return self.assign_with_opts(data, opts, elem_type, type_ann);
+                                            return self.assign_with_opts(data, elem_type, type_ann, opts);
                                         }
                                     }
                                     _ => {}
@@ -1478,12 +1478,12 @@ impl Analyzer<'_, '_> {
 
                             self.assign_with_opts(
                                 data,
+                                elem_type,
+                                &rhs_el,
                                 AssignOpts {
                                     allow_iterable_on_rhs: false,
                                     ..opts
                                 },
-                                elem_type,
-                                &rhs_el,
                             )?;
                         };
 
@@ -1571,12 +1571,12 @@ impl Analyzer<'_, '_> {
                     .map(|to| {
                         self.assign_with_opts(
                             data,
+                            &to,
+                            rhs,
                             AssignOpts {
                                 allow_unknown_rhs_if_expanded: true,
                                 ..opts
                             },
-                            &to,
-                            rhs,
                         )
                         .context("tried to assign a type to a union")
                     })
@@ -1825,15 +1825,15 @@ impl Analyzer<'_, '_> {
 
                 self.assign_to_type_elements(
                     data,
+                    span,
+                    &body,
+                    rhs,
+                    Default::default(),
                     AssignOpts {
                         allow_unknown_rhs: true,
                         allow_assignment_of_array_to_optional_type_lit: true,
                         ..opts
                     },
-                    span,
-                    &body,
-                    rhs,
-                    Default::default(),
                 )
                 .context("tried to assign a type to an interface")?;
 
@@ -1848,12 +1848,12 @@ impl Analyzer<'_, '_> {
 
                     let res = self.assign_with_opts(
                         data,
+                        &parent,
+                        &rhs,
                         AssignOpts {
                             allow_unknown_rhs: true,
                             ..opts
                         },
-                        &parent,
-                        &rhs,
                     );
 
                     errors.extend(res.err());
@@ -1910,7 +1910,7 @@ impl Analyzer<'_, '_> {
                 if !opts.allow_unknown_rhs && !opts.allow_unknown_rhs_if_expanded {
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(data, opts, span, &lhs.members, rhs, Default::default())
+                        self.assign_to_type_elements(data, span, &lhs.members, rhs, Default::default(), opts)
                             .with_context(|| {
                                 format!(
                                     "tried to assign a type to an interface to check if unknown rhs exists\nLHS: {}\nRHS: {}",
@@ -1936,7 +1936,7 @@ impl Analyzer<'_, '_> {
 
             Type::TypeLit(TypeLit { ref members, metadata, .. }) => {
                 return self
-                    .assign_to_type_elements(data, opts, span, &members, rhs, *metadata)
+                    .assign_to_type_elements(data, span, &members, rhs, *metadata, opts)
                     .context("tried to assign a type to type elements");
             }
 
@@ -1964,7 +1964,7 @@ impl Analyzer<'_, '_> {
 
             Type::Function(lf) => match rhs {
                 Type::Function(..) | Type::TypeLit(..) | Type::Interface(..) => {
-                    return self.assign_to_function(data, opts, to, lf, rhs).with_context(|| {
+                    return self.assign_to_function(data, to, lf, rhs, opts).with_context(|| {
                         format!(
                             "tried to assign to a function type: {}",
                             dump_type_as_string(&self.cm, &Type::Function(lf.clone()))
@@ -2098,12 +2098,12 @@ impl Analyzer<'_, '_> {
 
                                 self.assign_with_opts(
                                     data,
+                                    &elem.ty,
+                                    &r_ty,
                                     AssignOpts {
                                         allow_iterable_on_rhs: false,
                                         ..opts
                                     },
-                                    &elem.ty,
-                                    &r_ty,
                                 )?;
                             }
 

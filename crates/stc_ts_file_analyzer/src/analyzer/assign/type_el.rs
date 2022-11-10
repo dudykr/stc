@@ -418,14 +418,14 @@ impl Analyzer<'_, '_> {
                     return self
                         .assign_to_type_elements(
                             data,
-                            AssignOpts {
-                                allow_unknown_rhs: true,
-                                ..opts
-                            },
                             lhs_span,
                             lhs,
                             &rhs,
                             lhs_metadata,
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
                         )
                         .context("tried to assign a class instance to type elements");
                 }
@@ -465,14 +465,14 @@ impl Analyzer<'_, '_> {
                     return self
                         .assign_to_type_elements(
                             data,
-                            AssignOpts {
-                                allow_unknown_rhs: true,
-                                ..opts
-                            },
                             lhs_span,
                             lhs,
                             &rhs,
                             lhs_metadata,
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
                         )
                         .context("tried to assign an enum to type elements");
                 }
@@ -487,7 +487,7 @@ impl Analyzer<'_, '_> {
                     rhs.make_clone_cheap();
 
                     return self
-                        .assign_to_type_elements(data, opts, lhs_span, lhs, &rhs, lhs_metadata)
+                        .assign_to_type_elements(data, lhs_span, lhs, &rhs, lhs_metadata, opts)
                         .with_context(|| {
                             format!(
                                 "tried to assign the converted type to type elements:\nRHS={}",
