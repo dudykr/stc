@@ -716,6 +716,16 @@ impl Analyzer<'_, '_> {
         }
 
         match (declared, cur) {
+            (Key::Private(d), Key::Private(cur)) => {
+                if *d.id.sym() == *cur.id.sym() {
+                    return true;
+                }
+            }
+            (Key::Private(..), _) | (_, Key::Private(..)) => return false,
+            _ => {}
+        }
+
+        match (declared, cur) {
             (Key::Normal { sym, .. }, Key::Num(RNumber { value, .. })) => {
                 if &**sym == value.to_string() {
                     return true;
