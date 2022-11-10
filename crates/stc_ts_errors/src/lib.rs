@@ -1599,7 +1599,7 @@ impl Error {
             Error::ExportEqualsMixedWithOtherExports { .. } => 2309,
             Error::AnyTypeUsedAsCalleeWithTypeArgs { .. } => 2347,
             Error::TS2360 { .. } => 2360,
-            Error::InvalidRhsForInOperator { .. } => 26387,
+            Error::InvalidRhsForInOperator { .. } => 2638,
             Error::WrongTypeForLhsOfNumericOperation { .. } => 2362,
             Error::WrongTypeForRhsOfNumericOperation { .. } => 2363,
             Error::TS2365 { .. } => 2365,
