@@ -539,14 +539,14 @@ impl Analyzer<'_, '_> {
                     return self
                         .assign_to_type_elements(
                             data,
-                            AssignOpts {
-                                allow_unknown_rhs: true,
-                                ..opts
-                            },
                             lhs_span,
                             lhs,
                             &rhs,
                             lhs_metadata,
+                            AssignOpts {
+                                allow_unknown_rhs: true,
+                                ..opts
+                            },
                         )
                         .map_err(|err| {
                             err.convert_all(|err| match err {
@@ -586,7 +586,6 @@ impl Analyzer<'_, '_> {
                     return self
                         .assign_to_type_elements(
                             data,
-                            opts,
                             lhs_span,
                             lhs,
                             &Type::Keyword(KeywordType {
@@ -603,6 +602,7 @@ impl Analyzer<'_, '_> {
                                 metadata: Default::default(),
                             }),
                             lhs_metadata,
+                            opts,
                         )
                         .context("tried to assign a literal as keyword to type elements");
                 }
@@ -639,10 +639,10 @@ impl Analyzer<'_, '_> {
                                     ..
                                 })) = r_mapped.type_param.constraint.as_deref().map(|ty| ty.normalize())
                                 {
-                                    if let Ok(()) = self.assign_with_opts(data, opts, &l_index.params[0].ty, &&r_constraint) {
+                                    if let Ok(()) = self.assign_with_opts(data, &l_index.params[0].ty, &&r_constraint, opts) {
                                         if let Some(l_type_ann) = &l_index.type_ann {
                                             if let Some(r_ty) = &r_mapped.ty {
-                                                self.assign_with_opts(data, opts, &l_type_ann, &r_ty)
+                                                self.assign_with_opts(data, &l_type_ann, &r_ty, opts)
                                                     .context("tried to assign a mapped type to an index signature")?;
                                             }
                                         }
@@ -694,7 +694,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     return self
-                        .assign_to_type_elements(data, opts, lhs_span, lhs, &rhs, lhs_metadata)
+                        .assign_to_type_elements(data, lhs_span, lhs, &rhs, lhs_metadata, opts)
                         .context("tried to assign using expanded builtin type");
                 }
 
@@ -705,7 +705,6 @@ impl Analyzer<'_, '_> {
 
                     return self.assign_to_type_elements(
                         data,
-                        opts,
                         lhs_span,
                         lhs,
                         &Type::Keyword(KeywordType {
@@ -714,6 +713,7 @@ impl Analyzer<'_, '_> {
                             metadata: Default::default(),
                         }),
                         lhs_metadata,
+                        opts,
                     );
                 }
 
@@ -853,12 +853,12 @@ impl Analyzer<'_, '_> {
 
                         let res = self.assign_with_opts(
                             data,
+                            &l,
+                            &parent,
                             AssignOpts {
                                 allow_unknown_rhs: true,
                                 ..opts
                             },
-                            &l,
-                            &parent,
                         );
                         if res.is_ok() {
                             return Some(Ok(()));
@@ -890,7 +890,7 @@ impl Analyzer<'_, '_> {
 
         for (i, m) in lhs.into_iter().enumerate().filter(|(_, m)| m.key().is_some()) {
             let res = self
-                .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, &[m], lhs_metadata, rhs)
+                .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &[m], lhs_metadata, rhs, opts)
                 .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
 
             match res {
@@ -910,7 +910,7 @@ impl Analyzer<'_, '_> {
 
         if !lhs_index.is_empty() {
             let res = self
-                .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, &lhs_index, lhs_metadata, rhs)
+                .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &lhs_index, lhs_metadata, rhs, opts)
                 .with_context(|| format!("tried to assign to an element (not a key-based)"));
 
             errors.extend(res.err());
@@ -918,7 +918,7 @@ impl Analyzer<'_, '_> {
 
         if !lhs_call.is_empty() {
             let res = self
-                .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, &lhs_call, lhs_metadata, rhs)
+                .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &lhs_call, lhs_metadata, rhs, opts)
                 .with_context(|| format!("tried to assign to an element (not a key-based)"));
 
             errors.extend(res.err());
@@ -926,7 +926,7 @@ impl Analyzer<'_, '_> {
 
         if !lhs_constructor.is_empty() {
             let res = self
-                .assign_type_elements_to_type_element(data, opts, missing_fields, unhandled_rhs, &lhs_constructor, lhs_metadata, rhs)
+                .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &lhs_constructor, lhs_metadata, rhs, opts)
                 .with_context(|| format!("tried to assign to an element (not a key-based)"));
 
             errors.extend(res.err());
@@ -1063,7 +1063,6 @@ impl Analyzer<'_, '_> {
                                             if let Type::Function(lp_ty) = lp_ty.normalize() {
                                                 self.assign_to_fn_like(
                                                     data,
-                                                    opts,
                                                     true,
                                                     lp_ty.type_params.as_ref(),
                                                     &lp_ty.params,
@@ -1071,12 +1070,12 @@ impl Analyzer<'_, '_> {
                                                     rm.type_params.as_ref(),
                                                     &rm.params,
                                                     rm.ret_ty.as_deref(),
+                                                    opts,
                                                 )
                                                 .context("tried to assign a method signature to a property signature with function type")?;
                                             } else {
                                                 self.assign_with_opts(
                                                     data,
-                                                    opts,
                                                     &lp_ty,
                                                     &Type::Function(Function {
                                                         span,
@@ -1087,6 +1086,7 @@ impl Analyzer<'_, '_> {
                                                         }),
                                                         metadata: Default::default(),
                                                     }),
+                                                    opts,
                                                 )
                                                 .context(
                                                     "failed to assign a method signature to a property signature because the property was \
@@ -1109,10 +1109,6 @@ impl Analyzer<'_, '_> {
                                         let res = self
                                             .assign_to_fn_like(
                                                 data,
-                                                AssignOpts {
-                                                    is_params_of_method_definition: true,
-                                                    ..opts
-                                                },
                                                 true,
                                                 lm.type_params.as_ref(),
                                                 &lm.params,
@@ -1120,6 +1116,10 @@ impl Analyzer<'_, '_> {
                                                 rm.type_params.as_ref(),
                                                 &rm.params,
                                                 rm.ret_ty.as_deref(),
+                                                AssignOpts {
+                                                    is_params_of_method_definition: true,
+                                                    ..opts
+                                                },
                                             )
                                             .context("tried to assign to callable type element");
                                         // TODO(kdy1): Return type
@@ -1145,7 +1145,6 @@ impl Analyzer<'_, '_> {
                                             if let Type::Function(rf) = rp_ty.normalize() {
                                                 self.assign_to_fn_like(
                                                     data,
-                                                    opts,
                                                     true,
                                                     lm.type_params.as_ref(),
                                                     &lm.params,
@@ -1153,6 +1152,7 @@ impl Analyzer<'_, '_> {
                                                     rf.type_params.as_ref(),
                                                     &rf.params,
                                                     Some(&rf.ret_ty),
+                                                    opts,
                                                 )
                                                 .context("tried to assign a property with callable type to a method property")?;
                                             }

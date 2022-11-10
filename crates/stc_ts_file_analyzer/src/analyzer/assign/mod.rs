@@ -2115,7 +2115,7 @@ impl Analyzer<'_, '_> {
 
             Type::Constructor(ref lc) => {
                 return self
-                    .assign_to_constructor(data, opts, to, &lc, rhs)
+                    .assign_to_constructor(data, to, &lc, rhs, opts)
                     .context("tried to assign to a constructor type")
             }
 
@@ -2192,13 +2192,13 @@ impl Analyzer<'_, '_> {
                 return self
                     .assign_with_opts(
                         data,
-                        opts,
                         &Type::Keyword(KeywordType {
                             span: DUMMY_SP,
                             kind: TsKeywordTypeKind::TsStringKeyword,
                             metadata: Default::default(),
                         }),
                         rhs,
+                        opts,
                     )
                     .context("tried to assign a type to a `keyof TypeParam`")
             }
@@ -2361,7 +2361,7 @@ impl Analyzer<'_, '_> {
                         .map(Cow::into_owned)
                         .map(Type::TypeLit)
                     {
-                        self.assign_to_mapped(data, opts, l, &r)
+                        self.assign_to_mapped(data, l, &r, opts)
                             .context("tried to assign a type to a mapped type by converting it to a type literal")?;
                         return Ok(());
                     }
@@ -2369,7 +2369,7 @@ impl Analyzer<'_, '_> {
 
                 Type::TypeLit(rt) => {
                     match &l.type_param.constraint {
-                        Some(constraint) => self.assign_keys(data, opts, &constraint, &r)?,
+                        Some(constraint) => self.assign_keys(data, &constraint, &r, opts)?,
                         None => {}
                     }
 
@@ -2378,7 +2378,7 @@ impl Analyzer<'_, '_> {
                         match member {
                             TypeElement::Property(prop) => {
                                 if let Some(prop_ty) = &prop.type_ann {
-                                    self.assign_with_opts(data, opts, &l_ty, &prop_ty)?;
+                                    self.assign_with_opts(data, &l_ty, &prop_ty, opts)?;
                                 }
                             }
                             _ => Err(Error::Unimplemented {
