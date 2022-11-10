@@ -1994,10 +1994,13 @@ types/literal/booleanLiteralTypes2.ts
 types/literal/enumLiteralTypes1.ts
 types/literal/enumLiteralTypes2.ts
 types/literal/literalTypes1.ts
+types/literal/literalTypes2.ts
 types/literal/literalTypes3.ts
 types/literal/literalTypesAndDestructuring.ts
 types/literal/literalTypesAndTypeAssertions.ts
 types/literal/literalTypesWidenInParameterPosition.ts
+types/literal/numericLiteralTypes1.ts
+types/literal/numericLiteralTypes2.ts
 types/literal/numericLiteralTypes3.ts
 types/literal/numericStringLiteralTypes.ts
 types/literal/stringEnumLiteralTypes1.ts
@@ -2205,6 +2208,7 @@ types/tuple/castingTuple.ts
 types/tuple/contextualTypeWithTuple.ts
 types/tuple/emptyTuples/emptyTuplesTypeAssertion01.ts
 types/tuple/emptyTuples/emptyTuplesTypeAssertion02.ts
+types/tuple/indexerWithTuple.ts
 types/tuple/strictTupleLength.ts
 types/tuple/tupleElementTypes1.ts
 types/tuple/tupleElementTypes2.ts

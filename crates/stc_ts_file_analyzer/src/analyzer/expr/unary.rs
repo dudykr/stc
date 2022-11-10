@@ -113,7 +113,7 @@ impl Analyzer<'_, '_> {
                 if let Some(arg) = &arg {
                     match arg.normalize() {
                         Type::Lit(LitType {
-                            lit: RTsLit::Number(RNumber { span, value, raw: None }),
+                            lit: RTsLit::Number(RNumber { span, value, .. }),
                             ..
                         }) => {
                             let span = *span;
