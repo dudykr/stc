@@ -323,6 +323,8 @@ impl Analyzer<'_, '_> {
 
                 RExpr::TsSatisfies(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
 
+                RExpr::TsInstantiation(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
+
                 _ => unimplemented!("typeof ({:?})", e),
             }
         })()?;
