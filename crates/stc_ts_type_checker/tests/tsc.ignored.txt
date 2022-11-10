@@ -13,3 +13,4 @@ typeGuardFunctionOfFormThis.ts
 typeGuardFunctionOfFormThisErrors.ts
 typeGuardOfFormInstanceOfOnInterface.ts
 typeGuardOfFormIsTypeOnInterfaces.ts
+privateNameMethodsDerivedClasses.ts
