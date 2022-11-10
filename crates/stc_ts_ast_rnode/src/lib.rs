@@ -105,6 +105,13 @@ type_eq!(RTsEnumMemberId);
 type_eq!(RExpr);
 type_eq!(RPropName);
 
+impl TypeEq for RBool {
+    #[inline]
+    fn type_eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
 impl TypeEq for RStr {
     #[inline]
     fn type_eq(&self, other: &Self) -> bool {
@@ -137,7 +144,7 @@ impl TypeEq for RTsLit {
         match (self, other) {
             (RTsLit::Str(a), RTsLit::Str(b)) => a.type_eq(b),
             (RTsLit::Number(a), RTsLit::Number(b)) => a.type_eq(b),
-            (RTsLit::Bool(a), RTsLit::Bool(b)) => a == b,
+            (RTsLit::Bool(a), RTsLit::Bool(b)) => a.type_eq(b),
             (RTsLit::BigInt(a), RTsLit::BigInt(b)) => a.type_eq(b),
             _ => false,
         }

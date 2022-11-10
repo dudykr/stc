@@ -1989,6 +1989,8 @@ types/intersection/intersectionTypeMembers.ts
 types/intersection/operatorsAndIntersectionTypes.ts
 types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
+types/literal/booleanLiteralTypes1.ts
+types/literal/booleanLiteralTypes2.ts
 types/literal/enumLiteralTypes1.ts
 types/literal/enumLiteralTypes2.ts
 types/literal/literalTypes1.ts
@@ -2418,6 +2420,7 @@ types/union/contextualTypeWithUnionTypeCallSignatures.ts
 types/union/contextualTypeWithUnionTypeIndexSignatures.ts
 types/union/contextualTypeWithUnionTypeMembers.ts
 types/union/discriminatedUnionTypes1.ts
+types/union/discriminatedUnionTypes2.ts
 types/union/discriminatedUnionTypes3.ts
 types/union/unionTypeCallSignatures2.ts
 types/union/unionTypeCallSignatures3.ts

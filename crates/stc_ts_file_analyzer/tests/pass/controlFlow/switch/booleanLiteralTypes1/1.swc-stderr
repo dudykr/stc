@@ -1,0 +1,129 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:3:5]
+ 3 | throw new Error("Unexpected value");
+   :           ^^^^^
+   `----
+
+Error: 
+  > ErrorConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:3:5]
+ 3 | throw new Error("Unexpected value");
+   :       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Error
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:11:5]
+ 11 | switch (x.kind) {
+    :         ^
+    `----
+
+Error: 
+  > ({
+  |     kind: true;
+  |     a: string;
+  | } | {
+  |     kind: false;
+  |     b: string;
+  | })
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:11:5]
+ 11 | switch (x.kind) {
+    :         ^^^^^^
+    `----
+
+Error: 
+  > (true | false)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:12:9]
+ 12 | case true: return x.a;
+    :      ^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:12:9]
+ 12 | case true: return x.a;
+    :                   ^
+    `----
+
+Error: 
+  > {
+  |     kind: true;
+  |     a: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:12:9]
+ 12 | case true: return x.a;
+    :                   ^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:13:9]
+ 13 | case false: return x.b;
+    :      ^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:13:9]
+ 13 | case false: return x.b;
+    :                    ^
+    `----
+
+Error: 
+  > {
+  |     kind: false;
+  |     b: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:13:9]
+ 13 | case false: return x.b;
+    :                    ^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:15:5]
+ 15 | return assertNever(x);
+    :                    ^
+    `----
+
+Error: 
+  > never
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:15:5]
+ 15 | return assertNever(x);
+    :        ^^^^^^^^^^^
+    `----
+
+Error: 
+  > (x: never) => never
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/switch/booleanLiteralTypes1/1.ts:15:5]
+ 15 | return assertNever(x);
+    :        ^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > never
