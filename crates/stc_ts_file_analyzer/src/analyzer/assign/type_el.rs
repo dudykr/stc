@@ -219,7 +219,7 @@ impl Analyzer<'_, '_> {
                         .map(Type::TypeLit)
                     {
                         return self
-                            .assign_to_type_elements(data, opts, lhs_span, lhs, &rty, lhs_metadata)
+                            .assign_to_type_elements(data, lhs_span, lhs, &rty, lhs_metadata, opts)
                             .context("tried to assign to type elements by converting rhs to a type literal");
                     }
 
@@ -265,14 +265,14 @@ impl Analyzer<'_, '_> {
                             return self
                                 .assign_to_type_elements(
                                     data,
-                                    AssignOpts {
-                                        allow_unknown_rhs: true,
-                                        ..opts
-                                    },
                                     lhs_span,
                                     lhs,
                                     &rhs,
                                     lhs_metadata,
+                                    AssignOpts {
+                                        allow_unknown_rhs: true,
+                                        ..opts
+                                    },
                                 )
                                 .context("tried to assign an array as interface to type elements");
                         }

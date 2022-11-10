@@ -410,7 +410,6 @@ impl Analyzer<'_, '_> {
             }) => {
                 self.assign_to_fn_like(
                     data,
-                    opts,
                     true,
                     l.type_params.as_ref(),
                     &l.params,
@@ -418,6 +417,7 @@ impl Analyzer<'_, '_> {
                     r_type_params.as_ref(),
                     r_params,
                     Some(r_ret_ty),
+                    opts,
                 )
                 .context("tried to assign a function to another one")?;
 
@@ -431,10 +431,6 @@ impl Analyzer<'_, '_> {
                             return self
                                 .assign_to_fn_like(
                                     data,
-                                    AssignOpts {
-                                        infer_type_params_of_left: true,
-                                        ..opts
-                                    },
                                     true,
                                     l.type_params.as_ref(),
                                     &l.params,
@@ -442,6 +438,10 @@ impl Analyzer<'_, '_> {
                                     rm.type_params.as_ref(),
                                     &rm.params,
                                     rm.ret_ty.as_deref(),
+                                    AssignOpts {
+                                        infer_type_params_of_left: true,
+                                        ..opts
+                                    },
                                 )
                                 .context("tried to assign TypeElemeny::Call to a function");
                         }
@@ -457,7 +457,7 @@ impl Analyzer<'_, '_> {
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {
                     return self
-                        .assign_to_function(data, opts, lt, l, &ty)
+                        .assign_to_function(data, lt, l, &ty, opts)
                         .context("tried to assign an expanded type to a function");
                 }
             }
@@ -523,7 +523,6 @@ impl Analyzer<'_, '_> {
 
                 self.assign_to_fn_like(
                     data,
-                    opts,
                     false,
                     l.type_params.as_ref(),
                     &l.params,
@@ -531,6 +530,7 @@ impl Analyzer<'_, '_> {
                     rc.type_params.as_ref(),
                     &rc.params,
                     Some(&rc.type_ann),
+                    opts,
                 )
                 .context("tried to assign a constructor to another one")?;
 
@@ -550,10 +550,6 @@ impl Analyzer<'_, '_> {
                             if let Err(err) = self
                                 .assign_to_fn_like(
                                     data,
-                                    AssignOpts {
-                                        allow_assignment_to_param: opts.allow_assignment_to_param || r_el_cnt > 1,
-                                        ..opts
-                                    },
                                     false,
                                     l.type_params.as_ref(),
                                     &l.params,
@@ -561,6 +557,10 @@ impl Analyzer<'_, '_> {
                                     rc.type_params.as_ref(),
                                     &rc.params,
                                     rc.ret_ty.as_deref(),
+                                    AssignOpts {
+                                        allow_assignment_to_param: opts.allow_assignment_to_param || r_el_cnt > 1,
+                                        ..opts
+                                    },
                                 )
                                 .with_context(|| format!("tried to assign a constructor to another constructor ({}th element)", idx))
                             {
