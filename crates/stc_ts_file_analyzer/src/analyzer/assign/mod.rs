@@ -869,10 +869,10 @@ impl Analyzer<'_, '_> {
         match (to, rhs) {
             (Type::Conditional(lc), Type::Conditional(rc)) => {
                 if lc.check_type.type_eq(&rc.check_type) && lc.extends_type.type_eq(&rc.extends_type) {
-                    self.assign_with_opts(data, opts, &lc.true_type, &rc.true_type)
+                    self.assign_with_opts(data, &lc.true_type, &rc.true_type, opts)
                         .context("tried to assign the true type of a conditional type to it of similar conditional type")?;
 
-                    self.assign_with_opts(data, opts, &lc.false_type, &rc.false_type)
+                    self.assign_with_opts(data, &lc.false_type, &rc.false_type, opts)
                         .context("tried to assign the true type of a conditional type to it of similar conditional type")?;
 
                     return Ok(());
@@ -886,12 +886,12 @@ impl Analyzer<'_, '_> {
                     match (l_variance, r_variance) {
                         (Variance::Covariant, Variance::Covariant) => {
                             return self
-                                .assign_with_opts(data, opts, &lc.check_type, &rc.check_type)
+                                .assign_with_opts(data, &lc.check_type, &rc.check_type, opts)
                                 .context("tried assignment of covariant types")
                         }
                         (Variance::Contravariant, Variance::Contravariant) => {
                             return self
-                                .assign_with_opts(data, opts, &rc.check_type, &lc.check_type)
+                                .assign_with_opts(data, &rc.check_type, &lc.check_type, opts)
                                 .context("tried assignment of contravariant types")
                         }
                         _ => {
@@ -908,18 +908,18 @@ impl Analyzer<'_, '_> {
 
         match (to, rhs) {
             (_, Type::Conditional(rc)) => {
-                self.assign_with_opts(data, opts, to, &rc.true_type)
+                self.assign_with_opts(data, to, &rc.true_type, opts)
                     .context("tried to assign the true type of a conditional type to lhs")?;
-                self.assign_with_opts(data, opts, to, &rc.false_type)
+                self.assign_with_opts(data, to, &rc.false_type, opts)
                     .context("tried to assign the false type of a conditional type to lhs")?;
 
                 return Ok(());
             }
 
             (Type::Conditional(lc), _) => {
-                self.assign_with_opts(data, opts, &lc.true_type, &rhs)
+                self.assign_with_opts(data, &lc.true_type, &rhs, opts)
                     .context("tried to assign to the true type")?;
-                self.assign_with_opts(data, opts, &lc.false_type, &rhs)
+                self.assign_with_opts(data, &lc.false_type, &rhs, opts)
                     .context("tried to assign to the false type")?;
 
                 return Ok(());
