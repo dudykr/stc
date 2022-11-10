@@ -211,10 +211,10 @@ impl Analyzer<'_, '_> {
                     })
                     .store(&mut errors);
 
-                    if !errors.is_empty()
+                    if !opts.report_object_instead_of_fields
+                        && !errors.is_empty()
                         && lhs.iter().any(|el| matches!(el, TypeElement::Index(..)))
                         && all_rhs_members.iter().all(|el| !matches!(el, TypeElement::Index(..)))
-                        && !opts.report_object_instead_of_fields
                     {
                         return Err(Error::Errors {
                             span,
