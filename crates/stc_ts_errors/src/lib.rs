@@ -1133,6 +1133,7 @@ pub enum Error {
 
     InvalidRhsForInOperator {
         span: Span,
+        ty: Box<Type>,
     },
 
     /// TS2362
