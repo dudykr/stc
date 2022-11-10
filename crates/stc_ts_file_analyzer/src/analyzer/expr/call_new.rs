@@ -2826,13 +2826,13 @@ impl Analyzer<'_, '_> {
                                         let res = self
                                             .assign_with_opts(
                                                 &mut Default::default(),
+                                                &param_ty.elems[0].ty,
+                                                &arg.ty,
                                                 AssignOpts {
                                                     span: arg.span(),
                                                     allow_iterable_on_rhs: true,
                                                     ..Default::default()
                                                 },
-                                                &param_ty.elems[0].ty,
-                                                &arg.ty,
                                             )
                                             .convert_err(|err| Error::WrongArgType {
                                                 span: arg.span(),
@@ -2864,13 +2864,13 @@ impl Analyzer<'_, '_> {
                                             let res = self
                                                 .assign_with_opts(
                                                     &mut Default::default(),
+                                                    &param_elem.ty,
+                                                    &arg.ty,
                                                     AssignOpts {
                                                         span: arg.span(),
                                                         allow_iterable_on_rhs: true,
                                                         ..Default::default()
                                                     },
-                                                    &param_elem.ty,
-                                                    &arg.ty,
                                                 )
                                                 .convert_err(|err| Error::WrongArgType {
                                                     span: arg.span(),

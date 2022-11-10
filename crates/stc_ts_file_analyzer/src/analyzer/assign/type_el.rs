@@ -1206,7 +1206,7 @@ impl Analyzer<'_, '_> {
                                     {
                                         if let Some(l_index_ret_ty) = &li.type_ann {
                                             if let Some(r_prop_ty) = &r_prop.type_ann {
-                                                self.assign_with_opts(data, opts, &l_index_ret_ty, &&r_prop_ty)
+                                                self.assign_with_opts(data, &l_index_ret_ty, &&r_prop_ty, opts)
                                                     .context("tried to assign a type of property to thr type of an index signature")?;
                                             }
                                         }
@@ -1226,10 +1226,6 @@ impl Analyzer<'_, '_> {
                                         if let Some(li_ret) = &li.type_ann {
                                             self.assign_with_opts(
                                                 data,
-                                                AssignOpts {
-                                                    allow_assignment_to_param: false,
-                                                    ..opts
-                                                },
                                                 &li_ret,
                                                 &Type::Function(Function {
                                                     span: rm.span,
@@ -1240,6 +1236,10 @@ impl Analyzer<'_, '_> {
                                                     }),
                                                     metadata: Default::default(),
                                                 }),
+                                                AssignOpts {
+                                                    allow_assignment_to_param: false,
+                                                    ..opts
+                                                },
                                             )
                                             .context("tried to assign a method to an index signature")?;
                                         }
@@ -1260,7 +1260,7 @@ impl Analyzer<'_, '_> {
 
                                         if let Some(lt) = &li.type_ann {
                                             if let Some(rt) = &ri.type_ann {
-                                                self.assign_with_opts(data, opts, &lt, &rt)?;
+                                                self.assign_with_opts(data, &lt, &rt, opts)?;
                                             }
                                         }
 
@@ -1291,10 +1291,6 @@ impl Analyzer<'_, '_> {
                                     let res = self
                                         .assign_to_fn_like(
                                             data,
-                                            AssignOpts {
-                                                infer_type_params_of_left: true,
-                                                ..opts
-                                            },
                                             true,
                                             lc.type_params.as_ref(),
                                             &lc.params,
@@ -1302,6 +1298,10 @@ impl Analyzer<'_, '_> {
                                             rc.type_params.as_ref(),
                                             &rc.params,
                                             rc.ret_ty.as_deref(),
+                                            AssignOpts {
+                                                infer_type_params_of_left: true,
+                                                ..opts
+                                            },
                                         )
                                         .with_context(|| format!("tried to assign {}th element to a call signature", ri));
 
@@ -1342,10 +1342,6 @@ impl Analyzer<'_, '_> {
 
                                     let res = self.assign_to_fn_like(
                                         data,
-                                        AssignOpts {
-                                            infer_type_params_of_left: true,
-                                            ..opts
-                                        },
                                         false,
                                         lc.type_params.as_ref(),
                                         &lc.params,
@@ -1353,6 +1349,10 @@ impl Analyzer<'_, '_> {
                                         rc.type_params.as_ref(),
                                         &rc.params,
                                         rc.ret_ty.as_deref(),
+                                        AssignOpts {
+                                            infer_type_params_of_left: true,
+                                            ..opts
+                                        },
                                     );
 
                                     match res {

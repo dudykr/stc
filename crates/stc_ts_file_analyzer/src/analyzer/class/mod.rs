@@ -80,16 +80,16 @@ impl Analyzer<'_, '_> {
                         if self
                             .assign_with_opts(
                                 &mut Default::default(),
-                                AssignOpts {
-                                    span,
-                                    ..Default::default()
-                                },
                                 &ty,
                                 &Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     metadata: Default::default(),
                                 }),
+                                AssignOpts {
+                                    span,
+                                    ..Default::default()
+                                },
                             )
                             .is_err()
                         {
