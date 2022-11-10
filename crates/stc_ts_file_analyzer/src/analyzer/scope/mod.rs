@@ -1180,9 +1180,6 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ty) = self.scope.find_type(name) {
-            if cfg!(debug_assertions) {
-                debug!("Using type from scope: {:?}", ty);
-            }
             src.extend(ty.into_iter().map(Cow::into_owned));
             return Some(ItemRef::Owned(
                 vec![Type::new_intersection(DUMMY_SP, src).fixed().cheap()].into_iter(),
