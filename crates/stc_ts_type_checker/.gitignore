@@ -3,5 +3,3 @@ tests/success.txt
 tests/done_sorted.txt
 
 tests/wip-stats.rust-debug
-# Ignored to avoid merge conflicts
-tests/tsc-stats.rust-debug
