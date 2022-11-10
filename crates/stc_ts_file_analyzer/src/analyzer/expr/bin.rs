@@ -1299,12 +1299,12 @@ impl Analyzer<'_, '_> {
 
                             let params_res = self.assign_params(
                                 &mut Default::default(),
+                                &lm.params,
+                                &rm.params,
                                 AssignOpts {
                                     span,
                                     ..Default::default()
                                 },
-                                &lm.params,
-                                &rm.params,
                             );
 
                             if params_res.is_err() {

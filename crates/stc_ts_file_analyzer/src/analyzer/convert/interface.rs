@@ -41,6 +41,12 @@ impl Analyzer<'_, '_> {
 
                 self.assign_with_opts(
                     &mut Default::default(),
+                    &parent,
+                    &Type::TypeLit(TypeLit {
+                        span: DUMMY_SP,
+                        members: body.to_vec(),
+                        metadata: Default::default(),
+                    }),
                     AssignOpts {
                         span,
                         allow_unknown_rhs: true,
@@ -49,12 +55,6 @@ impl Analyzer<'_, '_> {
                         skip_call_and_constructor_elem: true,
                         ..Default::default()
                     },
-                    &parent,
-                    &Type::TypeLit(TypeLit {
-                        span: DUMMY_SP,
-                        members: body.to_vec(),
-                        metadata: Default::default(),
-                    }),
                 )?;
             };
 
@@ -92,6 +92,8 @@ impl Analyzer<'_, '_> {
 
                     if let Err(err) = self.assign_with_opts(
                         &mut Default::default(),
+                        &p1_type,
+                        &p2,
                         AssignOpts {
                             span,
                             // required because interface can extend classes
@@ -99,8 +101,6 @@ impl Analyzer<'_, '_> {
                             allow_unknown_rhs: true,
                             ..Default::default()
                         },
-                        &p1_type,
-                        &p2,
                     ) {
                         match err.actual() {
                             Error::MissingFields { .. } => {}
