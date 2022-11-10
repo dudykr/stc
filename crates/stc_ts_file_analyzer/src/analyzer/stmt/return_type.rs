@@ -284,14 +284,14 @@ impl Analyzer<'_, '_> {
             } else if let Some(ret_ty) = &ret_ty {
                 self.assign_with_opts(
                     &mut Default::default(),
+                    &declared,
+                    ret_ty,
                     AssignOpts {
                         span,
                         allow_unknown_rhs: true,
                         may_unwrap_promise: true,
                         ..Default::default()
                     },
-                    &declared,
-                    ret_ty,
                 )
                 .context("tried to assign return type")
                 .report(&mut self.storage);
@@ -335,11 +335,6 @@ impl Analyzer<'_, '_> {
                 (true, true) => {
                     self.assign_with_opts(
                         &mut Default::default(),
-                        AssignOpts {
-                            span: node.span,
-                            allow_unknown_rhs: true,
-                            ..Default::default()
-                        },
                         &declared,
                         &Type::Ref(Ref {
                             span: node.span,
@@ -351,6 +346,11 @@ impl Analyzer<'_, '_> {
                             }),
                             metadata: Default::default(),
                         }),
+                        AssignOpts {
+                            span: node.span,
+                            allow_unknown_rhs: true,
+                            ..Default::default()
+                        },
                     )
                     .report(&mut self.storage);
                 }
@@ -359,14 +359,14 @@ impl Analyzer<'_, '_> {
                 (true, false) => {
                     self.assign_with_opts(
                         &mut Default::default(),
+                        &declared,
+                        &ty,
                         AssignOpts {
                             span: node.span,
                             allow_unknown_rhs: true,
                             may_unwrap_promise: true,
                             ..Default::default()
                         },
-                        &declared,
-                        &ty,
                     )
                     .context("tried to validate the return type of an async function")
                     .report(&mut self.storage);
@@ -384,11 +384,6 @@ impl Analyzer<'_, '_> {
 
                     self.assign_with_opts(
                         &mut Default::default(),
-                        AssignOpts {
-                            span: node.span,
-                            allow_unknown_rhs: true,
-                            ..Default::default()
-                        },
                         &declared,
                         &Type::Ref(Ref {
                             span: node.span,
@@ -400,6 +395,11 @@ impl Analyzer<'_, '_> {
                             }),
                             metadata: Default::default(),
                         }),
+                        AssignOpts {
+                            span: node.span,
+                            allow_unknown_rhs: true,
+                            ..Default::default()
+                        },
                     )
                     .report(&mut self.storage);
                 }
@@ -407,13 +407,13 @@ impl Analyzer<'_, '_> {
                 (false, false) => {
                     self.assign_with_opts(
                         &mut Default::default(),
+                        &declared,
+                        &ty,
                         AssignOpts {
                             span: node.span,
                             allow_unknown_rhs: true,
                             ..Default::default()
                         },
-                        &declared,
-                        &ty,
                     )
                     .report(&mut self.storage);
                 }
@@ -463,14 +463,14 @@ impl Analyzer<'_, '_> {
                     Ok(declared) => {
                         match self.assign_with_opts(
                             &mut Default::default(),
+                            &declared,
+                            &item_ty,
                             AssignOpts {
                                 span: e.span,
                                 allow_unknown_rhs: true,
                                 use_missing_fields_for_class: true,
                                 ..Default::default()
                             },
-                            &declared,
-                            &item_ty,
                         ) {
                             Ok(()) => {}
                             Err(err) => {
