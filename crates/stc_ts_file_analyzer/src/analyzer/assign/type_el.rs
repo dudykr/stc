@@ -226,7 +226,17 @@ impl Analyzer<'_, '_> {
                         .map(Type::TypeLit)
                     {
                         return self
-                            .assign_to_type_elements(data, lhs_span, lhs, &rty, lhs_metadata, opts)
+                            .assign_to_type_elements(
+                                data,
+                                lhs_span,
+                                lhs,
+                                &rty,
+                                lhs_metadata,
+                                AssignOpts {
+                                    report_object_instead_of_fields: true,
+                                    ..opts
+                                },
+                            )
                             .context("tried to assign to type elements by converting rhs to a type literal");
                     }
 
