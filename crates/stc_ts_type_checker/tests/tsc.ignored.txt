@@ -2,6 +2,7 @@ conditionalTypes1.ts
 namedTupleMembers.ts
 privateNameAccessorssDerivedClasses.ts
 privateNameFieldDerivedClasses.ts
+privateNameMethodsDerivedClasses.ts
 privateNameStaticFieldDerivedClasses.ts
 privateNamesAndStaticFields.ts
 protectedClassPropertyAccessibleWithinNestedSubclass1.ts
@@ -13,4 +14,3 @@ typeGuardFunctionOfFormThis.ts
 typeGuardFunctionOfFormThisErrors.ts
 typeGuardOfFormInstanceOfOnInterface.ts
 typeGuardOfFormIsTypeOnInterfaces.ts
-privateNameMethodsDerivedClasses.ts
