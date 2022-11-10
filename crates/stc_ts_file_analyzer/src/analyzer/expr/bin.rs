@@ -1314,13 +1314,13 @@ impl Analyzer<'_, '_> {
                             let ret_ty_res = match (lm.ret_ty.as_deref(), rm.ret_ty.as_deref()) {
                                 (Some(lt), Some(rt)) => self.assign_with_opts(
                                     &mut Default::default(),
+                                    &lt,
+                                    &rt,
                                     AssignOpts {
                                         span,
                                         allow_unknown_rhs: true,
                                         ..Default::default()
                                     },
-                                    &lt,
-                                    &rt,
                                 ),
                                 _ => Ok(()),
                             };

@@ -370,17 +370,17 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign(&mut self, span: Span, data: &mut AssignData, left: &Type, right: &Type) -> VResult<()> {
         self.assign_with_opts(
             data,
+            left,
+            right,
             AssignOpts {
                 span,
                 ..Default::default()
             },
-            left,
-            right,
         )
     }
 
     /// Assign `right` to `left`. You can just use default for [AssignData].
-    pub(crate) fn assign_with_opts(&mut self, data: &mut AssignData, opts: AssignOpts, left: &Type, right: &Type) -> VResult<()> {
+    pub(crate) fn assign_with_opts(&mut self, data: &mut AssignData, left: &Type, right: &Type, opts: AssignOpts) -> VResult<()> {
         if self.is_builtin {
             return Ok(());
         }
@@ -2320,7 +2320,7 @@ impl Analyzer<'_, '_> {
     ///
     ///
     /// Currently only literals and unions are supported for `keys`.
-    fn assign_keys(&mut self, data: &mut AssignData, opts: AssignOpts, keys: &Type, rhs: &Type) -> VResult<()> {
+    fn assign_keys(&mut self, data: &mut AssignData, keys: &Type, rhs: &Type, opts: AssignOpts) -> VResult<()> {
         let keys = keys.normalize();
         let rhs = rhs.normalize();
 
@@ -2329,17 +2329,17 @@ impl Analyzer<'_, '_> {
 
         self.assign_with_opts(
             data,
+            &keys,
+            &rhs_keys,
             AssignOpts {
                 allow_unknown_rhs: true,
                 ..opts
             },
-            &keys,
-            &rhs_keys,
         )
         .context("tried to assign keys")
     }
 
-    fn assign_to_mapped(&mut self, data: &mut AssignData, opts: AssignOpts, l: &Mapped, r: &Type) -> VResult<()> {
+    fn assign_to_mapped(&mut self, data: &mut AssignData, l: &Mapped, r: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         let mut r = self
             .normalize(Some(span), Cow::Borrowed(&r), NormalizeTypeOpts { ..Default::default() })

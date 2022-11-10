@@ -154,7 +154,7 @@ impl Analyzer<'_, '_> {
                     .or_else(|| unwrap_ref_with_single_arg(r, "ReadonlyArray"))
                 {
                     return Some(
-                        self.assign_with_opts(data, opts, &l.elem_type, &r_elem)
+                        self.assign_with_opts(data, &l.elem_type, &r_elem, opts)
                             .context("tried fast-path assignment to an array"),
                     );
                 }
