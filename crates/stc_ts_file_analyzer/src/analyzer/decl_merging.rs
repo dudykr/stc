@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use fxhash::FxHashMap;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_types::{ClassDef, ClassMember, ClassProperty, Id, Interface, Method, Type, TypeElement, TypeParam};
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, BUILTIN_CTXT};
 use swc_common::{Span, Spanned};
 use tracing::info;
 
@@ -158,6 +158,11 @@ impl Analyzer<'_, '_> {
         };
 
         let orig = orig.next().unwrap().into_owned();
+
+        // In modules, we should not merge with builtin
+        if new.span().ctxt == BUILTIN_CTXT && self.ctx.in_module {
+            return Ok((orig, false));
+        }
 
         let new = self.merge_declaration_types(new.span(), orig, new)?;
         info!("Merging declaration {} with type {}", name, dump_type_as_string(&self.cm, &new));
