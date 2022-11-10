@@ -210,6 +210,13 @@ impl Analyzer<'_, '_> {
                         )
                     })
                     .store(&mut errors);
+
+                    if !errors.is_empty() {
+                        return Err(Error::Errors {
+                            span,
+                            errors: Error::flatten(errors),
+                        });
+                    }
                 }
 
                 Type::Interface(..) | Type::Intersection(..) => {
