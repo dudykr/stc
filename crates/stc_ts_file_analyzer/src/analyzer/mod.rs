@@ -200,6 +200,8 @@ pub(crate) struct Ctx {
     is_not_topmost_type: bool,
 
     is_fn_param: bool,
+
+    in_module: bool,
 }
 
 impl Ctx {
@@ -525,6 +527,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_unreachable: false,
                 is_not_topmost_type: false,
                 is_fn_param: false,
+                in_module: false,
             },
             loader,
             is_builtin,
@@ -734,6 +737,8 @@ impl Load for NoopLoader {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, modules: &Vec<RModule>) {
+        self.ctx.in_module = true;
+
         let mut items = vec![];
         for m in modules {
             items.extend(&m.body);
@@ -752,6 +757,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, m: &RModule) {
+        self.ctx.in_module = true;
         let is_dts = self.ctx.is_dts;
 
         let globals = self.env.shared().swc_globals().clone();

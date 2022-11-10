@@ -259,6 +259,7 @@ controlFlow/constLocalsInFunctionExpressions.ts
 controlFlow/controlFlowAssignmentExpression.ts
 controlFlow/controlFlowAssignmentPatternOrder.ts
 controlFlow/controlFlowBinaryAndExpression.ts
+controlFlow/controlFlowBinaryOrExpression.ts
 controlFlow/controlFlowCommaOperator.ts
 controlFlow/controlFlowConditionalExpression.ts
 controlFlow/controlFlowDestructuringDeclaration.ts
