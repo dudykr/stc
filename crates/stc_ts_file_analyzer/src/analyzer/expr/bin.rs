@@ -28,6 +28,7 @@ use crate::{
         expr::{type_cast::CastableOpts, TypeOfMode},
         generic::ExtendsOpts,
         scope::ExpandOpts,
+        types::NormalizeTypeOpts,
         util::{Comparator, ResultExt},
         Analyzer, Ctx, ScopeKind,
     },
@@ -1702,7 +1703,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     _ => {
-                        if !self.is_valid_rhs_of_in(&rt) {
+                        if !self.is_valid_rhs_of_in(rs, &rt) {
                             errors.push(Error::InvalidRhsForInOperator {
                                 span: rs,
                                 ty: box rt.clone(),
@@ -1769,20 +1770,24 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn is_valid_rhs_of_in(&mut self, ty: &Type) -> bool {
+    fn is_valid_rhs_of_in(&mut self, span: Span, ty: &Type) -> bool {
         if ty.is_any() {
             return true;
         }
 
+        let ty = match self.normalize(
+            Some(span),
+            Cow::Borrowed(ty),
+            NormalizeTypeOpts {
+                preserve_mapped: true,
+                ..Default::default()
+            },
+        ) {
+            Ok(v) => v,
+            Err(_) => return true,
+        };
+
         match ty.normalize() {
-            Type::Ref(..) => {
-                if let Ok(ty) = self.expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default()) {
-                    return self.is_valid_rhs_of_in(&ty);
-                }
-
-                true
-            }
-
             Type::TypeLit(..)
             | Type::Param(..)
             | Type::Mapped(..)
@@ -1794,7 +1799,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsObjectKeyword,
                 ..
             }) => true,
-            Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_rhs_of_in(&ty)),
+            Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_rhs_of_in(span, &ty)),
 
             _ => false,
         }
