@@ -1131,7 +1131,7 @@ pub enum Error {
         span: Span,
     },
 
-    TS2361 {
+    InvalidRhsForInOperator {
         span: Span,
     },
 
@@ -1598,7 +1598,7 @@ impl Error {
             Error::ExportEqualsMixedWithOtherExports { .. } => 2309,
             Error::AnyTypeUsedAsCalleeWithTypeArgs { .. } => 2347,
             Error::TS2360 { .. } => 2360,
-            Error::TS2361 { .. } => 2361,
+            Error::InvalidRhsForInOperator { .. } => 26387,
             Error::WrongTypeForLhsOfNumericOperation { .. } => 2362,
             Error::WrongTypeForRhsOfNumericOperation { .. } => 2363,
             Error::TS2365 { .. } => 2365,

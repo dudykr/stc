@@ -1703,7 +1703,7 @@ impl Analyzer<'_, '_> {
 
                     _ => {
                         if !self.is_valid_rhs_of_in(&rt) {
-                            errors.push(Error::TS2361 { span: rs })
+                            errors.push(Error::InvalidRhsForInOperator { span: rs })
                         }
                     }
                 }
