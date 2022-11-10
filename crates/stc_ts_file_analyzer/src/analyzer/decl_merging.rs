@@ -160,7 +160,7 @@ impl Analyzer<'_, '_> {
         let orig = orig.next().unwrap().into_owned();
 
         // In modules, we should not merge with builtin
-        if self.ctx.in_module && !self.is_builtin && new.span().ctxt == BUILTIN_CTXT {
+        if self.ctx.in_module && !self.is_builtin && new.span().ctxt == BUILTIN_CTXT && orig.is_interface() {
             return Ok((orig, true));
         }
 
