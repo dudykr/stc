@@ -281,6 +281,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2323
+    DuplicateExport {
+        span: Span,
+    },
+
     /// TS2393
     DuplicateFnImpl {
         span: Span,
@@ -1879,6 +1884,7 @@ impl Error {
             Error::DuplicateFnImpl { .. } => 2393,
 
             Error::DuplicateDefaultExport { .. } => 2528,
+            Error::DuplicateExport { .. } => 2323,
 
             Error::BlockScopedVarUsedBeforeInit { .. } => 2448,
 

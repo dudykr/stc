@@ -179,7 +179,11 @@ impl Analyzer<'_, '_> {
         // TODO(kdy1): Optimize this by emitting same error only once.
         if v.len() >= 2 {
             for &span in &*v {
-                self.storage.report(Error::DuplicateDefaultExport { span });
+                if sym == js_word!("default") {
+                    self.storage.report(Error::DuplicateDefaultExport { span });
+                } else {
+                    self.storage.report(Error::DuplicateExport { span });
+                }
             }
         }
     }
