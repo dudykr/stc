@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use fxhash::FxHashMap;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_types::{ClassDef, ClassMember, ClassProperty, Id, Interface, Method, Type, TypeElement, TypeParam};
-use stc_utils::{cache::Freeze, BUILTIN_CTXT};
+use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned};
 use tracing::info;
 
