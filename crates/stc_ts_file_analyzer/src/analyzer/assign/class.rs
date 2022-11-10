@@ -15,7 +15,7 @@ use crate::{
 };
 
 impl Analyzer<'_, '_> {
-    pub(super) fn assign_to_class_def(&mut self, data: &mut AssignData, opts: AssignOpts, l: &ClassDef, r: &Type) -> VResult<()> {
+    pub(super) fn assign_to_class_def(&mut self, data: &mut AssignData, l: &ClassDef, r: &Type, opts: AssignOpts) -> VResult<()> {
         let r = r.normalize();
 
         match r {
@@ -123,7 +123,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    pub(super) fn assign_to_class(&mut self, data: &mut AssignData, opts: AssignOpts, l: &Class, r: &Type) -> VResult<()> {
+    pub(super) fn assign_to_class(&mut self, data: &mut AssignData, l: &Class, r: &Type, opts: AssignOpts) -> VResult<()> {
         // debug_assert!(!span.is_dummy());
 
         let r = r.normalize();
@@ -259,9 +259,9 @@ impl Analyzer<'_, '_> {
     fn assign_class_members_to_class_member(
         &mut self,
         data: &mut AssignData,
-        opts: AssignOpts,
         l: &ClassMember,
         r: &[ClassMember],
+        opts: AssignOpts,
     ) -> VResult<()> {
         let span = opts.span;
 

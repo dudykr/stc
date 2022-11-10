@@ -10,7 +10,7 @@ use crate::{
 };
 
 impl Analyzer<'_, '_> {
-    pub(super) fn assign_to_query_type(&mut self, data: &mut AssignData, opts: AssignOpts, to: &QueryType, rhs: &Type) -> VResult<()> {
+    pub(super) fn assign_to_query_type(&mut self, data: &mut AssignData, to: &QueryType, rhs: &Type, opts: AssignOpts) -> VResult<()> {
         let rhs = rhs.normalize();
 
         match &*to.expr {
@@ -27,7 +27,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    pub(super) fn assign_query_type_to_type(&mut self, data: &mut AssignData, opts: AssignOpts, to: &Type, rhs: &QueryType) -> VResult<()> {
+    pub(super) fn assign_query_type_to_type(&mut self, data: &mut AssignData, to: &Type, rhs: &QueryType, opts: AssignOpts) -> VResult<()> {
         let to = to.normalize();
 
         match &*rhs.expr {

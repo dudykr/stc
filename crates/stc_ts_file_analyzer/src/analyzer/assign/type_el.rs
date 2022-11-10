@@ -37,11 +37,11 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_to_type_elements(
         &mut self,
         data: &mut AssignData,
-        opts: AssignOpts,
         lhs_span: Span,
         lhs: &[TypeElement],
         rhs: &Type,
         lhs_metadata: TypeLitMetadata,
+        opts: AssignOpts,
     ) -> VResult<()> {
         let span = opts.span.with_ctxt(SyntaxContext::empty());
         // debug_assert!(!span.is_dummy());
@@ -877,12 +877,12 @@ impl Analyzer<'_, '_> {
     fn handle_assignment_of_type_elements_to_type_elements(
         &mut self,
         data: &mut AssignData,
-        opts: AssignOpts,
         missing_fields: &mut Vec<TypeElement>,
         unhandled_rhs: &mut Vec<Span>,
         lhs: &[TypeElement],
         lhs_metadata: TypeLitMetadata,
         rhs: &[TypeElement],
+        opts: AssignOpts,
     ) -> VResult<()> {
         let span = opts.span;
 
@@ -982,12 +982,12 @@ impl Analyzer<'_, '_> {
     fn assign_type_elements_to_type_element(
         &mut self,
         data: &mut AssignData,
-        opts: AssignOpts,
         missing_fields: &mut Vec<TypeElement>,
         unhandled_rhs: &mut Vec<Span>,
         lms: &[&TypeElement],
         lhs_metadata: TypeLitMetadata,
         rhs_members: &[TypeElement],
+        opts: AssignOpts,
     ) -> VResult<()> {
         debug_assert!(!lms.is_empty());
 

@@ -31,7 +31,6 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_to_fn_like(
         &mut self,
         data: &mut AssignData,
-        opts: AssignOpts,
         is_call: bool,
         l_type_params: Option<&TypeParamDecl>,
         l_params: &[FnParam],
@@ -39,6 +38,7 @@ impl Analyzer<'_, '_> {
         r_type_params: Option<&TypeParamDecl>,
         r_params: &[FnParam],
         r_ret_ty: Option<&Type>,
+        opts: AssignOpts,
     ) -> VResult<()> {
         let span = opts.span.with_ctxt(SyntaxContext::empty());
 
@@ -396,7 +396,7 @@ impl Analyzer<'_, '_> {
     /// b = a; // error
     /// ```
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn assign_to_function(&mut self, data: &mut AssignData, opts: AssignOpts, lt: &Type, l: &Function, r: &Type) -> VResult<()> {
+    pub(super) fn assign_to_function(&mut self, data: &mut AssignData, lt: &Type, l: &Function, r: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         let r = r.normalize();
 
@@ -507,10 +507,10 @@ impl Analyzer<'_, '_> {
     pub(super) fn assign_to_constructor(
         &mut self,
         data: &mut AssignData,
-        opts: AssignOpts,
         lt: &Type,
         l: &Constructor,
         r: &Type,
+        opts: AssignOpts,
     ) -> VResult<()> {
         let span = opts.span;
         let r = r.normalize();
@@ -718,7 +718,7 @@ impl Analyzer<'_, '_> {
     ///
     /// So, it's an error if `l.params.len() < r.params.len()`.
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(crate) fn assign_params(&mut self, data: &mut AssignData, opts: AssignOpts, l: &[FnParam], r: &[FnParam]) -> VResult<()> {
+    pub(crate) fn assign_params(&mut self, data: &mut AssignData, l: &[FnParam], r: &[FnParam], opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
 
         let li = l.iter().filter(|p| match p.pat {
