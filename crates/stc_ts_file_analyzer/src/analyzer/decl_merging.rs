@@ -159,11 +159,6 @@ impl Analyzer<'_, '_> {
 
         let orig = orig.next().unwrap().into_owned();
 
-        // In modules, we should not merge with builtin
-        if self.ctx.in_module && !self.is_builtin && new.span().ctxt == BUILTIN_CTXT && orig.is_interface() {
-            return Ok((orig, true));
-        }
-
         let new = self.merge_declaration_types(new.span(), orig, new)?;
         info!("Merging declaration {} with type {}", name, dump_type_as_string(&self.cm, &new));
 
