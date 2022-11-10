@@ -697,7 +697,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(name) = name {
                         if let Some(property) = left {
-                            let new_ty = self.filter_types_with_property(&rt, &property, None)?.cheap();
+                            let new_ty = self.filter_types_with_property(span, &rt, &property, None)?.fixed().cheap();
 
                             self.add_deep_type_fact(span, name.clone(), new_ty.clone(), true);
                         }

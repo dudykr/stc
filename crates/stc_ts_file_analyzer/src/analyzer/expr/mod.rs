@@ -63,6 +63,7 @@ mod constraint_reducer;
 mod function;
 mod jsx;
 mod meta_prop;
+mod misc;
 mod object;
 pub(crate) mod optional_chaining;
 mod type_cast;
@@ -223,6 +224,13 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                     }));
                 }
+                RExpr::Lit(RLit::BigInt(v)) => {
+                    return Ok(Type::Lit(LitType {
+                        span: v.span,
+                        lit: RTsLit::BigInt(v.clone()),
+                        metadata: Default::default(),
+                    }));
+                }
                 RExpr::Lit(RLit::Null(RNull { span })) => {
                     if self.ctx.in_export_default_expr {
                         // TODO(kdy1): strict mode
@@ -312,6 +320,10 @@ impl Analyzer<'_, '_> {
                 RExpr::OptChain(expr) => expr.validate_with_args(self, type_ann),
 
                 RExpr::TsConstAssertion(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
+
+                RExpr::TsSatisfies(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
+
+                RExpr::TsInstantiation(expr) => expr.validate_with_args(self, (mode, None, type_ann)),
 
                 _ => unimplemented!("typeof ({:?})", e),
             }
@@ -701,6 +713,16 @@ impl Analyzer<'_, '_> {
                     return true;
                 }
             }
+        }
+
+        match (declared, cur) {
+            (Key::Private(d), Key::Private(cur)) => {
+                if *d.id.sym() == *cur.id.sym() {
+                    return true;
+                }
+            }
+            (Key::Private(..), _) | (_, Key::Private(..)) => return false,
+            _ => {}
         }
 
         match (declared, cur) {
@@ -3667,6 +3689,7 @@ impl Analyzer<'_, '_> {
                 if let Some(name) = extract_name_for_assignment(obj, false) {
                     let next_ty = self
                         .filter_types_with_property(
+                            span,
                             &obj_ty,
                             match &prop {
                                 Key::Normal { sym, .. } => sym,
