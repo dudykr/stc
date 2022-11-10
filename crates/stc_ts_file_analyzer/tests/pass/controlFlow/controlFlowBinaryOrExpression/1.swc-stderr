@@ -1,0 +1,65 @@
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/1.ts:14:1]
+ 14 | var sourceObj: EventTargetLike = <any>undefined;
+    :                                       ^^^^^^^^^
+    `----
+
+Error: 
+  > undefined
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/1.ts:14:1]
+ 14 | var sourceObj: EventTargetLike = <any>undefined;
+    :                                  ^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/1.ts:15:1]
+ 15 | if (isNodeList(sourceObj)) {
+    :                ^^^^^^^^^
+    `----
+
+Error: 
+  > ({
+  |     a: string;
+  | } | HTMLCollection | NodeList)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/1.ts:15:1]
+ 15 | if (isNodeList(sourceObj)) {
+    :     ^^^^^^^^^^
+    `----
+
+Error: 
+  > (sourceObj: any) => sourceObj is NodeList
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/1.ts:15:1]
+ 15 | if (isNodeList(sourceObj)) {
+    :     ^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > sourceObj is NodeList
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/1.ts:16:5]
+ 16 | sourceObj.length;
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > NodeList
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/1.ts:16:5]
+ 16 | sourceObj.length;
+    : ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number
