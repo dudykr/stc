@@ -95,13 +95,13 @@ impl Analyzer<'_, '_> {
             _ => {
                 if let Ok(()) = self.assign_with_opts(
                     &mut Default::default(),
+                    &declared,
+                    &actual,
                     AssignOpts {
                         span,
                         allow_unknown_rhs: true,
                         ..Default::default()
                     },
-                    &declared,
-                    &actual,
                 ) {
                     return Ok(declared);
                 }

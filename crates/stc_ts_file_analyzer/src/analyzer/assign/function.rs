@@ -652,7 +652,7 @@ impl Analyzer<'_, '_> {
                 let l_elem_type = self.get_iterator_element_type(span, l_ty, false, GetIteratorOpts { ..Default::default() });
 
                 if let Ok(l_elem_type) = l_elem_type {
-                    if let Ok(()) = self.assign_with_opts(data, opts, &l_elem_type, &r.ty) {
+                    if let Ok(()) = self.assign_with_opts(data, &l_elem_type, &r.ty, opts) {
                         return Ok(());
                     }
                 }
@@ -669,10 +669,10 @@ impl Analyzer<'_, '_> {
         r_ty.make_clone_cheap();
 
         let res = if opts.for_overload {
-            self.assign_with_opts(data, AssignOpts { ..opts }, &l_ty, &r_ty)
+            self.assign_with_opts(data, &l_ty, &r_ty, opts)
                 .context("tried to assign the type of a parameter to another")
         } else {
-            self.assign_with_opts(data, AssignOpts { ..opts }, &r_ty, &l_ty)
+            self.assign_with_opts(data, &r_ty, &l_ty, opts)
                 .context("tried to assign the type of a parameter to another (reversed due to variance)")
         };
 

@@ -346,12 +346,12 @@ impl Analyzer<'_, '_> {
                 return self
                     .assign_with_opts(
                         &mut Default::default(),
+                        lhs,
+                        rhs,
                         AssignOpts {
                             span,
                             ..Default::default()
                         },
-                        lhs,
-                        rhs,
                     )
                     .convert_err(|err| Error::InvalidOpAssign {
                         span,
@@ -696,12 +696,12 @@ impl Analyzer<'_, '_> {
 
         match (to, rhs) {
             (Type::Rest(lr), r) => match lr.ty.normalize() {
-                Type::Array(la) => return self.assign_with_opts(data, opts, &la.elem_type, &r),
+                Type::Array(la) => return self.assign_with_opts(data, &la.elem_type, &r, opts),
                 _ => {}
             },
 
             (l, Type::Rest(rr)) => match rr.ty.normalize() {
-                Type::Array(ra) => return self.assign_with_opts(data, opts, &l, &ra.elem_type),
+                Type::Array(ra) => return self.assign_with_opts(data, &l, &ra.elem_type, opts),
                 _ => {}
             },
 
