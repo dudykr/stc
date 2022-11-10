@@ -132,7 +132,7 @@ impl Analyzer<'_, '_> {
             Type::Ref(..) => {
                 let mut r = self.expand_top_ref(opts.span, Cow::Borrowed(r), Default::default())?;
                 r.make_clone_cheap();
-                return self.assign_to_class(data, opts, l, &r);
+                return self.assign_to_class(data, l, &r, opts);
             }
 
             Type::Class(rc) => {
@@ -156,7 +156,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 for (i, lm) in l.def.body.iter().enumerate() {
-                    self.assign_class_members_to_class_member(data, opts, lm, r_body)
+                    self.assign_class_members_to_class_member(data, lm, r_body, opts)
                         .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}\n{:#?}", i, lm, r_body))?;
                 }
 
@@ -169,7 +169,7 @@ impl Analyzer<'_, '_> {
                         let parent = self
                             .instantiate_class(opts.span, &parent)
                             .context("tried to instantiated class to assign the super class to a class")?;
-                        if self.assign_to_class(data, opts, l, &parent).is_ok() {
+                        if self.assign_to_class(data, l, &parent, opts).is_ok() {
                             return Ok(());
                         }
                     }
@@ -201,17 +201,17 @@ impl Analyzer<'_, '_> {
 
                 self.assign_to_type_elements(
                     data,
-                    AssignOpts {
-                        allow_unknown_rhs: true,
-                        is_assigning_to_class_members: true,
-                        ..opts
-                    },
                     l.span,
                     &lhs_members,
                     &r,
                     TypeLitMetadata {
                         specified: true,
                         ..Default::default()
+                    },
+                    AssignOpts {
+                        allow_unknown_rhs: true,
+                        is_assigning_to_class_members: true,
+                        ..opts
                     },
                 )
                 .context("tried to assign type elements to class members")?;
