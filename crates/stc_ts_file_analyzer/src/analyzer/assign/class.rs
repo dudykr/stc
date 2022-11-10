@@ -270,7 +270,7 @@ impl Analyzer<'_, '_> {
                 for rm in r {
                     match rm {
                         ClassMember::Constructor(rc) => {
-                            self.assign_params(data, opts, &lc.params, &rc.params)?;
+                            self.assign_params(data, &lc.params, &rc.params, opts)?;
                             // TODO(kdy1): Validate parameters and etc..
                             return Ok(());
                         }
@@ -295,7 +295,6 @@ impl Analyzer<'_, '_> {
 
                                 self.assign_to_fn_like(
                                     data,
-                                    opts,
                                     true,
                                     lm.type_params.as_ref(),
                                     &lm.params,
@@ -303,6 +302,7 @@ impl Analyzer<'_, '_> {
                                     rm.type_params.as_ref(),
                                     &rm.params,
                                     Some(&rm.ret_ty),
+                                    opts,
                                 )
                                 .context("tried to assign a class method to another one")?;
 
