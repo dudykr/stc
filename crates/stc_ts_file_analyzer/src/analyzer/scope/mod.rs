@@ -1479,14 +1479,14 @@ impl Analyzer<'_, '_> {
                                         let res = self
                                             .assign_with_opts(
                                                 &mut Default::default(),
+                                                &ty,
+                                                &generalized_var_ty,
                                                 AssignOpts {
                                                     span,
                                                     for_overload: true,
                                                     disallow_assignment_to_unknown: true,
                                                     ..Default::default()
                                                 },
-                                                &ty,
-                                                &generalized_var_ty,
                                             )
                                             .context("tried to validate a varaible declared multiple times")
                                             .convert_err(|err| Error::VarDeclNotCompatible {
@@ -1575,13 +1575,13 @@ impl Analyzer<'_, '_> {
                 Type::Function(..) => {
                     self.assign_with_opts(
                         &mut Default::default(),
+                        &new,
+                        &orig,
                         AssignOpts {
                             span,
                             for_overload: true,
                             ..Default::default()
                         },
-                        &new,
-                        &orig,
                     )
                     .convert_err(|err| Error::ImcompatibleFnOverload {
                         span: orig.span(),

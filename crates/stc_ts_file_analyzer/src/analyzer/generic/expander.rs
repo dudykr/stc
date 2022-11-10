@@ -349,6 +349,8 @@ impl Analyzer<'_, '_> {
 
         let res = self.assign_with_opts(
             &mut Default::default(),
+            parent,
+            child,
             AssignOpts {
                 span,
                 disallow_special_assignment_to_empty_class: true,
@@ -356,8 +358,6 @@ impl Analyzer<'_, '_> {
                 allow_assignment_to_param_constraint: true,
                 ..Default::default()
             },
-            parent,
-            child,
         );
 
         match res {

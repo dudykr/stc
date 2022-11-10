@@ -324,12 +324,12 @@ impl Analyzer<'_, '_> {
                         if let Some(Ok(ty)) = &ty {
                             self.assign_with_opts(
                                 &mut Default::default(),
+                                &ty,
+                                &default_value_ty,
                                 AssignOpts {
                                     span: assign_pat.span,
                                     ..Default::default()
                                 },
-                                &ty,
-                                &default_value_ty,
                             )
                             .report(&mut self.storage);
                         }

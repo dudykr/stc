@@ -425,6 +425,8 @@ impl Analyzer<'_, '_> {
         // We can cast A to B, thus from = A, to = B.
         if let Ok(()) = self.assign_with_opts(
             &mut Default::default(),
+            from,
+            to,
             AssignOpts {
                 span,
                 disallow_different_classes: opts.disallow_different_classes,
@@ -433,8 +435,6 @@ impl Analyzer<'_, '_> {
                 for_castablity: true,
                 ..Default::default()
             },
-            from,
-            to,
         ) {
             return Ok(true);
         }
