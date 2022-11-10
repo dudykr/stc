@@ -1532,6 +1532,10 @@ impl Error {
             // TS18047: ${obj} is possibly 'null'.
             2531 | 18047 => 2531,
 
+            // TS2571: Object is of type 'unknown'
+            // TS18046: ${obj} is of type 'unknown'.
+            2571 | 18046 => 2531,
+
             _ => code,
         }
     }
