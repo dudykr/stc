@@ -144,7 +144,7 @@ impl TypeEq for RTsLit {
         match (self, other) {
             (RTsLit::Str(a), RTsLit::Str(b)) => a.type_eq(b),
             (RTsLit::Number(a), RTsLit::Number(b)) => a.type_eq(b),
-            (RTsLit::Bool(a), RTsLit::Bool(b)) => a == b,
+            (RTsLit::Bool(a), RTsLit::Bool(b)) => a.type_eq(b),
             (RTsLit::BigInt(a), RTsLit::BigInt(b)) => a.type_eq(b),
             _ => false,
         }
