@@ -115,7 +115,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::TypeLit(TypeLit {
-                    members: rhs_members,
+                    members: all_rhs_members,
                     metadata: rhs_metadata,
                     ..
                 }) => {
@@ -126,7 +126,7 @@ impl Analyzer<'_, '_> {
                         let mut v = vec![];
                         let mut used_keys: Vec<Key> = vec![];
 
-                        for (index, r) in rhs_members.iter().enumerate().rev() {
+                        for (index, r) in all_rhs_members.iter().enumerate().rev() {
                             match r {
                                 TypeElement::Property(p @ PropertySignature { optional: false, .. }) => {
                                     if used_keys.iter().any(|prev| prev.type_eq(&p.key)) {
@@ -149,7 +149,7 @@ impl Analyzer<'_, '_> {
                         v
                     };
 
-                    let rhs_members = rhs_members
+                    let rhs_members = all_rhs_members
                         .into_iter()
                         .enumerate()
                         .filter(|(index, _)| valid_rhs_indexes.contains(index))
@@ -213,6 +213,7 @@ impl Analyzer<'_, '_> {
 
                     if !errors.is_empty()
                         && lhs.iter().any(|el| matches!(el, TypeElement::Index(..)))
+                        && all_rhs_members.iter().all(|el| !matches!(el, TypeElement::Index(..)))
                         && !opts.report_object_instead_of_fields
                     {
                         return Err(Error::Errors {
