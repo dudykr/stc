@@ -211,7 +211,10 @@ impl Analyzer<'_, '_> {
                     })
                     .store(&mut errors);
 
-                    if !errors.is_empty() && !opts.report_object_instead_of_fields {
+                    if !errors.is_empty()
+                        && lhs.iter().any(|el| matches!(el, TypeElement::Index(..)))
+                        && !opts.report_object_instead_of_fields
+                    {
                         return Err(Error::Errors {
                             span,
                             errors: Error::flatten(errors),
