@@ -105,6 +105,13 @@ type_eq!(RTsEnumMemberId);
 type_eq!(RExpr);
 type_eq!(RPropName);
 
+impl TypeEq for RBool {
+    #[inline]
+    fn type_eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
 impl TypeEq for RStr {
     #[inline]
     fn type_eq(&self, other: &Self) -> bool {
