@@ -99,6 +99,7 @@ impl Analyzer<'_, '_> {
                             // required because interface can extend classes
                             use_missing_fields_for_class: true,
                             allow_unknown_rhs: true,
+                            report_object_instead_of_fields: true,
                             ..Default::default()
                         },
                     ) {
