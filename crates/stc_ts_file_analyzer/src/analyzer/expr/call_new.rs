@@ -56,6 +56,9 @@ pub(crate) struct CallOpts {
     ///
     /// See: for-of29.ts
     pub disallow_optional_object_property: bool,
+
+    /// If false, private members are not allowed.
+    pub allow_private_names: bool,
 }
 
 #[validator]
@@ -1041,6 +1044,12 @@ impl Analyzer<'_, '_> {
             TypeElement::Method(m) if kind == ExtractKind::Call => {
                 if opts.disallow_optional_object_property && m.optional {
                     return;
+                }
+
+                if !opts.allow_private_names {
+                    if m.key.is_private() || prop.is_private() {
+                        return;
+                    }
                 }
 
                 // We are interested only on methods named `prop`
