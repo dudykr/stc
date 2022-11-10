@@ -1788,7 +1788,10 @@ impl Analyzer<'_, '_> {
         };
 
         match ty.normalize() {
-            Type::TypeLit(..)
+            Type::This(..)
+            | Type::Class(..)
+            | Type::ClassDef(..)
+            | Type::TypeLit(..)
             | Type::Param(..)
             | Type::Mapped(..)
             | Type::Array(..)
