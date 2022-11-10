@@ -151,7 +151,6 @@ impl Analyzer<'_, '_> {
                             return self
                                 .assign_to_fn_like(
                                     data,
-                                    opts,
                                     is_call,
                                     l_type_params,
                                     &new_l_params,
@@ -159,6 +158,7 @@ impl Analyzer<'_, '_> {
                                     r_type_params,
                                     r_params,
                                     r_ret_ty,
+                                    opts,
                                 )
                                 .context("tried to assign by expanding overloads in a type literal");
                         }

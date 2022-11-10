@@ -21,7 +21,7 @@ impl Analyzer<'_, '_> {
         match r {
             Type::Ref(..) => {
                 let r = self.expand_top_ref(opts.span, Cow::Borrowed(r), Default::default())?;
-                return self.assign_to_class_def(data, opts, l, &r);
+                return self.assign_to_class_def(data, l, &r, opts);
             }
 
             Type::Query(r_ty) => match &*r_ty.expr {
@@ -30,7 +30,7 @@ impl Analyzer<'_, '_> {
                         .resolve_typeof(opts.span, e)
                         .context("tried to resolve typeof for assignment")?;
 
-                    return self.assign_to_class_def(data, opts, l, &rhs);
+                    return self.assign_to_class_def(data, l, &rhs, opts);
                 }
                 QueryExpr::Import(_) => {}
             },
@@ -50,7 +50,7 @@ impl Analyzer<'_, '_> {
                     // let p: Parent;
                     // `p = c` is valid
                     if let Some(parent) = &rc.super_class {
-                        if self.assign_to_class_def(data, opts, l, &parent).is_ok() {
+                        if self.assign_to_class_def(data, l, &parent, opts).is_ok() {
                             return Ok(());
                         }
                     }
@@ -72,7 +72,7 @@ impl Analyzer<'_, '_> {
                 };
 
                 for (i, lm) in l.body.iter().enumerate() {
-                    self.assign_class_members_to_class_member(data, opts, lm, r_body)
+                    self.assign_class_members_to_class_member(data, lm, r_body, opts)
                         .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}\n{:#?}", i, lm, r_body))?;
                 }
 
@@ -97,17 +97,17 @@ impl Analyzer<'_, '_> {
 
                 self.assign_to_type_elements(
                     data,
-                    AssignOpts {
-                        allow_unknown_rhs: true,
-                        is_assigning_to_class_members: true,
-                        ..opts
-                    },
                     l.span,
                     &lhs_members,
                     &r,
                     TypeLitMetadata {
                         specified: true,
                         ..Default::default()
+                    },
+                    AssignOpts {
+                        allow_unknown_rhs: true,
+                        is_assigning_to_class_members: true,
+                        ..opts
                     },
                 )
                 .context("tried to assign type elements to a class member")?;

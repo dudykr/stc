@@ -110,7 +110,7 @@ impl Analyzer<'_, '_> {
                             Err(err) => return Some(Err(err)),
                         };
 
-                        if let Some(Ok(())) = self.assign_to_builtin(data, opts, l, &parent) {
+                        if let Some(Ok(())) = self.assign_to_builtin(data, l, &parent, opts) {
                             return Some(Ok(()));
                         }
                     }
