@@ -396,12 +396,12 @@ impl Analyzer<'_, '_> {
                     if let Some(right) = right {
                         self.assign_with_opts(
                             &mut Default::default(),
+                            &ty,
+                            &right,
                             AssignOpts {
                                 span: right.span(),
                                 ..Default::default()
                             },
-                            &ty,
-                            &right,
                         )
                         .report(&mut self.storage);
                     }
@@ -1311,13 +1311,13 @@ impl Analyzer<'_, '_> {
 
                 self.assign_with_opts(
                     &mut Default::default(),
+                    &parent,
+                    &class_ty,
                     AssignOpts {
                         span: parent.span(),
                         allow_unknown_rhs: true,
                         ..Default::default()
                     },
-                    &parent,
-                    &class_ty,
                 )
                 .context("tried to assign a class to parent interface")
                 .convert_err(|err| {
@@ -2173,12 +2173,12 @@ impl Analyzer<'_, '_> {
 
                     self.assign_with_opts(
                         &mut Default::default(),
+                        &index_ret_ty,
+                        &value,
                         AssignOpts {
                             span,
                             ..Default::default()
                         },
-                        &index_ret_ty,
-                        &value,
                     )
                     .convert_err(|_err| {
                         if index.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
@@ -2204,11 +2204,6 @@ impl Analyzer<'_, '_> {
             for ambient in ambient {
                 self.assign_to_fn_like(
                     &mut Default::default(),
-                    AssignOpts {
-                        span: i.span,
-                        for_overload: true,
-                        ..Default::default()
-                    },
                     false,
                     ambient.type_params.as_ref(),
                     &ambient.params,
@@ -2216,6 +2211,11 @@ impl Analyzer<'_, '_> {
                     i.type_params.as_ref(),
                     &i.params,
                     i.ret_ty.as_deref(),
+                    AssignOpts {
+                        span: i.span,
+                        for_overload: true,
+                        ..Default::default()
+                    },
                 )
                 .convert_err(|err| Error::WrongOverloadSignature { span: err.span() })?;
             }

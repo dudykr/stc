@@ -790,12 +790,12 @@ impl Analyzer<'_, '_> {
 
                         self.assign_with_opts(
                             &mut Default::default(),
+                            &var_ty,
+                            &ty,
                             AssignOpts {
                                 span: i.id.span,
                                 ..opts.assign
                             },
-                            &var_ty,
-                            &ty,
                         )?;
                     }
                 }
@@ -1077,7 +1077,7 @@ impl Analyzer<'_, '_> {
                     .report(&mut self.storage);
 
                 if let Some(lhs_ty) = &lhs_ty {
-                    self.assign_with_opts(&mut Default::default(), AssignOpts { span, ..opts.assign }, &lhs_ty, &ty)?;
+                    self.assign_with_opts(&mut Default::default(), &lhs_ty, &ty, AssignOpts { span, ..opts.assign })?;
                 }
                 return Ok(());
             }
