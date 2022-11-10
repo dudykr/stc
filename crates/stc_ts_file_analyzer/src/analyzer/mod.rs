@@ -757,6 +757,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, m: &RModule) {
+        self.ctx.in_module = true;
         let is_dts = self.ctx.is_dts;
 
         let globals = self.env.shared().swc_globals().clone();
