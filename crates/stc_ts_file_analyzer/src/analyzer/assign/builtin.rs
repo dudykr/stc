@@ -165,13 +165,13 @@ impl Analyzer<'_, '_> {
             if let Some(r_elem) = unwrap_ref_with_single_arg(r, "ReadonlyArray") {
                 return Some(self.assign_with_opts(
                     data,
-                    opts,
                     &l,
                     &Type::Array(Array {
                         span: r.span(),
                         elem_type: box r_elem.clone(),
                         metadata: ArrayMetadata { common: r.metadata() },
                     }),
+                    opts,
                 ));
             }
         }
@@ -206,7 +206,7 @@ impl Analyzer<'_, '_> {
                         let mut done = true;
                         for l in &l.types {
                             if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
-                                if let Ok(()) = self.assign_with_opts(data, opts, l, r) {
+                                if let Ok(()) = self.assign_with_opts(data, l, r, opts) {
                                     return Some(Ok(()));
                                 }
                             } else {
@@ -230,12 +230,12 @@ impl Analyzer<'_, '_> {
 
                 if let Ok(()) = self.assign_with_opts(
                     data,
+                    l,
+                    &r,
                     AssignOpts {
                         may_unwrap_promise: false,
                         ..opts
                     },
-                    l,
-                    &r,
                 ) {
                     return Some(Ok(()));
                 }
@@ -245,12 +245,12 @@ impl Analyzer<'_, '_> {
 
                     if let Ok(()) = self.assign_with_opts(
                         data,
+                        l,
+                        &r,
                         AssignOpts {
                             may_unwrap_promise: false,
                             ..opts
                         },
-                        l,
-                        &r,
                     ) {
                         return Some(Ok(()));
                     }
@@ -261,7 +261,7 @@ impl Analyzer<'_, '_> {
         if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
             if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
                 return Some(
-                    self.assign_with_opts(data, opts, l, r)
+                    self.assign_with_opts(data, l, r, opts)
                         .context("tried to assign a promise to another using optimized algorithm"),
                 );
             }
