@@ -2110,6 +2110,7 @@ types/primitives/boolean/validBooleanAssignments.ts
 types/primitives/enum/invalidEnumAssignments.ts
 types/primitives/enum/validEnumAssignments.ts
 types/primitives/null/directReferenceToNull.ts
+types/primitives/null/validNullAssignments.ts
 types/primitives/number/assignFromNumberInterface.ts
 types/primitives/number/extendNumberInterface.ts
 types/primitives/number/invalidNumberAssignments.ts
@@ -2123,6 +2124,7 @@ types/primitives/string/stringPropertyAccessWithError.ts
 types/primitives/string/validStringAssignments.ts
 types/primitives/stringLiteral/stringLiteralType.ts
 types/primitives/undefined/directReferenceToUndefined.ts
+types/primitives/undefined/invalidUndefinedAssignments.ts
 types/primitives/undefined/invalidUndefinedValues.ts
 types/primitives/undefined/validUndefinedAssignments.ts
 types/primitives/undefined/validUndefinedValues.ts
