@@ -1,0 +1,45 @@
+{
+  "name": "@stc-rs/core-linux-arm64-gnu",
+  "version": "1.2.130",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "main": "stc-rs.linux-arm64-gnu.node",
+  "files": [
+    "stc-rs.linux-arm64-gnu.node",
+    "stc-rs"
+  ],
+  "libc": [
+    "glibc"
+  ],
+  "description": "Super-fast alternative for babel",
+  "keywords": [
+    "stc-rs",
+    "stc-rspack",
+    "babel",
+    "typescript",
+    "rust",
+    "webpack",
+    "tsc"
+  ],
+  "author": "강동윤 <kdy1997.dev@gmail.com>",
+  "homepage": "https://stc-rs.rs",
+  "license": "Apache-2.0 AND MIT",
+  "engines": {
+    "node": ">=10"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stc-rs-project/stc-rs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stc-rs-project/stc-rs/issues"
+  }
+}
