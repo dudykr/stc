@@ -119,7 +119,7 @@ impl Analyzer<'_, '_> {
                     metadata: rhs_metadata,
                     ..
                 }) => {
-                    let allow_unknown_rhs = opts.allow_unknown_rhs || rhs_metadata.inexact;
+                    let allow_unknown_rhs = opts.allow_unknown_rhs || rhs_metadata.inexact || rhs_metadata.specified;
 
                     // Exclude duplicate properties on rhs
                     let valid_rhs_indexes = {
