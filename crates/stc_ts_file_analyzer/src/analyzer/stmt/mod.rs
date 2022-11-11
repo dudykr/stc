@@ -59,6 +59,8 @@ impl Analyzer<'_, '_> {
 
         s.visit_children_with(&mut *self.with_ctx(Ctx {
             ignore_facts: false,
+        s.visit_children_with(&mut self.with_ctx(Ctx {
+            do_not_create_cond_facts: false,
             ..self.ctx
         }));
 
@@ -82,7 +84,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RExprStmt) {
         s.visit_children_with(&mut *self.with_ctx(Ctx {
-            ignore_facts: true,
+            do_not_create_cond_facts: true,
             ..self.ctx
         }));
 
