@@ -11,7 +11,7 @@ use tracing::{instrument, span, trace, warn, Level};
 
 use self::return_type::LoopBreakerFinder;
 use crate::{
-    analyzer::{scope::ScopeKind, util::ResultExt, Analyzer},
+    analyzer::{scope::ScopeKind, util::ResultExt, Analyzer, Ctx},
     validator,
     validator::ValidateWith,
 };
@@ -57,7 +57,10 @@ impl Analyzer<'_, '_> {
             _ => false,
         };
 
-        s.visit_children_with(self);
+        s.visit_children_with(&mut *self.with_ctx(Ctx {
+            ignore_facts: false,
+            ..self.ctx
+        }));
 
         self.scope.return_values.in_conditional = old_in_conditional;
 
