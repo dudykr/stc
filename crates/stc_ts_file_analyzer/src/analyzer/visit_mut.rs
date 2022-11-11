@@ -3,8 +3,8 @@
 use rnode::Visit;
 use stc_ts_ast_rnode::{
     RArrowExpr, RBlockStmt, RCatchClause, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RComputedPropName, RConstructor,
-    RDoWhileStmt, RExportAll, RExportDecl, RExportDefaultDecl, RExportDefaultExpr, RExportNamedSpecifier, RExpr, RFnDecl, RFnExpr,
-    RForInStmt, RForOfStmt, RForStmt, RFunction, RIfStmt, RImportDecl, RModule, RModuleItem, RNamedExport, RObjectLit, RParam,
+    RDoWhileStmt, RExportAll, RExportDecl, RExportDefaultDecl, RExportDefaultExpr, RExportNamedSpecifier, RExpr, RExprStmt, RFnDecl,
+    RFnExpr, RForInStmt, RForOfStmt, RForStmt, RFunction, RIfStmt, RImportDecl, RModule, RModuleItem, RNamedExport, RObjectLit, RParam,
     RParamOrTsParamProp, RPrivateMethod, RPrivateProp, RPropName, RReturnStmt, RSeqExpr, RStmt, RSwitchStmt, RTpl, RTsEnumDecl,
     RTsExportAssignment, RTsFnParam, RTsFnType, RTsImportEqualsDecl, RTsInterfaceBody, RTsInterfaceDecl, RTsModuleBlock, RTsModuleDecl,
     RTsNamespaceDecl, RTsParamProp, RTsTplLitType, RTsType, RTsTypeAliasDecl, RTsTypeElement, RVarDecl, RVarDeclarator, RWhileStmt,
@@ -85,6 +85,7 @@ forward!(visit_while_stmt, RWhileStmt);
 forward!(visit_for_of_stmt, RForOfStmt);
 forward!(visit_for_in_stmt, RForInStmt);
 forward!(visit_for_stmt, RForStmt);
+forward!(visit_expr_stmt, RExprStmt);
 forward!(visit_constructor, RConstructor);
 forward!(visit_ts_param_prop, RTsParamProp);
 forward!(visit_tpl, RTpl);

@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use rnode::VisitWith;
-use stc_ts_ast_rnode::{RBlockStmt, RBool, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RWithStmt};
+use stc_ts_ast_rnode::{RBlockStmt, RBool, RExprStmt, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RWithStmt};
 use stc_ts_errors::Error;
 use stc_ts_types::{LitType, Type};
 use stc_utils::stack;
@@ -73,6 +73,18 @@ impl Analyzer<'_, '_> {
             line_col,
             end - start
         );
+
+        Ok(())
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, s: &RExprStmt) {
+        s.visit_children_with(&mut *self.with_ctx(Ctx {
+            ignore_facts: true,
+            ..self.ctx
+        }));
 
         Ok(())
     }
