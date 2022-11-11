@@ -27,13 +27,13 @@ jobs:
             target: x86_64-apple-darwin
             build: |
               cargo build --release
-              cp ./bindings/target/release/stc .
+              cp ./target/release/stc .
               chmod +x ./stc
           - host: windows-latest
             build: |
               export CARGO_PROFILE_RELEASE_LTO=false
               cargo build --release
-              cp ./bindings/target/release/stc .
+              cp ./target/release/stc .
               chmod +x ./stc
             target: x86_64-pc-windows-msvc
           - host: windows-latest
@@ -41,7 +41,7 @@ jobs:
               export DISABLE_PLUGIN_E2E_TESTS=true
               export CARGO_PROFILE_RELEASE_LTO=false
               cargo build --release --target i686-pc-windows-msvc
-              cp bindings/target/i686-pc-windows-msvc/release/stc .
+              cp target/i686-pc-windows-msvc/release/stc .
               chmod +x ./stc
             target: i686-pc-windows-msvc
           - host: ubuntu-latest
@@ -50,8 +50,8 @@ jobs:
             build: >-
               set -e &&
               unset CC_x86_64_unknown_linux_gnu && unset CC && RUSTFLAGS='-C target-feature=+sse2' cargo build --release &&
-              rm -rf bindings/target/target/x86_64-unknown-linux-gnu/release/.cargo-lock &&
-              cp bindings/target/x86_64-unknown-linux-gnu/release/stc . && chmod +x ./stc
+              rm -rf target/target/x86_64-unknown-linux-gnu/release/.cargo-lock &&
+              cp target/x86_64-unknown-linux-gnu/release/stc . && chmod +x ./stc
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
             # musl build is slow, let's disable the LTO
@@ -61,7 +61,7 @@ jobs:
               export CARGO_PROFILE_RELEASE_LTO=false &&
               RUSTFLAGS='-C target-feature=+sse2' cargo build --release &&
               rm -rf target/release/.cargo-lock &&
-              cp bindings/target/release/stc . && chmod +x ./stc
+              cp target/release/stc . && chmod +x ./stc
           - host: macos-latest
             target: aarch64-apple-darwin
             build: |
@@ -71,7 +71,7 @@ jobs:
               SYSROOT=$(xcrun --sdk macosx --show-sdk-path);
               export CFLAGS="-isysroot $SYSROOT -isystem $SYSROOT";
               cargo build --release --target=aarch64-apple-darwin
-              cp ./bindings/target/aarch64-apple-darwin/release/stc .
+              cp ./target/aarch64-apple-darwin/release/stc .
               chmod +x ./stc
           # - host: ubuntu-latest
           #   target: aarch64-unknown-linux-gnu
@@ -81,7 +81,7 @@ jobs:
           #     rustup target add aarch64-unknown-linux-gnu &&
           #     unset CC_x86_64_unknown_linux_gnu && unset CC &&
           #     RUSTFLAGS='' cargo build --release --target aarch64-unknown-linux-gnu &&
-          #     cp ./bindings/target/aarch64-unknown-linux-gnu/release/stc . && chmod +x ./stc
+          #     cp ./target/aarch64-unknown-linux-gnu/release/stc . && chmod +x ./stc
           - host: ubuntu-18.04
             target: armv7-unknown-linux-gnueabihf
             setup: |
@@ -89,7 +89,7 @@ jobs:
               sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf -y
             build: |
               cargo build --release --target=armv7-unknown-linux-gnueabihf
-              cp ./bindings/target/armv7-unknown-linux-gnueabihf/release/stc .
+              cp ./target/armv7-unknown-linux-gnueabihf/release/stc .
               chmod +x ./stc
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
@@ -100,7 +100,7 @@ jobs:
               rustup target add aarch64-unknown-linux-musl &&
               RUSTFLAGS='-C target-feature=+crt-static -C link-arg=-lgcc' cargo build --release --target aarch64-unknown-linux-musl &&
               rm -rf target/release/.cargo-lock &&
-              cp bindings/target/aarch64-unknown-linux-musl/release/stc . && chmod +x ./stc
+              cp target/aarch64-unknown-linux-musl/release/stc . && chmod +x ./stc
           - host: windows-latest
             target: aarch64-pc-windows-msvc
             # Disable `LTO` and increase `codegen-units` to avoid llvm `OOM` on GitHub Actions.
@@ -108,7 +108,7 @@ jobs:
               export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=256
               export CARGO_PROFILE_RELEASE_LTO=false
               cargo build --release --target aarch64-pc-windows-msvc
-              cp bindings/target/aarch64-pc-windows-msvc/release/stc.exe .
+              cp target/aarch64-pc-windows-msvc/release/stc.exe .
     name: stable - ${{ matrix.settings.target }} - node@16
     runs-on: ${{ matrix.settings.host }}
     steps:
