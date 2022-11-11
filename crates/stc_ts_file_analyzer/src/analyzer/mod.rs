@@ -201,7 +201,11 @@ pub(crate) struct Ctx {
 
     is_fn_param: bool,
 
+    /// Is this a module code?
     in_module: bool,
+
+    /// `true` for e.g. expressions in expresion statements.
+    ignore_facts: bool,
 }
 
 impl Ctx {
@@ -528,6 +532,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 is_not_topmost_type: false,
                 is_fn_param: false,
                 in_module: false,
+                ignore_facts: false,
             },
             loader,
             is_builtin,
