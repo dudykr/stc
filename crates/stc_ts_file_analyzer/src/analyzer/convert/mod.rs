@@ -13,17 +13,15 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
     ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, InferTypeMetadata, Interface,
-    Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature,
-    Operator, OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RefMetadata, RestType, Symbol, ThisType, TplType,
-    TsExpr, Tuple, TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
-    TypeParamInstantiation, Union,
+    Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature, Operator,
+    OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RefMetadata, RestType, Symbol, ThisType, TplType, TsExpr, Tuple,
+    TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
-use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, AHashSet};
+use stc_utils::{cache::Freeze, debug_ctx, AHashSet};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -613,27 +611,19 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, u: &RTsUnionType) -> VResult<Union> {
-        let mut types = u.types.validate_with(self)?;
+    fn validate(&mut self, u: &RTsUnionType) -> VResult<Type> {
+        let types = u.types.validate_with(self)?;
 
-        types.dedup_type();
-
-        Ok(Union {
-            span: u.span,
-            types,
-            metadata: Default::default(),
-        })
+        Ok(Type::new_union(u.span, types))
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, u: &RTsIntersectionType) -> VResult<Intersection> {
-        Ok(Intersection {
-            span: u.span,
-            types: u.types.validate_with(self)?,
-            metadata: Default::default(),
-        })
+    fn validate(&mut self, u: &RTsIntersectionType) -> VResult<Type> {
+        let types = u.types.validate_with(self)?;
+
+        Ok(Type::new_intersection(u.span, types))
     }
 }
 
@@ -1011,10 +1001,8 @@ impl Analyzer<'_, '_> {
                     })
                 }
                 RTsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(a)?),
-                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => Type::Union(u.validate_with(a)?).fixed(),
-                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(i)) => {
-                    Type::Intersection(i.validate_with(a)?).fixed()
-                }
+                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => u.validate_with(a)?,
+                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(i)) => i.validate_with(a)?,
                 RTsType::TsArrayType(arr) => Type::Array(arr.validate_with(a)?),
                 RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(f)) => Type::Function(f.validate_with(a)?),
                 RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsConstructorType(c)) => Type::Constructor(c.validate_with(a)?),

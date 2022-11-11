@@ -1233,6 +1233,11 @@ impl Type {
             return Type::never(span, Default::default());
         }
 
+        if tys.len() > 1 {
+            // In an intersection everything absorbs unknown
+            tys.retain(|ty| !ty.is_unknown());
+        }
+
         match tys.len() {
             0 => Type::never(span, Default::default()),
             1 => tys.into_iter().next().unwrap(),
@@ -1253,6 +1258,15 @@ impl Type {
                     let mut elements = vec![];
 
                     for ty in types {
+                        if ty.is_unknown() {
+                            // In a union an unknown absorbs everything
+                            return Type::Keyword(KeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                metadata: Default::default(),
+                            });
+                        }
+
                         if ty.is_union_type() {
                             let types = ty.expect_union_type().types;
                             for new in types {
@@ -1286,6 +1300,15 @@ impl Type {
         let mut elements = vec![];
 
         for ty in iter {
+            if ty.is_unknown() {
+                // In a union an unknown absorbs everything
+                return Type::Keyword(KeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsUnknownKeyword,
+                    metadata: Default::default(),
+                });
+            }
+
             if ty.is_union_type() {
                 let types = ty.expect_union_type().types;
                 for new in types {
