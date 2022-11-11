@@ -1498,9 +1498,10 @@ impl Error {
             // TS2551: Property not found with a suggestion.
             2550 | 2551 => 2339,
 
-            // TS2693: Type used as a variable.
-            // TS2585: Type used as a variable with a suggestion to change 'lib',
-            2585 => 2693,
+            // TS2304: Variable not found
+            // TS2585: Variable not found, but with a suggestion to change 'lib',
+            // TS2693: Variable not found, but a type with same name exists.
+            2304 | 2585 | 2693 => 2304,
 
             // TS2307: Module not found.
             // TS2792: Module not found with recommendation to change module resolution.
