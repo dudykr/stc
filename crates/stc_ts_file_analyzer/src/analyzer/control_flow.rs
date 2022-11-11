@@ -1036,7 +1036,8 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 RPat::Invalid(_) => {
-                                    self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                    // self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span:
+                                    // r.arg.span() });
                                     self.storage.report(Error::RestArgMustBeVarOrMemberAccess { span: r.arg.span() });
                                 }
 
