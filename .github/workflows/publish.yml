@@ -27,25 +27,22 @@ jobs:
             target: x86_64-apple-darwin
             build: |
               cargo build --release
-              cp ./bindings/target/release/swc .
-              chmod +x ./swc
-              yarn build
-              strip -x *.node
+              cp ./bindings/target/release/stc .
+              chmod +x ./stc
           - host: windows-latest
             build: |
               export CARGO_PROFILE_RELEASE_LTO=false
-              yarn build
               cargo build --release
-              cp ./bindings/target/release/swc .
+              cp ./bindings/target/release/stc .
+              chmod +x ./stc
             target: x86_64-pc-windows-msvc
           - host: windows-latest
             build: |
               export DISABLE_PLUGIN_E2E_TESTS=true
               export CARGO_PROFILE_RELEASE_LTO=false
               cargo build --release --target i686-pc-windows-msvc
-              cp bindings/target/i686-pc-windows-msvc/release/swc .
-              yarn build --target i686-pc-windows-msvc --cargo-flags="--no-default-features" --features swc_v1
-              yarn test
+              cp bindings/target/i686-pc-windows-msvc/release/stc .
+              chmod +x ./stc
             target: i686-pc-windows-msvc
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
@@ -54,9 +51,7 @@ jobs:
               set -e &&
               unset CC_x86_64_unknown_linux_gnu && unset CC && RUSTFLAGS='-C target-feature=+sse2' cargo build --release &&
               rm -rf bindings/target/target/x86_64-unknown-linux-gnu/release/.cargo-lock &&
-              cp bindings/target/x86_64-unknown-linux-gnu/release/swc . && chmod +x ./swc &&
-              yarn build --target x86_64-unknown-linux-gnu &&
-              strip swc.linux-x64-gnu.node
+              cp bindings/target/x86_64-unknown-linux-gnu/release/stc . && chmod +x ./stc
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
             # musl build is slow, let's disable the LTO
@@ -66,9 +61,7 @@ jobs:
               export CARGO_PROFILE_RELEASE_LTO=false &&
               RUSTFLAGS='-C target-feature=+sse2' cargo build --release &&
               rm -rf target/release/.cargo-lock &&
-              cp bindings/target/release/swc . && chmod +x ./swc &&
-              RUSTFLAGS='-C target-feature=+sse2 -C target-feature=-crt-static' yarn build &&
-              llvm-strip -x swc.linux-x64-musl.node
+              cp bindings/target/release/stc . && chmod +x ./stc
           - host: macos-latest
             target: aarch64-apple-darwin
             build: |
@@ -78,10 +71,8 @@ jobs:
               SYSROOT=$(xcrun --sdk macosx --show-sdk-path);
               export CFLAGS="-isysroot $SYSROOT -isystem $SYSROOT";
               cargo build --release --target=aarch64-apple-darwin
-              cp ./bindings/target/aarch64-apple-darwin/release/swc .
-              chmod +x ./swc
-              yarn build --target=aarch64-apple-darwin
-              strip -x *.node
+              cp ./bindings/target/aarch64-apple-darwin/release/stc .
+              chmod +x ./stc
           - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
@@ -89,22 +80,16 @@ jobs:
               set -e &&
               rustup target add aarch64-unknown-linux-gnu &&
               RUSTFLAGS='' cargo build --release --target aarch64-unknown-linux-gnu &&
-              cp ./bindings/target/aarch64-unknown-linux-gnu/release/swc . && chmod +x ./swc &&
-              export CC_aarch64_unknown_linux_gnu=/usr/aarch64-unknown-linux-gnu/bin/aarch64-unknown-linux-gnu-gcc &&
-              yarn build --target aarch64-unknown-linux-gnu &&
-              llvm-strip -x swc.linux-arm64-gnu.node
+              cp ./bindings/target/aarch64-unknown-linux-gnu/release/stc . && chmod +x ./stc
           - host: ubuntu-18.04
             target: armv7-unknown-linux-gnueabihf
             setup: |
               sudo apt-get update
               sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf -y
             build: |
-              export DISABLE_PLUGIN_E2E_TESTS=true
               cargo build --release --target=armv7-unknown-linux-gnueabihf
-              cp ./bindings/target/armv7-unknown-linux-gnueabihf/release/swc .
-              chmod +x ./swc
-              yarn build --target=armv7-unknown-linux-gnueabihf --cargo-flags='--no-default-features --features swc_v1'
-              arm-linux-gnueabihf-strip swc.linux-arm-gnueabihf.node
+              cp ./bindings/target/armv7-unknown-linux-gnueabihf/release/stc .
+              chmod +x ./stc
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
             downloadTarget: aarch64-unknown-linux-musl
@@ -114,19 +99,15 @@ jobs:
               rustup target add aarch64-unknown-linux-musl &&
               RUSTFLAGS='-C target-feature=+crt-static -C link-arg=-lgcc' cargo build --release --target aarch64-unknown-linux-musl &&
               rm -rf target/release/.cargo-lock &&
-              cp bindings/target/aarch64-unknown-linux-musl/release/swc . && chmod +x ./swc &&
-              env RUSTFLAGS='-C target-feature=-crt-static' yarn build --target=aarch64-unknown-linux-musl &&
-              /aarch64-linux-musl-cross/bin/aarch64-linux-musl-strip swc.linux-arm64-musl.node
+              cp bindings/target/aarch64-unknown-linux-musl/release/stc . && chmod +x ./stc
           - host: windows-latest
             target: aarch64-pc-windows-msvc
             # Disable `LTO` and increase `codegen-units` to avoid llvm `OOM` on GitHub Actions.
             build: |
-              export DISABLE_PLUGIN_E2E_TESTS=true
               export CARGO_PROFILE_RELEASE_CODEGEN_UNITS=256
               export CARGO_PROFILE_RELEASE_LTO=false
               cargo build --release --target aarch64-pc-windows-msvc
-              cp bindings/target/aarch64-pc-windows-msvc/release/swc.exe .
-              yarn build --target aarch64-pc-windows-msvc --cargo-flags='--no-default-features --features swc_v1'
+              cp bindings/target/aarch64-pc-windows-msvc/release/stc.exe .
     name: stable - ${{ matrix.settings.target }} - node@16
     runs-on: ${{ matrix.settings.host }}
     steps:
@@ -202,7 +183,7 @@ jobs:
         with:
           name: bindings-${{ matrix.settings.target }}
           path: |
-            swc*
+            stc*
           if-no-files-found: error
   test-macOS-windows-binding:
     if: ${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/ci' }}
@@ -284,7 +265,7 @@ jobs:
       - name: Build TypeScript
         run: yarn build:ts
       - name: Test bindings
-        run: docker run --rm -v $(pwd):/swc -w /swc node:${{ matrix.node }}-slim env DISABLE_PLUGIN_E2E_TESTS=true yarn test
+        run: docker run --rm -v $(pwd):/stc -w /stc node:${{ matrix.node }}-slim env yarn test
   test-linux-x64-musl-binding:
     if: ${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/ci' }}
     name: Test bindings on x86_64-unknown-linux-musl - node@${{ matrix.node }}
@@ -323,7 +304,7 @@ jobs:
       - name: Build TypeScript
         run: yarn build:ts
       - name: Test bindings
-        run: docker run --rm -v $(pwd):/swc -w /swc node:${{ matrix.node }}-alpine env DISABLE_PLUGIN_E2E_TESTS=true yarn test
+        run: docker run --rm -v $(pwd):/stc -w /stc node:${{ matrix.node }}-alpine env DISABLE_PLUGIN_E2E_TESTS=true yarn test
   test-linux-aarch64-musl-binding:
     if: ${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/ci' }}
     name: Test bindings on aarch64-unknown-linux-musl - node@${{ matrix.node }}
@@ -358,7 +339,6 @@ jobs:
           run: |
             set -e
             apk add nodejs npm yarn
-            DISABLE_PLUGIN_E2E_TESTS=true yarn test
   test-linux-arm-gnueabihf-binding:
     if: ${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/ci' }}
     name: Test bindings on armv7-unknown-linux-gnueabihf - node@${{ matrix.node }}
@@ -399,7 +379,6 @@ jobs:
           options: "-v ${{ github.workspace }}:/build -w /build"
           run: |
             set -e
-            DISABLE_PLUGIN_E2E_TESTS=true yarn test
             ls -la
   publish:
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
