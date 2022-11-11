@@ -7,10 +7,9 @@
   "cpu": [
     "arm64"
   ],
-  "main": "stc-rs.linux-arm64-gnu.node",
+  "main": "stc",
   "files": [
-    "stc-rs.linux-arm64-gnu.node",
-    "stc-rs"
+    "stc"
   ],
   "libc": [
     "glibc"

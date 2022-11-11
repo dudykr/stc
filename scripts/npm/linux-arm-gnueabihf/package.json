@@ -7,10 +7,9 @@
   "cpu": [
     "arm"
   ],
-  "main": "stc-rs.linux-arm-gnueabihf.node",
+  "main": "stc",
   "files": [
-    "stc-rs.linux-arm-gnueabihf.node",
-    "stc-rs"
+    "stc"
   ],
   "description": "Super-fast alternative for babel",
   "keywords": [

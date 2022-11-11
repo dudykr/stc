@@ -7,10 +7,9 @@
   "cpu": [
     "arm64"
   ],
-  "main": "stc-rs.win32-arm64-msvc.node",
+  "main": "stc.exe",
   "files": [
-    "stc-rs.win32-arm64-msvc.node",
-    "stc-rs.exe"
+    "stc.exe"
   ],
   "description": "Super-fast alternative for babel",
   "keywords": [

@@ -7,10 +7,9 @@
   "cpu": [
     "x64"
   ],
-  "main": "stc-rs.darwin-x64.node",
+  "main": "stc",
   "files": [
-    "stc-rs.darwin-x64.node",
-    "stc-rs"
+    "stc"
   ],
   "description": "Super-fast alternative for babel",
   "keywords": [

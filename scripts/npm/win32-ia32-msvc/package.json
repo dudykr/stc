@@ -7,10 +7,9 @@
   "cpu": [
     "ia32"
   ],
-  "main": "stc-rs.win32-ia32-msvc.node",
+  "main": "stc.exe",
   "files": [
-    "stc-rs.win32-ia32-msvc.node",
-    "stc-rs.exe"
+    "stc.exe"
   ],
   "description": "Super-fast alternative for babel",
   "keywords": [

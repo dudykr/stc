@@ -7,11 +7,7 @@
   "cpu": [
     "arm64"
   ],
-  "main": "stc-rs.darwin-arm64.node",
-  "files": [
-    "stc-rs.darwin-arm64.node",
-    "stc-rs"
-  ],
+  "main": "stc",
   "description": "Super-fast alternative for babel",
   "keywords": [
     "stc-rs",

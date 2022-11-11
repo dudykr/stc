@@ -7,10 +7,9 @@
   "cpu": [
     "x64"
   ],
-  "main": "stc-rs.linux-x64-musl.node",
+  "main": "stc",
   "files": [
-    "stc-rs.linux-x64-musl.node",
-    "stc-rs"
+    "stc"
   ],
   "libc": [
     "musl"
