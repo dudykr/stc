@@ -1315,7 +1315,7 @@ impl Analyzer<'_, '_> {
                     &class_ty,
                     AssignOpts {
                         span: parent.span(),
-                        allow_unknown_rhs: true,
+                        allow_unknown_rhs: Some(true),
                         ..Default::default()
                     },
                 )

@@ -1319,7 +1319,7 @@ impl Analyzer<'_, '_> {
                                     &rt,
                                     AssignOpts {
                                         span,
-                                        allow_unknown_rhs: true,
+                                        allow_unknown_rhs: Some(true),
                                         ..Default::default()
                                     },
                                 ),

@@ -288,7 +288,7 @@ impl Analyzer<'_, '_> {
                     ret_ty,
                     AssignOpts {
                         span,
-                        allow_unknown_rhs: true,
+                        allow_unknown_rhs: Some(true),
                         may_unwrap_promise: true,
                         ..Default::default()
                     },
@@ -348,7 +348,7 @@ impl Analyzer<'_, '_> {
                         }),
                         AssignOpts {
                             span: node.span,
-                            allow_unknown_rhs: true,
+                            allow_unknown_rhs: Some(true),
                             ..Default::default()
                         },
                     )
@@ -363,7 +363,7 @@ impl Analyzer<'_, '_> {
                         &ty,
                         AssignOpts {
                             span: node.span,
-                            allow_unknown_rhs: true,
+                            allow_unknown_rhs: Some(true),
                             may_unwrap_promise: true,
                             ..Default::default()
                         },
@@ -397,7 +397,7 @@ impl Analyzer<'_, '_> {
                         }),
                         AssignOpts {
                             span: node.span,
-                            allow_unknown_rhs: true,
+                            allow_unknown_rhs: Some(true),
                             ..Default::default()
                         },
                     )
@@ -411,7 +411,7 @@ impl Analyzer<'_, '_> {
                         &ty,
                         AssignOpts {
                             span: node.span,
-                            allow_unknown_rhs: true,
+                            allow_unknown_rhs: Some(true),
                             ..Default::default()
                         },
                     )
@@ -467,7 +467,7 @@ impl Analyzer<'_, '_> {
                             &item_ty,
                             AssignOpts {
                                 span: e.span,
-                                allow_unknown_rhs: true,
+                                allow_unknown_rhs: Some(true),
                                 use_missing_fields_for_class: true,
                                 ..Default::default()
                             },

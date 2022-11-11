@@ -2988,7 +2988,7 @@ impl Analyzer<'_, '_> {
                             &arg.ty,
                             AssignOpts {
                                 span: arg.span(),
-                                allow_unknown_rhs,
+                                allow_unknown_rhs: Some(allow_unknown_rhs),
                                 use_missing_fields_for_class: true,
                                 ..Default::default()
                             },
@@ -3291,7 +3291,7 @@ impl Analyzer<'_, '_> {
                                 &arg.ty,
                                 AssignOpts {
                                     span,
-                                    allow_unknown_rhs: true,
+                                    allow_unknown_rhs: Some(true),
                                     allow_assignment_to_param: true,
                                     ..Default::default()
                                 },

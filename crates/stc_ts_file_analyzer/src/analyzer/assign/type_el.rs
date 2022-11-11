@@ -119,7 +119,7 @@ impl Analyzer<'_, '_> {
                     metadata: rhs_metadata,
                     ..
                 }) => {
-                    let allow_unknown_rhs = opts.allow_unknown_rhs || rhs_metadata.inexact || rhs_metadata.specified;
+                    let allow_unknown_rhs = opts.allow_unknown_rhs.unwrap_or(rhs_metadata.inexact || rhs_metadata.specified);
 
                     // Exclude duplicate properties on rhs
                     let valid_rhs_indexes = {
@@ -186,7 +186,10 @@ impl Analyzer<'_, '_> {
                         lhs,
                         lhs_metadata,
                         &rhs_members,
-                        AssignOpts { allow_unknown_rhs, ..opts },
+                        AssignOpts {
+                            allow_unknown_rhs: Some(allow_unknown_rhs),
+                            ..opts
+                        },
                     )
                     .with_context(|| {
                         format!(
@@ -270,7 +273,7 @@ impl Analyzer<'_, '_> {
                                     &rhs,
                                     lhs_metadata,
                                     AssignOpts {
-                                        allow_unknown_rhs: true,
+                                        allow_unknown_rhs: Some(true),
                                         ..opts
                                     },
                                 )
@@ -312,7 +315,7 @@ impl Analyzer<'_, '_> {
                                     &rhs,
                                     lhs_metadata,
                                     AssignOpts {
-                                        allow_unknown_rhs: true,
+                                        allow_unknown_rhs: Some(true),
                                         ..opts
                                     },
                                 ) {
@@ -333,7 +336,7 @@ impl Analyzer<'_, '_> {
                                         &rhs,
                                         lhs_metadata,
                                         AssignOpts {
-                                            allow_unknown_rhs: true,
+                                            allow_unknown_rhs: Some(true),
                                             ..opts
                                         },
                                     )
@@ -374,7 +377,7 @@ impl Analyzer<'_, '_> {
                             &rhs,
                             lhs_metadata,
                             AssignOpts {
-                                allow_unknown_rhs: true,
+                                allow_unknown_rhs: Some(true),
                                 ..opts
                             },
                         )
@@ -423,7 +426,7 @@ impl Analyzer<'_, '_> {
                             &rhs,
                             lhs_metadata,
                             AssignOpts {
-                                allow_unknown_rhs: true,
+                                allow_unknown_rhs: Some(true),
                                 ..opts
                             },
                         )
@@ -470,7 +473,7 @@ impl Analyzer<'_, '_> {
                             &rhs,
                             lhs_metadata,
                             AssignOpts {
-                                allow_unknown_rhs: true,
+                                allow_unknown_rhs: Some(true),
                                 ..opts
                             },
                         )
@@ -544,7 +547,7 @@ impl Analyzer<'_, '_> {
                             &rhs,
                             lhs_metadata,
                             AssignOpts {
-                                allow_unknown_rhs: true,
+                                allow_unknown_rhs: Some(true),
                                 ..opts
                             },
                         )
@@ -856,7 +859,7 @@ impl Analyzer<'_, '_> {
                             &l,
                             &parent,
                             AssignOpts {
-                                allow_unknown_rhs: true,
+                                allow_unknown_rhs: Some(true),
                                 ..opts
                             },
                         );
