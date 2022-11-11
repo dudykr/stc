@@ -1772,6 +1772,8 @@ parser/ecmascript5/Statements/parserWithStatement2.ts
 parser/ecmascript5/StrictMode/parserStrictMode1.ts
 parser/ecmascript5/StrictMode/parserStrictMode15-negative.ts
 parser/ecmascript5/StrictMode/parserStrictMode16.ts
+parser/ecmascript5/StrictMode/parserStrictMode3-negative.ts
+parser/ecmascript5/StrictMode/parserStrictMode6-negative.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression1.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression3.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression4.ts
