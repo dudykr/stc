@@ -1797,6 +1797,7 @@ dependencies = [
  "stc_ts_builtin_types",
  "stc_ts_env",
  "stc_ts_file_analyzer",
+ "stc_ts_lang_server",
  "stc_ts_module_loader",
  "stc_ts_type_checker",
  "stc_utils",
@@ -2058,6 +2059,10 @@ dependencies = [
  "swc_ecma_ast",
  "tracing",
 ]
+
+[[package]]
+name = "stc_ts_lang_server"
+version = "0.1.0"
 
 [[package]]
 name = "stc_ts_module_loader"
