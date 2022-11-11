@@ -1098,10 +1098,6 @@ impl Analyzer<'_, '_> {
     pub(super) fn add_deep_type_fact(&mut self, span: Span, name: Name, ty: Type, is_for_true: bool) {
         debug_assert!(!self.is_builtin);
 
-        if self.ctx.do_not_create_cond_facts {
-            return;
-        }
-
         ty.assert_valid();
         ty.assert_clone_cheap();
 
