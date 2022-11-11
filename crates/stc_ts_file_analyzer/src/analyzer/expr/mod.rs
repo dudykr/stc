@@ -431,6 +431,11 @@ impl Analyzer<'_, '_> {
                                         _ => err,
                                     }
                                 }
+                                Error::CannotAssignToNamespace { .. }
+                                | Error::CannotAssignToModule { .. }
+                                | Error::CannotAssignToClass { .. }
+                                | Error::CannotAssignToEnum { .. }
+                                | Error::CannotAssignToFunction { .. } => err,
                                 _ => {
                                     skip_right = false;
                                     err
