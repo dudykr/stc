@@ -508,7 +508,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
             .map(|(target, specified)| {
                 let libs = if specified && libs == vec![Lib::Es5, Lib::Dom] {
                     match target {
-                        EsVersion::Es3 | EsVersion::Es5 => vec![Lib::Es5],
+                        EsVersion::Es3 | EsVersion::Es5 => vec![Lib::Es5, Lib::Dom],
                         EsVersion::Es2015 => Lib::load("es2015.full"),
                         EsVersion::Es2016 => Lib::load("es2016.full"),
                         EsVersion::Es2017 => Lib::load("es2017.full"),
