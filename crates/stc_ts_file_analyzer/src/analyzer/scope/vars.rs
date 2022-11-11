@@ -5,7 +5,7 @@ use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::{widen::Widen, Fix};
-use stc_ts_types::{Array, Key, KeywordType, LitType, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
+use stc_ts_types::{Array, Key, KeywordType, LitType, ModuleId, Ref, Tuple, Type, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, TryOpt};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
@@ -288,6 +288,15 @@ impl Analyzer<'_, '_> {
                                                         .unwrap_or_else(|| Type::any(span, Default::default()));
 
                                                     Ok(right)
+                                                }
+                                                RPat::Rest(p) => {
+                                                    // [a, ...b] = [1]
+                                                    // b should be an empty tuple
+                                                    Ok(Type::Tuple(Tuple {
+                                                        span: p.span,
+                                                        elems: vec![],
+                                                        metadata: Default::default(),
+                                                    }))
                                                 }
                                                 _ => Err(err),
                                             },
