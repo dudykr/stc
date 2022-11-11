@@ -356,6 +356,7 @@ impl Analyzer<'_, '_> {
                 disallow_special_assignment_to_empty_class: true,
                 disallow_different_classes: opts.disallow_different_classes,
                 allow_assignment_to_param_constraint: true,
+                allow_unknown_rhs: Some(false),
                 ..Default::default()
             },
         );

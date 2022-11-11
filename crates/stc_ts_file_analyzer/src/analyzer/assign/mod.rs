@@ -36,7 +36,18 @@ pub(crate) struct AssignOpts {
     /// This field should be overrided by caller.
     pub span: Span,
     pub right_ident_span: Option<Span>,
-    pub allow_unknown_rhs: bool,
+
+    /// # Values
+    ///
+    /// - `Some(false)`: `inexact` and `specified` of [TypeLitMetaadata] are
+    ///   ignored.
+    /// - `Some(true)`: extra properties are allowed.
+    /// - `None`: It depends on `inexact` and `specified` of [TypeLitMetaadata]
+    ///
+    /// # Usages
+    ///
+    /// - `Some(false)` is Used for `extends` check.
+    pub allow_unknown_rhs: Option<bool>,
 
     pub allow_missing_fields: bool,
 
