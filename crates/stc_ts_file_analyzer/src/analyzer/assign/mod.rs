@@ -36,7 +36,18 @@ pub(crate) struct AssignOpts {
     /// This field should be overrided by caller.
     pub span: Span,
     pub right_ident_span: Option<Span>,
-    pub allow_unknown_rhs: bool,
+
+    /// # Values
+    ///
+    /// - `Some(false)`: `inexact` and `specified` of [TypeLitMetaadata] are
+    ///   ignored.
+    /// - `Some(true)`: extra properties are allowed.
+    /// - `None`: It depends on `inexact` and `specified` of [TypeLitMetaadata]
+    ///
+    /// # Usages
+    ///
+    /// - `Some(false)` is Used for `extends` check.
+    pub allow_unknown_rhs: Option<bool>,
 
     pub allow_missing_fields: bool,
 
@@ -784,7 +795,11 @@ impl Analyzer<'_, '_> {
                         &new_lhs,
                         rhs,
                         AssignOpts {
-                            allow_unknown_rhs: opts.allow_unknown_rhs || opts.allow_unknown_rhs_if_expanded,
+                            allow_unknown_rhs: if opts.allow_unknown_rhs_if_expanded {
+                                Some(true)
+                            } else {
+                                opts.allow_unknown_rhs
+                            },
                             allow_unknown_rhs_if_expanded: false,
                             ..opts
                         },
@@ -1049,7 +1064,7 @@ impl Analyzer<'_, '_> {
                             &ty,
                             rhs,
                             AssignOpts {
-                                allow_unknown_rhs: true,
+                                allow_unknown_rhs: Some(true),
                                 ..opts
                             },
                         )
@@ -1069,7 +1084,7 @@ impl Analyzer<'_, '_> {
                     _ => true,
                 };
 
-                if !left_contains_object && rhs_requires_unknown_property_check && !opts.allow_unknown_rhs {
+                if !left_contains_object && rhs_requires_unknown_property_check && !opts.allow_unknown_rhs.unwrap_or_default() {
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
 
                     if let Some(lhs) = lhs {
@@ -1295,7 +1310,7 @@ impl Analyzer<'_, '_> {
                                 to,
                                 rhs,
                                 AssignOpts {
-                                    allow_unknown_rhs: true,
+                                    allow_unknown_rhs: Some(true),
                                     ..opts
                                 },
                             )
@@ -1356,7 +1371,7 @@ impl Analyzer<'_, '_> {
                             to,
                             c,
                             AssignOpts {
-                                allow_unknown_rhs: true,
+                                allow_unknown_rhs: Some(true),
                                 ..opts
                             },
                         );
@@ -1830,7 +1845,7 @@ impl Analyzer<'_, '_> {
                     rhs,
                     Default::default(),
                     AssignOpts {
-                        allow_unknown_rhs: true,
+                        allow_unknown_rhs: Some(true),
                         allow_assignment_of_array_to_optional_type_lit: true,
                         ..opts
                     },
@@ -1851,7 +1866,7 @@ impl Analyzer<'_, '_> {
                         &parent,
                         &rhs,
                         AssignOpts {
-                            allow_unknown_rhs: true,
+                            allow_unknown_rhs: Some(true),
                             ..opts
                         },
                     );
@@ -1907,7 +1922,7 @@ impl Analyzer<'_, '_> {
 
                 // We should check for unknown rhs, while allowing assignment to parent
                 // interfaces.
-                if !opts.allow_unknown_rhs && !opts.allow_unknown_rhs_if_expanded {
+                if !opts.allow_unknown_rhs.unwrap_or_default() && !opts.allow_unknown_rhs_if_expanded {
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
                     if let Some(lhs) = lhs {
                         self.assign_to_type_elements(data, span, &lhs.members, rhs, Default::default(), opts)
@@ -2038,7 +2053,7 @@ impl Analyzer<'_, '_> {
                                         &l.ty,
                                         &r.ty,
                                         AssignOpts {
-                                            allow_unknown_rhs: true,
+                                            allow_unknown_rhs: Some(true),
                                             ..opts
                                         },
                                     )
@@ -2068,7 +2083,7 @@ impl Analyzer<'_, '_> {
                                     &l_ty,
                                     rhs_elem_type,
                                     AssignOpts {
-                                        allow_unknown_rhs: true,
+                                        allow_unknown_rhs: Some(true),
                                         ..opts
                                     },
                                 )?;
@@ -2332,7 +2347,7 @@ impl Analyzer<'_, '_> {
             &keys,
             &rhs_keys,
             AssignOpts {
-                allow_unknown_rhs: true,
+                allow_unknown_rhs: Some(true),
                 ..opts
             },
         )

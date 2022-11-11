@@ -105,7 +105,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                     AssignOpts {
-                        allow_unknown_rhs: true,
+                        allow_unknown_rhs: Some(true),
                         is_assigning_to_class_members: true,
                         ..opts
                     },
@@ -209,7 +209,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                     AssignOpts {
-                        allow_unknown_rhs: true,
+                        allow_unknown_rhs: Some(true),
                         is_assigning_to_class_members: true,
                         ..opts
                     },

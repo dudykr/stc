@@ -49,7 +49,7 @@ impl Analyzer<'_, '_> {
                     }),
                     AssignOpts {
                         span,
-                        allow_unknown_rhs: true,
+                        allow_unknown_rhs: Some(true),
                         allow_missing_fields: true,
                         allow_assignment_of_param: true,
                         skip_call_and_constructor_elem: true,
@@ -98,7 +98,7 @@ impl Analyzer<'_, '_> {
                             span,
                             // required because interface can extend classes
                             use_missing_fields_for_class: true,
-                            allow_unknown_rhs: true,
+                            allow_unknown_rhs: Some(true),
                             ..Default::default()
                         },
                     ) {

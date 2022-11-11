@@ -1803,6 +1803,7 @@ parser/ecmascript5/parserExportAsFunctionIdentifier.ts
 parser/ecmascript5/parserImportDeclaration1.ts
 parser/ecmascript5/parserInExpression1.ts
 parser/ecmascript5/parserKeywordsAsIdentifierName1.ts
+parser/ecmascript5/parserNoASIOnCallAfterFunctionExpressambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 parser/ecmascript5/parserNoASIOnCallAfterFunctionExpression1.ts
 parser/ecmascript5/parserNotRegex2.ts
 parser/ecmascript5/parserObjectCreationArrayLiteral2.ts
@@ -1985,12 +1986,14 @@ types/intersection/intersectionMemberOfUnionNarrowsCorrectly.ts
 types/intersection/intersectionNarrowing.ts
 types/intersection/intersectionOfUnionNarrowing.ts
 types/intersection/intersectionOfUnionOfUnitTypes.ts
+types/intersection/intersectionTypeAssignment.ts
 types/intersection/intersectionTypeEquivalence.ts
 types/intersection/intersectionTypeInference.ts
 types/intersection/intersectionTypeInference2.ts
 types/intersection/intersectionTypeInference3.ts
 types/intersection/intersectionTypeMembers.ts
 types/intersection/operatorsAndIntersectionTypes.ts
+types/intersection/recursiveIntersectionTypes.ts
 types/keyof/keyofAndForIn.ts
 types/keyof/keyofIntersection.ts
 types/literal/booleanLiteralTypes1.ts

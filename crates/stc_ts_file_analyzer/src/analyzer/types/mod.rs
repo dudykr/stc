@@ -1224,7 +1224,10 @@ impl Analyzer<'_, '_> {
                 Cow::Owned(TypeLit {
                     span: t.span,
                     members,
-                    metadata: Default::default(),
+                    metadata: TypeLitMetadata {
+                        inexact: true,
+                        ..Default::default()
+                    },
                 })
             }
 
