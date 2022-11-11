@@ -23,7 +23,7 @@
     "tsc"
   ],
   "author": "강동윤 <kdy1997.dev@gmail.com>",
-  "homepage": "https://stc-rs.rs",
+  "homepage": "https://stc.dudy.dev",
   "license": "Apache-2.0 AND MIT",
   "engines": {
     "node": ">=10"
