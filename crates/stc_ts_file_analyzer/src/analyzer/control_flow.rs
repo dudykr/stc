@@ -28,7 +28,7 @@ use tracing::info;
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        expr::{AccessPropertyOpts, IdCtx, TypeOfMode},
+        expr::{optional_chaining::is_obj_opt_chaining, AccessPropertyOpts, IdCtx, TypeOfMode},
         scope::{ScopeKind, VarInfo},
         util::ResultExt,
         Analyzer, Ctx,
@@ -1028,7 +1028,6 @@ impl Analyzer<'_, '_> {
 
                                 RPat::Expr(expr) => {
                                     // { ...obj?.a["b"] }
-                                    use crate::analyzer::expr::optional_chaining::is_obj_opt_chaining;
                                     if is_obj_opt_chaining(&expr) {
                                         return Err(Error::InvalidRestPatternInOptionalChain { span: r.span });
                                     }
