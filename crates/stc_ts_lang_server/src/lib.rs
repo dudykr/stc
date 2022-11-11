@@ -1,14 +1,20 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+use lspower::{async_trait, jsonrpc, lsp};
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub struct StcLangServer {}
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+#[async_trait]
+impl lspower::LanguageServer for StcLangServer {
+    async fn initialize(&self, params: lsp::InitializeParams) -> jsonrpc::Result<lsp::InitializeResult> {
+        Ok(lsp::InitializeResult {
+            capabilities: lsp::ServerCapabilities { ..Default::default() },
+            server_info: Some(lsp::ServerInfo {
+                name: "stc-ts-lang-server".to_string(),
+                version: Some(env!("CARGO_PKG_VERSION").to_string()),
+            }),
+        })
+    }
+
+    async fn shutdown(&self) -> jsonrpc::Result<()> {
+        Ok(())
     }
 }
