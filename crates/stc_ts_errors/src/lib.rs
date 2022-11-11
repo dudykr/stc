@@ -724,6 +724,7 @@ pub enum Error {
     /// TS2539
     CannotAssignToNonVariable {
         span: Span,
+        ty: Box<Type>,
     },
 
     /// TS2708

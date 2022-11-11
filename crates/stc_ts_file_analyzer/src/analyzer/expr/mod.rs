@@ -421,20 +421,16 @@ impl Analyzer<'_, '_> {
                         .convert_err(|err| {
                             skip_right = true;
                             match err.actual() {
-                                Error::CannotAssignToNonVariable { .. } => match analyzer.scope.vars.get(&i.into()) {
-                                    Some(v) if v.kind == VarKind::Fn => Error::CannotAssignToFunction { span },
-                                    _ => err,
-                                },
-                                Error::NotVariable { ty, .. } => match ty {
-                                    Some(ty) => match ty.normalize() {
+                                Error::CannotAssignToNonVariable { ty, .. } | Error::NotVariable { ty: Some(ty), .. } => {
+                                    match ty.normalize() {
                                         Type::Module(..) => Error::CannotAssignToNamespace { span },
                                         Type::Namespace(..) => Error::CannotAssignToModule { span },
                                         Type::ClassDef(..) => Error::CannotAssignToClass { span },
                                         Type::Enum(..) => Error::CannotAssignToEnum { span },
+                                        Type::Function(..) => Error::CannotAssignToFunction { span },
                                         _ => err,
-                                    },
-                                    _ => err,
-                                },
+                                    }
+                                }
                                 _ => {
                                     skip_right = false;
                                     err
@@ -3136,7 +3132,7 @@ impl Analyzer<'_, '_> {
             }
             js_word!("void") => return Ok(Type::any(span, Default::default())),
             js_word!("eval") => match type_mode {
-                TypeOfMode::LValue => return Err(Error::CannotAssignToNonVariable { span }),
+                TypeOfMode::LValue => return Err(Error::CannotAssignToFunction { span }),
                 _ => {}
             },
             _ => {}
@@ -3154,7 +3150,7 @@ impl Analyzer<'_, '_> {
         if let Some(v) = self.scope.vars.get(&i.into()) {
             if let VarKind::Fn = v.kind {
                 if let TypeOfMode::LValue = type_mode {
-                    return Err(Error::CannotAssignToNonVariable { span });
+                    return Err(Error::CannotAssignToFunction { span });
                 }
             }
 

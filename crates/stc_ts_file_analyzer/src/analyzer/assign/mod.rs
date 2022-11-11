@@ -1728,7 +1728,12 @@ impl Analyzer<'_, '_> {
                             | Type::Interface(..)
                             | Type::Module(..)
                             | Type::EnumVariant(..) => fail!(),
-                            Type::Function(..) => return Err(Error::CannotAssignToNonVariable { span: rhs.span() }),
+                            Type::Function(..) => {
+                                return Err(Error::CannotAssignToNonVariable {
+                                    span: rhs.span(),
+                                    ty: box rhs.clone(),
+                                })
+                            }
                             _ => {}
                         }
                     }
