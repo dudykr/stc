@@ -1500,7 +1500,7 @@ impl Type {
     }
 
     pub fn is_unique_symbol(&self) -> bool {
-        match *self {
+        match self.normalize() {
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::Unique,
                 ref ty,
@@ -1508,6 +1508,10 @@ impl Type {
             }) => ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword),
             _ => false,
         }
+    }
+
+    pub fn is_symbol_like(&self) -> bool {
+        self.is_symbol() || self.is_unique_symbol() || self.is_kwd(TsKeywordTypeKind::TsSymbolKeyword)
     }
 
     pub fn is_never(&self) -> bool {
