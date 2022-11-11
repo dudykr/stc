@@ -70,7 +70,7 @@ impl Analyzer<'_, '_> {
                 Type::Enum(..) => {
                     errored = true;
 
-                    Err(Error::CannotAssignToNonVariable { span: e.arg.span() })
+                    Err(Error::CannotAssignToEnum { span: e.arg.span() })
                 }
 
                 Type::Lit(LitType {
