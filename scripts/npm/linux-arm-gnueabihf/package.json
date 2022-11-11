@@ -34,9 +34,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/stc-rs-project/stc-rs.git"
+    "url": "git+https://github.com/dudykr/stc.git"
   },
   "bugs": {
-    "url": "https://github.com/stc-rs-project/stc-rs/issues"
+    "url": "https://github.com/dudykr/stc/issues"
   }
 }
