@@ -570,8 +570,6 @@ assert_eq_size!(IndexedAccessType, [u8; 40]);
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Ref {
     pub span: Span,
-    /// Id of the module where the ref is used in.
-    pub ctxt: ModuleId,
     #[use_eq_ignore_span]
     pub type_name: RTsEntityName,
     pub type_args: Option<Box<TypeParamInstantiation>>,
@@ -579,7 +577,7 @@ pub struct Ref {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Ref, [u8; 72]);
+assert_eq_size!(Ref, [u8; 64]);
 
 impl Debug for Ref {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
@@ -1160,7 +1158,6 @@ pub struct TypeParam {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub span: Span,
-    pub ctxt: ModuleId,
     pub enum_name: Id,
     /// [None] if for the general instance type of an enum.
     pub name: Option<JsWord>,
@@ -1168,7 +1165,7 @@ pub struct EnumVariant {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(EnumVariant, [u8; 56]);
+assert_eq_size!(EnumVariant, [u8; 48]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Function {
