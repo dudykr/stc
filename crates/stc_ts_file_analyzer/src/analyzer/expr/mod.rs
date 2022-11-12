@@ -3362,24 +3362,12 @@ impl Analyzer<'_, '_> {
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(crate) fn type_of_ts_entity_name(
-        &mut self,
-        span: Span,
-        ctxt: ModuleId,
-        n: &RExpr,
-        type_args: Option<&TypeParamInstantiation>,
-    ) -> VResult<Type> {
+    pub(crate) fn type_of_ts_entity_name(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
         self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    fn type_of_ts_entity_name_inner(
-        &mut self,
-        span: Span,
-        ctxt: ModuleId,
-        n: &RExpr,
-        type_args: Option<&TypeParamInstantiation>,
-    ) -> VResult<Type> {
+    fn type_of_ts_entity_name_inner(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
         {
             let res = self.report_error_for_unresolve_type(span, &n, type_args);
