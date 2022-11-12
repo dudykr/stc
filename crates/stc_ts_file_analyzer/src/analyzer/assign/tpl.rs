@@ -37,7 +37,12 @@ impl Analyzer<'_, '_> {
                 while li <= l.quasis.len() + l.types.len() && ri <= r.quasis.len() + r.types.len() {
                     // 0: quasi, 1: type
                     match (li % 2, ri % 2) {
-                        (0, 0) => {}
+                        (0, 0) => {
+                            //
+                            if l.quasis[li % 2].cooked != r.quasis[ri % 2].cooked {
+                                return Err(Error::SimpleAssignFailed { span, cause: None }.context("failed quasi-quasi assignment"));
+                            }
+                        }
                         (0, 1) => {}
                         (1, 0) => {}
                         (1, 1) => {}
