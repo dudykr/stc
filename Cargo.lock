@@ -2196,6 +2196,7 @@ dependencies = [
 name = "stc_ts_lang_server"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "clap 4.0.23",
  "lspower",
  "stc_ts_file_analyzer",
