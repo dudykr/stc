@@ -7,4 +7,6 @@ pub struct App {
     pub cmd: LspCommand,
 }
 
-fn main() {}
+fn main() {
+    let app: App = Parser::parse();
+}
