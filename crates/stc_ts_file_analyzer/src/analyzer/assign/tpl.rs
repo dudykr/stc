@@ -1,5 +1,5 @@
 use stc_ts_ast_rnode::RTsLit;
-use stc_ts_errors::Error;
+use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{LitType, TplType, Type};
 
 use crate::{
@@ -49,7 +49,13 @@ impl Analyzer<'_, '_> {
                             return Err(Error::SimpleAssignFailed { span, cause: None }.context("cannot assign expression to literal"));
                         }
                         (1, 0) => {}
-                        (1, 1) => {}
+                        (1, 1) => {
+                            let l = &l.types[li / 2];
+                            let r = &r.types[ri / 2];
+
+                            self.assign_inner(data, l, r, opts)
+                                .context("tried to assign a type to a type for a template literal")?;
+                        }
                         _ => {
                             unreachable!()
                         }
