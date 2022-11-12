@@ -8,7 +8,7 @@ impl lspower::LanguageServer for StcLangServer {
         Ok(lsp::InitializeResult {
             capabilities: lsp::ServerCapabilities { ..Default::default() },
             server_info: Some(lsp::ServerInfo {
-                name: "stc-ts-lang-server".to_string(),
+                name: "stc-ts-lsp".to_string(),
                 version: Some(env!("CARGO_PKG_VERSION").to_string()),
             }),
         })
