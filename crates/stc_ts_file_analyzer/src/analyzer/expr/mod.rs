@@ -3945,7 +3945,11 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let types = e.exprs.iter().map(|e| e.validate_with_default(self)).collect::<VResult<Vec<_>>>()?;
+        let types = e
+            .exprs
+            .iter()
+            .map(|e| e.validate_with_default(self).map(|v| v.cheap()))
+            .collect::<VResult<Vec<_>>>()?;
 
         Ok(Type::Tpl(TplType {
             span: e.span,
