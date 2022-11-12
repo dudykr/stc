@@ -868,7 +868,7 @@ impl Analyzer<'_, '_> {
                         ..var_info.clone()
                     }
                 } else {
-                    if let Some(types) = self.find_type(self.ctx.module_id, &i.id.clone().into())? {
+                    if let Some(types) = self.find_type(&i.id.clone().into())? {
                         for ty in types {
                             match ty.normalize() {
                                 Type::Module(..) => {

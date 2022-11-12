@@ -95,7 +95,7 @@ impl Analyzer<'_, '_> {
             let ctxt = self.ctx.module_id;
             let mut map = HashMap::default();
             for param in &params {
-                let ty = self.find_type(ctxt, &param.name).unwrap().unwrap().next().unwrap();
+                let ty = self.find_type(&param.name).unwrap().unwrap().next().unwrap();
 
                 map.entry(param.name.clone()).or_insert_with(|| ty.into_owned());
             }
@@ -141,7 +141,7 @@ impl Analyzer<'_, '_> {
         self.register_type(param.name.clone().into(), param.clone().into());
 
         if cfg!(debug_assertions) && has_constraint {
-            if let Ok(types) = self.find_type(self.ctx.module_id, &p.name.clone().into()) {
+            if let Ok(types) = self.find_type(&p.name.clone().into()) {
                 let types = types.expect("should be stored").collect_vec();
 
                 debug_assert_eq!(types.len(), 1, "Types: {:?}", types);
@@ -719,7 +719,7 @@ impl Analyzer<'_, '_> {
             RTsEntityName::Ident(ref i) => {
                 self.report_error_for_type_param_usages_in_static_members(&i);
 
-                if let Some(types) = self.find_type(self.ctx.module_id, &i.into())? {
+                if let Some(types) = self.find_type(&i.into())? {
                     let mut found = false;
                     for ty in types {
                         found = true;
@@ -766,7 +766,6 @@ impl Analyzer<'_, '_> {
 
         Ok(Type::Ref(Ref {
             span: t.span.with_ctxt(SyntaxContext::empty()),
-            ctxt: self.ctx.module_id,
             type_name: t.type_name.clone(),
             type_args,
             metadata: RefMetadata {

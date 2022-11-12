@@ -151,7 +151,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(crate) fn merge_decl_with_name(&mut self, name: Id, new: Type) -> VResult<(Type, bool)> {
-        let orig = self.find_type(self.ctx.module_id, &name)?;
+        let orig = self.find_type(&name)?;
         let mut orig = match orig {
             Some(v) => v,
             None => return Ok((new, false)),
