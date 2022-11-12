@@ -16,3 +16,6 @@ stc_ts_utils = {version = "0.1.0", path = "../stc_ts_utils"}
 stc_utils = {version = "0.1.0", path = "../stc_utils"}
 tokio = { version = "1.21.2", features = ["rt", "macros", "io-util", "io-std", "rt-multi-thread"] }
 tower-lsp = "0.17.0"
+
+[dev-dependencies]
+once_cell = "1.16.0"
