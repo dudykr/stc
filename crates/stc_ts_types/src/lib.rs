@@ -362,17 +362,33 @@ fn _assert_send_sync() {
     assert::<Symbol>();
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Is, Spanned, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, Visit, Is, Spanned, Serialize, Deserialize)]
 pub enum Key {
     Computed(ComputedKey),
-    Normal {
-        #[use_eq_ignore_span]
-        span: Span,
-        sym: JsWord,
-    },
+    Normal { span: Span, sym: JsWord },
     Num(RNumber),
     BigInt(RBigInt),
     Private(PrivateName),
+}
+
+impl TypeEq for Key {
+    fn type_eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Key::Computed(l), Key::Computed(r)) => l.type_eq(r),
+            (Key::Normal { sym: l, .. }, Key::Normal { sym: r, .. }) => l == r,
+            (Key::Num(l), Key::Num(r)) => l.type_eq(r),
+            (Key::BigInt(l), Key::BigInt(r)) => l.type_eq(r),
+            (Key::Private(l), Key::Private(r)) => l.type_eq(r),
+
+            (Key::Num(RNumber { value: n, .. }), Key::Normal { sym: s, .. })
+            | (Key::Normal { sym: s, .. }, Key::Num(RNumber { value: n, .. })) => match s.parse::<f64>() {
+                Ok(v) => v == *n,
+                _ => false,
+            },
+
+            _ => false,
+        }
+    }
 }
 
 impl Key {
