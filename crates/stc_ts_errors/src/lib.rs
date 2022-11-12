@@ -1369,6 +1369,7 @@ pub enum Error {
     DebugContext(DebugContext),
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Error, [u8; 72]);
 
 impl Error {
