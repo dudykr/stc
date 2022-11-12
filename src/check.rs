@@ -1,18 +1,18 @@
-use structopt::StructOpt;
+use clap::Args;
 
 /// Perform type checking, but this command is not public api and is only used
 /// for testing.
-#[derive(Debug, StructOpt)]
-#[structopt(rename_all = "camel-case")]
+#[derive(Debug, Args)]
+#[clap(rename_all = "camel-case")]
 pub struct TestCommand {
-    #[structopt(name = "file")]
+    #[clap(name = "file")]
     pub file: String,
 
     /// The builtin libraries to load. Defaults to `es5`.
-    #[structopt(long)]
+    #[clap(long)]
     pub libs: Option<Vec<String>>,
 
     /// Directory name of typings to load.
-    #[structopt(long)]
+    #[clap(long)]
     pub types: Option<Vec<String>>,
 }
