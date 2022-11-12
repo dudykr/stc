@@ -182,14 +182,14 @@ impl Checker {
                         let ids = set.iter().copied().collect::<Vec<_>>();
                         let modules = ids
                             .iter()
-                            .map(|&id| self.module_graph.clone_module(id))
-                            .filter_map(|m| m)
-                            .map(|module| {
+                            .map(|&id| (id, self.module_graph.clone_module(id)))
+                            .filter_map(|m| m.1.map(|v| (m.0, v)))
+                            .map(|(module_id, module)| {
                                 RModule::from_orig(
                                     &mut node_id_gen,
                                     module.fold_with(&mut resolver(
                                         self.env.shared().marks().unresolved_mark(),
-                                        self.env.shared().marks().top_level_mark(),
+                                        self.module_graph.top_level_mark(module_id),
                                         true,
                                     )),
                                 )
@@ -291,7 +291,7 @@ impl Checker {
         })
     }
 
-    fn analyze_non_circular_module(&self, id: ModuleId, path: Arc<FileName>) -> Type {
+    fn analyze_non_circular_module(&self, module_id: ModuleId, path: Arc<FileName>) -> Type {
         self.run(|| {
             let _panic = panic_ctx!(format!("analyze_non_circular_module({})", path));
 
@@ -305,11 +305,11 @@ impl Checker {
             let mut node_id_gen = NodeIdGenerator::default();
             let mut module = self
                 .module_graph
-                .clone_module(id)
-                .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", id, path));
+                .clone_module(module_id)
+                .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", module_id, path));
             module = module.fold_with(&mut resolver(
                 self.env.shared().marks().unresolved_mark(),
-                self.env.shared().marks().top_level_mark(),
+                self.module_graph.top_level_mark(module_id),
                 true,
             ));
 
@@ -319,7 +319,7 @@ impl Checker {
 
             let mut storage = Single {
                 parent: None,
-                id,
+                id: module_id,
                 path: path.clone(),
                 info: Default::default(),
                 is_dts,
@@ -364,7 +364,7 @@ impl Checker {
                 span: module.span,
                 name: RTsModuleName::Str(RStr {
                     span: DUMMY_SP,
-                    value: format!("{:?}", id).into(),
+                    value: format!("{:?}", module_id).into(),
                     raw: None,
                 }),
                 exports: box storage.info.exports,
@@ -372,7 +372,7 @@ impl Checker {
             })
             .freezed();
 
-            self.dts_modules.insert(id, module);
+            self.dts_modules.insert(module_id, module);
 
             let dur = Instant::now() - start;
             log::trace!("[Timing] Full analysis of {} took {:?}", path, dur);

@@ -10,7 +10,7 @@ use rayon::prelude::*;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
 use stc_utils::panic_ctx;
 use swc_atoms::JsWord;
-use swc_common::{collections::AHashMap, comments::Comments, FileName, SourceMap, DUMMY_SP};
+use swc_common::{collections::AHashMap, comments::Comments, FileName, Mark, SourceMap, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
@@ -192,6 +192,10 @@ where
 
     pub fn clone_module(&self, id: ModuleId) -> Option<Module> {
         self.with_module(id, |m| m.cloned())
+    }
+
+    pub fn top_level_mark(&self, id: ModuleId) -> Mark {
+        self.id_generator.top_level_mark(id)
     }
 
     pub fn stmt_count_of(&self, id: ModuleId) -> usize {

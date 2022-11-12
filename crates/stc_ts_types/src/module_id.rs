@@ -27,7 +27,7 @@ pub struct ModuleIdGenerator {
 struct Data {
     cur: u32,
     modules: AHashMap<Arc<FileName>, (ModuleId, Mark)>,
-    paths: AHashMap<ModuleId, Arc<FileName>>,
+    paths: AHashMap<ModuleId, (Arc<FileName>, Mark)>,
 }
 
 impl ModuleIdGenerator {
@@ -44,7 +44,7 @@ impl ModuleIdGenerator {
 
         let module_id = ModuleId(data.cur);
         let res = data.modules.insert(path.clone(), (module_id, top_level_mark));
-        data.paths.insert(module_id, path.clone());
+        data.paths.insert(module_id, (path.clone(), top_level_mark));
 
         debug_assert_eq!(res, None, "Found multiple module id for one file");
 
@@ -52,6 +52,10 @@ impl ModuleIdGenerator {
     }
 
     pub fn path(&self, module_id: ModuleId) -> Arc<FileName> {
-        self.cache.lock().paths.get(&module_id).cloned().unwrap()
+        self.cache.lock().paths.get(&module_id).cloned().unwrap().0
+    }
+
+    pub fn top_level_mark(&self, module_id: ModuleId) -> Mark {
+        self.cache.lock().paths.get(&module_id).cloned().unwrap().1
     }
 }
