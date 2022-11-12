@@ -2447,3 +2447,4 @@ types/union/unionTypeReduction.ts
 types/uniqueSymbol/uniqueSymbols.ts
 types/uniqueSymbol/uniqueSymbolsDeclarations.ts
 types/uniqueSymbol/uniqueSymbolsDeclarationsErrors.ts
+types/unknown/unknownType2.ts
