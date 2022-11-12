@@ -1737,13 +1737,10 @@ impl Analyzer<'_, '_> {
                     TsKeywordTypeKind::TsSymbolKeyword => {
                         //
 
-                        match *rhs.normalize() {
-                            Type::Keyword(KeywordType {
-                                kind: TsKeywordTypeKind::TsSymbolKeyword,
-                                ..
-                            }) => return Ok(()),
-                            _ => fail!(),
+                        if rhs.is_symbol_like() {
+                            return Ok(());
                         }
+                        fail!()
                     }
 
                     TsKeywordTypeKind::TsObjectKeyword => {

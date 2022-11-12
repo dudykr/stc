@@ -64,7 +64,7 @@ impl Analyzer<'_, '_> {
         match op {
             op!(unary, "+") | op!(unary, "-") | op!("~") => {
                 if let Some(arg) = &arg {
-                    if arg.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
+                    if arg.is_symbol_like() {
                         self.storage.report(Error::NumericUnaryOpToSymbol { span: arg.span(), op: *op })
                     }
                 }

@@ -1233,6 +1233,7 @@ expressions/conditonalOperator/conditionalOperatorConditionIsNumberType.ts
 expressions/conditonalOperator/conditionalOperatorConditoinIsAnyType.ts
 expressions/conditonalOperator/conditionalOperatorConditoinIsStringType.ts
 expressions/conditonalOperator/conditionalOperatorWithIdenticalBCT.ts
+expressions/contextualTyping/argumentExpressionContextualTyping.ts
 expressions/contextualTyping/arrayLiteralExpressionContextualTyping.ts
 expressions/contextualTyping/functionExpressionContextualTyping1.ts
 expressions/contextualTyping/functionExpressionContextualTyping3.ts
@@ -1851,6 +1852,7 @@ parser/ecmascript6/Iterators/parserForOfStatement17.ts
 parser/ecmascript6/Iterators/parserForOfStatement18.ts
 parser/ecmascript6/Iterators/parserForOfStatement19.ts
 parser/ecmascript6/Iterators/parserForOfStatement23.ts
+parser/ecmascript6/Iterators/parserForOfStatement24.ts
 parser/ecmascript6/Iterators/parserForOfStatement5.ts
 parser/ecmascript6/Iterators/parserForOfStatement8.ts
 parser/ecmascript6/Iterators/parserForOfStatement9.ts
@@ -2447,3 +2449,4 @@ types/union/unionTypeReduction.ts
 types/uniqueSymbol/uniqueSymbols.ts
 types/uniqueSymbol/uniqueSymbolsDeclarations.ts
 types/uniqueSymbol/uniqueSymbolsDeclarationsErrors.ts
+types/unknown/unknownType2.ts

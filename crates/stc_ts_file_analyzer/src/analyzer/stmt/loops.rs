@@ -175,7 +175,7 @@ impl Analyzer<'_, '_> {
         }
 
         match e {
-            RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) => Ok(()),
+            RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) | RExpr::Paren(..) => Ok(()),
             // We use different error code for this.
             RExpr::Assign(..) => Ok(()),
             _ => match kind {
