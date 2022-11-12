@@ -505,6 +505,9 @@ mod tests {
             assert_eq!(group.module_id(6), file2.id);
             assert_eq!(group.module_id(7), file2.id);
             assert_eq!(group.module_id(8), file2.id);
+
+            Ok(())
         })
+        .unwrap();
     }
 }
