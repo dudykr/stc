@@ -2992,8 +2992,12 @@ impl Analyzer<'_, '_> {
                         ) {
                             let err = err.convert(|err| {
                                 match err {
-                                    Error::TupleAssignError { span, errors } => return Error::Errors { span, errors }.context("tuple"),
-                                    Error::ObjectAssignFailed { span, errors } => return Error::Errors { span, errors }.context("object"),
+                                    Error::TupleAssignError { span, errors } if !arg.ty.metadata().resolved_from_var => {
+                                        return Error::Errors { span, errors }.context("tuple")
+                                    }
+                                    Error::ObjectAssignFailed { span, errors } if !arg.ty.metadata().resolved_from_var => {
+                                        return Error::Errors { span, errors }.context("object")
+                                    }
                                     Error::Errors { span, ref errors } => {
                                         if errors.iter().all(|err| match err.actual() {
                                             Error::UnknownPropertyInObjectLiteralAssignment { span } => true,
@@ -3020,6 +3024,7 @@ impl Analyzer<'_, '_> {
                                 }
                                 .context("tried basical argument assignment")
                             });
+
                             report_err!(err);
                         }
                     }
