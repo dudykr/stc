@@ -52,8 +52,8 @@ impl Analyzer<'_, '_> {
                             // We should eat as much text as possible.
                         }
                         (1, 1) => {
-                            let l = &l.types[li / 2];
-                            let r = &r.types[ri / 2];
+                            let l = &l.types[(li - 1) / 2];
+                            let r = &r.types[(ri - 1) / 2];
 
                             self.assign_inner(data, l, r, opts)
                                 .context("tried to assign a type to a type for a template literal")?;
