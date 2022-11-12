@@ -1525,6 +1525,29 @@ impl Analyzer<'_, '_> {
                     .context("tried to access property of a type generalized from a literal");
             }
 
+            Type::Tpl(obj) => {
+                // Even if literal generalization is prevented, it should be
+                // expanded in this case.
+
+                return self
+                    .access_property(
+                        span,
+                        &Type::Keyword(KeywordType {
+                            span: obj.span,
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                            metadata: KeywordTypeMetadata {
+                                common: obj.metadata.common,
+                                ..Default::default()
+                            },
+                        }),
+                        prop,
+                        type_mode,
+                        id_ctx,
+                        opts,
+                    )
+                    .context("tried to access property of a type generalized from a literal");
+            }
+
             Type::Symbol(..) => {
                 return Err(Error::NoSuchProperty {
                     span,
