@@ -74,29 +74,11 @@ Error:
   x Type
    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:9:5]
  9 | const d1: `abc${string}` = `abc${s}`;
-   :                                  ^
-   `----
-
-Error: 
-  > string
-
-  x Type
-   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:9:5]
- 9 | const d1: `abc${string}` = `abc${s}`;
    :                            ^^^^^^^^^
    `----
 
 Error: 
   > `abc${string}`
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:10:5]
- 10 | const d2: `abc${number}` = `abc${n}`;
-    :                                  ^
-    `----
-
-Error: 
-  > number
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:10:5]
@@ -110,29 +92,11 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:11:5]
  11 | const d3: `abc${'foo' | 'bar' | 'baz'}` = `abc${u}`;
-    :                                                 ^
-    `----
-
-Error: 
-  > ('foo' | 'bar' | 'baz')
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:11:5]
- 11 | const d3: `abc${'foo' | 'bar' | 'baz'}` = `abc${u}`;
     :                                           ^^^^^^^^^
     `----
 
 Error: 
   > `abc${('foo' | 'bar' | 'baz')}`
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:12:5]
- 12 | const d4: `abc${T}` = `abc${t}`;
-    :                             ^
-    `----
-
-Error: 
-  > T
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:12:5]
@@ -205,15 +169,6 @@ Error:
 
 Error: 
   > `abc${string}`
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:24:5]
- 24 | const c3: `abc${string}` = `abc${s}`;
-    :                                  ^
-    `----
-
-Error: 
-  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:24:5]
@@ -479,15 +434,6 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:46:5]
  46 | const c2: `foo${string}` = `foo${s}`;
-    :                                  ^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:46:5]
- 46 | const c2: `foo${string}` = `foo${s}`;
     :                            ^^^^^^^^^
     `----
 
@@ -502,15 +448,6 @@ Error:
 
 Error: 
   > `foo${string}`
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:48:5]
- 48 | const c3 = `foo${s}` as `foo${string}`;
-    :                  ^
-    `----
-
-Error: 
-  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:48:5]
@@ -538,15 +475,6 @@ Error:
 
 Error: 
   > `foo${string}`
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:50:5]
- 50 | const c4 = <`foo${string}`>`foo${s}`;
-    :                                  ^
-    `----
-
-Error: 
-  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:50:5]
@@ -1087,29 +1015,11 @@ Error:
   x Type
      ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:109:1]
  109 | const pixelStringWithTemplate: PixelValueType = `${pixelValue}px`;
-     :                                                    ^^^^^^^^^^
-     `----
-
-Error: 
-  > number
-
-  x Type
-     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:109:1]
- 109 | const pixelStringWithTemplate: PixelValueType = `${pixelValue}px`;
      :                                                 ^^^^^^^^^^^^^^^^^
      `----
 
 Error: 
   > `${number}px`
-
-  x Type
-     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:114:5]
- 114 | return `test-${title}`;
-     :                ^^^^^
-     `----
-
-Error: 
-  > string
 
   x Type
      ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:114:5]
