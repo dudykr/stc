@@ -236,7 +236,7 @@ impl Analyzer<'_, '_> {
 
                 match lhs {
                     Type::TypeLit(..) => return Err(Error::WrongTypeForLhsOfNumericOperation { span }),
-                    ty if ty.is_bool() || ty.is_str() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
+                    ty if ty.is_bool() || ty.is_str() || ty.is_tpl() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
                         return Err(Error::WrongTypeForLhsOfNumericOperation { span });
                     }
                     _ => {}
@@ -244,7 +244,7 @@ impl Analyzer<'_, '_> {
 
                 match rhs {
                     Type::TypeLit(..) => return Err(Error::WrongTypeForRhsOfNumericOperation { span }),
-                    ty if ty.is_bool() || ty.is_str() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
+                    ty if ty.is_bool() || ty.is_str() || ty.is_tpl() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
                         return Err(Error::WrongTypeForRhsOfNumericOperation { span })
                     }
                     _ => {}
@@ -278,7 +278,7 @@ impl Analyzer<'_, '_> {
 
         // Addition to a string converts rhs into string.
         if op == op!("+=") {
-            if lhs.is_str() {
+            if lhs.is_str() || lhs.is_tpl() {
                 return Ok(());
             }
         }
