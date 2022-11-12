@@ -35,7 +35,16 @@ impl Analyzer<'_, '_> {
                 let mut ri = 0;
 
                 while li <= l.quasis.len() + l.types.len() && ri <= r.quasis.len() + r.types.len() {
-                    //
+                    // 0: quasi, 1: type
+                    match (li % 2, ri % 2) {
+                        (0, 0) => {}
+                        (0, 1) => {}
+                        (1, 0) => {}
+                        (1, 1) => {}
+                        _ => {
+                            unreachable!()
+                        }
+                    }
 
                     // Bump
                     li += 1;
