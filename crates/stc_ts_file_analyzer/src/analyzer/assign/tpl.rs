@@ -39,7 +39,7 @@ impl Analyzer<'_, '_> {
                     match (li % 2, ri % 2) {
                         (0, 0) => {
                             //
-                            if l.quasis[li % 2].cooked != r.quasis[ri % 2].cooked {
+                            if l.quasis[li / 2].cooked != r.quasis[ri / 2].cooked {
                                 return Err(
                                     Error::SimpleAssignFailed { span, cause: None }.context("failed to assign a literal to literal")
                                 );
@@ -48,7 +48,9 @@ impl Analyzer<'_, '_> {
                         (0, 1) => {
                             return Err(Error::SimpleAssignFailed { span, cause: None }.context("cannot assign expression to literal"));
                         }
-                        (1, 0) => {}
+                        (1, 0) => {
+                            // We should eat as much text as possible.
+                        }
                         (1, 1) => {
                             let l = &l.types[li / 2];
                             let r = &r.types[ri / 2];
