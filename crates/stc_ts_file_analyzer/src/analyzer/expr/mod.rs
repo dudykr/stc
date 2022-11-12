@@ -250,7 +250,6 @@ impl Analyzer<'_, '_> {
                 RExpr::Lit(RLit::Regex(..)) => {
                     return Ok(Type::Ref(Ref {
                         span,
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent {
                             node_id: NodeId::invalid(),
                             span,
@@ -791,7 +790,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::EnumVariant(EnumVariant { enum_name, name: None, .. }) => {
-                if let Ok(Some(types)) = self.find_type(self.ctx.module_id, enum_name) {
+                if let Ok(Some(types)) = self.find_type(enum_name) {
                     for ty in types {
                         match ty.normalize() {
                             Type::Enum(e) => {
@@ -1584,7 +1583,6 @@ impl Analyzer<'_, '_> {
                                 TypeOfMode::LValue => prop.span(),
                                 TypeOfMode::RValue => span,
                             },
-                            ctxt: self.ctx.module_id,
                             enum_name: e.id.clone().into(),
                             name: Some(sym.clone()),
                             metadata: Default::default(),
@@ -1640,13 +1638,12 @@ impl Analyzer<'_, '_> {
             //
             // Foo.A.toString()
             Type::EnumVariant(EnumVariant {
-                ctxt,
                 ref enum_name,
                 ref name,
                 span,
                 metadata,
                 ..
-            }) => match self.find_type(*ctxt, enum_name)? {
+            }) => match self.find_type(enum_name)? {
                 Some(types) => {
                     //
                     for ty in types {
@@ -2044,7 +2041,6 @@ impl Analyzer<'_, '_> {
                         span,
                         &Type::Ref(Ref {
                             span: span.with_ctxt(Default::default()),
-                            ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                             type_args: None,
                             metadata: Default::default(),
@@ -2080,7 +2076,6 @@ impl Analyzer<'_, '_> {
                         span,
                         &Type::Ref(Ref {
                             span: span.with_ctxt(Default::default()),
-                            ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                             type_args: None,
                             metadata: Default::default(),
@@ -2383,7 +2378,6 @@ impl Analyzer<'_, '_> {
                     span,
                     &Type::Ref(Ref {
                         span: span.with_ctxt(Default::default()),
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                         type_args: None,
                         metadata: Default::default(),
@@ -2746,7 +2740,6 @@ impl Analyzer<'_, '_> {
                     span,
                     &Type::Ref(Ref {
                         span: span.with_ctxt(Default::default()),
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                         type_args: None,
                         metadata: Default::default(),
@@ -2962,7 +2955,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let TypeOfMode::LValue = type_mode {
-            if let Some(types) = self.find_type(self.ctx.module_id, &id)? {
+            if let Some(types) = self.find_type(&id)? {
                 for ty in types {
                     match ty.normalize() {
                         Type::Module(..) => {
@@ -2979,7 +2972,7 @@ impl Analyzer<'_, '_> {
         }
 
         if self.ctx.allow_module_var && need_intersection {
-            if let Some(types) = self.find_type(self.ctx.module_id, &id)? {
+            if let Some(types) = self.find_type(&id)? {
                 for ty in types {
                     debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 

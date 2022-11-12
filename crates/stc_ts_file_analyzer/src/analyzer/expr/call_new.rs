@@ -19,7 +19,7 @@ use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
     type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Function, Id, IdCtx, IndexedAccessType, Instance,
-    Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, Symbol, ThisType, Union, UnionMetadata,
+    Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, Symbol, ThisType, Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
@@ -783,7 +783,6 @@ impl Analyzer<'_, '_> {
                                 js_word!("Object"),
                                 DUMMY_SP.with_ctxt(self.marks().unresolved_mark().as_ctxt()),
                             )),
-                            ctxt: ModuleId::builtin(),
                             type_args: None,
                             metadata: Default::default(),
                         }),
@@ -1489,7 +1488,7 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Intersection(..) if kind == ExtractKind::New => {
                 // TODO(kdy1): Check if all types has constructor signature
-                return Ok(make_instance_type(self.ctx.module_id, ty.clone()));
+                return Ok(make_instance_type(ty.clone()));
             }
 
             Type::Keyword(KeywordType {
@@ -3505,7 +3504,6 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                         for ty in &type_arg.types {
                                             types.push(Type::Ref(Ref {
                                                 span: *span,
-                                                ctxt: *ctxt,
                                                 type_name: RTsEntityName::Ident(i.clone()),
                                                 type_args: Some(box TypeParamInstantiation {
                                                     span: type_args.span,

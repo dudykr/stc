@@ -56,6 +56,7 @@ where
                 cm: cm.clone(),
                 analyzer,
                 node_id_gen: Default::default(),
+                top_level_mark: Mark::new(),
             };
             let ret = op(&mut tester);
 
