@@ -18,6 +18,8 @@ impl ModuleId {
     }
 }
 
+/// Each module has a unique id and [Mark] for top-level items
+
 #[derive(Default)]
 pub struct ModuleIdGenerator {
     cache: Mutex<Data>,
