@@ -3945,10 +3945,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(Type::Keyword(KeywordType {
+        let types = e.exprs.iter().map(|e| e.validate_with_default(self)).collect::<VResult<Vec<_>>>()?;
+
+        Ok(Type::Tpl(TplType {
             span: e.span,
-            kind: TsKeywordTypeKind::TsStringKeyword,
-            metadata: Default::default(),
+            quasis: e.quasis.clone(),
+            types,
+            metadata: TplTypeMetadata {
+                common: CommonTypeMetadata { ..Default::default() },
+            },
         }))
     }
 }
