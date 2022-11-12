@@ -28,22 +28,18 @@ impl Analyzer<'_, '_> {
 
         match r {
             Type::Tpl(r) => {
-                if r.quasis.len() != l.quasis.len() {
-                    return Err(Error::SimpleAssignFailed { span, cause: None });
-                }
+                // TOOD(kdy1): We should iterator over two types, and check if each element is
+                // assignable.
 
-                for index in 0..r.quasis.len() {
-                    if r.quasis[index].raw != l.quasis[index].raw {
-                        return Err(Error::SimpleAssignFailed { span, cause: None });
-                    }
-                }
+                let mut li = 0;
+                let mut ri = 0;
 
-                if r.types.len() != l.types.len() {
-                    return Err(Error::SimpleAssignFailed { span, cause: None });
-                }
+                while li <= l.quasis.len() + l.types.len() && ri <= r.quasis.len() + r.types.len() {
+                    //
 
-                for index in 0..r.types.len() {
-                    self.assign_without_wrapping(data, &l.types[index], &r.types[index], opts)?;
+                    // Bump
+                    li += 1;
+                    ri += 1;
                 }
 
                 Ok(())
