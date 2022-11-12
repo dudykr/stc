@@ -1521,7 +1521,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Use better logic
                 match kind {
                     VarKind::Fn if v.actual_ty.is_some() => {
-                        let ty = Type::new_union(span, v.actual_ty.into_iter().chain(actual_ty.or_else(|| v.ty.clone())));
+                        let ty = Type::new_union(span, v.actual_ty.into_iter().chain(actual_ty.or_else(|| v.ty.clone()))).cheap();
                         v.actual_ty = Some(ty);
                     }
                     _ => {
