@@ -195,7 +195,7 @@ impl Analyzer<'_, '_> {
 
         if op == op!("+=") {
             if lhs.is_enum_variant() {
-                if rhs.is_type_lit() || rhs.is_bool() || rhs.is_symbol() || rhs.is_unique_symbol() {
+                if rhs.is_type_lit() || rhs.is_bool() || rhs.is_symbol_like() {
                     return Err(Error::OperatorCannotBeAppliedToTypes { span });
                 }
             }
@@ -214,7 +214,7 @@ impl Analyzer<'_, '_> {
             | op!("<<=")
             | op!(">>=")
             | op!(">>>=") => {
-                if lhs.is_symbol() || lhs.is_unique_symbol() || lhs.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) {
+                if lhs.is_symbol_like() {
                     return Err(Error::WrongTypeForLhsOfNumericOperation { span });
                 }
             }
