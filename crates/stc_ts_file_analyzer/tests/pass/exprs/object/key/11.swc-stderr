@@ -15,7 +15,7 @@ Error:
    `----
 
 Error: 
-  > string
+  > `hello ${any} bye`
 
   x Type
    ,-[$DIR/tests/pass/exprs/object/key/11.ts:5:1]
