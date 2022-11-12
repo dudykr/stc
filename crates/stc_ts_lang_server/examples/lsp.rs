@@ -1,3 +1,6 @@
+//! A command used for testing. This starts a language server using same code as
+//! the release build.
+
 use clap::Parser;
 use stc_ts_lang_server::LspCommand;
 
@@ -7,6 +10,9 @@ pub struct App {
     pub cmd: LspCommand,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let app: App = Parser::parse();
+
+    app.cmd.run().await.unwrap();
 }
