@@ -477,13 +477,13 @@ mod tests {
 
         let path1 = Arc::new(FileName::Real(PathBuf::from("1")));
         let file1 = File {
-            id: gen.generate(&path1),
+            id: gen.generate(&path1).0,
             path: path1.clone(),
             stmt_count: 4,
         };
         let path2 = Arc::new(FileName::Real(PathBuf::from("2")));
         let file2 = File {
-            id: gen.generate(&path2),
+            id: gen.generate(&path2).0,
             path: path2.clone(),
             stmt_count: 5,
         };

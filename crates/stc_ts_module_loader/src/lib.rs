@@ -199,7 +199,7 @@ where
     }
 
     fn load_including_deps(&self, path: &Arc<FileName>, resolve_all: bool) {
-        let id = self.id_generator.generate(path);
+        let (id, _) = self.id_generator.generate(path);
 
         if resolve_all {
             if self.started.remove(&id).is_none() {
@@ -235,7 +235,7 @@ where
 
         let dep_module_ids = iter
             .map(|dep_path| {
-                let id = self.id_generator.generate(&dep_path);
+                let (id, _) = self.id_generator.generate(&dep_path);
 
                 self.load_including_deps(&dep_path, resolve_all);
 
@@ -259,7 +259,7 @@ where
     ///
     /// Note that this methods does not modify `self.loaded`.
     fn load(&self, filename: &Arc<FileName>, resolve_all: bool) -> Result<Option<LoadResult>, Error> {
-        let module_id = self.id_generator.generate(filename);
+        let (module_id, _) = self.id_generator.generate(filename);
 
         if resolve_all {
             if self.loaded.contains_key(&module_id) {
