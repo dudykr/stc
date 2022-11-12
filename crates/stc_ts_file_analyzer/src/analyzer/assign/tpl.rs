@@ -40,10 +40,14 @@ impl Analyzer<'_, '_> {
                         (0, 0) => {
                             //
                             if l.quasis[li % 2].cooked != r.quasis[ri % 2].cooked {
-                                return Err(Error::SimpleAssignFailed { span, cause: None }.context("failed quasi-quasi assignment"));
+                                return Err(
+                                    Error::SimpleAssignFailed { span, cause: None }.context("failed to assign a literal to literal")
+                                );
                             }
                         }
-                        (0, 1) => {}
+                        (0, 1) => {
+                            return Err(Error::SimpleAssignFailed { span, cause: None }.context("cannot assign expression to literal"));
+                        }
                         (1, 0) => {}
                         (1, 1) => {}
                         _ => {
