@@ -15,3 +15,6 @@ stc_ts_types = {path = "../stc_ts_types"}
 stc_utils = {path = "../stc_utils"}
 swc_atoms = "0.4.24"
 swc_common = "0.29.13"
+
+[dev-dependencies]
+testing = "0.31.14"
