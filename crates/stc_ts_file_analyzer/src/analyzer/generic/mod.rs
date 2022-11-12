@@ -3,7 +3,7 @@ use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RIdent, RPat, RStr, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace, print_type},
     DebugExt,
@@ -23,6 +23,7 @@ use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
     debug_ctx, stack,
 };
+use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::{debug, error, info, span, trace, warn, Level};
@@ -129,7 +130,19 @@ impl Analyzer<'_, '_> {
             args
         };
 
-        for (idx, p) in params.iter().enumerate() {
+        let skip = if params.len() == 0 {
+            0
+        } else {
+            match &params[0].pat {
+                RPat::Ident(RBindingIdent {
+                    id: RIdent { sym: js_word!("this"), .. },
+                    ..
+                }) => 1,
+                _ => 0,
+            }
+        };
+
+        for (idx, p) in params.iter().skip(skip).enumerate() {
             let is_rest = match &p.pat {
                 RPat::Rest(_) => true,
                 _ => false,
