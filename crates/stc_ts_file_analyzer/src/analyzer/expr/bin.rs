@@ -1871,7 +1871,7 @@ pub(super) fn extract_name_for_assignment(e: &RExpr, is_exact_eq: bool) -> Optio
 
 fn is_str_like_for_addition(t: &Type) -> bool {
     match t.normalize() {
-        Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => true,
+        Type::Lit(LitType { lit: RTsLit::Str(..), .. }) | Type::Tpl(..) => true,
         Type::Keyword(KeywordType {
             kind: TsKeywordTypeKind::TsStringKeyword,
             ..
