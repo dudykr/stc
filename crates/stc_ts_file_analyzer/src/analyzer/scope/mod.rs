@@ -1113,24 +1113,6 @@ impl Analyzer<'_, '_> {
             return Ok(Some(ItemRef::Owned(vec![ty].into_iter())));
         }
 
-        if let Some(data) = self.imports.get(&(self.ctx.module_id, target)) {
-            match data.normalize() {
-                Type::Module(data) => {
-                    if let Some(types) = data.exports.types.get(name.sym()) {
-                        let types = types.clone();
-                        return Ok(Some(ItemRef::Owned(types.into_iter())));
-                    }
-                    if let Some(types) = data.exports.private_types.get(name) {
-                        let types = types.clone();
-                        return Ok(Some(ItemRef::Owned(types.into_iter())));
-                    }
-                }
-                _ => {
-                    unreachable!()
-                }
-            }
-        }
-
         Ok(None)
     }
 
