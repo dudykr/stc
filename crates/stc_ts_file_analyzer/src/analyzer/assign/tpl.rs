@@ -34,7 +34,7 @@ impl Analyzer<'_, '_> {
                 let mut li = 0;
                 let mut ri = 0;
 
-                while li <= l.quasis.len() + l.types.len() && ri <= r.quasis.len() + r.types.len() {
+                while li < l.quasis.len() + l.types.len() && ri < r.quasis.len() + r.types.len() {
                     // 0: quasi, 1: type
                     match (li % 2, ri % 2) {
                         (0, 0) => {
@@ -52,8 +52,8 @@ impl Analyzer<'_, '_> {
                             // We should eat as much text as possible.
                         }
                         (1, 1) => {
-                            let l = &l.types[(li - 1) / 2];
-                            let r = &r.types[(ri - 1) / 2];
+                            let l = &l.types[li / 2];
+                            let r = &r.types[ri / 2];
 
                             self.assign_inner(data, l, r, opts)
                                 .context("tried to assign a type to a type for a template literal")?;
