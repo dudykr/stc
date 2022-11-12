@@ -2992,8 +2992,8 @@ impl Analyzer<'_, '_> {
                         ) {
                             let err = err.convert(|err| {
                                 match err {
-                                    Error::TupleAssignError { span, errors } => return Error::Errors { span, errors },
-                                    Error::ObjectAssignFailed { span, errors } => return Error::Errors { span, errors },
+                                    Error::TupleAssignError { span, errors } => return Error::Errors { span, errors }.context("tuple"),
+                                    Error::ObjectAssignFailed { span, errors } => return Error::Errors { span, errors }.context("object"),
                                     Error::Errors { span, ref errors } => {
                                         if errors.iter().all(|err| match err.actual() {
                                             Error::UnknownPropertyInObjectLiteralAssignment { span } => true,
