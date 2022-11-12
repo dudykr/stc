@@ -2164,6 +2164,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap 4.0.23",
+ "once_cell",
  "stc_ts_file_analyzer",
  "stc_ts_type_checker",
  "stc_ts_types",
