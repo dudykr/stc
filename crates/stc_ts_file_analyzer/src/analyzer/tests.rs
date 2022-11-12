@@ -12,7 +12,7 @@ use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_storage::Single;
 use stc_ts_types::{module_id, Id, ModuleId, Type};
 use stc_utils::stack;
-use swc_common::{input::SourceFileInput, FileName, SourceMap, SyntaxContext};
+use swc_common::{input::SourceFileInput, FileName, Mark, SourceMap, SyntaxContext};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 use swc_ecma_transforms::resolver;
@@ -28,10 +28,12 @@ use crate::{
 
 static ENV: Lazy<Env> = Lazy::new(|| Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &Lib::load("es5")));
 
+/// Single-file tester
 pub struct Tester<'a, 'b> {
     cm: Arc<SourceMap>,
     pub analyzer: Analyzer<'a, 'b>,
     pub node_id_gen: NodeIdGenerator,
+    pub top_level_mark: Mark,
 }
 
 pub fn run_test<F, Ret>(op: F) -> Result<Ret, StdErr>
@@ -84,7 +86,7 @@ impl Tester<'_, '_> {
             let module = parser
                 .parse_module()
                 .unwrap()
-                .fold_with(&mut resolver(MARKS.unresolved_mark(), MARKS.top_level_mark(), true));
+                .fold_with(&mut resolver(MARKS.unresolved_mark(), self.top_level_mark, true));
 
             RModule::from_orig(&mut NodeIdGenerator::invalid(), module)
         })

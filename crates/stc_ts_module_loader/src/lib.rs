@@ -108,7 +108,7 @@ where
         self.load_including_deps(entry, false);
         self.load_including_deps(entry, true);
 
-        let module_id = self.id_generator.generate(entry);
+        let module_id = self.id_generator.generate(entry).0;
 
         let res = {
             let mut analyzer = GraphAnalyzer::new(&*self);
@@ -143,7 +143,7 @@ where
     }
 
     pub fn id_for_declare_module(&self, module_name: &JsWord) -> ModuleId {
-        self.id_generator.generate(&Arc::new(FileName::Custom(module_name.to_string())))
+        self.id_generator.generate(&Arc::new(FileName::Custom(module_name.to_string()))).0
     }
 
     pub fn path(&self, id: ModuleId) -> Arc<FileName> {
@@ -160,7 +160,7 @@ where
     }
 
     pub fn id(&self, path: &Arc<FileName>) -> ModuleId {
-        self.id_generator.generate(path)
+        self.id_generator.generate(path).0
     }
 
     pub fn resolve(&self, base: &FileName, specifier: &JsWord) -> Result<Arc<FileName>, Error> {
