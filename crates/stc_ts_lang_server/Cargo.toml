@@ -9,9 +9,9 @@ version = "0.1.0"
 [dependencies]
 anyhow = "1.0.66"
 clap = {version = "4.0.23", features = ["derive"]}
-lspower = "1.5.0"
 stc_ts_file_analyzer = {version = "0.1.0", path = "../stc_ts_file_analyzer"}
 stc_ts_type_checker = {version = "0.1.0", path = "../stc_ts_type_checker"}
 stc_ts_types = {version = "0.0.0", path = "../stc_ts_types"}
 stc_ts_utils = {version = "0.1.0", path = "../stc_ts_utils"}
 stc_utils = {version = "0.1.0", path = "../stc_utils"}
+tower-lsp = "0.17.0"
