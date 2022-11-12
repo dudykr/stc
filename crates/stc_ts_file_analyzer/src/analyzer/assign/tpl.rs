@@ -1,5 +1,5 @@
 use stc_ts_ast_rnode::RTsLit;
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::Error;
 use stc_ts_types::{LitType, TplType, Type};
 
 use crate::{
@@ -42,13 +42,23 @@ impl Analyzer<'_, '_> {
                         if ri % 2 == 0 {
                             // RHS is literal
                             if l.quasis[li / 2].cooked != r.quasis[ri / 2].cooked {
-                                return Err(
-                                    Error::SimpleAssignFailed { span, cause: None }.context("failed to assign a literal to literal")
-                                );
+                                // TODO: Restore this after implementing correct
+                                // logic
+
+                                // return Err(
+                                //     Error::SimpleAssignFailed { span, cause:
+                                // None }.context("failed to assign a literal to
+                                // literal") );
                             }
                         } else {
+                            // TODO: Restore this after implementing correct
+                            // logic
+
                             // RHS is type
-                            return Err(Error::SimpleAssignFailed { span, cause: None }.context("cannot assign expression to literal"));
+
+                            // return Err(Error::SimpleAssignFailed { span,
+                            // cause: None }.context("cannot assign expression
+                            // to literal"));
                         }
                     } else {
                         // LHS is type
@@ -60,11 +70,15 @@ impl Analyzer<'_, '_> {
                         } else {
                             // RHS is type
 
-                            let l = &l.types[li / 2];
-                            let r = &r.types[ri / 2];
+                            // TODO: Restore this after implementing correct
+                            // logic
 
-                            self.assign_inner(data, l, r, opts)
-                                .context("tried to assign a type to a type for a template literal")?;
+                            // let l = &l.types[li / 2];
+                            // let r = &r.types[ri / 2];
+
+                            // self.assign_inner(data, l, r, opts)
+                            //     .context("tried to assign a type to a type
+                            // for a template literal")?;
                         }
                     }
 
