@@ -379,6 +379,13 @@ impl TypeEq for Key {
             (Key::Num(l), Key::Num(r)) => l.type_eq(r),
             (Key::BigInt(l), Key::BigInt(r)) => l.type_eq(r),
             (Key::Private(l), Key::Private(r)) => l.type_eq(r),
+
+            (Key::Num(RNumber { value: n, .. }), Key::Normal { sym: s, .. })
+            | (Key::Normal { sym: s, .. }, Key::Num(RNumber { value: n, .. })) => match s.parse::<f64>() {
+                Ok(v) => v == *n,
+                _ => false,
+            },
+
             _ => false,
         }
     }
