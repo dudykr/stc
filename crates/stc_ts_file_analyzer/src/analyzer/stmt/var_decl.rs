@@ -621,7 +621,7 @@ impl Analyzer<'_, '_> {
                         let var_ty = (|| -> VResult<_> {
                             match ty.normalize() {
                                 Type::EnumVariant(ref v) => {
-                                    if let Some(..) = self.find_type(self.ctx.module_id, &v.enum_name)? {
+                                    if let Some(..) = self.find_type(&v.enum_name)? {
                                         return Ok(Type::EnumVariant(EnumVariant { name: None, ..v.clone() }));
                                     }
                                     unreachable!("Failed to found enum named `{}`", v.enum_name)

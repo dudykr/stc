@@ -1022,9 +1022,7 @@ impl Analyzer<'_, '_> {
                 //
                 // See typeArgumentInferenceWithObjectLiteral.ts
 
-                let items = self
-                    .find_type(e.ctxt, &e.enum_name)
-                    .context("failed to find an enum for assignment")?;
+                let items = self.find_type(&e.enum_name).context("failed to find an enum for assignment")?;
 
                 if let Some(items) = items {
                     for e in items {
@@ -1148,9 +1146,7 @@ impl Analyzer<'_, '_> {
                     //
                     // See typeArgumentInferenceWithObjectLiteral.ts
 
-                    let e = self
-                        .find_type(e.ctxt, &e.enum_name)
-                        .context("failed to find an enum for assignment")?;
+                    let e = self.find_type(&e.enum_name).context("failed to find an enum for assignment")?;
 
                     if let Some(e) = e {
                         for e in e {
@@ -1562,7 +1558,7 @@ impl Analyzer<'_, '_> {
                             Type::EnumVariant(ev) => ev.enum_name == *enum_name,
                             _ => false,
                         }) {
-                            if let Ok(Some(lhs)) = self.find_type(self.ctx.module_id, &enum_name) {
+                            if let Ok(Some(lhs)) = self.find_type(&enum_name) {
                                 for ty in lhs {
                                     match ty.normalize() {
                                         Type::Enum(e) => {
@@ -1688,7 +1684,7 @@ impl Analyzer<'_, '_> {
                         Type::EnumVariant(ref v) => {
                             // Allow assigning enum with numeric values to
                             // number.
-                            if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {
+                            if let Some(types) = self.find_type(&v.enum_name)? {
                                 for ty in types {
                                     match *ty.normalize() {
                                         Type::Enum(ref e) => {
@@ -1860,7 +1856,7 @@ impl Analyzer<'_, '_> {
                 let mut errors = vec![];
                 for parent in extends {
                     let parent = self
-                        .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?
+                        .type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?
                         .freezed();
 
                     // An interface can extend a class.
@@ -2164,10 +2160,8 @@ impl Analyzer<'_, '_> {
                 fail!();
             }
 
-            Type::EnumVariant(EnumVariant {
-                ref ctxt, ref enum_name, ..
-            }) => {
-                if let Some(types) = self.find_type(*ctxt, enum_name)? {
+            Type::EnumVariant(EnumVariant { ref enum_name, .. }) => {
+                if let Some(types) = self.find_type(enum_name)? {
                     for ty in types {
                         if let Type::Enum(ref e) = ty.normalize() {
                             match to {

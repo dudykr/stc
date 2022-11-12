@@ -12,8 +12,7 @@ use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, TypeElement, Union,
-    UnionMetadata,
+    name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeElement, Union, UnionMetadata,
 };
 use stc_utils::cache::Freeze;
 use swc_atoms::js_word;
@@ -1438,7 +1437,6 @@ impl Analyzer<'_, '_> {
                     &mut Default::default(),
                     &Type::Ref(Ref {
                         span,
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new("Function".into(), span.with_ctxt(SyntaxContext::empty()))),
                         type_args: None,
                         metadata: Default::default(),

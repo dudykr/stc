@@ -2247,6 +2247,7 @@ dependencies = [
  "stc_utils",
  "swc_atoms",
  "swc_common",
+ "testing",
 ]
 
 [[package]]
@@ -2527,9 +2528,9 @@ dependencies = [
 
 [[package]]
 name = "swc_common"
-version = "0.29.13"
+version = "0.29.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "953e1f014688eadbbd3e9131a525e8922c552540bb02b0bb6d9fdcb1375bccc4"
+checksum = "4bde01c52376971bc6839c42e1a71dec9526ac7acfbfcf1eb3e606e5aa1b2de0"
 dependencies = [
  "ahash 0.7.6",
  "ast_node",
@@ -2718,9 +2719,9 @@ dependencies = [
 
 [[package]]
 name = "swc_error_reporters"
-version = "0.13.13"
+version = "0.13.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1996acb4fd0656d77769764e93ca486810d6baa724a8ed877a7ae3cc7f7c6b5"
+checksum = "cfdfda46250b8d5ff325c4f9e7e50497125e8f357f3a2daa655ba0b4ad8d964a"
 dependencies = [
  "anyhow",
  "miette",
@@ -2832,9 +2833,9 @@ dependencies = [
 
 [[package]]
 name = "testing"
-version = "0.31.13"
+version = "0.31.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a510616ec857597e5eaa33977e2aab5df08385cf7d69bd68bf55763fdf120b2"
+checksum = "8a6ad9c35c9b4e4834c16b7cbce4209ee0cb6b8af7264d2a8f37f1834340d901"
 dependencies = [
  "ansi_term",
  "difference",

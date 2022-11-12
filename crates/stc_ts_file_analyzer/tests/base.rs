@@ -69,6 +69,8 @@ fn validate(input: &Path) -> Vec<StcError> {
             let generator = module_id::ModuleIdGenerator::default();
             let path = Arc::new(FileName::Real(input.to_path_buf()));
 
+            let (module_id, top_level_mark) = generator.generate(&path);
+
             let mut node_id_gen = NodeIdGenerator::default();
             let mut module = {
                 let lexer = Lexer::new(
@@ -82,17 +84,13 @@ fn validate(input: &Path) -> Vec<StcError> {
                 parser.parse_module().unwrap()
             };
             module = GLOBALS.set(env.shared().swc_globals(), || {
-                module.fold_with(&mut resolver(
-                    env.shared().marks().unresolved_mark(),
-                    env.shared().marks().top_level_mark(),
-                    true,
-                ))
+                module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true))
             });
             let module = RModule::from_orig(&mut node_id_gen, module);
 
             let mut storage = Single {
                 parent: None,
-                id: generator.generate(&path),
+                id: module_id,
                 path,
                 is_dts: false,
                 info: Default::default(),
@@ -160,6 +158,8 @@ fn errors(input: PathBuf) {
         let generator = module_id::ModuleIdGenerator::default();
         let path = Arc::new(FileName::Real(input.to_path_buf()));
 
+        let (module_id, top_level_mark) = generator.generate(&path);
+
         let mut node_id_gen = NodeIdGenerator::default();
         let mut module = {
             let lexer = Lexer::new(
@@ -173,17 +173,13 @@ fn errors(input: PathBuf) {
             parser.parse_module().unwrap()
         };
         module = GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut resolver(
-                env.shared().marks().unresolved_mark(),
-                env.shared().marks().top_level_mark(),
-                true,
-            ))
+            module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true))
         });
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         let mut storage = Single {
             parent: None,
-            id: generator.generate(&path),
+            id: module_id,
             path,
             info: Default::default(),
             is_dts: false,
@@ -230,6 +226,8 @@ fn pass_only(input: PathBuf) {
         let generator = module_id::ModuleIdGenerator::default();
         let path = Arc::new(FileName::Real(input.to_path_buf()));
 
+        let (module_id, top_level_mark) = generator.generate(&path);
+
         let mut node_id_gen = NodeIdGenerator::default();
         let mut module = {
             let lexer = Lexer::new(
@@ -243,17 +241,13 @@ fn pass_only(input: PathBuf) {
             parser.parse_module().unwrap()
         };
         module = GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut resolver(
-                env.shared().marks().unresolved_mark(),
-                env.shared().marks().top_level_mark(),
-                true,
-            ))
+            module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true))
         });
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         let mut storage = Single {
             parent: None,
-            id: generator.generate(&path),
+            id: module_id,
             path,
             info: Default::default(),
             is_dts: false,
@@ -391,9 +385,11 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
             let generator = module_id::ModuleIdGenerator::default();
             let path = Arc::new(FileName::Real(file_name.clone()));
 
+            let (module_id, top_level_mark) = generator.generate(&path);
+
             let mut storage = Single {
                 parent: None,
-                id: generator.generate(&path),
+                id: module_id,
                 path,
                 info: Default::default(),
                 is_dts: false,
@@ -415,11 +411,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
             let mut parser = Parser::new_from(lexer);
             let module = parser.parse_module().unwrap();
             let module = GLOBALS.set(stable_env.swc_globals(), || {
-                module.fold_with(&mut resolver(
-                    stable_env.marks().unresolved_mark(),
-                    stable_env.marks().top_level_mark(),
-                    true,
-                ))
+                module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true))
             });
             let module = RModule::from_orig(&mut node_id_gen, module);
             {

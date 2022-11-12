@@ -19,7 +19,7 @@ use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
     type_id::SymbolId, Alias, Array, Class, ClassDef, ClassMember, ClassProperty, Function, Id, IdCtx, IndexedAccessType, Instance,
-    Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, ModuleId, Ref, Symbol, ThisType, Union, UnionMetadata,
+    Interface, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, Symbol, ThisType, Union, UnionMetadata,
 };
 use stc_ts_utils::PatExt;
 use stc_utils::{cache::Freeze, ext::TypeVecExt};
@@ -411,7 +411,6 @@ impl Analyzer<'_, '_> {
                 RExpr::Ident(i) if kind == ExtractKind::New => {
                     let mut ty = Type::Ref(Ref {
                         span: i.span,
-                        ctxt: analyzer.ctx.module_id,
                         type_name: RTsEntityName::Ident(i.clone()),
                         type_args: Default::default(),
                         metadata: Default::default(),
@@ -564,10 +563,9 @@ impl Analyzer<'_, '_> {
                 Type::Array(obj) => {
                     let obj = Type::Ref(Ref {
                         span,
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new(
                             "Array".into(),
-                            span.with_ctxt(self.marks().top_level_mark().as_ctxt()),
+                            span.with_ctxt(self.marks().unresolved_mark().as_ctxt()),
                         )),
                         type_args: Some(box TypeParamInstantiation {
                             span,
@@ -678,7 +676,7 @@ impl Analyzer<'_, '_> {
                     // Check parent interface
                     for parent in &i.extends {
                         let parent = self
-                            .type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())
+                            .type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())
                             .context("tried to check parent interface to call a property of it")?;
                         if let Ok(v) = self.call_property(
                             span,
@@ -783,9 +781,8 @@ impl Analyzer<'_, '_> {
                             span: DUMMY_SP,
                             type_name: RTsEntityName::Ident(RIdent::new(
                                 js_word!("Object"),
-                                DUMMY_SP.with_ctxt(self.marks().top_level_mark().as_ctxt()),
+                                DUMMY_SP.with_ctxt(self.marks().unresolved_mark().as_ctxt()),
                             )),
-                            ctxt: ModuleId::builtin(),
                             type_args: None,
                             metadata: Default::default(),
                         }),
@@ -1491,7 +1488,7 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Intersection(..) if kind == ExtractKind::New => {
                 // TODO(kdy1): Check if all types has constructor signature
-                return Ok(make_instance_type(self.ctx.module_id, ty.clone()));
+                return Ok(make_instance_type(ty.clone()));
             }
 
             Type::Keyword(KeywordType {
@@ -1603,7 +1600,7 @@ impl Analyzer<'_, '_> {
                     Err(first_err) => {
                         //  Check parent interface
                         for parent in &i.extends {
-                            let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, type_args)?;
+                            let parent = self.type_of_ts_entity_name(span, &parent.expr, type_args)?;
 
                             if let Ok(v) = self.extract(
                                 span,
@@ -3484,7 +3481,6 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
             // Boxified<A | B | C> => Boxified<A> | Boxified<B> | Boxified<C>
             Type::Ref(Ref {
                 span,
-                ctxt,
                 type_name: RTsEntityName::Ident(i),
                 type_args: Some(type_args),
                 metadata,
@@ -3495,7 +3491,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 }) =>
             {
                 // TODO(kdy1): Replace .ok() with something better
-                if let Some(types) = self.analyzer.find_type(*ctxt, &(&*i).into()).ok().flatten() {
+                if let Some(types) = self.analyzer.find_type(&(&*i).into()).ok().flatten() {
                     type_args.make_clone_cheap();
 
                     for stored_ty in types {
@@ -3508,7 +3504,6 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                                         for ty in &type_arg.types {
                                             types.push(Type::Ref(Ref {
                                                 span: *span,
-                                                ctxt: *ctxt,
                                                 type_name: RTsEntityName::Ident(i.clone()),
                                                 type_args: Some(box TypeParamInstantiation {
                                                     span: type_args.span,

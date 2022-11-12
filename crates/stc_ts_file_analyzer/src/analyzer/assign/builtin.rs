@@ -104,7 +104,7 @@ impl Analyzer<'_, '_> {
                             _ => {}
                         }
 
-                        let parent = self.type_of_ts_entity_name(opts.span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref());
+                        let parent = self.type_of_ts_entity_name(opts.span, &parent.expr, parent.type_args.as_deref());
                         let parent = match parent {
                             Ok(ty) => ty,
                             Err(err) => return Some(Err(err)),

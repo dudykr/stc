@@ -6,8 +6,8 @@ use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
-    Array, Class, ClassDef, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, ModuleId, Operator, PropertySignature, Ref,
-    TplType, Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union, UnionMetadata,
+    Array, Class, ClassDef, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, Operator, PropertySignature, Ref, TplType,
+    Tuple, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamInstantiation, Union, UnionMetadata,
 };
 use stc_utils::{cache::Freeze, ext::SpanExt};
 use swc_atoms::js_word;
@@ -254,7 +254,6 @@ impl Analyzer<'_, '_> {
                             //
                             let r_arr = Type::Ref(Ref {
                                 span,
-                                ctxt: ModuleId::builtin(),
                                 type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
                                 type_args: Some(box TypeParamInstantiation {
                                     span: DUMMY_SP,
@@ -297,7 +296,6 @@ impl Analyzer<'_, '_> {
                                 //
                                 let r_arr = Type::Ref(Ref {
                                     span,
-                                    ctxt: ModuleId::builtin(),
                                     type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
                                     type_args: Some(box TypeParamInstantiation {
                                         span: DUMMY_SP,
@@ -517,7 +515,6 @@ impl Analyzer<'_, '_> {
                 }) => {
                     let rhs = Type::Ref(Ref {
                         span,
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent {
                             span,
                             sym: match kind {
@@ -849,7 +846,7 @@ impl Analyzer<'_, '_> {
             Type::Interface(ri) => {
                 let res: VResult<_> = try {
                     for parent in &ri.extends {
-                        let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
+                        let parent = self.type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?;
 
                         // An interface can extend a class.
                         let parent = self.instantiate_class(span, &parent)?;

@@ -211,7 +211,7 @@ impl Analyzer<'_, '_> {
     fn export_type(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
         let orig_name = orig_name.unwrap_or_else(|| name.clone());
 
-        let types = match self.find_type(self.ctx.module_id, &orig_name) {
+        let types = match self.find_type(&orig_name) {
             Ok(v) => v,
             Err(err) => {
                 self.storage.report(err);

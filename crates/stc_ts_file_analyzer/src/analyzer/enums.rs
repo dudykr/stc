@@ -385,8 +385,6 @@ impl Analyzer<'_, '_> {
                 params: Default::default(),
                 type_ann: Some(box Type::EnumVariant(EnumVariant {
                     span: m.span,
-                    // TODO(kdy1): Store context in `Enum`
-                    ctxt: self.ctx.module_id,
                     enum_name: e.id.clone().into(),
                     name: Some(key.sym),
                     metadata: Default::default(),
@@ -574,7 +572,7 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::EnumVariant(ref ev) => {
                 if let Some(variant_name) = &ev.name {
-                    if let Some(types) = self.find_type(ev.ctxt, &ev.enum_name)? {
+                    if let Some(types) = self.find_type(&ev.enum_name)? {
                         for ty in types {
                             if let Type::Enum(Enum { members, .. }) = ty.normalize() {
                                 if let Some(v) = members.iter().find(|m| match m.id {

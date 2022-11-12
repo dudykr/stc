@@ -1090,11 +1090,9 @@ impl Analyzer<'_, '_> {
     }
 
     #[instrument(skip(self))]
-    pub fn find_type(&self, target: ModuleId, name: &Id) -> VResult<Option<ItemRef<Type>>> {
-        if target == self.ctx.module_id || target.is_builtin() {
-            if let Some(v) = self.find_local_type(name) {
-                return Ok(Some(v));
-            }
+    pub fn find_type(&self, name: &Id) -> VResult<Option<ItemRef<Type>>> {
+        if let Some(v) = self.find_local_type(name) {
+            return Ok(Some(v));
         }
 
         if let Some(ModuleInfo { data, .. }) = self.imports_by_id.get(name) {
@@ -1113,24 +1111,6 @@ impl Analyzer<'_, '_> {
 
         if let Ok(ty) = self.env.get_global_type(DUMMY_SP, &name.sym()) {
             return Ok(Some(ItemRef::Owned(vec![ty].into_iter())));
-        }
-
-        if let Some(data) = self.imports.get(&(self.ctx.module_id, target)) {
-            match data.normalize() {
-                Type::Module(data) => {
-                    if let Some(types) = data.exports.types.get(name.sym()) {
-                        let types = types.clone();
-                        return Ok(Some(ItemRef::Owned(types.into_iter())));
-                    }
-                    if let Some(types) = data.exports.private_types.get(name) {
-                        let types = types.clone();
-                        return Ok(Some(ItemRef::Owned(types.into_iter())));
-                    }
-                }
-                _ => {
-                    unreachable!()
-                }
-            }
         }
 
         Ok(None)
@@ -1911,14 +1891,10 @@ struct Expander<'a, 'b, 'c> {
 }
 
 impl Expander<'_, '_, '_> {
-    #[instrument(
-        name = "Expander.expand_ts_entity_name",
-        skip(self, span, ctxt, type_name, type_args, was_top_level, trying_primitive_expansion)
-    )]
+    #[instrument(name = "Expander.expand_ts_entity_name", skip_all)]
     fn expand_ts_entity_name(
         &mut self,
         span: Span,
-        ctxt: ModuleId,
         type_name: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
         was_top_level: bool,
@@ -1953,7 +1929,7 @@ impl Expander<'_, '_, '_> {
                     error!("Dejavu: {}{:?}", &i.sym, i.span.ctxt);
                     return Ok(None);
                 }
-                if let Some(types) = self.analyzer.find_type(ctxt, &i.into())? {
+                if let Some(types) = self.analyzer.find_type(&i.into())? {
                     info!(
                         "expand: expanding `{}` using analyzer: {}",
                         Id::from(i),
@@ -2133,7 +2109,7 @@ impl Expander<'_, '_, '_> {
             //
             //  let a: StringEnum.Foo = x;
             RTsEntityName::TsQualifiedName(box RTsQualifiedName { left, ref right, .. }) => {
-                let left = self.expand_ts_entity_name(span, ctxt, left, None, was_top_level, trying_primitive_expansion)?;
+                let left = self.expand_ts_entity_name(span, left, None, was_top_level, trying_primitive_expansion)?;
 
                 if let Some(left) = &left {
                     let ty = self
@@ -2168,7 +2144,6 @@ impl Expander<'_, '_, '_> {
 
         let Ref {
             span: r_span,
-            ctxt,
             type_name,
             type_args,
             ..
@@ -2179,14 +2154,7 @@ impl Expander<'_, '_, '_> {
             return Ok(None);
         }
 
-        let mut ty = self.expand_ts_entity_name(
-            span,
-            ctxt,
-            &type_name,
-            type_args.as_deref(),
-            was_top_level,
-            trying_primitive_expansion,
-        )?;
+        let mut ty = self.expand_ts_entity_name(span, &type_name, type_args.as_deref(), was_top_level, trying_primitive_expansion)?;
 
         if let Some(ty) = &mut ty {
             ty.reposition(r_span);
@@ -2194,7 +2162,6 @@ impl Expander<'_, '_, '_> {
             if let Type::Enum(e) = ty.normalize() {
                 return Ok(Some(Type::EnumVariant(EnumVariant {
                     span,
-                    ctxt,
                     enum_name: e.id.clone().into(),
                     name: None,
                     metadata: Default::default(),

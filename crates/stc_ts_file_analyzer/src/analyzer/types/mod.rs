@@ -11,8 +11,8 @@ use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection, Intrinsic, IntrinsicKind, Key,
-    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, ModuleId, Operator, PropertySignature, QueryExpr, Ref,
-    ThisType, ThisTypeMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature, QueryExpr, Ref, ThisType,
+    ThisTypeMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -1088,7 +1088,7 @@ impl Analyzer<'_, '_> {
             let mut members = vec![];
 
             for parent in &t.extends {
-                let parent = self.type_of_ts_entity_name(parent.span(), self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
+                let parent = self.type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?;
 
                 let super_els = self.convert_type_to_type_lit(span, Cow::Owned(parent))?;
 
@@ -1152,7 +1152,6 @@ impl Analyzer<'_, '_> {
                         span,
                         Cow::Owned(Type::Ref(Ref {
                             span,
-                            ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(name, span)),
                             type_args: None,
                             metadata: Default::default(),

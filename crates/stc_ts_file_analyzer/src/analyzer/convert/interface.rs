@@ -22,7 +22,7 @@ impl Analyzer<'_, '_> {
 
         for p in parent.iter() {
             let res: VResult<()> = try {
-                let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &p.expr, p.type_args.as_deref())?;
+                let parent = self.type_of_ts_entity_name(span, &p.expr, p.type_args.as_deref())?;
                 let parent = self.normalize(None, Cow::Owned(parent), Default::default())?.freezed();
 
                 if matches!(
@@ -73,9 +73,7 @@ impl Analyzer<'_, '_> {
 
         for (i, p1) in parent.iter().enumerate() {
             let res: VResult<()> = try {
-                let p1_type = self
-                    .type_of_ts_entity_name(span, self.ctx.module_id, &p1.expr, p1.type_args.as_deref())?
-                    .freezed();
+                let p1_type = self.type_of_ts_entity_name(span, &p1.expr, p1.type_args.as_deref())?.freezed();
 
                 for (j, p2) in parent.iter().enumerate() {
                     if i <= j {
@@ -86,9 +84,7 @@ impl Analyzer<'_, '_> {
                         continue;
                     }
 
-                    let p2 = self
-                        .type_of_ts_entity_name(span, self.ctx.module_id, &p2.expr, p2.type_args.as_deref())?
-                        .freezed();
+                    let p2 = self.type_of_ts_entity_name(span, &p2.expr, p2.type_args.as_deref())?.freezed();
 
                     if let Err(err) = self.assign_with_opts(
                         &mut Default::default(),

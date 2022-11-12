@@ -98,7 +98,7 @@ impl Analyzer<'_, '_> {
         )?;
         orig_ty.make_clone_cheap();
 
-        let mut casted_ty = make_instance_type(self.ctx.module_id, casted_ty);
+        let mut casted_ty = make_instance_type(casted_ty);
         self.prevent_inference_while_simplifying(&mut casted_ty);
         casted_ty = self.simplify(casted_ty);
 

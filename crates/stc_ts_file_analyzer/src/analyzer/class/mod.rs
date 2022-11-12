@@ -1307,7 +1307,7 @@ impl Analyzer<'_, '_> {
 
         for parent in &*class.implements {
             let res: VResult<_> = try {
-                let parent = self.type_of_ts_entity_name(parent.span(), self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
+                let parent = self.type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?;
 
                 self.assign_with_opts(
                     &mut Default::default(),
@@ -1653,7 +1653,6 @@ impl Analyzer<'_, '_> {
                                 }
                                 Some(box Type::Ref(Ref {
                                     span: DUMMY_SP,
-                                    ctxt: child.ctx.module_id,
                                     type_name: RTsEntityName::Ident(new_ty),
                                     // TODO(kdy1): Handle type parameters
                                     type_args: None,
@@ -1679,7 +1678,7 @@ impl Analyzer<'_, '_> {
             child.report_errors_for_statics_mixed_with_instances(&c).report(&mut child.storage);
             child.report_errors_for_duplicate_class_members(&c).report(&mut child.storage);
 
-            child.scope.super_class = super_class.clone().map(|ty| make_instance_type(child.ctx.module_id, *ty));
+            child.scope.super_class = super_class.clone().map(|ty| make_instance_type(*ty));
             {
                 // Validate constructors
                 let constructors_with_body = c

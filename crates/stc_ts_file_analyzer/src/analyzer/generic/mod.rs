@@ -15,7 +15,7 @@ use stc_ts_generics::{
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType, KeywordTypeMetadata,
-    LitType, LitTypeMetadata, Mapped, ModuleId, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type,
+    LitType, LitTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type,
     TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
@@ -1170,7 +1170,6 @@ impl Analyzer<'_, '_> {
                     param,
                     &Type::Ref(Ref {
                         span,
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
                         type_args: Some(box TypeParamInstantiation { span, params }),
                         metadata: Default::default(),
@@ -1217,7 +1216,7 @@ impl Analyzer<'_, '_> {
                 // Body should be handled by the match expression above.
 
                 for parent in &arg.extends {
-                    let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
+                    let parent = self.type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?;
                     self.infer_type(span, inferred, &param, &parent, opts)?;
                 }
 

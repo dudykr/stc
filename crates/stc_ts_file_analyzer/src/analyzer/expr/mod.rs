@@ -22,7 +22,7 @@ use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, F
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Key, KeywordType,
-    KeywordTypeMetadata, LitType, LitTypeMetadata, Method, ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
     QueryTypeMetadata, StaticThis, ThisType, TplType, TplTypeMetadata,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
@@ -250,7 +250,6 @@ impl Analyzer<'_, '_> {
                 RExpr::Lit(RLit::Regex(..)) => {
                     return Ok(Type::Ref(Ref {
                         span,
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent {
                             node_id: NodeId::invalid(),
                             span,
@@ -791,7 +790,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::EnumVariant(EnumVariant { enum_name, name: None, .. }) => {
-                if let Ok(Some(types)) = self.find_type(self.ctx.module_id, enum_name) {
+                if let Ok(Some(types)) = self.find_type(enum_name) {
                     for ty in types {
                         match ty.normalize() {
                             Type::Enum(e) => {
@@ -1584,7 +1583,6 @@ impl Analyzer<'_, '_> {
                                 TypeOfMode::LValue => prop.span(),
                                 TypeOfMode::RValue => span,
                             },
-                            ctxt: self.ctx.module_id,
                             enum_name: e.id.clone().into(),
                             name: Some(sym.clone()),
                             metadata: Default::default(),
@@ -1640,13 +1638,12 @@ impl Analyzer<'_, '_> {
             //
             // Foo.A.toString()
             Type::EnumVariant(EnumVariant {
-                ctxt,
                 ref enum_name,
                 ref name,
                 span,
                 metadata,
                 ..
-            }) => match self.find_type(*ctxt, enum_name)? {
+            }) => match self.find_type(enum_name)? {
                 Some(types) => {
                     //
                     for ty in types {
@@ -2024,7 +2021,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 for super_ty in extends {
-                    let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, &super_ty.expr, super_ty.type_args.as_deref())?;
+                    let obj = self.type_of_ts_entity_name(span, &super_ty.expr, super_ty.type_args.as_deref())?;
 
                     let obj = self
                         .instantiate_class(span, &obj)
@@ -2044,7 +2041,6 @@ impl Analyzer<'_, '_> {
                         span,
                         &Type::Ref(Ref {
                             span: span.with_ctxt(Default::default()),
-                            ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                             type_args: None,
                             metadata: Default::default(),
@@ -2080,7 +2076,6 @@ impl Analyzer<'_, '_> {
                         span,
                         &Type::Ref(Ref {
                             span: span.with_ctxt(Default::default()),
-                            ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                             type_args: None,
                             metadata: Default::default(),
@@ -2383,7 +2378,6 @@ impl Analyzer<'_, '_> {
                     span,
                     &Type::Ref(Ref {
                         span: span.with_ctxt(Default::default()),
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                         type_args: None,
                         metadata: Default::default(),
@@ -2698,7 +2692,7 @@ impl Analyzer<'_, '_> {
                 expr: box QueryExpr::TsEntityName(name),
                 ..
             }) => {
-                let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, &name.clone().into(), None)?;
+                let obj = self.type_of_ts_entity_name(span, &name.clone().into(), None)?;
                 return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
             }
 
@@ -2746,7 +2740,6 @@ impl Analyzer<'_, '_> {
                     span,
                     &Type::Ref(Ref {
                         span: span.with_ctxt(Default::default()),
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new(js_word!("Function"), DUMMY_SP)),
                         type_args: None,
                         metadata: Default::default(),
@@ -2962,7 +2955,7 @@ impl Analyzer<'_, '_> {
         }
 
         if let TypeOfMode::LValue = type_mode {
-            if let Some(types) = self.find_type(self.ctx.module_id, &id)? {
+            if let Some(types) = self.find_type(&id)? {
                 for ty in types {
                     match ty.normalize() {
                         Type::Module(..) => {
@@ -2979,7 +2972,7 @@ impl Analyzer<'_, '_> {
         }
 
         if self.ctx.allow_module_var && need_intersection {
-            if let Some(types) = self.find_type(self.ctx.module_id, &id)? {
+            if let Some(types) = self.find_type(&id)? {
                 for ty in types {
                     debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
@@ -3046,7 +3039,7 @@ impl Analyzer<'_, '_> {
         // See documentation on Analyzer.cur_module_name to understand what we are doing
         // here.
         if let Some(cur_module) = self.scope.current_module_name() {
-            let ty = self.find_type(self.ctx.module_id, &cur_module)?;
+            let ty = self.find_type(&cur_module)?;
             if let Some(ty) = ty {
                 for ty in ty {
                     match ty.normalize() {
@@ -3298,7 +3291,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let Ok(Some(types)) = self.find_type(self.ctx.module_id, &i.into()) {
+        if let Ok(Some(types)) = self.find_type(&i.into()) {
             for ty in types {
                 debug_assert!(ty.is_clone_cheap());
                 ty.assert_valid();
@@ -3369,24 +3362,12 @@ impl Analyzer<'_, '_> {
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(crate) fn type_of_ts_entity_name(
-        &mut self,
-        span: Span,
-        ctxt: ModuleId,
-        n: &RExpr,
-        type_args: Option<&TypeParamInstantiation>,
-    ) -> VResult<Type> {
-        self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
+    pub(crate) fn type_of_ts_entity_name(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
+        self.type_of_ts_entity_name_inner(span, n, type_args)
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    fn type_of_ts_entity_name_inner(
-        &mut self,
-        span: Span,
-        ctxt: ModuleId,
-        n: &RExpr,
-        type_args: Option<&TypeParamInstantiation>,
-    ) -> VResult<Type> {
+    fn type_of_ts_entity_name_inner(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
         {
             let res = self.report_error_for_unresolve_type(span, &n, type_args);
@@ -3414,7 +3395,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if let Some(types) = self.find_type(ctxt, &i.into())? {
+                if let Some(types) = self.find_type(&i.into())? {
                     for ty in types {
                         match ty.normalize() {
                             Type::Namespace(_)
@@ -3516,7 +3497,6 @@ impl Analyzer<'_, '_> {
 
                 Ok(Type::Ref(Ref {
                     span,
-                    ctxt: self.ctx.module_id,
                     type_name: RTsEntityName::Ident(i.clone()),
                     type_args: type_args.cloned().map(Box::new),
                     metadata: Default::default(),
@@ -3527,7 +3507,7 @@ impl Analyzer<'_, '_> {
                 prop: RMemberProp::Ident(right),
                 ..
             }) => {
-                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &obj, None)?;
+                let obj_ty = self.type_of_ts_entity_name(span, &obj, None)?;
                 obj_ty.assert_valid();
 
                 self.access_property(
@@ -3552,7 +3532,7 @@ impl Analyzer<'_, '_> {
                     }),
                 ..
             }) => {
-                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &obj, None)?;
+                let obj_ty = self.type_of_ts_entity_name(span, &obj, None)?;
                 obj_ty.assert_valid();
 
                 let ty = self
@@ -3826,7 +3806,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 for parent in &ty.extends {
-                    let parent_ty = self.type_of_ts_entity_name(parent.span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref());
+                    let parent_ty = self.type_of_ts_entity_name(parent.span, &parent.expr, parent.type_args.as_deref());
 
                     let parent_ty = match parent_ty {
                         Ok(v) => v,

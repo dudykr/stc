@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use stc_ts_ast_rnode::{RAwaitExpr, RIdent, RTsEntityName};
 use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;
-use stc_ts_types::{IdCtx, Key, ModuleId, Ref, Type, TypeParamInstantiation};
+use stc_ts_types::{IdCtx, Key, Ref, Type, TypeParamInstantiation};
 use stc_utils::cache::Freeze;
 use swc_atoms::js_word;
 use swc_common::{Span, SyntaxContext};
@@ -46,7 +46,6 @@ impl Analyzer<'_, '_> {
                 let spane = span.with_ctxt(SyntaxContext::empty());
 
                 Type::Ref(Ref {
-                    ctxt: ModuleId::builtin(),
                     span,
                     type_name: RTsEntityName::Ident(RIdent::new("PromiseLike".into(), span)),
                     type_args: Some(box TypeParamInstantiation {

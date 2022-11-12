@@ -81,10 +81,11 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let stable_env = env.shared().clone();
         let generator = module_id::ModuleIdGenerator::default();
         let path = Arc::new(FileName::Real(file_name.clone()));
+        let (module_id, top_level_mark) = generator.generate(&path);
 
         let mut storage = Single {
             parent: None,
-            id: generator.generate(&path),
+            id: module_id,
             path,
             info: Default::default(),
             is_dts: false,
@@ -106,11 +107,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         let mut parser = Parser::new_from(lexer);
         let module = parser.parse_module().unwrap();
         let module = GLOBALS.set(stable_env.swc_globals(), || {
-            module.fold_with(&mut resolver(
-                stable_env.marks().unresolved_mark(),
-                stable_env.marks().top_level_mark(),
-                true,
-            ))
+            module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true))
         });
         let mut module = RModule::from_orig(&mut node_id_gen, module);
         let mut mutations;

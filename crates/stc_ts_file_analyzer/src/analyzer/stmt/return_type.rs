@@ -5,8 +5,8 @@ use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt,
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
 use stc_ts_types::{
-    CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, ModuleId, Operator,
-    PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
+    CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, Operator, PropertySignature,
+    Ref, RefMetadata, TypeElement, TypeParamInstantiation,
 };
 use stc_utils::{
     cache::Freeze,
@@ -209,7 +209,6 @@ impl Analyzer<'_, '_> {
                         metadata = ret_ty.metadata();
                         ret_ty.span()
                     }),
-                    ctxt: ModuleId::builtin(),
                     type_name: if is_async {
                         RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), DUMMY_SP))
                     } else {
@@ -247,7 +246,6 @@ impl Analyzer<'_, '_> {
 
                 return Ok(Some(Type::Ref(Ref {
                     span,
-                    ctxt: ModuleId::builtin(),
                     type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), DUMMY_SP)),
                     type_args: Some(box TypeParamInstantiation {
                         span,
@@ -338,7 +336,6 @@ impl Analyzer<'_, '_> {
                         &declared,
                         &Type::Ref(Ref {
                             span: node.span,
-                            ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), node.span)),
                             type_args: Some(box TypeParamInstantiation {
                                 span: node.span,
@@ -387,7 +384,6 @@ impl Analyzer<'_, '_> {
                         &declared,
                         &Type::Ref(Ref {
                             span: node.span,
-                            ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(name.into(), node.span)),
                             type_args: Some(box TypeParamInstantiation {
                                 span: node.span,
