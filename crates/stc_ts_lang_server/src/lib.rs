@@ -1,4 +1,8 @@
+use clap::Args;
 use lspower::{async_trait, jsonrpc, lsp};
+
+#[derive(Debug, Args)]
+pub struct LspCommand {}
 
 pub struct StcLangServer {}
 
