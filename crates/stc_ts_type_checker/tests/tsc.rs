@@ -601,8 +601,8 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                     Arc::new(NodeResolver),
                 );
 
-                // Install a new OpenTelemetry trace pipeline
-                let _guard = init_tracing(file_stem.to_string_lossy().to_string());
+                // Install a logger
+                let _guard = testing::init();
 
                 let start = Instant::now();
 
