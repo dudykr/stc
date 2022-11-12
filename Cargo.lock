@@ -3044,6 +3044,7 @@ dependencies = [
  "autocfg",
  "bytes",
  "memchr",
+ "num_cpus",
  "pin-project-lite",
  "tokio-macros",
 ]
