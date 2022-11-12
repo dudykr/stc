@@ -1278,6 +1278,7 @@ expressions/nullishCoalescingOperator/nullishCoalescingOperator_not_strict.ts
 expressions/optionalChaining/callChain/callChain.2.ts
 expressions/optionalChaining/callChain/callChain.3.ts
 expressions/optionalChaining/callChain/callChain.ts
+expressions/optionalChaining/callChain/callChainInference.ts
 expressions/optionalChaining/callChain/parentheses.ts
 expressions/optionalChaining/callChain/superMethodCall.ts
 expressions/optionalChaining/callChain/thisMethodCall.ts
