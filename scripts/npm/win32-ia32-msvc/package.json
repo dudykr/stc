@@ -1,0 +1,41 @@
+{
+  "name": "@stc-rs/core-win32-ia32-msvc",
+  "version": "1.2.130",
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "ia32"
+  ],
+  "main": "stc.exe",
+  "files": [
+    "stc.exe"
+  ],
+  "description": "Super-fast alternative for babel",
+  "keywords": [
+    "stc-rs",
+    "stc-rspack",
+    "babel",
+    "typescript",
+    "rust",
+    "webpack",
+    "tsc"
+  ],
+  "author": "강동윤 <kdy1997.dev@gmail.com>",
+  "homepage": "https://stc.dudy.dev",
+  "license": "Apache-2.0 AND MIT",
+  "engines": {
+    "node": ">=10"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dudykr/stc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dudykr/stc/issues"
+  }
+}

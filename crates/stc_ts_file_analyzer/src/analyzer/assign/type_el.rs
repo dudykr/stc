@@ -1183,6 +1183,12 @@ impl Analyzer<'_, '_> {
                     }) if &**sym == "toString" => {}
 
                     _ => {
+                        if let Key::Computed(l_key) = l_key {
+                            if l_key.ty.is_unknown() {
+                                continue;
+                            }
+                        }
+
                         if !opts.allow_missing_fields {
                             // No property with `key` found.
                             missing_fields.push(lm.clone());

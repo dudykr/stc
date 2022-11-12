@@ -361,6 +361,7 @@ es6/Symbols/symbolProperty49.ts
 es6/Symbols/symbolProperty5.ts
 es6/Symbols/symbolProperty50.ts
 es6/Symbols/symbolProperty51.ts
+es6/Symbols/symbolProperty52.ts
 es6/Symbols/symbolProperty53.ts
 es6/Symbols/symbolProperty54.ts
 es6/Symbols/symbolProperty55.ts
@@ -1277,6 +1278,7 @@ expressions/nullishCoalescingOperator/nullishCoalescingOperator_not_strict.ts
 expressions/optionalChaining/callChain/callChain.2.ts
 expressions/optionalChaining/callChain/callChain.3.ts
 expressions/optionalChaining/callChain/callChain.ts
+expressions/optionalChaining/callChain/callChainInference.ts
 expressions/optionalChaining/callChain/parentheses.ts
 expressions/optionalChaining/callChain/superMethodCall.ts
 expressions/optionalChaining/callChain/thisMethodCall.ts
@@ -1771,6 +1773,8 @@ parser/ecmascript5/Statements/parserWithStatement2.ts
 parser/ecmascript5/StrictMode/parserStrictMode1.ts
 parser/ecmascript5/StrictMode/parserStrictMode15-negative.ts
 parser/ecmascript5/StrictMode/parserStrictMode16.ts
+parser/ecmascript5/StrictMode/parserStrictMode3-negative.ts
+parser/ecmascript5/StrictMode/parserStrictMode6-negative.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression1.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression3.ts
 parser/ecmascript5/SuperExpressions/parserSuperExpression4.ts
