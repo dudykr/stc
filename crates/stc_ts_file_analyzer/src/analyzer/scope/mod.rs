@@ -1090,11 +1090,9 @@ impl Analyzer<'_, '_> {
     }
 
     #[instrument(skip(self))]
-    pub fn find_type(&self, target: ModuleId, name: &Id) -> VResult<Option<ItemRef<Type>>> {
-        if target == self.ctx.module_id || target.is_builtin() {
-            if let Some(v) = self.find_local_type(name) {
-                return Ok(Some(v));
-            }
+    pub fn find_type(&self, name: &Id) -> VResult<Option<ItemRef<Type>>> {
+        if let Some(v) = self.find_local_type(name) {
+            return Ok(Some(v));
         }
 
         if let Some(ModuleInfo { data, .. }) = self.imports_by_id.get(name) {
