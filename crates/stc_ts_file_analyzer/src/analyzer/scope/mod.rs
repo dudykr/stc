@@ -1502,12 +1502,9 @@ impl Analyzer<'_, '_> {
                         ty
                     })
                 } else {
-                    if let Some(var_ty) = v.ty {
-                        Some(var_ty)
-                    } else {
-                        None
-                    }
+                    v.ty
                 };
+
                 if let Some(ty) = &actual_ty {
                     ty.assert_valid();
                     if !self.is_builtin {
@@ -1520,8 +1517,17 @@ impl Analyzer<'_, '_> {
                         ty.assert_clone_cheap();
                     }
                 }
+
                 // TODO(kdy1): Use better logic
-                v.actual_ty = actual_ty.or_else(|| v.ty.clone());
+                match kind {
+                    VarKind::Fn if v.actual_ty.is_some() => {
+                        let ty = Type::new_union(span, v.actual_ty.into_iter().chain(actual_ty.or_else(|| v.ty.clone()))).cheap();
+                        v.actual_ty = Some(ty);
+                    }
+                    _ => {
+                        v.actual_ty = actual_ty.or_else(|| v.ty.clone());
+                    }
+                }
 
                 self.scope.vars.insert(k, v);
             }
