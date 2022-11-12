@@ -40,12 +40,14 @@ impl Analyzer<'_, '_> {
                     if li % 2 == 0 {
                         // LHS is literal
                         if ri % 2 == 0 {
+                            // RHS is literal
                             if l.quasis[li / 2].cooked != r.quasis[ri / 2].cooked {
                                 return Err(
                                     Error::SimpleAssignFailed { span, cause: None }.context("failed to assign a literal to literal")
                                 );
                             }
                         } else {
+                            // RHS is type
                             return Err(Error::SimpleAssignFailed { span, cause: None }.context("cannot assign expression to literal"));
                         }
                     } else {
@@ -54,7 +56,10 @@ impl Analyzer<'_, '_> {
                         // We should eat as much text as possible.
 
                         if ri % 2 == 0 {
+                            // RHS is literal
                         } else {
+                            // RHS is type
+
                             let l = &l.types[li / 2];
                             let r = &r.types[ri / 2];
 
