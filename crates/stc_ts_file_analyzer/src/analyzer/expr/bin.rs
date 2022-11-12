@@ -523,7 +523,7 @@ impl Analyzer<'_, '_> {
                 //  - any + other is any
                 if let Some(kind) = c.take_if_any_matches(|(_, lt), (_, rt)| {
                     if lt.is_any() {
-                        if rt.is_str() {
+                        if rt.is_str() || rt.is_tpl() {
                             return Some(TsKeywordTypeKind::TsStringKeyword);
                         }
                         return Some(TsKeywordTypeKind::TsAnyKeyword);
