@@ -1852,6 +1852,7 @@ parser/ecmascript6/Iterators/parserForOfStatement17.ts
 parser/ecmascript6/Iterators/parserForOfStatement18.ts
 parser/ecmascript6/Iterators/parserForOfStatement19.ts
 parser/ecmascript6/Iterators/parserForOfStatement23.ts
+parser/ecmascript6/Iterators/parserForOfStatement24.ts
 parser/ecmascript6/Iterators/parserForOfStatement5.ts
 parser/ecmascript6/Iterators/parserForOfStatement8.ts
 parser/ecmascript6/Iterators/parserForOfStatement9.ts
