@@ -305,7 +305,11 @@ impl Analyzer<'_, '_> {
 
                 if !self.is_valid_for_switch_case(span, &lt, &rt)? {
                     if self.ctx.in_switch_case_test {
-                        self.storage.report(Error::SwitchCaseTestNotCompatible { span })
+                        self.storage.report(Error::SwitchCaseTestNotCompatible {
+                            span,
+                            disc: box lt.clone(),
+                            test: box rt.clone(),
+                        })
                     } else {
                         self.storage.report(Error::NoOverlap {
                             span,
