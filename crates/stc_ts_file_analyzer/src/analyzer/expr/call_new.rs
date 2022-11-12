@@ -411,7 +411,6 @@ impl Analyzer<'_, '_> {
                 RExpr::Ident(i) if kind == ExtractKind::New => {
                     let mut ty = Type::Ref(Ref {
                         span: i.span,
-                        ctxt: analyzer.ctx.module_id,
                         type_name: RTsEntityName::Ident(i.clone()),
                         type_args: Default::default(),
                         metadata: Default::default(),
@@ -564,7 +563,6 @@ impl Analyzer<'_, '_> {
                 Type::Array(obj) => {
                     let obj = Type::Ref(Ref {
                         span,
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new(
                             "Array".into(),
                             span.with_ctxt(self.marks().unresolved_mark().as_ctxt()),
@@ -3484,7 +3482,6 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
             // Boxified<A | B | C> => Boxified<A> | Boxified<B> | Boxified<C>
             Type::Ref(Ref {
                 span,
-                ctxt,
                 type_name: RTsEntityName::Ident(i),
                 type_args: Some(type_args),
                 metadata,
@@ -3495,7 +3492,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 }) =>
             {
                 // TODO(kdy1): Replace .ok() with something better
-                if let Some(types) = self.analyzer.find_type(*ctxt, &(&*i).into()).ok().flatten() {
+                if let Some(types) = self.analyzer.find_type(&(&*i).into()).ok().flatten() {
                     type_args.make_clone_cheap();
 
                     for stored_ty in types {

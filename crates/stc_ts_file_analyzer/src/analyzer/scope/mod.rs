@@ -1916,7 +1916,6 @@ impl Expander<'_, '_, '_> {
     fn expand_ts_entity_name(
         &mut self,
         span: Span,
-        ctxt: ModuleId,
         type_name: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
         was_top_level: bool,
@@ -2166,7 +2165,6 @@ impl Expander<'_, '_, '_> {
 
         let Ref {
             span: r_span,
-            ctxt,
             type_name,
             type_args,
             ..
@@ -2177,14 +2175,7 @@ impl Expander<'_, '_, '_> {
             return Ok(None);
         }
 
-        let mut ty = self.expand_ts_entity_name(
-            span,
-            ctxt,
-            &type_name,
-            type_args.as_deref(),
-            was_top_level,
-            trying_primitive_expansion,
-        )?;
+        let mut ty = self.expand_ts_entity_name(span, &type_name, type_args.as_deref(), was_top_level, trying_primitive_expansion)?;
 
         if let Some(ty) = &mut ty {
             ty.reposition(r_span);
