@@ -159,7 +159,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
+pub(crate) fn make_instance_type(ty: Type) -> Type {
     let span = ty.span();
 
     match ty.normalize() {
