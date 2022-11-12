@@ -14,5 +14,5 @@ stc_ts_type_checker = {version = "0.1.0", path = "../stc_ts_type_checker"}
 stc_ts_types = {version = "0.0.0", path = "../stc_ts_types"}
 stc_ts_utils = {version = "0.1.0", path = "../stc_ts_utils"}
 stc_utils = {version = "0.1.0", path = "../stc_utils"}
-tokio = { version = "1.21.2", features = ["rt", "macros"] }
+tokio = { version = "1.21.2", features = ["rt", "macros", "io-util", "io-std"] }
 tower-lsp = "0.17.0"
