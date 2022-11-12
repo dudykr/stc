@@ -36,30 +36,30 @@ impl Analyzer<'_, '_> {
 
                 while li < l.quasis.len() + l.types.len() && ri < r.quasis.len() + r.types.len() {
                     // 0: quasi, 1: type
-                    match (li % 2, ri % 2) {
-                        (0, 0) => {
-                            //
+
+                    if li % 2 == 0 {
+                        // LHS is literal
+                        if ri % 2 == 0 {
                             if l.quasis[li / 2].cooked != r.quasis[ri / 2].cooked {
                                 return Err(
                                     Error::SimpleAssignFailed { span, cause: None }.context("failed to assign a literal to literal")
                                 );
                             }
-                        }
-                        (0, 1) => {
+                        } else {
                             return Err(Error::SimpleAssignFailed { span, cause: None }.context("cannot assign expression to literal"));
                         }
-                        (1, 0) => {
-                            // We should eat as much text as possible.
-                        }
-                        (1, 1) => {
+                    } else {
+                        // LHS is type
+
+                        // We should eat as much text as possible.
+
+                        if ri % 2 == 0 {
+                        } else {
                             let l = &l.types[li / 2];
                             let r = &r.types[ri / 2];
 
                             self.assign_inner(data, l, r, opts)
                                 .context("tried to assign a type to a type for a template literal")?;
-                        }
-                        _ => {
-                            unreachable!()
                         }
                     }
 
