@@ -1344,9 +1344,11 @@ impl Analyzer<'_, '_> {
     fn is_valid_lhs_of_instanceof(&mut self, span: Span, ty: &Type) -> bool {
         let ty = ty.normalize();
 
-        match ty {
-            ty if ty.is_any() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) => true,
+        if ty.is_any() || ty.is_unknown() || ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword) {
+            return true;
+        }
 
+        match ty {
             Type::TypeLit(..)
             | Type::Interface(..)
             | Type::Class(..)
