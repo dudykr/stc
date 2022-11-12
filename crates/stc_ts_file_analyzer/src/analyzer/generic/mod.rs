@@ -1216,7 +1216,7 @@ impl Analyzer<'_, '_> {
                 // Body should be handled by the match expression above.
 
                 for parent in &arg.extends {
-                    let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
+                    let parent = self.type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?;
                     self.infer_type(span, inferred, &param, &parent, opts)?;
                 }
 

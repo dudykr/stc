@@ -22,7 +22,7 @@ use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, F
 pub use stc_ts_types::IdCtx;
 use stc_ts_types::{
     name::Name, Alias, Class, ClassDef, ClassMember, ClassProperty, CommonTypeMetadata, ComputedKey, Id, Key, KeywordType,
-    KeywordTypeMetadata, LitType, LitTypeMetadata, Method, ModuleId, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
+    KeywordTypeMetadata, LitType, LitTypeMetadata, Method, Operator, OptionalType, PropertySignature, QueryExpr, QueryType,
     QueryTypeMetadata, StaticThis, ThisType, TplType, TplTypeMetadata,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, stack};
@@ -2021,7 +2021,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 for super_ty in extends {
-                    let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, &super_ty.expr, super_ty.type_args.as_deref())?;
+                    let obj = self.type_of_ts_entity_name(span, &super_ty.expr, super_ty.type_args.as_deref())?;
 
                     let obj = self
                         .instantiate_class(span, &obj)
@@ -2692,7 +2692,7 @@ impl Analyzer<'_, '_> {
                 expr: box QueryExpr::TsEntityName(name),
                 ..
             }) => {
-                let obj = self.type_of_ts_entity_name(span, self.ctx.module_id, &name.clone().into(), None)?;
+                let obj = self.type_of_ts_entity_name(span, &name.clone().into(), None)?;
                 return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
             }
 
@@ -3363,7 +3363,7 @@ impl Analyzer<'_, '_> {
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn type_of_ts_entity_name(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
-        self.type_of_ts_entity_name_inner(span, ctxt, n, type_args)
+        self.type_of_ts_entity_name_inner(span, n, type_args)
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
@@ -3507,7 +3507,7 @@ impl Analyzer<'_, '_> {
                 prop: RMemberProp::Ident(right),
                 ..
             }) => {
-                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &obj, None)?;
+                let obj_ty = self.type_of_ts_entity_name(span, &obj, None)?;
                 obj_ty.assert_valid();
 
                 self.access_property(
@@ -3532,7 +3532,7 @@ impl Analyzer<'_, '_> {
                     }),
                 ..
             }) => {
-                let obj_ty = self.type_of_ts_entity_name(span, ctxt, &obj, None)?;
+                let obj_ty = self.type_of_ts_entity_name(span, &obj, None)?;
                 obj_ty.assert_valid();
 
                 let ty = self
@@ -3806,7 +3806,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 for parent in &ty.extends {
-                    let parent_ty = self.type_of_ts_entity_name(parent.span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref());
+                    let parent_ty = self.type_of_ts_entity_name(parent.span, &parent.expr, parent.type_args.as_deref());
 
                     let parent_ty = match parent_ty {
                         Ok(v) => v,
