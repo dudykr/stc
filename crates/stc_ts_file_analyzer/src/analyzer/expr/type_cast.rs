@@ -256,6 +256,10 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
+        if (from.is_str() || from.is_tpl()) && to.is_tpl() {
+            return Ok(true);
+        }
+
         match to {
             Type::TypeLit(to) => {
                 if to.members.is_empty() {

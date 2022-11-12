@@ -305,7 +305,11 @@ impl Analyzer<'_, '_> {
 
                 if !self.is_valid_for_switch_case(span, &lt, &rt)? {
                     if self.ctx.in_switch_case_test {
-                        self.storage.report(Error::SwitchCaseTestNotCompatible { span })
+                        self.storage.report(Error::SwitchCaseTestNotCompatible {
+                            span,
+                            disc: box lt.clone(),
+                            test: box rt.clone(),
+                        })
                     } else {
                         self.storage.report(Error::NoOverlap {
                             span,
@@ -519,7 +523,7 @@ impl Analyzer<'_, '_> {
                 //  - any + other is any
                 if let Some(kind) = c.take_if_any_matches(|(_, lt), (_, rt)| {
                     if lt.is_any() {
-                        if rt.is_str() {
+                        if rt.is_str() || rt.is_tpl() {
                             return Some(TsKeywordTypeKind::TsStringKeyword);
                         }
                         return Some(TsKeywordTypeKind::TsAnyKeyword);
@@ -1762,7 +1766,8 @@ impl Analyzer<'_, '_> {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
             })
-            | Type::Symbol(..) => true,
+            | Type::Symbol(..)
+            | Type::Tpl(..) => true,
 
             Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_lhs_of_in(&ty)),
 
@@ -1871,7 +1876,7 @@ pub(super) fn extract_name_for_assignment(e: &RExpr, is_exact_eq: bool) -> Optio
 
 fn is_str_like_for_addition(t: &Type) -> bool {
     match t.normalize() {
-        Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => true,
+        Type::Lit(LitType { lit: RTsLit::Str(..), .. }) | Type::Tpl(..) => true,
         Type::Keyword(KeywordType {
             kind: TsKeywordTypeKind::TsStringKeyword,
             ..

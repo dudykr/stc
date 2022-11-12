@@ -28,22 +28,63 @@ impl Analyzer<'_, '_> {
 
         match r {
             Type::Tpl(r) => {
-                if r.quasis.len() != l.quasis.len() {
-                    return Err(Error::SimpleAssignFailed { span, cause: None });
-                }
+                // TOOD(kdy1): We should iterator over two types, and check if each element is
+                // assignable.
 
-                for index in 0..r.quasis.len() {
-                    if r.quasis[index].raw != l.quasis[index].raw {
-                        return Err(Error::SimpleAssignFailed { span, cause: None });
+                let mut li = 0;
+                let mut ri = 0;
+
+                while li < l.quasis.len() + l.types.len() && ri < r.quasis.len() + r.types.len() {
+                    // 0: quasi, 1: type
+
+                    if li % 2 == 0 {
+                        // LHS is literal
+                        if ri % 2 == 0 {
+                            // RHS is literal
+                            if l.quasis[li / 2].cooked != r.quasis[ri / 2].cooked {
+                                // TODO: Restore this after implementing correct
+                                // logic
+
+                                // return Err(
+                                //     Error::SimpleAssignFailed { span, cause:
+                                // None }.context("failed to assign a literal to
+                                // literal") );
+                            }
+                        } else {
+                            // TODO: Restore this after implementing correct
+                            // logic
+
+                            // RHS is type
+
+                            // return Err(Error::SimpleAssignFailed { span,
+                            // cause: None }.context("cannot assign expression
+                            // to literal"));
+                        }
+                    } else {
+                        // LHS is type
+
+                        // We should eat as much text as possible.
+
+                        if ri % 2 == 0 {
+                            // RHS is literal
+                        } else {
+                            // RHS is type
+
+                            // TODO: Restore this after implementing correct
+                            // logic
+
+                            // let l = &l.types[li / 2];
+                            // let r = &r.types[ri / 2];
+
+                            // self.assign_inner(data, l, r, opts)
+                            //     .context("tried to assign a type to a type
+                            // for a template literal")?;
+                        }
                     }
-                }
 
-                if r.types.len() != l.types.len() {
-                    return Err(Error::SimpleAssignFailed { span, cause: None });
-                }
-
-                for index in 0..r.types.len() {
-                    self.assign_without_wrapping(data, &l.types[index], &r.types[index], opts)?;
+                    // Bump
+                    li += 1;
+                    ri += 1;
                 }
 
                 Ok(())

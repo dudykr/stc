@@ -842,7 +842,8 @@ impl Analyzer<'_, '_> {
             | Type::Lit(..)
             | Type::Interface(..)
             | Type::TypeLit(..)
-            | Type::Param(..) => Ok(()),
+            | Type::Param(..)
+            | Type::Tpl(..) => Ok(()),
             Type::Union(ty) => {
                 let has_null = ty.types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsNullKeyword));
                 let has_undefined = ty

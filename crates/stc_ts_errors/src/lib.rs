@@ -580,6 +580,8 @@ pub enum Error {
     /// TS2678
     SwitchCaseTestNotCompatible {
         span: Span,
+        disc: Box<Type>,
+        test: Box<Type>,
     },
 
     /// TS2540

@@ -312,7 +312,8 @@ impl Analyzer<'_, '_> {
                 ..
             })
             | Type::EnumVariant(..)
-            | Type::Symbol(..) => true,
+            | Type::Symbol(..)
+            | Type::Tpl(..) => true,
 
             Type::Param(TypeParam { constraint: Some(ty), .. }) => {
                 if self.is_type_valid_for_computed_key(span, ty) {

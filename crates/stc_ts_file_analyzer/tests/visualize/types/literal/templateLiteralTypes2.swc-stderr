@@ -15,7 +15,7 @@ Error:
    `----
 
 Error: 
-  > string
+  > `abc${string}`
 
   x Type
    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:6:5]
@@ -33,7 +33,7 @@ Error:
    `----
 
 Error: 
-  > string
+  > `abc${number}`
 
   x Type
    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:7:5]
@@ -51,7 +51,7 @@ Error:
    `----
 
 Error: 
-  > string
+  > `abc${('foo' | 'bar' | 'baz')}`
 
   x Type
    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:8:5]
@@ -69,16 +69,7 @@ Error:
    `----
 
 Error: 
-  > string
-
-  x Type
-   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:9:5]
- 9 | const d1: `abc${string}` = `abc${s}`;
-   :                                  ^
-   `----
-
-Error: 
-  > string
+  > `abc${T}`
 
   x Type
    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:9:5]
@@ -92,15 +83,6 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:10:5]
  10 | const d2: `abc${number}` = `abc${n}`;
-    :                                  ^
-    `----
-
-Error: 
-  > number
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:10:5]
- 10 | const d2: `abc${number}` = `abc${n}`;
     :                            ^^^^^^^^^
     `----
 
@@ -110,29 +92,11 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:11:5]
  11 | const d3: `abc${'foo' | 'bar' | 'baz'}` = `abc${u}`;
-    :                                                 ^
-    `----
-
-Error: 
-  > ('foo' | 'bar' | 'baz')
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:11:5]
- 11 | const d3: `abc${'foo' | 'bar' | 'baz'}` = `abc${u}`;
     :                                           ^^^^^^^^^
     `----
 
 Error: 
   > `abc${('foo' | 'bar' | 'baz')}`
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:12:5]
- 12 | const d4: `abc${T}` = `abc${t}`;
-    :                             ^
-    `----
-
-Error: 
-  > T
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:12:5]
@@ -159,7 +123,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `abc${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:20:5]
@@ -177,7 +141,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `abc${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:21:5]
@@ -186,7 +150,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `abc${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:22:5]
@@ -195,7 +159,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `abc${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:23:5]
@@ -204,16 +168,7 @@ Error:
     `----
 
 Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:24:5]
- 24 | const c3: `abc${string}` = `abc${s}`;
-    :                                  ^
-    `----
-
-Error: 
-  > string
+  > `abc${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:24:5]
@@ -240,7 +195,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `abc${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:27:5]
@@ -276,7 +231,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:31:5]
@@ -294,7 +249,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `bar${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:31:5]
@@ -303,7 +258,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > (`foo${string}` | `bar${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:32:5]
@@ -312,7 +267,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > (`foo${string}` | `bar${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:33:5]
@@ -327,15 +282,6 @@ Error:
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:33:5]
  33 | const c3 = cond ? c1 : c2;  // string
     :                   ^^
-    `----
-
-Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:33:5]
- 33 | const c3 = cond ? c1 : c2;  // string
-    :                        ^^
     `----
 
 Error: 
@@ -344,11 +290,20 @@ Error:
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:33:5]
  33 | const c3 = cond ? c1 : c2;  // string
+    :                        ^^
+    `----
+
+Error: 
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:33:5]
+ 33 | const c3 = cond ? c1 : c2;  // string
     :            ^^^^^^^^^^^^^^
     `----
 
 Error: 
-  > string
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:34:5]
@@ -366,7 +321,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:34:5]
@@ -384,7 +339,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `baz${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:34:5]
@@ -393,7 +348,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `baz${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:35:5]
@@ -402,7 +357,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `baz${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:36:5]
@@ -411,7 +366,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > (`foo${string}` | `bar${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:37:5]
@@ -420,7 +375,7 @@ Error:
     `----
 
 Error: 
-  > (`foo${string}` | `bar${string}`)
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:38:5]
@@ -429,7 +384,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:39:5]
@@ -438,7 +393,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `baz${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:40:5]
@@ -447,7 +402,8 @@ Error:
     `----
 
 Error: 
-  > (`foo${string}` | `bar${string}` | `baz${string}`)
+  > (`foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` |
+  | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:44:5]
@@ -465,7 +421,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:45:5]
@@ -474,16 +430,7 @@ Error:
     `----
 
 Error: 
-  > string
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:46:5]
- 46 | const c2: `foo${string}` = `foo${s}`;
-    :                                  ^
-    `----
-
-Error: 
-  > string
+  > `foo${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:46:5]
@@ -502,15 +449,6 @@ Error:
 
 Error: 
   > `foo${string}`
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:48:5]
- 48 | const c3 = `foo${s}` as `foo${string}`;
-    :                  ^
-    `----
-
-Error: 
-  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:48:5]
@@ -538,15 +476,6 @@ Error:
 
 Error: 
   > `foo${string}`
-
-  x Type
-    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:50:5]
- 50 | const c4 = <`foo${string}`>`foo${s}`;
-    :                                  ^
-    `----
-
-Error: 
-  > string
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:50:5]
@@ -591,7 +520,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:52:5]
@@ -600,7 +529,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:53:5]
@@ -609,7 +538,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:60:5]
@@ -627,7 +556,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:60:5]
@@ -645,7 +574,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:5]
@@ -672,7 +601,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:5]
@@ -681,7 +610,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > ('a' | `foo${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:5]
@@ -699,7 +628,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > (string | `foo${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:62:5]
@@ -717,7 +646,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:62:5]
@@ -735,7 +664,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:63:5]
@@ -762,7 +691,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:63:5]
@@ -771,7 +700,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > ('a' | `foo${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:63:5]
@@ -789,7 +718,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > (string | `foo${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:69:5]
@@ -852,7 +781,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `xyz-${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:80:5]
@@ -870,7 +799,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `xyz-${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:81:5]
@@ -888,7 +817,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `xyz-${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:81:5]
@@ -906,7 +835,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `xyz-${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:88:1]
@@ -971,7 +900,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo.bar.${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:93:1]
@@ -989,7 +918,7 @@ Error:
     `----
 
 Error: 
-  > string extends `foo.bar.${infer R}` ? {
+  > `foo.bar.${string}` extends `foo.bar.${infer R}` ? {
   | } : unknown
 
   x Type
@@ -1008,7 +937,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo.bar.${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:96:1]
@@ -1017,7 +946,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo.bar.${string}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:96:1]
@@ -1035,7 +964,7 @@ Error:
     `----
 
 Error: 
-  > string extends `foo.bar.${infer R}` ? {
+  > `foo.bar.${string}` extends `foo.bar.${infer R}` ? {
   | } : unknown
 
   x Type
@@ -1054,7 +983,7 @@ Error:
     `----
 
 Error: 
-  > string
+  > `foo.bar.${('abc' | 'def' | 'ghi')}`
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:99:1]
@@ -1072,7 +1001,7 @@ Error:
     `----
 
 Error: 
-  > string extends `foo.bar.${infer R}` ? {
+  > `foo.bar.${('abc' | 'def' | 'ghi')}` extends `foo.bar.${infer R}` ? {
   | } : unknown
 
   x Type
@@ -1087,29 +1016,11 @@ Error:
   x Type
      ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:109:1]
  109 | const pixelStringWithTemplate: PixelValueType = `${pixelValue}px`;
-     :                                                    ^^^^^^^^^^
-     `----
-
-Error: 
-  > number
-
-  x Type
-     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:109:1]
- 109 | const pixelStringWithTemplate: PixelValueType = `${pixelValue}px`;
      :                                                 ^^^^^^^^^^^^^^^^^
      `----
 
 Error: 
   > `${number}px`
-
-  x Type
-     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:114:5]
- 114 | return `test-${title}`;
-     :                ^^^^^
-     `----
-
-Error: 
-  > string
 
   x Type
      ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:114:5]
@@ -1158,7 +1069,7 @@ Error:
      `----
 
 Error: 
-  > string
+  > `rotate(${number}dig)`
 
   x Type
      ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:121:1]

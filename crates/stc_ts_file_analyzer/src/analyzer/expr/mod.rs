@@ -1525,6 +1525,29 @@ impl Analyzer<'_, '_> {
                     .context("tried to access property of a type generalized from a literal");
             }
 
+            Type::Tpl(obj) => {
+                // Even if literal generalization is prevented, it should be
+                // expanded in this case.
+
+                return self
+                    .access_property(
+                        span,
+                        &Type::Keyword(KeywordType {
+                            span: obj.span,
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                            metadata: KeywordTypeMetadata {
+                                common: obj.metadata.common,
+                                ..Default::default()
+                            },
+                        }),
+                        prop,
+                        type_mode,
+                        id_ctx,
+                        opts,
+                    )
+                    .context("tried to access property of a type generalized from a literal");
+            }
+
             Type::Symbol(..) => {
                 return Err(Error::NoSuchProperty {
                     span,
@@ -3908,8 +3931,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RTpl, type_ann: Option<&Type>) -> VResult<Type> {
-        e.exprs.visit_with(self);
-
         if e.exprs.is_empty() {
             return Ok(Type::Lit(LitType {
                 span: e.span,
@@ -3945,10 +3966,19 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(Type::Keyword(KeywordType {
+        let types = e
+            .exprs
+            .iter()
+            .map(|e| e.validate_with_default(self).map(|v| v.cheap()))
+            .collect::<VResult<Vec<_>>>()?;
+
+        Ok(Type::Tpl(TplType {
             span: e.span,
-            kind: TsKeywordTypeKind::TsStringKeyword,
-            metadata: Default::default(),
+            quasis: e.quasis.clone(),
+            types,
+            metadata: TplTypeMetadata {
+                common: CommonTypeMetadata { ..Default::default() },
+            },
         }))
     }
 }

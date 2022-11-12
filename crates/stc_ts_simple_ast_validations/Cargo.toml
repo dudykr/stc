@@ -15,6 +15,6 @@ stc_ts_storage = {path = "../stc_ts_storage"}
 stc_ts_utils = {path = "../stc_ts_utils"}
 stc_utils = {path = "../stc_utils"}
 stc_visit = {path = "../stc_visit"}
-swc_common = "0.29.13"
-swc_ecma_ast = "0.94.18"
+swc_common = "0.29.14"
+swc_ecma_ast = "0.94.19"
 tracing = "0.1.37"
