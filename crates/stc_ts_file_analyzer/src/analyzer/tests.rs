@@ -110,6 +110,7 @@ where
 
         let generator = module_id::ModuleIdGenerator::default();
         let path = Arc::new(fm.name.clone());
+        let (module_id, top_level_mark) = generator.generate(&path);
 
         let mut node_id_gen = NodeIdGenerator::default();
         let mut module = {
@@ -124,16 +125,11 @@ where
             parser.parse_module().unwrap()
         };
         module = swc_common::GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut resolver(
-                env.shared().marks().unresolved_mark(),
-                env.shared().marks().top_level_mark(),
-                true,
-            ))
+            module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true))
         });
         let span = module.span;
         let module = RModule::from_orig(&mut node_id_gen, module);
 
-        let (module_id, top_level_mark) = generator.generate(&path);
         let mut storage = Single {
             parent: None,
             id: module_id,
@@ -154,7 +150,7 @@ where
             let top_level_ctxt = SyntaxContext::empty().apply_mark(top_level_mark);
 
             let t1 = analyzer
-                .find_type(module_id, &Id::new("T1".into(), top_level_ctxt))
+                .find_type(&Id::new("T1".into(), top_level_ctxt))
                 .expect("type T1 should resolved without an issue")
                 .expect("type T1 should exist")
                 .into_iter()
@@ -162,7 +158,7 @@ where
                 .unwrap()
                 .into_owned();
             let t2 = analyzer
-                .find_type(module_id, &Id::new("T2".into(), top_level_ctxt))
+                .find_type(&Id::new("T2".into(), top_level_ctxt))
                 .expect("type T2 should resolved without an issue")
                 .expect("type T2 should exist")
                 .into_iter()

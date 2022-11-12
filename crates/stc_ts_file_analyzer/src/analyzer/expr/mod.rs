@@ -3291,7 +3291,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let Ok(Some(types)) = self.find_type(self.ctx.module_id, &i.into()) {
+        if let Ok(Some(types)) = self.find_type(&i.into()) {
             for ty in types {
                 debug_assert!(ty.is_clone_cheap());
                 ty.assert_valid();
@@ -3509,7 +3509,6 @@ impl Analyzer<'_, '_> {
 
                 Ok(Type::Ref(Ref {
                     span,
-                    ctxt: self.ctx.module_id,
                     type_name: RTsEntityName::Ident(i.clone()),
                     type_args: type_args.cloned().map(Box::new),
                     metadata: Default::default(),

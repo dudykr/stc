@@ -6,7 +6,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, ModuleId, Operator, Ref, RefMetadata, TypeParamInstantiation};
+use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, Operator, Ref, RefMetadata, TypeParamInstantiation};
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, DUMMY_SP};
@@ -224,7 +224,6 @@ impl Analyzer<'_, '_> {
                     // Extract<keyof T
                     return Ok(Type::Ref(Ref {
                         span: m.span,
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new("Extract".into(), DUMMY_SP)),
                         type_args: Some(box TypeParamInstantiation {
                             span: DUMMY_SP,
