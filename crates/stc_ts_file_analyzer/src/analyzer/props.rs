@@ -160,7 +160,9 @@ impl Analyzer<'_, '_> {
 
             if check_for_validity && check_for_symbol_form && is_symbol_access {
                 if !ty.is_symbol_like() {
-                    analyzer.storage.report(Error::NonSymbolComputedPropInFormOfSymbol { span });
+                    analyzer
+                        .storage
+                        .report(Error::NonSymbolComputedPropInFormOfSymbol { span, ty: box ty.clone() });
                 }
             }
 

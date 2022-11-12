@@ -1292,6 +1292,7 @@ pub enum Error {
     /// TS2471
     NonSymbolComputedPropInFormOfSymbol {
         span: Span,
+        ty: Box<Type>,
     },
 
     ExpectedNArgsButGotM {
