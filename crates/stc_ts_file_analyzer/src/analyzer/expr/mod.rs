@@ -3039,7 +3039,7 @@ impl Analyzer<'_, '_> {
         // See documentation on Analyzer.cur_module_name to understand what we are doing
         // here.
         if let Some(cur_module) = self.scope.current_module_name() {
-            let ty = self.find_type(self.ctx.module_id, &cur_module)?;
+            let ty = self.find_type(&cur_module)?;
             if let Some(ty) = ty {
                 for ty in ty {
                     match ty.normalize() {
@@ -3407,7 +3407,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if let Some(types) = self.find_type(ctxt, &i.into())? {
+                if let Some(types) = self.find_type(&i.into())? {
                     for ty in types {
                         match ty.normalize() {
                             Type::Namespace(_)

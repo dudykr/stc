@@ -1152,7 +1152,6 @@ impl Analyzer<'_, '_> {
                         span,
                         Cow::Owned(Type::Ref(Ref {
                             span,
-                            ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(name, span)),
                             type_args: None,
                             metadata: Default::default(),

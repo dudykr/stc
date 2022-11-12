@@ -1909,10 +1909,7 @@ struct Expander<'a, 'b, 'c> {
 }
 
 impl Expander<'_, '_, '_> {
-    #[instrument(
-        name = "Expander.expand_ts_entity_name",
-        skip(self, span, ctxt, type_name, type_args, was_top_level, trying_primitive_expansion)
-    )]
+    #[instrument(name = "Expander.expand_ts_entity_name", skip_all)]
     fn expand_ts_entity_name(
         &mut self,
         span: Span,
@@ -1950,7 +1947,7 @@ impl Expander<'_, '_, '_> {
                     error!("Dejavu: {}{:?}", &i.sym, i.span.ctxt);
                     return Ok(None);
                 }
-                if let Some(types) = self.analyzer.find_type(ctxt, &i.into())? {
+                if let Some(types) = self.analyzer.find_type(&i.into())? {
                     info!(
                         "expand: expanding `{}` using analyzer: {}",
                         Id::from(i),
@@ -2130,7 +2127,7 @@ impl Expander<'_, '_, '_> {
             //
             //  let a: StringEnum.Foo = x;
             RTsEntityName::TsQualifiedName(box RTsQualifiedName { left, ref right, .. }) => {
-                let left = self.expand_ts_entity_name(span, ctxt, left, None, was_top_level, trying_primitive_expansion)?;
+                let left = self.expand_ts_entity_name(span, left, None, was_top_level, trying_primitive_expansion)?;
 
                 if let Some(left) = &left {
                     let ty = self
@@ -2183,7 +2180,6 @@ impl Expander<'_, '_, '_> {
             if let Type::Enum(e) = ty.normalize() {
                 return Ok(Some(Type::EnumVariant(EnumVariant {
                     span,
-                    ctxt,
                     enum_name: e.id.clone().into(),
                     name: None,
                     metadata: Default::default(),

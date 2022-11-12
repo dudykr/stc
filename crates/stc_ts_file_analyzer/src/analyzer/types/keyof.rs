@@ -123,7 +123,6 @@ impl Analyzer<'_, '_> {
                                 span,
                                 &Type::Ref(Ref {
                                     span,
-                                    ctxt: ModuleId::builtin(),
                                     type_name: RTsEntityName::Ident(RIdent::new(name, DUMMY_SP)),
                                     type_args: None,
                                     metadata: Default::default(),
@@ -229,7 +228,6 @@ impl Analyzer<'_, '_> {
                             span,
                             &Type::Ref(Ref {
                                 span,
-                                ctxt: ModuleId::builtin(),
                                 type_name: RTsEntityName::Ident(RIdent::new(js_word!("Array"), DUMMY_SP)),
                                 type_args: None,
                                 metadata: Default::default(),
