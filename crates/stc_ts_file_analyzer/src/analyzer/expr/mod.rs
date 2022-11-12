@@ -3931,8 +3931,6 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RTpl, type_ann: Option<&Type>) -> VResult<Type> {
-        e.exprs.visit_with(self);
-
         if e.exprs.is_empty() {
             return Ok(Type::Lit(LitType {
                 span: e.span,
