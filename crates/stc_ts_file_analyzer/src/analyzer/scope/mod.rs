@@ -1520,8 +1520,14 @@ impl Analyzer<'_, '_> {
                         ty.assert_clone_cheap();
                     }
                 }
+
                 // TODO(kdy1): Use better logic
-                v.actual_ty = actual_ty.or_else(|| v.ty.clone());
+                match kind {
+                    VarKind::Var(_) => {
+                        v.actual_ty = actual_ty.or_else(|| v.ty.clone());
+                    }
+                    VarKind::Error | VarKind::Enum | VarKind::Import | VarKind::Fn | VarKind::Param | VarKind::Class => {}
+                }
 
                 self.scope.vars.insert(k, v);
             }
