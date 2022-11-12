@@ -294,7 +294,7 @@ Error:
     `----
 
 Error: 
-  > (`foo${string}` | `bar${string}`)
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:33:5]
@@ -303,7 +303,7 @@ Error:
     `----
 
 Error: 
-  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:34:5]
@@ -321,7 +321,7 @@ Error:
     `----
 
 Error: 
-  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:34:5]
@@ -348,7 +348,7 @@ Error:
     `----
 
 Error: 
-  > `foo${string}`
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `baz${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:35:5]
@@ -357,7 +357,7 @@ Error:
     `----
 
 Error: 
-  > `foo${string}`
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `baz${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:36:5]
@@ -375,7 +375,7 @@ Error:
     `----
 
 Error: 
-  > (`foo${string}` | `bar${string}`)
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:38:5]
@@ -384,7 +384,7 @@ Error:
     `----
 
 Error: 
-  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:39:5]
@@ -393,7 +393,7 @@ Error:
     `----
 
 Error: 
-  > `foo${string}`
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `baz${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:40:5]
@@ -402,7 +402,8 @@ Error:
     `----
 
 Error: 
-  > `foo${string}`
+  > (`foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` |
+  | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}`)
 
   x Type
     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:44:5]
