@@ -14,5 +14,5 @@ serde = { version = "1.0.147", features = ["derive"] }
 stc_utils = {path = "../stc_utils"}
 stc_visit = {path = "../stc_visit"}
 swc_atoms = "0.4.24"
-swc_common = "0.29.13"
-swc_ecma_ast = "0.94.18"
+swc_common = "0.29.14"
+swc_ecma_ast = "0.94.19"

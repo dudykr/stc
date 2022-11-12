@@ -17,8 +17,8 @@ stc_ts_dts_mutations = {path = "../stc_ts_dts_mutations"}
 stc_ts_env = {path = "../stc_ts_env"}
 stc_ts_types = {path = "../stc_ts_types"}
 stc_ts_utils = {path = "../stc_ts_utils"}
-swc_common = "0.29.13"
-swc_ecma_ast = "0.94.18"
+swc_common = "0.29.14"
+swc_ecma_ast = "0.94.19"
 
 [dev-dependencies]
 anyhow = "1.0.66"
@@ -26,12 +26,12 @@ stc_testing = {path = "../stc_testing"}
 stc_ts_builtin_types = {path = "../stc_ts_builtin_types"}
 stc_ts_file_analyzer = {path = "../stc_ts_file_analyzer"}
 stc_ts_storage = {path = "../stc_ts_storage"}
-swc_common = "0.29.13"
-swc_ecma_ast = "0.94.18"
-swc_ecma_codegen = "0.127.30"
-swc_ecma_parser = "0.122.25"
-swc_ecma_transforms = "0.198.42"
-swc_ecma_utils = "0.105.30"
-swc_ecma_visit = "0.80.18"
-testing = "0.31.13"
+swc_common = "0.29.14"
+swc_ecma_ast = "0.94.19"
+swc_ecma_codegen = "0.127.31"
+swc_ecma_parser = "0.122.26"
+swc_ecma_transforms = "0.198.45"
+swc_ecma_utils = "0.105.32"
+swc_ecma_visit = "0.80.19"
+testing = "0.31.14"
 testing_macros = "0.2.7"

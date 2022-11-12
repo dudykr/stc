@@ -21,11 +21,11 @@ stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
 stc_ts_types = {path = "../stc_ts_types"}
 stc_ts_utils = {path = "../stc_ts_utils"}
 swc_atoms = "0.4.24"
-swc_common = "0.29.13"
-swc_fast_graph = "0.17.14"
-swc_graph_analyzer = "0.18.14"
+swc_common = "0.29.14"
+swc_fast_graph = "0.17.15"
+swc_graph_analyzer = "0.18.15"
 tracing = "0.1.37"
 
 [dev-dependencies]
 stc_ts_testing = {path = "../stc_ts_testing"}
-testing = "0.31.13"
+testing = "0.31.14"
