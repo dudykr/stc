@@ -185,22 +185,20 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
             SourceFileInput::from(&*fm),
             Some(&comments),
         );
+        let (module_id, top_level_mark) = generator.generate(&path);
+
         let mut node_id_gen = NodeIdGenerator::default();
         let mut parser = Parser::new_from(lexer);
         let module = parser.parse_module().unwrap();
         let module = GLOBALS.set(stable_env.swc_globals(), || {
-            module.fold_with(&mut resolver(
-                stable_env.marks().unresolved_mark(),
-                stable_env.marks().top_level_mark(),
-                true,
-            ))
+            module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true))
         });
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         b.iter(|| {
             let mut storage = Single {
                 parent: None,
-                id: generator.generate(&path),
+                id: module_id,
                 path: path.clone(),
                 info: Default::default(),
                 is_dts: false,

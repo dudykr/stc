@@ -43,11 +43,7 @@ fn profile_file(path: &Path) {
             parser.parse_module().unwrap()
         };
         module = GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut resolver(
-                env.shared().marks().unresolved_mark(),
-                env.shared().marks().top_level_mark(),
-                true,
-            ))
+            module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true))
         });
         let module = RModule::from_orig(&mut node_id_gen, module);
 

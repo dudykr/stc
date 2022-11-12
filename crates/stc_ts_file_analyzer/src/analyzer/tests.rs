@@ -132,7 +132,7 @@ where
         let span = module.span;
         let module = RModule::from_orig(&mut node_id_gen, module);
 
-        let module_id = generator.generate(&path);
+        let (module_id, top_level_mark) = generator.generate(&path);
         let mut storage = Single {
             parent: None,
             id: module_id,
@@ -150,7 +150,7 @@ where
             let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
 
-            let top_level_ctxt = SyntaxContext::empty().apply_mark(env.shared().marks().top_level_mark());
+            let top_level_ctxt = SyntaxContext::empty().apply_mark(top_level_mark);
 
             let t1 = analyzer
                 .find_type(module_id, &Id::new("T1".into(), top_level_ctxt))
