@@ -123,10 +123,10 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         let constraint = try_opt!(p.constraint.validate_with(&mut *self.with_ctx(ctx)))
-            .map(Type::cheap)
+            .map(Type::freezed)
             .map(Box::new);
         let default = try_opt!(p.default.validate_with(&mut *self.with_ctx(ctx)))
-            .map(Type::cheap)
+            .map(Type::freezed)
             .map(Box::new);
 
         let has_constraint = constraint.is_some();
@@ -234,7 +234,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     child.prevent_expansion(&mut ty);
                 }
-                ty.make_cheap();
+                ty.make_clone_cheap();
                 let alias = Type::Alias(Alias {
                     span: span.with_ctxt(SyntaxContext::empty()),
                     ty: box ty,
