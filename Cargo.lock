@@ -214,9 +214,9 @@ checksum = "ec8a7b6a70fde80372154c65702f00a0f56f3e1c36abbc6c440484be248856db"
 
 [[package]]
 name = "cc"
-version = "1.0.75"
+version = "1.0.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41ca34107f97baef6cfb231b32f36115781856b8f8208e8c580e0bcaea374842"
+checksum = "76a284da2e6fe2092f2353e51713435363112dfd60030e22add80be333fb928f"
 
 [[package]]
 name = "cfg-if"
@@ -232,9 +232,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "chrono"
-version = "0.4.22"
+version = "0.4.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfd4d1b31faaa3a89d7934dbded3111da0d2ef28e3ebccdb4f0179f5929d1ef1"
+checksum = "16b0a3d9ed01224b22057780a37bb8c5dbfe1be8ba48678e7bf57ec4b385411f"
 dependencies = [
  "iana-time-zone",
  "num-integer",
@@ -2641,9 +2641,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_transforms"
-version = "0.198.45"
+version = "0.198.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3880f82ede343048112135be2758572955ac4c674a87720fc0549a8a24c3c61"
+checksum = "e996295f5d10ad35e6fb3af099eb0add4cd2c49ed49cd4f8b8096adf0892348c"
 dependencies = [
  "swc_atoms",
  "swc_common",
@@ -2655,9 +2655,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_transforms_base"
-version = "0.111.46"
+version = "0.111.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e98c2f5870b3e2b6d8c57aa5c63b9d3fa8076b3d687b1b9875f0923484fd9a9"
+checksum = "ab4cc244e5dd406d5a068c2c28438ba1319c6dc463dfe0889291d1cc3069e681"
 dependencies = [
  "better_scoped_tls",
  "bitflags",
@@ -2677,9 +2677,9 @@ dependencies = [
 
 [[package]]
 name = "swc_ecma_utils"
-version = "0.105.32"
+version = "0.105.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55d2be81d1d6072daaac15fc675295d951b73e62f07e749d4faade086424f131"
+checksum = "baaee0747f8c8d32a7d55f6054e915c7a0eae13fc20127dd9ab52bc1e2f2c785"
 dependencies = [
  "indexmap",
  "num_cpus",
