@@ -9,7 +9,7 @@ use stc_ts_types::{
     Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, LitType, Mapped, Operator, PropertySignature, Type, TypeElement,
     TypeLit,
 };
-use stc_utils::cache::ALLOW_DEEP_CLONE;
+use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::{TruePlusMinus, TsTypeOperatorOp};
 use tracing::{debug, error, instrument};

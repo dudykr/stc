@@ -1106,7 +1106,7 @@ impl Analyzer<'_, '_> {
             .report(&mut self.storage)
             .flatten()
         {
-            ty.freezed();
+            ty.make_clone_cheap();
             ty.assert_valid();
 
             if is_for_true {

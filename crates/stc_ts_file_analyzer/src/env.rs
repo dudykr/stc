@@ -253,16 +253,15 @@ pub trait BuiltInGen: Sized {
 
         for (_, ty) in types.iter_mut() {
             ty.fix();
-            ty.make_cheap();
+            ty.make_clone_cheap();
         }
 
         for (_, ty) in vars.iter_mut() {
             ty.fix();
-            ty.make_cheap();
+            ty.make_clone_cheap();
         }
 
         let dur = Instant::now() - start;
-        eprintln!("[builtin] Took {:?}", dur);
 
         Self::new(vars, types)
     }
