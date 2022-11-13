@@ -1809,6 +1809,8 @@ impl Analyzer<'_, '_> {
     }
 
     fn exclude_types(&mut self, span: Span, ty: &mut Type, excludes: Option<Vec<Type>>) {
+        ty.make_clone_cheap();
+
         let mapped_ty = self.normalize(
             Some(span),
             Cow::Borrowed(&*ty),
