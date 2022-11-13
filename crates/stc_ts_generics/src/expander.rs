@@ -117,7 +117,7 @@ impl GenericExpander<'_> {
                 return ty.fold_children_with(self);
             }
 
-            Type::Instance(..) | Type::Ref(..) => return ty.fold_children_with(self),
+            Type::Instance(..) | Type::Ref(..) | Type::Intrinsic(..) => return ty.fold_children_with(self),
 
             Type::Param(mut param) => {
                 param = param.fold_with(self);
