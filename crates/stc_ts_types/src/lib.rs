@@ -1076,22 +1076,7 @@ impl Union {
             return;
         }
 
-        self.types.iter().for_each(|ty| ty.assert_valid());
-
-        for (i, t1) in self.types.iter().enumerate() {
-            for (j, t2) in self.types.iter().enumerate() {
-                if i == j {
-                    continue;
-                }
-                if t1.type_eq(t2) {
-                    unreachable!("[INVALID_TYPE]: A union type has duplicate elements: ({:?})", t1)
-                }
-            }
-        }
-
-        if self.types.len() <= 1 {
-            unreachable!("[INVALID_TYPE]: A union type should have multiple items. Got {:?}", self.types);
-        }
+        self.visit_with(&mut AssertValid);
     }
 }
 
@@ -1138,25 +1123,7 @@ impl Intersection {
             return;
         }
 
-        self.types.iter().for_each(|ty| ty.assert_valid());
-
-        for (i, t1) in self.types.iter().enumerate() {
-            for (j, t2) in self.types.iter().enumerate() {
-                if i == j {
-                    continue;
-                }
-                if t1.type_eq(t2) {
-                    unreachable!("[INVALID_TYPE]: An intersection type has duplicate elements: ({:?})", t1)
-                }
-            }
-        }
-
-        if self.types.len() <= 1 {
-            unreachable!(
-                "[INVALID_TYPE]: An intersection type should have multiple items. Got {:?}",
-                self.types
-            );
-        }
+        self.visit_with(&mut AssertValid);
     }
 }
 
@@ -1822,7 +1789,20 @@ impl Visit<Union> for AssertValid {
 
         ty.visit_children_with(self);
 
-        ty.assert_valid();
+        for (i, t1) in ty.types.iter().enumerate() {
+            for (j, t2) in ty.types.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+                if t1.type_eq(t2) {
+                    unreachable!("[INVALID_TYPE]: A union type has duplicate elements: ({:?})", t1)
+                }
+            }
+        }
+
+        if ty.types.len() <= 1 {
+            unreachable!("[INVALID_TYPE]: A union type should have multiple items. Got {:?}", ty.types);
+        }
 
         for item in ty.types.iter() {
             if item.is_union_type() {
@@ -1840,7 +1820,23 @@ impl Visit<Intersection> for AssertValid {
 
         ty.visit_children_with(self);
 
-        ty.assert_valid();
+        for (i, t1) in ty.types.iter().enumerate() {
+            for (j, t2) in ty.types.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+                if t1.type_eq(t2) {
+                    unreachable!("[INVALID_TYPE]: An intersection type has duplicate elements: ({:?})", t1)
+                }
+            }
+        }
+
+        if ty.types.len() <= 1 {
+            unreachable!(
+                "[INVALID_TYPE]: An intersection type should have multiple items. Got {:?}",
+                ty.types
+            );
+        }
 
         for item in ty.types.iter() {
             if item.is_intersection() {
