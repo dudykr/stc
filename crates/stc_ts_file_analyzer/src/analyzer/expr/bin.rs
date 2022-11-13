@@ -14,7 +14,7 @@ use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, F
 use stc_ts_types::{
     name::Name, Class, IdCtx, Intersection, Key, KeywordType, KeywordTypeMetadata, LitType, Ref, TypeElement, Union, UnionMetadata,
 };
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, stack};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{op, BinaryOp, TsKeywordTypeKind, TsTypeOperatorOp};
@@ -1027,6 +1027,8 @@ impl Analyzer<'_, '_> {
     /// and `D` are empty classes.
     fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult<Type> {
         let orig_ty = orig_ty.normalize();
+
+        let _stack = stack::track(span)?;
 
         match orig_ty {
             Type::Ref(..) | Type::Query(..) => {
