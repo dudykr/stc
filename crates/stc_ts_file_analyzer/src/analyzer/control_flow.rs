@@ -298,7 +298,7 @@ impl AddAssign for CondFacts {
                         }
                         prev => {
                             let prev = prev.take();
-                            *e.get_mut() = Type::new_union(DUMMY_SP, vec![prev, v]).cheap();
+                            *e.get_mut() = Type::new_union(DUMMY_SP, vec![prev, v]).freezed();
                         }
                     };
                     e.get_mut().fix();
@@ -1106,7 +1106,7 @@ impl Analyzer<'_, '_> {
             .report(&mut self.storage)
             .flatten()
         {
-            ty.make_cheap();
+            ty.freezed();
             ty.assert_valid();
 
             if is_for_true {

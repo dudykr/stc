@@ -2415,7 +2415,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         let mut map = HashMap::default();
-                        map.insert(r.type_param.name.clone(), Type::Param(l.type_param.clone()).cheap());
+                        map.insert(r.type_param.name.clone(), Type::Param(l.type_param.clone()).freezed());
 
                         let new_r_ty = self.expand_type_params(&map, r.ty.clone(), Default::default())?;
 
