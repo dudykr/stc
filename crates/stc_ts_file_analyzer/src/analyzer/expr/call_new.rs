@@ -474,7 +474,7 @@ impl Analyzer<'_, '_> {
                     let mut params = FxHashMap::default();
 
                     for (type_param, ty) in type_param_decl.params.iter().zip(type_args.params.iter()) {
-                        params.insert(type_param.name.clone(), ty.clone().cheap());
+                        params.insert(type_param.name.clone(), ty.clone().freezed());
                     }
 
                     callee_ty = analyzer.expand_type_params(&params, callee_ty, Default::default())?;
@@ -3196,7 +3196,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        self.add_type_fact(&var_name.into(), new_ty.clone().cheap());
+        self.add_type_fact(&var_name.into(), new_ty.clone().freezed());
     }
 
     pub(crate) fn validate_type_args_count(

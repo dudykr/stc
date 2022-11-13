@@ -1955,7 +1955,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Array(Array { elem_type, .. }) => {
-                let elem_type = elem_type.clone().cheap();
+                let elem_type = elem_type.clone().freezed();
                 if self.scope.should_store_type_params() {
                     self.scope.store_type_param(Id::word("T".into()), elem_type.clone());
                 }
@@ -3580,7 +3580,7 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                     }),
                 ])
-                .cheap())
+                .freezed())
             }
 
             _ => {
@@ -3702,7 +3702,7 @@ impl Analyzer<'_, '_> {
                             Some(TypeFacts::Truthy),
                         )
                         .report(&mut self.storage)
-                        .map(|ty| ty.cheap());
+                        .map(|ty| ty.freezed());
                     if let Some(next_ty) = next_ty {
                         self.cur_facts
                             .false_facts
@@ -3969,7 +3969,7 @@ impl Analyzer<'_, '_> {
         let types = e
             .exprs
             .iter()
-            .map(|e| e.validate_with_default(self).map(|v| v.cheap()))
+            .map(|e| e.validate_with_default(self).map(|v| v.freezed()))
             .collect::<VResult<Vec<_>>>()?;
 
         Ok(Type::Tpl(TplType {

@@ -532,7 +532,7 @@ impl Scope<'_> {
     fn register_type(&mut self, name: Id, ty: Type, should_override: bool) {
         ty.assert_valid();
 
-        let ty = ty.cheap();
+        let ty = ty.freezed();
         match ty.normalize() {
             Type::Param(..) => {
                 // Override type parameter.
@@ -603,7 +603,7 @@ impl Scope<'_> {
                         metadata: Default::default(),
                     })
                     .fixed()
-                    .cheap();
+                    .freezed();
                 }
             }
             Entry::Vacant(e) => {
@@ -828,7 +828,7 @@ impl Analyzer<'_, '_> {
         }
 
         if self.is_builtin {
-            let ty = ty.cheap();
+            let ty = ty.freezed();
 
             self.storage
                 .store_private_type(ModuleId::builtin(), name.clone(), ty.clone(), false);
@@ -836,10 +836,10 @@ impl Analyzer<'_, '_> {
 
             ty
         } else {
-            let ty = ty.cheap();
+            let ty = ty.freezed();
             let (ty, should_override) = self
                 .merge_decl_with_name(name.clone(), ty.clone())
-                .map(|(ty, should_override)| (ty.cheap(), should_override))
+                .map(|(ty, should_override)| (ty.freezed(), should_override))
                 .unwrap_or_else(|err| {
                     self.storage.report(err);
                     (ty, false)
@@ -1167,7 +1167,7 @@ impl Analyzer<'_, '_> {
             }
             src.extend(ty.into_iter().map(Cow::into_owned));
             return Some(ItemRef::Owned(
-                vec![Type::new_intersection(DUMMY_SP, src).fixed().cheap()].into_iter(),
+                vec![Type::new_intersection(DUMMY_SP, src).fixed().freezed()].into_iter(),
             ));
         }
 
@@ -1341,7 +1341,7 @@ impl Analyzer<'_, '_> {
             debug!("[vars]: Expanded {} as {}", name, dump_type_as_string(&self.cm, ty));
         }
 
-        let ty = ty.map(|ty| ty.cheap());
+        let ty = ty.map(|ty| ty.freezed());
 
         if let Some(actual_ty) = &actual_ty {
             if actual_ty.is_never() {
@@ -1360,7 +1360,7 @@ impl Analyzer<'_, '_> {
                     Some(ty)
                 }
             })
-            .map(|ty| ty.cheap());
+            .map(|ty| ty.freezed());
 
         if let Some(ty) = &actual_ty {
             ty.assert_valid();
@@ -1521,7 +1521,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Use better logic
                 match kind {
                     VarKind::Fn if v.actual_ty.is_some() => {
-                        let ty = Type::new_union(span, v.actual_ty.into_iter().chain(actual_ty.or_else(|| v.ty.clone()))).cheap();
+                        let ty = Type::new_union(span, v.actual_ty.into_iter().chain(actual_ty.or_else(|| v.ty.clone()))).freezed();
                         v.actual_ty = Some(ty);
                     }
                     _ => {

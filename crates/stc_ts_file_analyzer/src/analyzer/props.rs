@@ -505,7 +505,7 @@ impl Analyzer<'_, '_> {
                         let params = p.function.params.validate_with(child)?;
 
                         let ret_ty = try_opt!(p.function.return_type.validate_with(child));
-                        let ret_ty = ret_ty.map(|ty| ty.cheap());
+                        let ret_ty = ret_ty.map(|ty| ty.freezed());
                         child.scope.declared_return_type = ret_ty.clone();
 
                         let mut inferred = None;

@@ -955,7 +955,7 @@ impl Analyzer<'_, '_> {
                     exports: box exports,
                     metadata: Default::default(),
                 };
-                let ty = Type::Namespace(ty).cheap();
+                let ty = Type::Namespace(ty).freezed();
 
                 Ok(ty)
             })
@@ -1014,7 +1014,7 @@ impl Analyzer<'_, '_> {
                         exports: box exports,
                         metadata: Default::default(),
                     };
-                    let ty = Type::Module(ty).cheap();
+                    let ty = Type::Module(ty).freezed();
                     return Ok(Some(ty));
                 }
 

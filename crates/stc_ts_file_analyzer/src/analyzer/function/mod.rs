@@ -435,7 +435,7 @@ impl Analyzer<'_, '_> {
         };
 
         match fn_ty {
-            Ok(ty) => Type::Function(ty).fixed().cheap(),
+            Ok(ty) => Type::Function(ty).fixed().freezed(),
             Err(err) => {
                 self.storage.report(err);
                 Type::any(f.span, Default::default())
@@ -467,7 +467,7 @@ impl Analyzer<'_, '_> {
         let fn_ty = self
             .with_ctx(ctx)
             .with_child(ScopeKind::Fn, Default::default(), |a: &mut Analyzer| {
-                Ok(a.visit_fn(Some(&f.ident), &f.function, None).cheap())
+                Ok(a.visit_fn(Some(&f.ident), &f.function, None).freezed())
             })?;
 
         let mut a = self.with_ctx(ctx);

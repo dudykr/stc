@@ -46,11 +46,11 @@ impl Analyzer<'_, '_> {
         for (idx, param) in type_params.params.iter().enumerate() {
             if let Some(arg) = type_args.params.get(idx) {
                 // TODO(kdy1): Change this to assert.
-                let arg = arg.clone().cheap();
+                let arg = arg.clone().freezed();
                 params.insert(param.name.clone(), arg);
             } else {
                 if let Some(default) = &param.default {
-                    let default = default.clone().cheap();
+                    let default = default.clone().freezed();
                     params.insert(param.name.clone(), default.clone());
                 } else {
                     unimplemented!(

@@ -877,7 +877,7 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             ) {
-                return Ok(ty.cheap());
+                return Ok(ty.freezed());
             }
 
             Ok(Type::Array(Array {
@@ -885,7 +885,7 @@ impl Analyzer<'_, '_> {
                 elem_type: box ty,
                 metadata: Default::default(),
             })
-            .cheap())
+            .freezed())
         })
         .context("tried to ensure iterator")
     }

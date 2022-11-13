@@ -226,7 +226,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if ty.is_union_type() {
-                    *e.get_mut() = InferredType::Union(ty.into_owned().cheap());
+                    *e.get_mut() = InferredType::Union(ty.into_owned().freezed());
                     return Ok(());
                 }
 

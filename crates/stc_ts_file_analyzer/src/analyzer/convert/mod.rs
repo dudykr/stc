@@ -86,7 +86,7 @@ impl Analyzer<'_, '_> {
                         default: None,
                         metadata: Default::default(),
                     })
-                    .cheap(),
+                    .freezed(),
                 );
             }
 
@@ -895,7 +895,7 @@ impl Analyzer<'_, '_> {
         let span = t.span;
 
         let obj_type = box t.obj_type.validate_with(self)?;
-        let index_type = box t.index_type.validate_with(self)?.cheap();
+        let index_type = box t.index_type.validate_with(self)?.freezed();
 
         if !self.is_builtin {
             let ctx = Ctx {
@@ -1026,7 +1026,7 @@ impl Analyzer<'_, '_> {
         })?;
 
         if is_topmost_type {
-            Ok(ty.cheap())
+            Ok(ty.freezed())
         } else {
             Ok(ty)
         }
