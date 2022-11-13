@@ -51,7 +51,7 @@ impl GenericExpander<'_> {
         }
 
         match ty.normalize() {
-            Type::StaticThis(..) | Type::Intrinsic(..) | Type::Symbol(..) => return ty,
+            Type::StaticThis(..) | Type::Symbol(..) => return ty,
 
             Type::Param(param) => {
                 if !self.dejavu.contains(&param.name) {
