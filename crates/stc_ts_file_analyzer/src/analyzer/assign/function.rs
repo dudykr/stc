@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
                             // TODO(kdy1): Use extends()
                             _ => true,
                         })
-                        .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
+                        .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).freezed()))
                         .collect::<FxHashMap<_, _>>();
                     let mut new_r_params = self
                         .expand_type_params(&map, r_params.to_vec(), Default::default())

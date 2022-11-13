@@ -1746,6 +1746,9 @@ impl Type {
     }
 }
 
+/// Visitor which validate types.
+///
+/// See [Type] for variants which should be kept by [Type]s.
 struct AssertValid;
 
 impl Visit<TypeElement> for AssertValid {
@@ -2401,20 +2404,6 @@ impl VisitMut<Type> for Freezer {
 }
 
 impl Type {
-    /// Make cloning cheap.
-    #[inline]
-    pub fn cheap(mut self) -> Self {
-        self.make_cheap();
-        self
-    }
-
-    /// Make cloning cheap.
-    #[inline]
-    #[instrument(skip(self))]
-    pub fn make_cheap(&mut self) {
-        self.visit_mut_with(&mut Freezer);
-    }
-
     pub fn as_bool(&self) -> Value<bool> {
         match self {
             Type::Arc(ref ty) => ty.ty.as_bool(),

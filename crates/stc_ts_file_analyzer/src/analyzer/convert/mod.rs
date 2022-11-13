@@ -86,7 +86,7 @@ impl Analyzer<'_, '_> {
                         default: None,
                         metadata: Default::default(),
                     })
-                    .cheap(),
+                    .freezed(),
                 );
             }
 
@@ -123,10 +123,10 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         let constraint = try_opt!(p.constraint.validate_with(&mut *self.with_ctx(ctx)))
-            .map(Type::cheap)
+            .map(Type::freezed)
             .map(Box::new);
         let default = try_opt!(p.default.validate_with(&mut *self.with_ctx(ctx)))
-            .map(Type::cheap)
+            .map(Type::freezed)
             .map(Box::new);
 
         let has_constraint = constraint.is_some();
@@ -234,7 +234,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     child.prevent_expansion(&mut ty);
                 }
-                ty.make_cheap();
+                ty.make_clone_cheap();
                 let alias = Type::Alias(Alias {
                     span: span.with_ctxt(SyntaxContext::empty()),
                     ty: box ty,
@@ -895,7 +895,7 @@ impl Analyzer<'_, '_> {
         let span = t.span;
 
         let obj_type = box t.obj_type.validate_with(self)?;
-        let index_type = box t.index_type.validate_with(self)?.cheap();
+        let index_type = box t.index_type.validate_with(self)?.freezed();
 
         if !self.is_builtin {
             let ctx = Ctx {
@@ -1026,7 +1026,7 @@ impl Analyzer<'_, '_> {
         })?;
 
         if is_topmost_type {
-            Ok(ty.cheap())
+            Ok(ty.freezed())
         } else {
             Ok(ty)
         }

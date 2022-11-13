@@ -629,7 +629,7 @@ impl Analyzer<'_, '_> {
                                 _ => Ok(ty),
                             }
                         })()?
-                        .cheap();
+                        .freezed();
 
                         self.declare_complex_vars(VarKind::Var(kind), &v.name, var_ty.clone(), None, None)
                             .report(&mut self.storage);

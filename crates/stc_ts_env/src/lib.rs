@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use stc_ts_errors::Error;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Type};
+use stc_utils::cache::Freeze;
 use string_enum::StringEnum;
 use swc_atoms::JsWord;
 use swc_common::{Globals, Span, Spanned, DUMMY_SP};
@@ -84,7 +85,7 @@ impl Env {
             Ok(prev_ty) => {
                 self.global_types
                     .lock()
-                    .insert(name, Type::new_intersection(DUMMY_SP, vec![prev_ty, ty]).fixed().cheap());
+                    .insert(name, Type::new_intersection(DUMMY_SP, vec![prev_ty, ty]).fixed().freezed());
             }
             Err(_) => {
                 self.global_types.lock().insert(name, ty);

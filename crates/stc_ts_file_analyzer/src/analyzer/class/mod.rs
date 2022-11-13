@@ -371,8 +371,7 @@ impl Analyzer<'_, '_> {
 
         match &p.param {
             RTsParamPropParam::Ident(ref i) => {
-                let ty: Option<Type> = i.type_ann.validate_with(self).transpose()?;
-                let ty = ty.map(|ty| ty.cheap());
+                let ty: Option<Type> = i.type_ann.validate_with(self).transpose()?.freezed();
 
                 self.declare_var(i.id.span, VarKind::Param, i.id.clone().into(), ty.clone(), None, true, false, false)?;
 
@@ -659,7 +658,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
-                let declared_ret_ty = declared_ret_ty.map(|ty| ty.cheap());
+                let declared_ret_ty = declared_ret_ty.map(|ty| ty.freezed());
                 child.scope.declared_return_type = declared_ret_ty.clone();
 
                 let span = c.function.span;
@@ -2280,7 +2279,7 @@ impl Analyzer<'_, '_> {
                 Type::any(c.span(), Default::default())
             }
         };
-        let ty = ty.cheap();
+        let ty = ty.freezed();
 
         let old_this = self.scope.this.take();
         // self.scope.this = Some(ty.clone());

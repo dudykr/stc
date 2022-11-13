@@ -573,7 +573,7 @@ impl Analyzer<'_, '_> {
 
                             match prop_ty {
                                 Ok(prop_ty) => {
-                                    let prop_ty = prop_ty.map(Type::cheap);
+                                    let prop_ty = prop_ty.map(Type::freezed);
 
                                     match &prop.value {
                                         Some(default) => {
@@ -877,7 +877,7 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             ) {
-                return Ok(ty.cheap());
+                return Ok(ty.freezed());
             }
 
             Ok(Type::Array(Array {
@@ -885,7 +885,7 @@ impl Analyzer<'_, '_> {
                 elem_type: box ty,
                 metadata: Default::default(),
             })
-            .cheap())
+            .freezed())
         })
         .context("tried to ensure iterator")
     }

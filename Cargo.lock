@@ -2016,6 +2016,7 @@ dependencies = [
  "stc_ts_storage",
  "stc_ts_type_ops",
  "stc_ts_types",
+ "stc_utils",
  "string_enum",
  "swc_atoms",
  "swc_common",

@@ -245,7 +245,7 @@ impl Analyzer<'_, '_> {
                             return Ok(Cow::Owned(types.into_iter().next().unwrap()));
                         }
 
-                        let ty = Type::Union(Union { types, ..*ty }).cheap();
+                        let ty = Type::Union(Union { types, ..*ty }).freezed();
 
                         return Ok(Cow::Owned(ty));
                     }
@@ -396,7 +396,7 @@ impl Analyzer<'_, '_> {
                                             *check_type_constraint = box new;
 
                                             let mut params = HashMap::default();
-                                            params.insert(name.clone(), ALLOW_DEEP_CLONE.set(&(), || check_type.clone().fixed().cheap()));
+                                            params.insert(name.clone(), ALLOW_DEEP_CLONE.set(&(), || check_type.clone().fixed().freezed()));
                                             let c = self.expand_type_params(&params, c.clone(), Default::default())?;
                                             let c = Type::Conditional(c);
                                             c.assert_valid();
@@ -1436,7 +1436,7 @@ impl Analyzer<'_, '_> {
                                             ..Default::default()
                                         },
                                     })
-                                    .cheap(),
+                                    .freezed(),
                                 )
                             }
                             _ => {
@@ -1447,7 +1447,7 @@ impl Analyzer<'_, '_> {
                                         metadata: Default::default(),
                                     })
                                     .fixed()
-                                    .cheap(),
+                                    .freezed(),
                                 );
                             }
                         }
@@ -1467,7 +1467,7 @@ impl Analyzer<'_, '_> {
                                 metadata: Default::default(),
                             })
                             .fixed()
-                            .cheap(),
+                            .freezed(),
                         );
                     }
                 }
