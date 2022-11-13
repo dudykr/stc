@@ -65,7 +65,9 @@ struct Fixer;
 
 impl VisitMut<Union> for Fixer {
     fn visit_mut(&mut self, u: &mut Union) {
-        u.visit_mut_children_with(self);
+        for ty in &u.types {
+            ty.assert_valid();
+        }
 
         let mut new: Vec<Type> = Vec::with_capacity(u.types.capacity());
         for ty in u.types.drain(..) {
@@ -99,7 +101,9 @@ impl VisitMut<Union> for Fixer {
 
 impl VisitMut<Intersection> for Fixer {
     fn visit_mut(&mut self, ty: &mut Intersection) {
-        ty.visit_mut_children_with(self);
+        for ty in &ty.types {
+            ty.assert_valid();
+        }
 
         let mut new: Vec<Type> = Vec::with_capacity(ty.types.capacity());
         for ty in ty.types.drain(..) {

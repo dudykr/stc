@@ -505,7 +505,8 @@ impl Fold<Type> for GenericExpander<'_> {
         }
 
         let start = dump_type_as_string(&self.cm, &ty);
-        let ty = self.fold_type(ty);
+        let ty = self.fold_type(ty).fixed();
+        ty.assert_valid();
         let expanded = dump_type_as_string(&self.cm, &ty);
 
         debug!(op = "generic:expand", "Expanded {} => {}", start, expanded,);

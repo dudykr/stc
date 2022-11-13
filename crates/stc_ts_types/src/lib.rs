@@ -1779,6 +1779,9 @@ impl Type {
     }
 }
 
+/// Visitor which validate types.
+///
+/// See [Type] for variants which should be kept by [Type]s.
 struct AssertValid;
 
 impl Visit<TypeElement> for AssertValid {
