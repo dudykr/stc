@@ -51,7 +51,7 @@ impl Analyzer<'_, '_> {
             } else {
                 if let Some(default) = &param.default {
                     let default = default.clone().freezed();
-                    params.insert(param.name.clone(), default.clone());
+                    params.insert(param.name.clone(), *default.clone());
                 } else {
                     unimplemented!(
                         "Reporting errors when type parameter count and type argument count differs\nParams={:#?}\nArgs: {:#?}",

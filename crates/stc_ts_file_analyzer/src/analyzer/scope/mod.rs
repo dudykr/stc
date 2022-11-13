@@ -564,7 +564,7 @@ impl Scope<'_> {
                             prev_i.types.push(ty);
                             prev_i.fix();
 
-                            prev.make_cheap();
+                            prev.make_clone_cheap();
                         }
                     }
                     Entry::Vacant(e) => {
@@ -594,7 +594,7 @@ impl Scope<'_> {
                     i.types.push(ty);
 
                     prev.fix();
-                    prev.make_cheap();
+                    prev.make_clone_cheap();
                 } else {
                     let prev_ty = replace(prev, Type::any(DUMMY_SP, Default::default()));
                     *prev = Type::Intersection(Intersection {
@@ -2020,7 +2020,7 @@ impl Expander<'_, '_, '_> {
                                     inferred.types.iter_mut().for_each(|(_, ty)| {
                                         self.analyzer.allow_expansion(ty);
 
-                                        ty.make_cheap();
+                                        ty.make_clone_cheap();
                                     });
 
                                     let before = dump_type_as_string(&self.analyzer.cm, &ty);

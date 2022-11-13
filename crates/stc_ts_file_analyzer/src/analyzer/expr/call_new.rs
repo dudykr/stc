@@ -2734,7 +2734,7 @@ impl Analyzer<'_, '_> {
                     return;
                 }
             }};
-        };
+        }
 
         let marks = self.marks();
 

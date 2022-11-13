@@ -573,7 +573,7 @@ impl Analyzer<'_, '_> {
 
                             match prop_ty {
                                 Ok(prop_ty) => {
-                                    let prop_ty = prop_ty.map(Type::cheap);
+                                    let prop_ty = prop_ty.map(Type::freezed);
 
                                     match &prop.value {
                                         Some(default) => {

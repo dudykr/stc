@@ -14,6 +14,7 @@ use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
     Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
+use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{error, info};
@@ -725,7 +726,7 @@ impl Analyzer<'_, '_> {
 
             self.replace_null_or_undefined_while_defaulting_to_any(&mut ty);
 
-            ty.make_cheap();
+            ty.make_clone_cheap();
 
             map.insert(k, ty);
         }

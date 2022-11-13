@@ -1021,9 +1021,7 @@ impl Analyzer<'_, '_> {
                 Ok(None)
             })?;
 
-        if let Some(ty) = &mut ty {
-            ty.make_cheap();
-        }
+        ty.make_clone_cheap();
 
         if let Some(ty) = &ty {
             match &decl.id {
