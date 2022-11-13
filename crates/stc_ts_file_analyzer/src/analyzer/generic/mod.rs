@@ -588,7 +588,7 @@ impl Analyzer<'_, '_> {
                         };
                         let prev = match prev {
                             InferredType::Union(prev) => prev,
-                            InferredType::Other(prev) => Type::new_union_without_dedup(span, prev).cheap(),
+                            InferredType::Other(prev) => Type::new_union_without_dedup(span, prev).freezed(),
                         };
 
                         self.with_ctx(ctx).infer_type(span, inferred, &prev, arg, opts)?;
@@ -731,7 +731,7 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
 
-                                let param_ty = Type::union(e.clone()).cheap();
+                                let param_ty = Type::union(e.clone()).freezed();
                                 e.push(arg.clone());
 
                                 match param_ty.normalize() {
@@ -1202,7 +1202,7 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )?
-                    .cheap();
+                    .freezed();
                 match arg.normalize() {
                     Type::Ref(..) => {}
                     _ => {
@@ -1526,7 +1526,7 @@ impl Analyzer<'_, '_> {
                                             self.infer_type(span, &mut data, &param_ty, arg_prop_ty, opts)?;
                                             let inferred_ty = data.type_params.remove(&name).map(|ty| match ty {
                                                 InferredType::Union(ty) => ty,
-                                                InferredType::Other(types) => Type::union(types).cheap(),
+                                                InferredType::Other(types) => Type::union(types).freezed(),
                                             });
 
                                             self.mapped_type_param_name = old;
@@ -1559,7 +1559,7 @@ impl Analyzer<'_, '_> {
                                                 .clone()
                                                 .foldable()
                                                 .fold_with(&mut SingleTypeParamReplacer { name: &name, to: param_ty })
-                                                .cheap();
+                                                .freezed();
 
                                             self.infer_type(span, inferred, &mapped_param_ty, arg_prop_ty, opts)?;
                                         }
@@ -1837,7 +1837,7 @@ impl Analyzer<'_, '_> {
                                                             .remove(name)
                                                             .map(|ty| match ty {
                                                                 InferredType::Union(v) => v,
-                                                                InferredType::Other(v) => Type::union(v).cheap(),
+                                                                InferredType::Other(v) => Type::union(v).freezed(),
                                                             })
                                                             .map(Box::new);
 
@@ -2018,7 +2018,7 @@ impl Analyzer<'_, '_> {
                     }) => match &param.ty {
                         Some(param_ty) => match arg {
                             Type::TypeLit(arg_lit) => {
-                                let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).cheap();
+                                let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).freezed();
                                 print_type(&"reversed", &self.cm, &reversed_param_ty);
 
                                 self.infer_type(span, inferred, &reversed_param_ty, arg, opts)?;
@@ -2155,7 +2155,7 @@ impl Analyzer<'_, '_> {
 
             let ty = match ty.clone() {
                 InferredType::Union(v) => v,
-                InferredType::Other(types) => Type::union(types).cheap(),
+                InferredType::Other(types) => Type::union(types).freezed(),
             };
             fixed.insert(param_name.clone(), ty);
         });

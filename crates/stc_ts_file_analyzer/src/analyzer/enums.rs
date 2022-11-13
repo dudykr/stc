@@ -7,6 +7,7 @@ use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{
     Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata, PropertySignature, TypeElement, TypeLit,
 };
+use stc_utils::cache::Freeze;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -136,7 +137,7 @@ impl Analyzer<'_, '_> {
         let stored_ty = ty
             .clone()
             .map(Type::Enum)
-            .map(Type::cheap)
+            .map(Type::freezed)
             .report(&mut self.storage)
             .unwrap_or_else(|| Type::any(span, Default::default()));
 

@@ -11,7 +11,7 @@ use stc_ts_env::{BuiltIn, Env, ModuleConfig, Rule, StableEnv};
 use stc_ts_storage::Builtin;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{ClassDef, ModuleTypeData, Type};
-use stc_utils::stack;
+use stc_utils::{cache::Freeze, stack};
 use swc_atoms::JsWord;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
@@ -187,7 +187,7 @@ pub trait BuiltInGen: Sized {
                                                 },
                                                 metadata: Default::default(),
                                             })
-                                            .cheap(),
+                                            .freezed(),
                                         );
                                     }
                                 }
@@ -253,16 +253,15 @@ pub trait BuiltInGen: Sized {
 
         for (_, ty) in types.iter_mut() {
             ty.fix();
-            ty.make_cheap();
+            ty.make_clone_cheap();
         }
 
         for (_, ty) in vars.iter_mut() {
             ty.fix();
-            ty.make_cheap();
+            ty.make_clone_cheap();
         }
 
         let dur = Instant::now() - start;
-        eprintln!("[builtin] Took {:?}", dur);
 
         Self::new(vars, types)
     }
