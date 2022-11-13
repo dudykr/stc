@@ -360,7 +360,7 @@ impl Analyzer<'_, '_> {
                         if self.ctx.in_cond {
                             let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
                             prevent_generalize(&mut r);
-                            r.make_cheap();
+                            r.make_clone_cheap();
 
                             if op == op!("===") {
                                 self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(r.clone());

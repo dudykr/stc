@@ -528,7 +528,7 @@ impl Analyzer<'_, '_> {
                 Err(()) => Type::any(span, Default::default()),
             };
             rhs_ty.respan(e.right.span());
-            rhs_ty.make_cheap();
+            rhs_ty.make_clone_cheap();
 
             analyzer.try_assign(span, e.op, &e.left, &rhs_ty);
 
@@ -1957,7 +1957,7 @@ impl Analyzer<'_, '_> {
             Type::Array(Array { elem_type, .. }) => {
                 let elem_type = elem_type.clone().freezed();
                 if self.scope.should_store_type_params() {
-                    self.scope.store_type_param(Id::word("T".into()), elem_type.clone());
+                    self.scope.store_type_param(Id::word("T".into()), *elem_type.clone());
                 }
 
                 if let Key::Computed(prop) = prop {
@@ -1968,13 +1968,13 @@ impl Analyzer<'_, '_> {
                         })
                         | Type::Lit(LitType {
                             lit: RTsLit::Number(..), ..
-                        }) => return Ok(elem_type.clone()),
+                        }) => return Ok(*elem_type.clone()),
 
                         _ => {}
                     }
                 }
                 if let Key::Num(n) = prop {
-                    return Ok(elem_type.clone());
+                    return Ok(*elem_type.clone());
                 }
 
                 let array_ty = self.env.get_global_type(span, &js_word!("Array"))?;
@@ -3040,7 +3040,7 @@ impl Analyzer<'_, '_> {
                 metadata: Default::default(),
             });
             ty.fix();
-            ty.make_cheap();
+            ty.make_clone_cheap();
         }
 
         debug!("type_of_var({:?}): {:?}", id, ty);
