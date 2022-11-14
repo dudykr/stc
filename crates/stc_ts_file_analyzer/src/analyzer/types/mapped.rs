@@ -300,7 +300,7 @@ impl Analyzer<'_, '_> {
     fn get_property_names_for_mapped_type(&mut self, span: Span, ty: &Type) -> VResult<Option<Vec<PropertyName>>> {
         let ty = self
             .normalize(
-                None,
+                Some(span),
                 Cow::Borrowed(ty),
                 NormalizeTypeOpts {
                     normalize_keywords: true,
