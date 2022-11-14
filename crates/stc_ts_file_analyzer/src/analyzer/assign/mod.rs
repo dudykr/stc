@@ -1816,6 +1816,10 @@ impl Analyzer<'_, '_> {
                             )?;
                             return self
                                 .assign_inner(data, &left, rhs, opts)
+                                .convert_err(|err| Error::SimpleAssignFailed {
+                                    span: err.span(),
+                                    cause: Some(box err),
+                                })
                                 .context("tried to assign a type literal to an expanded keyword");
                         }
                         _ => {}
