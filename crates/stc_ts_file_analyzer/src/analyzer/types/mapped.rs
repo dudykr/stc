@@ -51,43 +51,6 @@ impl Analyzer<'_, '_> {
                 ty: keyof_operand,
                 ..
             })) => {
-                if let Some(mapped_ty) = m.ty.as_deref() {
-                    let found_type_param_in_keyof_operand = {
-                        let mut v = TypeParamNameUsageFinder::default();
-                        keyof_operand.visit_with(&mut v);
-                        !v.params.is_empty()
-                    };
-                    if !found_type_param_in_keyof_operand {
-                        // Check if type in `keyof T` is only used as `T[K]`.
-                        // If so, we can just use the type.
-                        //
-                        // {
-                        //     [P#5430#0 in keyof number[]]: Box<number[][P]>;
-                        // };
-
-                        let mut finder = IndexedAccessTypeFinder {
-                            obj: &keyof_operand,
-                            key: &m.type_param.name,
-                            can_replace_indexed_type: false,
-                        };
-
-                        mapped_ty.visit_with(&mut finder);
-                        if finder.can_replace_indexed_type {
-                            let mut replacer = IndexedAccessTypeReplacer {
-                                obj: &keyof_operand,
-                                key: &m.type_param.name,
-                            };
-
-                            let mut ret_ty = mapped_ty.clone();
-                            ret_ty.visit_mut_with(&mut replacer);
-
-                            ret_ty = self.apply_mapped_flags_to_type(span, ret_ty, m.optional, m.readonly)?;
-
-                            return Ok(Some(ret_ty));
-                        }
-                    }
-                }
-
                 let keyof_operand = self
                     .normalize(Some(span), Cow::Borrowed(keyof_operand), Default::default())
                     .context("tried to normalize the operand of `in keyof`")?;
@@ -186,6 +149,43 @@ impl Analyzer<'_, '_> {
                         members,
                         metadata: Default::default(),
                     })));
+                }
+
+                if let Some(mapped_ty) = m.ty.as_deref() {
+                    let found_type_param_in_keyof_operand = {
+                        let mut v = TypeParamNameUsageFinder::default();
+                        keyof_operand.visit_with(&mut v);
+                        !v.params.is_empty()
+                    };
+                    if !found_type_param_in_keyof_operand {
+                        // Check if type in `keyof T` is only used as `T[K]`.
+                        // If so, we can just use the type.
+                        //
+                        // {
+                        //     [P#5430#0 in keyof number[]]: Box<number[][P]>;
+                        // };
+
+                        let mut finder = IndexedAccessTypeFinder {
+                            obj: &keyof_operand,
+                            key: &m.type_param.name,
+                            can_replace_indexed_type: false,
+                        };
+
+                        mapped_ty.visit_with(&mut finder);
+                        if finder.can_replace_indexed_type {
+                            let mut replacer = IndexedAccessTypeReplacer {
+                                obj: &keyof_operand,
+                                key: &m.type_param.name,
+                            };
+
+                            let mut ret_ty = mapped_ty.clone();
+                            ret_ty.visit_mut_with(&mut replacer);
+
+                            ret_ty = self.apply_mapped_flags_to_type(span, ret_ty, m.optional, m.readonly)?;
+
+                            return Ok(Some(ret_ty));
+                        }
+                    }
                 }
             }
             _ => match m.type_param.constraint.as_deref() {
