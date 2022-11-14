@@ -303,6 +303,9 @@ impl Analyzer<'_, '_> {
                 || rhs.is_kwd(TsKeywordTypeKind::TsNullKeyword)
                 || rhs.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
             {
+                if rhs_errored {
+                    return Ok(());
+                }
                 return Err(Error::AssignOpCannotBeApplied { span, op });
             }
         }
