@@ -59,6 +59,9 @@ pub(crate) struct CallOpts {
 
     /// If false, private members are not allowed.
     pub allow_private_names: bool,
+
+    /// Used to prevent infinite recursion.
+    pub do_not_check_object: bool,
 }
 
 #[validator]
@@ -754,31 +757,36 @@ impl Analyzer<'_, '_> {
             match obj_type.normalize() {
                 Type::Interface(Interface { name, .. }) if *name.sym() == js_word!("Object") => {}
                 _ => {
-                    let obj_res = self.call_property(
-                        span,
-                        kind,
-                        expr,
-                        this,
-                        &Type::Ref(Ref {
-                            span: DUMMY_SP,
-                            type_name: RTsEntityName::Ident(RIdent::new(
-                                js_word!("Object"),
-                                DUMMY_SP.with_ctxt(self.marks().unresolved_mark().as_ctxt()),
-                            )),
-                            type_args: None,
-                            metadata: Default::default(),
-                        }),
-                        prop,
-                        type_args,
-                        args,
-                        arg_types,
-                        spread_arg_types,
-                        type_ann,
-                        opts,
-                    );
-                    match obj_res {
-                        Ok(v) => return Ok(v),
-                        Err(..) => {}
+                    if !opts.do_not_check_object {
+                        let obj_res = self.call_property(
+                            span,
+                            kind,
+                            expr,
+                            this,
+                            &Type::Ref(Ref {
+                                span: DUMMY_SP,
+                                type_name: RTsEntityName::Ident(RIdent::new(
+                                    js_word!("Object"),
+                                    DUMMY_SP.with_ctxt(self.marks().unresolved_mark().as_ctxt()),
+                                )),
+                                type_args: None,
+                                metadata: Default::default(),
+                            }),
+                            prop,
+                            type_args,
+                            args,
+                            arg_types,
+                            spread_arg_types,
+                            type_ann,
+                            CallOpts {
+                                do_not_check_object: true,
+                                ..opts
+                            },
+                        );
+                        match obj_res {
+                            Ok(v) => return Ok(v),
+                            Err(..) => {}
+                        }
                     }
                 }
             }
