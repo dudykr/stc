@@ -51,9 +51,13 @@ impl Analyzer<'_, '_> {
                 ty: keyof_operand,
                 ..
             })) => {
+                let keyof_operand = self
+                    .normalize(Some(span), Cow::Borrowed(keyof_operand), Default::default())
+                    .context("tried to normalize the operand of `in keyof`")?;
+
                 if let Some(mapped_ty) = m.ty.as_deref().map(Type::normalize) {
                     // Special case, but many usages can be handled with this check.
-                    if (&**keyof_operand).type_eq(&mapped_ty) {
+                    if (&*keyof_operand).type_eq(&mapped_ty) {
                         let new_type = self
                             .convert_type_to_type_lit(span, Cow::Borrowed(&keyof_operand))
                             .context("tried to convert a type to type literal to expand mapped type")?
@@ -79,7 +83,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Some(ty));
                 }
 
-                let keys = self.get_property_names_for_mapped_type(span, keyof_operand)?;
+                let keys = self.get_property_names_for_mapped_type(span, &keyof_operand)?;
                 if let Some(keys) = keys {
                     let members = keys
                         .into_iter()
@@ -162,7 +166,7 @@ impl Analyzer<'_, '_> {
                         // };
 
                         let mut finder = IndexedAccessTypeFinder {
-                            obj: keyof_operand,
+                            obj: &keyof_operand,
                             key: &m.type_param.name,
                             can_replace_indexed_type: false,
                         };
@@ -170,7 +174,7 @@ impl Analyzer<'_, '_> {
                         mapped_ty.visit_with(&mut finder);
                         if finder.can_replace_indexed_type {
                             let mut replacer = IndexedAccessTypeReplacer {
-                                obj: keyof_operand,
+                                obj: &keyof_operand,
                                 key: &m.type_param.name,
                             };
 
