@@ -9,6 +9,10 @@ a = 3;
 
 `>;
 
+declare const err1: Errors1;
+
+err1
+
 // Hover over `Errors2` to see what's wrong with this input
 type Errors2 = TypeCheck<`
 
