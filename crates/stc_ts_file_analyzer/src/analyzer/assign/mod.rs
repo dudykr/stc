@@ -589,7 +589,14 @@ impl Analyzer<'_, '_> {
                     right_ident: opts.right_ident_span,
                     cause: vec![],
                 })
-                .with_context(|| format!("`fail!()` called from assign/mod.rs:{}", line!()));
+                .with_context(|| {
+                    format!(
+                        "`fail!()` called from assign/mod.rs:{}\nLHS: {}\nRHS: {}",
+                        line!(),
+                        dump_type_as_string(&self.cm, to),
+                        dump_type_as_string(&self.cm, rhs)
+                    )
+                });
             }};
         }
 
