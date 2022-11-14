@@ -6,12 +6,12 @@ use stc_ts_base_type_ops::apply_mapped_flags;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
-    Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, LitType, Mapped, Operator, PropertySignature, Type,
-    TypeElement, TypeLit,
+    Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator, PropertySignature,
+    Type, TypeElement, TypeLit,
 };
 use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
 use swc_common::{Span, Spanned, TypeEq};
-use swc_ecma_ast::{TruePlusMinus, TsTypeOperatorOp};
+use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, instrument};
 
 use crate::{
@@ -318,6 +318,11 @@ impl Analyzer<'_, '_> {
         }
 
         match ty.normalize() {
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
+                ..
+            }) => return Ok(Some(vec![])),
+
             Type::TypeLit(ty) => {
                 let mut keys = vec![];
                 for m in &ty.members {
