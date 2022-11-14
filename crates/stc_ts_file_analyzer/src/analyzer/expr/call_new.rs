@@ -2972,7 +2972,10 @@ impl Analyzer<'_, '_> {
                                     ..Default::default()
                                 },
                             )
-                            .convert_err(|err| Error::SpreadMustBeTupleOrPassedToRest { span: err.span() })
+                            .convert_err(|err| Error::WrongArgType {
+                                span: err.span(),
+                                inner: box err,
+                            })
                             .context("arg is spread");
                         if let Err(err) = res {
                             report_err!(err);
