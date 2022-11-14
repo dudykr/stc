@@ -1804,7 +1804,20 @@ impl Analyzer<'_, '_> {
                     | TsKeywordTypeKind::TsBooleanKeyword
                     | TsKeywordTypeKind::TsNullKeyword
                     | TsKeywordTypeKind::TsUndefinedKeyword => match rhs {
-                        Type::Lit(..) | Type::Interface(..) | Type::TypeLit(..) | Type::Function(..) | Type::Constructor(..) => fail!(),
+                        Type::Lit(..) | Type::Interface(..) | Type::Function(..) | Type::Constructor(..) => fail!(),
+                        Type::TypeLit(..) => {
+                            let left = self.normalize(
+                                Some(span),
+                                Cow::Borrowed(to),
+                                NormalizeTypeOpts {
+                                    normalize_keywords: true,
+                                    ..Default::default()
+                                },
+                            )?;
+                            return self
+                                .assign_inner(data, &left, rhs, opts)
+                                .context("tried to assign a type literal to an expanded keyword");
+                        }
                         _ => {}
                     },
                     _ => {}
