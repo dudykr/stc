@@ -1068,6 +1068,8 @@ impl Analyzer<'_, '_> {
 
         debug_assert!(!span.is_dummy(), "type_to_type_lit: `span` should not be dummy");
 
+        let ty = self.normalize(Some(span), ty, NormalizeTypeOpts { ..Default::default() })?;
+
         if ty.is_type_lit() {
             match ty {
                 Cow::Owned(ty) => {
@@ -1162,13 +1164,6 @@ impl Analyzer<'_, '_> {
                     .map(Cow::Owned));
             }
 
-            Type::Ref(..) => {
-                let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
-                return self
-                    .convert_type_to_type_lit(span, ty)
-                    .map(|o| o.map(Cow::into_owned).map(Cow::Owned));
-            }
-
             Type::Enum(e) => self.enum_to_type_lit(e).map(Cow::Owned)?,
 
             Type::Class(c) => {
@@ -1229,13 +1224,6 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 })
-            }
-
-            Type::Alias(ty) => {
-                return Ok(self
-                    .convert_type_to_type_lit(span, Cow::Borrowed(&ty.ty))?
-                    .map(Cow::into_owned)
-                    .map(Cow::Owned))
             }
 
             Type::Constructor(ty) => {
@@ -1320,36 +1308,6 @@ impl Analyzer<'_, '_> {
                     members,
                     metadata: Default::default(),
                 })
-            }
-
-            Type::Mapped(m) => {
-                let ty = self.expand_mapped(span, m)?;
-                if let Some(ty) = ty {
-                    let ty = self
-                        .convert_type_to_type_lit(span, Cow::Owned(ty))?
-                        .map(Cow::into_owned)
-                        .map(Cow::Owned);
-
-                    match ty {
-                        Some(v) => v,
-                        None => return Ok(None),
-                    }
-                } else {
-                    return Ok(None);
-                }
-            }
-
-            Type::Query(..) => {
-                // TODO(kdy1): Optimize
-                let ty = self
-                    .normalize(None, Cow::Borrowed(ty), Default::default())
-                    .context("tried to normalize a type to convert it to type literal")?;
-                let ty = self
-                    .convert_type_to_type_lit(span, ty)
-                    .context("tried to convert a normalized type to type liteal")?
-                    .map(Cow::into_owned)
-                    .map(Cow::Owned);
-                return Ok(ty);
             }
 
             _ => {
