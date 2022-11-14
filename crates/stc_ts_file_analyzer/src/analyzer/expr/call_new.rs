@@ -544,6 +544,11 @@ impl Analyzer<'_, '_> {
         self.scope.this = Some(this.clone());
 
         let res = (|| {
+            let obj_type = self
+                .normalize(Some(span), Cow::Borrowed(obj_type), Default::default())?
+                .freezed()
+                .into_owned();
+
             match obj_type.normalize() {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsAnyKeyword,
@@ -628,29 +633,6 @@ impl Analyzer<'_, '_> {
                     }
 
                     return Ok(Type::union(types));
-                }
-
-                Type::Ref(..) => {
-                    let obj_type = self
-                        .expand_top_ref(span, Cow::Borrowed(obj_type), Default::default())
-                        .context("tried to expand object to call property of it")?;
-
-                    return self
-                        .call_property(
-                            span,
-                            kind,
-                            expr,
-                            this,
-                            &obj_type,
-                            prop,
-                            type_args,
-                            args,
-                            arg_types,
-                            spread_arg_types,
-                            type_ann,
-                            opts,
-                        )
-                        .context("tried to call a property of expanded type");
                 }
 
                 Type::Interface(ref i) => {
@@ -825,7 +807,7 @@ impl Analyzer<'_, '_> {
             };
             let callee = self
                 .with_ctx(ctx)
-                .access_property(span, obj_type, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                .access_property(span, &obj_type, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default())
                 .context("tried to access property to call it")?;
 
             let callee_before_expanding = dump_type_as_string(&self.cm, &callee);
