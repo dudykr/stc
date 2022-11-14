@@ -6,8 +6,8 @@ use stc_ts_base_type_ops::apply_mapped_flags;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
-    Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, LitType, Mapped, Operator, PropertySignature, Type, TypeElement,
-    TypeLit,
+    Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, LitType, Mapped, Operator, PropertySignature, Type,
+    TypeElement, TypeLit,
 };
 use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
 use swc_common::{Span, Spanned, TypeEq};
@@ -67,6 +67,16 @@ impl Analyzer<'_, '_> {
                             return Ok(Some(Type::TypeLit(new)));
                         }
                     }
+                }
+
+                if let Some(array) = keyof_operand.as_array() {
+                    let ty = Type::Array(Array {
+                        span,
+                        elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                        metadata: array.metadata,
+                    })
+                    .freezed();
+                    return Ok(Some(ty));
                 }
 
                 let keys = self.get_property_names_for_mapped_type(span, keyof_operand)?;
