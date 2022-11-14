@@ -866,10 +866,15 @@ impl Analyzer<'_, '_> {
 
                 Ok(())
             }
-            _ => Err(Error::ObjectIsPossiblyUndefinedWithType {
-                span,
-                ty: box ty.into_owned(),
-            }),
+            _ => {
+                if !self.rule().strict_null_checks {
+                    return Ok(());
+                }
+                Err(Error::ObjectIsPossiblyUndefinedWithType {
+                    span,
+                    ty: box ty.into_owned(),
+                })
+            }
         }
     }
 
