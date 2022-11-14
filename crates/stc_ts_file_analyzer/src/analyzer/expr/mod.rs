@@ -1887,6 +1887,46 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
+            Type::Infer(..) => {
+                let mut prop_ty = match prop {
+                    Key::Computed(key) => key.ty.clone(),
+                    Key::Normal { span, sym } => box Type::Lit(LitType {
+                        span: span.with_ctxt(SyntaxContext::empty()),
+                        lit: RTsLit::Str(RStr {
+                            span: *span,
+                            value: sym.clone(),
+                            raw: None,
+                        }),
+                        metadata: Default::default(),
+                    }),
+                    Key::Num(n) => box Type::Lit(LitType {
+                        span: n.span.with_ctxt(SyntaxContext::empty()),
+                        lit: RTsLit::Number(n.clone()),
+                        metadata: Default::default(),
+                    }),
+                    Key::BigInt(n) => box Type::Lit(LitType {
+                        span: n.span.with_ctxt(SyntaxContext::empty()),
+                        lit: RTsLit::BigInt(n.clone()),
+                        metadata: Default::default(),
+                    }),
+                    Key::Private(..) => {
+                        unreachable!()
+                    }
+                };
+
+                if is_str_lit_or_union(&prop_ty) {
+                    prevent_generalize(&mut prop_ty);
+                }
+
+                return Ok(Type::IndexedAccessType(IndexedAccessType {
+                    span,
+                    readonly: false,
+                    obj_type: box obj,
+                    index_type: prop_ty,
+                    metadata: Default::default(),
+                }));
+            }
+
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..

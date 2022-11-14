@@ -1110,6 +1110,7 @@ es6/yieldExpressions/generatorTypeCheck60.ts
 es6/yieldExpressions/generatorTypeCheck62.ts
 es6/yieldExpressions/generatorTypeCheck7.ts
 es6/yieldExpressions/generatorTypeCheck9.ts
+es7/exponentiationOperator/compoundExponentiationAssignmentLHSCanBeAssigned1.ts
 es7/exponentiationOperator/compoundExponentiationAssignmentLHSIsReference.ts
 es7/exponentiationOperator/emitCompoundExponentiationAssignmentWithIndexingOnLHS1.ts
 es7/exponentiationOperator/emitCompoundExponentiationAssignmentWithIndexingOnLHS2.ts
@@ -1132,6 +1133,7 @@ es7/exponentiationOperator/emitExponentiationOperatorInTemplateString3.ts
 es7/exponentiationOperator/emitExponentiationOperatorInTemplateString3ES6.ts
 es7/exponentiationOperator/exponentiationOperatorWithAnyAndNumber.ts
 es7/exponentiationOperator/exponentiationOperatorWithEnum.ts
+es7/exponentiationOperator/exponentiationOperatorWithEnumUnion.ts
 es7/exponentiationOperator/exponentiationOperatorWithInvalidOperands.ts
 es7/exponentiationOperator/exponentiationOperatorWithInvalidSimpleUnaryExpressionOperands.ts
 es7/exponentiationOperator/exponentiationOperatorWithNew.ts
@@ -2150,6 +2152,7 @@ types/primitives/void/invalidVoidValues.ts
 types/primitives/void/validVoidAssignments.ts
 types/primitives/void/validVoidValues.ts
 types/rest/genericObjectRest.ts
+types/rest/genericRestParameters2.ts
 types/rest/objectRest2.ts
 types/rest/objectRestAssignment.ts
 types/rest/objectRestCatchES5.ts
