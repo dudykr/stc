@@ -3452,3 +3452,6 @@ export type IsNumeric<Input extends string> = Input extends ''
     : Input extends `${Numbers}${infer Rest}`
     ? IsNumeric<Rest>
     : false;
+
+
+const a: number = {} as Errors1
