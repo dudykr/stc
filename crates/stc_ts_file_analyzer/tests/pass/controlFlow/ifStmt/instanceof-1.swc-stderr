@@ -33,7 +33,7 @@ Error:
    `----
 
 Error: 
-  > RegExpConstructor
+  > never
 
   x Type
    ,-[$DIR/tests/pass/controlFlow/ifStmt/instanceof-1.ts:8:5]
