@@ -1026,16 +1026,12 @@ impl Analyzer<'_, '_> {
     /// Note that `C extends D` and `D extends C` are true because both of `C`
     /// and `D` are empty classes.
     fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult<Type> {
-        let orig_ty = orig_ty.normalize();
+        let mut orig_ty = self.normalize(Some(span), Cow::Borrowed(orig_ty), Default::default())?;
+        orig_ty.make_clone_cheap();
 
         let _stack = stack::track(span)?;
 
-        match orig_ty {
-            Type::Ref(..) | Type::Query(..) => {
-                let orig_ty = self.normalize(None, Cow::Borrowed(orig_ty), Default::default())?;
-                return self.narrow_with_instanceof(span, ty, &orig_ty);
-            }
-
+        match orig_ty.normalize() {
             Type::Union(orig) => {
                 let mut new_types = orig
                     .types
@@ -1074,7 +1070,7 @@ impl Analyzer<'_, '_> {
                         def: box ty.clone(),
                         metadata: Default::default(),
                     })),
-                    orig_ty,
+                    &orig_ty,
                 )
             }
             _ => {}
@@ -1082,7 +1078,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(v) = self.extends(
             span,
-            orig_ty,
+            &orig_ty,
             &ty,
             ExtendsOpts {
                 disallow_different_classes: true,
@@ -1100,9 +1096,9 @@ impl Analyzer<'_, '_> {
                     }
                     _ => {}
                 }
-                return Ok(orig_ty.clone());
+                return Ok(orig_ty.into_owned());
             } else {
-                match (orig_ty, ty.normalize()) {
+                match (orig_ty.normalize(), ty.normalize()) {
                     (Type::Interface(..), Type::Interface(..)) => return Ok(ty.into_owned()),
                     _ => {}
                 }
@@ -1110,7 +1106,7 @@ impl Analyzer<'_, '_> {
                 if !self
                     .has_overlap(
                         span,
-                        orig_ty,
+                        &orig_ty,
                         &ty,
                         CastableOpts {
                             disallow_different_classes: true,
