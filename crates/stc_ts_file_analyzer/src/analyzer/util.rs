@@ -1,4 +1,4 @@
-use std::iter::once;
+use std::{borrow::Cow, iter::once};
 
 use rnode::{Fold, FoldWith, Visit};
 use stc_ts_ast_rnode::{RExpr, RIdent, RPropName, RStr, RTsEntityName, RTsType};
@@ -27,6 +27,12 @@ impl Analyzer<'_, '_> {
         if !cfg!(debug_assertions) {
             return;
         }
+        let ty = match ty.normalize() {
+            Type::Mapped(..) => self
+                .normalize(Some(span), Cow::Borrowed(ty), Default::default())
+                .unwrap_or(Cow::Borrowed(&ty)),
+            _ => Cow::Borrowed(ty),
+        };
 
         if let Some(debugger) = &self.debugger {
             ALLOW_DEEP_CLONE.set(&(), || {
