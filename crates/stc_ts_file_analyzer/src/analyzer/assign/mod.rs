@@ -591,7 +591,7 @@ impl Analyzer<'_, '_> {
                 })
                 .with_context(|| {
                     format!(
-                        "`fail!()` called from assign/mod.rs:{}\nLHS: {}\nRHS: {}",
+                        "`fail!()` called from assign/mod.rs:{}\nLHS (final): {}\nRHS (final): {}",
                         line!(),
                         dump_type_as_string(&self.cm, to),
                         dump_type_as_string(&self.cm, rhs)
