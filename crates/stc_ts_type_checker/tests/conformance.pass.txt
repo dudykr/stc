@@ -2150,6 +2150,7 @@ types/primitives/void/invalidVoidValues.ts
 types/primitives/void/validVoidAssignments.ts
 types/primitives/void/validVoidValues.ts
 types/rest/genericObjectRest.ts
+types/rest/genericRestParameters2.ts
 types/rest/objectRest2.ts
 types/rest/objectRestAssignment.ts
 types/rest/objectRestCatchES5.ts
