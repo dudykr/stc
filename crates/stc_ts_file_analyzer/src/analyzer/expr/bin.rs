@@ -1073,6 +1073,23 @@ impl Analyzer<'_, '_> {
                     &orig_ty,
                 )
             }
+            Type::Interface(..) | Type::TypeLit(..) => {
+                // Find constructor signature
+                if let Some(ty) = self.convert_type_to_type_lit(span, Cow::Borrowed(&ty))? {
+                    for m in &ty.members {
+                        match m {
+                            TypeElement::Constructor(c) => {
+                                if let Some(ret_ty) = &c.ret_ty {
+                                    return self
+                                        .narrow_with_instanceof(span, Cow::Borrowed(&ret_ty), &orig_ty)
+                                        .context("tried to narrow consturctor return type");
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
             _ => {}
         }
 
