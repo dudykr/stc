@@ -484,6 +484,7 @@ impl Analyzer<'_, '_> {
             | Type::Alias(..)
             | Type::Instance(..)
             | Type::Intrinsic(..)
+            | Type::Mapped(..)
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
@@ -589,7 +590,14 @@ impl Analyzer<'_, '_> {
                     right_ident: opts.right_ident_span,
                     cause: vec![],
                 })
-                .with_context(|| format!("`fail!()` called from assign/mod.rs:{}", line!()));
+                .with_context(|| {
+                    format!(
+                        "`fail!()` called from assign/mod.rs:{}\nLHS (final): {}\nRHS (final): {}",
+                        line!(),
+                        dump_type_as_string(&self.cm, to),
+                        dump_type_as_string(&self.cm, rhs)
+                    )
+                });
             }};
         }
 
@@ -810,7 +818,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if to.is_str() || to.is_num() {
+        if to.is_str_lit() || to.is_num_lit() || to.is_bool_lit() {
             if rhs.is_type_lit() {
                 fail!()
             }
@@ -1254,10 +1262,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Ok(Some(rhs)) = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(rhs)) {
-                    if self
-                        .assign_without_wrapping(data, to, &Type::TypeLit(rhs.into_owned()), opts)
-                        .is_ok()
-                    {
+                    if self.assign_inner(data, to, &Type::TypeLit(rhs.into_owned()), opts).is_ok() {
                         return Ok(());
                     }
                 }
@@ -1799,7 +1804,24 @@ impl Analyzer<'_, '_> {
                     | TsKeywordTypeKind::TsBooleanKeyword
                     | TsKeywordTypeKind::TsNullKeyword
                     | TsKeywordTypeKind::TsUndefinedKeyword => match rhs {
-                        Type::Lit(..) | Type::Interface(..) | Type::TypeLit(..) | Type::Function(..) | Type::Constructor(..) => fail!(),
+                        Type::Lit(..) | Type::Interface(..) | Type::Function(..) | Type::Constructor(..) => fail!(),
+                        Type::TypeLit(..) => {
+                            let left = self.normalize(
+                                Some(span),
+                                Cow::Borrowed(to),
+                                NormalizeTypeOpts {
+                                    normalize_keywords: true,
+                                    ..Default::default()
+                                },
+                            )?;
+                            return self
+                                .assign_inner(data, &left, rhs, opts)
+                                .convert_err(|err| Error::SimpleAssignFailed {
+                                    span: err.span(),
+                                    cause: Some(box err),
+                                })
+                                .context("tried to assign a type literal to an expanded keyword");
+                        }
                         _ => {}
                     },
                     _ => {}
