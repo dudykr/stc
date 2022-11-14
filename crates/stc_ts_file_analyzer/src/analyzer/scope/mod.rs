@@ -11,7 +11,7 @@ use std::{
 use fxhash::{FxHashMap, FxHashSet};
 use iter::once;
 use once_cell::sync::Lazy;
-use rnode::{Fold, FoldWith, VisitMutWith, VisitWith};
+use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
@@ -1999,6 +1999,7 @@ impl Expander<'_, '_, '_> {
 
                                 if let Some(type_params) = type_params {
                                     let mut type_args: Option<_> = type_args.cloned().fold_with(self);
+                                    type_args.visit_mut_with(&mut ShallowNormalizer { analyzer: self.analyzer });
                                     type_args.make_clone_cheap();
 
                                     if cfg!(debug_assertions) {
@@ -2653,5 +2654,26 @@ impl Fold<stc_ts_types::ClassMember> for Expander<'_, '_, '_> {
 impl Fold<TypeElement> for Expander<'_, '_, '_> {
     fn fold(&mut self, node: TypeElement) -> TypeElement {
         node
+    }
+}
+
+/// Calls [`Analyzer::normalize`] on top-level types
+pub struct ShallowNormalizer<'a, 'b, 'c> {
+    analyzer: &'a mut Analyzer<'b, 'c>,
+}
+
+impl VisitMut<Type> for ShallowNormalizer<'_, '_, '_> {
+    fn visit_mut(&mut self, value: &mut Type) {
+        match value.normalize() {
+            Type::IndexedAccessType(..) => {
+                if let Ok(new) = self
+                    .analyzer
+                    .normalize(Some(value.span()), Cow::Borrowed(&*value), Default::default())
+                {
+                    *value = new.freezed().into_owned();
+                }
+            }
+            _ => {}
+        }
     }
 }
