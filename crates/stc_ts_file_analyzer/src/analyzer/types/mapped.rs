@@ -48,14 +48,14 @@ impl Analyzer<'_, '_> {
         match m.type_param.constraint.as_deref().map(|v| v.normalize()) {
             Some(Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
-                ty,
+                ty: keyof_operand,
                 ..
             })) => {
                 if let Some(mapped_ty) = m.ty.as_deref().map(Type::normalize) {
                     // Special case, but many usages can be handled with this check.
-                    if (&**ty).type_eq(&mapped_ty) {
+                    if (&**keyof_operand).type_eq(&mapped_ty) {
                         let new_type = self
-                            .convert_type_to_type_lit(span, Cow::Borrowed(&ty))
+                            .convert_type_to_type_lit(span, Cow::Borrowed(&keyof_operand))
                             .context("tried to convert a type to type literal to expand mapped type")?
                             .map(Cow::into_owned);
 
@@ -69,7 +69,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let keys = self.get_property_names_for_mapped_type(span, ty)?;
+                let keys = self.get_property_names_for_mapped_type(span, keyof_operand)?;
                 if let Some(keys) = keys {
                     let members = keys
                         .into_iter()
@@ -140,7 +140,7 @@ impl Analyzer<'_, '_> {
                 if let Some(mapped_ty) = m.ty.as_deref() {
                     let found_type_param_in_keyof_operand = {
                         let mut v = TypeParamNameUsageFinder::default();
-                        ty.visit_with(&mut v);
+                        keyof_operand.visit_with(&mut v);
                         !v.params.is_empty()
                     };
                     if !found_type_param_in_keyof_operand {
@@ -152,7 +152,7 @@ impl Analyzer<'_, '_> {
                         // };
 
                         let mut finder = IndexedAccessTypeFinder {
-                            obj: ty,
+                            obj: keyof_operand,
                             key: &m.type_param.name,
                             can_replace_indexed_type: false,
                         };
@@ -160,7 +160,7 @@ impl Analyzer<'_, '_> {
                         mapped_ty.visit_with(&mut finder);
                         if finder.can_replace_indexed_type {
                             let mut replacer = IndexedAccessTypeReplacer {
-                                obj: ty,
+                                obj: keyof_operand,
                                 key: &m.type_param.name,
                             };
 
