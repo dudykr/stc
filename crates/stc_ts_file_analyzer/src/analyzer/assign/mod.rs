@@ -221,6 +221,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
+        let mut rhs_errored = false;
         match op {
             op!("*=") | op!("**=") | op!("/=") | op!("%=") | op!("-=") => {
                 if let Type::Keyword(KeywordType {
@@ -228,6 +229,9 @@ impl Analyzer<'_, '_> {
                     ..
                 }) = rhs
                 {
+                    if op == op!("**=") {
+                        rhs_errored = true;
+                    }
                     self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: rhs.span() });
                 } else {
                     self.deny_null_or_undefined(rhs.span(), rhs)
@@ -372,6 +376,10 @@ impl Analyzer<'_, '_> {
                     });
             }
             _ => {}
+        }
+
+        if rhs_errored {
+            return Ok(());
         }
 
         Err(Error::AssignOpCannotBeApplied { span, op })
