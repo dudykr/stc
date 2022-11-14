@@ -782,7 +782,6 @@ es6/spread/iteratorSpreadInArray7.ts
 es6/spread/iteratorSpreadInArray8.ts
 es6/spread/iteratorSpreadInArray9.ts
 es6/spread/iteratorSpreadInCall.ts
-es6/spread/iteratorSpreadInCall10.ts
 es6/spread/iteratorSpreadInCall11.ts
 es6/spread/iteratorSpreadInCall12.ts
 es6/spread/iteratorSpreadInCall2.ts
