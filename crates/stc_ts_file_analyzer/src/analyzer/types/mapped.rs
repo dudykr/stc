@@ -36,7 +36,7 @@ impl Analyzer<'_, '_> {
         let ty = self.expand_mapped_inner(span, m)?;
 
         if let Some(ty) = &ty {
-            let expanded = dump_type_as_string(&self.cm, &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
+            let expanded = dump_type_as_string(&self.cm, ty);
 
             debug!("[types/mapped]: Expanded {} as {}", orig, expanded);
         }
