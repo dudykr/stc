@@ -483,11 +483,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        unimplemented!(
-            "get_property_names_for_mapped_type:\n{}\n{:#?}",
-            dump_type_as_string(&self.cm, &ty),
-            ty
-        );
+        Ok(None)
     }
 
     pub(crate) fn apply_mapped_flags_to_type(
