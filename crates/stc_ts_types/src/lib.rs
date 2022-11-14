@@ -1061,7 +1061,7 @@ impl Debug for Union {
             if i != 0 {
                 write!(f, " | ")?;
             }
-            write!(f, "{:?}", ty)?;
+            Debug::fmt(&ty, f)?;
         }
 
         write!(f, ")")?;
@@ -1108,7 +1108,7 @@ impl Debug for Intersection {
             if i != 0 {
                 write!(f, " & ")?;
             }
-            write!(f, "{:?}", ty)?;
+            Debug::fmt(&ty, f)?;
         }
 
         write!(f, ")")?;
