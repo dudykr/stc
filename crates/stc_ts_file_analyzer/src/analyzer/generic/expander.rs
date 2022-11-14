@@ -4,7 +4,7 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::{expander::GenericExpander, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Interface, KeywordType, TypeParam, TypeParamDecl, TypeParamInstantiation};
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, ext::SpanExt};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
 use tracing::debug;
@@ -205,7 +205,7 @@ impl Analyzer<'_, '_> {
                 let mut parent = self
                     .with_ctx(ctx)
                     .expand(
-                        parent.span(),
+                        parent.span().or_else(|| span),
                         parent.clone(),
                         ExpandOpts {
                             full: true,
