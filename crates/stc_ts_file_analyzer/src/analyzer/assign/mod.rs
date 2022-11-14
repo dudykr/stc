@@ -818,7 +818,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if to.is_str() || to.is_num() {
+        if to.is_str_lit() || to.is_num_lit() || to.is_bool_lit() {
             if rhs.is_type_lit() {
                 fail!()
             }
