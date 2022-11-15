@@ -2006,15 +2006,19 @@ impl Analyzer<'_, '_> {
                         // TODO: Handle Type::Rest
 
                         if elems.len() > rhs_elems.len() {
-                            let elems_without_default = elems
-                                .into_iter()
-                                .filter(|el| match *el.ty {
-                                    Type::Optional(..) => true,
+                            let rhs_elems_cannot_cast = rhs_elems
+                                .iter()
+                                .enumerate()
+                                .filter(|&(i, right_element)| match *(&elems[i]).ty {
+                                    Type::Keyword(KeywordType {
+                                        kind: TsKeywordTypeKind::TsAnyKeyword,
+                                        ..
+                                    }) => true,
                                     _ => false,
                                 })
                                 .collect::<Vec<_>>();
 
-                            if elems_without_default.len() > rhs_elems.len() {
+                            if rhs_elems_cannot_cast.len() > 0 {
                                 return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
                             }
                         }
