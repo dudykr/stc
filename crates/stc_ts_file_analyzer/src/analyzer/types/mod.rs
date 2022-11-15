@@ -21,7 +21,7 @@ use stc_utils::{
     ext::{SpanExt, TypeVecExt},
     stack,
 };
-use swc_atoms::js_word;
+use swc_atoms::{js_word, Atom, JsWord};
 use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, instrument, span, Level};
@@ -1502,42 +1502,13 @@ impl Analyzer<'_, '_> {
 
         match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.as_ref() {
             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
-                let new_val = match ty.kind {
-                    IntrinsicKind::Uppercase => s.value.to_uppercase(),
-                    IntrinsicKind::Lowercase => s.value.to_lowercase(),
-                    IntrinsicKind::Capitalize => {
-                        if s.value.is_empty() {
-                            "".into()
-                        } else {
-                            let mut res = String::new();
-                            let mut chars = s.value.chars();
-
-                            res.extend(chars.next().into_iter().flat_map(|v| v.to_uppercase()));
-                            res.push_str(chars.as_str());
-
-                            res
-                        }
-                    }
-                    IntrinsicKind::Uncapitalize => {
-                        if s.value.is_empty() {
-                            "".into()
-                        } else {
-                            let mut res = String::new();
-                            let mut chars = s.value.chars();
-
-                            res.extend(chars.next().into_iter().flat_map(|v| v.to_lowercase()));
-                            res.push_str(chars.as_str());
-
-                            res
-                        }
-                    }
-                };
+                let new_val = apply_intrinsics(&ty.kind, &Atom::new(s.value.as_ref()));
 
                 return Ok(Type::Lit(LitType {
                     span: arg.params[0].span(),
                     lit: RTsLit::Str(RStr {
                         span: arg.params[0].span(),
-                        value: new_val.into(),
+                        value: JsWord::from(new_val.as_ref()),
                         raw: None,
                     }),
                     metadata: LitTypeMetadata {
@@ -1555,37 +1526,7 @@ impl Analyzer<'_, '_> {
                 let quasis = quasis
                     .iter()
                     .map(|quasis| {
-                        let old_raw = &quasis.raw;
-                        let raw = match ty.kind {
-                            IntrinsicKind::Uppercase => old_raw.to_uppercase(),
-                            IntrinsicKind::Lowercase => old_raw.to_lowercase(),
-                            IntrinsicKind::Capitalize => {
-                                if old_raw.is_empty() {
-                                    "".into()
-                                } else {
-                                    let mut res = String::new();
-                                    let mut chars = old_raw.chars();
-
-                                    res.extend(chars.next().into_iter().flat_map(|v| v.to_uppercase()));
-                                    res.push_str(chars.as_str());
-                                    res
-                                }
-                            }
-                            IntrinsicKind::Uncapitalize => {
-                                if old_raw.is_empty() {
-                                    "".into()
-                                } else {
-                                    let mut res = String::new();
-                                    let mut chars = old_raw.chars();
-
-                                    res.extend(chars.next().into_iter().flat_map(|v| v.to_lowercase()));
-                                    res.push_str(chars.as_str());
-
-                                    res
-                                }
-                            }
-                        }
-                        .into();
+                        let raw = apply_intrinsics(&ty.kind, &quasis.raw);
 
                         RTplElement { raw, ..quasis.clone() }
                     })
@@ -1879,4 +1820,38 @@ pub(crate) fn left_of_expr(t: &RExpr) -> Option<&RIdent> {
 
         _ => None,
     }
+}
+
+fn apply_intrinsics(intrinsics: &IntrinsicKind, raw: &Atom) -> Atom {
+    match intrinsics {
+        IntrinsicKind::Uppercase => raw.to_uppercase(),
+        IntrinsicKind::Lowercase => raw.to_lowercase(),
+        IntrinsicKind::Capitalize => {
+            if raw.is_empty() {
+                "".into()
+            } else {
+                let mut res = String::new();
+                let mut chars = raw.chars();
+
+                res.extend(chars.next().into_iter().flat_map(|v| v.to_uppercase()));
+                res.push_str(chars.as_str());
+
+                res
+            }
+        }
+        IntrinsicKind::Uncapitalize => {
+            if raw.is_empty() {
+                "".into()
+            } else {
+                let mut res = String::new();
+                let mut chars = raw.chars();
+
+                res.extend(chars.next().into_iter().flat_map(|v| v.to_lowercase()));
+                res.push_str(chars.as_str());
+
+                res
+            }
+        }
+    }
+    .into()
 }
