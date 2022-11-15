@@ -1213,40 +1213,56 @@ impl Analyzer<'_, '_> {
 
         let l = l.clone().generalize_lit();
         let r = r.clone().generalize_lit();
-        if self.can_compare_relatively(span, &l, &r)? {
-            return;
-        }
-
-        self.storage.report(Error::CannotCompareWithOp {
-            span,
-            op,
-            left: box l.clone(),
-            right: box r.clone(),
-        });
+        self.verify_rel_cmp_operands(span, op, &l, &r)?;
     }
 
-    fn can_compare_relatively(&mut self, span: Span, l: &Type, r: &Type) -> VResult<bool> {
+    fn verify_rel_cmp_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) -> VResult<()> {
         let l = l.normalize();
         let r = r.normalize();
 
+        macro_rules! error {
+            () => {{
+                self.storage.report(Error::CannotCompareWithOp {
+                    span,
+                    op,
+                    left: box l.clone(),
+                    right: box r.clone(),
+                });
+                return Ok(());
+            }};
+        }
+
         if l.type_eq(r) {
-            return Ok(true);
+            return Ok(());
         }
 
         if l.is_str_lit() && r.is_str_lit() {
-            return Ok(true);
+            return Ok(());
         }
 
-        if (l.is_num() && r.is_symbol_like()) || (l.is_symbol_like() && r.is_num()) {
-            return Ok(true);
+        {
+            let mut abort = false;
+            if l.is_symbol_like() {
+                abort = true;
+                self.storage.report(Error::NumericOpToSymbol { span: l.span() });
+            }
+
+            if r.is_symbol_like() {
+                abort = true;
+                self.storage.report(Error::NumericOpToSymbol { span: r.span() });
+            }
+
+            if abort {
+                return Ok(());
+            }
         }
 
         //
         if l.is_type_param() && !r.is_type_param() {
-            return Ok(true);
+            return Ok(());
         }
         if !l.is_type_param() && r.is_type_param() {
-            return Ok(true);
+            return Ok(());
         }
 
         let c = Comparator { left: l, right: r };
@@ -1281,7 +1297,10 @@ impl Analyzer<'_, '_> {
 
             None
         }) {
-            return Ok(v);
+            if !v {
+                error!()
+            }
+            return Ok(());
         }
 
         // Basically we depend on assign's behavior, but there's are some corner cases
@@ -1290,20 +1309,28 @@ impl Analyzer<'_, '_> {
             (Type::Class(l), Type::Class(r)) => {
                 if l.def.super_class.is_none() && r.def.super_class.is_none() {
                     if l.def.body.is_empty() || r.def.body.is_empty() {
-                        return Ok(false);
+                        error!();
                     }
                 }
             }
 
             (Type::TypeLit(lt), Type::TypeLit(rt)) => {
                 if let Ok(Some(v)) = self.can_compare_type_elements_relatively(span, &lt.members, &rt.members) {
-                    return Ok(v);
+                    if v {
+                        return Ok(());
+                    } else {
+                        error!();
+                    }
                 }
             }
             _ => {}
         }
 
-        self.has_overlap(span, &l, &r, Default::default())
+        if self.has_overlap(span, &l, &r, Default::default())? {
+            return Ok(());
+        }
+
+        error!()
     }
 
     /// Returns Ok(Some(v)) if this method has a special rule to handle type
