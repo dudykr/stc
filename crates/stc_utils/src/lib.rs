@@ -9,6 +9,7 @@ use std::{
 };
 
 use once_cell::sync::Lazy;
+use swc_common::SyntaxContext;
 
 pub mod cache;
 pub mod error;
@@ -21,6 +22,9 @@ pub type ABuilderHasher = ahash::RandomState;
 pub type AHashMap<K, V> = HashMap<K, V, ahash::RandomState>;
 
 pub type AHashSet<V> = HashSet<V, ahash::RandomState>;
+
+/// Syntax context for builtin modules.
+pub const BUILTIN_CTXT: SyntaxContext = SyntaxContext::empty();
 
 /// If true, errors will not be buffered.
 pub fn early_error() -> bool {

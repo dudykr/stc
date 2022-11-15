@@ -21,4 +21,3 @@ warning: Type
   |                       ^^^^^^^^^^^^^^^^^
   |
   = note: [string, (E.A | string)][]
-

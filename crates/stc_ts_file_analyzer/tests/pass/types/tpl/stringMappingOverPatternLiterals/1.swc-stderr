@@ -1,0 +1,9 @@
+
+  x Type
+   ,-[$DIR/tests/pass/types/tpl/stringMappingOverPatternLiterals/1.ts:9:1]
+ 9 | b = 'AAFOO'
+   : ^^^^^^^^^^^
+   `----
+
+Error: 
+  > 'AAFOO'

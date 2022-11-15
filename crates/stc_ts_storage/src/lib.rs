@@ -473,36 +473,41 @@ mod tests {
 
     #[test]
     fn group_01() {
-        let gen = module_id::ModuleIdGenerator::default();
+        testing::run_test(false, |_, _| {
+            let gen = module_id::ModuleIdGenerator::default();
 
-        let path1 = Arc::new(FileName::Real(PathBuf::from("1")));
-        let file1 = File {
-            id: gen.generate(&path1),
-            path: path1.clone(),
-            stmt_count: 4,
-        };
-        let path2 = Arc::new(FileName::Real(PathBuf::from("2")));
-        let file2 = File {
-            id: gen.generate(&path2),
-            path: path2.clone(),
-            stmt_count: 5,
-        };
-        let group = Group {
-            parent: None,
-            files: Arc::new(vec![file1.clone(), file2.clone()]),
-            info: Default::default(),
-            errors: Default::default(),
-        };
+            let path1 = Arc::new(FileName::Real(PathBuf::from("1")));
+            let file1 = File {
+                id: gen.generate(&path1).0,
+                path: path1.clone(),
+                stmt_count: 4,
+            };
+            let path2 = Arc::new(FileName::Real(PathBuf::from("2")));
+            let file2 = File {
+                id: gen.generate(&path2).0,
+                path: path2.clone(),
+                stmt_count: 5,
+            };
+            let group = Group {
+                parent: None,
+                files: Arc::new(vec![file1.clone(), file2.clone()]),
+                info: Default::default(),
+                errors: Default::default(),
+            };
 
-        assert_eq!(group.module_id(0), file1.id);
-        assert_eq!(group.module_id(1), file1.id);
-        assert_eq!(group.module_id(2), file1.id);
-        assert_eq!(group.module_id(3), file1.id);
+            assert_eq!(group.module_id(0), file1.id);
+            assert_eq!(group.module_id(1), file1.id);
+            assert_eq!(group.module_id(2), file1.id);
+            assert_eq!(group.module_id(3), file1.id);
 
-        assert_eq!(group.module_id(4), file2.id);
-        assert_eq!(group.module_id(5), file2.id);
-        assert_eq!(group.module_id(6), file2.id);
-        assert_eq!(group.module_id(7), file2.id);
-        assert_eq!(group.module_id(8), file2.id);
+            assert_eq!(group.module_id(4), file2.id);
+            assert_eq!(group.module_id(5), file2.id);
+            assert_eq!(group.module_id(6), file2.id);
+            assert_eq!(group.module_id(7), file2.id);
+            assert_eq!(group.module_id(8), file2.id);
+
+            Ok(())
+        })
+        .unwrap();
     }
 }

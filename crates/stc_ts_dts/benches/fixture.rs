@@ -27,7 +27,7 @@ use stc_ts_utils::StcComments;
 use swc_common::{input::SourceFileInput, FileName, GLOBALS};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, Syntax, TsConfig};
-use swc_ecma_transforms::resolver::ts_resolver;
+use swc_ecma_transforms::resolver;
 use swc_ecma_visit::FoldWith;
 use test::Bencher;
 
@@ -185,18 +185,20 @@ fn run_bench(b: &mut Bencher, path: PathBuf) {
             SourceFileInput::from(&*fm),
             Some(&comments),
         );
+        let (module_id, top_level_mark) = generator.generate(&path);
+
         let mut node_id_gen = NodeIdGenerator::default();
         let mut parser = Parser::new_from(lexer);
         let module = parser.parse_module().unwrap();
         let module = GLOBALS.set(stable_env.swc_globals(), || {
-            module.fold_with(&mut ts_resolver(stable_env.marks().top_level_mark()))
+            module.fold_with(&mut resolver(stable_env.marks().unresolved_mark(), top_level_mark, true))
         });
         let module = RModule::from_orig(&mut node_id_gen, module);
 
         b.iter(|| {
             let mut storage = Single {
                 parent: None,
-                id: generator.generate(&path),
+                id: module_id,
                 path: path.clone(),
                 info: Default::default(),
                 is_dts: false,

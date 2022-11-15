@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         // We don't apply type annotation because it can corrupt type checking.
         let mut casted_ty = e.type_ann.validate_with(self)?;
         casted_ty.make_clone_cheap();
@@ -59,7 +59,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         if e.node_id.is_invalid() {
             return e.type_ann.validate_with(self);
         }
@@ -86,7 +86,7 @@ impl Analyzer<'_, '_> {
     /// ```
     ///
     /// results in error.
-    fn validate_type_cast(&mut self, span: Span, orig_ty: Type, casted_ty: Type) -> VResult {
+    fn validate_type_cast(&mut self, span: Span, orig_ty: Type, casted_ty: Type) -> VResult<Type> {
         let mut orig_ty = self.expand(
             span,
             orig_ty,
@@ -98,7 +98,7 @@ impl Analyzer<'_, '_> {
         )?;
         orig_ty.make_clone_cheap();
 
-        let mut casted_ty = make_instance_type(self.ctx.module_id, casted_ty);
+        let mut casted_ty = make_instance_type(casted_ty);
         self.prevent_inference_while_simplifying(&mut casted_ty);
         casted_ty = self.simplify(casted_ty);
 
@@ -253,6 +253,10 @@ impl Analyzer<'_, '_> {
 
         // Overlaps with all types.
         if from.is_any() || from.is_kwd(TsKeywordTypeKind::TsNullKeyword) || from.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
+            return Ok(true);
+        }
+
+        if (from.is_str() || from.is_tpl()) && to.is_tpl() {
             return Ok(true);
         }
 
@@ -425,6 +429,8 @@ impl Analyzer<'_, '_> {
         // We can cast A to B, thus from = A, to = B.
         if let Ok(()) = self.assign_with_opts(
             &mut Default::default(),
+            from,
+            to,
             AssignOpts {
                 span,
                 disallow_different_classes: opts.disallow_different_classes,
@@ -433,8 +439,6 @@ impl Analyzer<'_, '_> {
                 for_castablity: true,
                 ..Default::default()
             },
-            from,
-            to,
         ) {
             return Ok(true);
         }

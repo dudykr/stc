@@ -21,7 +21,10 @@ impl Debugger {
 
         {
             let mut emitter = Emitter {
-                cfg: swc_ecma_codegen::Config { minify: false },
+                cfg: swc_ecma_codegen::Config {
+                    minify: false,
+                    ..Default::default()
+                },
                 cm: self.cm.clone(),
                 comments: None,
                 wr: box JsWriter::new(self.cm.clone(), "\n", &mut buf, None),
@@ -36,6 +39,8 @@ impl Debugger {
     pub fn dump_type(&self, span: Span, ty: &Type) {
         let ty_str = self.dump(ty);
         self.handler.struct_span_warn(span, "Type").note(&ty_str).emit();
+        self.handler.struct_span_err(span, "Type").note(&ty_str).emit();
+        self.handler.struct_span_err(span, "Type").note(&ty_str).emit();
     }
 }
 

@@ -1,112 +1,126 @@
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/bin-1.ts:3:9
-  |
-3 | let g = f || (abc => { void abc.toLowerCase() })
-  |         ^
-  |
-  = note: (null | (x: string) => void)
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/bin-1.ts:3:29
-  |
-3 | let g = f || (abc => { void abc.toLowerCase() })
-  |                             ^^^
-  |
-  = note: string
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/bin-1.ts:3:1]
+ 3 | let g = f || (abc => { void abc.toLowerCase() })
+   :         ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/bin-1.ts:3:29
-  |
-3 | let g = f || (abc => { void abc.toLowerCase() })
-  |                             ^^^^^^^^^^^^^^^^^
-  |
-  = note: string
+Error: 
+  > (null | (x: string) => void)
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/bin-1.ts:3:24
-  |
-3 | let g = f || (abc => { void abc.toLowerCase() })
-  |                        ^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: undefined
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/bin-1.ts:3:1]
+ 3 | let g = f || (abc => { void abc.toLowerCase() })
+   :                             ^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/bin-1.ts:3:15
-  |
-3 | let g = f || (abc => { void abc.toLowerCase() })
-  |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (abc: string) => void
+Error: 
+  > string
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/bin-1.ts:3:14
-  |
-3 | let g = f || (abc => { void abc.toLowerCase() })
-  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (abc: string) => void
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/bin-1.ts:3:1]
+ 3 | let g = f || (abc => { void abc.toLowerCase() })
+   :                             ^^^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/bin-1.ts:3:9
-  |
-3 | let g = f || (abc => { void abc.toLowerCase() })
-  |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (x: string) => void
+Error: 
+  > string
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:10
-  |
-4 | let gg = f ?? (abc => { void abc.toLowerCase() })
-  |          ^
-  |
-  = note: (null | (x: string) => void)
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/bin-1.ts:3:1]
+ 3 | let g = f || (abc => { void abc.toLowerCase() })
+   :                        ^^^^^^^^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:30
-  |
-4 | let gg = f ?? (abc => { void abc.toLowerCase() })
-  |                              ^^^
-  |
-  = note: string
+Error: 
+  > undefined
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:30
-  |
-4 | let gg = f ?? (abc => { void abc.toLowerCase() })
-  |                              ^^^^^^^^^^^^^^^^^
-  |
-  = note: string
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/bin-1.ts:3:1]
+ 3 | let g = f || (abc => { void abc.toLowerCase() })
+   :               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:25
-  |
-4 | let gg = f ?? (abc => { void abc.toLowerCase() })
-  |                         ^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: undefined
+Error: 
+  > (abc: string) => void
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:16
-  |
-4 | let gg = f ?? (abc => { void abc.toLowerCase() })
-  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (abc: string) => void
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/bin-1.ts:3:1]
+ 3 | let g = f || (abc => { void abc.toLowerCase() })
+   :              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:15
-  |
-4 | let gg = f ?? (abc => { void abc.toLowerCase() })
-  |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (abc: string) => void
+Error: 
+  > (abc: string) => void
 
-warning: Type
- --> $DIR/tests/pass/exprs/arrow/bin-1.ts:4:10
-  |
-4 | let gg = f ?? (abc => { void abc.toLowerCase() })
-  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (x: string) => void
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/bin-1.ts:3:1]
+ 3 | let g = f || (abc => { void abc.toLowerCase() })
+   :         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
 
+Error: 
+  > (x: string) => void
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/bin-1.ts:4:1]
+ 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
+   :          ^
+   `----
+
+Error: 
+  > (null | (x: string) => void)
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/bin-1.ts:4:1]
+ 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
+   :                              ^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/bin-1.ts:4:1]
+ 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
+   :                              ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/bin-1.ts:4:1]
+ 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
+   :                         ^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > undefined
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/bin-1.ts:4:1]
+ 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
+   :                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (abc: string) => void
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/bin-1.ts:4:1]
+ 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
+   :               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (abc: string) => void
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/arrow/bin-1.ts:4:1]
+ 4 | let gg = f ?? (abc => { void abc.toLowerCase() })
+   :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (x: string) => void

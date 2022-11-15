@@ -19,8 +19,7 @@ export RUST_BACKTRACE=1
 export RUST_MIN_STACK=$((16 * 1024 * 1024))
 
 # We prevent regression using faster checks
-touch ../stc_ts_file_analyzer/tests/base.rs
-UPDATE=1 cargo test -p stc_ts_file_analyzer --lib --test base -- -Zunstable-options --report-time
+RUST_LOG=off ./scripts/base.sh --features tracing/max_level_off
 
 RUST_LOG=off TEST='' DONT_PRINT_MATCHED=1 cargo test --test tsc \
   | tee /dev/stderr \

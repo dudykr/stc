@@ -22,7 +22,7 @@ impl Analyzer<'_, '_> {
 
         for p in parent.iter() {
             let res: VResult<()> = try {
-                let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &p.expr, p.type_args.as_deref())?;
+                let parent = self.type_of_ts_entity_name(span, &p.expr, p.type_args.as_deref())?;
                 let parent = self.normalize(None, Cow::Owned(parent), Default::default())?.freezed();
 
                 if matches!(
@@ -41,20 +41,20 @@ impl Analyzer<'_, '_> {
 
                 self.assign_with_opts(
                     &mut Default::default(),
-                    AssignOpts {
-                        span,
-                        allow_unknown_rhs: true,
-                        allow_missing_fields: true,
-                        allow_assignment_of_param: true,
-                        skip_call_and_constructor_elem: true,
-                        ..Default::default()
-                    },
                     &parent,
                     &Type::TypeLit(TypeLit {
                         span: DUMMY_SP,
                         members: body.to_vec(),
                         metadata: Default::default(),
                     }),
+                    AssignOpts {
+                        span,
+                        allow_unknown_rhs: Some(true),
+                        allow_missing_fields: true,
+                        allow_assignment_of_param: true,
+                        skip_call_and_constructor_elem: true,
+                        ..Default::default()
+                    },
                 )?;
             };
 
@@ -73,9 +73,7 @@ impl Analyzer<'_, '_> {
 
         for (i, p1) in parent.iter().enumerate() {
             let res: VResult<()> = try {
-                let p1_type = self
-                    .type_of_ts_entity_name(span, self.ctx.module_id, &p1.expr, p1.type_args.as_deref())?
-                    .freezed();
+                let p1_type = self.type_of_ts_entity_name(span, &p1.expr, p1.type_args.as_deref())?.freezed();
 
                 for (j, p2) in parent.iter().enumerate() {
                     if i <= j {
@@ -86,21 +84,19 @@ impl Analyzer<'_, '_> {
                         continue;
                     }
 
-                    let p2 = self
-                        .type_of_ts_entity_name(span, self.ctx.module_id, &p2.expr, p2.type_args.as_deref())?
-                        .freezed();
+                    let p2 = self.type_of_ts_entity_name(span, &p2.expr, p2.type_args.as_deref())?.freezed();
 
                     if let Err(err) = self.assign_with_opts(
                         &mut Default::default(),
+                        &p1_type,
+                        &p2,
                         AssignOpts {
                             span,
                             // required because interface can extend classes
                             use_missing_fields_for_class: true,
-                            allow_unknown_rhs: true,
+                            allow_unknown_rhs: Some(true),
                             ..Default::default()
                         },
-                        &p1_type,
-                        &p2,
                     ) {
                         match err.actual() {
                             Error::MissingFields { .. } => {}

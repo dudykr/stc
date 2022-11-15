@@ -3,6 +3,7 @@
 
 #![allow(incomplete_features)]
 #![feature(specialization)]
+#![feature(box_patterns)]
 
 use either::Either;
 use rayon::prelude::*;

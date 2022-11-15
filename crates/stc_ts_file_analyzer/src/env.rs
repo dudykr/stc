@@ -11,7 +11,7 @@ use stc_ts_env::{BuiltIn, Env, ModuleConfig, Rule, StableEnv};
 use stc_ts_storage::Builtin;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{ClassDef, ModuleTypeData, Type};
-use stc_utils::stack;
+use stc_utils::{cache::Freeze, stack};
 use swc_atoms::JsWord;
 use swc_common::DUMMY_SP;
 use swc_ecma_ast::*;
@@ -102,7 +102,7 @@ pub trait BuiltInGen: Sized {
                     RModuleItem::ModuleDecl(ref md) => unreachable!("ModuleDecl: {:#?}", md),
                     RModuleItem::Stmt(ref mut stmt) => {
                         match *stmt {
-                            RStmt::Decl(RDecl::Var(RVarDecl { ref decls, .. })) => {
+                            RStmt::Decl(RDecl::Var(box RVarDecl { ref decls, .. })) => {
                                 assert_eq!(decls.len(), 1);
                                 stmt.visit_with(&mut analyzer);
                             }
@@ -187,7 +187,7 @@ pub trait BuiltInGen: Sized {
                                                 },
                                                 metadata: Default::default(),
                                             })
-                                            .cheap(),
+                                            .freezed(),
                                         );
                                     }
                                 }
@@ -253,16 +253,15 @@ pub trait BuiltInGen: Sized {
 
         for (_, ty) in types.iter_mut() {
             ty.fix();
-            ty.make_cheap();
+            ty.make_clone_cheap();
         }
 
         for (_, ty) in vars.iter_mut() {
             ty.fix();
-            ty.make_cheap();
+            ty.make_clone_cheap();
         }
 
         let dur = Instant::now() - start;
-        eprintln!("[builtin] Took {:?}", dur);
 
         Self::new(vars, types)
     }
@@ -285,8 +284,7 @@ pub trait EnvFactory {
         libs.sort();
         libs.dedup();
 
-        CACHE.entry(libs.clone()).or_default();
-        let cell = CACHE.get(&libs).unwrap().value().clone();
+        let cell = CACHE.entry(libs.clone()).or_default().clone();
 
         let builtin = swc_common::GLOBALS.set(STABLE_ENV.swc_globals(), || {
             let builtin = cell.get_or_init(|| {

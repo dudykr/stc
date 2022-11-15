@@ -22,7 +22,10 @@ impl Visit<Type> for TypeVisualizer<'_> {
 
         {
             let mut emitter = Emitter {
-                cfg: swc_ecma_codegen::Config { minify: false },
+                cfg: swc_ecma_codegen::Config {
+                    minify: false,
+                    ..Default::default()
+                },
                 cm: self.cm.clone(),
                 comments: None,
                 wr: box JsWriter::new(self.cm.clone(), "\n", &mut buf, None),

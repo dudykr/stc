@@ -2,7 +2,6 @@
 //!
 //! The visitor is too slow to compile every time I make change.
 #![deny(deprecated)]
-#![deny(unused)]
 #![allow(incomplete_features)]
 #![feature(box_syntax)]
 #![feature(box_patterns)]
@@ -275,6 +274,7 @@ impl Clone for Type {
     }
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Type, [u8; 104]);
 
 impl TypeEq for Type {
@@ -362,13 +362,33 @@ fn _assert_send_sync() {
     assert::<Symbol>();
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Is, Spanned, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, Visit, Is, Spanned, Serialize, Deserialize)]
 pub enum Key {
     Computed(ComputedKey),
     Normal { span: Span, sym: JsWord },
-    Num(#[use_eq_ignore_span] RNumber),
-    BigInt(#[use_eq_ignore_span] RBigInt),
-    Private(#[use_eq_ignore_span] PrivateName),
+    Num(RNumber),
+    BigInt(RBigInt),
+    Private(PrivateName),
+}
+
+impl TypeEq for Key {
+    fn type_eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Key::Computed(l), Key::Computed(r)) => l.type_eq(r),
+            (Key::Normal { sym: l, .. }, Key::Normal { sym: r, .. }) => l == r,
+            (Key::Num(l), Key::Num(r)) => l.type_eq(r),
+            (Key::BigInt(l), Key::BigInt(r)) => l.type_eq(r),
+            (Key::Private(l), Key::Private(r)) => l.type_eq(r),
+
+            (Key::Num(RNumber { value: n, .. }), Key::Normal { sym: s, .. })
+            | (Key::Normal { sym: s, .. }, Key::Num(RNumber { value: n, .. })) => match s.parse::<f64>() {
+                Ok(v) => v == *n,
+                _ => false,
+            },
+
+            _ => false,
+        }
+    }
 }
 
 impl Key {
@@ -398,7 +418,8 @@ impl From<RPrivateName> for PrivateName {
     }
 }
 
-assert_eq_size!(Key, [u8; 56]);
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(Key, [u8; 40]);
 
 impl Key {
     pub fn ty(&self) -> Cow<Type> {
@@ -409,8 +430,7 @@ impl Key {
                 lit: RTsLit::Str(RStr {
                     span: *span,
                     value: sym.clone(),
-                    has_escape: false,
-                    kind: Default::default(),
+                    raw: None,
                 }),
                 metadata: Default::default(),
             })),
@@ -453,13 +473,20 @@ impl PartialEq<str> for Key {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Visit, Spanned, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, EqIgnoreSpan, Visit, Spanned, Serialize, Deserialize)]
 pub struct ComputedKey {
     pub span: Span,
     pub expr: Box<RExpr>,
     pub ty: Box<Type>,
 }
 
+impl TypeEq for ComputedKey {
+    fn type_eq(&self, other: &Self) -> bool {
+        self.ty.type_eq(&other.ty)
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(ComputedKey, [u8; 32]);
 
 /// Special type to denote instance of various types.
@@ -484,17 +511,18 @@ pub struct Instance {
     pub metadata: InstanceMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Instance, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct LitType {
     pub span: Span,
 
-    #[use_eq_ignore_span]
     pub lit: RTsLit,
     pub metadata: LitTypeMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(LitType, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -506,6 +534,7 @@ pub struct KeywordType {
     pub metadata: KeywordTypeMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(KeywordType, [u8; 24]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -515,6 +544,7 @@ pub struct Symbol {
     pub metadata: SymbolMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Symbol, [u8; 48]);
 
 /// Type of form `...T` .
@@ -528,6 +558,7 @@ pub struct RestType {
     pub metadata: RestTypeMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(RestType, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -537,6 +568,7 @@ pub struct OptionalType {
     pub metadata: OptionalTypeMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(OptionalType, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -548,20 +580,20 @@ pub struct IndexedAccessType {
     pub metadata: IndexedAccessTypeMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(IndexedAccessType, [u8; 40]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Ref {
     pub span: Span,
-    /// Id of the module where the ref is used in.
-    pub ctxt: ModuleId,
     #[use_eq_ignore_span]
     pub type_name: RTsEntityName,
     pub type_args: Option<Box<TypeParamInstantiation>>,
     pub metadata: RefMetadata,
 }
 
-assert_eq_size!(Ref, [u8; 72]);
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(Ref, [u8; 64]);
 
 impl Debug for Ref {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
@@ -580,6 +612,7 @@ pub struct InferType {
     pub metadata: InferTypeMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(InferType, [u8; 80]);
 
 impl Debug for InferType {
@@ -595,6 +628,7 @@ pub struct QueryType {
     pub metadata: QueryTypeMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(QueryType, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -613,7 +647,8 @@ pub struct ImportType {
     pub metadata: ImportTypeMetadata,
 }
 
-assert_eq_size!(ImportType, [u8; 88]);
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(ImportType, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Namespace {
@@ -632,7 +667,8 @@ pub struct Module {
     pub metadata: ModuleTypeMetadata,
 }
 
-assert_eq_size!(Module, [u8; 64]);
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(Module, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Enum {
@@ -648,6 +684,7 @@ pub struct Enum {
     pub metadata: EnumMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Enum, [u8; 88]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -666,6 +703,7 @@ pub struct Class {
     pub metadata: ClassMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Class, [u8; 32]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -680,6 +718,7 @@ pub struct ClassDef {
     pub metadata: ClassDefMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(ClassDef, [u8; 88]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, FromVariant, EqIgnoreSpan, TypeEq, Visit, Is, Serialize, Deserialize)]
@@ -722,7 +761,6 @@ pub struct Method {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ClassProperty {
     pub span: Span,
-    #[use_eq_ignore_span]
     pub key: Key,
     pub value: Option<Box<Type>>,
     pub is_static: bool,
@@ -749,6 +787,7 @@ pub struct Mapped {
     pub metadata: MappedMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Mapped, [u8; 96]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -761,6 +800,7 @@ pub struct Conditional {
     pub metadata: ConditionalMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Conditional, [u8; 56]);
 
 impl Debug for Conditional {
@@ -774,7 +814,7 @@ impl Debug for Conditional {
 }
 
 /// TODO(kdy1): Remove this and create `keyof`, `unique` and `readonly` types.
-#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, Visit, Serialize, Deserialize)]
 pub struct Operator {
     pub span: Span,
     #[use_eq]
@@ -783,7 +823,19 @@ pub struct Operator {
     pub metadata: OperatorMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Operator, [u8; 32]);
+
+impl TypeEq for Operator {
+    fn type_eq(&self, other: &Self) -> bool {
+        match self.op {
+            TsTypeOperatorOp::Unique => return false,
+            _ => {}
+        }
+
+        self.op == other.op && self.ty.type_eq(&other.ty)
+    }
+}
 
 /// This type has a length of n to infinite.
 ///
@@ -796,6 +848,7 @@ pub struct Tuple {
     pub metadata: TupleMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Tuple, [u8; 48]);
 
 #[derive(Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -820,6 +873,7 @@ pub struct Alias {
     pub metadata: AliasMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Alias, [u8; 40]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -832,6 +886,7 @@ pub struct Interface {
     pub metadata: InterfaceMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Interface, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -841,6 +896,7 @@ pub struct TypeLit {
     pub metadata: TypeLitMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(TypeLit, [u8; 56]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -854,7 +910,7 @@ pub struct TypeParamDecl {
 pub struct TsExpr {
     pub span: Span,
     #[use_eq_ignore_span]
-    pub expr: RTsEntityName,
+    pub expr: Box<RExpr>,
     pub type_args: Option<Box<TypeParamInstantiation>>,
 }
 
@@ -983,6 +1039,7 @@ pub struct Array {
     pub metadata: ArrayMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Array, [u8; 32]);
 
 /// a | b
@@ -993,6 +1050,7 @@ pub struct Union {
     pub metadata: UnionMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Union, [u8; 48]);
 
 impl Debug for Union {
@@ -1003,7 +1061,7 @@ impl Debug for Union {
             if i != 0 {
                 write!(f, " | ")?;
             }
-            write!(f, "{:?}", ty)?;
+            Debug::fmt(&ty, f)?;
         }
 
         write!(f, ")")?;
@@ -1018,22 +1076,7 @@ impl Union {
             return;
         }
 
-        self.types.iter().for_each(|ty| ty.assert_valid());
-
-        for (i, t1) in self.types.iter().enumerate() {
-            for (j, t2) in self.types.iter().enumerate() {
-                if i == j {
-                    continue;
-                }
-                if t1.type_eq(t2) {
-                    unreachable!("[INVALID_TYPE]: A union type has duplicate elements: ({:?})", t1)
-                }
-            }
-        }
-
-        if self.types.len() <= 1 {
-            unreachable!("[INVALID_TYPE]: A union type should have multiple items. Got {:?}", self.types);
-        }
+        self.visit_with(&mut AssertValid);
     }
 }
 
@@ -1054,6 +1097,7 @@ pub struct Intersection {
     pub metadata: IntersectionMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Intersection, [u8; 48]);
 
 impl Debug for Intersection {
@@ -1064,7 +1108,7 @@ impl Debug for Intersection {
             if i != 0 {
                 write!(f, " & ")?;
             }
-            write!(f, "{:?}", ty)?;
+            Debug::fmt(&ty, f)?;
         }
 
         write!(f, ")")?;
@@ -1079,25 +1123,7 @@ impl Intersection {
             return;
         }
 
-        self.types.iter().for_each(|ty| ty.assert_valid());
-
-        for (i, t1) in self.types.iter().enumerate() {
-            for (j, t2) in self.types.iter().enumerate() {
-                if i == j {
-                    continue;
-                }
-                if t1.type_eq(t2) {
-                    unreachable!("[INVALID_TYPE]: An intersection type has duplicate elements: ({:?})", t1)
-                }
-            }
-        }
-
-        if self.types.len() <= 1 {
-            unreachable!(
-                "[INVALID_TYPE]: An intersection type should have multiple items. Got {:?}",
-                self.types
-            );
-        }
+        self.visit_with(&mut AssertValid);
     }
 }
 
@@ -1115,14 +1141,14 @@ pub struct TypeParam {
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub span: Span,
-    pub ctxt: ModuleId,
     pub enum_name: Id,
     /// [None] if for the general instance type of an enum.
     pub name: Option<JsWord>,
     pub metadata: EnumVariantMetadata,
 }
 
-assert_eq_size!(EnumVariant, [u8; 56]);
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(EnumVariant, [u8; 48]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct Function {
@@ -1133,6 +1159,7 @@ pub struct Function {
     pub metadata: FunctionMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Function, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -1146,6 +1173,7 @@ pub struct Constructor {
     pub metadata: ConstructorMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Constructor, [u8; 96]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -1158,6 +1186,7 @@ pub struct Predicate {
     pub metadata: PredicateMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Predicate, [u8; 64]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -1216,6 +1245,11 @@ impl Type {
             return Type::never(span, Default::default());
         }
 
+        if tys.len() > 1 {
+            // In an intersection everything absorbs unknown
+            tys.retain(|ty| !ty.is_unknown());
+        }
+
         match tys.len() {
             0 => Type::never(span, Default::default()),
             1 => tys.into_iter().next().unwrap(),
@@ -1236,6 +1270,15 @@ impl Type {
                     let mut elements = vec![];
 
                     for ty in types {
+                        if ty.is_unknown() {
+                            // In a union an unknown absorbs everything
+                            return Type::Keyword(KeywordType {
+                                span,
+                                kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                metadata: Default::default(),
+                            });
+                        }
+
                         if ty.is_union_type() {
                             let types = ty.expect_union_type().types;
                             for new in types {
@@ -1269,6 +1312,15 @@ impl Type {
         let mut elements = vec![];
 
         for ty in iter {
+            if ty.is_unknown() {
+                // In a union an unknown absorbs everything
+                return Type::Keyword(KeywordType {
+                    span,
+                    kind: TsKeywordTypeKind::TsUnknownKeyword,
+                    metadata: Default::default(),
+                });
+            }
+
             if ty.is_union_type() {
                 let types = ty.expect_union_type().types;
                 for new in types {
@@ -1460,7 +1512,7 @@ impl Type {
     }
 
     pub fn is_unique_symbol(&self) -> bool {
-        match *self {
+        match self.normalize() {
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::Unique,
                 ref ty,
@@ -1468,6 +1520,10 @@ impl Type {
             }) => ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword),
             _ => false,
         }
+    }
+
+    pub fn is_symbol_like(&self) -> bool {
+        self.is_symbol() || self.is_unique_symbol() || self.is_kwd(TsKeywordTypeKind::TsSymbolKeyword)
     }
 
     pub fn is_never(&self) -> bool {
@@ -1690,6 +1746,9 @@ impl Type {
     }
 }
 
+/// Visitor which validate types.
+///
+/// See [Type] for variants which should be kept by [Type]s.
 struct AssertValid;
 
 impl Visit<TypeElement> for AssertValid {
@@ -1730,7 +1789,20 @@ impl Visit<Union> for AssertValid {
 
         ty.visit_children_with(self);
 
-        ty.assert_valid();
+        for (i, t1) in ty.types.iter().enumerate() {
+            for (j, t2) in ty.types.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+                if t1.type_eq(t2) {
+                    unreachable!("[INVALID_TYPE]: A union type has duplicate elements: ({:?})", t1)
+                }
+            }
+        }
+
+        if ty.types.len() <= 1 {
+            unreachable!("[INVALID_TYPE]: A union type should have multiple items. Got {:?}", ty.types);
+        }
 
         for item in ty.types.iter() {
             if item.is_union_type() {
@@ -1748,7 +1820,23 @@ impl Visit<Intersection> for AssertValid {
 
         ty.visit_children_with(self);
 
-        ty.assert_valid();
+        for (i, t1) in ty.types.iter().enumerate() {
+            for (j, t2) in ty.types.iter().enumerate() {
+                if i == j {
+                    continue;
+                }
+                if t1.type_eq(t2) {
+                    unreachable!("[INVALID_TYPE]: An intersection type has duplicate elements: ({:?})", t1)
+                }
+            }
+        }
+
+        if ty.types.len() <= 1 {
+            unreachable!(
+                "[INVALID_TYPE]: An intersection type should have multiple items. Got {:?}",
+                ty.types
+            );
+        }
 
         for item in ty.types.iter() {
             if item.is_intersection() {
@@ -1862,6 +1950,8 @@ impl Type {
 
 impl Type {
     /// Converts this type to foldable type.
+    ///
+    /// TODO(kdy1): Remove if possible
     pub fn foldable(mut self) -> Type {
         self.normalize_mut();
         self
@@ -2314,20 +2404,6 @@ impl VisitMut<Type> for Freezer {
 }
 
 impl Type {
-    /// Make cloning cheap.
-    #[inline]
-    pub fn cheap(mut self) -> Self {
-        self.make_cheap();
-        self
-    }
-
-    /// Make cloning cheap.
-    #[inline]
-    #[instrument(skip(self))]
-    pub fn make_cheap(&mut self) {
-        self.visit_mut_with(&mut Freezer);
-    }
-
     pub fn as_bool(&self) -> Value<bool> {
         match self {
             Type::Arc(ref ty) => ty.ty.as_bool(),
@@ -2337,9 +2413,9 @@ impl Type {
             Type::Lit(ty) => Known(match &ty.lit {
                 RTsLit::Number(v) => v.value != 0.0,
                 RTsLit::Str(v) => v.value != *"",
-                RTsLit::Tpl(v) => v.quasis.first().unwrap().raw.value != *"",
+                RTsLit::Tpl(v) => v.quasis.first().unwrap().raw != *"",
                 RTsLit::Bool(v) => v.value,
-                RTsLit::BigInt(v) => v.value != BigInt::zero(),
+                RTsLit::BigInt(v) => *v.value != BigInt::zero(),
             }),
             Type::Keyword(KeywordType { kind, .. }) => Known(match kind {
                 TsKeywordTypeKind::TsNeverKeyword
@@ -2365,6 +2441,7 @@ pub struct StaticThis {
     pub metadata: StaticThisMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(StaticThis, [u8; 24]);
 
 #[derive(Debug, Clone, PartialEq, Eq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -2373,6 +2450,7 @@ pub struct ThisType {
     pub metadata: ThisTypeMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(ThisType, [u8; 24]);
 
 #[derive(Debug, Clone, PartialEq, Spanned, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
@@ -2386,6 +2464,7 @@ pub struct TplType {
     pub metadata: TplTypeMetadata,
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(TplType, [u8; 72]);
 
 #[derive(Debug, Clone, PartialEq, EqIgnoreSpan, TypeEq, Serialize, Deserialize)]
@@ -2399,6 +2478,7 @@ impl Spanned for Freezed {
     }
 }
 
+#[cfg(target_pointer_width = "64")]
 assert_eq_size!(Freezed, [u8; 8]);
 
 impl Visitable for Freezed {}

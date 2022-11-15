@@ -1,81 +1,88 @@
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:3:5
-  |
-3 |   } = {
-  |  _____^
-4 | |     prop1: "string",
-5 | | }
-  | |_^
-  |
-  = note: {
-              prop1: "string";
-          }
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:12
-  |
-7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
-  |            ^
-  |
-  = note: {
-              prop1: (number | string);
-          }
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:3:1]
+ 3 | ,-> } = {
+ 4 | |       prop1: "string",
+ 5 | `-> }
+   `----
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:12
-  |
-7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
-  |            ^^^^^^^
-  |
-  = note: (number | string)
+Error: 
+  > {
+  |     prop1: "string";
+  | }
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:5
-  |
-7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
-  |     ^^^^^^^^^^^^^^
-  |
-  = note: string
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+ 7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+   :            ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:5
-  |
-7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: boolean
+Error: 
+  > {
+  |     prop1: (number | string);
+  | }
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:36
-  |
-7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
-  |                                    ^
-  |
-  = note: {
-              prop1: (number | string);
-          }
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+ 7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+   :            ^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:36
-  |
-7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
-  |                                    ^^^^^^^
-  |
-  = note: string
+Error: 
+  > (number | string)
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:36
-  |
-7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
-  |                                    ^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: string
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+ 7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+   :     ^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:5
-  |
-7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: string
+Error: 
+  > string
 
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+ 7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+ 7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+   :                                    ^
+   `----
+
+Error: 
+  > {
+  |     prop1: (number | string);
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+ 7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+   :                                    ^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+ 7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+   :                                    ^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/ifStmt/object/prop-1.ts:7:1]
+ 7 | if (typeof o.prop1 === "string" && o.prop1.toLowerCase()) { }
+   :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > string

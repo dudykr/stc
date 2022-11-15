@@ -35,7 +35,7 @@ impl Analyzer<'_, '_> {
 
                 if r.is_union_type() {
                     Some(
-                        self.assign_with_opts(data, opts, l, &r)
+                        self.assign_with_opts(data, l, &r, opts)
                             .context("tried to assign to a flattened union to another union"),
                     )
                 } else {

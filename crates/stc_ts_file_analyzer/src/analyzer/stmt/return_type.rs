@@ -5,8 +5,8 @@ use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt,
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
 use stc_ts_types::{
-    CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, ModuleId, Operator,
-    PropertySignature, Ref, RefMetadata, TypeElement, TypeParamInstantiation,
+    CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, Operator, PropertySignature,
+    Ref, RefMetadata, TypeElement, TypeParamInstantiation,
 };
 use stc_utils::{
     cache::Freeze,
@@ -209,7 +209,6 @@ impl Analyzer<'_, '_> {
                         metadata = ret_ty.metadata();
                         ret_ty.span()
                     }),
-                    ctxt: ModuleId::builtin(),
                     type_name: if is_async {
                         RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), DUMMY_SP))
                     } else {
@@ -247,7 +246,6 @@ impl Analyzer<'_, '_> {
 
                 return Ok(Some(Type::Ref(Ref {
                     span,
-                    ctxt: ModuleId::builtin(),
                     type_name: RTsEntityName::Ident(RIdent::new("Promise".into(), DUMMY_SP)),
                     type_args: Some(box TypeParamInstantiation {
                         span,
@@ -284,14 +282,14 @@ impl Analyzer<'_, '_> {
             } else if let Some(ret_ty) = &ret_ty {
                 self.assign_with_opts(
                     &mut Default::default(),
+                    &declared,
+                    ret_ty,
                     AssignOpts {
                         span,
-                        allow_unknown_rhs: true,
+                        allow_unknown_rhs: Some(true),
                         may_unwrap_promise: true,
                         ..Default::default()
                     },
-                    &declared,
-                    ret_ty,
                 )
                 .context("tried to assign return type")
                 .report(&mut self.storage);
@@ -335,15 +333,9 @@ impl Analyzer<'_, '_> {
                 (true, true) => {
                     self.assign_with_opts(
                         &mut Default::default(),
-                        AssignOpts {
-                            span: node.span,
-                            allow_unknown_rhs: true,
-                            ..Default::default()
-                        },
                         &declared,
                         &Type::Ref(Ref {
                             span: node.span,
-                            ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new("AsyncGenerator".into(), node.span)),
                             type_args: Some(box TypeParamInstantiation {
                                 span: node.span,
@@ -351,6 +343,11 @@ impl Analyzer<'_, '_> {
                             }),
                             metadata: Default::default(),
                         }),
+                        AssignOpts {
+                            span: node.span,
+                            allow_unknown_rhs: Some(true),
+                            ..Default::default()
+                        },
                     )
                     .report(&mut self.storage);
                 }
@@ -359,14 +356,14 @@ impl Analyzer<'_, '_> {
                 (true, false) => {
                     self.assign_with_opts(
                         &mut Default::default(),
+                        &declared,
+                        &ty,
                         AssignOpts {
                             span: node.span,
-                            allow_unknown_rhs: true,
+                            allow_unknown_rhs: Some(true),
                             may_unwrap_promise: true,
                             ..Default::default()
                         },
-                        &declared,
-                        &ty,
                     )
                     .context("tried to validate the return type of an async function")
                     .report(&mut self.storage);
@@ -384,15 +381,9 @@ impl Analyzer<'_, '_> {
 
                     self.assign_with_opts(
                         &mut Default::default(),
-                        AssignOpts {
-                            span: node.span,
-                            allow_unknown_rhs: true,
-                            ..Default::default()
-                        },
                         &declared,
                         &Type::Ref(Ref {
                             span: node.span,
-                            ctxt: ModuleId::builtin(),
                             type_name: RTsEntityName::Ident(RIdent::new(name.into(), node.span)),
                             type_args: Some(box TypeParamInstantiation {
                                 span: node.span,
@@ -400,6 +391,11 @@ impl Analyzer<'_, '_> {
                             }),
                             metadata: Default::default(),
                         }),
+                        AssignOpts {
+                            span: node.span,
+                            allow_unknown_rhs: Some(true),
+                            ..Default::default()
+                        },
                     )
                     .report(&mut self.storage);
                 }
@@ -407,13 +403,13 @@ impl Analyzer<'_, '_> {
                 (false, false) => {
                     self.assign_with_opts(
                         &mut Default::default(),
-                        AssignOpts {
-                            span: node.span,
-                            allow_unknown_rhs: true,
-                            ..Default::default()
-                        },
                         &declared,
                         &ty,
+                        AssignOpts {
+                            span: node.span,
+                            allow_unknown_rhs: Some(true),
+                            ..Default::default()
+                        },
                     )
                     .report(&mut self.storage);
                 }
@@ -428,7 +424,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RYieldExpr) -> VResult {
+    fn validate(&mut self, e: &RYieldExpr) -> VResult<Type> {
         let span = e.span;
 
         if let Some(res) = e.arg.validate_with_default(self) {
@@ -463,14 +459,14 @@ impl Analyzer<'_, '_> {
                     Ok(declared) => {
                         match self.assign_with_opts(
                             &mut Default::default(),
+                            &declared,
+                            &item_ty,
                             AssignOpts {
                                 span: e.span,
-                                allow_unknown_rhs: true,
+                                allow_unknown_rhs: Some(true),
                                 use_missing_fields_for_class: true,
                                 ..Default::default()
                             },
-                            &declared,
-                            &item_ty,
                         ) {
                             Ok(()) => {}
                             Err(err) => {
@@ -663,8 +659,7 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
                                                     lit: RTsLit::Str(RStr {
                                                         span: i_span,
                                                         value: key.clone(),
-                                                        has_escape: false,
-                                                        kind: Default::default(),
+                                                        raw: None,
                                                     }),
                                                     metadata: Default::default(),
                                                 });

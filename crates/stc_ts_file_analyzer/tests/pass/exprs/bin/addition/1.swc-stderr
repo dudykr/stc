@@ -1,184 +1,207 @@
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:2:9
-  |
-2 |     n = n + v[k];
-  |         ^
-  |
-  = note: number
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:2:13
-  |
-2 |     n = n + v[k];
-  |             ^
-  |
-  = note: T
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:2:5]
+ 2 | n = n + v[k];
+   :     ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:2:15
-  |
-2 |     n = n + v[k];
-  |               ^
-  |
-  = note: K
+Error: 
+  > number
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:2:13
-  |
-2 |     n = n + v[k];
-  |             ^^^^
-  |
-  = note: number
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:2:5]
+ 2 | n = n + v[k];
+   :         ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:2:9
-  |
-2 |     n = n + v[k];
-  |         ^^^^^^^^
-  |
-  = note: number
+Error: 
+  > T
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:2:5
-  |
-2 |     n = n + v[k];
-  |     ^^^^^^^^^^^^
-  |
-  = note: number
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:2:5]
+ 2 | n = n + v[k];
+   :           ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:3:10
-  |
-3 |     n += v[k]; // += should work the same way
-  |          ^
-  |
-  = note: T
+Error: 
+  > K
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:3:12
-  |
-3 |     n += v[k]; // += should work the same way
-  |            ^
-  |
-  = note: K
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:2:5]
+ 2 | n = n + v[k];
+   :         ^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:3:10
-  |
-3 |     n += v[k]; // += should work the same way
-  |          ^^^^
-  |
-  = note: number
+Error: 
+  > number
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:3:5
-  |
-3 |     n += v[k]; // += should work the same way
-  |     ^
-  |
-  = note: number
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:2:5]
+ 2 | n = n + v[k];
+   :     ^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:3:5
-  |
-3 |     n += v[k]; // += should work the same way
-  |     ^^^^^^^^^
-  |
-  = note: number
+Error: 
+  > number
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:6:21
-  |
-6 |     for (const v of vs) {
-  |                     ^^
-  |
-  = note: T[]
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:2:5]
+ 2 | n = n + v[k];
+   : ^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:7:13
-  |
-7 |         n = n + v[k];
-  |             ^
-  |
-  = note: number
+Error: 
+  > number
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:7:17
-  |
-7 |         n = n + v[k];
-  |                 ^
-  |
-  = note: T
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:3:5]
+ 3 | n += v[k]; // += should work the same way
+   :      ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:7:19
-  |
-7 |         n = n + v[k];
-  |                   ^
-  |
-  = note: K
+Error: 
+  > T
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:7:17
-  |
-7 |         n = n + v[k];
-  |                 ^^^^
-  |
-  = note: number
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:3:5]
+ 3 | n += v[k]; // += should work the same way
+   :        ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:7:13
-  |
-7 |         n = n + v[k];
-  |             ^^^^^^^^
-  |
-  = note: number
+Error: 
+  > K
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:7:9
-  |
-7 |         n = n + v[k];
-  |         ^^^^^^^^^^^^
-  |
-  = note: number
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:3:5]
+ 3 | n += v[k]; // += should work the same way
+   :      ^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:8:14
-  |
-8 |         n += v[k];
-  |              ^
-  |
-  = note: T
+Error: 
+  > number
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:8:16
-  |
-8 |         n += v[k];
-  |                ^
-  |
-  = note: K
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:3:5]
+ 3 | n += v[k]; // += should work the same way
+   : ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:8:14
-  |
-8 |         n += v[k];
-  |              ^^^^
-  |
-  = note: number
+Error: 
+  > number
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:8:9
-  |
-8 |         n += v[k];
-  |         ^
-  |
-  = note: number
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:3:5]
+ 3 | n += v[k]; // += should work the same way
+   : ^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/bin/addition/1.ts:8:9
-  |
-8 |         n += v[k];
-  |         ^^^^^^^^^
-  |
-  = note: number
+Error: 
+  > number
 
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:6:5]
+ 6 | for (const v of vs) {
+   :                 ^^
+   `----
+
+Error: 
+  > T[]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:7:9]
+ 7 | n = n + v[k];
+   :     ^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:7:9]
+ 7 | n = n + v[k];
+   :         ^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:7:9]
+ 7 | n = n + v[k];
+   :           ^
+   `----
+
+Error: 
+  > K
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:7:9]
+ 7 | n = n + v[k];
+   :         ^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:7:9]
+ 7 | n = n + v[k];
+   :     ^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:7:9]
+ 7 | n = n + v[k];
+   : ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:8:9]
+ 8 | n += v[k];
+   :      ^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:8:9]
+ 8 | n += v[k];
+   :        ^
+   `----
+
+Error: 
+  > K
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:8:9]
+ 8 | n += v[k];
+   :      ^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:8:9]
+ 8 | n += v[k];
+   : ^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/bin/addition/1.ts:8:9]
+ 8 | n += v[k];
+   : ^^^^^^^^^
+   `----
+
+Error: 
+  > number

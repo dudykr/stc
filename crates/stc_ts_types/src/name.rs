@@ -4,7 +4,9 @@ use std::{
 };
 
 use smallvec::{smallvec, SmallVec};
-use stc_ts_ast_rnode::{RExpr, RExprOrSuper, RIdent, RLit, RMemberExpr, RTsEntityName, RTsThisTypeOrIdent};
+use stc_ts_ast_rnode::{
+    RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RTsEntityName, RTsThisTypeOrIdent,
+};
 use swc_atoms::{js_word, JsWord};
 use swc_common::{iter::IdentifyLast, SyntaxContext};
 
@@ -135,6 +137,10 @@ impl TryFrom<&'_ RExpr> for Name {
         match e {
             RExpr::Ident(i) => Ok(i.into()),
             RExpr::Member(m) => m.try_into(),
+            RExpr::OptChain(ROptChainExpr {
+                base: ROptChainBase::Member(m),
+                ..
+            }) => m.try_into(),
             RExpr::This(this) => Ok({
                 let this: Id = RIdent::new(js_word!("this"), this.span.with_ctxt(SyntaxContext::empty())).into();
 
@@ -160,14 +166,14 @@ impl<'a> TryFrom<&'a RMemberExpr> for Name {
     type Error = ();
 
     fn try_from(e: &RMemberExpr) -> Result<Self, ()> {
-        let mut name: Name = match &e.obj {
-            RExprOrSuper::Expr(e) => (&**e).try_into()?,
-            _ => return Err(()),
-        };
+        let mut name: Name = (&*e.obj).try_into()?;
 
-        name.0.push(match &*e.prop {
-            RExpr::Ident(i) if !e.computed => i.clone().into(),
-            RExpr::Lit(RLit::Str(s)) if e.computed => Id::word(s.value.clone()),
+        name.0.push(match &e.prop {
+            RMemberProp::Ident(i) => i.clone().into(),
+            RMemberProp::Computed(RComputedPropName {
+                expr: box RExpr::Lit(RLit::Str(s)),
+                ..
+            }) => Id::word(s.value.clone()),
             _ => return Err(()),
         });
 

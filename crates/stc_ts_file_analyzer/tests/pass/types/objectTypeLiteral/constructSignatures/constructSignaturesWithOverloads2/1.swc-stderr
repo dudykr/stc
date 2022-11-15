@@ -1,0 +1,18 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/objectTypeLiteral/constructSignatures/constructSignaturesWithOverloads2/1.ts:10:1]
+ 10 | var r2 = new C2(1, '');
+    :              ^^
+    `----
+
+Error: 
+  > (typeof C2 | C2)
+
+  x Type
+    ,-[$DIR/tests/pass/types/objectTypeLiteral/constructSignatures/constructSignaturesWithOverloads2/1.ts:10:1]
+ 10 | var r2 = new C2(1, '');
+    :          ^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > C2

@@ -5,7 +5,7 @@ use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_type_ops::{widen::Widen, Fix};
-use stc_ts_types::{Array, Key, KeywordType, LitType, ModuleId, Ref, Type, TypeLit, TypeParamInstantiation, Union};
+use stc_ts_types::{Array, Key, KeywordType, LitType, Ref, Tuple, Type, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::{run, PatExt};
 use stc_utils::{cache::Freeze, TryOpt};
 use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
@@ -185,13 +185,13 @@ impl Analyzer<'_, '_> {
                 if let Some(left) = &type_ann {
                     self.assign_with_opts(
                         &mut Default::default(),
+                        &left,
+                        &right,
                         AssignOpts {
                             span: p.right.span(),
                             allow_assignment_to_param_constraint: false,
                             ..Default::default()
                         },
-                        &left,
-                        &right,
                     )
                     .report(&mut self.storage);
                 }
@@ -260,7 +260,7 @@ impl Analyzer<'_, '_> {
                         if let Some(elem) = elem {
                             let elem_ty = ty
                                 .as_ref()
-                                .try_map(|ty| -> VResult {
+                                .try_map(|ty| -> VResult<Type> {
                                     let result = self.get_element_from_iterator(span, Cow::Borrowed(ty), idx).with_context(|| {
                                         format!(
                                             "tried to get the type of {}th element from iterator to declare vars with an array pattern",
@@ -288,6 +288,15 @@ impl Analyzer<'_, '_> {
                                                         .unwrap_or_else(|| Type::any(span, Default::default()));
 
                                                     Ok(right)
+                                                }
+                                                RPat::Rest(p) => {
+                                                    // [a, ...b] = [1]
+                                                    // b should be an empty tuple
+                                                    Ok(Type::Tuple(Tuple {
+                                                        span: p.span,
+                                                        elems: vec![],
+                                                        metadata: Default::default(),
+                                                    }))
                                                 }
                                                 _ => Err(err),
                                             },
@@ -368,6 +377,7 @@ impl Analyzer<'_, '_> {
                                             &Key::Num(RNumber {
                                                 span: elem.span(),
                                                 value: idx as f64,
+                                                raw: None,
                                             }),
                                             TypeOfMode::RValue,
                                             IdCtx::Var,
@@ -387,6 +397,7 @@ impl Analyzer<'_, '_> {
                                             &Key::Num(RNumber {
                                                 span: elem.span(),
                                                 value: idx as f64,
+                                                raw: None,
                                             }),
                                             TypeOfMode::RValue,
                                             IdCtx::Var,
@@ -562,7 +573,7 @@ impl Analyzer<'_, '_> {
 
                             match prop_ty {
                                 Ok(prop_ty) => {
-                                    let prop_ty = prop_ty.map(Type::cheap);
+                                    let prop_ty = prop_ty.map(Type::freezed);
 
                                     match &prop.value {
                                         Some(default) => {
@@ -778,8 +789,7 @@ impl Analyzer<'_, '_> {
                                 lit: RTsLit::Str(RStr {
                                     span: *span,
                                     value: sym.clone(),
-                                    has_escape: false,
-                                    kind: Default::default(),
+                                    raw: None,
                                 }),
                                 metadata: Default::default(),
                             })),
@@ -799,7 +809,6 @@ impl Analyzer<'_, '_> {
 
                     return Ok(Type::Ref(Ref {
                         span,
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new("Omit".into(), DUMMY_SP)),
                         type_args: Some(box TypeParamInstantiation {
                             span,
@@ -868,7 +877,7 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             ) {
-                return Ok(ty.cheap());
+                return Ok(ty.freezed());
             }
 
             Ok(Type::Array(Array {
@@ -876,7 +885,7 @@ impl Analyzer<'_, '_> {
                 elem_type: box ty,
                 metadata: Default::default(),
             })
-            .cheap())
+            .freezed())
         })
         .context("tried to ensure iterator")
     }

@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use rnode::{FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{
-    RArrayPat, RCallExpr, RExpr, RExprOrSuper, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsTypeAssertion, RVarDecl, RVarDeclarator,
+    RArrayPat, RCallExpr, RCallee, RExpr, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsTypeAssertion, RVarDecl, RVarDeclarator,
 };
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
@@ -159,7 +159,7 @@ impl Analyzer<'_, '_> {
                 let is_symbol_call = match &**init {
                     RExpr::Call(RCallExpr {
                         callee:
-                            RExprOrSuper::Expr(box RExpr::Ident(RIdent {
+                            RCallee::Expr(box RExpr::Ident(RIdent {
                                 sym: js_word!("Symbol"), ..
                             })),
                         ..
@@ -262,14 +262,14 @@ impl Analyzer<'_, '_> {
                         let opts = AssignOpts {
                             span: v_span,
                             allow_unknown_rhs: match &**init {
-                                RExpr::Ident(..) | RExpr::Member(..) | RExpr::MetaProp(..) | RExpr::New(..) | RExpr::Call(..) => true,
-                                _ => false,
+                                RExpr::Ident(..) | RExpr::Member(..) | RExpr::MetaProp(..) | RExpr::New(..) | RExpr::Call(..) => Some(true),
+                                _ => None,
                             },
                             ..Default::default()
                         };
 
                         match self
-                            .assign_with_opts(&mut Default::default(), opts, &ty, &value_ty)
+                            .assign_with_opts(&mut Default::default(), &ty, &value_ty, opts)
                             .context("tried to assign from var decl")
                         {
                             Ok(()) => {
@@ -621,7 +621,7 @@ impl Analyzer<'_, '_> {
                         let var_ty = (|| -> VResult<_> {
                             match ty.normalize() {
                                 Type::EnumVariant(ref v) => {
-                                    if let Some(..) = self.find_type(self.ctx.module_id, &v.enum_name)? {
+                                    if let Some(..) = self.find_type(&v.enum_name)? {
                                         return Ok(Type::EnumVariant(EnumVariant { name: None, ..v.clone() }));
                                     }
                                     unreachable!("Failed to found enum named `{}`", v.enum_name)
@@ -629,7 +629,7 @@ impl Analyzer<'_, '_> {
                                 _ => Ok(ty),
                             }
                         })()?
-                        .cheap();
+                        .freezed();
 
                         self.declare_complex_vars(VarKind::Var(kind), &v.name, var_ty.clone(), None, None)
                             .report(&mut self.storage);

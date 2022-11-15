@@ -3,7 +3,7 @@
 
 use num_bigint::BigInt;
 pub use stc_visit_macros::Visit;
-use swc_atoms::JsWord;
+use swc_atoms::{Atom, JsWord};
 use swc_common::SyntaxContext;
 
 pub use self::{
@@ -65,6 +65,7 @@ noop!(SyntaxContext);
 noop!(JsWord);
 noop!(BigInt);
 noop!(&'_ str);
+noop!(Atom);
 
 noop!(swc_ecma_ast::TruePlusMinus);
 noop!(swc_ecma_ast::TsTypeOperatorOp);
@@ -75,5 +76,5 @@ noop!(swc_ecma_ast::Accessibility);
 noop!(swc_ecma_ast::AssignOp);
 noop!(swc_ecma_ast::VarDeclKind);
 noop!(swc_ecma_ast::MethodKind);
-noop!(swc_ecma_ast::StrKind);
 noop!(swc_ecma_ast::UpdateOp);
+noop!(swc_ecma_ast::MetaPropKind);

@@ -1,52 +1,58 @@
-warning: Type
-  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:6
-   |
-11 | o?.x(d = 1);
-   |      ^^^^^
-   |
-   = note: 1
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1
-   |
-11 | o?.x(d = 1);
-   | ^
-   |
-   = note: (undefined | {
-               [key: string]: any;
-               [key: number]: any;
-               (...args: any[]) : any;
-           })
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1]
+ 11 | o?.x(d = 1);
+    :      ^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1
-   |
-11 | o?.x(d = 1);
-   | ^^^^
-   |
-   = note: (undefined | any)
+Error: 
+  > 1
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1
-   |
-11 | o?.x(d = 1);
-   | ^^^^^^^^^^^
-   |
-   = note: any
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1]
+ 11 | o?.x(d = 1);
+    : ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:12:1
-   |
-12 | d.toString();
-   | ^
-   |
-   = note: number
+Error: 
+  > (undefined | {
+  |     [key: string]: any;
+  |     [key: number]: any;
+  |     (...args: any[]) : any;
+  | })
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:12:1
-   |
-12 | d.toString();
-   | ^^^^^^^^^^^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1]
+ 11 | o?.x(d = 1);
+    : ^^^^
+    `----
 
+Error: 
+  > (undefined | any)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:11:1]
+ 11 | o?.x(d = 1);
+    : ^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:12:1]
+ 12 | d.toString();
+    : ^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/1.ts:12:1]
+ 12 | d.toString();
+    : ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > string

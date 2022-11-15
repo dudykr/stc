@@ -1,16 +1,18 @@
-warning: Type
- --> $DIR/tests/pass/fn/returnType/inference/1.ts:1:22
-  |
-1 | export var v: void = function () { }();
-  |                      ^^^^^^^^^^^^^^^
-  |
-  = note: () => void
 
-warning: Type
- --> $DIR/tests/pass/fn/returnType/inference/1.ts:1:22
-  |
-1 | export var v: void = function () { }();
-  |                      ^^^^^^^^^^^^^^^^^
-  |
-  = note: void
+  x Type
+   ,-[$DIR/tests/pass/fn/returnType/inference/1.ts:1:1]
+ 1 | export var v: void = function () { }();
+   :                      ^^^^^^^^^^^^^^^
+   `----
 
+Error: 
+  > () => void
+
+  x Type
+   ,-[$DIR/tests/pass/fn/returnType/inference/1.ts:1:1]
+ 1 | export var v: void = function () { }();
+   :                      ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > void

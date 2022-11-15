@@ -1,28 +1,31 @@
-warning: Type
- --> $DIR/tests/pass/exprs/optionalChaining/access-6.ts:2:11
-  |
-2 | const x = o6<number>()?.["x"];
-  |           ^^
-  |
-  = note: <T>() => (undefined | {
-              x: number;
-          })
 
-warning: Type
- --> $DIR/tests/pass/exprs/optionalChaining/access-6.ts:2:11
-  |
-2 | const x = o6<number>()?.["x"];
-  |           ^^^^^^^^^^^^
-  |
-  = note: (undefined | {
-              x: number;
-          })
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-6.ts:2:1]
+ 2 | const x = o6<number>()?.["x"];
+   :           ^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/optionalChaining/access-6.ts:2:11
-  |
-2 | const x = o6<number>()?.["x"];
-  |           ^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (undefined | number)
+Error: 
+  > <T>() => (undefined | {
+  |     x: number;
+  | })
 
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-6.ts:2:1]
+ 2 | const x = o6<number>()?.["x"];
+   :           ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     x: number;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-6.ts:2:1]
+ 2 | const x = o6<number>()?.["x"];
+   :           ^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number

@@ -1,87 +1,95 @@
-warning: Type
-  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:21:12
-   |
-21 |     return entity.kind === kind;
-   |            ^^^^^^
-   |
-   = note: Entity
 
-warning: Type
-  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:21:12
-   |
-21 |     return entity.kind === kind;
-   |            ^^^^^^^^^^^
-   |
-   = note: ("A" | "B")
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:21:5]
+ 21 | return entity.kind === kind;
+    :        ^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:21:28
-   |
-21 |     return entity.kind === kind;
-   |                            ^^^^
-   |
-   = note: ("A" | "B")
+Error: 
+  > Entity
 
-warning: Type
-  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:21:12
-   |
-21 |     return entity.kind === kind;
-   |            ^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: boolean
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:21:5]
+ 21 | return entity.kind === kind;
+    :        ^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:24:12
-   |
-24 |   let x: A = {
-   |  ____________^
-25 | |     kind: "A",
-26 | |     a: 100,
-27 | | }
-   | |_^
-   |
-   = note: {
-               kind: "A";
-               a: 100;
-           }
+Error: 
+  > ("A" | "B")
 
-warning: Type
-  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:29:14
-   |
-29 | if (!hasKind(x, "B")) {
-   |              ^
-   |
-   = note: A
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:21:5]
+ 21 | return entity.kind === kind;
+    :                        ^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:29:6
-   |
-29 | if (!hasKind(x, "B")) {
-   |      ^^^^^^^
-   |
-   = note: ((entity: Entity, kind: "A") => entity is A | (entity: Entity, kind: "B") => entity is B | (entity: Entity, kind: Kind) => entity is Entity | (entity: Entity, kind: Kind) => boolean)
+Error: 
+  > ("A" | "B")
 
-warning: Type
-  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:29:6
-   |
-29 | if (!hasKind(x, "B")) {
-   |      ^^^^^^^^^^^^^^^
-   |
-   = note: entity is B
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:21:5]
+ 21 | return entity.kind === kind;
+    :        ^^^^^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:29:5
-   |
-29 | if (!hasKind(x, "B")) {
-   |     ^^^^^^^^^^^^^^^^
-   |
-   = note: boolean
+Error: 
+  > boolean
 
-warning: Type
-  --> $DIR/tests/pass/exprs/lit/string/tags-1.ts:30:13
-   |
-30 |     let c = x;
-   |             ^
-   |
-   = note: A
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:24:1]
+ 24 | ,-> let x: A = {
+ 25 | |       kind: "A",
+ 26 | |       a: 100,
+ 27 | `-> }
+    `----
 
+Error: 
+  > {
+  |     kind: "A";
+  |     a: 100;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:29:1]
+ 29 | if (!hasKind(x, "B")) {
+    :              ^
+    `----
+
+Error: 
+  > A
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:29:1]
+ 29 | if (!hasKind(x, "B")) {
+    :      ^^^^^^^
+    `----
+
+Error: 
+  > ((entity: Entity, kind: "A") => entity is A | (entity: Entity, kind: "B") => entity is B | (entity: Entity, kind: Kind) => entity is Entity | (entity: Entity, kind: Kind) => boolean)
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:29:1]
+ 29 | if (!hasKind(x, "B")) {
+    :      ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > entity is B
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:29:1]
+ 29 | if (!hasKind(x, "B")) {
+    :     ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/lit/string/tags-1.ts:30:5]
+ 30 | let c = x;
+    :         ^
+    `----
+
+Error: 
+  > A

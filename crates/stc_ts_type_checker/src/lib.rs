@@ -23,7 +23,7 @@ use swc_common::{errors::Handler, FileName, SourceMap, Spanned, DUMMY_SP};
 use swc_ecma_ast::Module;
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::TsConfig;
-use swc_ecma_transforms::resolver::ts_resolver;
+use swc_ecma_transforms::resolver;
 use swc_ecma_visit::FoldWith;
 use tracing::{info, warn};
 
@@ -182,12 +182,16 @@ impl Checker {
                         let ids = set.iter().copied().collect::<Vec<_>>();
                         let modules = ids
                             .iter()
-                            .map(|&id| self.module_graph.clone_module(id))
-                            .filter_map(|m| m)
-                            .map(|module| {
+                            .map(|&id| (id, self.module_graph.clone_module(id)))
+                            .filter_map(|m| m.1.map(|v| (m.0, v)))
+                            .map(|(module_id, module)| {
                                 RModule::from_orig(
                                     &mut node_id_gen,
-                                    module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark())),
+                                    module.fold_with(&mut resolver(
+                                        self.env.shared().marks().unresolved_mark(),
+                                        self.module_graph.top_level_mark(module_id),
+                                        true,
+                                    )),
                                 )
                             })
                             .collect::<Vec<_>>();
@@ -234,8 +238,7 @@ impl Checker {
                                     name: RTsModuleName::Str(RStr {
                                         span: DUMMY_SP,
                                         value: format!("{:?}", module_id).into(),
-                                        has_escape: false,
-                                        kind: Default::default(),
+                                        raw: None,
                                     }),
                                     exports: box data,
                                     metadata: Default::default(),
@@ -288,7 +291,7 @@ impl Checker {
         })
     }
 
-    fn analyze_non_circular_module(&self, id: ModuleId, path: Arc<FileName>) -> Type {
+    fn analyze_non_circular_module(&self, module_id: ModuleId, path: Arc<FileName>) -> Type {
         self.run(|| {
             let _panic = panic_ctx!(format!("analyze_non_circular_module({})", path));
 
@@ -302,9 +305,13 @@ impl Checker {
             let mut node_id_gen = NodeIdGenerator::default();
             let mut module = self
                 .module_graph
-                .clone_module(id)
-                .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", id, path));
-            module = module.fold_with(&mut ts_resolver(self.env.shared().marks().top_level_mark()));
+                .clone_module(module_id)
+                .unwrap_or_else(|| unreachable!("Module graph does not contains {:?}: {}", module_id, path));
+            module = module.fold_with(&mut resolver(
+                self.env.shared().marks().unresolved_mark(),
+                self.module_graph.top_level_mark(module_id),
+                true,
+            ));
 
             let _panic = panic_ctx!(format!("Span of module = ({:?})", module.span));
 
@@ -312,7 +319,7 @@ impl Checker {
 
             let mut storage = Single {
                 parent: None,
-                id,
+                id: module_id,
                 path: path.clone(),
                 info: Default::default(),
                 is_dts,
@@ -357,16 +364,15 @@ impl Checker {
                 span: module.span,
                 name: RTsModuleName::Str(RStr {
                     span: DUMMY_SP,
-                    value: format!("{:?}", id).into(),
-                    has_escape: false,
-                    kind: Default::default(),
+                    value: format!("{:?}", module_id).into(),
+                    raw: None,
                 }),
                 exports: box storage.info.exports,
                 metadata: Default::default(),
             })
             .freezed();
 
-            self.dts_modules.insert(id, module);
+            self.dts_modules.insert(module_id, module);
 
             let dur = Instant::now() - start;
             log::trace!("[Timing] Full analysis of {} took {:?}", path, dur);
@@ -392,7 +398,7 @@ impl Load for Checker {
         }
     }
 
-    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, _partial: &ModuleTypeData) -> VResult {
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, _partial: &ModuleTypeData) -> VResult<Type> {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 
@@ -401,7 +407,7 @@ impl Load for Checker {
         return Ok(data);
     }
 
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult {
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult<Type> {
         let base_path = self.module_graph.path(base);
         let dep_path = self.module_graph.path(dep);
 

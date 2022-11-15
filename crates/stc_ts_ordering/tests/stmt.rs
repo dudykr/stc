@@ -14,7 +14,7 @@ fn assert_order(src: &str, expected: Vec<Vec<usize>>) {
     testing::run_test2(false, |cm, _handler| {
         let fm = cm.new_source_file(FileName::Anon, src.into());
 
-        let module = parse_rnode(&fm, &NoopComments, Mark::fresh(Mark::root()));
+        let module = parse_rnode(&fm, &NoopComments, Mark::new(), Mark::fresh(Mark::root()));
 
         let order = calc_eval_order(&module.body);
 

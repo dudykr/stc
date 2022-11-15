@@ -14,6 +14,7 @@ use stc_ts_types::{
     Array, ArrayMetadata, Class, ClassDef, ClassMember, Function, Id, Interface, KeywordType, KeywordTypeMetadata, LitType, Operator, Ref,
     Type, TypeElement, TypeLit, TypeParam, TypeParamMetadata, Union,
 };
+use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{error, info};
@@ -226,7 +227,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if ty.is_union_type() {
-                    *e.get_mut() = InferredType::Union(ty.into_owned().cheap());
+                    *e.get_mut() = InferredType::Union(ty.into_owned().freezed());
                     return Ok(());
                 }
 
@@ -248,12 +249,12 @@ impl Analyzer<'_, '_> {
                             if self
                                 .assign_with_opts(
                                     &mut Default::default(),
+                                    &ty,
+                                    prev,
                                     AssignOpts {
                                         span,
                                         ..Default::default()
                                     },
-                                    &ty,
-                                    prev,
                                 )
                                 .is_ok()
                             {
@@ -405,7 +406,7 @@ impl Analyzer<'_, '_> {
         }
 
         for parent in &param.extends {
-            let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
+            let parent = self.type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?;
             self.infer_type(span, inferred, &parent, arg, opts)?;
         }
 
@@ -725,7 +726,7 @@ impl Analyzer<'_, '_> {
 
             self.replace_null_or_undefined_while_defaulting_to_any(&mut ty);
 
-            ty.make_cheap();
+            ty.make_clone_cheap();
 
             map.insert(k, ty);
         }

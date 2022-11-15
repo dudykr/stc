@@ -1,24 +1,27 @@
-warning: Type
-  --> $DIR/tests/pass/types/enums/simple-access-1.ts:15:40
-   |
-15 | const snb: string | number | boolean = item[e];
-   |                                        ^^^^
-   |
-   = note: Item
 
-warning: Type
-  --> $DIR/tests/pass/types/enums/simple-access-1.ts:15:45
-   |
-15 | const snb: string | number | boolean = item[e];
-   |                                             ^
-   |
-   = note: E
+  x Type
+    ,-[$DIR/tests/pass/types/enums/simple-access-1.ts:15:1]
+ 15 | const snb: string | number | boolean = item[e];
+    :                                        ^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/enums/simple-access-1.ts:15:40
-   |
-15 | const snb: string | number | boolean = item[e];
-   |                                        ^^^^^^^
-   |
-   = note: (string | number | boolean)
+Error: 
+  > Item
 
+  x Type
+    ,-[$DIR/tests/pass/types/enums/simple-access-1.ts:15:1]
+ 15 | const snb: string | number | boolean = item[e];
+    :                                             ^
+    `----
+
+Error: 
+  > E
+
+  x Type
+    ,-[$DIR/tests/pass/types/enums/simple-access-1.ts:15:1]
+ 15 | const snb: string | number | boolean = item[e];
+    :                                        ^^^^^^^
+    `----
+
+Error: 
+  > (string | number | boolean)

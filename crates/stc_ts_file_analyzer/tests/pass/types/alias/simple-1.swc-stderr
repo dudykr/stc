@@ -1,32 +1,36 @@
-warning: Type
- --> $DIR/tests/pass/types/alias/simple-1.ts:6:1
-  |
-6 | x6_1.x
-  | ^^^^
-  |
-  = note: I6
 
-warning: Type
- --> $DIR/tests/pass/types/alias/simple-1.ts:6:1
-  |
-6 | x6_1.x
-  | ^^^^^^
-  |
-  = note: string
+  x Type
+   ,-[$DIR/tests/pass/types/alias/simple-1.ts:6:1]
+ 6 | x6_1.x
+   : ^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/alias/simple-1.ts:7:1
-  |
-7 | x6_2.x
-  | ^^^^
-  |
-  = note: I6
+Error: 
+  > I6
 
-warning: Type
- --> $DIR/tests/pass/types/alias/simple-1.ts:7:1
-  |
-7 | x6_2.x
-  | ^^^^^^
-  |
-  = note: string
+  x Type
+   ,-[$DIR/tests/pass/types/alias/simple-1.ts:6:1]
+ 6 | x6_1.x
+   : ^^^^^^
+   `----
 
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/types/alias/simple-1.ts:7:1]
+ 7 | x6_2.x
+   : ^^^^
+   `----
+
+Error: 
+  > I6
+
+  x Type
+   ,-[$DIR/tests/pass/types/alias/simple-1.ts:7:1]
+ 7 | x6_2.x
+   : ^^^^^^
+   `----
+
+Error: 
+  > string

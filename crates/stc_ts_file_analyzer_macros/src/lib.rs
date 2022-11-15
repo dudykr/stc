@@ -202,7 +202,7 @@ pub fn validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
                     type Context = (ContextType);
                     type Output = ReturnType;
 
-                    fn validate(&mut self, node_pat: &NodeType, ctxt: Self::Context) -> ReturnType {
+                    fn validate(&mut self, node_pat: &NodeType, ctxt: Self::Context) -> Self::Output {
                         let (context_pats) = ctxt;
 
                         let ret = {

@@ -10,7 +10,7 @@ use rayon::prelude::*;
 use stc_ts_types::{module_id::ModuleIdGenerator, ModuleId};
 use stc_utils::panic_ctx;
 use swc_atoms::JsWord;
-use swc_common::{collections::AHashMap, comments::Comments, FileName, SourceMap, DUMMY_SP};
+use swc_common::{collections::AHashMap, comments::Comments, FileName, Mark, SourceMap, DUMMY_SP};
 use swc_ecma_ast::{EsVersion, Module};
 use swc_ecma_loader::resolve::Resolve;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
@@ -108,7 +108,7 @@ where
         self.load_including_deps(entry, false);
         self.load_including_deps(entry, true);
 
-        let module_id = self.id_generator.generate(entry);
+        let module_id = self.id_generator.generate(entry).0;
 
         let res = {
             let mut analyzer = GraphAnalyzer::new(&*self);
@@ -143,7 +143,7 @@ where
     }
 
     pub fn id_for_declare_module(&self, module_name: &JsWord) -> ModuleId {
-        self.id_generator.generate(&Arc::new(FileName::Custom(module_name.to_string())))
+        self.id_generator.generate(&Arc::new(FileName::Custom(module_name.to_string()))).0
     }
 
     pub fn path(&self, id: ModuleId) -> Arc<FileName> {
@@ -160,7 +160,7 @@ where
     }
 
     pub fn id(&self, path: &Arc<FileName>) -> ModuleId {
-        self.id_generator.generate(path)
+        self.id_generator.generate(path).0
     }
 
     pub fn resolve(&self, base: &FileName, specifier: &JsWord) -> Result<Arc<FileName>, Error> {
@@ -194,12 +194,16 @@ where
         self.with_module(id, |m| m.cloned())
     }
 
+    pub fn top_level_mark(&self, id: ModuleId) -> Mark {
+        self.id_generator.top_level_mark(id)
+    }
+
     pub fn stmt_count_of(&self, id: ModuleId) -> usize {
         self.with_module(id, |m| m.map(|v| v.body.len()).unwrap_or(0))
     }
 
     fn load_including_deps(&self, path: &Arc<FileName>, resolve_all: bool) {
-        let id = self.id_generator.generate(path);
+        let (id, _) = self.id_generator.generate(path);
 
         if resolve_all {
             if self.started.remove(&id).is_none() {
@@ -235,7 +239,7 @@ where
 
         let dep_module_ids = iter
             .map(|dep_path| {
-                let id = self.id_generator.generate(&dep_path);
+                let (id, _) = self.id_generator.generate(&dep_path);
 
                 self.load_including_deps(&dep_path, resolve_all);
 
@@ -244,14 +248,14 @@ where
             .collect::<Vec<_>>();
 
         if resolve_all {
-            let _res = self.loaded.insert(
+            let res = self.loaded.insert(
                 id,
                 Ok(ModuleRecord {
                     module: loaded.module,
                     deps: dep_module_ids,
                 }),
             );
-            // assert_eq!(res, None, "duplicate?");
+            assert!(res.is_none(), "duplicate?");
         }
     }
 
@@ -259,7 +263,7 @@ where
     ///
     /// Note that this methods does not modify `self.loaded`.
     fn load(&self, filename: &Arc<FileName>, resolve_all: bool) -> Result<Option<LoadResult>, Error> {
-        let module_id = self.id_generator.generate(filename);
+        let (module_id, _) = self.id_generator.generate(filename);
 
         if resolve_all {
             if self.loaded.contains_key(&module_id) {
@@ -380,10 +384,11 @@ where
     type ModuleId = ModuleId;
 
     fn deps_of(&self, module_id: Self::ModuleId) -> Vec<Self::ModuleId> {
-        let m = self
-            .loaded
-            .get(&module_id)
-            .unwrap_or_else(|| unreachable!("{:?} is not loaded", module_id));
+        let m = self.loaded.get(&module_id).unwrap_or_else(|| {
+            //
+            let path = self.id_generator.path(module_id);
+            unreachable!("{:?}({:?}) is not loaded", module_id, path)
+        });
 
         match &*m {
             Ok(m) => m.deps.clone(),

@@ -1,6 +1,0 @@
-Stats {
-    required_error: 0,
-    matched_error: 10,
-    extra_error: 21,
-    panic: 0,
-}

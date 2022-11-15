@@ -1,159 +1,174 @@
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:11:13
-   |
-11 |     let s = a[x];  // boolean
-   |             ^
-   |
-   = note: boolean[]
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:11:15
-   |
-11 |     let s = a[x];  // boolean
-   |               ^
-   |
-   = note: `${number}`
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:11:5]
+ 11 | let s = a[x];  // boolean
+    :         ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:11:13
-   |
-11 |     let s = a[x];  // boolean
-   |             ^^^^
-   |
-   = note: boolean
+Error: 
+  > boolean[]
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:15:13
-   |
-15 |     let s = a[x];  // boolean
-   |             ^
-   |
-   = note: boolean[]
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:11:5]
+ 11 | let s = a[x];  // boolean
+    :           ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:15:15
-   |
-15 |     let s = a[x];  // boolean
-   |               ^
-   |
-   = note: (number | `${number}`)
+Error: 
+  > `${number}`
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:15:13
-   |
-15 |     let s = a[x];  // boolean
-   |             ^^^^
-   |
-   = note: boolean
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:11:5]
+ 11 | let s = a[x];  // boolean
+    :         ^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:34:20
-   |
-34 | const container1 = createContainer('hi')
-   |                    ^^^^^^^^^^^^^^^
-   |
-   = note: <T extends unknown>(value: T) => Container<T>
+Error: 
+  > boolean
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:34:20
-   |
-34 | const container1 = createContainer('hi')
-   |                    ^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: Container<string>
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:15:5]
+ 15 | let s = a[x];  // boolean
+    :         ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:35:20
-   |
-35 | const container2 = createContainer(2)
-   |                    ^^^^^^^^^^^^^^^
-   |
-   = note: <T extends unknown>(value: T) => Container<T>
+Error: 
+  > boolean[]
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:35:20
-   |
-35 | const container2 = createContainer(2)
-   |                    ^^^^^^^^^^^^^^^^^^
-   |
-   = note: Container<number>
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:15:5]
+ 15 | let s = a[x];  // boolean
+    :           ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:4
-   |
-37 | f([container1, container2], (value1, value2) => {
-   |    ^^^^^^^^^^
-   |
-   = note: {
-               value: string;
-           }
+Error: 
+  > (number | `${number}`)
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:16
-   |
-37 | f([container1, container2], (value1, value2) => {
-   |                ^^^^^^^^^^
-   |
-   = note: {
-               value: number;
-           }
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:15:5]
+ 15 | let s = a[x];  // boolean
+    :         ^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:3
-   |
-37 | f([container1, container2], (value1, value2) => {
-   |   ^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: (({
-               value: string;
-           } | {
-               value: number;
-           }))[]
+Error: 
+  > boolean
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:38:5
-   |
-38 |     value1;  // string
-   |     ^^^^^^
-   |
-   = note: any
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:34:1]
+ 34 | const container1 = createContainer('hi')
+    :                    ^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:39:5
-   |
-39 |     value2;  // number
-   |     ^^^^^^
-   |
-   = note: any
+Error: 
+  > <T extends unknown>(value: T) => Container<T>
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:29
-   |
-37 |   f([container1, container2], (value1, value2) => {
-   |  _____________________________^
-38 | |     value1;  // string
-39 | |     value2;  // number
-40 | | });
-   | |_^
-   |
-   = note: (value1: any, value2: any) => void
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:34:1]
+ 34 | const container1 = createContainer('hi')
+    :                    ^^^^^^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:1
-   |
-37 | f([container1, container2], (value1, value2) => {
-   | ^
-   |
-   = note: <T extends Container<unknown>[]>(containers: [...T], callback: (...values: UnwrapContainers<T>) => void) => void
+Error: 
+  > Container<string>
 
-warning: Type
-  --> $DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:1
-   |
-37 | / f([container1, container2], (value1, value2) => {
-38 | |     value1;  // string
-39 | |     value2;  // number
-40 | | });
-   | |__^
-   |
-   = note: void
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:35:1]
+ 35 | const container2 = createContainer(2)
+    :                    ^^^^^^^^^^^^^^^
+    `----
 
+Error: 
+  > <T extends unknown>(value: T) => Container<T>
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:35:1]
+ 35 | const container2 = createContainer(2)
+    :                    ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > Container<number>
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:1]
+ 37 | f([container1, container2], (value1, value2) => {
+    :    ^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     value: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:1]
+ 37 | f([container1, container2], (value1, value2) => {
+    :                ^^^^^^^^^^
+    `----
+
+Error: 
+  > {
+  |     value: number;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:1]
+ 37 | f([container1, container2], (value1, value2) => {
+    :   ^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (({
+  |     value: string;
+  | } | {
+  |     value: number;
+  | }))[]
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:38:5]
+ 38 | value1;  // string
+    : ^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:39:5]
+ 39 | value2;  // number
+    : ^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:1]
+ 37 | ,-> f([container1, container2], (value1, value2) => {
+ 38 | |       value1;  // string
+ 39 | |       value2;  // number
+ 40 | `-> });
+    `----
+
+Error: 
+  > (value1: any, value2: any) => void
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:1]
+ 37 | f([container1, container2], (value1, value2) => {
+    : ^
+    `----
+
+Error: 
+  > <T extends Container<unknown>[]>(containers: [...T], callback: (...values: UnwrapContainers<T>) => void) => void
+
+  x Type
+    ,-[$DIR/tests/pass/types/literal/numericStringLiteralTypes.ts:37:1]
+ 37 | ,-> f([container1, container2], (value1, value2) => {
+ 38 | |       value1;  // string
+ 39 | |       value2;  // number
+ 40 | `-> });
+    `----
+
+Error: 
+  > void

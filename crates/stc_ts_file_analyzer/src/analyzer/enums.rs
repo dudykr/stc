@@ -7,6 +7,7 @@ use stc_ts_errors::{Error, Errors};
 use stc_ts_types::{
     Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata, PropertySignature, TypeElement, TypeLit,
 };
+use stc_utils::cache::Freeze;
 use swc_atoms::{js_word, JsWord};
 use swc_common::{Span, Spanned, DUMMY_SP};
 use swc_ecma_ast::*;
@@ -78,7 +79,11 @@ impl Analyzer<'_, '_> {
                                 RTsLit::Number(v) => RExpr::Lit(RLit::Num(v)),
                                 RTsLit::Str(v) => RExpr::Lit(RLit::Str(v)),
                                 RTsLit::Bool(v) => RExpr::Lit(RLit::Bool(v)),
-                                RTsLit::Tpl(v) => RExpr::Lit(RLit::Str(v.quasis.into_iter().next().unwrap().raw)),
+                                RTsLit::Tpl(v) => RExpr::Lit(RLit::Str(RStr {
+                                    span: v.span,
+                                    value: From::from(&*v.quasis.into_iter().next().unwrap().raw),
+                                    raw: None,
+                                })),
                                 RTsLit::BigInt(v) => RExpr::Lit(RLit::BigInt(v)),
                             }
                         })
@@ -132,7 +137,7 @@ impl Analyzer<'_, '_> {
         let stored_ty = ty
             .clone()
             .map(Type::Enum)
-            .map(Type::cheap)
+            .map(Type::freezed)
             .report(&mut self.storage)
             .unwrap_or_else(|| Type::any(span, Default::default()));
 
@@ -242,6 +247,7 @@ impl Evaluator<'_> {
                                     op!("~") => (!(v as i32)) as f64,
                                     _ => Err(Error::InvalidEnumInit { span })?,
                                 },
+                                raw: None,
                             }))
                         }
                         RTsLit::Str(_) => {}
@@ -261,7 +267,11 @@ impl Evaluator<'_> {
             }
         } else {
             if let Some(value) = default {
-                return Ok(RTsLit::Number(RNumber { span, value: value as _ }));
+                return Ok(RTsLit::Number(RNumber {
+                    span,
+                    value: value as _,
+                    raw: None,
+                }));
             }
         }
 
@@ -293,25 +303,24 @@ impl Evaluator<'_> {
                         op!(">>>") => ((l.round() as u64) >> (r.round() as u64)) as _,
                         _ => Err(Error::InvalidEnumInit { span })?,
                     },
+
+                    raw: None,
                 })
             }
             (RTsLit::Str(l), RTsLit::Str(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
-                has_escape: l.has_escape || r.has_escape,
-                kind: Default::default(),
+                raw: None,
             }),
             (RTsLit::Number(l), RTsLit::Str(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
-                has_escape: r.has_escape,
-                kind: Default::default(),
+                raw: None,
             }),
             (RTsLit::Str(l), RTsLit::Number(r)) if expr.op == op!(bin, "+") => RTsLit::Str(RStr {
                 span,
                 value: format!("{}{}", l.value, r.value).into(),
-                has_escape: l.has_escape,
-                kind: Default::default(),
+                raw: None,
             }),
             _ => Err(Error::InvalidEnumInit { span })?,
         })
@@ -377,8 +386,6 @@ impl Analyzer<'_, '_> {
                 params: Default::default(),
                 type_ann: Some(box Type::EnumVariant(EnumVariant {
                     span: m.span,
-                    // TODO(kdy1): Store context in `Enum`
-                    ctxt: self.ctx.module_id,
                     enum_name: e.id.clone().into(),
                     name: Some(key.sym),
                     metadata: Default::default(),
@@ -562,11 +569,11 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult {
+    pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult<Type> {
         match ty.normalize() {
             Type::EnumVariant(ref ev) => {
                 if let Some(variant_name) = &ev.name {
-                    if let Some(types) = self.find_type(ev.ctxt, &ev.enum_name)? {
+                    if let Some(types) = self.find_type(&ev.enum_name)? {
                         for ty in types {
                             if let Type::Enum(Enum { members, .. }) = ty.normalize() {
                                 if let Some(v) = members.iter().find(|m| match m.id {

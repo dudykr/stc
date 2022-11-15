@@ -122,7 +122,7 @@ impl Analyzer<'_, '_> {
             child.scope.declared_return_type = declared_ret_ty.clone();
 
             if let Some(ty) = &mut declared_ret_ty {
-                ty.make_cheap();
+                ty.make_clone_cheap();
 
                 child.expand_return_type_of_fn(ty).report(&mut child.storage);
             }
@@ -277,7 +277,7 @@ impl Analyzer<'_, '_> {
     /// If the referred type has default type parameter, we have to include it
     /// in function type of output (.d.ts)
     fn qualify_ref_type_args(&mut self, span: Span, mut ty: Ref) -> VResult<Ref> {
-        let actual_ty = self.type_of_ts_entity_name(span, self.ctx.module_id, &ty.type_name, ty.type_args.as_deref())?;
+        let actual_ty = self.type_of_ts_entity_name(span, &ty.type_name.clone().into(), ty.type_args.as_deref())?;
 
         // TODO(kdy1): PERF
         let type_params = match actual_ty.foldable() {
@@ -435,7 +435,7 @@ impl Analyzer<'_, '_> {
         };
 
         match fn_ty {
-            Ok(ty) => Type::Function(ty).fixed().cheap(),
+            Ok(ty) => Type::Function(ty).fixed().freezed(),
             Err(err) => {
                 self.storage.report(err);
                 Type::any(f.span, Default::default())
@@ -467,7 +467,7 @@ impl Analyzer<'_, '_> {
         let fn_ty = self
             .with_ctx(ctx)
             .with_child(ScopeKind::Fn, Default::default(), |a: &mut Analyzer| {
-                Ok(a.visit_fn(Some(&f.ident), &f.function, None).cheap())
+                Ok(a.visit_fn(Some(&f.ident), &f.function, None).freezed())
             })?;
 
         let mut a = self.with_ctx(ctx);

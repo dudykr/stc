@@ -1,8 +1,9 @@
-warning: Type
- --> $DIR/tests/pass/controlFlow/forOfStmt/async/types.forAwait.es2018.1/1.ts:4:21
-  |
-4 |     for await (y of iterableOfPromise) {
-  |                     ^^^^^^^^^^^^^^^^^
-  |
-  = note: Iterable
 
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/async/types.forAwait.es2018.1/1.ts:4:5]
+ 4 | for await (y of iterableOfPromise) {
+   :                 ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > Iterable

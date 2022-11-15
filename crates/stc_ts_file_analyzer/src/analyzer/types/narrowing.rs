@@ -12,7 +12,7 @@ use crate::{
 };
 
 impl Analyzer<'_, '_> {
-    pub(crate) fn narrowed_type_of_assignment(&mut self, span: Span, declared: Type, actual: &Type) -> VResult {
+    pub(crate) fn narrowed_type_of_assignment(&mut self, span: Span, declared: Type, actual: &Type) -> VResult<Type> {
         declared.assert_valid();
         actual.assert_valid();
 
@@ -95,13 +95,13 @@ impl Analyzer<'_, '_> {
             _ => {
                 if let Ok(()) = self.assign_with_opts(
                     &mut Default::default(),
-                    AssignOpts {
-                        span,
-                        allow_unknown_rhs: true,
-                        ..Default::default()
-                    },
                     &declared,
                     &actual,
+                    AssignOpts {
+                        span,
+                        allow_unknown_rhs: Some(true),
+                        ..Default::default()
+                    },
                 ) {
                     return Ok(declared);
                 }

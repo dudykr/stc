@@ -84,7 +84,7 @@ impl MapWithMut for RPropName {
 
 impl MapWithMut for RDecl {
     fn dummy() -> Self {
-        RDecl::Var(RVarDecl {
+        RDecl::Var(box RVarDecl {
             node_id: NodeId::invalid(),
             span: DUMMY_SP,
             kind: VarDeclKind::Var,

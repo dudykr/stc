@@ -1,13 +1,12 @@
-warning: Type
- --> $DIR/tests/pass/exprs/object/key/6.ts:5:9
-  |
-5 |   var v = {
-  |  _________^
-6 | |     set [""](v) { },
-7 | | }
-  | |_^
-  |
-  = note: {
-              [""]: any;
-          }
 
+  x Type
+   ,-[$DIR/tests/pass/exprs/object/key/6.ts:5:1]
+ 5 | ,-> var v = {
+ 6 | |       set [""](v) { },
+ 7 | `-> }
+   `----
+
+Error: 
+  > {
+  |     [""]: any;
+  | }

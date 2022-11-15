@@ -7,9 +7,9 @@ use std::{
 use itertools::Itertools;
 use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, VisitWith};
 use stc_ts_ast_rnode::{
-    RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp, RComputedPropName, RConstructor,
-    RDecl, RExpr, RExprOrSuper, RFunction, RIdent, RLit, RMemberExpr, RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp,
-    RPropName, RStmt, RTsEntityName, RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RAssignPat, RBindingIdent, RClass, RClassDecl, RClassExpr, RClassMember, RClassMethod, RClassProp, RConstructor, RDecl, RExpr,
+    RFunction, RIdent, RMemberExpr, RParam, RParamOrTsParamProp, RPat, RPrivateMethod, RPrivateProp, RPropName, RStmt, RTsEntityName,
+    RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{DebugExt, Error, Errors};
@@ -17,8 +17,8 @@ use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_simple_ast_validations::consturctor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
-    Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam, Id, Intersection,
-    Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
+    rprop_name_to_expr, Accessor, Class, ClassDef, ClassMember, ClassMetadata, ClassProperty, ComputedKey, ConstructorSignature, FnParam,
+    Id, Intersection, Key, KeywordType, Method, Operator, OperatorMetadata, QueryExpr, QueryType, QueryTypeMetadata, Ref, TsExpr, Type,
 };
 use stc_utils::{cache::Freeze, AHashSet};
 use swc_atoms::js_word;
@@ -59,7 +59,7 @@ impl Analyzer<'_, '_> {
         span: Span,
         readonly: bool,
         is_static: bool,
-        type_ann: &Option<RTsTypeAnn>,
+        type_ann: &Option<Box<RTsTypeAnn>>,
         value: &Option<Box<RExpr>>,
     ) -> VResult<Option<Type>> {
         let mut ty = try_opt!(type_ann.validate_with(self));
@@ -80,16 +80,16 @@ impl Analyzer<'_, '_> {
                         if self
                             .assign_with_opts(
                                 &mut Default::default(),
-                                AssignOpts {
-                                    span,
-                                    ..Default::default()
-                                },
                                 &ty,
                                 &Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                                     metadata: Default::default(),
                                 }),
+                                AssignOpts {
+                                    span,
+                                    ..Default::default()
+                                },
                             )
                             .is_err()
                         {
@@ -143,9 +143,9 @@ impl Analyzer<'_, '_> {
         let marks = self.marks();
         self.record(p);
 
-        if !p.computed && p.is_static {
-            match &*p.key {
-                RExpr::Ident(i) => {
+        if p.is_static {
+            match &p.key {
+                RPropName::Ident(i) => {
                     if &*i.sym == "prototype" {
                         self.storage.report(Error::StaticPropertyCannotBeNamedPrototype { span: i.span })
                     }
@@ -155,8 +155,8 @@ impl Analyzer<'_, '_> {
         }
 
         // Verify key if key is computed
-        if p.computed {
-            self.validate_computed_prop_key(p.span, &p.key);
+        if let RPropName::Computed(p) = &p.key {
+            self.validate_computed_prop_key(p.span, &p.expr);
         }
 
         let value = self
@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let key = self.validate_key(&p.key, p.computed)?;
+        let key = self.validate_key(&rprop_name_to_expr(p.key.clone()), matches!(p.key, RPropName::Computed(..)))?;
 
         Ok(ClassProperty {
             span: p.span,
@@ -228,7 +228,7 @@ impl Analyzer<'_, '_> {
             value,
             is_static: p.is_static,
             accessibility: p.accessibility,
-            is_abstract: p.is_abstract,
+            is_abstract: false,
             is_optional: p.is_optional,
             readonly: p.readonly,
             definite: p.definite,
@@ -371,8 +371,7 @@ impl Analyzer<'_, '_> {
 
         match &p.param {
             RTsParamPropParam::Ident(ref i) => {
-                let ty: Option<Type> = i.type_ann.validate_with(self).transpose()?;
-                let ty = ty.map(|ty| ty.cheap());
+                let ty: Option<Type> = i.type_ann.validate_with(self).transpose()?.freezed();
 
                 self.declare_var(i.id.span, VarKind::Param, i.id.clone().into(), ty.clone(), None, true, false, false)?;
 
@@ -396,12 +395,12 @@ impl Analyzer<'_, '_> {
                     if let Some(right) = right {
                         self.assign_with_opts(
                             &mut Default::default(),
+                            &ty,
+                            &right,
                             AssignOpts {
                                 span: right.span(),
                                 ..Default::default()
                             },
-                            &ty,
-                            &right,
                         )
                         .report(&mut self.storage);
                     }
@@ -485,13 +484,6 @@ impl Analyzer<'_, '_> {
         match c.key.id.sym {
             js_word!("constructor") => {
                 self.storage.report(Error::ConstructorIsKeyword { span: c.key.id.span });
-            }
-            _ => {}
-        }
-
-        match c.kind {
-            MethodKind::Method => {
-                self.storage.report(Error::PrivateIdUsedAsMethodName { span: c.key.id.span });
             }
             _ => {}
         }
@@ -666,7 +658,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
-                let declared_ret_ty = declared_ret_ty.map(|ty| ty.cheap());
+                let declared_ret_ty = declared_ret_ty.map(|ty| ty.freezed());
                 child.scope.declared_return_type = declared_ret_ty.clone();
 
                 let span = c.function.span;
@@ -826,7 +818,7 @@ impl Analyzer<'_, '_> {
                 RClassMember::Method(
                     m @ RClassMethod {
                         kind: MethodKind::Method,
-                        function: RFunction { body: Some(..), .. },
+                        function: box RFunction { body: Some(..), .. },
                         ..
                     },
                 ) => {
@@ -834,7 +826,7 @@ impl Analyzer<'_, '_> {
                 }
                 RClassMember::PrivateMethod(
                     m @ RPrivateMethod {
-                        function: RFunction { body: Some(..), .. },
+                        function: box RFunction { body: Some(..), .. },
                         ..
                     },
                 ) => {
@@ -842,8 +834,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 RClassMember::ClassProp(RClassProp {
-                    computed: false,
-                    key: box RExpr::Ident(key),
+                    key: RPropName::Ident(key),
                     is_static,
                     ..
                 }) => {
@@ -854,17 +845,7 @@ impl Analyzer<'_, '_> {
                 RClassMember::ClassProp(m) => {
                     is_props.insert(keys.len());
 
-                    let key = match &*m.key {
-                        RExpr::Lit(RLit::Num(v)) => Cow::Owned(RPropName::Ident(RIdent::new(
-                            v.value.to_string().into(),
-                            v.span.with_ctxt(SyntaxContext::empty()),
-                        ))),
-                        _ => Cow::Owned(RPropName::Computed(RComputedPropName {
-                            node_id: NodeId::invalid(),
-                            span: DUMMY_SP,
-                            expr: m.key.clone(),
-                        })),
-                    };
+                    let key = Cow::Borrowed(&m.key);
                     keys.push((key, m.is_static));
                 }
                 RClassMember::PrivateProp(m) => {
@@ -1250,9 +1231,9 @@ impl Analyzer<'_, '_> {
         let mut errors = Errors::default();
         let is_symbol_access = match *key {
             RExpr::Member(RMemberExpr {
-                obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent {
+                obj: box RExpr::Ident(RIdent {
                     sym: js_word!("Symbol"), ..
-                })),
+                }),
                 ..
             }) => true,
             _ => false,
@@ -1325,17 +1306,17 @@ impl Analyzer<'_, '_> {
 
         for parent in &*class.implements {
             let res: VResult<_> = try {
-                let parent = self.type_of_ts_entity_name(parent.span(), self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
+                let parent = self.type_of_ts_entity_name(parent.span(), &parent.expr, parent.type_args.as_deref())?;
 
                 self.assign_with_opts(
                     &mut Default::default(),
-                    AssignOpts {
-                        span: parent.span(),
-                        allow_unknown_rhs: true,
-                        ..Default::default()
-                    },
                     &parent,
                     &class_ty,
+                    AssignOpts {
+                        span: parent.span(),
+                        allow_unknown_rhs: Some(true),
+                        ..Default::default()
+                    },
                 )
                 .context("tried to assign a class to parent interface")
                 .convert_err(|err| {
@@ -1632,7 +1613,7 @@ impl Analyzer<'_, '_> {
                                 });
 
                                 if has_class_in_super {
-                                    child.prepend_stmts.push(RStmt::Decl(RDecl::Var(RVarDecl {
+                                    child.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
                                         node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
                                         kind: VarDeclKind::Const,
@@ -1642,7 +1623,7 @@ impl Analyzer<'_, '_> {
                                             span: i.span,
                                             name: RPat::Ident(RBindingIdent {
                                                 node_id: NodeId::invalid(),
-                                                type_ann: Some(RTsTypeAnn {
+                                                type_ann: Some(box RTsTypeAnn {
                                                     node_id: NodeId::invalid(),
                                                     span: DUMMY_SP,
                                                     type_ann: box super_ty.into(),
@@ -1654,7 +1635,7 @@ impl Analyzer<'_, '_> {
                                         }],
                                     })));
                                 } else {
-                                    child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(RTsTypeAliasDecl {
+                                    child.prepend_stmts.push(RStmt::Decl(RDecl::TsTypeAlias(box RTsTypeAliasDecl {
                                         node_id: NodeId::invalid(),
                                         span: DUMMY_SP,
                                         declare: false,
@@ -1671,7 +1652,6 @@ impl Analyzer<'_, '_> {
                                 }
                                 Some(box Type::Ref(Ref {
                                     span: DUMMY_SP,
-                                    ctxt: child.ctx.module_id,
                                     type_name: RTsEntityName::Ident(new_ty),
                                     // TODO(kdy1): Handle type parameters
                                     type_args: None,
@@ -1697,7 +1677,7 @@ impl Analyzer<'_, '_> {
             child.report_errors_for_statics_mixed_with_instances(&c).report(&mut child.storage);
             child.report_errors_for_duplicate_class_members(&c).report(&mut child.storage);
 
-            child.scope.super_class = super_class.clone().map(|ty| make_instance_type(child.ctx.module_id, *ty));
+            child.scope.super_class = super_class.clone().map(|ty| make_instance_type(*ty));
             {
                 // Validate constructors
                 let constructors_with_body = c
@@ -1810,14 +1790,13 @@ impl Analyzer<'_, '_> {
                                         _ => unreachable!("TypeScript parameter property with pattern other than an identifier"),
                                     };
                                     key.type_ann = None;
-                                    let key = box RExpr::Ident(key.id);
+                                    let key = RPropName::Ident(key.id);
                                     additional_members.push(RClassMember::ClassProp(RClassProp {
                                         node_id: NodeId::invalid(),
                                         span: p.span,
                                         key,
                                         value: None,
                                         is_static: false,
-                                        computed: false,
                                         accessibility: Some(Accessibility::Private),
                                         is_abstract: false,
                                         is_optional,
@@ -2192,12 +2171,12 @@ impl Analyzer<'_, '_> {
 
                     self.assign_with_opts(
                         &mut Default::default(),
+                        &index_ret_ty,
+                        &value,
                         AssignOpts {
                             span,
                             ..Default::default()
                         },
-                        &index_ret_ty,
-                        &value,
                     )
                     .convert_err(|_err| {
                         if index.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
@@ -2223,11 +2202,6 @@ impl Analyzer<'_, '_> {
             for ambient in ambient {
                 self.assign_to_fn_like(
                     &mut Default::default(),
-                    AssignOpts {
-                        span: i.span,
-                        for_overload: true,
-                        ..Default::default()
-                    },
                     false,
                     ambient.type_params.as_ref(),
                     &ambient.params,
@@ -2235,6 +2209,11 @@ impl Analyzer<'_, '_> {
                     i.type_params.as_ref(),
                     &i.params,
                     i.ret_ty.as_deref(),
+                    AssignOpts {
+                        span: i.span,
+                        for_overload: true,
+                        ..Default::default()
+                    },
                 )
                 .convert_err(|err| Error::WrongOverloadSignature { span: err.span() })?;
             }
@@ -2276,7 +2255,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Instantate fully
-    pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> VResult {
+    pub(crate) fn instantiate_class(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         Ok(match ty.normalize() {
@@ -2300,7 +2279,7 @@ impl Analyzer<'_, '_> {
                 Type::any(c.span(), Default::default())
             }
         };
-        let ty = ty.cheap();
+        let ty = ty.freezed();
 
         let old_this = self.scope.this.take();
         // self.scope.this = Some(ty.clone());

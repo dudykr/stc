@@ -1,0 +1,99 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:6:1]
+ 6 | function fn5() { return undefined; }
+   :                         ^^^^^^^^^
+   `----
+
+Error: 
+  > undefined
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+ 7 | var n = fn5((n) => n.toFixed());
+   :                    ^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+ 7 | var n = fn5((n) => n.toFixed());
+   :                    ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+ 7 | var n = fn5((n) => n.toFixed());
+   :             ^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (n: any) => any
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+ 7 | var n = fn5((n) => n.toFixed());
+   :         ^^^
+   `----
+
+Error: 
+  > (() => undefined | (f: (n: string) => void) => string)
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:7:1]
+ 7 | var n = fn5((n) => n.toFixed());
+   :         ^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:8:1]
+ 8 | var s = fn5((n) => n.substr(0));
+   :                    ^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:8:1]
+ 8 | var s = fn5((n) => n.substr(0));
+   :                    ^^^^^^^^^^^
+   `----
+
+Error: 
+  > any
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:8:1]
+ 8 | var s = fn5((n) => n.substr(0));
+   :             ^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (n: any) => any
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:8:1]
+ 8 | var s = fn5((n) => n.substr(0));
+   :         ^^^
+   `----
+
+Error: 
+  > (() => undefined | (f: (n: string) => void) => string | (f: (n: number) => void) => number)
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/call/overloadResolution/1.ts:8:1]
+ 8 | var s = fn5((n) => n.substr(0));
+   :         ^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > string

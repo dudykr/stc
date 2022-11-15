@@ -1,16 +1,18 @@
-warning: Type
- --> $DIR/tests/visualize/types/tuple/strictTupleLength/1.ts:4:10
-  |
-4 | var t1 = t2; // error
-  |          ^^
-  |
-  = note: [number, number]
 
-warning: Type
- --> $DIR/tests/visualize/types/tuple/strictTupleLength/1.ts:5:10
-  |
-5 | var t2 = t1; // error
-  |          ^^
-  |
-  = note: [number]
+  x Type
+   ,-[$DIR/tests/visualize/types/tuple/strictTupleLength/1.ts:4:1]
+ 4 | var t1 = t2; // error
+   :          ^^
+   `----
 
+Error: 
+  > [number, number]
+
+  x Type
+   ,-[$DIR/tests/visualize/types/tuple/strictTupleLength/1.ts:5:1]
+ 5 | var t2 = t1; // error
+   :          ^^
+   `----
+
+Error: 
+  > [number]

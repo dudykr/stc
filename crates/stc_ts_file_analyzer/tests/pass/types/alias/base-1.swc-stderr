@@ -1,160 +1,180 @@
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:55:7
-   |
-55 | foo13(x13_1, x13_2);
-   |       ^^^^^
-   |
-   = note: I13
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:55:14
-   |
-55 | foo13(x13_1, x13_2);
-   |              ^^^^^
-   |
-   = note: I13
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:55:1]
+ 55 | foo13(x13_1, x13_2);
+    :       ^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:55:1
-   |
-55 | foo13(x13_1, x13_2);
-   | ^^^^^
-   |
-   = note: <T1 extends I13, T2 extends T13>(t1: T1, t2: T13) => void
+Error: 
+  > I13
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:55:1
-   |
-55 | foo13(x13_1, x13_2);
-   | ^^^^^^^^^^^^^^^^^^^
-   |
-   = note: void
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:55:1]
+ 55 | foo13(x13_1, x13_2);
+    :              ^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:56:7
-   |
-56 | foo13(x13_2, x13_1);
-   |       ^^^^^
-   |
-   = note: I13
+Error: 
+  > I13
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:56:14
-   |
-56 | foo13(x13_2, x13_1);
-   |              ^^^^^
-   |
-   = note: I13
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:55:1]
+ 55 | foo13(x13_1, x13_2);
+    : ^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:56:1
-   |
-56 | foo13(x13_2, x13_1);
-   | ^^^^^
-   |
-   = note: <T1 extends I13, T2 extends T13>(t1: T1, t2: T13) => void
+Error: 
+  > <T1 extends I13, T2 extends T13>(t1: T1, t2: T13) => void
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:56:1
-   |
-56 | foo13(x13_2, x13_1);
-   | ^^^^^^^^^^^^^^^^^^^
-   |
-   = note: void
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:55:1]
+ 55 | foo13(x13_1, x13_2);
+    : ^^^^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:72:5
-   |
-72 | f15(E.x).toLowerCase();
-   |     ^
-   |
-   = note: E
+Error: 
+  > void
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:72:5
-   |
-72 | f15(E.x).toLowerCase();
-   |     ^^^
-   |
-   = note: E.x
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:56:1]
+ 56 | foo13(x13_2, x13_1);
+    :       ^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:72:1
-   |
-72 | f15(E.x).toLowerCase();
-   | ^^^
-   |
-   = note: ((a: string) => boolean | (a: Meters) => string)
+Error: 
+  > I13
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:72:1
-   |
-72 | f15(E.x).toLowerCase();
-   | ^^^^^^^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:56:1]
+ 56 | foo13(x13_2, x13_1);
+    :              ^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:72:1
-   |
-72 | f15(E.x).toLowerCase();
-   | ^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: string
+Error: 
+  > I13
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:77:5
-   |
-77 | f16(x);
-   |     ^
-   |
-   = note: [string, boolean]
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:56:1]
+ 56 | foo13(x13_2, x13_1);
+    : ^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:77:1
-   |
-77 | f16(x);
-   | ^^^
-   |
-   = note: (s: StringAndBoolean) => string
+Error: 
+  > <T1 extends I13, T2 extends T13>(t1: T1, t2: T13) => void
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:77:1
-   |
-77 | f16(x);
-   | ^^^^^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:56:1]
+ 56 | foo13(x13_2, x13_1);
+    : ^^^^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:79:27
-   |
-79 | var y: StringAndBoolean = ["1", false];
-   |                           ^^^^^^^^^^^^
-   |
-   = note: ["1", false]
+Error: 
+  > void
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:80:1
-   |
-80 | y[0].toLowerCase();
-   | ^
-   |
-   = note: [string, boolean]
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:72:1]
+ 72 | f15(E.x).toLowerCase();
+    :     ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:80:1
-   |
-80 | y[0].toLowerCase();
-   | ^^^^
-   |
-   = note: string
+Error: 
+  > E
 
-warning: Type
-  --> $DIR/tests/pass/types/alias/base-1.ts:80:1
-   |
-80 | y[0].toLowerCase();
-   | ^^^^^^^^^^^^^^^^^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:72:1]
+ 72 | f15(E.x).toLowerCase();
+    :     ^^^
+    `----
 
+Error: 
+  > E.x
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:72:1]
+ 72 | f15(E.x).toLowerCase();
+    : ^^^
+    `----
+
+Error: 
+  > ((a: string) => boolean | (a: Meters) => string)
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:72:1]
+ 72 | f15(E.x).toLowerCase();
+    : ^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:72:1]
+ 72 | f15(E.x).toLowerCase();
+    : ^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:77:1]
+ 77 | f16(x);
+    :     ^
+    `----
+
+Error: 
+  > [string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:77:1]
+ 77 | f16(x);
+    : ^^^
+    `----
+
+Error: 
+  > (s: StringAndBoolean) => string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:77:1]
+ 77 | f16(x);
+    : ^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:79:1]
+ 79 | var y: StringAndBoolean = ["1", false];
+    :                           ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > ["1", false]
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:80:1]
+ 80 | y[0].toLowerCase();
+    : ^
+    `----
+
+Error: 
+  > [string, boolean]
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:80:1]
+ 80 | y[0].toLowerCase();
+    : ^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/types/alias/base-1.ts:80:1]
+ 80 | y[0].toLowerCase();
+    : ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > string

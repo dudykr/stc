@@ -281,6 +281,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2323
+    DuplicateExport {
+        span: Span,
+    },
+
     /// TS2393
     DuplicateFnImpl {
         span: Span,
@@ -393,7 +398,7 @@ pub enum Error {
     },
 
     /// TS18050
-    UndefinedInRelativeComparison {
+    UndefinedOrNullIsNotValidOperand {
         span: Span,
     },
 
@@ -575,6 +580,8 @@ pub enum Error {
     /// TS2678
     SwitchCaseTestNotCompatible {
         span: Span,
+        disc: Box<Type>,
+        test: Box<Type>,
     },
 
     /// TS2540
@@ -719,6 +726,7 @@ pub enum Error {
     /// TS2539
     CannotAssignToNonVariable {
         span: Span,
+        ty: Box<Type>,
     },
 
     /// TS2708
@@ -767,8 +775,8 @@ pub enum Error {
     NoOverlap {
         span: Span,
         value: bool,
-        left: Span,
-        right: Span,
+        left: Box<Type>,
+        right: Box<Type>,
     },
 
     CannotAssignToReadonlyProperty {
@@ -1131,8 +1139,9 @@ pub enum Error {
         span: Span,
     },
 
-    TS2361 {
+    InvalidRhsForInOperator {
         span: Span,
+        ty: Box<Type>,
     },
 
     /// TS2362
@@ -1362,7 +1371,8 @@ pub enum Error {
     DebugContext(DebugContext),
 }
 
-assert_eq_size!(Error, [u8; 88]);
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(Error, [u8; 72]);
 
 impl Error {
     pub fn convert<F>(self, op: F) -> Self
@@ -1492,9 +1502,10 @@ impl Error {
             // TS2551: Property not found with a suggestion.
             2550 | 2551 => 2339,
 
-            // TS2693: Type used as a variable.
-            // TS2585: Type used as a variable with a suggestion to change 'lib',
-            2585 => 2693,
+            // TS2304: Variable not found
+            // TS2585: Variable not found, but with a suggestion to change 'lib',
+            // TS2693: Variable not found, but a type with same name exists.
+            2304 | 2585 | 2693 => 2304,
 
             // TS2307: Module not found.
             // TS2792: Module not found with recommendation to change module resolution.
@@ -1522,6 +1533,22 @@ impl Error {
             // TS7033; No implicit any for get accessor.
             // TS7034; No implicit any for "in some locations where its type cannot be determined."
             7005 | 7006 | 7008 | 7031 | 7032 | 7033 | 7034 => 7005,
+
+            // TS2532: Object is possibly 'undefined'.
+            // TS18048: ${obj} is possibly 'undefined'.
+            2532 | 18048 => 2532,
+
+            // TS2531: Object is possibly 'null'.
+            // TS18047: ${obj} is possibly 'null'.
+            2531 | 18047 => 2531,
+
+            // TS2571: Object is of type 'unknown'
+            // TS18046: ${obj} is of type 'unknown'.
+            2571 | 18046 => 2531,
+
+            // TS2533: Object is possibly 'null' or 'undefined'.
+            // TS18049: '{0}' is possibly 'null' or 'undefined'.
+            2533 | 18049 => 2533,
 
             _ => code,
         }
@@ -1590,7 +1617,7 @@ impl Error {
             Error::ExportEqualsMixedWithOtherExports { .. } => 2309,
             Error::AnyTypeUsedAsCalleeWithTypeArgs { .. } => 2347,
             Error::TS2360 { .. } => 2360,
-            Error::TS2361 { .. } => 2361,
+            Error::InvalidRhsForInOperator { .. } => 2638,
             Error::WrongTypeForLhsOfNumericOperation { .. } => 2362,
             Error::WrongTypeForRhsOfNumericOperation { .. } => 2363,
             Error::TS2365 { .. } => 2365,
@@ -1816,7 +1843,7 @@ impl Error {
 
             Error::PrivateIdUsedAsMethodName { .. } => 18022,
 
-            Error::UndefinedInRelativeComparison { .. } => 18050,
+            Error::UndefinedOrNullIsNotValidOperand { .. } => 18050,
 
             Error::CannotDeletePrivateProperty { .. } => 18011,
 
@@ -1866,6 +1893,7 @@ impl Error {
             Error::DuplicateFnImpl { .. } => 2393,
 
             Error::DuplicateDefaultExport { .. } => 2528,
+            Error::DuplicateExport { .. } => 2323,
 
             Error::BlockScopedVarUsedBeforeInit { .. } => 2448,
 

@@ -13,17 +13,15 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
     ConstructorSignature, FnParam, Id, IdCtx, ImportType, IndexSignature, IndexedAccessType, InferType, InferTypeMetadata, Interface,
-    Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature,
-    Operator, OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RefMetadata, RestType, Symbol, ThisType, TplType,
-    TsExpr, Tuple, TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl,
-    TypeParamInstantiation, Union,
+    Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, Mapped, MethodSignature, Operator,
+    OptionalType, Predicate, PropertySignature, QueryExpr, QueryType, Ref, RefMetadata, RestType, Symbol, ThisType, TplType, TsExpr, Tuple,
+    TupleElement, TupleMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamDecl, TypeParamInstantiation,
 };
 use stc_ts_utils::{find_ids_in_pat, PatExt};
-use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, AHashSet};
+use stc_utils::{cache::Freeze, debug_ctx, AHashSet};
 use swc_atoms::js_word;
 use swc_common::{Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -88,7 +86,7 @@ impl Analyzer<'_, '_> {
                         default: None,
                         metadata: Default::default(),
                     })
-                    .cheap(),
+                    .freezed(),
                 );
             }
 
@@ -97,7 +95,7 @@ impl Analyzer<'_, '_> {
             let ctxt = self.ctx.module_id;
             let mut map = HashMap::default();
             for param in &params {
-                let ty = self.find_type(ctxt, &param.name).unwrap().unwrap().next().unwrap();
+                let ty = self.find_type(&param.name).unwrap().unwrap().next().unwrap();
 
                 map.entry(param.name.clone()).or_insert_with(|| ty.into_owned());
             }
@@ -125,10 +123,10 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         let constraint = try_opt!(p.constraint.validate_with(&mut *self.with_ctx(ctx)))
-            .map(Type::cheap)
+            .map(Type::freezed)
             .map(Box::new);
         let default = try_opt!(p.default.validate_with(&mut *self.with_ctx(ctx)))
-            .map(Type::cheap)
+            .map(Type::freezed)
             .map(Box::new);
 
         let has_constraint = constraint.is_some();
@@ -143,7 +141,7 @@ impl Analyzer<'_, '_> {
         self.register_type(param.name.clone().into(), param.clone().into());
 
         if cfg!(debug_assertions) && has_constraint {
-            if let Ok(types) = self.find_type(self.ctx.module_id, &p.name.clone().into()) {
+            if let Ok(types) = self.find_type(&p.name.clone().into()) {
                 let types = types.expect("should be stored").collect_vec();
 
                 debug_assert_eq!(types.len(), 1, "Types: {:?}", types);
@@ -166,7 +164,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     #[inline]
-    fn validate(&mut self, ann: &RTsTypeAnn) -> VResult {
+    fn validate(&mut self, ann: &RTsTypeAnn) -> VResult<Type> {
         self.record(ann);
 
         let ctx = Ctx {
@@ -236,7 +234,7 @@ impl Analyzer<'_, '_> {
                 } else {
                     child.prevent_expansion(&mut ty);
                 }
-                ty.make_cheap();
+                ty.make_clone_cheap();
                 let alias = Type::Alias(Alias {
                     span: span.with_ctxt(SyntaxContext::empty()),
                     ty: box ty,
@@ -263,7 +261,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, d: &RTsInterfaceDecl) -> VResult {
+    fn validate(&mut self, d: &RTsInterfaceDecl) -> VResult<Type> {
         let ty = self.with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<_> {
             match &*d.id.sym {
                 "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
@@ -613,27 +611,19 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, u: &RTsUnionType) -> VResult<Union> {
-        let mut types = u.types.validate_with(self)?;
+    fn validate(&mut self, u: &RTsUnionType) -> VResult<Type> {
+        let types = u.types.validate_with(self)?;
 
-        types.dedup_type();
-
-        Ok(Union {
-            span: u.span,
-            types,
-            metadata: Default::default(),
-        })
+        Ok(Type::new_union(u.span, types))
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, u: &RTsIntersectionType) -> VResult<Intersection> {
-        Ok(Intersection {
-            span: u.span,
-            types: u.types.validate_with(self)?,
-            metadata: Default::default(),
-        })
+    fn validate(&mut self, u: &RTsIntersectionType) -> VResult<Type> {
+        let types = u.types.validate_with(self)?;
+
+        Ok(Type::new_intersection(u.span, types))
     }
 }
 
@@ -699,14 +689,14 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsParenthesizedType) -> VResult {
+    fn validate(&mut self, t: &RTsParenthesizedType) -> VResult<Type> {
         t.type_ann.validate_with(self)
     }
 }
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, t: &RTsTypeRef) -> VResult {
+    fn validate(&mut self, t: &RTsTypeRef) -> VResult<Type> {
         self.record(t);
 
         let span = t.span;
@@ -729,7 +719,7 @@ impl Analyzer<'_, '_> {
             RTsEntityName::Ident(ref i) => {
                 self.report_error_for_type_param_usages_in_static_members(&i);
 
-                if let Some(types) = self.find_type(self.ctx.module_id, &i.into())? {
+                if let Some(types) = self.find_type(&i.into())? {
                     let mut found = false;
                     for ty in types {
                         found = true;
@@ -769,14 +759,13 @@ impl Analyzer<'_, '_> {
             }
 
             if !reported_type_not_found {
-                self.report_error_for_unresolve_type(t.span, &t.type_name, type_args.as_deref())
+                self.report_error_for_unresolve_type(t.span, &t.type_name.clone().into(), type_args.as_deref())
                     .report(&mut self.storage);
             }
         }
 
         Ok(Type::Ref(Ref {
             span: t.span.with_ctxt(SyntaxContext::empty()),
-            ctxt: self.ctx.module_id,
             type_name: t.type_name.clone(),
             type_args,
             metadata: RefMetadata {
@@ -906,7 +895,7 @@ impl Analyzer<'_, '_> {
         let span = t.span;
 
         let obj_type = box t.obj_type.validate_with(self)?;
-        let index_type = box t.index_type.validate_with(self)?.cheap();
+        let index_type = box t.index_type.validate_with(self)?.freezed();
 
         if !self.is_builtin {
             let ctx = Ctx {
@@ -958,7 +947,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, ty: &RTsType) -> VResult {
+    fn validate(&mut self, ty: &RTsType) -> VResult<Type> {
         self.record(ty);
 
         let _ctx = debug_ctx!(format!("validate\nTsType: {:?}", ty));
@@ -1011,10 +1000,8 @@ impl Analyzer<'_, '_> {
                     })
                 }
                 RTsType::TsTupleType(ty) => Type::Tuple(ty.validate_with(a)?),
-                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => Type::Union(u.validate_with(a)?).fixed(),
-                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(i)) => {
-                    Type::Intersection(i.validate_with(a)?).fixed()
-                }
+                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsUnionType(u)) => u.validate_with(a)?,
+                RTsType::TsUnionOrIntersectionType(RTsUnionOrIntersectionType::TsIntersectionType(i)) => i.validate_with(a)?,
                 RTsType::TsArrayType(arr) => Type::Array(arr.validate_with(a)?),
                 RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsFnType(f)) => Type::Function(f.validate_with(a)?),
                 RTsType::TsFnOrConstructorType(RTsFnOrConstructorType::TsConstructorType(c)) => Type::Constructor(c.validate_with(a)?),
@@ -1039,7 +1026,7 @@ impl Analyzer<'_, '_> {
         })?;
 
         if is_topmost_type {
-            Ok(ty.cheap())
+            Ok(ty.freezed())
         } else {
             Ok(ty)
         }

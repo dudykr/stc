@@ -1,0 +1,65 @@
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:15:1]
+ 15 | var sourceObj: EventTargetLike = <any>undefined;
+    :                                       ^^^^^^^^^
+    `----
+
+Error: 
+  > undefined
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:15:1]
+ 15 | var sourceObj: EventTargetLike = <any>undefined;
+    :                                  ^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > any
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:17:1]
+ 17 | if (isHTMLCollection(sourceObj)) {
+    :                      ^^^^^^^^^
+    `----
+
+Error: 
+  > ({
+  |     a: string;
+  | } | HTMLCollection | NodeList)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:17:1]
+ 17 | if (isHTMLCollection(sourceObj)) {
+    :     ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (sourceObj: any) => sourceObj is HTMLCollection
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:17:1]
+ 17 | if (isHTMLCollection(sourceObj)) {
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > sourceObj is HTMLCollection
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:18:5]
+ 18 | sourceObj.length;
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > HTMLCollection
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowBinaryOrExpression/2.ts:18:5]
+ 18 | sourceObj.length;
+    : ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > number
