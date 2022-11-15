@@ -23,10 +23,13 @@ impl Marks {
             m
         }
 
-        let unresolved_mark = m("unresolved");
-        swc_common::GLOBALS.set(globals, || Self {
-            unresolved_mark,
-            unresolved_ctxt: SyntaxContext::empty().apply_mark(unresolved_mark),
+        swc_common::GLOBALS.set(globals, || {
+            let unresolved_mark = m("unresolved");
+
+            Self {
+                unresolved_mark,
+                unresolved_ctxt: SyntaxContext::empty().apply_mark(unresolved_mark),
+            }
         })
     }
 }
