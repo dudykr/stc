@@ -57,8 +57,8 @@ impl Analyzer<'_, '_> {
                 }),
         };
 
-        if let Some(ref arg) = arg_ty {
-            self.validate_unary_expr_inner(span, *op, arg);
+        if let Some(arg_ty) = &arg_ty {
+            self.validate_unary_expr_inner(span, *op, arg, arg_ty);
         }
 
         match op {
@@ -233,7 +233,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn validate_unary_expr_inner(&mut self, span: Span, op: UnaryOp, arg: &Type) {
+    fn validate_unary_expr_inner(&mut self, span: Span, op: UnaryOp, arg_expr: &RExpr, arg: &Type) {
         let mut errors = Errors::default();
 
         match op {
