@@ -21,7 +21,7 @@ use stc_utils::{
     ext::{SpanExt, TypeVecExt},
     stack,
 };
-use swc_atoms::{js_word, Atom};
+use swc_atoms::{js_word, Atom, JsWord};
 use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, instrument, span, Level};
@@ -1508,7 +1508,7 @@ impl Analyzer<'_, '_> {
                     span: arg.params[0].span(),
                     lit: RTsLit::Str(RStr {
                         span: arg.params[0].span(),
-                        value: swc_atoms::JsWord::from(new_val.as_ref()),
+                        value: JsWord::from(new_val.as_ref()),
                         raw: None,
                     }),
                     metadata: LitTypeMetadata {
