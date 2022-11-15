@@ -1249,7 +1249,6 @@ pub enum Error {
     NumericOpToSymbol {
         /// Span of the argument.
         span: Span,
-        op: UnaryOp,
     },
 
     /// TS2356
