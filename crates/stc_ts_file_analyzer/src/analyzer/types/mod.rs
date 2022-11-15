@@ -1824,8 +1824,8 @@ pub(crate) fn left_of_expr(t: &RExpr) -> Option<&RIdent> {
 
 fn apply_intrinsics(intrinsics: &IntrinsicKind, raw: &Atom) -> Atom {
     match intrinsics {
-        IntrinsicKind::Uppercase => raw.to_uppercase(),
-        IntrinsicKind::Lowercase => raw.to_lowercase(),
+        IntrinsicKind::Uppercase => raw.to_ascii_uppercase(),
+        IntrinsicKind::Lowercase => raw.to_ascii_lowercase(),
         IntrinsicKind::Capitalize => {
             if raw.is_empty() {
                 "".into()
