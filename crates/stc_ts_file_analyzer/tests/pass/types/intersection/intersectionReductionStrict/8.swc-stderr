@@ -1,0 +1,40 @@
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionReductionStrict/8.ts:11:6
+   |
+11 | s1 = Tag1.a;
+   |      ^^^^
+   |
+   = note: Tag1
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionReductionStrict/8.ts:11:6
+   |
+11 | s1 = Tag1.a;
+   |      ^^^^^^
+   |
+   = note: Tag1.a
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionReductionStrict/8.ts:11:1
+   |
+11 | s1 = Tag1.a;
+   | ^^^^^^^^^^^
+   |
+   = note: Tag1.a
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionReductionStrict/8.ts:12:6
+   |
+12 | s2 = s1;
+   |      ^^
+   |
+   = note: Tag1
+
+warning: Type
+  --> $DIR/tests/pass/types/intersection/intersectionReductionStrict/8.ts:12:1
+   |
+12 | s2 = s1;
+   | ^^^^^^^
+   |
+   = note: Tag1
+
