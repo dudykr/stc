@@ -28,7 +28,7 @@ impl Analyzer<'_, '_> {
         }
 
         // TODO(kdy1): Check for `self.ctx.in_cond` to improve performance.
-        let arg: Option<Type> = match op {
+        let arg_ty: Option<Type> = match op {
             op!("!") => {
                 let orig_facts = self.cur_facts.take();
                 let arg_ty = self
@@ -57,13 +57,13 @@ impl Analyzer<'_, '_> {
                 }),
         };
 
-        if let Some(ref arg) = arg {
+        if let Some(ref arg) = arg_ty {
             self.validate_unary_expr_inner(span, *op, arg);
         }
 
         match op {
             op!(unary, "+") | op!(unary, "-") | op!("~") => {
-                if let Some(arg) = &arg {
+                if let Some(arg) = &arg_ty {
                     if arg.is_symbol_like() {
                         self.storage.report(Error::NumericOpToSymbol { span: arg.span() })
                     }
@@ -110,7 +110,7 @@ impl Analyzer<'_, '_> {
             op!("void") => return Ok(Type::undefined(span, Default::default())),
 
             op!(unary, "-") | op!(unary, "+") => {
-                if let Some(arg) = &arg {
+                if let Some(arg) = &arg_ty {
                     match arg.normalize() {
                         Type::Lit(LitType {
                             lit: RTsLit::Number(RNumber { span, value, .. }),
@@ -149,7 +149,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match arg {
+        match arg_ty {
             Some(Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
@@ -160,7 +160,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let Some(arg) = arg {
+        if let Some(arg) = arg_ty {
             match op {
                 op!("!") => return Ok(negate(arg)),
 
