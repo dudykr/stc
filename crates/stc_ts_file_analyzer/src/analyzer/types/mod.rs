@@ -1500,7 +1500,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> VResult<Type> {
         let arg = &ty.type_args;
 
-        match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.as_ref() {
+        match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.normalize() {
             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
                 let new_val = apply_intrinsics(&ty.kind, &Atom::new(s.value.as_ref()));
 
