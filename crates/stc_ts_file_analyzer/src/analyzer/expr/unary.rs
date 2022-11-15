@@ -1,5 +1,6 @@
 use stc_ts_ast_rnode::{
-    RBigInt, RBool, RExpr, RMemberExpr, RMemberProp, RNumber, ROptChainBase, ROptChainExpr, RParenExpr, RStr, RTsLit, RUnaryExpr,
+    RBigInt, RBool, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, RNumber, ROptChainBase, ROptChainExpr, RParenExpr, RStr, RTsLit,
+    RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, Error, Errors};
 use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
@@ -234,6 +235,19 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_unary_expr_inner(&mut self, span: Span, op: UnaryOp, arg_expr: &RExpr, arg: &Type) {
+        match arg_expr {
+            RExpr::Lit(RLit::Null(..))
+            | RExpr::Ident(RIdent {
+                sym: js_word!("undefined"),
+                ..
+            }) => {
+                self.storage
+                    .report(Error::UndefinedOrNullIsNotValidOperand { span: arg_expr.span() });
+                return;
+            }
+            _ => {}
+        }
+
         let mut errors = Errors::default();
 
         match op {
