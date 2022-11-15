@@ -1,16 +1,18 @@
-warning: Type
- --> $DIR/tests/pass/types/intersection/intersectionReductionStrict/4.ts:3:43
-  |
-3 | const f1 = (t: "a" | ("b" & "c")): "a" => t;
-  |                                           ^
-  |
-  = note: "a"
 
-warning: Type
- --> $DIR/tests/pass/types/intersection/intersectionReductionStrict/4.ts:3:12
-  |
-3 | const f1 = (t: "a" | ("b" & "c")): "a" => t;
-  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (t: ("a" | ("b" & "c"))) => "a"
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/4.ts:3:1]
+ 3 | const f1 = (t: "a" | ("b" & "c")): "a" => t;
+   :                                           ^
+   `----
 
+Error: 
+  > "a"
+
+  x Type
+   ,-[$DIR/tests/pass/types/intersection/intersectionReductionStrict/4.ts:3:1]
+ 3 | const f1 = (t: "a" | ("b" & "c")): "a" => t;
+   :            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (t: ("a" | ("b" & "c"))) => "a"

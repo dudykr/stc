@@ -1,23 +1,27 @@
-warning: Type
- --> $DIR/tests/pass/types/enums/object/entries.ts:2:38
-  |
-2 | export var entries5 = Object.entries(E);                   // [string, any][]
-  |                                      ^
-  |
-  = note: E
 
-warning: Type
- --> $DIR/tests/pass/types/enums/object/entries.ts:2:23
-  |
-2 | export var entries5 = Object.entries(E);                   // [string, any][]
-  |                       ^^^^^^
-  |
-  = note: ObjectConstructor
+  x Type
+   ,-[$DIR/tests/pass/types/enums/object/entries.ts:2:1]
+ 2 | export var entries5 = Object.entries(E);                   // [string, any][]
+   :                                      ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/enums/object/entries.ts:2:23
-  |
-2 | export var entries5 = Object.entries(E);                   // [string, any][]
-  |                       ^^^^^^^^^^^^^^^^^
-  |
-  = note: [string, (E.A | string)][]
+Error: 
+  > E
+
+  x Type
+   ,-[$DIR/tests/pass/types/enums/object/entries.ts:2:1]
+ 2 | export var entries5 = Object.entries(E);                   // [string, any][]
+   :                       ^^^^^^
+   `----
+
+Error: 
+  > ObjectConstructor
+
+  x Type
+   ,-[$DIR/tests/pass/types/enums/object/entries.ts:2:1]
+ 2 | export var entries5 = Object.entries(E);                   // [string, any][]
+   :                       ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > [string, (E.A | string)][]
