@@ -708,7 +708,7 @@ impl Analyzer<'_, '_> {
                             }
                         } else {
                             // enumVariant is Enum
-                            if let Some(types) = self.find_type(ev.ctxt, &ev.enum_name)? {
+                            if let Some(types) = self.find_type(&ev.enum_name)? {
                                 for ty in types.into_iter() {
                                     if let Type::Enum(e) = ty.normalize() {
                                         let mut str_lits = vec![];
@@ -721,14 +721,12 @@ impl Analyzer<'_, '_> {
                                             match *v.val {
                                                 RExpr::Lit(RLit::Str(..)) => str_lits.push(stc_ts_types::Type::EnumVariant(EnumVariant {
                                                     span: v.span,
-                                                    ctxt: self.ctx.module_id,
                                                     enum_name: e.id.clone().into(),
                                                     name: Some(key.sym),
                                                     metadata: Default::default(),
                                                 })),
                                                 RExpr::Lit(RLit::Num(..)) => num_lits.push(stc_ts_types::Type::EnumVariant(EnumVariant {
                                                     span: v.span,
-                                                    ctxt: self.ctx.module_id,
                                                     enum_name: e.id.clone().into(),
                                                     name: Some(key.sym),
                                                     metadata: Default::default(),

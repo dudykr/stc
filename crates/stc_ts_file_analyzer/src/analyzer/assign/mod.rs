@@ -510,14 +510,12 @@ impl Analyzer<'_, '_> {
             Type::EnumVariant(EnumVariant {
                 name: Some(..),
                 enum_name,
-                ctxt,
                 span,
                 metadata,
             }) => {
                 return Ok(Cow::Owned(Type::EnumVariant(EnumVariant {
                     span: span.clone(),
                     enum_name: enum_name.clone(),
-                    ctxt: ctxt.clone(),
                     metadata: metadata.clone(),
                     name: None,
                 })))
@@ -1726,7 +1724,12 @@ impl Analyzer<'_, '_> {
                         | Type::Interface(..)
                         | Type::Module(..)
                         | Type::EnumVariant(..) => fail!(),
-                        Type::Function(..) => return Err(Error::CannotAssignToNonVariable { span: rhs.span() }),
+                        Type::Function(..) => {
+                            return Err(Error::CannotAssignToNonVariable {
+                                span: rhs.span(),
+                                ty: box rhs.clone(),
+                            })
+                        }
                         _ => {}
                     },
 
