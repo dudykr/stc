@@ -11,8 +11,11 @@ type CTemplate = Lowercase<ATemplate>;
 var b: BTemplate;
 b = "AAFOO";
 
-let aTemp: ATemplate = "aAFoo";
-let bTemp: BTemplate = "AAFOO";
-let cTemp: CTemplate = "aafoo";
+var aTemp: ATemplate;
+aTemp = "aAFoo";
+var bTemp: BTemplate;
+bTemp = "AAFOO";
+var cTemp: CTemplate;
+cTemp = "aafoo";
 
 export {};
