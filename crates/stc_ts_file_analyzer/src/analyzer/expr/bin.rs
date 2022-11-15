@@ -1232,14 +1232,6 @@ impl Analyzer<'_, '_> {
             }};
         }
 
-        if l.type_eq(r) {
-            return Ok(());
-        }
-
-        if l.is_str_lit() && r.is_str_lit() {
-            return Ok(());
-        }
-
         {
             let mut abort = false;
             if l.is_symbol_like() {
@@ -1257,7 +1249,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        if l.type_eq(r) {
+            return Ok(());
+        }
+
+        if l.is_str_lit() && r.is_str_lit() {
+            return Ok(());
+        }
         //
+
         if l.is_type_param() && !r.is_type_param() {
             return Ok(());
         }
