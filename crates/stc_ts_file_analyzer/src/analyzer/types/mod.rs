@@ -1502,7 +1502,7 @@ impl Analyzer<'_, '_> {
 
         match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.normalize() {
             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
-                let new_val = apply_intrinsics(&ty.kind, &Atom::new(s.value.as_ref()));
+                let new_val = apply_intrinsics(&ty.kind, &s.value);
 
                 return Ok(Type::Lit(LitType {
                     span: arg.params[0].span(),
@@ -1827,7 +1827,9 @@ pub(crate) fn left_of_expr(t: &RExpr) -> Option<&RIdent> {
     }
 }
 
-fn apply_intrinsics(intrinsics: &IntrinsicKind, raw: &Atom) -> Atom {
+fn apply_intrinsics<T: AsRef<str>>(intrinsics: &IntrinsicKind, raw: T) -> Atom {
+    let raw = raw.as_ref();
+
     match intrinsics {
         IntrinsicKind::Uppercase => raw.to_ascii_uppercase(),
         IntrinsicKind::Lowercase => raw.to_ascii_lowercase(),
