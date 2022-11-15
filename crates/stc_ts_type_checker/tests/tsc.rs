@@ -153,10 +153,6 @@ fn record_stat(stats: Stats) -> Stats {
 
     let content = format!("{:#?}", stats);
 
-    if env::var("WIP_STATS").unwrap_or_default() == "1" && env::var("STC_IGNORE_WIP").unwrap_or_default() != "1" {
-        fs::write("tests/wip-stats.rust-debug", &content).unwrap();
-    }
-
     // If we are testing everything, update stats file.
     if is_all_test_enabled() {
         fs::write("tests/tsc-stats.rust-debug", &content).unwrap();

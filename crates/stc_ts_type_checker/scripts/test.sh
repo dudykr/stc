@@ -17,6 +17,6 @@ export RUST_MIN_STACK=$((16 * 1024 * 1024))
 # We prevent regression using faster checks
 RUST_LOG=off ./scripts/base.sh  --features tracing/max_level_off
 
-TEST="$@" WIP_STATS=1 cargo test --color always -q --test tsc
+TEST="$@" cargo test --color always -q --test tsc
 
 ./scripts/_/notify.sh 'Test finished!'
