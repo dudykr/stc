@@ -2067,21 +2067,19 @@ impl Analyzer<'_, '_> {
                         // TODO: Handle Type::Rest
 
                         if elems.len() > rhs_elems.len() {
-                            let rhs_elems_cannot_cast = rhs_elems
-                                .iter()
-                                .enumerate()
-                                .filter(|&(i, right_element)| match *(&elems[i]).ty {
-                                    Type::Keyword(KeywordType {
-                                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                                        ..
-                                    }) => true,
-                                    _ => false,
-                                })
-                                .collect::<Vec<_>>();
+                            let is_lhs_any_tuple = elems.iter().all(|l| match *l.ty {
+                                Type::Keyword(KeywordType {
+                                    kind: TsKeywordTypeKind::TsAnyKeyword,
+                                    ..
+                                }) => true,
+                                _ => false,
+                            });
 
-                            if rhs_elems_cannot_cast.len() > 0 {
-                                return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
+                            if is_lhs_any_tuple {
+                                return Ok(());
                             }
+
+                            return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
                         }
 
                         let mut errors = vec![];
