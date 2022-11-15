@@ -1711,26 +1711,22 @@ impl Analyzer<'_, '_> {
 
                     _ => {}
                 }
-
+                
                 match kind {
-                    TsKeywordTypeKind::TsStringKeyword => match *rhs {
-                        Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => return Ok(()),
-                        Type::EnumVariant(ref v) => {
-                            // Allow assigning enum with numeric values to
-                            // number.
-                            if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {
-                                for ty in types {
-                                    if let Type::Enum(ref e) = *ty.normalize() {
-                                        let is_str = e.has_str;
-                                        if is_str {
-                                            return Ok(());
-                                        }
-                                    }
-                                }
-                            }
-
-                            fail!()
-                        },
+                    TsKeywordTypeKind::TsVoidKeyword | TsKeywordTypeKind::TsUndefinedKeyword => match rhs {
+                        Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsVoidKeyword,
+                            ..
+                        }) => return Ok(()),
+                        Type::Lit(..)
+                        | Type::Keyword(..)
+                        | Type::TypeLit(..)
+                        | Type::Class(..)
+                        | Type::ClassDef(..)
+                        | Type::Interface(..)
+                        | Type::Module(..)
+                        | Type::EnumVariant(..) => fail!(),
+                        Type::Function(..) => return Err(Error::CannotAssignToNonVariable { span: rhs.span() }),
                         _ => {}
                     },
 
