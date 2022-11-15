@@ -1,6 +1,6 @@
 use std::{borrow::Cow, collections::HashMap};
 
-use stc_ts_ast_rnode::{RBool, RIdent, RStr, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RBool, RIdent, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
@@ -475,6 +475,21 @@ impl Analyzer<'_, '_> {
                     .into_owned();
 
                 return Ok(Cow::Owned(ty));
+            }
+            Type::EnumVariant(EnumVariant {
+                name: Some(..),
+                enum_name,
+                ctxt,
+                span,
+                metadata,
+            }) => {
+                return Ok(Cow::Owned(Type::EnumVariant(EnumVariant {
+                    span: span.clone(),
+                    enum_name: enum_name.clone(),
+                    ctxt: ctxt.clone(),
+                    metadata: metadata.clone(),
+                    name: None,
+                })))
             }
             _ => {}
         }
@@ -994,7 +1009,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
             }
-            Type::EnumVariant(ref e @ EnumVariant { name: Some(..), .. }) => {
+            Type::EnumVariant(ref e @ EnumVariant { name: Some(name), .. }) => {
                 // Single-variant enums seem to be treated like a number.
                 //
                 // See typeArgumentInferenceWithObjectLiteral.ts
@@ -1004,11 +1019,22 @@ impl Analyzer<'_, '_> {
                     .context("failed to find an enum for assignment")?;
 
                 if let Some(items) = items {
-                    for e in items {
-                        match e.normalize() {
-                            Type::Enum(e) => {
-                                if e.members.len() == 1 {
+                     for t in items {
+                        match t.normalize() {
+                            Type::Enum(en) => {
+                                if en.clone().members.len() == 1 {
                                     return Ok(());
+                                }
+
+                                for mem in en.clone().members.into_iter() {
+                                    match mem.id {
+                                        RTsEnumMemberId::Ident(RIdent { ref sym, .. })
+                                        | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
+                                            if sym == name {
+                                                return Ok(());
+                                            }
+                                        }
+                                    };
                                 }
                             }
                             _ => {}
@@ -1654,6 +1680,22 @@ impl Analyzer<'_, '_> {
                 match kind {
                     TsKeywordTypeKind::TsStringKeyword => match *rhs {
                         Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => return Ok(()),
+                        Type::EnumVariant(ref v) => {
+                            // Allow assigning enum with numeric values to
+                            // number.
+                            if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {
+                                for ty in types {
+                                    if let Type::Enum(ref e) = *ty.normalize() {
+                                        let is_str = e.has_str;
+                                        if is_str {
+                                            return Ok(());
+                                        }
+                                    }
+                                }
+                            }
+
+                            fail!()
+                        },
                         _ => {}
                     },
 
@@ -1667,14 +1709,11 @@ impl Analyzer<'_, '_> {
                             // number.
                             if let Some(types) = self.find_type(v.ctxt, &v.enum_name)? {
                                 for ty in types {
-                                    match *ty.normalize() {
-                                        Type::Enum(ref e) => {
-                                            let is_num = !e.has_str;
-                                            if is_num {
-                                                return Ok(());
-                                            }
+                                    if let Type::Enum(ref e) = *ty.normalize() {
+                                        let is_num = e.has_num;
+                                        if is_num {
+                                            return Ok(());
                                         }
-                                        _ => {}
                                     }
                                 }
                             }
@@ -1689,10 +1728,9 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     },
 
-                    TsKeywordTypeKind::TsVoidKeyword | TsKeywordTypeKind::TsUndefinedKeyword => {
-                        //
-
-                        match rhs {
+                    TsKeywordTypeKind::TsVoidKeyword | TsKeywordTypeKind::TsUndefinedKeyword => match rhs {
+                        
+                        Type::Keyword(KeywordType {
                             Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsVoidKeyword,
                                 ..

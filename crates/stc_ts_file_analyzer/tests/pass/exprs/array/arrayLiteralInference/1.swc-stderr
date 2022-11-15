@@ -238,5 +238,5 @@ warning: Type
 29 | | ]);
    | |__^
    |
-   = note: Map<(AppType.Standard | AppType.Relationship | AppType.AdvancedList), ([AppStyle.Standard, AppStyle.MiniApp] | [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity])>
+   = note: Map<AppType.Standard, ([AppStyle.Standard, AppStyle.MiniApp] | [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity])>
 

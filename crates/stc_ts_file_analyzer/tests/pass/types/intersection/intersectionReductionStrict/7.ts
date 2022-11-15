@@ -4,10 +4,9 @@ const enum Tag1 {
   a = "a",
   b = "b",
 }
-const enum Tag2 {}
 
 declare let s1: string & Tag1;
-declare let s2: string & Tag2;
+declare let s2: string;
 
-s1 = s2;
+s1 = Tag1.a;
 s2 = s1;
