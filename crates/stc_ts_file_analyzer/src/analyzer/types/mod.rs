@@ -1840,7 +1840,7 @@ fn apply_intrinsics<T: AsRef<str>>(intrinsics: &IntrinsicKind, raw: T) -> Atom {
                 let mut res = String::new();
                 let mut chars = raw.chars();
 
-                res.extend(chars.next().into_iter().flat_map(|v| v.to_uppercase()));
+                res.extend(chars.next().into_iter().map(|v| v.to_ascii_uppercase()));
                 res.push_str(chars.as_str());
 
                 res
@@ -1853,7 +1853,7 @@ fn apply_intrinsics<T: AsRef<str>>(intrinsics: &IntrinsicKind, raw: T) -> Atom {
                 let mut res = String::new();
                 let mut chars = raw.chars();
 
-                res.extend(chars.next().into_iter().flat_map(|v| v.to_lowercase()));
+                res.extend(chars.next().into_iter().map(|v| v.to_ascii_lowercase()));
                 res.push_str(chars.as_str());
 
                 res
