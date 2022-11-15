@@ -1059,7 +1059,7 @@ impl Analyzer<'_, '_> {
                 let items = self.find_type(&e.enum_name).context("failed to find an enum for assignment")?;
 
                 if let Some(items) = items {
-                     for t in items {
+                    for t in items {
                         match t.normalize() {
                             Type::Enum(en) => {
                                 if en.clone().members.len() == 1 {
@@ -1711,7 +1711,7 @@ impl Analyzer<'_, '_> {
 
                     _ => {}
                 }
-                
+
                 match kind {
                     TsKeywordTypeKind::TsVoidKeyword | TsKeywordTypeKind::TsUndefinedKeyword => match rhs {
                         Type::Keyword(KeywordType {
