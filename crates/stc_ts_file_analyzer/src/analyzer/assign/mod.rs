@@ -1711,28 +1711,6 @@ impl Analyzer<'_, '_> {
                 }
 
                 match kind {
-                    TsKeywordTypeKind::TsVoidKeyword | TsKeywordTypeKind::TsUndefinedKeyword => match rhs {
-                        Type::Keyword(KeywordType {
-                            kind: TsKeywordTypeKind::TsVoidKeyword,
-                            ..
-                        }) => return Ok(()),
-                        Type::Lit(..)
-                        | Type::Keyword(..)
-                        | Type::TypeLit(..)
-                        | Type::Class(..)
-                        | Type::ClassDef(..)
-                        | Type::Interface(..)
-                        | Type::Module(..)
-                        | Type::EnumVariant(..) => fail!(),
-                        Type::Function(..) => {
-                            return Err(Error::CannotAssignToNonVariable {
-                                span: rhs.span(),
-                                ty: box rhs.clone(),
-                            })
-                        }
-                        _ => {}
-                    },
-
                     TsKeywordTypeKind::TsNumberKeyword => match *rhs {
                         Type::Lit(LitType {
                             lit: RTsLit::Number(..), ..
