@@ -1500,7 +1500,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> VResult<Type> {
         let arg = &ty.type_args;
 
-        match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.as_ref() {
+        match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.normalize() {
             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
                 let new_val = apply_intrinsics(&ty.kind, &Atom::new(s.value.as_ref()));
 
@@ -1527,8 +1527,13 @@ impl Analyzer<'_, '_> {
                     .iter()
                     .map(|quasis| {
                         let raw = apply_intrinsics(&ty.kind, &quasis.raw);
+                        let cooked = quasis.cooked.as_ref().map(|cooked| apply_intrinsics(&ty.kind, cooked));
 
-                        RTplElement { raw, ..quasis.clone() }
+                        RTplElement {
+                            raw,
+                            cooked,
+                            ..quasis.clone()
+                        }
                     })
                     .collect();
 
