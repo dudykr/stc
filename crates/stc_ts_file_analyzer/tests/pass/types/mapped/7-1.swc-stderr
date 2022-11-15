@@ -1,130 +1,145 @@
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7-1.ts:12:16
-   |
-12 |         return this.x;
-   |                ^^^^
-   |
-   = note: this
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7-1.ts:12:16
-   |
-12 |         return this.x;
-   |                ^^^^^^
-   |
-   = note: any
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:12:9]
+ 12 | return this.x;
+    :        ^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7-1.ts:14:12
-   |
-14 |       hello: {
-   |  ____________^
-15 | |         get() {
-16 | |             return "hi";
-17 | |         },
-18 | |         set(value: string) {
-19 | |         }
-20 | |     }
-   | |_____^
-   |
-   = note: {
-               get(): "hi";
-               set(value: string): void;
-           }
+Error: 
+  > this
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7-1.ts:10:19
-   |
-10 |   let vue = new Vue({
-   |  ___________________^
-11 | |     test(): number {
-12 | |         return this.x;
-13 | |     },
-...  |
-20 | |     }
-21 | | });
-   | |_^
-   |
-   = note: {
-               test(): number;
-               hello: {
-                   get(): "hi";
-                   set(value: string): void;
-               };
-           }
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:12:9]
+ 12 | return this.x;
+    :        ^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7-1.ts:10:15
-   |
-10 | let vue = new Vue({
-   |               ^^^
-   |
-   = note: new <P>(options: Accessors<P>) => P
+Error: 
+  > any
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7-1.ts:10:11
-   |
-10 |   let vue = new Vue({
-   |  ___________^
-11 | |     test(): number {
-12 | |         return this.x;
-13 | |     },
-...  |
-20 | |     }
-21 | | });
-   | |__^
-   |
-   = note: {
-               test: number;
-               hello: string;
-           }
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:14:5]
+ 14 | ,-> hello: {
+ 15 | |           get() {
+ 16 | |               return "hi";
+ 17 | |           },
+ 18 | |           set(value: string) {
+ 19 | |           }
+ 20 | `->     }
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7-1.ts:23:1
-   |
-23 | vue;
-   | ^^^
-   |
-   = note: {
-               test: number;
-               hello: string;
-           }
+Error: 
+  > {
+  |     get(): "hi";
+  |     set(value: string): void;
+  | }
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7-1.ts:24:1
-   |
-24 | vue.test;
-   | ^^^
-   |
-   = note: {
-               test: number;
-               hello: string;
-           }
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:10:1]
+ 10 | ,-> let vue = new Vue({
+ 11 | |       test(): number {
+ 12 | |           return this.x;
+ 13 | |       },
+ 14 | |       hello: {
+ 15 | |           get() {
+ 16 | |               return "hi";
+ 17 | |           },
+ 18 | |           set(value: string) {
+ 19 | |           }
+ 20 | |       }
+ 21 | `-> });
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7-1.ts:24:1
-   |
-24 | vue.test;
-   | ^^^^^^^^
-   |
-   = note: number
+Error: 
+  > {
+  |     test(): number;
+  |     hello: {
+  |         get(): "hi";
+  |         set(value: string): void;
+  |     };
+  | }
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7-1.ts:25:1
-   |
-25 | vue.hello;
-   | ^^^
-   |
-   = note: {
-               test: number;
-               hello: string;
-           }
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:10:1]
+ 10 | let vue = new Vue({
+    :               ^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7-1.ts:25:1
-   |
-25 | vue.hello;
-   | ^^^^^^^^^
-   |
-   = note: string
+Error: 
+  > new <P>(options: Accessors<P>) => P
 
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:10:1]
+ 10 | ,-> let vue = new Vue({
+ 11 | |       test(): number {
+ 12 | |           return this.x;
+ 13 | |       },
+ 14 | |       hello: {
+ 15 | |           get() {
+ 16 | |               return "hi";
+ 17 | |           },
+ 18 | |           set(value: string) {
+ 19 | |           }
+ 20 | |       }
+ 21 | `-> });
+    `----
+
+Error: 
+  > {
+  |     test: number;
+  |     hello: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:23:1]
+ 23 | vue;
+    : ^^^
+    `----
+
+Error: 
+  > {
+  |     test: number;
+  |     hello: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:24:1]
+ 24 | vue.test;
+    : ^^^
+    `----
+
+Error: 
+  > {
+  |     test: number;
+  |     hello: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:24:1]
+ 24 | vue.test;
+    : ^^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:25:1]
+ 25 | vue.hello;
+    : ^^^
+    `----
+
+Error: 
+  > {
+  |     test: number;
+  |     hello: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7-1.ts:25:1]
+ 25 | vue.hello;
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > string

@@ -1,0 +1,36 @@
+
+  x Type
+    ,-[$DIR/tests/pass/types/tpl/stringMappingOverPatternLiterals/1.ts:12:1]
+ 12 | b = "AAFOO";
+    : ^^^^^^^^^^^
+    `----
+
+Error: 
+  > "AAFOO"
+
+  x Type
+    ,-[$DIR/tests/pass/types/tpl/stringMappingOverPatternLiterals/1.ts:15:1]
+ 15 | aTemp = "aAFoo";
+    : ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > "aAFoo"
+
+  x Type
+    ,-[$DIR/tests/pass/types/tpl/stringMappingOverPatternLiterals/1.ts:17:1]
+ 17 | bTemp = "AAFOO";
+    : ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > "AAFOO"
+
+  x Type
+    ,-[$DIR/tests/pass/types/tpl/stringMappingOverPatternLiterals/1.ts:19:1]
+ 19 | cTemp = "aafoo";
+    : ^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > "aafoo"

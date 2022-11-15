@@ -3,12 +3,17 @@ use tracing::info;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Marks {
-    pub(crate) top_level_mark: Mark,
+    pub(crate) unresolved_mark: Mark,
+    unresolved_ctxt: SyntaxContext,
 }
 
 impl Marks {
-    pub fn top_level_mark(self) -> Mark {
-        self.top_level_mark
+    pub fn unresolved_mark(self) -> Mark {
+        self.unresolved_mark
+    }
+
+    pub fn unresolved_ctxt(self) -> SyntaxContext {
+        self.unresolved_ctxt
     }
 
     pub fn new(globals: &Globals) -> Self {
@@ -18,8 +23,13 @@ impl Marks {
             m
         }
 
-        swc_common::GLOBALS.set(globals, || Self {
-            top_level_mark: m("top level"),
+        swc_common::GLOBALS.set(globals, || {
+            let unresolved_mark = m("unresolved");
+
+            Self {
+                unresolved_mark,
+                unresolved_ctxt: SyntaxContext::empty().apply_mark(unresolved_mark),
+            }
         })
     }
 }

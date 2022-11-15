@@ -1,48 +1,54 @@
-warning: Type
- --> $DIR/tests/pass/exprs/array/access-property-1.ts:6:9
-  |
-6 | var y = x as A<B>[];
-  |         ^
-  |
-  = note: any
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/access-property-1.ts:6:9
-  |
-6 | var y = x as A<B>[];
-  |         ^^^^^^^^^^^
-  |
-  = note: A<B>[]
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:6:1]
+ 6 | var y = x as A<B>[];
+   :         ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/access-property-1.ts:7:9
-  |
-7 | var z = y[0].x.m; // z should be string
-  |         ^
-  |
-  = note: A[]
+Error: 
+  > any
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/access-property-1.ts:7:9
-  |
-7 | var z = y[0].x.m; // z should be string
-  |         ^^^^
-  |
-  = note: A
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:6:1]
+ 6 | var y = x as A<B>[];
+   :         ^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/access-property-1.ts:7:9
-  |
-7 | var z = y[0].x.m; // z should be string
-  |         ^^^^^^
-  |
-  = note: B
+Error: 
+  > A<B>[]
 
-warning: Type
- --> $DIR/tests/pass/exprs/array/access-property-1.ts:7:9
-  |
-7 | var z = y[0].x.m; // z should be string
-  |         ^^^^^^^^
-  |
-  = note: string
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:7:1]
+ 7 | var z = y[0].x.m; // z should be string
+   :         ^
+   `----
 
+Error: 
+  > A[]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:7:1]
+ 7 | var z = y[0].x.m; // z should be string
+   :         ^^^^
+   `----
+
+Error: 
+  > A
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:7:1]
+ 7 | var z = y[0].x.m; // z should be string
+   :         ^^^^^^
+   `----
+
+Error: 
+  > B
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/access-property-1.ts:7:1]
+ 7 | var z = y[0].x.m; // z should be string
+   :         ^^^^^^^^
+   `----
+
+Error: 
+  > string

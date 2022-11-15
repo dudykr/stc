@@ -5,7 +5,7 @@ use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
-    Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, ModuleId, PropertySignature, Ref, Type,
+    Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, PropertySignature, Ref, Type,
     TypeElement, Union,
 };
 use stc_utils::{cache::Freeze, debug_ctx, ext::TypeVecExt, try_cache};
@@ -123,7 +123,6 @@ impl Analyzer<'_, '_> {
                                 span,
                                 &Type::Ref(Ref {
                                     span,
-                                    ctxt: ModuleId::builtin(),
                                     type_name: RTsEntityName::Ident(RIdent::new(name, DUMMY_SP)),
                                     type_args: None,
                                     metadata: Default::default(),
@@ -223,13 +222,12 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                Type::Array(arr) => {
+                Type::Array(..) | Type::Tuple(..) => {
                     return self
                         .keyof(
                             span,
                             &Type::Ref(Ref {
                                 span,
-                                ctxt: ModuleId::builtin(),
                                 type_name: RTsEntityName::Ident(RIdent::new(js_word!("Array"), DUMMY_SP)),
                                 type_args: None,
                                 metadata: Default::default(),

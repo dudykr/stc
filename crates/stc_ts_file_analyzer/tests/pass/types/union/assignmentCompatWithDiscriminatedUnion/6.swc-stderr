@@ -1,21 +1,21 @@
-warning: Type
-  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/6.ts:20:19
-   |
-20 |             type: thingType
-   |                   ^^^^^^^^^
-   |
-   = note: ('one' | 'two')
 
-warning: Type
-  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/6.ts:19:16
-   |
-19 |           return {
-   |  ________________^
-20 | |             type: thingType
-21 | |         };
-   | |_________^
-   |
-   = note: {
-               type: ('one' | 'two');
-           }
+  x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/6.ts:20:13]
+ 20 | type: thingType
+    :       ^^^^^^^^^
+    `----
 
+Error: 
+  > ('one' | 'two')
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/6.ts:19:9]
+ 19 | ,-> return {
+ 20 | |               type: thingType
+ 21 | `->         };
+    `----
+
+Error: 
+  > {
+  |     type: ('one' | 'two');
+  | }

@@ -1,32 +1,36 @@
-warning: Type
- --> $DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:9:1
-  |
-9 | i1.tuple1 = ["foo", 5, false, true];
-  | ^^
-  |
-  = note: I
 
-warning: Type
- --> $DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:9:1
-  |
-9 | i1.tuple1 = ["foo", 5, false, true];
-  | ^^^^^^^^^
-  |
-  = note: [string, number]
+  x Type
+   ,-[$DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:9:1]
+ 9 | i1.tuple1 = ["foo", 5, false, true];
+   : ^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:9:13
-  |
-9 | i1.tuple1 = ["foo", 5, false, true];
-  |             ^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: ["foo", 5, false, true]
+Error: 
+  > I
 
-warning: Type
- --> $DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:9:1
-  |
-9 | i1.tuple1 = ["foo", 5, false, true];
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: ["foo", 5, false, true]
+  x Type
+   ,-[$DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:9:1]
+ 9 | i1.tuple1 = ["foo", 5, false, true];
+   : ^^^^^^^^^
+   `----
 
+Error: 
+  > [string, number]
+
+  x Type
+   ,-[$DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:9:1]
+ 9 | i1.tuple1 = ["foo", 5, false, true];
+   :             ^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > ["foo", 5, false, true]
+
+  x Type
+   ,-[$DIR/tests/visualize/types/tuple/genericCallWithTupleType/1.ts:9:1]
+ 9 | i1.tuple1 = ["foo", 5, false, true];
+   : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > ["foo", 5, false, true]

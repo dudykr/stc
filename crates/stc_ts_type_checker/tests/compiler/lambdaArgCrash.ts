@@ -5,7 +5,7 @@ class Event {
 
 	 constructor () {
 
-		 // TODO(kdy1): remove
+		 // TODO: remove
 
 		 this._listeners = [];
 

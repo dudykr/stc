@@ -1,70 +1,78 @@
-warning: Type
-  --> $DIR/tests/pass/facts/deep/equality/1.ts:17:5
-   |
-17 | if (foo.obj.obj2.type === 'a') {
-   |     ^^^
-   |
-   = note: {
-               obj: {
-                   obj2: (A | B);
-               };
-           }
 
-warning: Type
-  --> $DIR/tests/pass/facts/deep/equality/1.ts:17:5
-   |
-17 | if (foo.obj.obj2.type === 'a') {
-   |     ^^^^^^^
-   |
-   = note: {
-               obj2: (A | B);
-           }
+  x Type
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:17:1]
+ 17 | if (foo.obj.obj2.type === 'a') {
+    :     ^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/facts/deep/equality/1.ts:17:5
-   |
-17 | if (foo.obj.obj2.type === 'a') {
-   |     ^^^^^^^^^^^^
-   |
-   = note: (A | B)
+Error: 
+  > {
+  |     obj: {
+  |         obj2: (A | B);
+  |     };
+  | }
 
-warning: Type
-  --> $DIR/tests/pass/facts/deep/equality/1.ts:17:5
-   |
-17 | if (foo.obj.obj2.type === 'a') {
-   |     ^^^^^^^^^^^^^^^^^
-   |
-   = note: ('a' | 'b')
+  x Type
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:17:1]
+ 17 | if (foo.obj.obj2.type === 'a') {
+    :     ^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/facts/deep/equality/1.ts:17:5
-   |
-17 | if (foo.obj.obj2.type === 'a') {
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: boolean
+Error: 
+  > {
+  |     obj2: (A | B);
+  | }
 
-warning: Type
-  --> $DIR/tests/pass/facts/deep/equality/1.ts:18:10
-   |
-18 |     useA(foo.obj.obj2)
-   |          ^^^^^^^^^^^^
-   |
-   = note: A
+  x Type
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:17:1]
+ 17 | if (foo.obj.obj2.type === 'a') {
+    :     ^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/facts/deep/equality/1.ts:18:5
-   |
-18 |     useA(foo.obj.obj2)
-   |     ^^^^
-   |
-   = note: (a: A) => void
+Error: 
+  > (A | B)
 
-warning: Type
-  --> $DIR/tests/pass/facts/deep/equality/1.ts:18:5
-   |
-18 |     useA(foo.obj.obj2)
-   |     ^^^^^^^^^^^^^^^^^^
-   |
-   = note: void
+  x Type
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:17:1]
+ 17 | if (foo.obj.obj2.type === 'a') {
+    :     ^^^^^^^^^^^^^^^^^
+    `----
 
+Error: 
+  > ('a' | 'b')
+
+  x Type
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:17:1]
+ 17 | if (foo.obj.obj2.type === 'a') {
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:18:5]
+ 18 | useA(foo.obj.obj2)
+    :      ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > A
+
+  x Type
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:18:5]
+ 18 | useA(foo.obj.obj2)
+    : ^^^^
+    `----
+
+Error: 
+  > (a: A) => void
+
+  x Type
+    ,-[$DIR/tests/pass/facts/deep/equality/1.ts:18:5]
+ 18 | useA(foo.obj.obj2)
+    : ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > void

@@ -121,6 +121,7 @@ fn record_time(line_count: usize, time_of_check: Duration, full_time: Duration) 
         }
     );
 
+    #[allow(dead_code)]
     #[derive(Debug)]
     struct Timings {
         lines: usize,
@@ -150,11 +151,9 @@ fn record_stat(stats: Stats) -> Stats {
 
     let stats = (*guard).clone();
 
-    let content = format!("{:#?}", stats);
+    drop(guard);
 
-    if env::var("WIP_STATS").unwrap_or_default() == "1" && env::var("STC_IGNORE_WIP").unwrap_or_default() != "1" {
-        fs::write("tests/wip-stats.rust-debug", &content).unwrap();
-    }
+    let content = format!("{:#?}", stats);
 
     // If we are testing everything, update stats file.
     if is_all_test_enabled() {
@@ -261,7 +260,7 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
             SourceFileInput::from(&*fm),
             None,
         );
-        parser.parse_program().ok()
+        parser.parse_module().ok()
     })
     .ok()??;
 
@@ -507,7 +506,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
             .map(|(target, specified)| {
                 let libs = if specified && libs == vec![Lib::Es5, Lib::Dom] {
                     match target {
-                        EsVersion::Es3 | EsVersion::Es5 => vec![Lib::Es5],
+                        EsVersion::Es3 | EsVersion::Es5 => vec![Lib::Es5, Lib::Dom],
                         EsVersion::Es2015 => Lib::load("es2015.full"),
                         EsVersion::Es2016 => Lib::load("es2016.full"),
                         EsVersion::Es2017 => Lib::load("es2017.full"),
@@ -600,8 +599,8 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                     Arc::new(NodeResolver),
                 );
 
-                // Install a new OpenTelemetry trace pipeline
-                let _guard = init_tracing(file_stem.to_string_lossy().to_string());
+                // Install a logger
+                let _guard = testing::init();
 
                 let start = Instant::now();
 

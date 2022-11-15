@@ -51,7 +51,7 @@ impl GenericExpander<'_> {
         }
 
         match ty.normalize() {
-            Type::StaticThis(..) | Type::Intrinsic(..) | Type::Symbol(..) => return ty,
+            Type::StaticThis(..) | Type::Symbol(..) => return ty,
 
             Type::Param(param) => {
                 if !self.dejavu.contains(&param.name) {
@@ -117,7 +117,7 @@ impl GenericExpander<'_> {
                 return ty.fold_children_with(self);
             }
 
-            Type::Instance(..) | Type::Ref(..) => return ty.fold_children_with(self),
+            Type::Instance(..) | Type::Ref(..) | Type::Intrinsic(..) => return ty.fold_children_with(self),
 
             Type::Param(mut param) => {
                 param = param.fold_with(self);
@@ -225,6 +225,7 @@ impl GenericExpander<'_> {
                                             apply_mapped_flags(member, m.optional, m.readonly);
                                         }
 
+                                        let members = members.fold_with(self);
                                         return Type::TypeLit(TypeLit {
                                             span: ty.span,
                                             members,
@@ -504,7 +505,8 @@ impl Fold<Type> for GenericExpander<'_> {
         }
 
         let start = dump_type_as_string(&self.cm, &ty);
-        let ty = self.fold_type(ty);
+        let ty = self.fold_type(ty).fixed();
+        ty.assert_valid();
         let expanded = dump_type_as_string(&self.cm, &ty);
 
         debug!(op = "generic:expand", "Expanded {} => {}", start, expanded,);

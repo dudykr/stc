@@ -4,7 +4,7 @@ use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_generics::{expander::GenericExpander, ExpandGenericOpts};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Interface, KeywordType, TypeParam, TypeParamDecl, TypeParamInstantiation};
-use stc_utils::cache::Freeze;
+use stc_utils::{cache::Freeze, ext::SpanExt};
 use swc_common::{Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
 use tracing::debug;
@@ -46,12 +46,12 @@ impl Analyzer<'_, '_> {
         for (idx, param) in type_params.params.iter().enumerate() {
             if let Some(arg) = type_args.params.get(idx) {
                 // TODO(kdy1): Change this to assert.
-                let arg = arg.clone().cheap();
+                let arg = arg.clone().freezed();
                 params.insert(param.name.clone(), arg);
             } else {
                 if let Some(default) = &param.default {
-                    let default = default.clone().cheap();
-                    params.insert(param.name.clone(), default.clone());
+                    let default = default.clone().freezed();
+                    params.insert(param.name.clone(), *default.clone());
                 } else {
                     unimplemented!(
                         "Reporting errors when type parameter count and type argument count differs\nParams={:#?}\nArgs: {:#?}",
@@ -87,6 +87,7 @@ impl Analyzer<'_, '_> {
         T: for<'aa> FoldWith<GenericExpander<'aa>> + Fix,
     {
         for (_, param) in params {
+            param.assert_valid();
             debug_assert!(param.is_clone_cheap());
         }
 
@@ -204,7 +205,7 @@ impl Analyzer<'_, '_> {
                 let mut parent = self
                     .with_ctx(ctx)
                     .expand(
-                        parent.span(),
+                        parent.span().or_else(|| span),
                         parent.clone(),
                         ExpandOpts {
                             full: true,
@@ -349,15 +350,17 @@ impl Analyzer<'_, '_> {
 
         let res = self.assign_with_opts(
             &mut Default::default(),
+            parent,
+            child,
             AssignOpts {
                 span,
                 disallow_special_assignment_to_empty_class: true,
                 disallow_different_classes: opts.disallow_different_classes,
                 allow_assignment_to_param_constraint: true,
+                allow_unknown_rhs: Some(false),
+                allow_unknown_rhs_if_expanded: true,
                 ..Default::default()
             },
-            parent,
-            child,
         );
 
         match res {

@@ -1,29 +1,30 @@
-warning: Type
-  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:16:19
-   |
-16 |             type: obj1.type
-   |                   ^^^^
-   |
-   = note: (A1 | A2)
 
-warning: Type
-  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:16:19
-   |
-16 |             type: obj1.type
-   |                   ^^^^^^^^^
-   |
-   = note: ("A1" | "A2")
+  x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:16:13]
+ 16 | type: obj1.type
+    :       ^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:15:26
-   |
-15 |           const obj2: AU = {
-   |  __________________________^
-16 | |             type: obj1.type
-17 | |         };
-   | |_________^
-   |
-   = note: {
-               type: ("A1" | "A2");
-           }
+Error: 
+  > (A1 | A2)
 
+  x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:16:13]
+ 16 | type: obj1.type
+    :       ^^^^^^^^^
+    `----
+
+Error: 
+  > ("A1" | "A2")
+
+  x Type
+    ,-[$DIR/tests/pass/types/union/assignmentCompatWithDiscriminatedUnion/8.ts:15:9]
+ 15 | ,-> const obj2: AU = {
+ 16 | |               type: obj1.type
+ 17 | `->         };
+    `----
+
+Error: 
+  > {
+  |     type: ("A1" | "A2");
+  | }

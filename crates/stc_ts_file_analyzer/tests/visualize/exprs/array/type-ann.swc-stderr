@@ -1,40 +1,45 @@
-warning: Type
- --> $DIR/tests/visualize/exprs/array/type-ann.ts:3:12
-  |
-3 | var temp = ["s", "t", "r"];
-  |            ^^^^^^^^^^^^^^^
-  |
-  = note: ["s", "t", "r"]
 
-warning: Type
- --> $DIR/tests/visualize/exprs/array/type-ann.ts:4:13
-  |
-4 | var temp1 = [1, 2, 3];
-  |             ^^^^^^^^^
-  |
-  = note: [1, 2, 3]
+  x Type
+   ,-[$DIR/tests/visualize/exprs/array/type-ann.ts:3:1]
+ 3 | var temp = ["s", "t", "r"];
+   :            ^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/exprs/array/type-ann.ts:6:23
-  |
-6 | var c2: myArray = [...temp1, ...temp];
-  |                       ^^^^^
-  |
-  = note: number[]
+Error: 
+  > ["s", "t", "r"]
 
-warning: Type
- --> $DIR/tests/visualize/exprs/array/type-ann.ts:6:33
-  |
-6 | var c2: myArray = [...temp1, ...temp];
-  |                                 ^^^^
-  |
-  = note: string[]
+  x Type
+   ,-[$DIR/tests/visualize/exprs/array/type-ann.ts:4:1]
+ 4 | var temp1 = [1, 2, 3];
+   :             ^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/visualize/exprs/array/type-ann.ts:6:19
-  |
-6 | var c2: myArray = [...temp1, ...temp];
-  |                   ^^^^^^^^^^^^^^^^^^^
-  |
-  = note: ((number | string))[]
+Error: 
+  > [1, 2, 3]
 
+  x Type
+   ,-[$DIR/tests/visualize/exprs/array/type-ann.ts:6:1]
+ 6 | var c2: myArray = [...temp1, ...temp];
+   :                       ^^^^^
+   `----
+
+Error: 
+  > number[]
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/array/type-ann.ts:6:1]
+ 6 | var c2: myArray = [...temp1, ...temp];
+   :                                 ^^^^
+   `----
+
+Error: 
+  > string[]
+
+  x Type
+   ,-[$DIR/tests/visualize/exprs/array/type-ann.ts:6:1]
+ 6 | var c2: myArray = [...temp1, ...temp];
+   :                   ^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > ((number | string))[]

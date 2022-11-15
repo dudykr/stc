@@ -1,24 +1,27 @@
-warning: Type
- --> $DIR/tests/pass/exprs/assign/objectPat/3.ts:2:41
-  |
-2 |     let { [k1]: a1, [k2]: a2, ...r1 } = obj;
-  |                                         ^^^
-  |
-  = note: T
 
-warning: Type
- --> $DIR/tests/pass/exprs/assign/objectPat/3.ts:2:12
-  |
-2 |     let { [k1]: a1, [k2]: a2, ...r1 } = obj;
-  |            ^^
-  |
-  = note: K1
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/3.ts:2:5]
+ 2 | let { [k1]: a1, [k2]: a2, ...r1 } = obj;
+   :                                     ^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/exprs/assign/objectPat/3.ts:2:22
-  |
-2 |     let { [k1]: a1, [k2]: a2, ...r1 } = obj;
-  |                      ^^
-  |
-  = note: K2
+Error: 
+  > T
 
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/3.ts:2:5]
+ 2 | let { [k1]: a1, [k2]: a2, ...r1 } = obj;
+   :        ^^
+   `----
+
+Error: 
+  > K1
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/assign/objectPat/3.ts:2:5]
+ 2 | let { [k1]: a1, [k2]: a2, ...r1 } = obj;
+   :                  ^^
+   `----
+
+Error: 
+  > K2

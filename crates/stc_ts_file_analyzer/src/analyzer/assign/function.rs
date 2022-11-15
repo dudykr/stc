@@ -31,7 +31,6 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_to_fn_like(
         &mut self,
         data: &mut AssignData,
-        opts: AssignOpts,
         is_call: bool,
         l_type_params: Option<&TypeParamDecl>,
         l_params: &[FnParam],
@@ -39,6 +38,7 @@ impl Analyzer<'_, '_> {
         r_type_params: Option<&TypeParamDecl>,
         r_params: &[FnParam],
         r_ret_ty: Option<&Type>,
+        opts: AssignOpts,
     ) -> VResult<()> {
         let span = opts.span.with_ctxt(SyntaxContext::empty());
 
@@ -151,7 +151,6 @@ impl Analyzer<'_, '_> {
                             return self
                                 .assign_to_fn_like(
                                     data,
-                                    opts,
                                     is_call,
                                     l_type_params,
                                     &new_l_params,
@@ -159,6 +158,7 @@ impl Analyzer<'_, '_> {
                                     r_type_params,
                                     r_params,
                                     r_ret_ty,
+                                    opts,
                                 )
                                 .context("tried to assign by expanding overloads in a type literal");
                         }
@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
                             // TODO(kdy1): Use extends()
                             _ => true,
                         })
-                        .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).cheap()))
+                        .map(|(l, r)| (r.name.clone(), Type::Param(l.clone()).freezed()))
                         .collect::<FxHashMap<_, _>>();
                     let mut new_r_params = self
                         .expand_type_params(&map, r_params.to_vec(), Default::default())
@@ -197,10 +197,6 @@ impl Analyzer<'_, '_> {
                     return self
                         .assign_to_fn_like(
                             data,
-                            AssignOpts {
-                                allow_assignment_of_void: Some(false),
-                                ..opts
-                            },
                             is_call,
                             l_type_params,
                             l_params,
@@ -208,6 +204,10 @@ impl Analyzer<'_, '_> {
                             None,
                             &new_r_params,
                             new_r_ret_ty.as_ref(),
+                            AssignOpts {
+                                allow_assignment_of_void: Some(false),
+                                ..opts
+                            },
                         )
                         .context("tried to assign to a mapped (wrong) function");
                 }
@@ -252,7 +252,6 @@ impl Analyzer<'_, '_> {
                 return self
                     .assign_to_fn_like(
                         data,
-                        opts,
                         is_call,
                         None,
                         &new_l_params,
@@ -260,6 +259,7 @@ impl Analyzer<'_, '_> {
                         None,
                         r_params,
                         r_ret_ty,
+                        opts,
                     )
                     .context("tried to assign to an instantiated fn-like stuff");
             }
@@ -320,7 +320,6 @@ impl Analyzer<'_, '_> {
                 return self
                     .assign_to_fn_like(
                         data,
-                        opts,
                         is_call,
                         l_type_params,
                         &new_l_params,
@@ -328,6 +327,7 @@ impl Analyzer<'_, '_> {
                         None,
                         &new_r_params,
                         new_r_ret_ty.as_ref(),
+                        opts,
                     )
                     .with_context(|| format!("tried to assign to an expanded callable\nMap:\n{}", dump_type_map(&self.cm, &map)));
             }
@@ -337,18 +337,7 @@ impl Analyzer<'_, '_> {
 
         // TypeScript functions are bivariant if strict_function_types is false.
         if !self.env.rule().strict_function_types || opts.is_params_of_method_definition {
-            if self
-                .assign_params(
-                    data,
-                    AssignOpts {
-                        is_params_of_method_definition: false,
-                        ..opts
-                    },
-                    &r_params,
-                    &l_params,
-                )
-                .is_ok()
-            {
+            if self.assign_params(data, &r_params, &l_params, opts).is_ok() {
                 return Ok(());
             }
         }
@@ -363,12 +352,12 @@ impl Analyzer<'_, '_> {
         if r_params.len() != 0 {
             self.assign_params(
                 data,
+                l_params,
+                r_params,
                 AssignOpts {
                     is_params_of_method_definition: false,
                     ..opts
                 },
-                l_params,
-                r_params,
             )
             .context("tried to assign parameters of a function to parameters of another function")?;
         }
@@ -382,7 +371,7 @@ impl Analyzer<'_, '_> {
                     for_overload: false,
                     allow_assignment_of_void: Some(opts.allow_assignment_of_void.unwrap_or(true)),
                     allow_assignment_to_void: !opts.for_overload,
-                    is_params_of_method_definition: false,
+
                     ..opts
                 };
 
@@ -407,16 +396,7 @@ impl Analyzer<'_, '_> {
     /// b = a; // error
     /// ```
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn assign_to_function(
-        &mut self,
-        data: &mut AssignData,
-        mut opts: AssignOpts,
-        lt: &Type,
-        l: &Function,
-        r: &Type,
-    ) -> VResult<()> {
-        opts.is_params_of_method_definition = false;
-
+    pub(super) fn assign_to_function(&mut self, data: &mut AssignData, lt: &Type, l: &Function, r: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         let r = r.normalize();
 
@@ -430,7 +410,6 @@ impl Analyzer<'_, '_> {
             }) => {
                 self.assign_to_fn_like(
                     data,
-                    opts,
                     true,
                     l.type_params.as_ref(),
                     &l.params,
@@ -438,6 +417,7 @@ impl Analyzer<'_, '_> {
                     r_type_params.as_ref(),
                     r_params,
                     Some(r_ret_ty),
+                    opts,
                 )
                 .context("tried to assign a function to another one")?;
 
@@ -451,10 +431,6 @@ impl Analyzer<'_, '_> {
                             return self
                                 .assign_to_fn_like(
                                     data,
-                                    AssignOpts {
-                                        infer_type_params_of_left: true,
-                                        ..opts
-                                    },
                                     true,
                                     l.type_params.as_ref(),
                                     &l.params,
@@ -462,6 +438,10 @@ impl Analyzer<'_, '_> {
                                     rm.type_params.as_ref(),
                                     &rm.params,
                                     rm.ret_ty.as_deref(),
+                                    AssignOpts {
+                                        infer_type_params_of_left: true,
+                                        ..opts
+                                    },
                                 )
                                 .context("tried to assign TypeElemeny::Call to a function");
                         }
@@ -477,7 +457,7 @@ impl Analyzer<'_, '_> {
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {
                     return self
-                        .assign_to_function(data, opts, lt, l, &ty)
+                        .assign_to_function(data, lt, l, &ty, opts)
                         .context("tried to assign an expanded type to a function");
                 }
             }
@@ -527,10 +507,10 @@ impl Analyzer<'_, '_> {
     pub(super) fn assign_to_constructor(
         &mut self,
         data: &mut AssignData,
-        opts: AssignOpts,
         lt: &Type,
         l: &Constructor,
         r: &Type,
+        opts: AssignOpts,
     ) -> VResult<()> {
         let span = opts.span;
         let r = r.normalize();
@@ -543,7 +523,6 @@ impl Analyzer<'_, '_> {
 
                 self.assign_to_fn_like(
                     data,
-                    opts,
                     false,
                     l.type_params.as_ref(),
                     &l.params,
@@ -551,6 +530,7 @@ impl Analyzer<'_, '_> {
                     rc.type_params.as_ref(),
                     &rc.params,
                     Some(&rc.type_ann),
+                    opts,
                 )
                 .context("tried to assign a constructor to another one")?;
 
@@ -570,10 +550,6 @@ impl Analyzer<'_, '_> {
                             if let Err(err) = self
                                 .assign_to_fn_like(
                                     data,
-                                    AssignOpts {
-                                        allow_assignment_to_param: opts.allow_assignment_to_param || r_el_cnt > 1,
-                                        ..opts
-                                    },
                                     false,
                                     l.type_params.as_ref(),
                                     &l.params,
@@ -581,6 +557,10 @@ impl Analyzer<'_, '_> {
                                     rc.type_params.as_ref(),
                                     &rc.params,
                                     rc.ret_ty.as_deref(),
+                                    AssignOpts {
+                                        allow_assignment_to_param: opts.allow_assignment_to_param || r_el_cnt > 1,
+                                        ..opts
+                                    },
                                 )
                                 .with_context(|| format!("tried to assign a constructor to another constructor ({}th element)", idx))
                             {
@@ -605,7 +585,7 @@ impl Analyzer<'_, '_> {
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {
                     return self
-                        .assign_to_constructor(data, opts, lt, l, &ty)
+                        .assign_to_constructor(data, lt, l, &ty, opts)
                         .context("tried to assign an expanded type to a constructor type");
                 }
             }
@@ -672,7 +652,7 @@ impl Analyzer<'_, '_> {
                 let l_elem_type = self.get_iterator_element_type(span, l_ty, false, GetIteratorOpts { ..Default::default() });
 
                 if let Ok(l_elem_type) = l_elem_type {
-                    if let Ok(()) = self.assign_with_opts(data, opts, &l_elem_type, &r.ty) {
+                    if let Ok(()) = self.assign_with_opts(data, &l_elem_type, &r.ty, opts) {
                         return Ok(());
                     }
                 }
@@ -689,10 +669,10 @@ impl Analyzer<'_, '_> {
         r_ty.make_clone_cheap();
 
         let res = if opts.for_overload {
-            self.assign_with_opts(data, AssignOpts { ..opts }, &l_ty, &r_ty)
+            self.assign_with_opts(data, &l_ty, &r_ty, opts)
                 .context("tried to assign the type of a parameter to another")
         } else {
-            self.assign_with_opts(data, AssignOpts { ..opts }, &r_ty, &l_ty)
+            self.assign_with_opts(data, &r_ty, &l_ty, opts)
                 .context("tried to assign the type of a parameter to another (reversed due to variance)")
         };
 
@@ -738,7 +718,7 @@ impl Analyzer<'_, '_> {
     ///
     /// So, it's an error if `l.params.len() < r.params.len()`.
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(crate) fn assign_params(&mut self, data: &mut AssignData, opts: AssignOpts, l: &[FnParam], r: &[FnParam]) -> VResult<()> {
+    pub(crate) fn assign_params(&mut self, data: &mut AssignData, l: &[FnParam], r: &[FnParam], opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
 
         let li = l.iter().filter(|p| match p.pat {

@@ -6,7 +6,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;
-use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, ModuleId, Operator, Ref, RefMetadata, TypeParamInstantiation};
+use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, Operator, Ref, RefMetadata, TypeParamInstantiation};
 use stc_ts_utils::{find_ids_in_pat, PatExt};
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, DUMMY_SP};
@@ -175,7 +175,7 @@ impl Analyzer<'_, '_> {
         }
 
         match e {
-            RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) => Ok(()),
+            RExpr::Ident(..) | RExpr::This(..) | RExpr::Member(..) | RExpr::Paren(..) => Ok(()),
             // We use different error code for this.
             RExpr::Assign(..) => Ok(()),
             _ => match kind {
@@ -185,7 +185,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn get_element_type_of_for_in(&mut self, rhs: &Type) -> VResult {
+    fn get_element_type_of_for_in(&mut self, rhs: &Type) -> VResult<Type> {
         let rhs = self
             .normalize(
                 None,
@@ -224,7 +224,6 @@ impl Analyzer<'_, '_> {
                     // Extract<keyof T
                     return Ok(Type::Ref(Ref {
                         span: m.span,
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new("Extract".into(), DUMMY_SP)),
                         type_args: Some(box TypeParamInstantiation {
                             span: DUMMY_SP,
@@ -288,7 +287,7 @@ impl Analyzer<'_, '_> {
             child.scope.declaring.extend(created_vars);
 
             child.ctx.allow_ref_declaring = match left {
-                RVarDeclOrPat::VarDecl(RVarDecl {
+                RVarDeclOrPat::VarDecl(box RVarDecl {
                     kind: VarDeclKind::Var, ..
                 }) => true,
                 _ => false,
@@ -296,7 +295,7 @@ impl Analyzer<'_, '_> {
 
             // Type annotation on lhs of for in/of loops is invalid.
             match left {
-                RVarDeclOrPat::VarDecl(RVarDecl { decls, .. }) => {
+                RVarDeclOrPat::VarDecl(box RVarDecl { decls, .. }) => {
                     if decls.len() >= 1 {
                         if decls[0].name.get_ty().is_some() {
                             match kind {

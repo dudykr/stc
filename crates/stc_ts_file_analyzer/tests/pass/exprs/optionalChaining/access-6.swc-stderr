@@ -1,0 +1,31 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-6.ts:2:1]
+ 2 | const x = o6<number>()?.["x"];
+   :           ^^
+   `----
+
+Error: 
+  > <T>() => (undefined | {
+  |     x: number;
+  | })
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-6.ts:2:1]
+ 2 | const x = o6<number>()?.["x"];
+   :           ^^^^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     x: number;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/optionalChaining/access-6.ts:2:1]
+ 2 | const x = o6<number>()?.["x"];
+   :           ^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number

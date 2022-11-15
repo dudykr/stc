@@ -33,7 +33,10 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
     let mut buf = vec![];
     {
         let mut emitter = Emitter {
-            cfg: swc_ecma_codegen::Config { minify: false },
+            cfg: swc_ecma_codegen::Config {
+                minify: false,
+                ..Default::default()
+            },
             cm: cm.clone(),
             comments: None,
             wr: box JsWriter::new(cm.clone(), "\n", &mut buf, None),
@@ -125,6 +128,10 @@ pub fn assert_no_ref(ty: &Type) {
     }
 }
 
+/// Prints stack trace of current function
+///
+/// Use this when if you think a wrong code is called, but **it should not be
+/// called**.
 pub fn print_backtrace() {
     if cfg!(debug_assertions) {
         let s = dump_backtrace();

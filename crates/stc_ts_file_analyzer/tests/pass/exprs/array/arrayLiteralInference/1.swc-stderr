@@ -1,242 +1,268 @@
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:6
-   |
-26 |     [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
-   |      ^^^^^^^
-   |
-   = note: AppType
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:6
-   |
-26 |     [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
-   |      ^^^^^^^^^^^^^^^^
-   |
-   = note: AppType.Standard
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:5]
+ 26 | [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
+    :  ^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:25
-   |
-26 |     [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
-   |                         ^^^^^^^^
-   |
-   = note: AppStyle
+Error: 
+  > AppType
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:25
-   |
-26 |     [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
-   |                         ^^^^^^^^^^^^^^^^^
-   |
-   = note: AppStyle.Standard
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:5]
+ 26 | [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
+    :  ^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:44
-   |
-26 |     [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
-   |                                            ^^^^^^^^
-   |
-   = note: AppStyle
+Error: 
+  > AppType.Standard
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:44
-   |
-26 |     [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
-   |                                            ^^^^^^^^^^^^^^^^
-   |
-   = note: AppStyle.MiniApp
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:5]
+ 26 | [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
+    :                     ^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:24
-   |
-26 |     [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
-   |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: [AppStyle.Standard, AppStyle.MiniApp]
+Error: 
+  > AppStyle
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:5
-   |
-26 |     [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]]
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:5]
+ 26 | [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
+    :                     ^^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:6
-   |
-27 |     [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
-   |      ^^^^^^^
-   |
-   = note: AppType
+Error: 
+  > AppStyle.Standard
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:6
-   |
-27 |     [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
-   |      ^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: AppType.Relationship
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:5]
+ 26 | [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
+    :                                        ^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:29
-   |
-27 |     [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
-   |                             ^^^^^^^^
-   |
-   = note: AppStyle
+Error: 
+  > AppStyle
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:29
-   |
-27 |     [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
-   |                             ^^^^^^^^^^^^^^^^^
-   |
-   = note: AppStyle.Standard
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:5]
+ 26 | [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
+    :                                        ^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:48
-   |
-27 |     [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
-   |                                                ^^^^^^^^
-   |
-   = note: AppStyle
+Error: 
+  > AppStyle.MiniApp
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:48
-   |
-27 |     [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
-   |                                                ^^^^^^^^^^^^^
-   |
-   = note: AppStyle.Tree
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:5]
+ 26 | [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
+    :                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:63
-   |
-27 |     [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
-   |                                                               ^^^^^^^^
-   |
-   = note: AppStyle
+Error: 
+  > [AppStyle.Standard, AppStyle.MiniApp]
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:63
-   |
-27 |     [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
-   |                                                               ^^^^^^^^^^^^^^^^^^^
-   |
-   = note: AppStyle.TreeEntity
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:26:5]
+ 26 | [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
+    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:28
-   |
-27 |     [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
-   |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]
+Error: 
+  > [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]]
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:5
-   |
-27 |     [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]]
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:5]
+ 27 | [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
+    :  ^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:6
-   |
-28 |     [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
-   |      ^^^^^^^
-   |
-   = note: AppType
+Error: 
+  > AppType
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:6
-   |
-28 |     [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
-   |      ^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: AppType.AdvancedList
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:5]
+ 27 | [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
+    :  ^^^^^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:29
-   |
-28 |     [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
-   |                             ^^^^^^^^
-   |
-   = note: AppStyle
+Error: 
+  > AppType.Relationship
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:29
-   |
-28 |     [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
-   |                             ^^^^^^^^^^^^^^^^^
-   |
-   = note: AppStyle.Standard
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:5]
+ 27 | [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
+    :                         ^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:48
-   |
-28 |     [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
-   |                                                ^^^^^^^^
-   |
-   = note: AppStyle
+Error: 
+  > AppStyle
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:48
-   |
-28 |     [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
-   |                                                ^^^^^^^^^^^^^^^^
-   |
-   = note: AppStyle.MiniApp
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:5]
+ 27 | [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
+    :                         ^^^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:28
-   |
-28 |     [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
-   |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: [AppStyle.Standard, AppStyle.MiniApp]
+Error: 
+  > AppStyle.Standard
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:5
-   |
-28 |     [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:5]
+ 27 | [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
+    :                                            ^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:25:71
-   |
-25 |   const appTypeStylesWithError: Map<AppType, Array<AppStyle>> = new Map([
-   |  _______________________________________________________________________^
-26 | |     [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
-27 | |     [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
-28 | |     [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
-29 | | ]);
-   | |_^
-   |
-   = note: [[AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]], [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]], [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]]
+Error: 
+  > AppStyle
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:25:67
-   |
-25 | const appTypeStylesWithError: Map<AppType, Array<AppStyle>> = new Map([
-   |                                                                   ^^^
-   |
-   = note: MapConstructor
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:5]
+ 27 | [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
+    :                                            ^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:25:63
-   |
-25 |   const appTypeStylesWithError: Map<AppType, Array<AppStyle>> = new Map([
-   |  _______________________________________________________________^
-26 | |     [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
-27 | |     [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
-28 | |     [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
-29 | | ]);
-   | |__^
-   |
-   = note: Map<(AppType.Standard | AppType.Relationship | AppType.AdvancedList), ([AppStyle.Standard, AppStyle.MiniApp] | [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity])>
+Error: 
+  > AppStyle.Tree
 
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:5]
+ 27 | [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
+    :                                                           ^^^^^^^^
+    `----
+
+Error: 
+  > AppStyle
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:5]
+ 27 | [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
+    :                                                           ^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > AppStyle.TreeEntity
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:5]
+ 27 | [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
+    :                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:27:5]
+ 27 | [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
+    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]]
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:5]
+ 28 | [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
+    :  ^^^^^^^
+    `----
+
+Error: 
+  > AppType
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:5]
+ 28 | [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
+    :  ^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > AppType.AdvancedList
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:5]
+ 28 | [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
+    :                         ^^^^^^^^
+    `----
+
+Error: 
+  > AppStyle
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:5]
+ 28 | [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
+    :                         ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > AppStyle.Standard
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:5]
+ 28 | [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
+    :                                            ^^^^^^^^
+    `----
+
+Error: 
+  > AppStyle
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:5]
+ 28 | [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
+    :                                            ^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > AppStyle.MiniApp
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:5]
+ 28 | [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
+    :                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > [AppStyle.Standard, AppStyle.MiniApp]
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:28:5]
+ 28 | [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
+    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:25:1]
+ 25 | ,-> const appTypeStylesWithError: Map<AppType, Array<AppStyle>> = new Map([
+ 26 | |       [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
+ 27 | |       [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
+ 28 | |       [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
+ 29 | `-> ]);
+    `----
+
+Error: 
+  > [[AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]], [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]], [AppType.AdvancedList, [AppStyle.Standard,
+  | AppStyle.MiniApp]]]
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:25:1]
+ 25 | const appTypeStylesWithError: Map<AppType, Array<AppStyle>> = new Map([
+    :                                                                   ^^^
+    `----
+
+Error: 
+  > MapConstructor
+
+  x Type
+    ,-[$DIR/tests/pass/exprs/array/arrayLiteralInference/1.ts:25:1]
+ 25 | ,-> const appTypeStylesWithError: Map<AppType, Array<AppStyle>> = new Map([
+ 26 | |       [AppType.Standard, [AppStyle.Standard, AppStyle.MiniApp]],
+ 27 | |       [AppType.Relationship, [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity]],
+ 28 | |       [AppType.AdvancedList, [AppStyle.Standard, AppStyle.MiniApp]]
+ 29 | `-> ]);
+    `----
+
+Error: 
+  > Map<(AppType.Standard | AppType.Relationship | AppType.AdvancedList), ([AppStyle.Standard, AppStyle.MiniApp] | [AppStyle.Standard, AppStyle.Tree, AppStyle.TreeEntity])>

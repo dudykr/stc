@@ -28,7 +28,7 @@ use tracing::info;
 use crate::{
     analyzer::{
         assign::AssignOpts,
-        expr::{AccessPropertyOpts, IdCtx, TypeOfMode},
+        expr::{optional_chaining::is_obj_opt_chaining, AccessPropertyOpts, IdCtx, TypeOfMode},
         scope::{ScopeKind, VarInfo},
         util::ResultExt,
         Analyzer, Ctx,
@@ -298,7 +298,7 @@ impl AddAssign for CondFacts {
                         }
                         prev => {
                             let prev = prev.take();
-                            *e.get_mut() = Type::new_union(DUMMY_SP, vec![prev, v]).cheap();
+                            *e.get_mut() = Type::new_union(DUMMY_SP, vec![prev, v]).freezed();
                         }
                     };
                     e.get_mut().fix();
@@ -544,7 +544,7 @@ impl Analyzer<'_, '_> {
     /// Returns the type of discriminant.
     ///
     /// TODO(kdy1): Implement this.
-    fn report_errors_for_incomparable_switch_cases(&mut self, s: &RSwitchStmt) -> VResult {
+    fn report_errors_for_incomparable_switch_cases(&mut self, s: &RSwitchStmt) -> VResult<Type> {
         let discriminant_ty = s.discriminant.validate_with_default(self)?;
         for case in &s.cases {
             if let Some(test) = &case.test {
@@ -790,12 +790,12 @@ impl Analyzer<'_, '_> {
 
                         self.assign_with_opts(
                             &mut Default::default(),
+                            &var_ty,
+                            &ty,
                             AssignOpts {
                                 span: i.id.span,
                                 ..opts.assign
                             },
-                            &var_ty,
-                            &ty,
                         )?;
                     }
                 }
@@ -868,13 +868,14 @@ impl Analyzer<'_, '_> {
                         ..var_info.clone()
                     }
                 } else {
-                    if let Some(types) = self.find_type(self.ctx.module_id, &i.id.clone().into())? {
+                    if let Some(types) = self.find_type(&i.id.clone().into())? {
                         for ty in types {
                             match ty.normalize() {
                                 Type::Module(..) => {
                                     return Err(Error::NotVariable {
                                         span: i.id.span,
                                         left: lhs.span(),
+                                        ty: Some(box ty.normalize().clone()),
                                     });
                                 }
                                 _ => {}
@@ -1027,7 +1028,6 @@ impl Analyzer<'_, '_> {
 
                                 RPat::Expr(expr) => {
                                     // { ...obj?.a["b"] }
-                                    use crate::analyzer::expr::optional_chaining::is_obj_opt_chaining;
                                     if is_obj_opt_chaining(&expr) {
                                         return Err(Error::InvalidRestPatternInOptionalChain { span: r.span });
                                     }
@@ -1036,7 +1036,8 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 RPat::Invalid(_) => {
-                                    self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                    // self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span:
+                                    // r.arg.span() });
                                     self.storage.report(Error::RestArgMustBeVarOrMemberAccess { span: r.arg.span() });
                                 }
 
@@ -1076,7 +1077,7 @@ impl Analyzer<'_, '_> {
                     .report(&mut self.storage);
 
                 if let Some(lhs_ty) = &lhs_ty {
-                    self.assign_with_opts(&mut Default::default(), AssignOpts { span, ..opts.assign }, &lhs_ty, &ty)?;
+                    self.assign_with_opts(&mut Default::default(), &lhs_ty, &ty, AssignOpts { span, ..opts.assign })?;
                 }
                 return Ok(());
             }
@@ -1105,7 +1106,7 @@ impl Analyzer<'_, '_> {
             .report(&mut self.storage)
             .flatten()
         {
-            ty.make_cheap();
+            ty.make_clone_cheap();
             ty.assert_valid();
 
             if is_for_true {
@@ -1129,18 +1130,24 @@ impl Analyzer<'_, '_> {
     /// Otherwise, this method calculates type facts created by `if (a.foo) ;`.
     /// In this case, this method tests if `type_facts` matches the type of
     /// property and returns `never` if it does not.
-    pub(super) fn filter_types_with_property(&mut self, src: &Type, property: &JsWord, type_facts: Option<TypeFacts>) -> VResult<Type> {
+    pub(super) fn filter_types_with_property(
+        &mut self,
+        span: Span,
+        src: &Type,
+        property: &JsWord,
+        type_facts: Option<TypeFacts>,
+    ) -> VResult<Type> {
         src.assert_valid();
 
         match src.normalize() {
             Type::Ref(..) => {
                 let src = self.expand_top_ref(src.span(), Cow::Borrowed(src), Default::default())?;
-                return self.filter_types_with_property(&src, property, type_facts);
+                return self.filter_types_with_property(span, &src, property, type_facts);
             }
             Type::Union(ty) => {
                 let mut new_types = vec![];
                 for ty in &ty.types {
-                    let ty = self.filter_types_with_property(&ty, property, type_facts)?;
+                    let ty = self.filter_types_with_property(span, &ty, property, type_facts)?;
                     new_types.push(ty);
                 }
                 new_types.retain(|ty| !ty.is_never());
@@ -1161,7 +1168,7 @@ impl Analyzer<'_, '_> {
 
         let prop_res = self
             .access_property(
-                src.span(),
+                src.span().or_else(|| span),
                 src,
                 &Key::Normal {
                     span: DUMMY_SP,
@@ -1273,7 +1280,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RCondExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, e: &RCondExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
         self.record(e);
 
         let RCondExpr {

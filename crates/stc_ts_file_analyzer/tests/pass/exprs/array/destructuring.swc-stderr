@@ -1,0 +1,18 @@
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/destructuring.ts:1:1]
+ 1 | const [a, b = a] = [1]; // ok
+   :                    ^^^
+   `----
+
+Error: 
+  > [1]
+
+  x Type
+   ,-[$DIR/tests/pass/exprs/array/destructuring.ts:1:1]
+ 1 | const [a, b = a] = [1]; // ok
+   :               ^
+   `----
+
+Error: 
+  > number

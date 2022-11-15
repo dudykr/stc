@@ -1,7 +1,8 @@
 use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RBindingIdent, RDecl, RDefaultDecl, RExportAll, RExportDecl, RExportDefaultDecl, RExportDefaultExpr, RExportNamedSpecifier,
-    RExportSpecifier, RExpr, RIdent, RNamedExport, RPat, RStmt, RTsExportAssignment, RTsModuleName, RTsTypeAnn, RVarDecl, RVarDeclarator,
+    RExportSpecifier, RExpr, RIdent, RModuleExportName, RNamedExport, RPat, RStmt, RTsExportAssignment, RTsModuleName, RTsTypeAnn,
+    RVarDecl, RVarDeclarator,
 };
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -60,7 +61,7 @@ impl Analyzer<'_, '_> {
                 RDecl::TsEnum(ref e) => {
                     let span = e.span();
 
-                    let ty = e.validate_with(a).report(&mut a.storage).map(Type::from).map(|ty| ty.cheap());
+                    let ty = e.validate_with(a).report(&mut a.storage).map(Type::from).map(|ty| ty.freezed());
                     let ty = ty.unwrap_or_else(|| Type::any(span, Default::default()));
                     a.register_type(e.id.clone().into(), ty);
 
@@ -140,7 +141,7 @@ impl Analyzer<'_, '_> {
                 let var_name = id.unwrap_or_else(|| Id::word(js_word!("default")));
 
                 let class_ty = c.class.validate_with(self)?;
-                let class_ty = Type::ClassDef(class_ty).cheap();
+                let class_ty = Type::ClassDef(class_ty).freezed();
                 self.register_type(var_name.clone(), class_ty.clone());
 
                 self.export_type(span, Id::word(js_word!("default")), Some(var_name.clone()));
@@ -178,7 +179,11 @@ impl Analyzer<'_, '_> {
         // TODO(kdy1): Optimize this by emitting same error only once.
         if v.len() >= 2 {
             for &span in &*v {
-                self.storage.report(Error::DuplicateDefaultExport { span });
+                if sym == js_word!("default") {
+                    self.storage.report(Error::DuplicateDefaultExport { span });
+                } else {
+                    self.storage.report(Error::DuplicateExport { span });
+                }
             }
         }
     }
@@ -206,7 +211,7 @@ impl Analyzer<'_, '_> {
     fn export_type(&mut self, span: Span, name: Id, orig_name: Option<Id>) {
         let orig_name = orig_name.unwrap_or_else(|| name.clone());
 
-        let types = match self.find_type(self.ctx.module_id, &orig_name) {
+        let types = match self.find_type(&orig_name) {
             Ok(v) => v,
             Err(err) => {
                 self.storage.report(err);
@@ -219,7 +224,7 @@ impl Analyzer<'_, '_> {
             None => unreachable!(".register_type() should be called before calling .export({})", orig_name),
         };
 
-        let iter = types.into_iter().map(|v| v.into_owned()).map(|v| v.cheap()).collect::<Vec<_>>();
+        let iter = types.into_iter().map(|v| v.into_owned()).map(|v| v.freezed()).collect::<Vec<_>>();
 
         for ty in iter {
             self.storage.store_private_type(self.ctx.module_id, name.clone(), ty, false);
@@ -250,7 +255,7 @@ impl Analyzer<'_, '_> {
                         sym: "_default".into(),
                         optional: false,
                     },
-                    type_ann: Some(RTsTypeAnn {
+                    type_ann: Some(box RTsTypeAnn {
                         node_id: NodeId::invalid(),
                         span: DUMMY_SP,
                         type_ann: ty.clone().into(),
@@ -259,7 +264,7 @@ impl Analyzer<'_, '_> {
                 init: None,
                 definite: false,
             };
-            self.prepend_stmts.push(RStmt::Decl(RDecl::Var(RVarDecl {
+            self.prepend_stmts.push(RStmt::Decl(RDecl::Var(box RVarDecl {
                 node_id: NodeId::invalid(),
                 span: DUMMY_SP,
                 kind: VarDeclKind::Const,
@@ -317,8 +322,15 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx).validate_with(|a| {
-            a.type_of_var(&node.orig, TypeOfMode::RValue, None)
-                .context("failed to reexport with named export specifier")?;
+            a.type_of_var(
+                &match &node.orig {
+                    RModuleExportName::Ident(v) => v.clone(),
+                    RModuleExportName::Str(v) => RIdent::new(v.value.clone(), v.span),
+                },
+                TypeOfMode::RValue,
+                None,
+            )
+            .context("failed to reexport with named export specifier")?;
 
             Ok(())
         });

@@ -1,96 +1,108 @@
-warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:4:17
-  |
-4 | while ((match = re.exec("xxx")) != null) {
-  |                 ^^
-  |
-  = note: RegExp
 
-warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:4:17
-  |
-4 | while ((match = re.exec("xxx")) != null) {
-  |                 ^^^^^^^^^^^^^^
-  |
-  = note: (RegExpExecArray | null)
+  x Type
+   ,-[$DIR/tests/pass/types/guards/nested-assignment/1.ts:4:1]
+ 4 | while ((match = re.exec("xxx")) != null) {
+   :                 ^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:4:9
-  |
-4 | while ((match = re.exec("xxx")) != null) {
-  |         ^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (RegExpExecArray | null)
+Error: 
+  > RegExp
 
-warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:4:8
-  |
-4 | while ((match = re.exec("xxx")) != null) {
-  |        ^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (RegExpExecArray | null)
+  x Type
+   ,-[$DIR/tests/pass/types/guards/nested-assignment/1.ts:4:1]
+ 4 | while ((match = re.exec("xxx")) != null) {
+   :                 ^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:4:8
-  |
-4 | while ((match = re.exec("xxx")) != null) {
-  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: boolean
+Error: 
+  > (RegExpExecArray | null)
 
-warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:5:20
-  |
-5 |     const length = match[1].length + match[2].length
-  |                    ^^^^^
-  |
-  = note: RegExpExecArray
+  x Type
+   ,-[$DIR/tests/pass/types/guards/nested-assignment/1.ts:4:1]
+ 4 | while ((match = re.exec("xxx")) != null) {
+   :         ^^^^^^^^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:5:20
-  |
-5 |     const length = match[1].length + match[2].length
-  |                    ^^^^^^^^
-  |
-  = note: string
+Error: 
+  > (RegExpExecArray | null)
 
-warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:5:20
-  |
-5 |     const length = match[1].length + match[2].length
-  |                    ^^^^^^^^^^^^^^^
-  |
-  = note: number
+  x Type
+   ,-[$DIR/tests/pass/types/guards/nested-assignment/1.ts:4:1]
+ 4 | while ((match = re.exec("xxx")) != null) {
+   :        ^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:5:38
-  |
-5 |     const length = match[1].length + match[2].length
-  |                                      ^^^^^
-  |
-  = note: RegExpExecArray
+Error: 
+  > (RegExpExecArray | null)
 
-warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:5:38
-  |
-5 |     const length = match[1].length + match[2].length
-  |                                      ^^^^^^^^
-  |
-  = note: string
+  x Type
+   ,-[$DIR/tests/pass/types/guards/nested-assignment/1.ts:4:1]
+ 4 | while ((match = re.exec("xxx")) != null) {
+   :        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:5:38
-  |
-5 |     const length = match[1].length + match[2].length
-  |                                      ^^^^^^^^^^^^^^^
-  |
-  = note: number
+Error: 
+  > boolean
 
-warning: Type
- --> $DIR/tests/pass/types/guards/nested-assignment/1.ts:5:20
-  |
-5 |     const length = match[1].length + match[2].length
-  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: number
+  x Type
+   ,-[$DIR/tests/pass/types/guards/nested-assignment/1.ts:5:5]
+ 5 | const length = match[1].length + match[2].length
+   :                ^^^^^
+   `----
 
+Error: 
+  > RegExpExecArray
+
+  x Type
+   ,-[$DIR/tests/pass/types/guards/nested-assignment/1.ts:5:5]
+ 5 | const length = match[1].length + match[2].length
+   :                ^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/types/guards/nested-assignment/1.ts:5:5]
+ 5 | const length = match[1].length + match[2].length
+   :                ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/types/guards/nested-assignment/1.ts:5:5]
+ 5 | const length = match[1].length + match[2].length
+   :                                  ^^^^^
+   `----
+
+Error: 
+  > RegExpExecArray
+
+  x Type
+   ,-[$DIR/tests/pass/types/guards/nested-assignment/1.ts:5:5]
+ 5 | const length = match[1].length + match[2].length
+   :                                  ^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/types/guards/nested-assignment/1.ts:5:5]
+ 5 | const length = match[1].length + match[2].length
+   :                                  ^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/pass/types/guards/nested-assignment/1.ts:5:5]
+ 5 | const length = match[1].length + match[2].length
+   :                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > number

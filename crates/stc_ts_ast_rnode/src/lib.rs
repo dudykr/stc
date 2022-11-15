@@ -1,8 +1,11 @@
-use num_bigint::BigInt as BigIntValue;
+#![feature(box_syntax)]
+
 use rnode::{define_rnode, NodeId};
-use swc_atoms::{js_word, JsWord};
-use swc_common::{EqIgnoreSpan, Span, TypeEq};
+use swc_atoms::{Atom, JsWord};
+use swc_common::{EqIgnoreSpan, Span, Spanned, TypeEq};
 use swc_ecma_ast::*;
+
+type BigIntValue = Box<num_bigint::BigInt>;
 
 impl RIdent {
     pub const fn new(sym: JsWord, span: Span) -> Self {
@@ -19,14 +22,64 @@ impl RExpr {
     pub fn is_new_target(&self) -> bool {
         match self {
             RExpr::MetaProp(RMetaPropExpr {
-                meta: RIdent { sym: js_word!("new"), .. },
-                prop: RIdent {
-                    sym: js_word!("target"), ..
-                },
+                kind: MetaPropKind::NewTarget,
                 ..
             }) => true,
             _ => false,
         }
+    }
+}
+
+impl From<RTsEntityName> for RExpr {
+    fn from(v: RTsEntityName) -> Self {
+        match v {
+            RTsEntityName::Ident(v) => RExpr::Ident(v),
+            RTsEntityName::TsQualifiedName(v) => RExpr::Member(RMemberExpr {
+                node_id: NodeId::invalid(),
+                span: v.span(),
+                obj: box v.left.into(),
+                prop: RMemberProp::Ident(v.right),
+            }),
+        }
+    }
+}
+
+impl From<Box<RExpr>> for RTsEntityName {
+    fn from(v: Box<RExpr>) -> Self {
+        match *v {
+            RExpr::Ident(v) => RTsEntityName::Ident(v.clone()),
+            RExpr::Member(RMemberExpr { obj, prop, .. }) => RTsEntityName::TsQualifiedName(box RTsQualifiedName {
+                node_id: NodeId::invalid(),
+                left: obj.into(),
+                right: match prop {
+                    RMemberProp::Ident(v) => v.clone(),
+                    _ => unreachable!("invalid member expression"),
+                },
+            }),
+            _ => unreachable!("invalid expression"),
+        }
+    }
+}
+
+impl From<Atom> for RStr {
+    fn from(v: Atom) -> Self {
+        Self {
+            value: (&*v).into(),
+            span: Default::default(),
+            raw: None,
+        }
+    }
+}
+
+impl From<Atom> for RLit {
+    fn from(v: Atom) -> Self {
+        Self::Str(v.into())
+    }
+}
+
+impl From<Atom> for RTsLit {
+    fn from(v: Atom) -> Self {
+        Self::Str(v.into())
     }
 }
 
@@ -44,15 +97,59 @@ macro_rules! type_eq {
 
 type_eq!(RTsKeywordType);
 type_eq!(RTsThisType);
-type_eq!(RTsLitType);
 type_eq!(RTsThisTypeOrIdent);
-type_eq!(RStr);
 type_eq!(RIdent);
 type_eq!(RTsEntityName);
 type_eq!(RTsNamespaceDecl);
 type_eq!(RTsEnumMemberId);
 type_eq!(RExpr);
 type_eq!(RPropName);
+
+impl TypeEq for RBool {
+    #[inline]
+    fn type_eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl TypeEq for RStr {
+    #[inline]
+    fn type_eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl TypeEq for RNumber {
+    #[inline]
+    fn type_eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl TypeEq for RBigInt {
+    #[inline]
+    fn type_eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl TypeEq for RTsLitType {
+    fn type_eq(&self, other: &Self) -> bool {
+        self.lit.type_eq(&other.lit)
+    }
+}
+
+impl TypeEq for RTsLit {
+    fn type_eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (RTsLit::Str(a), RTsLit::Str(b)) => a.type_eq(b),
+            (RTsLit::Number(a), RTsLit::Number(b)) => a.type_eq(b),
+            (RTsLit::Bool(a), RTsLit::Bool(b)) => a.type_eq(b),
+            (RTsLit::BigInt(a), RTsLit::BigInt(b)) => a.type_eq(b),
+            _ => false,
+        }
+    }
+}
 
 define_rnode!({
     pub struct Class {
@@ -61,8 +158,8 @@ define_rnode!({
         pub body: Vec<ClassMember>,
         pub super_class: Option<Box<Expr>>,
         pub is_abstract: bool,
-        pub type_params: Option<TsTypeParamDecl>,
-        pub super_type_params: Option<TsTypeParamInstantiation>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
+        pub super_type_params: Option<Box<TsTypeParamInstantiation>>,
         pub implements: Vec<TsExprWithTypeArgs>,
     }
 
@@ -79,12 +176,11 @@ define_rnode!({
 
     pub struct ClassProp {
         pub span: Span,
-        pub key: Box<Expr>,
+        pub key: PropName,
         pub value: Option<Box<Expr>>,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
         pub is_static: bool,
         pub decorators: Vec<Decorator>,
-        pub computed: bool,
         #[not_spanned]
         pub accessibility: Option<Accessibility>,
         pub is_abstract: bool,
@@ -98,13 +194,11 @@ define_rnode!({
         pub span: Span,
         pub key: PrivateName,
         pub value: Option<Box<Expr>>,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
         pub is_static: bool,
         pub decorators: Vec<Decorator>,
-        pub computed: bool,
         #[not_spanned]
         pub accessibility: Option<Accessibility>,
-        pub is_abstract: bool,
         pub is_optional: bool,
         pub readonly: bool,
         pub definite: bool,
@@ -113,7 +207,7 @@ define_rnode!({
     pub struct ClassMethod {
         pub span: Span,
         pub key: PropName,
-        pub function: Function,
+        pub function: Box<Function>,
         #[not_spanned]
         pub kind: MethodKind,
         pub is_static: bool,
@@ -126,7 +220,7 @@ define_rnode!({
     pub struct PrivateMethod {
         pub span: Span,
         pub key: PrivateName,
-        pub function: Function,
+        pub function: Box<Function>,
         #[not_spanned]
         pub kind: MethodKind,
         pub is_static: bool,
@@ -153,23 +247,23 @@ define_rnode!({
     pub enum Decl {
         Class(ClassDecl),
         Fn(FnDecl),
-        Var(VarDecl),
-        TsInterface(TsInterfaceDecl),
-        TsTypeAlias(TsTypeAliasDecl),
-        TsEnum(TsEnumDecl),
-        TsModule(TsModuleDecl),
+        Var(Box<VarDecl>),
+        TsInterface(Box<TsInterfaceDecl>),
+        TsTypeAlias(Box<TsTypeAliasDecl>),
+        TsEnum(Box<TsEnumDecl>),
+        TsModule(Box<TsModuleDecl>),
     }
     pub struct FnDecl {
         pub ident: Ident,
         pub declare: bool,
         #[span]
-        pub function: Function,
+        pub function: Box<Function>,
     }
     pub struct ClassDecl {
         pub ident: Ident,
         pub declare: bool,
         #[span]
-        pub class: Class,
+        pub class: Box<Class>,
     }
     pub struct VarDecl {
         pub span: Span,
@@ -195,6 +289,7 @@ define_rnode!({
         Bin(BinExpr),
         Assign(AssignExpr),
         Member(MemberExpr),
+        SuperProp(SuperPropExpr),
         Cond(CondExpr),
         Call(CallExpr),
         New(NewExpr),
@@ -218,6 +313,8 @@ define_rnode!({
         TsConstAssertion(TsConstAssertion),
         TsNonNull(TsNonNullExpr),
         TsAs(TsAsExpr),
+        TsInstantiation(TsInstantiation),
+        TsSatisfies(TsSatisfiesExpr),
         PrivateName(PrivateName),
         OptChain(OptChainExpr),
         Invalid(Invalid),
@@ -265,12 +362,12 @@ define_rnode!({
     pub struct FnExpr {
         pub ident: Option<Ident>,
         #[span]
-        pub function: Function,
+        pub function: Box<Function>,
     }
     pub struct ClassExpr {
         pub ident: Option<Ident>,
         #[span]
-        pub class: Class,
+        pub class: Box<Class>,
     }
     pub struct AssignExpr {
         pub span: Span,
@@ -281,9 +378,13 @@ define_rnode!({
     }
     pub struct MemberExpr {
         pub span: Span,
-        pub obj: ExprOrSuper,
-        pub prop: Box<Expr>,
-        pub computed: bool,
+        pub obj: Box<Expr>,
+        pub prop: MemberProp,
+    }
+    pub enum MemberProp {
+        Ident(Ident),
+        PrivateName(PrivateName),
+        Computed(ComputedPropName),
     }
     pub struct CondExpr {
         pub span: Span,
@@ -293,15 +394,26 @@ define_rnode!({
     }
     pub struct CallExpr {
         pub span: Span,
-        pub callee: ExprOrSuper,
+        pub callee: Callee,
         pub args: Vec<ExprOrSpread>,
-        pub type_args: Option<TsTypeParamInstantiation>,
+        pub type_args: Option<Box<TsTypeParamInstantiation>>,
+    }
+    pub struct Super {
+        pub span: Span,
+    }
+    pub struct Import {
+        pub span: Span,
+    }
+    pub enum Callee {
+        Expr(Box<Expr>),
+        Super(Super),
+        Import(Import),
     }
     pub struct NewExpr {
         pub span: Span,
         pub callee: Box<Expr>,
         pub args: Option<Vec<ExprOrSpread>>,
-        pub type_args: Option<TsTypeParamInstantiation>,
+        pub type_args: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct SeqExpr {
         pub span: Span,
@@ -313,8 +425,8 @@ define_rnode!({
         pub body: BlockStmtOrExpr,
         pub is_async: bool,
         pub is_generator: bool,
-        pub type_params: Option<TsTypeParamDecl>,
-        pub return_type: Option<TsTypeAnn>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
+        pub return_type: Option<Box<TsTypeAnn>>,
     }
     pub struct YieldExpr {
         pub span: Span,
@@ -322,10 +434,8 @@ define_rnode!({
         pub delegate: bool,
     }
     pub struct MetaPropExpr {
-        #[span(lo)]
-        pub meta: Ident,
-        #[span(hi)]
-        pub prop: Ident,
+        pub span: Span,
+        pub kind: MetaPropKind,
     }
     pub struct AwaitExpr {
         pub span: Span,
@@ -340,25 +450,19 @@ define_rnode!({
         pub span: Span,
         pub tag: Box<Expr>,
         pub tpl: Tpl,
-        pub type_params: Option<TsTypeParamInstantiation>,
+        pub type_params: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct TplElement {
         pub span: Span,
         pub tail: bool,
-        pub cooked: Option<Str>,
-        pub raw: Str,
+        pub cooked: Option<Atom>,
+        pub raw: Atom,
     }
     pub struct ParenExpr {
         pub span: Span,
         pub expr: Box<Expr>,
     }
-    pub enum ExprOrSuper {
-        Super(Super),
-        Expr(Box<Expr>),
-    }
-    pub struct Super {
-        pub span: Span,
-    }
+
     #[skip_node_id]
     pub struct ExprOrSpread {
         pub spread: Option<Span>,
@@ -377,7 +481,17 @@ define_rnode!({
     pub struct OptChainExpr {
         pub span: Span,
         pub question_dot_token: Span,
-        pub expr: Box<Expr>,
+        pub base: OptChainBase,
+    }
+    pub enum OptChainBase {
+        Member(MemberExpr),
+        Call(OptCall),
+    }
+    pub struct OptCall {
+        pub span: Span,
+        pub callee: Box<Expr>,
+        pub args: Vec<ExprOrSpread>,
+        pub type_args: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct Function {
         pub params: Vec<Param>,
@@ -386,8 +500,8 @@ define_rnode!({
         pub body: Option<BlockStmt>,
         pub is_generator: bool,
         pub is_async: bool,
-        pub type_params: Option<TsTypeParamDecl>,
-        pub return_type: Option<TsTypeAnn>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
+        pub return_type: Option<Box<TsTypeAnn>>,
     }
     pub struct Param {
         pub span: Span,
@@ -408,7 +522,7 @@ define_rnode!({
     pub struct BindingIdent {
         #[span]
         pub id: Ident,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
     }
 
     pub struct PrivateName {
@@ -456,7 +570,7 @@ define_rnode!({
         pub span: Span,
         pub attrs: Vec<JSXAttrOrSpread>,
         pub self_closing: bool,
-        pub type_args: Option<TsTypeParamInstantiation>,
+        pub type_args: Option<Box<TsTypeParamInstantiation>>,
     }
     pub enum JSXAttrOrSpread {
         JSXAttr(JSXAttr),
@@ -483,8 +597,8 @@ define_rnode!({
     }
     pub struct JSXText {
         pub span: Span,
-        pub value: JsWord,
-        pub raw: JsWord,
+        pub value: Atom,
+        pub raw: Atom,
     }
     pub struct JSXElement {
         pub span: Span,
@@ -530,13 +644,15 @@ define_rnode!({
         pub span: Span,
         #[not_spanned]
         pub value: BigIntValue,
+
+        pub raw: Option<Atom>,
     }
     #[skip_node_id]
     pub struct Str {
         pub span: Span,
         pub value: JsWord,
-        pub has_escape: bool,
-        pub kind: StrKind,
+
+        pub raw: Option<Atom>,
     }
     #[skip_node_id]
     pub struct Bool {
@@ -550,13 +666,15 @@ define_rnode!({
     #[skip_node_id]
     pub struct Regex {
         pub span: Span,
-        pub exp: JsWord,
-        pub flags: JsWord,
+        pub exp: Atom,
+        pub flags: Atom,
     }
     #[skip_node_id]
     pub struct Number {
         pub span: Span,
         pub value: f64,
+
+        pub raw: Option<Atom>,
     }
     pub enum Program {
         Module(Module),
@@ -565,12 +683,12 @@ define_rnode!({
     pub struct Module {
         pub span: Span,
         pub body: Vec<ModuleItem>,
-        pub shebang: Option<JsWord>,
+        pub shebang: Option<Atom>,
     }
     pub struct Script {
         pub span: Span,
         pub body: Vec<Stmt>,
-        pub shebang: Option<JsWord>,
+        pub shebang: Option<Atom>,
     }
     pub enum ModuleItem {
         ModuleDecl(ModuleDecl),
@@ -583,7 +701,7 @@ define_rnode!({
         ExportDefaultDecl(ExportDefaultDecl),
         ExportDefaultExpr(ExportDefaultExpr),
         ExportAll(ExportAll),
-        TsImportEquals(TsImportEqualsDecl),
+        TsImportEquals(Box<TsImportEqualsDecl>),
         TsExportAssignment(TsExportAssignment),
         TsNamespaceExport(TsNamespaceExportDecl),
     }
@@ -598,21 +716,21 @@ define_rnode!({
     pub struct ImportDecl {
         pub span: Span,
         pub specifiers: Vec<ImportSpecifier>,
-        pub src: Str,
+        pub src: Box<Str>,
         pub type_only: bool,
-        pub asserts: Option<ObjectLit>,
+        pub asserts: Option<Box<ObjectLit>>,
     }
     pub struct ExportAll {
         pub span: Span,
-        pub src: Str,
-        pub asserts: Option<ObjectLit>,
+        pub src: Box<Str>,
+        pub asserts: Option<Box<ObjectLit>>,
     }
     pub struct NamedExport {
         pub span: Span,
         pub specifiers: Vec<ExportSpecifier>,
-        pub src: Option<Str>,
+        pub src: Option<Box<Str>>,
         pub type_only: bool,
-        pub asserts: Option<ObjectLit>,
+        pub asserts: Option<Box<ObjectLit>>,
     }
     pub struct ExportDefaultDecl {
         pub span: Span,
@@ -621,7 +739,7 @@ define_rnode!({
     pub enum DefaultDecl {
         Class(ClassExpr),
         Fn(FnExpr),
-        TsInterfaceDecl(TsInterfaceDecl),
+        TsInterfaceDecl(Box<TsInterfaceDecl>),
     }
     pub enum ImportSpecifier {
         Named(ImportNamedSpecifier),
@@ -639,7 +757,7 @@ define_rnode!({
     pub struct ImportNamedSpecifier {
         pub span: Span,
         pub local: Ident,
-        pub imported: Option<Ident>,
+        pub imported: Option<ModuleExportName>,
         pub is_type_only: bool,
     }
     pub enum ExportSpecifier {
@@ -649,7 +767,7 @@ define_rnode!({
     }
     pub struct ExportNamespaceSpecifier {
         pub span: Span,
-        pub name: Ident,
+        pub name: ModuleExportName,
     }
     pub struct ExportDefaultSpecifier {
         #[span]
@@ -657,9 +775,13 @@ define_rnode!({
     }
     pub struct ExportNamedSpecifier {
         pub span: Span,
-        pub orig: Ident,
-        pub exported: Option<Ident>,
+        pub orig: ModuleExportName,
+        pub exported: Option<ModuleExportName>,
         pub is_type_only: bool,
+    }
+    pub enum ModuleExportName {
+        Ident(Ident),
+        Str(Str),
     }
 
     pub enum Pat {
@@ -675,25 +797,25 @@ define_rnode!({
         pub span: Span,
         pub elems: Vec<Option<Pat>>,
         pub optional: bool,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
     }
     pub struct ObjectPat {
         pub span: Span,
         pub props: Vec<ObjectPatProp>,
         pub optional: bool,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
     }
     pub struct AssignPat {
         pub span: Span,
         pub left: Box<Pat>,
         pub right: Box<Expr>,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
     }
     pub struct RestPat {
         pub span: Span,
         pub dot3_token: Span,
         pub arg: Box<Pat>,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
     }
     pub enum ObjectPatProp {
         KeyValue(KeyValuePatProp),
@@ -734,20 +856,20 @@ define_rnode!({
     pub struct GetterProp {
         pub span: Span,
         pub key: PropName,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
         pub body: Option<BlockStmt>,
     }
     pub struct SetterProp {
         pub span: Span,
         pub key: PropName,
-        pub param: Pat,
+        pub param: Box<Pat>,
         pub body: Option<BlockStmt>,
     }
     pub struct MethodProp {
         #[span(lo)]
         pub key: PropName,
         #[span(hi)]
-        pub function: Function,
+        pub function: Box<Function>,
     }
     pub enum PropName {
         Ident(Ident),
@@ -776,7 +898,7 @@ define_rnode!({
         If(IfStmt),
         Switch(SwitchStmt),
         Throw(ThrowStmt),
-        Try(TryStmt),
+        Try(Box<TryStmt>),
         While(WhileStmt),
         DoWhile(DoWhileStmt),
         For(ForStmt),
@@ -880,11 +1002,11 @@ define_rnode!({
         pub body: BlockStmt,
     }
     pub enum VarDeclOrPat {
-        VarDecl(VarDecl),
-        Pat(Pat),
+        VarDecl(Box<VarDecl>),
+        Pat(Box<Pat>),
     }
     pub enum VarDeclOrExpr {
-        VarDecl(VarDecl),
+        VarDecl(Box<VarDecl>),
         Expr(Box<Expr>),
     }
     pub struct TsTypeAnn {
@@ -900,6 +1022,8 @@ define_rnode!({
         pub name: Ident,
         pub constraint: Option<Box<TsType>>,
         pub default: Option<Box<TsType>>,
+        pub is_in: bool,
+        pub is_out: bool,
     }
     pub struct TsTypeParamInstantiation {
         pub span: Span,
@@ -943,14 +1067,14 @@ define_rnode!({
     pub struct TsCallSignatureDecl {
         pub span: Span,
         pub params: Vec<TsFnParam>,
-        pub type_ann: Option<TsTypeAnn>,
-        pub type_params: Option<TsTypeParamDecl>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
     }
     pub struct TsConstructSignatureDecl {
         pub span: Span,
         pub params: Vec<TsFnParam>,
-        pub type_ann: Option<TsTypeAnn>,
-        pub type_params: Option<TsTypeParamDecl>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
     }
     pub struct TsPropertySignature {
         pub span: Span,
@@ -960,8 +1084,8 @@ define_rnode!({
         pub optional: bool,
         pub init: Option<Box<Expr>>,
         pub params: Vec<TsFnParam>,
-        pub type_ann: Option<TsTypeAnn>,
-        pub type_params: Option<TsTypeParamDecl>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
     }
 
     pub struct TsGetterSignature {
@@ -970,7 +1094,7 @@ define_rnode!({
         pub key: Box<Expr>,
         pub computed: bool,
         pub optional: bool,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
     }
 
     pub struct TsSetterSignature {
@@ -989,12 +1113,12 @@ define_rnode!({
         pub computed: bool,
         pub optional: bool,
         pub params: Vec<TsFnParam>,
-        pub type_ann: Option<TsTypeAnn>,
-        pub type_params: Option<TsTypeParamDecl>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
     }
     pub struct TsIndexSignature {
         pub params: Vec<TsFnParam>,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
         pub readonly: bool,
         pub span: Span,
         pub is_static: bool,
@@ -1044,26 +1168,26 @@ define_rnode!({
     pub struct TsFnType {
         pub span: Span,
         pub params: Vec<TsFnParam>,
-        pub type_params: Option<TsTypeParamDecl>,
-        pub type_ann: TsTypeAnn,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
+        pub type_ann: Box<TsTypeAnn>,
     }
     pub struct TsConstructorType {
         pub span: Span,
         pub params: Vec<TsFnParam>,
-        pub type_params: Option<TsTypeParamDecl>,
-        pub type_ann: TsTypeAnn,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
+        pub type_ann: Box<TsTypeAnn>,
         pub is_abstract: bool,
     }
     pub struct TsTypeRef {
         pub span: Span,
         pub type_name: TsEntityName,
-        pub type_params: Option<TsTypeParamInstantiation>,
+        pub type_params: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct TsTypePredicate {
         pub span: Span,
         pub asserts: bool,
         pub param_name: TsThisTypeOrIdent,
-        pub type_ann: Option<TsTypeAnn>,
+        pub type_ann: Option<Box<TsTypeAnn>>,
     }
     pub enum TsThisTypeOrIdent {
         TsThisType(TsThisType),
@@ -1072,6 +1196,7 @@ define_rnode!({
     pub struct TsTypeQuery {
         pub span: Span,
         pub expr_name: TsTypeQueryExpr,
+        pub type_args: Option<Box<TsTypeParamInstantiation>>,
     }
     pub enum TsTypeQueryExpr {
         TsEntityName(TsEntityName),
@@ -1081,7 +1206,7 @@ define_rnode!({
         pub span: Span,
         pub arg: Str,
         pub qualifier: Option<TsEntityName>,
-        pub type_args: Option<TsTypeParamInstantiation>,
+        pub type_args: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct TsTypeLit {
         pub span: Span,
@@ -1100,7 +1225,7 @@ define_rnode!({
     pub struct TsTupleElement {
         pub span: Span,
         pub label: Option<Pat>,
-        pub ty: TsType,
+        pub ty: Box<TsType>,
     }
 
     pub struct TsOptionalType {
@@ -1182,7 +1307,7 @@ define_rnode!({
         pub span: Span,
         pub id: Ident,
         pub declare: bool,
-        pub type_params: Option<TsTypeParamDecl>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
         pub extends: Vec<TsExprWithTypeArgs>,
         pub body: TsInterfaceBody,
     }
@@ -1192,14 +1317,14 @@ define_rnode!({
     }
     pub struct TsExprWithTypeArgs {
         pub span: Span,
-        pub expr: TsEntityName,
-        pub type_args: Option<TsTypeParamInstantiation>,
+        pub expr: Box<Expr>,
+        pub type_args: Option<Box<TsTypeParamInstantiation>>,
     }
     pub struct TsTypeAliasDecl {
         pub span: Span,
         pub declare: bool,
         pub id: Ident,
-        pub type_params: Option<TsTypeParamDecl>,
+        pub type_params: Option<Box<TsTypeParamDecl>>,
         pub type_ann: Box<TsType>,
     }
     pub struct TsEnumDecl {
@@ -1290,5 +1415,28 @@ define_rnode!({
     pub struct StaticBlock {
         pub span: Span,
         pub body: BlockStmt,
+    }
+
+    pub struct TsInstantiation {
+        pub span: Span,
+        pub expr: Box<Expr>,
+        pub type_args: Box<TsTypeParamInstantiation>,
+    }
+
+    pub struct TsSatisfiesExpr {
+        pub span: Span,
+        pub expr: Box<Expr>,
+        pub type_ann: Box<TsType>,
+    }
+
+    pub struct SuperPropExpr {
+        pub span: Span,
+        pub obj: Super,
+        pub prop: SuperProp,
+    }
+
+    pub enum SuperProp {
+        Ident(Ident),
+        Computed(ComputedPropName),
     }
 });

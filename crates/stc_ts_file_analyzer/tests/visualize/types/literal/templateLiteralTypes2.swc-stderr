@@ -1,0 +1,1091 @@
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:5:5]
+ 5 | const c1 = `abc${s}`;
+   :                  ^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:5:5]
+ 5 | const c1 = `abc${s}`;
+   :            ^^^^^^^^^
+   `----
+
+Error: 
+  > `abc${string}`
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:6:5]
+ 6 | const c2 = `abc${n}`;
+   :                  ^
+   `----
+
+Error: 
+  > number
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:6:5]
+ 6 | const c2 = `abc${n}`;
+   :            ^^^^^^^^^
+   `----
+
+Error: 
+  > `abc${number}`
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:7:5]
+ 7 | const c3 = `abc${u}`;
+   :                  ^
+   `----
+
+Error: 
+  > ('foo' | 'bar' | 'baz')
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:7:5]
+ 7 | const c3 = `abc${u}`;
+   :            ^^^^^^^^^
+   `----
+
+Error: 
+  > `abc${('foo' | 'bar' | 'baz')}`
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:8:5]
+ 8 | const c4 = `abc${t}`;
+   :                  ^
+   `----
+
+Error: 
+  > T
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:8:5]
+ 8 | const c4 = `abc${t}`;
+   :            ^^^^^^^^^
+   `----
+
+Error: 
+  > `abc${T}`
+
+  x Type
+   ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:9:5]
+ 9 | const d1: `abc${string}` = `abc${s}`;
+   :                            ^^^^^^^^^
+   `----
+
+Error: 
+  > `abc${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:10:5]
+ 10 | const d2: `abc${number}` = `abc${n}`;
+    :                            ^^^^^^^^^
+    `----
+
+Error: 
+  > `abc${number}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:11:5]
+ 11 | const d3: `abc${'foo' | 'bar' | 'baz'}` = `abc${u}`;
+    :                                           ^^^^^^^^^
+    `----
+
+Error: 
+  > `abc${('foo' | 'bar' | 'baz')}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:12:5]
+ 12 | const d4: `abc${T}` = `abc${t}`;
+    :                       ^^^^^^^^^
+    `----
+
+Error: 
+  > `abc${T}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:16:5]
+ 16 | return `abc${s}`;
+    :              ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:16:5]
+ 16 | return `abc${s}`;
+    :        ^^^^^^^^^
+    `----
+
+Error: 
+  > `abc${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:20:5]
+ 20 | const c1 = `abc${s}`;  // Type string
+    :                  ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:20:5]
+ 20 | const c1 = `abc${s}`;  // Type string
+    :            ^^^^^^^^^
+    `----
+
+Error: 
+  > `abc${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:21:5]
+ 21 | let v1 = c1;  // Type string
+    :          ^^
+    `----
+
+Error: 
+  > `abc${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:22:5]
+ 22 | const c2 = c1;  // Type string
+    :            ^^
+    `----
+
+Error: 
+  > `abc${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:23:5]
+ 23 | let v2 = c2;  // Type string
+    :          ^^
+    `----
+
+Error: 
+  > `abc${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:24:5]
+ 24 | const c3: `abc${string}` = `abc${s}`;
+    :                            ^^^^^^^^^
+    `----
+
+Error: 
+  > `abc${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:25:5]
+ 25 | let v3 = c3;  // Type `abc${string}`
+    :          ^^
+    `----
+
+Error: 
+  > `abc${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:26:5]
+ 26 | const c4: `abc${string}` = c1;  // Type `abc${string}`
+    :                            ^^
+    `----
+
+Error: 
+  > `abc${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:27:5]
+ 27 | let v4 = c4;  // Type `abc${string}`
+    :          ^^
+    `----
+
+Error: 
+  > `abc${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:31:5]
+ 31 | const c1 = cond ? `foo${s}` : `bar${s}`;  // string
+    :            ^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:31:5]
+ 31 | const c1 = cond ? `foo${s}` : `bar${s}`;  // string
+    :                         ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:31:5]
+ 31 | const c1 = cond ? `foo${s}` : `bar${s}`;  // string
+    :                   ^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:31:5]
+ 31 | const c1 = cond ? `foo${s}` : `bar${s}`;  // string
+    :                                     ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:31:5]
+ 31 | const c1 = cond ? `foo${s}` : `bar${s}`;  // string
+    :                               ^^^^^^^^^
+    `----
+
+Error: 
+  > `bar${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:31:5]
+ 31 | const c1 = cond ? `foo${s}` : `bar${s}`;  // string
+    :            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (`foo${string}` | `bar${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:32:5]
+ 32 | const c2: `foo${string}` | `bar${string}` = c1;  // `foo${string}` | `bar${string}`
+    :                                             ^^
+    `----
+
+Error: 
+  > (`foo${string}` | `bar${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:33:5]
+ 33 | const c3 = cond ? c1 : c2;  // string
+    :            ^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:33:5]
+ 33 | const c3 = cond ? c1 : c2;  // string
+    :                   ^^
+    `----
+
+Error: 
+  > (`foo${string}` | `bar${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:33:5]
+ 33 | const c3 = cond ? c1 : c2;  // string
+    :                        ^^
+    `----
+
+Error: 
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:33:5]
+ 33 | const c3 = cond ? c1 : c2;  // string
+    :            ^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:34:5]
+ 34 | const c4 = cond ? c3 : `baz${s}`;  // string
+    :            ^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:34:5]
+ 34 | const c4 = cond ? c3 : `baz${s}`;  // string
+    :                   ^^
+    `----
+
+Error: 
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:34:5]
+ 34 | const c4 = cond ? c3 : `baz${s}`;  // string
+    :                              ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:34:5]
+ 34 | const c4 = cond ? c3 : `baz${s}`;  // string
+    :                        ^^^^^^^^^
+    `----
+
+Error: 
+  > `baz${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:34:5]
+ 34 | const c4 = cond ? c3 : `baz${s}`;  // string
+    :            ^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `baz${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:35:5]
+ 35 | const c5: `foo${string}` | `bar${string}` | `baz${string}` = c4; // `foo${string}` | `bar${string}` | `baz${string}`
+    :                                                              ^^
+    `----
+
+Error: 
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `baz${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:36:5]
+ 36 | let v1 = c1;  // string
+    :          ^^
+    `----
+
+Error: 
+  > (`foo${string}` | `bar${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:37:5]
+ 37 | let v2 = c2;  // `foo${string}` | `bar${string}`
+    :          ^^
+    `----
+
+Error: 
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:38:5]
+ 38 | let v3 = c3;  // string
+    :          ^^
+    `----
+
+Error: 
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:39:5]
+ 39 | let v4 = c4;  // string
+    :          ^^
+    `----
+
+Error: 
+  > (`foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `foo${string}` | `bar${string}` | `baz${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:40:5]
+ 40 | let v5 = c5;  // `foo${string}` | `bar${string}` | `baz${string}`
+    :          ^^
+    `----
+
+Error: 
+  > (`foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` |
+  | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}` | `foo${string}` | `bar${string}` | `baz${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:44:5]
+ 44 | const c1 = `foo${s}`;
+    :                  ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:44:5]
+ 44 | const c1 = `foo${s}`;
+    :            ^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:45:5]
+ 45 | let v1 = c1;
+    :          ^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:46:5]
+ 46 | const c2: `foo${string}` = `foo${s}`;
+    :                            ^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:47:5]
+ 47 | let v2 = c2;
+    :          ^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:48:5]
+ 48 | const c3 = `foo${s}` as `foo${string}`;
+    :            ^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:48:5]
+ 48 | const c3 = `foo${s}` as `foo${string}`;
+    :            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:49:5]
+ 49 | let v3 = c3;
+    :          ^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:50:5]
+ 50 | const c4 = <`foo${string}`>`foo${s}`;
+    :                            ^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:50:5]
+ 50 | const c4 = <`foo${string}`>`foo${s}`;
+    :            ^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:51:5]
+ 51 | let v4 = c4;
+    :          ^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:52:5]
+ 52 | const c5 = `foo${s}` as const;
+    :                  ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:52:5]
+ 52 | const c5 = `foo${s}` as const;
+    :            ^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:52:5]
+ 52 | const c5 = `foo${s}` as const;
+    :            ^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:53:5]
+ 53 | let v5 = c5;
+    :          ^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:60:5]
+ 60 | let x1 = widening(`foo${s}`);
+    :                         ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:60:5]
+ 60 | let x1 = widening(`foo${s}`);
+    :                   ^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:60:5]
+ 60 | let x1 = widening(`foo${s}`);
+    :          ^^^^^^^^
+    `----
+
+Error: 
+  > <T>(x: T) => T
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:60:5]
+ 60 | let x1 = widening(`foo${s}`);
+    :          ^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:5]
+ 61 | let x2 = widening(cond ? 'a' : `foo${s}`);
+    :                   ^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:5]
+ 61 | let x2 = widening(cond ? 'a' : `foo${s}`);
+    :                                      ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:5]
+ 61 | let x2 = widening(cond ? 'a' : `foo${s}`);
+    :                                ^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:5]
+ 61 | let x2 = widening(cond ? 'a' : `foo${s}`);
+    :                   ^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > ('a' | `foo${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:5]
+ 61 | let x2 = widening(cond ? 'a' : `foo${s}`);
+    :          ^^^^^^^^
+    `----
+
+Error: 
+  > <T>(x: T) => T
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:61:5]
+ 61 | let x2 = widening(cond ? 'a' : `foo${s}`);
+    :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (string | `foo${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:62:5]
+ 62 | let y1 = nonWidening(`foo${s}`);
+    :                            ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:62:5]
+ 62 | let y1 = nonWidening(`foo${s}`);
+    :                      ^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:62:5]
+ 62 | let y1 = nonWidening(`foo${s}`);
+    :          ^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends (string | number | symbol)>(x: T) => T
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:62:5]
+ 62 | let y1 = nonWidening(`foo${s}`);
+    :          ^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:63:5]
+ 63 | let y2 = nonWidening(cond ? 'a' : `foo${s}`);
+    :                      ^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:63:5]
+ 63 | let y2 = nonWidening(cond ? 'a' : `foo${s}`);
+    :                                         ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:63:5]
+ 63 | let y2 = nonWidening(cond ? 'a' : `foo${s}`);
+    :                                   ^^^^^^^^^
+    `----
+
+Error: 
+  > `foo${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:63:5]
+ 63 | let y2 = nonWidening(cond ? 'a' : `foo${s}`);
+    :                      ^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > ('a' | `foo${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:63:5]
+ 63 | let y2 = nonWidening(cond ? 'a' : `foo${s}`);
+    :          ^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends (string | number | symbol)>(x: T) => T
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:63:5]
+ 63 | let y2 = nonWidening(cond ? 'a' : `foo${s}`);
+    :          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (string | `foo${string}`)
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:69:5]
+ 69 | let x1: string = t;
+    :                  ^
+    `----
+
+Error: 
+  > `foo${number}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:70:5]
+ 70 | let x2: String = t;
+    :                  ^
+    `----
+
+Error: 
+  > `foo${number}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:71:5]
+ 71 | let x3: Object = t;
+    :                  ^
+    `----
+
+Error: 
+  > `foo${number}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:72:5]
+ 72 | let x4: {} = t;
+    :              ^
+    `----
+
+Error: 
+  > `foo${number}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:73:5]
+ 73 | let x6: { length: number } = t;
+    :                              ^
+    `----
+
+Error: 
+  > `foo${number}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:80:5]
+ 80 | let x1 = g1(`xyz-${s}`);  // string
+    :                    ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:80:5]
+ 80 | let x1 = g1(`xyz-${s}`);  // string
+    :             ^^^^^^^^^^
+    `----
+
+Error: 
+  > `xyz-${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:80:5]
+ 80 | let x1 = g1(`xyz-${s}`);  // string
+    :          ^^
+    `----
+
+Error: 
+  > <T>(x: T) => T
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:80:5]
+ 80 | let x1 = g1(`xyz-${s}`);  // string
+    :          ^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > `xyz-${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:81:5]
+ 81 | let x2 = g2(`xyz-${s}`);  // `xyz-${string}`
+    :                    ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:81:5]
+ 81 | let x2 = g2(`xyz-${s}`);  // `xyz-${string}`
+    :             ^^^^^^^^^^
+    `----
+
+Error: 
+  > `xyz-${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:81:5]
+ 81 | let x2 = g2(`xyz-${s}`);  // `xyz-${string}`
+    :          ^^
+    `----
+
+Error: 
+  > <T extends string>(x: T) => T
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:81:5]
+ 81 | let x2 = g2(`xyz-${s}`);  // `xyz-${string}`
+    :          ^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > `xyz-${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:88:1]
+ 88 | const t1 = takesLiteral("foo.bar.baz"); // "baz"
+    :            ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:88:1]
+ 88 | const t1 = takesLiteral("foo.bar.baz"); // "baz"
+    :            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > "foo.bar.baz" extends `foo.bar.${infer R}` ? {
+  | } : unknown
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:90:1]
+ 90 | const t2 = takesLiteral(id2); // "baz"
+    :                         ^^^
+    `----
+
+Error: 
+  > "foo.bar.baz"
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:90:1]
+ 90 | const t2 = takesLiteral(id2); // "baz"
+    :            ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:90:1]
+ 90 | const t2 = takesLiteral(id2); // "baz"
+    :            ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > "foo.bar.baz" extends `foo.bar.${infer R}` ? {
+  | } : unknown
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:93:1]
+ 93 | const t3 = takesLiteral(`foo.bar.${someString}`);  // string
+    :                                    ^^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:93:1]
+ 93 | const t3 = takesLiteral(`foo.bar.${someString}`);  // string
+    :                         ^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > `foo.bar.${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:93:1]
+ 93 | const t3 = takesLiteral(`foo.bar.${someString}`);  // string
+    :            ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:93:1]
+ 93 | const t3 = takesLiteral(`foo.bar.${someString}`);  // string
+    :            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > `foo.bar.${string}` extends `foo.bar.${infer R}` ? {
+  | } : unknown
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:95:1]
+ 95 | const id4 = `foo.bar.${someString}`;
+    :                        ^^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:95:1]
+ 95 | const id4 = `foo.bar.${someString}`;
+    :             ^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > `foo.bar.${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:96:1]
+ 96 | const t4 = takesLiteral(id4);  // unknown
+    :                         ^^^
+    `----
+
+Error: 
+  > `foo.bar.${string}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:96:1]
+ 96 | const t4 = takesLiteral(id4);  // unknown
+    :            ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:96:1]
+ 96 | const t4 = takesLiteral(id4);  // unknown
+    :            ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > `foo.bar.${string}` extends `foo.bar.${infer R}` ? {
+  | } : unknown
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:99:1]
+ 99 | const t5 = takesLiteral(`foo.bar.${someUnion}`);  // "abc" | "def" | "ghi"
+    :                                    ^^^^^^^^^
+    `----
+
+Error: 
+  > ('abc' | 'def' | 'ghi')
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:99:1]
+ 99 | const t5 = takesLiteral(`foo.bar.${someUnion}`);  // "abc" | "def" | "ghi"
+    :                         ^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > `foo.bar.${('abc' | 'def' | 'ghi')}`
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:99:1]
+ 99 | const t5 = takesLiteral(`foo.bar.${someUnion}`);  // "abc" | "def" | "ghi"
+    :            ^^^^^^^^^^^^
+    `----
+
+Error: 
+  > <T extends string>(literal: T) => T extends `foo.bar.${infer R}` ? R : unknown
+
+  x Type
+    ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:99:1]
+ 99 | const t5 = takesLiteral(`foo.bar.${someUnion}`);  // "abc" | "def" | "ghi"
+    :            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > `foo.bar.${('abc' | 'def' | 'ghi')}` extends `foo.bar.${infer R}` ? {
+  | } : unknown
+
+  x Type
+     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:107:1]
+ 107 | const pixelString: PixelValueType = `22px`;
+     :                                     ^^^^^^
+     `----
+
+Error: 
+  > "22px"
+
+  x Type
+     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:109:1]
+ 109 | const pixelStringWithTemplate: PixelValueType = `${pixelValue}px`;
+     :                                                 ^^^^^^^^^^^^^^^^^
+     `----
+
+Error: 
+  > `${number}px`
+
+  x Type
+     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:114:5]
+ 114 | return `test-${title}`;
+     :        ^^^^^^^^^^^^^^^
+     `----
+
+Error: 
+  > `test-${string}`
+
+  x Type
+     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:119:1]
+ 119 | const interpolatedStyle = { rotate: 12 };
+     :                           ^^^^^^^^^^^^^^
+     `----
+
+Error: 
+  > {
+  |     rotate: 12;
+  | }
+
+  x Type
+     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:121:1]
+ 121 | C2(`rotate(${interpolatedStyle.rotate}dig)`);
+     :              ^^^^^^^^^^^^^^^^^
+     `----
+
+Error: 
+  > {
+  |     rotate: number;
+  | }
+
+  x Type
+     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:121:1]
+ 121 | C2(`rotate(${interpolatedStyle.rotate}dig)`);
+     :              ^^^^^^^^^^^^^^^^^^^^^^^^
+     `----
+
+Error: 
+  > number
+
+  x Type
+     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:121:1]
+ 121 | C2(`rotate(${interpolatedStyle.rotate}dig)`);
+     :    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     `----
+
+Error: 
+  > `rotate(${number}dig)`
+
+  x Type
+     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:121:1]
+ 121 | C2(`rotate(${interpolatedStyle.rotate}dig)`);
+     : ^^
+     `----
+
+Error: 
+  > (transform: ("-moz-initial" | (string & {
+  | }))) => number
+
+  x Type
+     ,-[$DIR/tests/visualize/types/literal/templateLiteralTypes2.ts:121:1]
+ 121 | C2(`rotate(${interpolatedStyle.rotate}dig)`);
+     : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     `----
+
+Error: 
+  > number

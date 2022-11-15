@@ -12,10 +12,10 @@ use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_storage::Single;
 use stc_ts_types::{module_id, Id, ModuleId, Type};
 use stc_utils::stack;
-use swc_common::{input::SourceFileInput, FileName, SourceMap, SyntaxContext};
+use swc_common::{input::SourceFileInput, FileName, Mark, SourceMap, SyntaxContext};
 use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
-use swc_ecma_transforms::resolver::ts_resolver;
+use swc_ecma_transforms::resolver;
 use swc_ecma_visit::FoldWith;
 use testing::StdErr;
 use tracing::Level;
@@ -28,10 +28,12 @@ use crate::{
 
 static ENV: Lazy<Env> = Lazy::new(|| Env::simple(Default::default(), EsVersion::latest(), ModuleConfig::None, &Lib::load("es5")));
 
+/// Single-file tester
 pub struct Tester<'a, 'b> {
     cm: Arc<SourceMap>,
     pub analyzer: Analyzer<'a, 'b>,
     pub node_id_gen: NodeIdGenerator,
+    pub top_level_mark: Mark,
 }
 
 pub fn run_test<F, Ret>(op: F) -> Result<Ret, StdErr>
@@ -54,6 +56,7 @@ where
                 cm: cm.clone(),
                 analyzer,
                 node_id_gen: Default::default(),
+                top_level_mark: Mark::new(),
             };
             let ret = op(&mut tester);
 
@@ -71,10 +74,9 @@ impl Tester<'_, '_> {
                 Syntax::Typescript(TsConfig {
                     tsx: false,
                     decorators: true,
-                    dynamic_import: true,
+
                     dts: false,
                     no_early_errors: false,
-                    import_assertions: false,
                 }),
                 EsVersion::latest(),
                 StringInput::from(&*fm),
@@ -82,7 +84,10 @@ impl Tester<'_, '_> {
             );
             let mut parser = Parser::new_from(lexer);
 
-            let module = parser.parse_module().unwrap().fold_with(&mut ts_resolver(MARKS.top_level_mark()));
+            let module = parser
+                .parse_module()
+                .unwrap()
+                .fold_with(&mut resolver(MARKS.unresolved_mark(), self.top_level_mark, true));
 
             RModule::from_orig(&mut NodeIdGenerator::invalid(), module)
         })
@@ -105,6 +110,7 @@ where
 
         let generator = module_id::ModuleIdGenerator::default();
         let path = Arc::new(fm.name.clone());
+        let (module_id, top_level_mark) = generator.generate(&path);
 
         let mut node_id_gen = NodeIdGenerator::default();
         let mut module = {
@@ -119,12 +125,11 @@ where
             parser.parse_module().unwrap()
         };
         module = swc_common::GLOBALS.set(env.shared().swc_globals(), || {
-            module.fold_with(&mut ts_resolver(env.shared().marks().top_level_mark()))
+            module.fold_with(&mut resolver(env.shared().marks().unresolved_mark(), top_level_mark, true))
         });
         let span = module.span;
         let module = RModule::from_orig(&mut node_id_gen, module);
 
-        let module_id = generator.generate(&path);
         let mut storage = Single {
             parent: None,
             id: module_id,
@@ -142,10 +147,10 @@ where
             let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
 
-            let top_level_ctxt = SyntaxContext::empty().apply_mark(env.shared().marks().top_level_mark());
+            let top_level_ctxt = SyntaxContext::empty().apply_mark(top_level_mark);
 
             let t1 = analyzer
-                .find_type(module_id, &Id::new("T1".into(), top_level_ctxt))
+                .find_type(&Id::new("T1".into(), top_level_ctxt))
                 .expect("type T1 should resolved without an issue")
                 .expect("type T1 should exist")
                 .into_iter()
@@ -153,7 +158,7 @@ where
                 .unwrap()
                 .into_owned();
             let t2 = analyzer
-                .find_type(module_id, &Id::new("T2".into(), top_level_ctxt))
+                .find_type(&Id::new("T2".into(), top_level_ctxt))
                 .expect("type T2 should resolved without an issue")
                 .expect("type T2 should exist")
                 .into_iter()

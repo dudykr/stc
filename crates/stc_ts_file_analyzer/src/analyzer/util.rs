@@ -1,4 +1,4 @@
-use std::iter::once;
+use std::{borrow::Cow, iter::once};
 
 use rnode::{Fold, FoldWith, Visit};
 use stc_ts_ast_rnode::{RExpr, RIdent, RPropName, RStr, RTsEntityName, RTsType};
@@ -6,7 +6,7 @@ use stc_ts_errors::Error;
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    Class, ClassMetadata, Enum, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType, Intersection, ModuleId, QueryExpr, QueryType, Ref,
+    Class, ClassMetadata, Enum, EnumVariant, EnumVariantMetadata, Id, IndexedAccessType, Intersection, QueryExpr, QueryType, Ref,
     RefMetadata, Tuple, TypeElement, Union,
 };
 use stc_utils::cache::ALLOW_DEEP_CLONE;
@@ -27,6 +27,12 @@ impl Analyzer<'_, '_> {
         if !cfg!(debug_assertions) {
             return;
         }
+        let ty = match ty.normalize() {
+            Type::Mapped(..) => self
+                .normalize(Some(span), Cow::Borrowed(ty), Default::default())
+                .unwrap_or(Cow::Borrowed(&ty)),
+            _ => Cow::Borrowed(ty),
+        };
 
         if let Some(debugger) = &self.debugger {
             ALLOW_DEEP_CLONE.set(&(), || {
@@ -83,7 +89,7 @@ impl Analyzer<'_, '_> {
 
     /// TODO(kdy1): Use Cow
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> VResult {
+    pub(super) fn make_instance(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let ty = ty.normalize();
 
         let span = span.with_ctxt(SyntaxContext::empty());
@@ -132,7 +138,7 @@ impl Analyzer<'_, '_> {
 
                 for parent in &interface.extends {
                     let ctxt = self.ctx.module_id;
-                    let parent_ty = self.type_of_ts_entity_name(span, ctxt, &parent.expr, None)?;
+                    let parent_ty = self.type_of_ts_entity_name(span, &parent.expr, None)?;
                     if let Ok(ty) = self.make_instance(span, &parent_ty) {
                         return Ok(ty);
                     }
@@ -159,7 +165,7 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
+pub(crate) fn make_instance_type(ty: Type) -> Type {
     let span = ty.span();
 
     match ty.normalize() {
@@ -170,7 +176,7 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
                 .cloned()
                 .map(|mut element| {
                     // TODO(kdy1): Remove clone
-                    element.ty = box make_instance_type(module_id, *element.ty);
+                    element.ty = box make_instance_type(*element.ty);
                     element
                 })
                 .collect(),
@@ -186,7 +192,7 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
         }),
 
         Type::Intersection(ref i) => {
-            let types = i.types.iter().map(|ty| make_instance_type(module_id, ty.clone())).collect();
+            let types = i.types.iter().map(|ty| make_instance_type(ty.clone())).collect();
 
             Type::Intersection(Intersection {
                 span: i.span,
@@ -202,7 +208,6 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
             metadata,
         }) => Type::Ref(Ref {
             span: *span,
-            ctxt: module_id,
             type_name: type_name.clone(),
             type_args: Default::default(),
             metadata: RefMetadata {
@@ -213,7 +218,6 @@ pub(crate) fn make_instance_type(module_id: ModuleId, ty: Type) -> Type {
 
         Type::Enum(Enum { id, metadata, .. }) => Type::EnumVariant(EnumVariant {
             span,
-            ctxt: module_id,
             enum_name: id.into(),
             name: None,
             metadata: EnumVariantMetadata {

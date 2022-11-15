@@ -13,6 +13,7 @@
         "dedup",
         "dejavu",
         "deps",
+        "dudykr",
         "elems",
         "fastpath",
         "fxhash",
@@ -41,5 +42,7 @@
     ],
     "ignorePaths": [
         "target"
+        "fxhash",
+        "smallvec"
     ]
 }

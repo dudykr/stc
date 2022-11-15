@@ -200,6 +200,8 @@ pub(crate) struct Ctx {
     is_not_topmost_type: bool,
 
     is_fn_param: bool,
+
+    in_module: bool,
 }
 
 impl Ctx {
@@ -371,9 +373,8 @@ impl Analyzer<'_, '_> {
             span,
             RTsModuleName::Str(RStr {
                 span: DUMMY_SP,
-                has_escape: false,
-                kind: Default::default(),
                 value: js_word!(""),
+                raw: None,
             }),
             data,
         ))
@@ -526,6 +527,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 in_unreachable: false,
                 is_not_topmost_type: false,
                 is_fn_param: false,
+                in_module: false,
             },
             loader,
             is_builtin,
@@ -719,11 +721,11 @@ impl Load for NoopLoader {
         unreachable!()
     }
 
-    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> VResult {
+    fn load_circular_dep(&self, base: ModuleId, dep: ModuleId, partial: &ModuleTypeData) -> VResult<Type> {
         unreachable!()
     }
 
-    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult {
+    fn load_non_circular_dep(&self, base: ModuleId, dep: ModuleId) -> VResult<Type> {
         unreachable!()
     }
 
@@ -735,6 +737,8 @@ impl Load for NoopLoader {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, modules: &Vec<RModule>) {
+        self.ctx.in_module = true;
+
         let mut items = vec![];
         for m in modules {
             items.extend(&m.body);
@@ -753,6 +757,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, m: &RModule) {
+        self.ctx.in_module = true;
         let is_dts = self.ctx.is_dts;
 
         let globals = self.env.shared().swc_globals().clone();
@@ -850,7 +855,7 @@ impl Analyzer<'_, '_> {
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
             let ty = match node.module_ref {
                 RTsModuleRef::TsEntityName(ref e) => analyzer
-                    .type_of_ts_entity_name(node.span, analyzer.ctx.module_id, e, None)
+                    .type_of_ts_entity_name(node.span, &e.clone().into(), None)
                     .unwrap_or_else(|err| {
                         analyzer.storage.report(err);
                         Type::any(node.span, Default::default())
@@ -925,7 +930,7 @@ impl Analyzer<'_, '_> {
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, decl: &RTsNamespaceDecl) -> VResult {
+    fn validate(&mut self, decl: &RTsNamespaceDecl) -> VResult<Type> {
         let is_builtin = self.is_builtin;
         let span = decl.span;
         let ctxt = self.ctx.module_id;
@@ -950,7 +955,7 @@ impl Analyzer<'_, '_> {
                     exports: box exports,
                     metadata: Default::default(),
                 };
-                let ty = Type::Namespace(ty).cheap();
+                let ty = Type::Namespace(ty).freezed();
 
                 Ok(ty)
             })
@@ -1009,16 +1014,14 @@ impl Analyzer<'_, '_> {
                         exports: box exports,
                         metadata: Default::default(),
                     };
-                    let ty = Type::Module(ty).cheap();
+                    let ty = Type::Module(ty).freezed();
                     return Ok(Some(ty));
                 }
 
                 Ok(None)
             })?;
 
-        if let Some(ty) = &mut ty {
-            ty.make_cheap();
-        }
+        ty.make_clone_cheap();
 
         if let Some(ty) = &ty {
             match &decl.id {

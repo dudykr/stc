@@ -6,12 +6,12 @@ use stc_ts_base_type_ops::apply_mapped_flags;
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
-    Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, LitType, Mapped, Operator, PropertySignature, Type, TypeElement,
-    TypeLit,
+    Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator, PropertySignature,
+    Type, TypeElement, TypeLit,
 };
-use stc_utils::cache::ALLOW_DEEP_CLONE;
+use stc_utils::cache::{Freeze, ALLOW_DEEP_CLONE};
 use swc_common::{Span, Spanned, TypeEq};
-use swc_ecma_ast::{TruePlusMinus, TsTypeOperatorOp};
+use swc_ecma_ast::{TruePlusMinus, TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, instrument};
 
 use crate::{
@@ -36,7 +36,7 @@ impl Analyzer<'_, '_> {
         let ty = self.expand_mapped_inner(span, m)?;
 
         if let Some(ty) = &ty {
-            let expanded = dump_type_as_string(&self.cm, &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
+            let expanded = dump_type_as_string(&self.cm, ty);
 
             debug!("[types/mapped]: Expanded {} as {}", orig, expanded);
         }
@@ -48,14 +48,18 @@ impl Analyzer<'_, '_> {
         match m.type_param.constraint.as_deref().map(|v| v.normalize()) {
             Some(Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
-                ty,
+                ty: keyof_operand,
                 ..
             })) => {
+                let keyof_operand = self
+                    .normalize(Some(span), Cow::Borrowed(keyof_operand), Default::default())
+                    .context("tried to normalize the operand of `in keyof`")?;
+
                 if let Some(mapped_ty) = m.ty.as_deref().map(Type::normalize) {
                     // Special case, but many usages can be handled with this check.
-                    if (&**ty).type_eq(&mapped_ty) {
+                    if (&*keyof_operand).type_eq(&mapped_ty) {
                         let new_type = self
-                            .convert_type_to_type_lit(span, Cow::Borrowed(&ty))
+                            .convert_type_to_type_lit(span, Cow::Borrowed(&keyof_operand))
                             .context("tried to convert a type to type literal to expand mapped type")?
                             .map(Cow::into_owned);
 
@@ -69,7 +73,17 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                let keys = self.get_property_names_for_mapped_type(span, ty)?;
+                if let Some(array) = keyof_operand.as_array() {
+                    let ty = Type::Array(Array {
+                        span,
+                        elem_type: m.ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
+                        metadata: array.metadata,
+                    })
+                    .freezed();
+                    return Ok(Some(ty));
+                }
+
+                let keys = self.get_property_names_for_mapped_type(span, &keyof_operand)?;
                 if let Some(keys) = keys {
                     let members = keys
                         .into_iter()
@@ -140,7 +154,7 @@ impl Analyzer<'_, '_> {
                 if let Some(mapped_ty) = m.ty.as_deref() {
                     let found_type_param_in_keyof_operand = {
                         let mut v = TypeParamNameUsageFinder::default();
-                        ty.visit_with(&mut v);
+                        keyof_operand.visit_with(&mut v);
                         !v.params.is_empty()
                     };
                     if !found_type_param_in_keyof_operand {
@@ -152,7 +166,7 @@ impl Analyzer<'_, '_> {
                         // };
 
                         let mut finder = IndexedAccessTypeFinder {
-                            obj: ty,
+                            obj: &keyof_operand,
                             key: &m.type_param.name,
                             can_replace_indexed_type: false,
                         };
@@ -160,7 +174,7 @@ impl Analyzer<'_, '_> {
                         mapped_ty.visit_with(&mut finder);
                         if finder.can_replace_indexed_type {
                             let mut replacer = IndexedAccessTypeReplacer {
-                                obj: ty,
+                                obj: &keyof_operand,
                                 key: &m.type_param.name,
                             };
 
@@ -224,7 +238,7 @@ impl Analyzer<'_, '_> {
     fn expand_key_in_mapped(&mut self, mapped_type_param: Id, mapped_ty: &Type, key: &Key) -> VResult<Type> {
         let mapped_ty = mapped_ty.clone();
         let mut type_params = HashMap::default();
-        type_params.insert(mapped_type_param, key.ty().into_owned().cheap());
+        type_params.insert(mapped_type_param, key.ty().into_owned().freezed());
         self.expand_type_params(&type_params, mapped_ty, Default::default())
     }
 
@@ -255,7 +269,7 @@ impl Analyzer<'_, '_> {
                     return Ok(Some(vec![Key::Normal {
                         span: t.span,
                         sym: match &t.quasis[0].cooked {
-                            Some(v) => v.value.clone(),
+                            Some(v) => (&**v).into(),
                             _ => return Ok(None),
                         },
                     }]))
@@ -290,7 +304,7 @@ impl Analyzer<'_, '_> {
     fn get_property_names_for_mapped_type(&mut self, span: Span, ty: &Type) -> VResult<Option<Vec<PropertyName>>> {
         let ty = self
             .normalize(
-                None,
+                Some(span),
                 Cow::Borrowed(ty),
                 NormalizeTypeOpts {
                     normalize_keywords: true,
@@ -304,6 +318,11 @@ impl Analyzer<'_, '_> {
         }
 
         match ty.normalize() {
+            Type::Keyword(KeywordType {
+                kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
+                ..
+            }) => return Ok(Some(vec![])),
+
             Type::TypeLit(ty) => {
                 let mut keys = vec![];
                 for m in &ty.members {
@@ -351,7 +370,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 for parent in &ty.extends {
-                    let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
+                    let parent = self.type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?;
                     if let Some(parent_keys) = self.get_property_names_for_mapped_type(span, &parent)? {
                         keys.extend(parent_keys);
                     }
@@ -464,11 +483,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        unimplemented!(
-            "get_property_names_for_mapped_type:\n{}\n{:#?}",
-            dump_type_as_string(&self.cm, &ty),
-            ty
-        );
+        Ok(None)
     }
 
     pub(crate) fn apply_mapped_flags_to_type(

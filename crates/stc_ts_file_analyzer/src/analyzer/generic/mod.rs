@@ -3,7 +3,7 @@ use std::{borrow::Cow, collections::hash_map::Entry, mem::take, time::Instant};
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RIdent, RPat, RStr, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace, print_type},
     DebugExt,
@@ -15,7 +15,7 @@ use stc_ts_generics::{
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     Array, ClassMember, FnParam, Function, Id, IndexSignature, IndexedAccessType, Intersection, Key, KeywordType, KeywordTypeMetadata,
-    LitType, LitTypeMetadata, Mapped, ModuleId, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type,
+    LitType, LitTypeMetadata, Mapped, Operator, OptionalType, PropertySignature, Ref, Tuple, TupleElement, TupleMetadata, Type,
     TypeElement, TypeLit, TypeOrSpread, TypeParam, TypeParamDecl, TypeParamInstantiation, TypeParamMetadata, Union, UnionMetadata,
 };
 use stc_ts_utils::MapWithMut;
@@ -23,6 +23,7 @@ use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
     debug_ctx, stack,
 };
+use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::{debug, error, info, span, trace, warn, Level};
@@ -129,7 +130,19 @@ impl Analyzer<'_, '_> {
             args
         };
 
-        for (idx, p) in params.iter().enumerate() {
+        let skip = if params.len() == 0 {
+            0
+        } else {
+            match &params[0].pat {
+                RPat::Ident(RBindingIdent {
+                    id: RIdent { sym: js_word!("this"), .. },
+                    ..
+                }) => 1,
+                _ => 0,
+            }
+        };
+
+        for (idx, p) in params.iter().skip(skip).enumerate() {
             let is_rest = match &p.pat {
                 RPat::Rest(_) => true,
                 _ => false,
@@ -575,7 +588,7 @@ impl Analyzer<'_, '_> {
                         };
                         let prev = match prev {
                             InferredType::Union(prev) => prev,
-                            InferredType::Other(prev) => Type::new_union_without_dedup(span, prev).cheap(),
+                            InferredType::Other(prev) => Type::new_union_without_dedup(span, prev).freezed(),
                         };
 
                         self.with_ctx(ctx).infer_type(span, inferred, &prev, arg, opts)?;
@@ -677,12 +690,12 @@ impl Analyzer<'_, '_> {
                                 if let Some(prev) = e.iter().find(|prev| {
                                     self.assign_with_opts(
                                         &mut Default::default(),
+                                        prev,
+                                        &arg,
                                         AssignOpts {
                                             span,
                                             ..Default::default()
                                         },
-                                        prev,
-                                        &arg,
                                     )
                                     .is_ok()
                                 }) {
@@ -702,12 +715,12 @@ impl Analyzer<'_, '_> {
                                     if self
                                         .assign_with_opts(
                                             &mut Default::default(),
+                                            &arg,
+                                            prev,
                                             AssignOpts {
                                                 span,
                                                 ..Default::default()
                                             },
-                                            &arg,
-                                            prev,
                                         )
                                         .is_ok()
                                     {
@@ -718,7 +731,7 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
 
-                                let param_ty = Type::union(e.clone()).cheap();
+                                let param_ty = Type::union(e.clone()).freezed();
                                 e.push(arg.clone());
 
                                 match param_ty.normalize() {
@@ -928,6 +941,18 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Tuple(param) => match arg {
+                Type::Array(arg) => {
+                    for elem in &param.elems {
+                        match elem.ty.normalize() {
+                            Type::Rest(rest) => {
+                                self.infer_type(span, inferred, &rest.ty, &arg.elem_type, opts)?;
+                            }
+                            _ => {
+                                self.infer_type(span, inferred, &elem.ty, &arg.elem_type, opts)?;
+                            }
+                        }
+                    }
+                }
                 Type::Tuple(arg) => return self.infer_type_using_tuple_and_tuple(span, inferred, param, arg, opts),
                 _ => {
                     dbg!();
@@ -1145,7 +1170,6 @@ impl Analyzer<'_, '_> {
                     param,
                     &Type::Ref(Ref {
                         span,
-                        ctxt: ModuleId::builtin(),
                         type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
                         type_args: Some(box TypeParamInstantiation { span, params }),
                         metadata: Default::default(),
@@ -1178,7 +1202,7 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )?
-                    .cheap();
+                    .freezed();
                 match arg.normalize() {
                     Type::Ref(..) => {}
                     _ => {
@@ -1192,7 +1216,7 @@ impl Analyzer<'_, '_> {
                 // Body should be handled by the match expression above.
 
                 for parent in &arg.extends {
-                    let parent = self.type_of_ts_entity_name(span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref())?;
+                    let parent = self.type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?;
                     self.infer_type(span, inferred, &param, &parent, opts)?;
                 }
 
@@ -1464,8 +1488,7 @@ impl Analyzer<'_, '_> {
                                         lit: RTsLit::Str(RStr {
                                             span: *i_span,
                                             value: sym.clone(),
-                                            has_escape: false,
-                                            kind: Default::default(),
+                                            raw: None,
                                         }),
                                         metadata: LitTypeMetadata {
                                             common: param.metadata.common,
@@ -1503,7 +1526,7 @@ impl Analyzer<'_, '_> {
                                             self.infer_type(span, &mut data, &param_ty, arg_prop_ty, opts)?;
                                             let inferred_ty = data.type_params.remove(&name).map(|ty| match ty {
                                                 InferredType::Union(ty) => ty,
-                                                InferredType::Other(types) => Type::union(types).cheap(),
+                                                InferredType::Other(types) => Type::union(types).freezed(),
                                             });
 
                                             self.mapped_type_param_name = old;
@@ -1536,7 +1559,7 @@ impl Analyzer<'_, '_> {
                                                 .clone()
                                                 .foldable()
                                                 .fold_with(&mut SingleTypeParamReplacer { name: &name, to: param_ty })
-                                                .cheap();
+                                                .freezed();
 
                                             self.infer_type(span, inferred, &mapped_param_ty, arg_prop_ty, opts)?;
                                         }
@@ -1712,8 +1735,7 @@ impl Analyzer<'_, '_> {
                                                 lit: RTsLit::Str(RStr {
                                                     span: *i_span,
                                                     value: i_sym.clone(),
-                                                    has_escape: false,
-                                                    kind: Default::default(),
+                                                    raw: None,
                                                 }),
                                                 metadata: LitTypeMetadata {
                                                     common: param.metadata.common,
@@ -1815,7 +1837,7 @@ impl Analyzer<'_, '_> {
                                                             .remove(name)
                                                             .map(|ty| match ty {
                                                                 InferredType::Union(v) => v,
-                                                                InferredType::Other(v) => Type::union(v).cheap(),
+                                                                InferredType::Other(v) => Type::union(v).freezed(),
                                                             })
                                                             .map(Box::new);
 
@@ -1996,7 +2018,7 @@ impl Analyzer<'_, '_> {
                     }) => match &param.ty {
                         Some(param_ty) => match arg {
                             Type::TypeLit(arg_lit) => {
-                                let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).cheap();
+                                let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).freezed();
                                 print_type(&"reversed", &self.cm, &reversed_param_ty);
 
                                 self.infer_type(span, inferred, &reversed_param_ty, arg, opts)?;
@@ -2133,7 +2155,7 @@ impl Analyzer<'_, '_> {
 
             let ty = match ty.clone() {
                 InferredType::Union(v) => v,
-                InferredType::Other(types) => Type::union(types).cheap(),
+                InferredType::Other(types) => Type::union(types).freezed(),
             };
             fixed.insert(param_name.clone(), ty);
         });
@@ -2154,7 +2176,7 @@ impl Analyzer<'_, '_> {
 
 /// Handles renaming of the type parameters.
 impl Analyzer<'_, '_> {
-    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult {
+    pub(super) fn rename_type_params(&mut self, span: Span, mut ty: Type, type_ann: Option<&Type>) -> VResult<Type> {
         if self.is_builtin {
             return Ok(ty);
         }

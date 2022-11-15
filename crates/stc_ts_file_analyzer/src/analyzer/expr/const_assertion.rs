@@ -18,7 +18,7 @@ impl Analyzer<'_, '_> {
         mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
-    ) -> VResult {
+    ) -> VResult<Type> {
         let span = expr.span;
 
         if mode == TypeOfMode::RValue {

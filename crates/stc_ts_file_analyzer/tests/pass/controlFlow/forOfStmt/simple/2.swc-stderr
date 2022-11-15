@@ -1,16 +1,18 @@
-warning: Type
- --> $DIR/tests/pass/controlFlow/forOfStmt/simple/2.ts:1:15
-  |
-1 | for (let v of ['a', 'b', 'c']) {
-  |               ^^^^^^^^^^^^^^^
-  |
-  = note: string[]
 
-warning: Type
- --> $DIR/tests/pass/controlFlow/forOfStmt/simple/2.ts:2:13
-  |
-2 |     var x = v;
-  |             ^
-  |
-  = note: string
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/simple/2.ts:1:1]
+ 1 | for (let v of ['a', 'b', 'c']) {
+   :               ^^^^^^^^^^^^^^^
+   `----
 
+Error: 
+  > string[]
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/forOfStmt/simple/2.ts:2:5]
+ 2 | var x = v;
+   :         ^
+   `----
+
+Error: 
+  > string

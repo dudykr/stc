@@ -1,292 +1,328 @@
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:12:27
-   |
-12 | export const none: None = { none: '' };
-   |                           ^^^^^^^^^^^^
-   |
-   = note: {
-               none: '';
-           }
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:15:22
-   |
-15 |     return 'some' in value;
-   |                      ^^^^^
-   |
-   = note: (Some | None)
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:12:1]
+ 12 | export const none: None = { none: '' };
+    :                           ^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:15:12
-   |
-15 |     return 'some' in value;
-   |            ^^^^^^^^^^^^^^^
-   |
-   = note: boolean
+Error: 
+  > {
+  |     none: '';
+  | }
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:19:12
-   |
-19 |     return { some };
-   |            ^^^^^^^^
-   |
-   = note: {
-               some: a;
-           }
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:15:5]
+ 15 | return 'some' in value;
+    :                  ^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:25:5
-   |
-25 |     x!.slice();
-   |     ^
-   |
-   = note: (string | undefined | null)
+Error: 
+  > (Some | None)
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:25:5
-   |
-25 |     x!.slice();
-   |     ^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:15:5]
+ 15 | return 'some' in value;
+    :        ^^^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:25:5
-   |
-25 |     x!.slice();
-   |     ^^^^^^^^^^
-   |
-   = note: string
+Error: 
+  > boolean
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:26:5
-   |
-26 |     x = "";
-   |     ^^^^^^
-   |
-   = note: ""
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:19:5]
+ 19 | return { some };
+    :        ^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:27:5
-   |
-27 |     x!.slice();
-   |     ^
-   |
-   = note: string
+Error: 
+  > {
+  |     some: a;
+  | }
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:27:5
-   |
-27 |     x!.slice();
-   |     ^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:25:5]
+ 25 | x!.slice();
+    : ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:27:5
-   |
-27 |     x!.slice();
-   |     ^^^^^^^^^^
-   |
-   = note: string
+Error: 
+  > (string | undefined | null)
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:28:9
-   |
-28 |     x = undefined;
-   |         ^^^^^^^^^
-   |
-   = note: undefined
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:25:5]
+ 25 | x!.slice();
+    : ^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:28:5
-   |
-28 |     x = undefined;
-   |     ^^^^^^^^^^^^^
-   |
-   = note: undefined
+Error: 
+  > string
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:29:5
-   |
-29 |     x!.slice();
-   |     ^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:25:5]
+ 25 | x!.slice();
+    : ^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:29:5
-   |
-29 |     x!.slice();
-   |     ^^
-   |
-   = note: string
+Error: 
+  > string
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:29:5
-   |
-29 |     x!.slice();
-   |     ^^^^^^^^^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:26:5]
+ 26 | x = "";
+    : ^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:30:5
-   |
-30 |     x = null;
-   |     ^^^^^^^^
-   |
-   = note: null
+Error: 
+  > ""
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:31:5
-   |
-31 |     x!.slice();
-   |     ^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:27:5]
+ 27 | x!.slice();
+    : ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:31:5
-   |
-31 |     x!.slice();
-   |     ^^
-   |
-   = note: string
+Error: 
+  > string
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:31:5
-   |
-31 |     x!.slice();
-   |     ^^^^^^^^^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:27:5]
+ 27 | x!.slice();
+    : ^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:32:27
-   |
-32 |     x = <undefined | null>undefined;
-   |                           ^^^^^^^^^
-   |
-   = note: undefined
+Error: 
+  > string
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:32:9
-   |
-32 |     x = <undefined | null>undefined;
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: (undefined | null)
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:27:5]
+ 27 | x!.slice();
+    : ^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:32:5
-   |
-32 |     x = <undefined | null>undefined;
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: (undefined | null)
+Error: 
+  > string
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:33:5
-   |
-33 |     x!.slice();
-   |     ^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:28:5]
+ 28 | x = undefined;
+    :     ^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:33:5
-   |
-33 |     x!.slice();
-   |     ^^
-   |
-   = note: string
+Error: 
+  > undefined
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:33:5
-   |
-33 |     x!.slice();
-   |     ^^^^^^^^^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:28:5]
+ 28 | x = undefined;
+    : ^^^^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:34:9
-   |
-34 |     x = <string | undefined>"";
-   |         ^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: (string | undefined)
+Error: 
+  > undefined
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:34:5
-   |
-34 |     x = <string | undefined>"";
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: (string | undefined)
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:29:5]
+ 29 | x!.slice();
+    : ^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:35:5
-   |
-35 |     x!.slice();
-   |     ^
-   |
-   = note: string
+Error: 
+  > string
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:35:5
-   |
-35 |     x!.slice();
-   |     ^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:29:5]
+ 29 | x!.slice();
+    : ^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:35:5
-   |
-35 |     x!.slice();
-   |     ^^^^^^^^^^
-   |
-   = note: string
+Error: 
+  > string
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:36:9
-   |
-36 |     x = <string | null>"";
-   |         ^^^^^^^^^^^^^^^^^
-   |
-   = note: (string | null)
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:29:5]
+ 29 | x!.slice();
+    : ^^^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:36:5
-   |
-36 |     x = <string | null>"";
-   |     ^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: (string | null)
+Error: 
+  > string
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:37:5
-   |
-37 |     x!.slice();
-   |     ^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:30:5]
+ 30 | x = null;
+    : ^^^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:37:5
-   |
-37 |     x!.slice();
-   |     ^^
-   |
-   = note: string
+Error: 
+  > null
 
-warning: Type
-  --> $DIR/tests/pass/controlFlow/guard/assertions/9.ts:37:5
-   |
-37 |     x!.slice();
-   |     ^^^^^^^^^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:31:5]
+ 31 | x!.slice();
+    : ^
+    `----
 
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:31:5]
+ 31 | x!.slice();
+    : ^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:31:5]
+ 31 | x!.slice();
+    : ^^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:32:5]
+ 32 | x = <undefined | null>undefined;
+    :                       ^^^^^^^^^
+    `----
+
+Error: 
+  > undefined
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:32:5]
+ 32 | x = <undefined | null>undefined;
+    :     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (undefined | null)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:32:5]
+ 32 | x = <undefined | null>undefined;
+    : ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (undefined | null)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:33:5]
+ 33 | x!.slice();
+    : ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:33:5]
+ 33 | x!.slice();
+    : ^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:33:5]
+ 33 | x!.slice();
+    : ^^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:34:5]
+ 34 | x = <string | undefined>"";
+    :     ^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (string | undefined)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:34:5]
+ 34 | x = <string | undefined>"";
+    : ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (string | undefined)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:35:5]
+ 35 | x!.slice();
+    : ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:35:5]
+ 35 | x!.slice();
+    : ^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:35:5]
+ 35 | x!.slice();
+    : ^^^^^^^^^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:36:5]
+ 36 | x = <string | null>"";
+    :     ^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (string | null)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:36:5]
+ 36 | x = <string | null>"";
+    : ^^^^^^^^^^^^^^^^^^^^^
+    `----
+
+Error: 
+  > (string | null)
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:37:5]
+ 37 | x!.slice();
+    : ^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:37:5]
+ 37 | x!.slice();
+    : ^^
+    `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/guard/assertions/9.ts:37:5]
+ 37 | x!.slice();
+    : ^^^^^^^^^^
+    `----
+
+Error: 
+  > string

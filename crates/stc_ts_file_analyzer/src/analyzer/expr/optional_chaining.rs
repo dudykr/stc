@@ -1,4 +1,4 @@
-use stc_ts_ast_rnode::{RExpr, RExprOrSuper, RMemberExpr, ROptChainExpr};
+use stc_ts_ast_rnode::{RCallExpr, RCallee, RExpr, RMemberExpr, RMemberProp, ROptCall, ROptChainBase, ROptChainExpr};
 use stc_ts_errors::DebugExt;
 use stc_ts_types::Type;
 use stc_utils::ext::TypeVecExt;
@@ -17,13 +17,20 @@ use crate::{
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, node: &ROptChainExpr, type_ann: Option<&Type>) -> VResult {
+    fn validate(&mut self, node: &ROptChainExpr, type_ann: Option<&Type>) -> VResult<Type> {
         let span = node.span;
 
-        match &*node.expr {
-            RExpr::Member(me) => {
-                let prop = self.validate_key(&me.prop, me.computed)?;
-                let obj = me.obj.validate_with(self)?;
+        match &node.base {
+            ROptChainBase::Member(me) => {
+                let prop = self.validate_key(
+                    &match &me.prop {
+                        RMemberProp::Ident(i) => RExpr::Ident(i.clone()),
+                        RMemberProp::Computed(c) => *c.expr.clone(),
+                        RMemberProp::PrivateName(p) => RExpr::PrivateName(p.clone()),
+                    },
+                    matches!(me.prop, RMemberProp::Computed(_)),
+                )?;
+                let obj = me.obj.validate_with_default(self)?;
 
                 let is_obj_optional = self.is_obj_optional(&obj)?;
 
@@ -49,14 +56,26 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            RExpr::Call(ce) => {
-                let ty = ce.validate_with_args(self, type_ann)?;
-
-                Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
-            }
-
-            _ => unreachable!("Onvalid optional chaining expression found",),
+            ROptChainBase::Call(ce) => ce.validate_with_args(self, type_ann),
         }
+    }
+}
+
+#[validator]
+impl Analyzer<'_, '_> {
+    fn validate(&mut self, node: &ROptCall, type_ann: Option<&Type>) -> VResult<Type> {
+        let span = node.span;
+
+        let ty = RCallExpr {
+            node_id: node.node_id,
+            span,
+            callee: RCallee::Expr(node.callee.clone()),
+            args: node.args.clone(),
+            type_args: node.type_args.clone(),
+        }
+        .validate_with_args(self, type_ann)?;
+
+        Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
     }
 }
 
@@ -85,10 +104,7 @@ impl Analyzer<'_, '_> {
 pub(crate) fn is_obj_opt_chaining(obj: &RExpr) -> bool {
     match obj {
         RExpr::OptChain(..) => true,
-        RExpr::Member(RMemberExpr {
-            obj: RExprOrSuper::Expr(obj),
-            ..
-        }) => is_obj_opt_chaining(&obj),
+        RExpr::Member(RMemberExpr { obj, .. }) => is_obj_opt_chaining(&obj),
         _ => false,
     }
 }

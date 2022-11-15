@@ -16,7 +16,7 @@ use crate::{
 
 #[validator]
 impl Analyzer<'_, '_> {
-    fn validate(&mut self, e: &RUpdateExpr) -> VResult {
+    fn validate(&mut self, e: &RUpdateExpr) -> VResult<Type> {
         let span = e.span;
 
         match &*e.arg {
@@ -70,7 +70,7 @@ impl Analyzer<'_, '_> {
                 Type::Enum(..) => {
                     errored = true;
 
-                    Err(Error::CannotAssignToNonVariable { span: e.arg.span() })
+                    Err(Error::CannotAssignToEnum { span: e.arg.span() })
                 }
 
                 Type::Lit(LitType {

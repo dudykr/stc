@@ -11,7 +11,7 @@ use std::{
 use fxhash::{FxHashMap, FxHashSet};
 use iter::once;
 use once_cell::sync::Lazy;
-use rnode::{Fold, FoldWith, VisitMutWith, VisitWith};
+use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
@@ -532,7 +532,7 @@ impl Scope<'_> {
     fn register_type(&mut self, name: Id, ty: Type, should_override: bool) {
         ty.assert_valid();
 
-        let ty = ty.cheap();
+        let ty = ty.freezed();
         match ty.normalize() {
             Type::Param(..) => {
                 // Override type parameter.
@@ -564,7 +564,7 @@ impl Scope<'_> {
                             prev_i.types.push(ty);
                             prev_i.fix();
 
-                            prev.make_cheap();
+                            prev.make_clone_cheap();
                         }
                     }
                     Entry::Vacant(e) => {
@@ -594,7 +594,7 @@ impl Scope<'_> {
                     i.types.push(ty);
 
                     prev.fix();
-                    prev.make_cheap();
+                    prev.make_clone_cheap();
                 } else {
                     let prev_ty = replace(prev, Type::any(DUMMY_SP, Default::default()));
                     *prev = Type::Intersection(Intersection {
@@ -603,7 +603,7 @@ impl Scope<'_> {
                         metadata: Default::default(),
                     })
                     .fixed()
-                    .cheap();
+                    .freezed();
                 }
             }
             Entry::Vacant(e) => {
@@ -690,7 +690,7 @@ impl Analyzer<'_, '_> {
     ///    assignment, and false if you are going to use it in user-visible
     ///    stuffs (e.g. type annotation for .d.ts file)
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> VResult {
+    pub(super) fn expand(&mut self, span: Span, ty: Type, opts: ExpandOpts) -> VResult<Type> {
         if !self.is_builtin {
             debug_assert_ne!(span, DUMMY_SP, "expand: {:#?} cannot be expanded because it has empty span", ty);
         }
@@ -720,7 +720,7 @@ impl Analyzer<'_, '_> {
         Ok(ty)
     }
 
-    pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> VResult {
+    pub(super) fn expand_type_params_using_scope(&mut self, ty: Type) -> VResult<Type> {
         let type_params = take(&mut self.scope.type_params);
         let res = self.expand_type_params(&type_params, ty, Default::default());
         self.scope.type_params = type_params;
@@ -828,7 +828,7 @@ impl Analyzer<'_, '_> {
         }
 
         if self.is_builtin {
-            let ty = ty.cheap();
+            let ty = ty.freezed();
 
             self.storage
                 .store_private_type(ModuleId::builtin(), name.clone(), ty.clone(), false);
@@ -836,10 +836,10 @@ impl Analyzer<'_, '_> {
 
             ty
         } else {
-            let ty = ty.cheap();
+            let ty = ty.freezed();
             let (ty, should_override) = self
                 .merge_decl_with_name(name.clone(), ty.clone())
-                .map(|(ty, should_override)| (ty.cheap(), should_override))
+                .map(|(ty, should_override)| (ty.freezed(), should_override))
                 .unwrap_or_else(|err| {
                     self.storage.report(err);
                     (ty, false)
@@ -897,7 +897,7 @@ impl Analyzer<'_, '_> {
         self.declare_vars_inner_with_ty(kind, pat, ty, actual_ty, default_ty)
     }
 
-    pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> VResult {
+    pub(super) fn resolve_typeof(&mut self, span: Span, name: &RTsEntityName) -> VResult<Type> {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot resolve `typeof` with a dummy span");
         }
@@ -1090,11 +1090,9 @@ impl Analyzer<'_, '_> {
     }
 
     #[instrument(skip(self))]
-    pub fn find_type(&self, target: ModuleId, name: &Id) -> VResult<Option<ItemRef<Type>>> {
-        if target == self.ctx.module_id || target.is_builtin() {
-            if let Some(v) = self.find_local_type(name) {
-                return Ok(Some(v));
-            }
+    pub fn find_type(&self, name: &Id) -> VResult<Option<ItemRef<Type>>> {
+        if let Some(v) = self.find_local_type(name) {
+            return Ok(Some(v));
         }
 
         if let Some(ModuleInfo { data, .. }) = self.imports_by_id.get(name) {
@@ -1113,24 +1111,6 @@ impl Analyzer<'_, '_> {
 
         if let Ok(ty) = self.env.get_global_type(DUMMY_SP, &name.sym()) {
             return Ok(Some(ItemRef::Owned(vec![ty].into_iter())));
-        }
-
-        if let Some(data) = self.imports.get(&(self.ctx.module_id, target)) {
-            match data.normalize() {
-                Type::Module(data) => {
-                    if let Some(types) = data.exports.types.get(name.sym()) {
-                        let types = types.clone();
-                        return Ok(Some(ItemRef::Owned(types.into_iter())));
-                    }
-                    if let Some(types) = data.exports.private_types.get(name) {
-                        let types = types.clone();
-                        return Ok(Some(ItemRef::Owned(types.into_iter())));
-                    }
-                }
-                _ => {
-                    unreachable!()
-                }
-            }
         }
 
         Ok(None)
@@ -1180,12 +1160,14 @@ impl Analyzer<'_, '_> {
         }
 
         if let Some(ty) = self.scope.find_type(name) {
-            if cfg!(debug_assertions) {
-                debug!("Using type from scope: {:?}", ty);
+            if self.ctx.in_module {
+                // In module mode, we should not merge user-defined types with builtin.
+                // As `src` contains builtin typds, we remove them.
+                src.clear();
             }
             src.extend(ty.into_iter().map(Cow::into_owned));
             return Some(ItemRef::Owned(
-                vec![Type::new_intersection(DUMMY_SP, src).fixed().cheap()].into_iter(),
+                vec![Type::new_intersection(DUMMY_SP, src).fixed().freezed()].into_iter(),
             ));
         }
 
@@ -1359,7 +1341,7 @@ impl Analyzer<'_, '_> {
             debug!("[vars]: Expanded {} as {}", name, dump_type_as_string(&self.cm, ty));
         }
 
-        let ty = ty.map(|ty| ty.cheap());
+        let ty = ty.map(|ty| ty.freezed());
 
         if let Some(actual_ty) = &actual_ty {
             if actual_ty.is_never() {
@@ -1378,7 +1360,7 @@ impl Analyzer<'_, '_> {
                     Some(ty)
                 }
             })
-            .map(|ty| ty.cheap());
+            .map(|ty| ty.freezed());
 
         if let Some(ty) = &actual_ty {
             ty.assert_valid();
@@ -1479,14 +1461,14 @@ impl Analyzer<'_, '_> {
                                         let res = self
                                             .assign_with_opts(
                                                 &mut Default::default(),
+                                                &ty,
+                                                &generalized_var_ty,
                                                 AssignOpts {
                                                     span,
                                                     for_overload: true,
                                                     disallow_assignment_to_unknown: true,
                                                     ..Default::default()
                                                 },
-                                                &ty,
-                                                &generalized_var_ty,
                                             )
                                             .context("tried to validate a varaible declared multiple times")
                                             .convert_err(|err| Error::VarDeclNotCompatible {
@@ -1520,12 +1502,9 @@ impl Analyzer<'_, '_> {
                         ty
                     })
                 } else {
-                    if let Some(var_ty) = v.ty {
-                        Some(var_ty)
-                    } else {
-                        None
-                    }
+                    v.ty
                 };
+
                 if let Some(ty) = &actual_ty {
                     ty.assert_valid();
                     if !self.is_builtin {
@@ -1538,8 +1517,17 @@ impl Analyzer<'_, '_> {
                         ty.assert_clone_cheap();
                     }
                 }
+
                 // TODO(kdy1): Use better logic
-                v.actual_ty = actual_ty.or_else(|| v.ty.clone());
+                match kind {
+                    VarKind::Fn if v.actual_ty.is_some() => {
+                        let ty = Type::new_union(span, v.actual_ty.into_iter().chain(actual_ty.or_else(|| v.ty.clone()))).freezed();
+                        v.actual_ty = Some(ty);
+                    }
+                    _ => {
+                        v.actual_ty = actual_ty.or_else(|| v.ty.clone());
+                    }
+                }
 
                 self.scope.vars.insert(k, v);
             }
@@ -1575,13 +1563,13 @@ impl Analyzer<'_, '_> {
                 Type::Function(..) => {
                     self.assign_with_opts(
                         &mut Default::default(),
+                        &new,
+                        &orig,
                         AssignOpts {
                             span,
                             for_overload: true,
                             ..Default::default()
                         },
-                        &new,
-                        &orig,
                     )
                     .convert_err(|err| Error::ImcompatibleFnOverload {
                         span: orig.span(),
@@ -1909,14 +1897,10 @@ struct Expander<'a, 'b, 'c> {
 }
 
 impl Expander<'_, '_, '_> {
-    #[instrument(
-        name = "Expander.expand_ts_entity_name",
-        skip(self, span, ctxt, type_name, type_args, was_top_level, trying_primitive_expansion)
-    )]
+    #[instrument(name = "Expander.expand_ts_entity_name", skip_all)]
     fn expand_ts_entity_name(
         &mut self,
         span: Span,
-        ctxt: ModuleId,
         type_name: &RTsEntityName,
         type_args: Option<&TypeParamInstantiation>,
         was_top_level: bool,
@@ -1951,7 +1935,7 @@ impl Expander<'_, '_, '_> {
                     error!("Dejavu: {}{:?}", &i.sym, i.span.ctxt);
                     return Ok(None);
                 }
-                if let Some(types) = self.analyzer.find_type(ctxt, &i.into())? {
+                if let Some(types) = self.analyzer.find_type(&i.into())? {
                     info!(
                         "expand: expanding `{}` using analyzer: {}",
                         Id::from(i),
@@ -2015,6 +1999,7 @@ impl Expander<'_, '_, '_> {
 
                                 if let Some(type_params) = type_params {
                                     let mut type_args: Option<_> = type_args.cloned().fold_with(self);
+                                    type_args.visit_mut_with(&mut ShallowNormalizer { analyzer: self.analyzer });
                                     type_args.make_clone_cheap();
 
                                     if cfg!(debug_assertions) {
@@ -2036,7 +2021,7 @@ impl Expander<'_, '_, '_> {
                                     inferred.types.iter_mut().for_each(|(_, ty)| {
                                         self.analyzer.allow_expansion(ty);
 
-                                        ty.make_cheap();
+                                        ty.make_clone_cheap();
                                     });
 
                                     let before = dump_type_as_string(&self.analyzer.cm, &ty);
@@ -2131,7 +2116,7 @@ impl Expander<'_, '_, '_> {
             //
             //  let a: StringEnum.Foo = x;
             RTsEntityName::TsQualifiedName(box RTsQualifiedName { left, ref right, .. }) => {
-                let left = self.expand_ts_entity_name(span, ctxt, left, None, was_top_level, trying_primitive_expansion)?;
+                let left = self.expand_ts_entity_name(span, left, None, was_top_level, trying_primitive_expansion)?;
 
                 if let Some(left) = &left {
                     let ty = self
@@ -2166,7 +2151,6 @@ impl Expander<'_, '_, '_> {
 
         let Ref {
             span: r_span,
-            ctxt,
             type_name,
             type_args,
             ..
@@ -2177,14 +2161,7 @@ impl Expander<'_, '_, '_> {
             return Ok(None);
         }
 
-        let mut ty = self.expand_ts_entity_name(
-            span,
-            ctxt,
-            &type_name,
-            type_args.as_deref(),
-            was_top_level,
-            trying_primitive_expansion,
-        )?;
+        let mut ty = self.expand_ts_entity_name(span, &type_name, type_args.as_deref(), was_top_level, trying_primitive_expansion)?;
 
         if let Some(ty) = &mut ty {
             ty.reposition(r_span);
@@ -2192,7 +2169,6 @@ impl Expander<'_, '_, '_> {
             if let Type::Enum(e) = ty.normalize() {
                 return Ok(Some(Type::EnumVariant(EnumVariant {
                     span,
-                    ctxt,
                     enum_name: e.id.clone().into(),
                     name: None,
                     metadata: Default::default(),
@@ -2369,7 +2345,7 @@ impl Expander<'_, '_, '_> {
             _ => ty.fold_children_with(self),
         };
 
-        let res: VResult = try {
+        let res: VResult<_> = try {
             match ty.normalize() {
                 Type::Ref(r) => {
                     let ty = self.expand_ref(r.clone(), was_top_level)?;
@@ -2678,5 +2654,26 @@ impl Fold<stc_ts_types::ClassMember> for Expander<'_, '_, '_> {
 impl Fold<TypeElement> for Expander<'_, '_, '_> {
     fn fold(&mut self, node: TypeElement) -> TypeElement {
         node
+    }
+}
+
+/// Calls [`Analyzer::normalize`] on top-level types
+pub struct ShallowNormalizer<'a, 'b, 'c> {
+    analyzer: &'a mut Analyzer<'b, 'c>,
+}
+
+impl VisitMut<Type> for ShallowNormalizer<'_, '_, '_> {
+    fn visit_mut(&mut self, value: &mut Type) {
+        match value.normalize() {
+            Type::IndexedAccessType(..) => {
+                if let Ok(new) = self
+                    .analyzer
+                    .normalize(Some(value.span()), Cow::Borrowed(&*value), Default::default())
+                {
+                    *value = new.freezed().into_owned();
+                }
+            }
+            _ => {}
+        }
     }
 }

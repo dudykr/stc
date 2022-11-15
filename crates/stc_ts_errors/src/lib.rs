@@ -281,6 +281,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2323
+    DuplicateExport {
+        span: Span,
+    },
+
     /// TS2393
     DuplicateFnImpl {
         span: Span,
@@ -389,6 +394,11 @@ pub enum Error {
 
     /// TS18022
     PrivateIdUsedAsMethodName {
+        span: Span,
+    },
+
+    /// TS18050
+    UndefinedOrNullIsNotValidOperand {
         span: Span,
     },
 
@@ -570,6 +580,8 @@ pub enum Error {
     /// TS2678
     SwitchCaseTestNotCompatible {
         span: Span,
+        disc: Box<Type>,
+        test: Box<Type>,
     },
 
     /// TS2540
@@ -714,6 +726,22 @@ pub enum Error {
     /// TS2539
     CannotAssignToNonVariable {
         span: Span,
+        ty: Box<Type>,
+    },
+
+    /// TS2708
+    CannotAssignToModule {
+        span: Span,
+    },
+
+    /// TS2629
+    CannotAssignToClass {
+        span: Span,
+    },
+
+    /// TS2628
+    CannotAssignToEnum {
+        span: Span,
     },
 
     /// TS2630
@@ -747,8 +775,8 @@ pub enum Error {
     NoOverlap {
         span: Span,
         value: bool,
-        left: Span,
-        right: Span,
+        left: Box<Type>,
+        right: Box<Type>,
     },
 
     CannotAssignToReadonlyProperty {
@@ -884,6 +912,7 @@ pub enum Error {
         // Span of rhs
         span: Span,
         left: Span,
+        ty: Option<Box<Type>>,
     },
 
     /// TS2304
@@ -904,8 +933,15 @@ pub enum Error {
         span: Span,
     },
 
-    // TS2493
+    /// TS2493
     TupleIndexError {
+        span: Span,
+        len: u64,
+        index: i64,
+    },
+
+    /// TS2514
+    NegativeTupleIndex {
         span: Span,
         len: u64,
         index: i64,
@@ -1015,6 +1051,13 @@ pub enum Error {
         callee: Box<Type>,
     },
 
+    /// TS2348
+    NoConstructablePropertyWithName {
+        span: Span,
+        obj: Box<Type>,
+        key: Box<Key>,
+    },
+
     /// TS2349
     NoCallSignature {
         span: Span,
@@ -1096,8 +1139,9 @@ pub enum Error {
         span: Span,
     },
 
-    TS2361 {
+    InvalidRhsForInOperator {
         span: Span,
+        ty: Box<Type>,
     },
 
     /// TS2362
@@ -1202,10 +1246,9 @@ pub enum Error {
     },
 
     /// `TS2469`
-    NumericUnaryOpToSymbol {
+    NumericOpToSymbol {
         /// Span of the argument.
         span: Span,
-        op: UnaryOp,
     },
 
     /// TS2356
@@ -1270,6 +1313,11 @@ pub enum Error {
         span: Span,
     },
 
+    /// TS2556
+    SpreadMustBeTupleOrPassedToRest {
+        span: Span,
+    },
+
     /// TS2703
     InvalidDeleteOperand {
         span: Span,
@@ -1295,7 +1343,7 @@ pub enum Error {
         span: Span,
     },
 
-    MustHaveSymbolAsycIteratorThatReturnsIterator {
+    MustHaveSymbolAsyncIteratorThatReturnsIterator {
         span: Span,
     },
 
@@ -1322,7 +1370,8 @@ pub enum Error {
     DebugContext(DebugContext),
 }
 
-assert_eq_size!(Error, [u8; 88]);
+#[cfg(target_pointer_width = "64")]
+assert_eq_size!(Error, [u8; 72]);
 
 impl Error {
     pub fn convert<F>(self, op: F) -> Self
@@ -1439,14 +1488,23 @@ impl Error {
             // TS2584: Type not found with recommendation to change target library to include `dom`.
             2318 | 2552 | 2580 | 2581 | 2582 | 2583 | 2584 => 2304,
 
+            // TS2348: Not callable, but with a suggestion to use new
+            // TS2349: Not callable
+            2348 | 2349 => 2349,
+
+            // TS2350: new cannot be used for non-void function
+            // TS2350: new cannot be used because it's not constructor
+            2350 | 2351 => 2350,
+
             // TS2339: Property not found.
             // TS2550: Property not found with a suggestion to change `lib`.
             // TS2551: Property not found with a suggestion.
             2550 | 2551 => 2339,
 
-            // TS2693: Type used as a variable.
-            // TS2585: Type used as a variable with a suggestion to change 'lib',
-            2585 => 2693,
+            // TS2304: Variable not found
+            // TS2585: Variable not found, but with a suggestion to change 'lib',
+            // TS2693: Variable not found, but a type with same name exists.
+            2304 | 2585 | 2693 => 2304,
 
             // TS2307: Module not found.
             // TS2792: Module not found with recommendation to change module resolution.
@@ -1474,6 +1532,22 @@ impl Error {
             // TS7033; No implicit any for get accessor.
             // TS7034; No implicit any for "in some locations where its type cannot be determined."
             7005 | 7006 | 7008 | 7031 | 7032 | 7033 | 7034 => 7005,
+
+            // TS2532: Object is possibly 'undefined'.
+            // TS18048: ${obj} is possibly 'undefined'.
+            2532 | 18048 => 2532,
+
+            // TS2531: Object is possibly 'null'.
+            // TS18047: ${obj} is possibly 'null'.
+            2531 | 18047 => 2531,
+
+            // TS2571: Object is of type 'unknown'
+            // TS18046: ${obj} is of type 'unknown'.
+            2571 | 18046 => 2531,
+
+            // TS2533: Object is possibly 'null' or 'undefined'.
+            // TS18049: '{0}' is possibly 'null' or 'undefined'.
+            2533 | 18049 => 2533,
 
             _ => code,
         }
@@ -1542,7 +1616,7 @@ impl Error {
             Error::ExportEqualsMixedWithOtherExports { .. } => 2309,
             Error::AnyTypeUsedAsCalleeWithTypeArgs { .. } => 2347,
             Error::TS2360 { .. } => 2360,
-            Error::TS2361 { .. } => 2361,
+            Error::InvalidRhsForInOperator { .. } => 2638,
             Error::WrongTypeForLhsOfNumericOperation { .. } => 2362,
             Error::WrongTypeForRhsOfNumericOperation { .. } => 2363,
             Error::TS2365 { .. } => 2365,
@@ -1596,6 +1670,7 @@ impl Error {
             Error::ExpectedAtLeastNArgsButGotM { .. } => 2555,
             Error::ExpectedNArgsButGotMOrMore { .. } => 2556,
             Error::ExpectedAtLeastNArgsButGotMOrMore { .. } => 2557,
+            Error::SpreadMustBeTupleOrPassedToRest { .. } => 2556,
 
             Error::ReferencedInInit { .. } => 2372,
 
@@ -1615,6 +1690,7 @@ impl Error {
             Error::ComputedMemberInEnumWithStrMember { .. } => 2553,
 
             Error::TupleIndexError { .. } => 2493,
+            Error::NegativeTupleIndex { .. } => 2514,
             Error::InvalidLValue { .. } => 2540,
 
             Error::TS2378 { .. } => 2378,
@@ -1637,6 +1713,9 @@ impl Error {
             Error::ExprInvalidForUpdateArg { .. } => 2357,
 
             Error::CannotAssignToNonVariable { .. } => 2539,
+            Error::CannotAssignToModule { .. } => 2708,
+            Error::CannotAssignToClass { .. } => 2629,
+            Error::CannotAssignToEnum { .. } => 2628,
             Error::CannotAssignToFunction { .. } => 2630,
 
             Error::AssignedWrapperToPrimitive { .. } => 2322,
@@ -1653,7 +1732,7 @@ impl Error {
 
             Error::InvalidRhsInInstanceOf { .. } => 2359,
 
-            Error::NumericUnaryOpToSymbol { .. } => 2469,
+            Error::NumericOpToSymbol { .. } => 2469,
 
             Error::InvalidNumericOperand { .. } => 2356,
 
@@ -1679,7 +1758,7 @@ impl Error {
 
             Error::MustHaveSymbolIteratorThatReturnsIterator { .. } => 2488,
 
-            Error::MustHaveSymbolAsycIteratorThatReturnsIterator { .. } => 2504,
+            Error::MustHaveSymbolAsyncIteratorThatReturnsIterator { .. } => 2504,
 
             Error::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { .. } => 2548,
 
@@ -1763,6 +1842,8 @@ impl Error {
 
             Error::PrivateIdUsedAsMethodName { .. } => 18022,
 
+            Error::UndefinedOrNullIsNotValidOperand { .. } => 18050,
+
             Error::CannotDeletePrivateProperty { .. } => 18011,
 
             Error::CannotAccessPrivatePropertyFromOutside { .. } => 18013,
@@ -1785,6 +1866,8 @@ impl Error {
             Error::NotArrayType { .. } => 2461,
             Error::NotArrayTypeNorStringType { .. } => 2495,
             Error::NotArrayTypeNorStringTypeButDownlevelIterationWouldWork { .. } => 2569,
+
+            Error::NoConstructablePropertyWithName { .. } => 2348,
 
             Error::NoCallablePropertyWithName { .. } => 2349,
 
@@ -1809,6 +1892,7 @@ impl Error {
             Error::DuplicateFnImpl { .. } => 2393,
 
             Error::DuplicateDefaultExport { .. } => 2528,
+            Error::DuplicateExport { .. } => 2323,
 
             Error::BlockScopedVarUsedBeforeInit { .. } => 2448,
 

@@ -1,153 +1,176 @@
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7.ts:17:20
-   |
-17 |             return this.x;
-   |                    ^^^^
-   |
-   = note: this
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7.ts:17:20
-   |
-17 |             return this.x;
-   |                    ^^^^^^
-   |
-   = note: any
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:17:13]
+ 17 | return this.x;
+    :        ^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7.ts:19:16
-   |
-19 |           hello: {
-   |  ________________^
-20 | |             get() {
-21 | |                 return "hi";
-22 | |             },
-23 | |             set(value: string) {
-24 | |             }
-25 | |         }
-   | |_________^
-   |
-   = note: {
-               get(): "hi";
-               set(value: string): void;
-           }
+Error: 
+  > this
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7.ts:15:15
-   |
-15 |       computed: {
-   |  _______________^
-16 | |         test(): number {
-17 | |             return this.x;
-18 | |         },
-...  |
-25 | |         }
-26 | |     }
-   | |_____^
-   |
-   = note: {
-               test(): number;
-               hello: {
-                   get(): "hi";
-                   set(value: string): void;
-               };
-           }
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:17:13]
+ 17 | return this.x;
+    :        ^^^^^^
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7.ts:14:19
-   |
-14 |   let vue = new Vue({
-   |  ___________________^
-15 | |     computed: {
-16 | |         test(): number {
-17 | |             return this.x;
-...  |
-26 | |     }
-27 | | });
-   | |_^
-   |
-   = note: {
-               computed: {
-                   test(): number;
-                   hello: {
-                       get(): "hi";
-                       set(value: string): void;
-                   };
-               };
-           }
+Error: 
+  > any
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7.ts:14:15
-   |
-14 | let vue = new Vue({
-   |               ^^^
-   |
-   = note: new <P>(options: VueOptions<P>) => P
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:19:9]
+ 19 | ,-> hello: {
+ 20 | |               get() {
+ 21 | |                   return "hi";
+ 22 | |               },
+ 23 | |               set(value: string) {
+ 24 | |               }
+ 25 | `->         }
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7.ts:14:11
-   |
-14 |   let vue = new Vue({
-   |  ___________^
-15 | |     computed: {
-16 | |         test(): number {
-17 | |             return this.x;
-...  |
-26 | |     }
-27 | | });
-   | |__^
-   |
-   = note: {
-               test: number;
-               hello: string;
-           }
+Error: 
+  > {
+  |     get(): "hi";
+  |     set(value: string): void;
+  | }
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7.ts:29:1
-   |
-29 | vue;
-   | ^^^
-   |
-   = note: {
-               test: number;
-               hello: string;
-           }
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:15:5]
+ 15 | ,-> computed: {
+ 16 | |           test(): number {
+ 17 | |               return this.x;
+ 18 | |           },
+ 19 | |           hello: {
+ 20 | |               get() {
+ 21 | |                   return "hi";
+ 22 | |               },
+ 23 | |               set(value: string) {
+ 24 | |               }
+ 25 | |           }
+ 26 | `->     }
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7.ts:30:1
-   |
-30 | vue.test;
-   | ^^^
-   |
-   = note: {
-               test: number;
-               hello: string;
-           }
+Error: 
+  > {
+  |     test(): number;
+  |     hello: {
+  |         get(): "hi";
+  |         set(value: string): void;
+  |     };
+  | }
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7.ts:30:1
-   |
-30 | vue.test;
-   | ^^^^^^^^
-   |
-   = note: number
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:14:1]
+ 14 | ,-> let vue = new Vue({
+ 15 | |       computed: {
+ 16 | |           test(): number {
+ 17 | |               return this.x;
+ 18 | |           },
+ 19 | |           hello: {
+ 20 | |               get() {
+ 21 | |                   return "hi";
+ 22 | |               },
+ 23 | |               set(value: string) {
+ 24 | |               }
+ 25 | |           }
+ 26 | |       }
+ 27 | `-> });
+    `----
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7.ts:31:1
-   |
-31 | vue.hello;
-   | ^^^
-   |
-   = note: {
-               test: number;
-               hello: string;
-           }
+Error: 
+  > {
+  |     computed: {
+  |         test(): number;
+  |         hello: {
+  |             get(): "hi";
+  |             set(value: string): void;
+  |         };
+  |     };
+  | }
 
-warning: Type
-  --> $DIR/tests/pass/types/mapped/7.ts:31:1
-   |
-31 | vue.hello;
-   | ^^^^^^^^^
-   |
-   = note: string
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:14:1]
+ 14 | let vue = new Vue({
+    :               ^^^
+    `----
 
+Error: 
+  > new <P>(options: VueOptions<P>) => P
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:14:1]
+ 14 | ,-> let vue = new Vue({
+ 15 | |       computed: {
+ 16 | |           test(): number {
+ 17 | |               return this.x;
+ 18 | |           },
+ 19 | |           hello: {
+ 20 | |               get() {
+ 21 | |                   return "hi";
+ 22 | |               },
+ 23 | |               set(value: string) {
+ 24 | |               }
+ 25 | |           }
+ 26 | |       }
+ 27 | `-> });
+    `----
+
+Error: 
+  > {
+  |     test: number;
+  |     hello: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:29:1]
+ 29 | vue;
+    : ^^^
+    `----
+
+Error: 
+  > {
+  |     test: number;
+  |     hello: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:30:1]
+ 30 | vue.test;
+    : ^^^
+    `----
+
+Error: 
+  > {
+  |     test: number;
+  |     hello: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:30:1]
+ 30 | vue.test;
+    : ^^^^^^^^
+    `----
+
+Error: 
+  > number
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:31:1]
+ 31 | vue.hello;
+    : ^^^
+    `----
+
+Error: 
+  > {
+  |     test: number;
+  |     hello: string;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/types/mapped/7.ts:31:1]
+ 31 | vue.hello;
+    : ^^^^^^^^^
+    `----
+
+Error: 
+  > string

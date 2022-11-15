@@ -3,12 +3,13 @@ extern crate swc_node_base;
 use std::{path::PathBuf, sync::Arc, time::Instant};
 
 use anyhow::Error;
+use clap::Parser;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_file_analyzer::env::EnvFactory;
+use stc_ts_lang_server::LspCommand;
 use stc_ts_module_loader::resolvers::node::NodeResolver;
 use stc_ts_type_checker::Checker;
-use structopt::StructOpt;
 use swc_common::{
     errors::{ColorConfig, EmitterWriter, Handler},
     FileName, SourceMap,
@@ -17,17 +18,19 @@ use swc_ecma_ast::EsVersion;
 use swc_ecma_parser::TsConfig;
 use tracing_subscriber::EnvFilter;
 
-use crate::check::IterateCommand;
+use crate::check::TestCommand;
 
 mod check;
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "stc", about = "Super fast type checker for typescript", author, rename_all = "camel")]
+#[derive(Debug, Parser)]
+#[command(name = "stc", about = "Super fast type checker for typescript", author, rename_all = "camel")]
 enum Command {
-    Iterate(IterateCommand),
+    Test(TestCommand),
+    Lsp(LspCommand),
 }
 
-fn main() -> Result<(), Error> {
+#[tokio::main]
+async fn main() -> Result<(), Error> {
     let start = Instant::now();
 
     env_logger::init();
@@ -42,7 +45,7 @@ fn main() -> Result<(), Error> {
 
     tracing::subscriber::set_global_default(sub).unwrap();
 
-    let command = Command::from_args();
+    let command = Command::parse();
 
     let cm = Arc::new(SourceMap::default());
     let handler = {
@@ -59,7 +62,7 @@ fn main() -> Result<(), Error> {
     }
 
     match command {
-        Command::Iterate(cmd) => {
+        Command::Test(cmd) => {
             let libs = {
                 let start = Instant::now();
 
@@ -103,7 +106,7 @@ fn main() -> Result<(), Error> {
             let mut errors = vec![];
 
             let start = Instant::now();
-            for _ in 0..1000 {
+            {
                 let mut checker = Checker::new(
                     cm.clone(),
                     handler.clone(),
@@ -119,7 +122,7 @@ fn main() -> Result<(), Error> {
             }
             let end = Instant::now();
 
-            log::info!("Checking 1000 times took {:?}", end - start);
+            log::info!("Checking took {:?}", end - start);
 
             {
                 let start = Instant::now();
@@ -131,6 +134,9 @@ fn main() -> Result<(), Error> {
 
                 log::info!("Error reporting took {:?}", end - start);
             }
+        }
+        Command::Lsp(cmd) => {
+            cmd.run().await?;
         }
     }
 

@@ -1,206 +1,227 @@
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:3:46
-  |
-3 | export const n3: number | undefined = a?.m?.({ x: 12 }); // should be ok
-  |                                              ^^^^^^^^^
-  |
-  = note: {
-              x: 12;
-          }
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:3:39
-  |
-3 | export const n3: number | undefined = a?.m?.({ x: 12 }); // should be ok
-  |                                       ^
-  |
-  = note: ({
-              m?<T>(obj: {
-                  x: T;
-              }): T;
-          } | undefined)
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:3:1]
+ 3 | export const n3: number | undefined = a?.m?.({ x: 12 }); // should be ok
+   :                                              ^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:3:39
-  |
-3 | export const n3: number | undefined = a?.m?.({ x: 12 }); // should be ok
-  |                                       ^^^^
-  |
-  = note: (undefined | <T>(obj: {
-              x: T;
-          }) => T)
+Error: 
+  > {
+  |     x: 12;
+  | }
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:3:39
-  |
-3 | export const n3: number | undefined = a?.m?.({ x: 12 }); // should be ok
-  |                                       ^^^^^^^^^^^^^^^^^
-  |
-  = note: (undefined | 12)
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:3:1]
+ 3 | export const n3: number | undefined = a?.m?.({ x: 12 }); // should be ok
+   :                                       ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:4:51
-  |
-4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
-  |                                                   ^^^^^^
-  |
-  = note: <T>() => T
+Error: 
+  > ({
+  |     m?<T>(obj: {
+  |         x: T;
+  |     }): T;
+  | } | undefined)
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:4:51
-  |
-4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
-  |                                                   ^^^^^^^^
-  |
-  = note: T
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:3:1]
+ 3 | export const n3: number | undefined = a?.m?.({ x: 12 }); // should be ok
+   :                                       ^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:4:46
-  |
-4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
-  |                                              ^^^^^^^^^^^^^^^
-  |
-  = note: {
-              x: T;
-          }
+Error: 
+  > (undefined | <T>(obj: {
+  |     x: T;
+  | }) => T)
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:4:39
-  |
-4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
-  |                                       ^
-  |
-  = note: ({
-              m?<T>(obj: {
-                  x: T;
-              }): T;
-          } | undefined)
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:3:1]
+ 3 | export const n3: number | undefined = a?.m?.({ x: 12 }); // should be ok
+   :                                       ^^^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:4:39
-  |
-4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
-  |                                       ^^^^
-  |
-  = note: (undefined | <T>(obj: {
-              x: T;
-          }) => T)
+Error: 
+  > (undefined | 12)
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:4:39
-  |
-4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
-  |                                       ^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: (undefined | T)
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:4:1]
+ 4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
+   :                                                   ^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:7:24
-  |
-7 | export let t1 = a?.m?.({ x: 12 });
-  |                        ^^^^^^^^^
-  |
-  = note: {
-              x: 12;
-          }
+Error: 
+  > <T>() => T
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:7:17
-  |
-7 | export let t1 = a?.m?.({ x: 12 });
-  |                 ^
-  |
-  = note: ({
-              m?<T>(obj: {
-                  x: T;
-              }): T;
-          } | undefined)
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:4:1]
+ 4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
+   :                                                   ^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:7:17
-  |
-7 | export let t1 = a?.m?.({ x: 12 });
-  |                 ^^^^
-  |
-  = note: (undefined | <T>(obj: {
-              x: T;
-          }) => T)
+Error: 
+  > T
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:7:17
-  |
-7 | export let t1 = a?.m?.({ x: 12 });
-  |                 ^^^^^^^^^^^^^^^^^
-  |
-  = note: (undefined | number)
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:4:1]
+ 4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
+   :                                              ^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:8:12
-  |
-8 | t1 = a!.m!({ x: 12 });
-  |            ^^^^^^^^^
-  |
-  = note: {
-              x: 12;
-          }
+Error: 
+  > {
+  |     x: T;
+  | }
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:8:6
-  |
-8 | t1 = a!.m!({ x: 12 });
-  |      ^
-  |
-  = note: ({
-              m?<T>(obj: {
-                  x: T;
-              }): T;
-          } | undefined)
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:4:1]
+ 4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
+   :                                       ^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:8:6
-  |
-8 | t1 = a!.m!({ x: 12 });
-  |      ^^
-  |
-  = note: {
-              m?<T>(obj: {
-                  x: T;
-              }): T;
-          }
+Error: 
+  > ({
+  |     m?<T>(obj: {
+  |         x: T;
+  |     }): T;
+  | } | undefined)
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:8:6
-  |
-8 | t1 = a!.m!({ x: 12 });
-  |      ^^^^
-  |
-  = note: (undefined | <T>(obj: {
-              x: T;
-          }) => T)
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:4:1]
+ 4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
+   :                                       ^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:8:6
-  |
-8 | t1 = a!.m!({ x: 12 });
-  |      ^^^^^
-  |
-  = note: <T>(obj: {
-              x: T;
-          }) => T
+Error: 
+  > (undefined | <T>(obj: {
+  |     x: T;
+  | }) => T)
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:8:6
-  |
-8 | t1 = a!.m!({ x: 12 });
-  |      ^^^^^^^^^^^^^^^^
-  |
-  = note: 12
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:4:1]
+ 4 | export const n4: number | undefined = a?.m?.({ x: absorb() }); // likewise
+   :                                       ^^^^^^^^^^^^^^^^^^^^^^^
+   `----
 
-warning: Type
- --> $DIR/tests/pass/types/generic/call-chain-1.ts:8:1
-  |
-8 | t1 = a!.m!({ x: 12 });
-  | ^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: 12
+Error: 
+  > (undefined | T)
 
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:7:1]
+ 7 | export let t1 = a?.m?.({ x: 12 });
+   :                        ^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     x: 12;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:7:1]
+ 7 | export let t1 = a?.m?.({ x: 12 });
+   :                 ^
+   `----
+
+Error: 
+  > ({
+  |     m?<T>(obj: {
+  |         x: T;
+  |     }): T;
+  | } | undefined)
+
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:7:1]
+ 7 | export let t1 = a?.m?.({ x: 12 });
+   :                 ^^^^
+   `----
+
+Error: 
+  > (undefined | <T>(obj: {
+  |     x: T;
+  | }) => T)
+
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:7:1]
+ 7 | export let t1 = a?.m?.({ x: 12 });
+   :                 ^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > (undefined | number)
+
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:8:1]
+ 8 | t1 = a!.m!({ x: 12 });
+   :            ^^^^^^^^^
+   `----
+
+Error: 
+  > {
+  |     x: 12;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:8:1]
+ 8 | t1 = a!.m!({ x: 12 });
+   :      ^
+   `----
+
+Error: 
+  > ({
+  |     m?<T>(obj: {
+  |         x: T;
+  |     }): T;
+  | } | undefined)
+
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:8:1]
+ 8 | t1 = a!.m!({ x: 12 });
+   :      ^^
+   `----
+
+Error: 
+  > {
+  |     m?<T>(obj: {
+  |         x: T;
+  |     }): T;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:8:1]
+ 8 | t1 = a!.m!({ x: 12 });
+   :      ^^^^
+   `----
+
+Error: 
+  > (undefined | <T>(obj: {
+  |     x: T;
+  | }) => T)
+
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:8:1]
+ 8 | t1 = a!.m!({ x: 12 });
+   :      ^^^^^
+   `----
+
+Error: 
+  > <T>(obj: {
+  |     x: T;
+  | }) => T
+
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:8:1]
+ 8 | t1 = a!.m!({ x: 12 });
+   :      ^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > 12
+
+  x Type
+   ,-[$DIR/tests/pass/types/generic/call-chain-1.ts:8:1]
+ 8 | t1 = a!.m!({ x: 12 });
+   : ^^^^^^^^^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > 12

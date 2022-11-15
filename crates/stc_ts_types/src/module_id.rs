@@ -3,7 +3,7 @@ use std::sync::Arc;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use stc_visit::Visit;
-use swc_common::{collections::AHashMap, EqIgnoreSpan, FileName, TypeEq};
+use swc_common::{collections::AHashMap, EqIgnoreSpan, FileName, Mark, TypeEq};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, EqIgnoreSpan, TypeEq, Visit, Serialize, Deserialize)]
 pub struct ModuleId(u32);
@@ -18,6 +18,8 @@ impl ModuleId {
     }
 }
 
+/// Each module has a unique id and [Mark] for top-level items
+
 #[derive(Default)]
 pub struct ModuleIdGenerator {
     cache: Mutex<Data>,
@@ -26,12 +28,13 @@ pub struct ModuleIdGenerator {
 #[derive(Default)]
 struct Data {
     cur: u32,
-    modules: AHashMap<Arc<FileName>, ModuleId>,
-    paths: AHashMap<ModuleId, Arc<FileName>>,
+    modules: AHashMap<Arc<FileName>, (ModuleId, Mark)>,
+    paths: AHashMap<ModuleId, (Arc<FileName>, Mark)>,
 }
 
 impl ModuleIdGenerator {
-    pub fn generate(&self, path: &Arc<FileName>) -> ModuleId {
+    /// Returns `(module_id, top_level_mark)`
+    pub fn generate(&self, path: &Arc<FileName>) -> (ModuleId, Mark) {
         let mut data = self.cache.lock();
         if let Some(v) = data.modules.get(path) {
             return *v;
@@ -39,16 +42,22 @@ impl ModuleIdGenerator {
 
         data.cur += 1;
 
+        let top_level_mark = Mark::new();
+
         let module_id = ModuleId(data.cur);
-        let res = data.modules.insert(path.clone(), module_id);
-        data.paths.insert(module_id, path.clone());
+        let res = data.modules.insert(path.clone(), (module_id, top_level_mark));
+        data.paths.insert(module_id, (path.clone(), top_level_mark));
 
         debug_assert_eq!(res, None, "Found multiple module id for one file");
 
-        module_id
+        (module_id, top_level_mark)
     }
 
     pub fn path(&self, module_id: ModuleId) -> Arc<FileName> {
-        self.cache.lock().paths.get(&module_id).cloned().unwrap()
+        self.cache.lock().paths.get(&module_id).cloned().unwrap().0
+    }
+
+    pub fn top_level_mark(&self, module_id: ModuleId) -> Mark {
+        self.cache.lock().paths.get(&module_id).cloned().unwrap().1
     }
 }

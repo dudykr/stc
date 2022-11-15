@@ -366,7 +366,7 @@ module TypeScript {
 
         public addToControlFlow(context: ControlFlowContext): void {
             super.addToControlFlow(context);
-            // TODO(kdy1): add successor as catch block/finally block if present
+            // TODO: add successor as catch block/finally block if present
             if (this.nodeType == NodeType.Throw) {
                 context.returnStmt();
             }
@@ -1499,7 +1499,7 @@ module TypeScript {
             }
             context.current = afterLoop;
             condBlock.addSuccessor(afterLoop);
-            // TODO(kdy1): check for while (true) and then only continue if afterLoop has predecessors
+            // TODO: check for while (true) and then only continue if afterLoop has predecessors
             context.noContinuation = false;
             context.walker.options.goChildren = false;
         }
@@ -1552,7 +1552,7 @@ module TypeScript {
                 var loopEnd = context.current;
                 loopEnd.addSuccessor(loopStart);
                 context.addContent(this.cond);
-                // TODO(kdy1): check for while (true) 
+                // TODO: check for while (true) 
                 context.current = afterLoop;
                 loopEnd.addSuccessor(afterLoop);
             }
@@ -2037,12 +2037,12 @@ module TypeScript {
             return this;
         }
 
-        // TODO(kdy1): more reasoning about unreachable cases (such as duplicate literals as case expressions)
+        // TODO: more reasoning about unreachable cases (such as duplicate literals as case expressions)
         // for now, assume all cases are reachable, regardless of whether some cases fall through
         public addToControlFlow(context: ControlFlowContext) {
             var execBlock = new BasicBlock();
             var sw = context.currentSwitch[context.currentSwitch.length - 1];
-            // TODO(kdy1): fall-through from previous (+ to end of switch)
+            // TODO: fall-through from previous (+ to end of switch)
             if (this.expr) {
                 var exprBlock = new BasicBlock();
                 context.current = exprBlock;

@@ -12,4 +12,4 @@ Inflector = "0.11.4"
 rnode_macros = {path = "../rnode_macros"}
 serde = {version = "1.0.147", features = ["derive"]}
 stc_visit = {path = "../stc_visit"}
-swc_common = "0.14.6"
+swc_common = "0.29.14"

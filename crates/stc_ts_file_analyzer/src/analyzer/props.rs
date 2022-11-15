@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Visit, VisitWith};
-use stc_ts_ast_rnode::{RComputedPropName, RExpr, RExprOrSuper, RGetterProp, RIdent, RMemberExpr, RPrivateName, RProp, RPropName};
+use stc_ts_ast_rnode::{RComputedPropName, RExpr, RGetterProp, RIdent, RMemberExpr, RPrivateName, RProp, RPropName};
 use stc_ts_errors::{Error, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{Accessor, ComputedKey, Key, KeywordType, PrivateName, TypeParam};
@@ -82,9 +82,9 @@ impl Analyzer<'_, '_> {
 
         let is_symbol_access = match *node.expr {
             RExpr::Member(RMemberExpr {
-                obj: RExprOrSuper::Expr(box RExpr::Ident(RIdent {
+                obj: box RExpr::Ident(RIdent {
                     sym: js_word!("Symbol"), ..
-                })),
+                }),
                 ..
             }) => true,
             _ => false,
@@ -159,7 +159,7 @@ impl Analyzer<'_, '_> {
             }
 
             if check_for_validity && check_for_symbol_form && is_symbol_access {
-                match ty.normalize() {
+                match ty.normalize_instance() {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsSymbolKeyword,
                         ..
@@ -169,7 +169,7 @@ impl Analyzer<'_, '_> {
                         op: TsTypeOperatorOp::Unique,
                         ty,
                         ..
-                    }) if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
+                    }) if ty.normalize_instance().is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
                     _ => {
                         //
                         analyzer.storage.report(Error::NonSymbolComputedPropInFormOfSymbol { span });
@@ -265,7 +265,7 @@ impl Analyzer<'_, '_> {
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn is_type_valid_for_computed_key(&mut self, span: Span, ty: &Type) -> bool {
-        if ty.metadata().resolved_from_var && ty.is_lit() {
+        if (ty.metadata().resolved_from_var || ty.metadata().prevent_generalization) && ty.is_lit() {
             return true;
         }
 
@@ -312,7 +312,8 @@ impl Analyzer<'_, '_> {
                 ..
             })
             | Type::EnumVariant(..)
-            | Type::Symbol(..) => true,
+            | Type::Symbol(..)
+            | Type::Tpl(..) => true,
 
             Type::Param(TypeParam { constraint: Some(ty), .. }) => {
                 if self.is_type_valid_for_computed_key(span, ty) {
@@ -504,7 +505,7 @@ impl Analyzer<'_, '_> {
                         let params = p.function.params.validate_with(child)?;
 
                         let ret_ty = try_opt!(p.function.return_type.validate_with(child));
-                        let ret_ty = ret_ty.map(|ty| ty.cheap());
+                        let ret_ty = ret_ty.map(|ty| ty.freezed());
                         child.scope.declared_return_type = ret_ty.clone();
 
                         let mut inferred = None;

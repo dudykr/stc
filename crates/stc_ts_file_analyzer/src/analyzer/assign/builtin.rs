@@ -1,4 +1,4 @@
-use stc_ts_ast_rnode::{RIdent, RTsEntityName};
+use stc_ts_ast_rnode::{RExpr, RIdent, RTsEntityName};
 use stc_ts_errors::{DebugExt, Error};
 use stc_ts_types::{Array, ArrayMetadata, Ref, Type, TypeElement};
 use swc_atoms::js_word;
@@ -19,7 +19,7 @@ impl Analyzer<'_, '_> {
     /// - Handles assignment of `Function` types.
     /// - Handles assignment of various array types.
     /// - Handles assignment of promise types.
-    pub(super) fn assign_to_builtins(&mut self, data: &mut AssignData, opts: AssignOpts, l: &Type, r: &Type) -> Option<VResult<()>> {
+    pub(super) fn assign_to_builtin(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
         let span = opts.span;
         let l = l.normalize();
         let r = r.normalize();
@@ -97,20 +97,20 @@ impl Analyzer<'_, '_> {
                     }
 
                     for parent in &ri.extends {
-                        match parent.expr {
-                            RTsEntityName::Ident(RIdent {
+                        match &*parent.expr {
+                            RExpr::Ident(RIdent {
                                 sym: js_word!("Function"), ..
                             }) => return Some(Ok(())),
                             _ => {}
                         }
 
-                        let parent = self.type_of_ts_entity_name(opts.span, self.ctx.module_id, &parent.expr, parent.type_args.as_deref());
+                        let parent = self.type_of_ts_entity_name(opts.span, &parent.expr, parent.type_args.as_deref());
                         let parent = match parent {
                             Ok(ty) => ty,
                             Err(err) => return Some(Err(err)),
                         };
 
-                        if let Some(Ok(())) = self.assign_to_builtins(data, opts, l, &parent) {
+                        if let Some(Ok(())) = self.assign_to_builtin(data, l, &parent, opts) {
                             return Some(Ok(()));
                         }
                     }
@@ -154,7 +154,7 @@ impl Analyzer<'_, '_> {
                     .or_else(|| unwrap_ref_with_single_arg(r, "ReadonlyArray"))
                 {
                     return Some(
-                        self.assign_with_opts(data, opts, &l.elem_type, &r_elem)
+                        self.assign_with_opts(data, &l.elem_type, &r_elem, opts)
                             .context("tried fast-path assignment to an array"),
                     );
                 }
@@ -165,13 +165,13 @@ impl Analyzer<'_, '_> {
             if let Some(r_elem) = unwrap_ref_with_single_arg(r, "ReadonlyArray") {
                 return Some(self.assign_with_opts(
                     data,
-                    opts,
                     &l,
                     &Type::Array(Array {
                         span: r.span(),
                         elem_type: box r_elem.clone(),
                         metadata: ArrayMetadata { common: r.metadata() },
                     }),
+                    opts,
                 ));
             }
         }
@@ -206,7 +206,7 @@ impl Analyzer<'_, '_> {
                         let mut done = true;
                         for l in &l.types {
                             if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
-                                if let Ok(()) = self.assign_with_opts(data, opts, l, r) {
+                                if let Ok(()) = self.assign_with_opts(data, l, r, opts) {
                                     return Some(Ok(()));
                                 }
                             } else {
@@ -230,12 +230,12 @@ impl Analyzer<'_, '_> {
 
                 if let Ok(()) = self.assign_with_opts(
                     data,
+                    l,
+                    &r,
                     AssignOpts {
                         may_unwrap_promise: false,
                         ..opts
                     },
-                    l,
-                    &r,
                 ) {
                     return Some(Ok(()));
                 }
@@ -245,12 +245,12 @@ impl Analyzer<'_, '_> {
 
                     if let Ok(()) = self.assign_with_opts(
                         data,
+                        l,
+                        &r,
                         AssignOpts {
                             may_unwrap_promise: false,
                             ..opts
                         },
-                        l,
-                        &r,
                     ) {
                         return Some(Ok(()));
                     }
@@ -261,7 +261,7 @@ impl Analyzer<'_, '_> {
         if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
             if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
                 return Some(
-                    self.assign_with_opts(data, opts, l, r)
+                    self.assign_with_opts(data, l, r, opts)
                         .context("tried to assign a promise to another using optimized algorithm"),
                 );
             }
