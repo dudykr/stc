@@ -235,17 +235,20 @@ impl Analyzer<'_, '_> {
     }
 
     fn validate_unary_expr_inner(&mut self, span: Span, op: UnaryOp, arg_expr: &RExpr, arg: &Type) {
-        match arg_expr {
-            RExpr::Lit(RLit::Null(..))
-            | RExpr::Ident(RIdent {
-                sym: js_word!("undefined"),
-                ..
-            }) => {
-                self.storage
-                    .report(Error::UndefinedOrNullIsNotValidOperand { span: arg_expr.span() });
-                return;
-            }
-            _ => {}
+        match op {
+            op!("delete") | op!("!") | op!("typeof") | op!("void") => {}
+            _ => match arg_expr {
+                RExpr::Lit(RLit::Null(..))
+                | RExpr::Ident(RIdent {
+                    sym: js_word!("undefined"),
+                    ..
+                }) => {
+                    self.storage
+                        .report(Error::UndefinedOrNullIsNotValidOperand { span: arg_expr.span() });
+                    return;
+                }
+                _ => {}
+            },
         }
 
         let mut errors = Errors::default();
