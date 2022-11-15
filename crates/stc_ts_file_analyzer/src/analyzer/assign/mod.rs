@@ -1711,6 +1711,11 @@ impl Analyzer<'_, '_> {
                 }
 
                 match kind {
+                    TsKeywordTypeKind::TsStringKeyword => match *rhs {
+                        Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => return Ok(()),
+                        _ => {}
+                    },
+
                     TsKeywordTypeKind::TsNumberKeyword => match *rhs {
                         Type::Lit(LitType {
                             lit: RTsLit::Number(..), ..
