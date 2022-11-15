@@ -265,7 +265,7 @@ impl Analyzer<'_, '_> {
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn is_type_valid_for_computed_key(&mut self, span: Span, ty: &Type) -> bool {
-        if ty.metadata().resolved_from_var && ty.is_lit() {
+        if (ty.metadata().resolved_from_var || ty.metadata().prevent_generalization) && ty.is_lit() {
             return true;
         }
 
