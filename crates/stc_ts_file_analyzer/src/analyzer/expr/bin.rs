@@ -1233,18 +1233,13 @@ impl Analyzer<'_, '_> {
         }
 
         {
-            let mut abort = false;
             if l.is_symbol_like() {
-                abort = true;
                 self.storage.report(Error::NumericOpToSymbol { span: l.span() });
+                return Ok(());
             }
 
             if r.is_symbol_like() {
-                abort = true;
                 self.storage.report(Error::NumericOpToSymbol { span: r.span() });
-            }
-
-            if abort {
                 return Ok(());
             }
         }
