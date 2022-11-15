@@ -3,7 +3,7 @@ use std::{borrow::Cow, collections::HashMap};
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RNumber, RStr, RTplElement, RTsEntityName, RTsLit};
 use stc_ts_base_type_ops::bindings::{collect_bindings, BindingCollector, KnownTypeVisitor};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_generics::ExpandGenericOpts;
@@ -12,7 +12,7 @@ use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection, Intrinsic, IntrinsicKind, Key,
     KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature, QueryExpr, Ref, ThisType,
-    ThisTypeMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    ThisTypeMetadata, TplType, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -1500,19 +1500,71 @@ impl Analyzer<'_, '_> {
     pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> VResult<Type> {
         let arg = &ty.type_args;
 
-        match ty.kind {
-            IntrinsicKind::Uppercase | IntrinsicKind::Lowercase | IntrinsicKind::Capitalize | IntrinsicKind::Uncapitalize => {
-                match arg.params[0].normalize() {
-                    Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
-                        let new_val = match ty.kind {
-                            IntrinsicKind::Uppercase => s.value.to_uppercase(),
-                            IntrinsicKind::Lowercase => s.value.to_lowercase(),
+        match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.as_ref() {
+            Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
+                let new_val = match ty.kind {
+                    IntrinsicKind::Uppercase => s.value.to_uppercase(),
+                    IntrinsicKind::Lowercase => s.value.to_lowercase(),
+                    IntrinsicKind::Capitalize => {
+                        if s.value.is_empty() {
+                            "".into()
+                        } else {
+                            let mut res = String::new();
+                            let mut chars = s.value.chars();
+
+                            res.extend(chars.next().into_iter().flat_map(|v| v.to_uppercase()));
+                            res.push_str(chars.as_str());
+
+                            res
+                        }
+                    }
+                    IntrinsicKind::Uncapitalize => {
+                        if s.value.is_empty() {
+                            "".into()
+                        } else {
+                            let mut res = String::new();
+                            let mut chars = s.value.chars();
+
+                            res.extend(chars.next().into_iter().flat_map(|v| v.to_lowercase()));
+                            res.push_str(chars.as_str());
+
+                            res
+                        }
+                    }
+                };
+
+                return Ok(Type::Lit(LitType {
+                    span: arg.params[0].span(),
+                    lit: RTsLit::Str(RStr {
+                        span: arg.params[0].span(),
+                        value: new_val.into(),
+                        raw: None,
+                    }),
+                    metadata: LitTypeMetadata {
+                        common: arg.params[0].metadata(),
+                        ..Default::default()
+                    },
+                }));
+            }
+            Type::Tpl(TplType {
+                span,
+                quasis,
+                types,
+                metadata,
+            }) => {
+                let quasis = quasis
+                    .iter()
+                    .map(|quasis| {
+                        let old_raw = &quasis.raw;
+                        let raw = match ty.kind {
+                            IntrinsicKind::Uppercase => old_raw.to_uppercase(),
+                            IntrinsicKind::Lowercase => old_raw.to_lowercase(),
                             IntrinsicKind::Capitalize => {
-                                if s.value.is_empty() {
+                                if old_raw.is_empty() {
                                     "".into()
                                 } else {
                                     let mut res = String::new();
-                                    let mut chars = s.value.chars();
+                                    let mut chars = old_raw.chars();
 
                                     res.extend(chars.next().into_iter().flat_map(|v| v.to_uppercase()));
                                     res.push_str(chars.as_str());
@@ -1521,11 +1573,11 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                             IntrinsicKind::Uncapitalize => {
-                                if s.value.is_empty() {
+                                if old_raw.is_empty() {
                                     "".into()
                                 } else {
                                     let mut res = String::new();
-                                    let mut chars = s.value.chars();
+                                    let mut chars = old_raw.chars();
 
                                     res.extend(chars.next().into_iter().flat_map(|v| v.to_lowercase()));
                                     res.push_str(chars.as_str());
@@ -1533,25 +1585,22 @@ impl Analyzer<'_, '_> {
                                     res
                                 }
                             }
-                        };
+                        }
+                        .into();
 
-                        return Ok(Type::Lit(LitType {
-                            span: arg.params[0].span(),
-                            lit: RTsLit::Str(RStr {
-                                span: arg.params[0].span(),
-                                value: new_val.into(),
-                                raw: None,
-                            }),
-                            metadata: LitTypeMetadata {
-                                common: arg.params[0].metadata(),
-                                ..Default::default()
-                            },
-                        }));
-                    }
+                        RTplElement { raw, ..quasis.clone() }
+                    })
+                    .collect();
 
-                    _ => {}
-                }
+                return Ok(Type::Tpl(TplType {
+                    span: *span,
+                    quasis,
+                    types: types.clone(),
+                    metadata: *metadata,
+                }));
             }
+
+            _ => {}
         }
 
         Ok(Type::Intrinsic(ty.clone()))
