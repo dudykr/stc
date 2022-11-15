@@ -3,7 +3,7 @@ use std::{borrow::Cow, collections::HashMap};
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RNumber, RStr, RTsEntityName, RTsLit};
+use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RNumber, RStr, RTplElement, RTsEntityName, RTsLit};
 use stc_ts_base_type_ops::bindings::{collect_bindings, BindingCollector, KnownTypeVisitor};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_generics::ExpandGenericOpts;
@@ -12,7 +12,7 @@ use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection, Intrinsic, IntrinsicKind, Key,
     KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature, QueryExpr, Ref, ThisType,
-    ThisTypeMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    ThisTypeMetadata, TplType, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -21,7 +21,7 @@ use stc_utils::{
     ext::{SpanExt, TypeVecExt},
     stack,
 };
-use swc_atoms::js_word;
+use swc_atoms::{js_word, Atom, JsWord};
 use swc_common::{util::take::Take, Span, Spanned, SyntaxContext, TypeEq};
 use swc_ecma_ast::{TsKeywordTypeKind, TsTypeOperatorOp};
 use tracing::{debug, error, instrument, span, Level};
@@ -1500,58 +1500,52 @@ impl Analyzer<'_, '_> {
     pub(crate) fn expand_intrinsic_types(&mut self, span: Span, ty: &Intrinsic) -> VResult<Type> {
         let arg = &ty.type_args;
 
-        match ty.kind {
-            IntrinsicKind::Uppercase | IntrinsicKind::Lowercase | IntrinsicKind::Capitalize | IntrinsicKind::Uncapitalize => {
-                match arg.params[0].normalize() {
-                    Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
-                        let new_val = match ty.kind {
-                            IntrinsicKind::Uppercase => s.value.to_uppercase(),
-                            IntrinsicKind::Lowercase => s.value.to_lowercase(),
-                            IntrinsicKind::Capitalize => {
-                                if s.value.is_empty() {
-                                    "".into()
-                                } else {
-                                    let mut res = String::new();
-                                    let mut chars = s.value.chars();
+        match self.normalize(None, Cow::Borrowed(&arg.params[0]), Default::default())?.normalize() {
+            Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => {
+                let new_val = apply_intrinsics(&ty.kind, &s.value);
 
-                                    res.extend(chars.next().into_iter().flat_map(|v| v.to_uppercase()));
-                                    res.push_str(chars.as_str());
-
-                                    res
-                                }
-                            }
-                            IntrinsicKind::Uncapitalize => {
-                                if s.value.is_empty() {
-                                    "".into()
-                                } else {
-                                    let mut res = String::new();
-                                    let mut chars = s.value.chars();
-
-                                    res.extend(chars.next().into_iter().flat_map(|v| v.to_lowercase()));
-                                    res.push_str(chars.as_str());
-
-                                    res
-                                }
-                            }
-                        };
-
-                        return Ok(Type::Lit(LitType {
-                            span: arg.params[0].span(),
-                            lit: RTsLit::Str(RStr {
-                                span: arg.params[0].span(),
-                                value: new_val.into(),
-                                raw: None,
-                            }),
-                            metadata: LitTypeMetadata {
-                                common: arg.params[0].metadata(),
-                                ..Default::default()
-                            },
-                        }));
-                    }
-
-                    _ => {}
-                }
+                return Ok(Type::Lit(LitType {
+                    span: arg.params[0].span(),
+                    lit: RTsLit::Str(RStr {
+                        span: arg.params[0].span(),
+                        value: JsWord::from(new_val.as_ref()),
+                        raw: None,
+                    }),
+                    metadata: LitTypeMetadata {
+                        common: arg.params[0].metadata(),
+                        ..Default::default()
+                    },
+                }));
             }
+            Type::Tpl(TplType {
+                span,
+                quasis,
+                types,
+                metadata,
+            }) => {
+                let quasis = quasis
+                    .iter()
+                    .map(|quasis| {
+                        let raw = apply_intrinsics(&ty.kind, &quasis.raw);
+                        let cooked = quasis.cooked.as_ref().map(|cooked| apply_intrinsics(&ty.kind, cooked));
+
+                        RTplElement {
+                            raw,
+                            cooked,
+                            ..quasis.clone()
+                        }
+                    })
+                    .collect();
+
+                return Ok(Type::Tpl(TplType {
+                    span: *span,
+                    quasis,
+                    types: types.clone(),
+                    metadata: *metadata,
+                }));
+            }
+
+            _ => {}
         }
 
         Ok(Type::Intrinsic(ty.clone()))
@@ -1831,4 +1825,40 @@ pub(crate) fn left_of_expr(t: &RExpr) -> Option<&RIdent> {
 
         _ => None,
     }
+}
+
+fn apply_intrinsics<T: AsRef<str>>(intrinsics: &IntrinsicKind, raw: T) -> Atom {
+    let raw = raw.as_ref();
+
+    match intrinsics {
+        IntrinsicKind::Uppercase => raw.to_ascii_uppercase(),
+        IntrinsicKind::Lowercase => raw.to_ascii_lowercase(),
+        IntrinsicKind::Capitalize => {
+            if raw.is_empty() {
+                "".into()
+            } else {
+                let mut res = String::new();
+                let mut chars = raw.chars();
+
+                res.extend(chars.next().into_iter().map(|v| v.to_ascii_uppercase()));
+                res.push_str(chars.as_str());
+
+                res
+            }
+        }
+        IntrinsicKind::Uncapitalize => {
+            if raw.is_empty() {
+                "".into()
+            } else {
+                let mut res = String::new();
+                let mut chars = raw.chars();
+
+                res.extend(chars.next().into_iter().map(|v| v.to_ascii_lowercase()));
+                res.push_str(chars.as_str());
+
+                res
+            }
+        }
+    }
+    .into()
 }
