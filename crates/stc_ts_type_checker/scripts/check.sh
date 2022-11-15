@@ -21,7 +21,7 @@ export RUST_MIN_STACK=$((16 * 1024 * 1024))
 # We prevent regression using faster checks
 RUST_LOG=off ./scripts/base.sh --features tracing/max_level_off
 
-RUST_LOG=off TEST='' DONT_PRINT_MATCHED=1 cargo test --test tsc \
+RUST_LOG=off TEST='' DONT_PRINT_MATCHED=1 cargo test --test tsc  --features tracing/max_level_off \
   | tee /dev/stderr \
   | grep 'ts .\.\. ok$' \
   | sed -e 's!test conformance::!!' \
