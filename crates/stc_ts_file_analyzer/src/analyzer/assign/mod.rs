@@ -202,8 +202,7 @@ impl Analyzer<'_, '_> {
         }
 
         match op {
-            op!("+=")
-            | op!("*=")
+            op!("*=")
             | op!("**=")
             | op!("/=")
             | op!("%=")
@@ -351,12 +350,16 @@ impl Analyzer<'_, '_> {
         match op {
             op!("+=") => {
                 if rhs.is_str() {
-                    return Err(Error::InvalidOpAssign {
-                        span,
-                        op,
-                        lhs: box l.into_owned().clone(),
-                        rhs: box r.into_owned().clone(),
-                    });
+                    if l.is_bool() || l.is_num() || l.is_enum_variant() || l.is_type_lit() || l.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
+                        return Err(Error::InvalidOpAssign {
+                            span,
+                            op,
+                            lhs: box l.into_owned().clone(),
+                            rhs: box r.into_owned().clone(),
+                        });
+                    }
+
+                    return Ok(());
                 }
             }
 
