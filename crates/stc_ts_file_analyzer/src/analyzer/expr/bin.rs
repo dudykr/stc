@@ -1237,6 +1237,10 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
+        if (l.is_num() && r.is_symbol_like()) || (l.is_symbol_like() && r.is_num()) {
+            return Ok(true);
+        }
+
         //
         if l.is_type_param() && !r.is_type_param() {
             return Ok(true);
