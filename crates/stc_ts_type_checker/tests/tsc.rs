@@ -151,6 +151,8 @@ fn record_stat(stats: Stats) -> Stats {
 
     let stats = (*guard).clone();
 
+    drop(guard);
+
     let content = format!("{:#?}", stats);
 
     // If we are testing everything, update stats file.
