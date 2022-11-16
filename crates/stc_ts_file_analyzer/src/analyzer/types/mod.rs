@@ -1545,6 +1545,28 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
+            Type::Param(TypeParam {
+                span: param_span,
+                name,
+                constraint: Some(constraint),
+                default,
+                metadata,
+            }) => {
+                if let Some(c) = constraint.as_intrinsic() {
+                    let constraint = self
+                        .expand_intrinsic_types(span, &c)
+                        .context("failed to expand intrinsics in type parameters")?;
+
+                    return Ok(Type::Param(TypeParam {
+                        span: *param_span,
+                        name: name.clone(),
+                        constraint: Some(box constraint),
+                        default: default.clone(),
+                        metadata: *metadata,
+                    }));
+                }
+            }
+
             _ => {}
         }
 
