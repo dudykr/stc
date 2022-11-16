@@ -499,7 +499,6 @@ impl Analyzer<'_, '_> {
             | Type::Instance(..)
             | Type::Intrinsic(..)
             | Type::Mapped(..)
-            | Type::Param(..)
             | Type::Operator(Operator {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
