@@ -39,6 +39,7 @@ use crate::{
         assign::AssignOpts,
         pat::PatMode,
         scope::{ExpandOpts, ScopeKind, VarKind},
+        types::NormalizeTypeOpts,
         util::ResultExt,
         Analyzer, Ctx,
     },
@@ -1479,7 +1480,14 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         let mut obj = match obj.normalize() {
-            Type::Conditional(..) | Type::Instance(..) => self.normalize(None, Cow::Borrowed(obj), Default::default())?,
+            Type::Conditional(..) | Type::Instance(..) => self.normalize(
+                None,
+                Cow::Borrowed(obj),
+                NormalizeTypeOpts {
+                    preserve_intersection: true,
+                    ..Default::default()
+                },
+            )?,
             _ => Cow::Borrowed(obj),
         };
         if !self.is_builtin {

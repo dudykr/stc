@@ -473,7 +473,7 @@ impl Analyzer<'_, '_> {
 
                     Type::Instance(ty) => {
                         let ty = self
-                            .instantiate_for_normalization(span, &ty.ty)
+                            .instantiate_for_normalization(span, &ty.ty, opts)
                             .context("tried to instantiate for normalizations")?;
                         ty.assert_valid();
 
@@ -776,7 +776,7 @@ impl Analyzer<'_, '_> {
     }
 
     // This is part of normalization.
-    fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type) -> VResult<Type> {
+    fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type, opts: NormalizeTypeOpts) -> VResult<Type> {
         let mut ty = self.normalize(
             span,
             Cow::Borrowed(ty),
@@ -821,11 +821,11 @@ impl Analyzer<'_, '_> {
                 },
             }),
 
-            Type::Intersection(ty) => {
+            Type::Intersection(ty) if !opts.preserve_intersection => {
                 let types = ty
                     .types
                     .into_iter()
-                    .map(|ty| self.instantiate_for_normalization(span, &ty))
+                    .map(|ty| self.instantiate_for_normalization(span, &ty, opts))
                     .collect::<Result<_, _>>()?;
 
                 Type::Intersection(Intersection { types, ..ty }).fixed()
@@ -835,7 +835,7 @@ impl Analyzer<'_, '_> {
                 let types = ty
                     .types
                     .into_iter()
-                    .map(|ty| self.instantiate_for_normalization(span, &ty))
+                    .map(|ty| self.instantiate_for_normalization(span, &ty, opts))
                     .collect::<Result<_, _>>()?;
 
                 Type::Union(Union { types, ..ty }).fixed()
