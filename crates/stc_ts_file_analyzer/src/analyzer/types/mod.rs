@@ -1552,19 +1552,30 @@ impl Analyzer<'_, '_> {
                 default,
                 metadata,
             }) => {
-                if let Some(c) = constraint.as_intrinsic() {
-                    let constraint = self
-                        .expand_intrinsic_types(span, &c)
-                        .context("failed to expand intrinsics in type parameters")?;
+                let constraint = self
+                    .normalize(Some(span), Cow::Borrowed(constraint), Default::default())
+                    .context("failed to expand intrinsics in type parameters")?
+                    .freezed()
+                    .into_owned()
+                    .freezed();
 
-                    return Ok(Type::Param(TypeParam {
-                        span: *param_span,
-                        name: name.clone(),
-                        constraint: Some(box constraint),
-                        default: default.clone(),
-                        metadata: *metadata,
-                    }));
-                }
+                let arg = Type::Param(TypeParam {
+                    span: *param_span,
+                    name: name.clone(),
+                    constraint: Some(box constraint),
+                    default: default.clone(),
+                    metadata: *metadata,
+                });
+
+                return Ok(Type::Intrinsic(Intrinsic {
+                    span,
+                    kind: ty.kind.clone(),
+                    type_args: TypeParamInstantiation {
+                        span: ty.type_args.span,
+                        params: vec![arg],
+                    },
+                    metadata: ty.metadata,
+                }));
             }
 
             _ => {}
