@@ -50,6 +50,9 @@ pub(crate) struct NormalizeTypeOpts {
     /// Should we preserve `typeof globalThis`?
     pub preserve_global_this: bool,
 
+    /// Should we preserve [Type::Intersection]?
+    pub preserve_intersection: bool,
+
     //// If `true`, we will not expand generics.
     pub process_only_key: bool,
 }
@@ -254,11 +257,13 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::Intersection(ty) => {
-                        if let Some(new_ty) = self
-                            .normalize_intersection_types(span.unwrap_or(ty.span), &ty.types, opts)
-                            .context("failed to normalize an intersection type")?
-                        {
-                            return Ok(Cow::Owned(new_ty));
+                        if !opts.preserve_intersection {
+                            if let Some(new_ty) = self
+                                .normalize_intersection_types(span.unwrap_or(ty.span), &ty.types, opts)
+                                .context("failed to normalize an intersection type")?
+                            {
+                                return Ok(Cow::Owned(new_ty));
+                            }
                         }
                     }
 
