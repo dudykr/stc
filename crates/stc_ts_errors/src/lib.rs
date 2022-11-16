@@ -191,7 +191,7 @@ pub enum Error {
         span: Span,
     },
 
-    /// TS2412
+    /// TS2411
     ClassMemberNotCompatibleWithNumericIndexSignature {
         span: Span,
     },
@@ -1916,7 +1916,7 @@ impl Error {
 
             Error::ClassMemberNotCompatibleWithStringIndexSignature { .. } => 2411,
 
-            Error::ClassMemberNotCompatibleWithNumericIndexSignature { .. } => 2412,
+            Error::ClassMemberNotCompatibleWithNumericIndexSignature { .. } => 2411,
 
             Error::AbstractAndConcreteIsMixed { .. } => 2512,
 
