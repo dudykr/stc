@@ -35,6 +35,7 @@ use crate::{
         expr::TypeOfMode,
         generic::InferTypeOpts,
         scope::ExpandOpts,
+        types::NormalizeTypeOpts,
         util::{make_instance_type, ResultExt},
         Analyzer, Ctx, ScopeKind,
     },
@@ -548,7 +549,14 @@ impl Analyzer<'_, '_> {
 
         let res = (|| {
             let obj_type = self
-                .normalize(Some(span), Cow::Borrowed(obj_type), Default::default())?
+                .normalize(
+                    Some(span),
+                    Cow::Borrowed(obj_type),
+                    NormalizeTypeOpts {
+                        preserve_intersection: true,
+                        ..Default::default()
+                    },
+                )?
                 .freezed()
                 .into_owned();
 
