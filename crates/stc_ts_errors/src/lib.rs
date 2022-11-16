@@ -191,7 +191,7 @@ pub enum Error {
         span: Span,
     },
 
-    /// TS2412
+    /// TS2411
     ClassMemberNotCompatibleWithNumericIndexSignature {
         span: Span,
     },
@@ -1246,10 +1246,9 @@ pub enum Error {
     },
 
     /// `TS2469`
-    NumericUnaryOpToSymbol {
+    NumericOpToSymbol {
         /// Span of the argument.
         span: Span,
-        op: UnaryOp,
     },
 
     /// TS2356
@@ -1733,7 +1732,7 @@ impl Error {
 
             Error::InvalidRhsInInstanceOf { .. } => 2359,
 
-            Error::NumericUnaryOpToSymbol { .. } => 2469,
+            Error::NumericOpToSymbol { .. } => 2469,
 
             Error::InvalidNumericOperand { .. } => 2356,
 
@@ -1917,7 +1916,7 @@ impl Error {
 
             Error::ClassMemberNotCompatibleWithStringIndexSignature { .. } => 2411,
 
-            Error::ClassMemberNotCompatibleWithNumericIndexSignature { .. } => 2412,
+            Error::ClassMemberNotCompatibleWithNumericIndexSignature { .. } => 2411,
 
             Error::AbstractAndConcreteIsMixed { .. } => 2512,
 
