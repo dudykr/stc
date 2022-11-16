@@ -556,7 +556,8 @@ impl Analyzer<'_, '_> {
                         preserve_intersection: true,
                         ..Default::default()
                     },
-                )?
+                )
+                .context("failed to normalize for call_property")?
                 .freezed()
                 .into_owned();
 
