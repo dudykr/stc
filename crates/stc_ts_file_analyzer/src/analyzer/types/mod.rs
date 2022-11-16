@@ -3,7 +3,7 @@ use std::{borrow::Cow, collections::HashMap, fmt::Debug};
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use rnode::{VisitMutWith, VisitWith};
-use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RLit, RNumber, RStr, RTsEntityName, RTsEnumMemberId, RTsLit};
+use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RLit, RNumber, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::bindings::{collect_bindings, BindingCollector, KnownTypeVisitor};
 use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_generics::ExpandGenericOpts;
@@ -12,7 +12,7 @@ use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, EnumVariant, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection, Intrinsic, IntrinsicKind,
     Key, KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature, QueryExpr, Ref,
-    ThisType, ThisTypeMetadata, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    ThisType, ThisTypeMetadata, TplType, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
