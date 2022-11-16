@@ -5,7 +5,10 @@ use itertools::Itertools;
 use rnode::{VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RNumber, RStr, RTplElement, RTsEntityName, RTsLit};
 use stc_ts_base_type_ops::bindings::{collect_bindings, BindingCollector, KnownTypeVisitor};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, print_backtrace},
+    DebugExt, Error,
+};
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
@@ -439,9 +442,10 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
 
-                                    let expanded_ty = self
-                                        .resolve_typeof(actual_span, e)
-                                        .context("tried to resolve typeof as a part of normalization")?;
+                                    let expanded_ty = self.resolve_typeof(actual_span, e).with_context(|| {
+                                        print_backtrace();
+                                        "tried to resolve typeof as a part of normalization".into()
+                                    })?;
 
                                     if expanded_ty.is_global_this() {
                                         return Ok(Cow::Owned(expanded_ty));
@@ -782,7 +786,7 @@ impl Analyzer<'_, '_> {
             Cow::Borrowed(ty),
             NormalizeTypeOpts {
                 normalize_keywords: false,
-                ..Default::default()
+                ..opts
             },
         )?;
         ty.make_clone_cheap();
