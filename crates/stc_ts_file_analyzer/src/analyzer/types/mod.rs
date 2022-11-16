@@ -419,6 +419,10 @@ impl Analyzer<'_, '_> {
                                         .resolve_typeof(actual_span, e)
                                         .context("tried to resolve typeof as a part of normalization")?;
 
+                                    if expanded_ty.is_global_this() {
+                                        return Ok(Cow::Owned(expanded_ty));
+                                    }
+
                                     if ty.type_eq(&expanded_ty) {
                                         return Ok(Cow::Owned(Type::any(
                                             actual_span.with_ctxt(SyntaxContext::empty()),
