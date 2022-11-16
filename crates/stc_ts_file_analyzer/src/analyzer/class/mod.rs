@@ -1331,7 +1331,7 @@ impl Analyzer<'_, '_> {
                                     err.convert_all(|err| Error::InvalidImplOfInterface {
                                         span: match &err {
                                             Error::AssignFailed { right_ident: Some(s), .. } => *s,
-                                            Error::AssignFailed { right, .. } => right.span(),
+                                            Error::AssignFailed { left, .. } => left.span(),
                                             _ => err.span(),
                                         },
                                         cause: box err,
