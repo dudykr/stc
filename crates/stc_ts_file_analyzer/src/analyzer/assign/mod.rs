@@ -1060,11 +1060,11 @@ impl Analyzer<'_, '_> {
                     for t in items {
                         match t.normalize() {
                             Type::Enum(en) => {
-                                if en.clone().members.len() == 1 {
+                                if en.members.len() == 1 {
                                     return Ok(());
                                 }
 
-                                for mem in en.clone().members.into_iter() {
+                                for mem in en.members.iter() {
                                     match mem.id {
                                         RTsEnumMemberId::Ident(RIdent { ref sym, .. })
                                         | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
