@@ -514,9 +514,9 @@ impl Analyzer<'_, '_> {
                 metadata,
             }) => {
                 return Ok(Cow::Owned(Type::EnumVariant(EnumVariant {
-                    span: span.clone(),
+                    span: *span,
                     enum_name: enum_name.clone(),
-                    metadata: metadata.clone(),
+                    metadata: *metadata,
                     name: None,
                 })))
             }

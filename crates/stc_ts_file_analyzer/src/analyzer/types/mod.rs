@@ -702,7 +702,7 @@ impl Analyzer<'_, '_> {
                             // enumVariant is enumMemeber
                             if let Ok(result) = self.expand_enum_variant(elem.clone()) {
                                 match result {
-                                    stc_ts_types::Type::Lit(LitType { .. }) => return Ok(Some(elem.clone())),
+                                    Type::Lit(LitType { .. }) => return Ok(Some(elem.clone())),
                                     _ => {}
                                 }
                             }
@@ -719,13 +719,13 @@ impl Analyzer<'_, '_> {
                                                 RTsEnumMemberId::Str(s) => RIdent::new(s.value.clone(), s.span),
                                             };
                                             match *v.val {
-                                                RExpr::Lit(RLit::Str(..)) => str_lits.push(stc_ts_types::Type::EnumVariant(EnumVariant {
+                                                RExpr::Lit(RLit::Str(..)) => str_lits.push(Type::EnumVariant(EnumVariant {
                                                     span: v.span,
                                                     enum_name: e.id.clone().into(),
                                                     name: Some(key.sym),
                                                     metadata: Default::default(),
                                                 })),
-                                                RExpr::Lit(RLit::Num(..)) => num_lits.push(stc_ts_types::Type::EnumVariant(EnumVariant {
+                                                RExpr::Lit(RLit::Num(..)) => num_lits.push(Type::EnumVariant(EnumVariant {
                                                     span: v.span,
                                                     enum_name: e.id.clone().into(),
                                                     name: Some(key.sym),
@@ -1245,7 +1245,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Enum(e) => self.enum_to_type_lit(e).map(Cow::Owned)?,
-            Type::EnumVariant(e) => match self.expand_enum_variant(stc_ts_types::Type::EnumVariant(e.clone())) {
+            Type::EnumVariant(e) => match self.expand_enum_variant(Type::EnumVariant(e.clone())) {
                 Ok(Type::TypeLit(ty)) => Cow::Owned(ty),
                 Ok(Type::Lit(ty)) => return self.convert_type_to_type_lit(span, Cow::Owned(Type::Lit(ty))),
                 _ => unreachable!(),
