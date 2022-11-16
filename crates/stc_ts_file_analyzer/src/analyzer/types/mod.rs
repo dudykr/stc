@@ -11,8 +11,8 @@ use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
     name::Name, Accessor, Array, Class, ClassDef, ClassMember, ClassMetadata, ComputedKey, Conditional, ConditionalMetadata,
     ConstructorSignature, Id, IdCtx, IndexedAccessType, Instance, InstanceMetadata, Intersection, Intrinsic, IntrinsicKind, Key,
-    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature, QueryExpr, Ref, ThisType,
-    ThisTypeMetadata, TplType, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
+    KeywordType, KeywordTypeMetadata, LitType, LitTypeMetadata, MethodSignature, Operator, PropertySignature, QueryExpr, QueryType, Ref,
+    ThisType, ThisTypeMetadata, TplType, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParam, TypeParamInstantiation, Union,
 };
 use stc_ts_utils::run;
 use stc_utils::{
@@ -46,6 +46,9 @@ pub(crate) struct NormalizeTypeOpts {
     pub preserve_typeof: bool,
     /// Should we normalize keywords as interfaces?
     pub normalize_keywords: bool,
+
+    /// Should we preserve `typeof globalThis`?
+    pub preserve_global_this: bool,
 
     //// If `true`, we will not expand generics.
     pub process_only_key: bool,
@@ -415,6 +418,22 @@ impl Analyzer<'_, '_> {
                         if !opts.preserve_typeof {
                             match &*q.expr {
                                 QueryExpr::TsEntityName(e) => {
+                                    if opts.preserve_global_this {
+                                        match e {
+                                            RTsEntityName::Ident(i) => {
+                                                //
+                                                if &*i.sym == "globalThis" {
+                                                    return Ok(Cow::Owned(Type::Query(QueryType {
+                                                        span: actual_span,
+                                                        expr: box QueryExpr::TsEntityName(e.clone()),
+                                                        metadata: Default::default(),
+                                                    })));
+                                                }
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+
                                     let expanded_ty = self
                                         .resolve_typeof(actual_span, e)
                                         .context("tried to resolve typeof as a part of normalization")?;
