@@ -1677,7 +1677,7 @@ impl Analyzer<'_, '_> {
             child.report_errors_for_statics_mixed_with_instances(&c).report(&mut child.storage);
             child.report_errors_for_duplicate_class_members(&c).report(&mut child.storage);
 
-            child.scope.super_class = super_class.clone().map(|ty| make_instance_type(*ty));
+            child.scope.super_class = super_class.clone().map(|ty| make_instance_type(*ty).freezed());
             {
                 // Validate constructors
                 let constructors_with_body = c
