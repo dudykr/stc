@@ -1252,6 +1252,57 @@ impl Analyzer<'_, '_> {
             ..opts
         };
 
+        if obj.is_global_this() {
+            match prop {
+                Key::Normal { span, sym }
+                | Key::Computed(ComputedKey {
+                    span,
+                    expr: box RExpr::Lit(RLit::Str(RStr { value: sym, .. })),
+                    ..
+                }) => match id_ctx {
+                    IdCtx::Var => {
+                        return self
+                            .env
+                            .get_global_var(*span, &sym)
+                            .context("tried to access a prperty of `globalThis`")
+                            .convert_err(|err| match err.actual() {
+                                Error::NoSuchVar { span, name } => Error::NoSuchProperty {
+                                    span: *span,
+                                    obj: Some(box obj.clone()),
+                                    prop: Some(box Key::Normal {
+                                        span: *span,
+                                        sym: name.sym().clone(),
+                                    }),
+                                },
+                                _ => err,
+                            });
+                    }
+                    IdCtx::Type => {
+                        return self
+                            .env
+                            .get_global_type(*span, &sym)
+                            .context("tried to access a prperty of `globalThis`");
+                    }
+                },
+                Key::Num(v) => {
+                    return self.access_property_inner(
+                        span,
+                        obj,
+                        &Key::Normal {
+                            span: v.span,
+                            sym: v.value.to_string().into(),
+                        },
+                        type_mode,
+                        id_ctx,
+                        opts,
+                    )
+                }
+                _ => {
+                    unimplemented!("access_property_inner: global_this: {:?}", prop);
+                }
+            }
+        }
+
         if id_ctx == IdCtx::Var {
             // TODO(kdy1): Use parent scope
 
@@ -1264,36 +1315,6 @@ impl Analyzer<'_, '_> {
                 if let Some(declaring) = &self.scope.declaring_prop() {
                     if prop == declaring.sym() {
                         return Ok(Type::any(span, Default::default()));
-                    }
-                }
-            }
-
-            if obj.is_global_this() {
-                match prop {
-                    Key::Normal { span, sym }
-                    | Key::Computed(ComputedKey {
-                        span,
-                        expr: box RExpr::Lit(RLit::Str(RStr { value: sym, .. })),
-                        ..
-                    }) => {
-                        return self
-                            .env
-                            .get_global_var(*span, &sym)
-                            .context("tired to access a prperty of `globalThis`")
-                            .convert_err(|err| match err.actual() {
-                                Error::NoSuchVar { span, name } => Error::NoSuchProperty {
-                                    span: *span,
-                                    obj: Some(box obj.clone()),
-                                    prop: Some(box Key::Normal {
-                                        span: *span,
-                                        sym: name.sym().clone(),
-                                    }),
-                                },
-                                _ => err,
-                            })
-                    }
-                    _ => {
-                        unimplemented!("access_property_inner: global_this: {:?}", prop);
                     }
                 }
             }
