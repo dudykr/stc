@@ -3194,13 +3194,14 @@ impl Analyzer<'_, '_> {
                 {
                     let narrowed_ty = self.narrow_with_predicate(span, &previous_types, new_ty.clone())?.freezed();
 
-                    self.add_type_fact(&var_name.into(), narrowed_ty);
+                    self.add_type_fact(&var_name.into(), narrowed_ty, new_ty.clone());
                     return;
                 }
             }
         }
 
-        self.add_type_fact(&var_name.into(), new_ty.clone().freezed());
+        let new_ty = new_ty.clone().freezed();
+        self.add_type_fact(&var_name.into(), new_ty.clone(), new_ty);
     }
 
     pub(crate) fn validate_type_args_count(
