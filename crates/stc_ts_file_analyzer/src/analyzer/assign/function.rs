@@ -662,17 +662,11 @@ impl Analyzer<'_, '_> {
 
         // TODO(kdy1): Change this to extends call.
 
-        let mut l_ty = self.normalize(Some(opts.span), Cow::Borrowed(&l.ty), Default::default())?;
-        let mut r_ty = self.normalize(Some(opts.span), Cow::Borrowed(&r.ty), Default::default())?;
-
-        l_ty.make_clone_cheap();
-        r_ty.make_clone_cheap();
-
         let res = if opts.for_overload {
-            self.assign_with_opts(data, &l_ty, &r_ty, opts)
+            self.assign_with_opts(data, &l.ty, &r.ty, opts)
                 .context("tried to assign the type of a parameter to another")
         } else {
-            self.assign_with_opts(data, &r_ty, &l_ty, opts)
+            self.assign_with_opts(data, &r.ty, &l.ty, opts)
                 .context("tried to assign the type of a parameter to another (reversed due to variance)")
         };
 

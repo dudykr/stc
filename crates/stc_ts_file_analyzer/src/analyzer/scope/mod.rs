@@ -13,10 +13,7 @@ use iter::once;
 use once_cell::sync::Lazy;
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
-use stc_ts_errors::{
-    debug::{dump_type_as_string, print_backtrace},
-    DebugExt, Error,
-};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
@@ -1343,11 +1340,6 @@ impl Analyzer<'_, '_> {
 
         let ty = ty.map(|ty| ty.freezed());
 
-        if let Some(actual_ty) = &actual_ty {
-            if actual_ty.is_never() {
-                print_backtrace();
-            }
-        }
         let actual_ty = actual_ty
             .and_then(|ty| {
                 if ty.is_any()
@@ -2140,8 +2132,6 @@ impl Expander<'_, '_, '_> {
             }
         }
 
-        print_backtrace();
-
         Ok(Some(Type::any(span, Default::default())))
     }
 
@@ -2198,7 +2188,6 @@ impl Expander<'_, '_, '_> {
         let _stack = match stack::track(self.span) {
             Ok(v) => v,
             Err(..) => {
-                print_backtrace();
                 error!("[expander] Stack overflow: {}", dump_type_as_string(&self.analyzer.cm, &ty));
                 return ty;
             }

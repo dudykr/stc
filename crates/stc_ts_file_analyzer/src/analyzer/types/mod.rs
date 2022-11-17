@@ -426,26 +426,27 @@ impl Analyzer<'_, '_> {
                         if !opts.preserve_typeof {
                             match &*q.expr {
                                 QueryExpr::TsEntityName(e) => {
-                                    if opts.preserve_global_this {
-                                        match e {
-                                            RTsEntityName::Ident(i) => {
-                                                //
-                                                if &*i.sym == "globalThis" {
+                                    match e {
+                                        RTsEntityName::Ident(i) => {
+                                            //
+                                            if &*i.sym == "globalThis" {
+                                                if opts.preserve_global_this {
                                                     return Ok(Cow::Owned(Type::Query(QueryType {
                                                         span: actual_span,
                                                         expr: box QueryExpr::TsEntityName(e.clone()),
                                                         metadata: Default::default(),
                                                     })));
+                                                } else {
+                                                    print_backtrace()
                                                 }
                                             }
-                                            _ => {}
                                         }
+                                        _ => {}
                                     }
 
-                                    let expanded_ty = self.resolve_typeof(actual_span, e).with_context(|| {
-                                        print_backtrace();
-                                        "tried to resolve typeof as a part of normalization".into()
-                                    })?;
+                                    let expanded_ty = self
+                                        .resolve_typeof(actual_span, e)
+                                        .with_context(|| "tried to resolve typeof as a part of normalization".into())?;
 
                                     if expanded_ty.is_global_this() {
                                         return Ok(Cow::Owned(expanded_ty));

@@ -24,6 +24,7 @@ use crate::{
         expr::TypeOfMode,
         pat::PatMode,
         scope::VarKind,
+        types::NormalizeTypeOpts,
         util::{Generalizer, ResultExt},
         Analyzer, Ctx,
     },
@@ -682,8 +683,15 @@ impl Analyzer<'_, '_> {
                         if !self.is_builtin {
                             // Report error if type is not found.
                             if let Some(ty) = &ty {
-                                self.normalize(Some(i.id.span), Cow::Borrowed(ty), Default::default())
-                                    .report(&mut self.storage);
+                                self.normalize(
+                                    Some(i.id.span),
+                                    Cow::Borrowed(ty),
+                                    NormalizeTypeOpts {
+                                        preserve_global_this: true,
+                                        ..Default::default()
+                                    },
+                                )
+                                .report(&mut self.storage);
                             }
                         }
 

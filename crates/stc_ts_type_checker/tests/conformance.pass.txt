@@ -310,6 +310,7 @@ es2017/useSharedArrayBuffer5.ts
 es2017/useSharedArrayBuffer6.ts
 es2018/usePromiseFinally.ts
 es2018/useRegexpGroups.ts
+es2019/globalThisTypeIndexAccess.ts
 es2020/bigintMissingES2019.ts
 es2020/modules/exportAsNamespace_nonExistent.ts
 es2020/numberFormatCurrencySign.ts
@@ -1820,7 +1821,6 @@ parser/ecmascript5/parserExportAsFunctionIdentifier.ts
 parser/ecmascript5/parserImportDeclaration1.ts
 parser/ecmascript5/parserInExpression1.ts
 parser/ecmascript5/parserKeywordsAsIdentifierName1.ts
-parser/ecmascript5/parserNoASIOnCallAfterFunctionExpressambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 parser/ecmascript5/parserNoASIOnCallAfterFunctionExpression1.ts
 parser/ecmascript5/parserNotRegex2.ts
 parser/ecmascript5/parserObjectCreationArrayLiteral2.ts

@@ -2036,8 +2036,6 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        print_backtrace();
-
         Ok(false)
     }
 

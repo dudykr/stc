@@ -13,10 +13,7 @@ use stc_ts_ast_rnode::{
     RTsEnumMemberId, RTsLit, RTsNonNullExpr, RUnaryExpr,
 };
 use stc_ts_base_type_ops::bindings::BindingKind;
-use stc_ts_errors::{
-    debug::{dump_type_as_string, print_backtrace},
-    DebugExt, Error, Errors,
-};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 pub use stc_ts_types::IdCtx;
@@ -1255,6 +1252,120 @@ impl Analyzer<'_, '_> {
             ..opts
         };
 
+        if obj.is_global_this() {
+            match prop {
+                Key::Normal { span: key_span, sym }
+                | Key::Computed(ComputedKey {
+                    span: key_span,
+                    expr: box RExpr::Lit(RLit::Str(RStr { value: sym, .. })),
+                    ..
+                }) => {
+                    if &*sym == "globalThis" {
+                        return Ok(obj.clone());
+                    }
+
+                    match id_ctx {
+                        IdCtx::Var => {
+                            let res = self
+                                .env
+                                .get_global_var(span, &sym)
+                                .context("tried to access a prperty of `globalThis`");
+
+                            // TODO(kdy1): Apply correct rule
+                            if res.is_err() {
+                                return Ok(Type::any(span, Default::default()));
+                            }
+
+                            return res.convert_err(|err| match err.actual() {
+                                Error::NoSuchVar { span, name } => Error::NoSuchProperty {
+                                    span: *span,
+                                    obj: Some(box obj.clone()),
+                                    prop: Some(box Key::Normal {
+                                        span: *span,
+                                        sym: name.sym().clone(),
+                                    }),
+                                },
+                                _ => err,
+                            });
+                        }
+                        IdCtx::Type => {
+                            return self
+                                .env
+                                .get_global_type(span, &sym)
+                                .context("tried to access a prperty of `globalThis`")
+                                .convert_err(|err| match err.actual() {
+                                    Error::NoSuchType { span, name } => Error::NoSuchProperty {
+                                        span: *span,
+                                        obj: Some(box obj.clone()),
+                                        prop: Some(box Key::Normal {
+                                            span: *span,
+                                            sym: name.sym().clone(),
+                                        }),
+                                    },
+                                    _ => err,
+                                });
+                        }
+                    }
+                }
+                Key::Num(v) => {
+                    return self.access_property_inner(
+                        span,
+                        obj,
+                        &Key::Normal {
+                            span: v.span,
+                            sym: v.value.to_string().into(),
+                        },
+                        type_mode,
+                        id_ctx,
+                        opts,
+                    )
+                }
+                Key::Computed(ComputedKey { ty, .. }) => match ty.normalize() {
+                    Type::Lit(LitType {
+                        lit:
+                            RTsLit::Str(RStr {
+                                span: str_span,
+                                value: sym,
+                                ..
+                            }),
+                        ..
+                    }) => {
+                        return self.access_property_inner(
+                            span,
+                            obj,
+                            &Key::Normal {
+                                span: *str_span,
+                                sym: sym.clone(),
+                            },
+                            type_mode,
+                            id_ctx,
+                            opts,
+                        )
+                    }
+                    Type::Lit(LitType {
+                        lit: RTsLit::Number(v), ..
+                    }) => {
+                        return self.access_property_inner(
+                            span,
+                            obj,
+                            &Key::Normal {
+                                span: v.span,
+                                sym: v.value.to_string().into(),
+                            },
+                            type_mode,
+                            id_ctx,
+                            opts,
+                        )
+                    }
+
+                    _ => {}
+                },
+                _ => {}
+            }
+
+            unimplemented!("access_property_inner: global_this: {:?}", prop);
+        }
+
         if id_ctx == IdCtx::Var {
             // TODO(kdy1): Use parent scope
 
@@ -1480,11 +1591,12 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         let mut obj = match obj.normalize() {
-            Type::Conditional(..) | Type::Instance(..) => self.normalize(
-                None,
+            Type::Conditional(..) | Type::Instance(..) | Type::Query(..) => self.normalize(
+                Some(span),
                 Cow::Borrowed(obj),
                 NormalizeTypeOpts {
                     preserve_intersection: true,
+                    preserve_global_this: true,
                     ..Default::default()
                 },
             )?,
@@ -2263,7 +2375,6 @@ impl Analyzer<'_, '_> {
                             return Ok(ty);
                         }
 
-                        print_backtrace();
                         return Err(Error::NoSuchProperty {
                             span,
                             obj: Some(box obj),
@@ -2503,7 +2614,6 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                print_backtrace();
                 // No property found
                 return Err(Error::NoSuchPropertyInModule {
                     span,
@@ -2759,18 +2869,9 @@ impl Analyzer<'_, '_> {
                 return Ok(ty);
             }
 
-            Type::Query(QueryType {
-                expr: box QueryExpr::TsEntityName(name),
-                ..
-            }) => {
-                let obj = self.type_of_ts_entity_name(span, &name.clone().into(), None)?;
-                return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
-            }
-
             Type::Function(f) if type_mode == TypeOfMode::RValue => {
                 // Use builtin type `Function`
                 let interface = self.env.get_global_type(f.span, &js_word!("Function"))?;
-                print_backtrace();
                 return self.access_property(span, &interface, prop, type_mode, id_ctx, opts);
             }
 
@@ -2851,7 +2952,6 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        print_backtrace();
         unimplemented!(
             "access_property(MemberExpr):\nObject: {:?}\nProp: {:?}\nPath: {}",
             obj,
