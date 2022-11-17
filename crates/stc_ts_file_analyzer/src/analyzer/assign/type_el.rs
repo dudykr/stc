@@ -43,229 +43,289 @@ impl Analyzer<'_, '_> {
         lhs_metadata: TypeLitMetadata,
         opts: AssignOpts,
     ) -> VResult<()> {
-        let res = (|| {
-            let span = opts.span.with_ctxt(SyntaxContext::empty());
-            // debug_assert!(!span.is_dummy());
+        let span = opts.span.with_ctxt(SyntaxContext::empty());
+        // debug_assert!(!span.is_dummy());
 
-            let mut errors = vec![];
-            let mut missing_fields = vec![];
+        let mut errors = vec![];
+        let mut missing_fields = vec![];
 
-            let numeric_keyed_ty = lhs
-                .iter()
-                .filter_map(|e| match e {
-                    TypeElement::Index(ref i) if i.params.len() == 1 && i.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) => {
-                        Some(i.type_ann.as_ref())
-                    }
-
-                    _ => None,
-                })
-                .next();
-
-            if let Some(numeric_keyed_ty) = numeric_keyed_ty {
-                let any = box Type::any(span, Default::default());
-                let numeric_keyed_ty = numeric_keyed_ty.unwrap_or(&any);
-
-                match *rhs.normalize() {
-                    Type::Array(Array { ref elem_type, .. }) => return self.assign_inner(data, numeric_keyed_ty, elem_type, opts),
-
-                    Type::Tuple(Tuple { ref elems, .. }) => {
-                        let mut errors = Errors::default();
-                        for el in elems {
-                            self.assign_inner(
-                                data,
-                                numeric_keyed_ty,
-                                &el.ty,
-                                AssignOpts {
-                                    span: el.span().or_else(|| span),
-                                    ..opts
-                                },
-                            )
-                            .context("tried to assign an element of tuple to numerically keyed type")
-                            .store(&mut errors);
-                        }
-                        return if errors.is_empty() {
-                            Ok(())
-                        } else {
-                            Err(Error::Errors {
-                                span,
-                                errors: errors.into(),
-                            })
-                        };
-                    }
-
-                    _ => {}
+        let numeric_keyed_ty = lhs
+            .iter()
+            .filter_map(|e| match e {
+                TypeElement::Index(ref i) if i.params.len() == 1 && i.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) => {
+                    Some(i.type_ann.as_ref())
                 }
+
+                _ => None,
+            })
+            .next();
+
+        if let Some(numeric_keyed_ty) = numeric_keyed_ty {
+            let any = box Type::any(span, Default::default());
+            let numeric_keyed_ty = numeric_keyed_ty.unwrap_or(&any);
+
+            match *rhs.normalize() {
+                Type::Array(Array { ref elem_type, .. }) => return self.assign_inner(data, numeric_keyed_ty, elem_type, opts),
+
+                Type::Tuple(Tuple { ref elems, .. }) => {
+                    let mut errors = Errors::default();
+                    for el in elems {
+                        self.assign_inner(
+                            data,
+                            numeric_keyed_ty,
+                            &el.ty,
+                            AssignOpts {
+                                span: el.span().or_else(|| span),
+                                ..opts
+                            },
+                        )
+                        .context("tried to assign an element of tuple to numerically keyed type")
+                        .store(&mut errors);
+                    }
+                    return if errors.is_empty() {
+                        Ok(())
+                    } else {
+                        Err(Error::Errors {
+                            span,
+                            errors: errors.into(),
+                        })
+                    };
+                }
+
+                _ => {}
             }
+        }
 
-            {
-                let mut unhandled_rhs = vec![];
+        {
+            let mut unhandled_rhs = vec![];
 
-                match rhs.normalize() {
-                    Type::Ref(Ref {
-                        type_name:
-                            RTsEntityName::Ident(RIdent {
-                                sym: js_word!("Function"), ..
-                            }),
-                        ..
-                    }) => {
-                        if lhs.iter().any(|el| match el {
-                            TypeElement::Call(..) | TypeElement::Constructor(..) => true,
+            match rhs.normalize() {
+                Type::Ref(Ref {
+                    type_name: RTsEntityName::Ident(RIdent {
+                        sym: js_word!("Function"), ..
+                    }),
+                    ..
+                }) => {
+                    if lhs.iter().any(|el| match el {
+                        TypeElement::Call(..) | TypeElement::Constructor(..) => true,
+                        _ => false,
+                    }) {
+                        return Ok(());
+                    }
+                }
+
+                Type::TypeLit(TypeLit {
+                    members: rhs_members,
+                    metadata: rhs_metadata,
+                    ..
+                }) => {
+                    let allow_unknown_rhs = opts.allow_unknown_rhs.unwrap_or(rhs_metadata.inexact || rhs_metadata.specified);
+
+                    // Exclude duplicate properties on rhs
+                    let valid_rhs_indexes = {
+                        let mut v = vec![];
+                        let mut used_keys: Vec<Key> = vec![];
+
+                        for (index, r) in rhs_members.iter().enumerate().rev() {
+                            match r {
+                                TypeElement::Property(p @ PropertySignature { optional: false, .. }) => {
+                                    if used_keys.iter().any(|prev| prev.type_eq(&p.key)) {
+                                        continue;
+                                    }
+
+                                    used_keys.push(p.key.clone());
+                                }
+                                TypeElement::Property(PropertySignature { optional: true, .. })
+                                | TypeElement::Method(MethodSignature { optional: true, .. }) => {
+                                    // TODO: Skip this while not creaitng
+                                    // `MissingProperties`
+                                }
+                                _ => {}
+                            }
+
+                            v.push(index);
+                        }
+
+                        v
+                    };
+
+                    let rhs_members = rhs_members
+                        .into_iter()
+                        .enumerate()
+                        .filter(|(index, _)| valid_rhs_indexes.contains(index))
+                        .map(|(_, v)| v.clone())
+                        .collect::<Vec<_>>();
+
+                    if !allow_unknown_rhs {
+                        let mut done = vec![];
+
+                        for r in &rhs_members {
+                            // optional members do not have effect.
+                            match r {
+                                TypeElement::Property(PropertySignature { optional: true, .. })
+                                | TypeElement::Method(MethodSignature { optional: true, .. }) => continue,
+                                _ => {}
+                            }
+
+                            if let Some(key) = r.key() {
+                                if done.iter().any(|prev: &Key| prev.type_eq(key)) {
+                                    continue;
+                                }
+
+                                done.push(key.clone());
+                            }
+
+                            unhandled_rhs.push(r.span());
+                        }
+                    }
+
+                    self.handle_assignment_of_type_elements_to_type_elements(
+                        data,
+                        &mut missing_fields,
+                        &mut unhandled_rhs,
+                        lhs,
+                        lhs_metadata,
+                        &rhs_members,
+                        AssignOpts {
+                            allow_unknown_rhs: Some(allow_unknown_rhs),
+                            ..opts
+                        },
+                    )
+                    .with_context(|| {
+                        format!(
+                            "tried assignment of a type literal to a type literals\nLHS={}\nRHS={}",
+                            dump_type_as_string(
+                                &self.cm,
+                                &Type::TypeLit(TypeLit {
+                                    span: DUMMY_SP,
+                                    members: lhs.to_vec(),
+                                    metadata: Default::default()
+                                })
+                            ),
+                            dump_type_as_string(
+                                &self.cm,
+                                &Type::TypeLit(TypeLit {
+                                    span: DUMMY_SP,
+                                    members: rhs_members.to_vec(),
+                                    metadata: Default::default()
+                                })
+                            ),
+                        )
+                    })
+                    .store(&mut errors);
+                }
+
+                Type::Interface(..) | Type::Intersection(..) => {
+                    if let Some(rty) = self
+                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs))?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit)
+                    {
+                        return self
+                            .assign_to_type_elements(data, lhs_span, lhs, &rty, lhs_metadata, opts)
+                            .context("tried to assign to type elements by converting rhs to a type literal");
+                    }
+
+                    return Err(Error::SimpleAssignFailed { span, cause: None });
+                }
+
+                Type::Tuple(..) | Type::Array(..) | Type::EnumVariant(..) if lhs.is_empty() => return Ok(()),
+
+                Type::Array(..) | Type::Tuple(..) => {
+                    if opts.allow_assignment_of_array_to_optional_type_lit {
+                        if lhs.iter().all(|el| match el {
+                            TypeElement::Property(PropertySignature { optional: true, .. })
+                            | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
                             _ => false,
                         }) {
                             return Ok(());
                         }
                     }
-
-                    Type::TypeLit(TypeLit {
-                        members: rhs_members,
-                        metadata: rhs_metadata,
-                        ..
-                    }) => {
-                        let allow_unknown_rhs = opts.allow_unknown_rhs.unwrap_or(rhs_metadata.inexact || rhs_metadata.specified);
-
-                        // Exclude duplicate properties on rhs
-                        let valid_rhs_indexes = {
-                            let mut v = vec![];
-                            let mut used_keys: Vec<Key> = vec![];
-
-                            for (index, r) in rhs_members.iter().enumerate().rev() {
-                                match r {
-                                    TypeElement::Property(p @ PropertySignature { optional: false, .. }) => {
-                                        if used_keys.iter().any(|prev| prev.type_eq(&p.key)) {
-                                            continue;
-                                        }
-
-                                        used_keys.push(p.key.clone());
-                                    }
-                                    TypeElement::Property(PropertySignature { optional: true, .. })
-                                    | TypeElement::Method(MethodSignature { optional: true, .. }) => {
-                                        // TODO: Skip this while not creaitng
-                                        // `MissingProperties`
-                                    }
-                                    _ => {}
-                                }
-
-                                v.push(index);
-                            }
-
-                            v
-                        };
-
-                        let rhs_members = rhs_members
-                            .into_iter()
-                            .enumerate()
-                            .filter(|(index, _)| valid_rhs_indexes.contains(index))
-                            .map(|(_, v)| v.clone())
-                            .collect::<Vec<_>>();
-
-                        if !allow_unknown_rhs {
-                            let mut done = vec![];
-
-                            for r in &rhs_members {
-                                // optional members do not have effect.
-                                match r {
-                                    TypeElement::Property(PropertySignature { optional: true, .. })
-                                    | TypeElement::Method(MethodSignature { optional: true, .. }) => continue,
-                                    _ => {}
-                                }
-
-                                if let Some(key) = r.key() {
-                                    if done.iter().any(|prev: &Key| prev.type_eq(key)) {
-                                        continue;
-                                    }
-
-                                    done.push(key.clone());
-                                }
-
-                                unhandled_rhs.push(r.span());
-                            }
-                        }
-
-                        self.handle_assignment_of_type_elements_to_type_elements(
-                            data,
-                            &mut missing_fields,
-                            &mut unhandled_rhs,
-                            lhs,
-                            lhs_metadata,
-                            &rhs_members,
-                            AssignOpts {
-                                allow_unknown_rhs: Some(allow_unknown_rhs),
-                                ..opts
-                            },
-                        )
-                        .with_context(|| {
-                            format!(
-                                "tried assignment of a type literal to a type literals\nLHS={}\nRHS={}",
-                                dump_type_as_string(
-                                    &self.cm,
-                                    &Type::TypeLit(TypeLit {
-                                        span: DUMMY_SP,
-                                        members: lhs.to_vec(),
-                                        metadata: Default::default()
-                                    })
-                                ),
-                                dump_type_as_string(
-                                    &self.cm,
-                                    &Type::TypeLit(TypeLit {
-                                        span: DUMMY_SP,
-                                        members: rhs_members.to_vec(),
-                                        metadata: Default::default()
-                                    })
-                                ),
-                            )
-                        })
-                        .store(&mut errors);
-                    }
-
-                    Type::Interface(..) | Type::Intersection(..) => {
-                        if let Some(rty) = self
-                            .convert_type_to_type_lit(span, Cow::Borrowed(rhs))?
-                            .map(Cow::into_owned)
-                            .map(Type::TypeLit)
-                        {
-                            return self
-                                .assign_to_type_elements(data, lhs_span, lhs, &rty, lhs_metadata, opts)
-                                .context("tried to assign to type elements by converting rhs to a type literal");
-                        }
-
+                    if lhs.iter().any(|member| match member {
+                        TypeElement::Property(PropertySignature { optional: true, .. })
+                        | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
+                        _ => false,
+                    }) {
                         return Err(Error::SimpleAssignFailed { span, cause: None });
                     }
 
-                    Type::Tuple(..) | Type::Array(..) | Type::EnumVariant(..) if lhs.is_empty() => return Ok(()),
+                    match rhs.normalize() {
+                        Type::Array(r_arr) => {
+                            //
+                            let r_arr = Type::Ref(Ref {
+                                span,
+                                type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
+                                type_args: Some(box TypeParamInstantiation {
+                                    span: DUMMY_SP,
+                                    params: vec![*r_arr.elem_type.clone()],
+                                }),
+                                metadata: Default::default(),
+                            });
 
-                    Type::Array(..) | Type::Tuple(..) => {
-                        if opts.allow_assignment_of_array_to_optional_type_lit {
-                            if lhs.iter().all(|el| match el {
-                                TypeElement::Property(PropertySignature { optional: true, .. })
-                                | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
-                                _ => false,
-                            }) {
-                                return Ok(());
-                            }
-                        }
-                        if lhs.iter().any(|member| match member {
-                            TypeElement::Property(PropertySignature { optional: true, .. })
-                            | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
-                            _ => false,
-                        }) {
-                            return Err(Error::SimpleAssignFailed { span, cause: None });
+                            let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;
+
+                            return self
+                                .assign_to_type_elements(
+                                    data,
+                                    lhs_span,
+                                    lhs,
+                                    &rhs,
+                                    lhs_metadata,
+                                    AssignOpts {
+                                        allow_unknown_rhs: Some(true),
+                                        ..opts
+                                    },
+                                )
+                                .context("tried to assign an array as interface to type elements");
                         }
 
-                        match rhs.normalize() {
-                            Type::Array(r_arr) => {
+                        Type::Tuple(r_tuple) => {
+                            {
+                                // Try assigning as an array.
+
+                                let r_elem_type = Type::Union(Union {
+                                    span: r_tuple.span,
+                                    types: r_tuple.elems.iter().map(|el| *el.ty.clone()).collect(),
+                                    metadata: UnionMetadata {
+                                        common: r_tuple.metadata.common,
+                                        ..Default::default()
+                                    },
+                                })
+                                .fixed();
+
                                 //
                                 let r_arr = Type::Ref(Ref {
                                     span,
                                     type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
                                     type_args: Some(box TypeParamInstantiation {
                                         span: DUMMY_SP,
-                                        params: vec![*r_arr.elem_type.clone()],
+                                        params: vec![r_elem_type],
                                     }),
                                     metadata: Default::default(),
                                 });
 
                                 let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;
 
+                                if let Ok(()) = self.assign_to_type_elements(
+                                    data,
+                                    lhs_span,
+                                    lhs,
+                                    &rhs,
+                                    lhs_metadata,
+                                    AssignOpts {
+                                        allow_unknown_rhs: Some(true),
+                                        ..opts
+                                    },
+                                ) {
+                                    return Ok(());
+                                }
+                            }
+
+                            if let Some(rhs) = self
+                                .convert_type_to_type_lit(span, Cow::Borrowed(rhs))?
+                                .map(Cow::into_owned)
+                                .map(Type::TypeLit)
+                            {
                                 return self
                                     .assign_to_type_elements(
                                         data,
@@ -278,570 +338,489 @@ impl Analyzer<'_, '_> {
                                             ..opts
                                         },
                                     )
-                                    .context("tried to assign an array as interface to type elements");
+                                    .context("tried to assign a tuple as type literal to type elements");
                             }
-
-                            Type::Tuple(r_tuple) => {
-                                {
-                                    // Try assigning as an array.
-
-                                    let r_elem_type = Type::Union(Union {
-                                        span: r_tuple.span,
-                                        types: r_tuple.elems.iter().map(|el| *el.ty.clone()).collect(),
-                                        metadata: UnionMetadata {
-                                            common: r_tuple.metadata.common,
-                                            ..Default::default()
-                                        },
-                                    })
-                                    .fixed();
-
-                                    //
-                                    let r_arr = Type::Ref(Ref {
-                                        span,
-                                        type_name: RTsEntityName::Ident(RIdent::new("Array".into(), DUMMY_SP)),
-                                        type_args: Some(box TypeParamInstantiation {
-                                            span: DUMMY_SP,
-                                            params: vec![r_elem_type],
-                                        }),
-                                        metadata: Default::default(),
-                                    });
-
-                                    let rhs = self.normalize(None, Cow::Owned(r_arr), Default::default())?;
-
-                                    if let Ok(()) = self.assign_to_type_elements(
-                                        data,
-                                        lhs_span,
-                                        lhs,
-                                        &rhs,
-                                        lhs_metadata,
-                                        AssignOpts {
-                                            allow_unknown_rhs: Some(true),
-                                            ..opts
-                                        },
-                                    ) {
-                                        return Ok(());
-                                    }
-                                }
-
-                                if let Some(rhs) = self
-                                    .convert_type_to_type_lit(span, Cow::Borrowed(rhs))?
-                                    .map(Cow::into_owned)
-                                    .map(Type::TypeLit)
-                                {
-                                    return self
-                                        .assign_to_type_elements(
-                                            data,
-                                            lhs_span,
-                                            lhs,
-                                            &rhs,
-                                            lhs_metadata,
-                                            AssignOpts {
-                                                allow_unknown_rhs: Some(true),
-                                                ..opts
-                                            },
-                                        )
-                                        .context("tried to assign a tuple as type literal to type elements");
-                                }
-                            }
-
-                            _ => unreachable!(),
                         }
 
-                        // TODO(kdy1): Check for literal properties
-
-                        // for el in lhs {
-                        //     match el {
-                        //         TypeElement::Property(l_el) => {
-                        //             match l
-                        //         }
-                        //         _ => {}
-                        //     }
-                        // }
-
-                        return Ok(());
+                        _ => unreachable!(),
                     }
 
-                    Type::ClassDef(rhs_cls) => {
-                        let rhs = self
-                            .convert_type_to_type_lit(span, Cow::Borrowed(rhs))
-                            .context("tried to convert a class definition into a type literal for assignment")?
-                            .map(Cow::into_owned)
-                            .map(Type::TypeLit)
-                            .unwrap();
+                    // TODO(kdy1): Check for literal properties
 
-                        return self
-                            .assign_to_type_elements(
-                                data,
-                                lhs_span,
-                                lhs,
-                                &rhs,
-                                lhs_metadata,
-                                AssignOpts {
-                                    allow_unknown_rhs: Some(true),
-                                    ..opts
-                                },
+                    // for el in lhs {
+                    //     match el {
+                    //         TypeElement::Property(l_el) => {
+                    //             match l
+                    //         }
+                    //         _ => {}
+                    //     }
+                    // }
+
+                    return Ok(());
+                }
+
+                Type::ClassDef(rhs_cls) => {
+                    let rhs = self
+                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs))
+                        .context("tried to convert a class definition into a type literal for assignment")?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit)
+                        .unwrap();
+
+                    return self
+                        .assign_to_type_elements(
+                            data,
+                            lhs_span,
+                            lhs,
+                            &rhs,
+                            lhs_metadata,
+                            AssignOpts {
+                                allow_unknown_rhs: Some(true),
+                                ..opts
+                            },
+                        )
+                        .convert_err(|err| match err {
+                            Error::Errors { span, .. } => Error::SimpleAssignFailed {
+                                span,
+                                cause: Some(box err),
+                            },
+                            Error::MissingFields { span, .. } => Error::SimpleAssignFailed {
+                                span,
+                                cause: Some(box err),
+                            },
+                            _ => err,
+                        })
+                        .with_context(|| {
+                            format!(
+                                "tried to assign a class definition to type elements\nRHS = {}",
+                                dump_type_as_string(&self.cm, &rhs),
                             )
-                            .convert_err(|err| match err {
-                                Error::Errors { span, .. } => Error::SimpleAssignFailed {
-                                    span,
-                                    cause: Some(box err),
-                                },
-                                Error::MissingFields { span, .. } => Error::SimpleAssignFailed {
-                                    span,
+                        });
+                }
+
+                Type::Class(rhs_cls) => {
+                    // TODO(kdy1): Check if constructor exists.
+                    if rhs_cls.def.is_abstract {
+                        return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
+                    }
+
+                    // TODO(kdy1): Optimize
+                    // for el in lhs {
+                    //     self.assign_class_members_to_type_element(opts, el, &rhs.body)?;
+                    // }
+
+                    let rhs = self
+                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs))
+                        .context("tried to convert a class into type literal for assignment")?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit)
+                        .unwrap();
+
+                    return self
+                        .assign_to_type_elements(
+                            data,
+                            lhs_span,
+                            lhs,
+                            &rhs,
+                            lhs_metadata,
+                            AssignOpts {
+                                allow_unknown_rhs: Some(true),
+                                ..opts
+                            },
+                        )
+                        .context("tried to assign a class instance to type elements");
+                }
+
+                Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsBigIntKeyword,
+                    ..
+                })
+                | Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                })
+                | Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                })
+                | Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                })
+                | Type::Lit(LitType {
+                    lit: RTsLit::Number(..), ..
+                })
+                | Type::Lit(LitType {
+                    lit: RTsLit::BigInt(..), ..
+                })
+                | Type::Lit(LitType { lit: RTsLit::Str(..), .. })
+                | Type::Lit(LitType { lit: RTsLit::Bool(..), .. })
+                | Type::Mapped(..)
+                    if lhs.is_empty() =>
+                {
+                    return Ok(())
+                }
+
+                Type::Enum(r) => {
+                    let rhs = self.enum_to_type_lit(r).map(Type::TypeLit)?;
+                    return self
+                        .assign_to_type_elements(
+                            data,
+                            lhs_span,
+                            lhs,
+                            &rhs,
+                            lhs_metadata,
+                            AssignOpts {
+                                allow_unknown_rhs: Some(true),
+                                ..opts
+                            },
+                        )
+                        .context("tried to assign an enum to type elements");
+                }
+
+                Type::Function(..) | Type::Constructor(..) => {
+                    let mut rhs = self
+                        .convert_type_to_type_lit(span, Cow::Borrowed(rhs))
+                        .context("tried to convert a function to a type literal for asssignment")?
+                        .map(Cow::into_owned)
+                        .map(Type::TypeLit)
+                        .unwrap();
+                    rhs.make_clone_cheap();
+
+                    return self
+                        .assign_to_type_elements(data, lhs_span, lhs, &rhs, lhs_metadata, opts)
+                        .with_context(|| {
+                            format!(
+                                "tried to assign the converted type to type elements:\nRHS={}",
+                                dump_type_as_string(&self.cm, &rhs)
+                            )
+                        });
+                }
+
+                Type::Keyword(KeywordType {
+                    kind: kind @ TsKeywordTypeKind::TsStringKeyword,
+                    ..
+                })
+                | Type::Keyword(KeywordType {
+                    kind: kind @ TsKeywordTypeKind::TsNumberKeyword,
+                    ..
+                })
+                | Type::Keyword(KeywordType {
+                    kind: kind @ TsKeywordTypeKind::TsBooleanKeyword,
+                    ..
+                })
+                | Type::Keyword(KeywordType {
+                    kind: kind @ TsKeywordTypeKind::TsBigIntKeyword,
+                    ..
+                }) => {
+                    let rhs = Type::Ref(Ref {
+                        span,
+                        type_name: RTsEntityName::Ident(RIdent {
+                            span,
+                            sym: match kind {
+                                TsKeywordTypeKind::TsNumberKeyword => "Number".into(),
+                                TsKeywordTypeKind::TsBooleanKeyword => "Boolean".into(),
+                                TsKeywordTypeKind::TsBigIntKeyword => "BigInt".into(),
+                                TsKeywordTypeKind::TsStringKeyword => "String".into(),
+                                _ => {
+                                    unreachable!()
+                                }
+                            },
+                            node_id: NodeId::invalid(),
+                            optional: false,
+                        }),
+                        type_args: None,
+                        metadata: Default::default(),
+                    });
+
+                    let rhs = self.normalize(Some(span), Cow::Owned(rhs), Default::default())?;
+
+                    // Try builtin assignment
+                    return self
+                        .assign_to_type_elements(
+                            data,
+                            lhs_span,
+                            lhs,
+                            &rhs,
+                            lhs_metadata,
+                            AssignOpts {
+                                allow_unknown_rhs: Some(true),
+                                ..opts
+                            },
+                        )
+                        .map_err(|err| {
+                            err.convert_all(|err| match err {
+                                Error::MissingFields { .. } => Error::SimpleAssignFailed {
+                                    span: err.span(),
                                     cause: Some(box err),
                                 },
                                 _ => err,
                             })
-                            .with_context(|| {
-                                format!(
-                                    "tried to assign a class definition to type elements\nRHS = {}",
-                                    dump_type_as_string(&self.cm, &rhs),
-                                )
-                            });
-                    }
-
-                    Type::Class(rhs_cls) => {
-                        // TODO(kdy1): Check if constructor exists.
-                        if rhs_cls.def.is_abstract {
-                            return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
-                        }
-
-                        // TODO(kdy1): Optimize
-                        // for el in lhs {
-                        //     self.assign_class_members_to_type_element(opts, el, &rhs.body)?;
-                        // }
-
-                        let rhs = self
-                            .convert_type_to_type_lit(span, Cow::Borrowed(rhs))
-                            .context("tried to convert a class into type literal for assignment")?
-                            .map(Cow::into_owned)
-                            .map(Type::TypeLit)
-                            .unwrap();
-
-                        return self
-                            .assign_to_type_elements(
-                                data,
-                                lhs_span,
-                                lhs,
-                                &rhs,
-                                lhs_metadata,
-                                AssignOpts {
-                                    allow_unknown_rhs: Some(true),
-                                    ..opts
-                                },
+                        })
+                        .with_context(|| {
+                            format!(
+                                "tried to assign a keyword as builtin to type elements\nRHS = {}",
+                                dump_type_as_string(&self.cm, &rhs)
                             )
-                            .context("tried to assign a class instance to type elements");
-                    }
-
-                    Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsBigIntKeyword,
-                        ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                        ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsStringKeyword,
-                        ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsBooleanKeyword,
-                        ..
-                    })
-                    | Type::Lit(LitType {
-                        lit: RTsLit::Number(..), ..
-                    })
-                    | Type::Lit(LitType {
-                        lit: RTsLit::BigInt(..), ..
-                    })
-                    | Type::Lit(LitType { lit: RTsLit::Str(..), .. })
-                    | Type::Lit(LitType { lit: RTsLit::Bool(..), .. })
-                    | Type::Mapped(..)
-                        if lhs.is_empty() =>
-                    {
-                        return Ok(())
-                    }
-
-                    Type::Enum(r) => {
-                        let rhs = self.enum_to_type_lit(r).map(Type::TypeLit)?;
-                        return self
-                            .assign_to_type_elements(
-                                data,
-                                lhs_span,
-                                lhs,
-                                &rhs,
-                                lhs_metadata,
-                                AssignOpts {
-                                    allow_unknown_rhs: Some(true),
-                                    ..opts
-                                },
-                            )
-                            .context("tried to assign an enum to type elements");
-                    }
-
-                    Type::Function(..) | Type::Constructor(..) => {
-                        let mut rhs = self
-                            .convert_type_to_type_lit(span, Cow::Borrowed(rhs))
-                            .context("tried to convert a function to a type literal for asssignment")?
-                            .map(Cow::into_owned)
-                            .map(Type::TypeLit)
-                            .unwrap();
-                        rhs.make_clone_cheap();
-
-                        return self
-                            .assign_to_type_elements(data, lhs_span, lhs, &rhs, lhs_metadata, opts)
-                            .with_context(|| {
-                                format!(
-                                    "tried to assign the converted type to type elements:\nRHS={}",
-                                    dump_type_as_string(&self.cm, &rhs)
-                                )
-                            });
-                    }
-
-                    Type::Keyword(KeywordType {
-                        kind: kind @ TsKeywordTypeKind::TsStringKeyword,
-                        ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: kind @ TsKeywordTypeKind::TsNumberKeyword,
-                        ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: kind @ TsKeywordTypeKind::TsBooleanKeyword,
-                        ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: kind @ TsKeywordTypeKind::TsBigIntKeyword,
-                        ..
-                    }) => {
-                        let rhs = Type::Ref(Ref {
-                            span,
-                            type_name: RTsEntityName::Ident(RIdent {
-                                span,
-                                sym: match kind {
-                                    TsKeywordTypeKind::TsNumberKeyword => "Number".into(),
-                                    TsKeywordTypeKind::TsBooleanKeyword => "Boolean".into(),
-                                    TsKeywordTypeKind::TsBigIntKeyword => "BigInt".into(),
-                                    TsKeywordTypeKind::TsStringKeyword => "String".into(),
-                                    _ => {
-                                        unreachable!()
-                                    }
-                                },
-                                node_id: NodeId::invalid(),
-                                optional: false,
-                            }),
-                            type_args: None,
-                            metadata: Default::default(),
                         });
+                }
 
-                        let rhs = self.normalize(Some(span), Cow::Owned(rhs), Default::default())?;
+                Type::Lit(LitType {
+                    lit: lit @ RTsLit::Number(..),
+                    ..
+                })
+                | Type::Lit(LitType {
+                    lit: lit @ RTsLit::Str(..),
+                    ..
+                })
+                | Type::Lit(LitType {
+                    lit: lit @ RTsLit::Bool(..),
+                    ..
+                })
+                | Type::Lit(LitType {
+                    lit: lit @ RTsLit::BigInt(..),
+                    ..
+                }) => {
+                    // Try keyword assignment
 
-                        // Try builtin assignment
-                        return self
-                            .assign_to_type_elements(
-                                data,
-                                lhs_span,
-                                lhs,
-                                &rhs,
-                                lhs_metadata,
-                                AssignOpts {
-                                    allow_unknown_rhs: Some(true),
-                                    ..opts
-                                },
-                            )
-                            .map_err(|err| {
-                                err.convert_all(|err| match err {
-                                    Error::MissingFields { .. } => Error::SimpleAssignFailed {
-                                        span: err.span(),
-                                        cause: Some(box err),
-                                    },
-                                    _ => err,
-                                })
-                            })
-                            .with_context(|| {
-                                format!(
-                                    "tried to assign a keyword as builtin to type elements\nRHS = {}",
-                                    dump_type_as_string(&self.cm, &rhs)
-                                )
-                            });
-                    }
-
-                    Type::Lit(LitType {
-                        lit: lit @ RTsLit::Number(..),
-                        ..
-                    })
-                    | Type::Lit(LitType {
-                        lit: lit @ RTsLit::Str(..),
-                        ..
-                    })
-                    | Type::Lit(LitType {
-                        lit: lit @ RTsLit::Bool(..),
-                        ..
-                    })
-                    | Type::Lit(LitType {
-                        lit: lit @ RTsLit::BigInt(..),
-                        ..
-                    }) => {
-                        // Try keyword assignment
-
-                        return self
-                            .assign_to_type_elements(
-                                data,
-                                lhs_span,
-                                lhs,
-                                &Type::Keyword(KeywordType {
-                                    span,
-                                    kind: match lit {
-                                        RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
-                                        RTsLit::Number(_) => TsKeywordTypeKind::TsNumberKeyword,
-                                        RTsLit::Str(_) => TsKeywordTypeKind::TsStringKeyword,
-                                        RTsLit::Bool(_) => TsKeywordTypeKind::TsBooleanKeyword,
-                                        _ => {
-                                            unreachable!()
-                                        }
-                                    },
-                                    metadata: Default::default(),
-                                }),
-                                lhs_metadata,
-                                opts,
-                            )
-                            .context("tried to assign a literal as keyword to type elements");
-                    }
-
-                    Type::Param(..)
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsVoidKeyword,
-                        ..
-                    }) => return Err(Error::SimpleAssignFailed { span, cause: None }),
-
-                    // TODO(kdy1): Strict mode
-                    Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsNullKeyword,
-                        ..
-                    }) => return Ok(()),
-
-                    // TODO(kdy1): Strict mode
-                    Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                        ..
-                    }) => return Ok(()),
-
-                    Type::Mapped(r_mapped) => {
-                        for l_el in lhs {
-                            match l_el {
-                                TypeElement::Call(_) => {}
-                                TypeElement::Constructor(_) => {}
-                                TypeElement::Property(_) => {}
-                                TypeElement::Method(_) => {}
-                                TypeElement::Index(l_index) => {
-                                    if let Some(Type::Operator(Operator {
-                                        op: TsTypeOperatorOp::KeyOf,
-                                        ty: r_constraint,
-                                        ..
-                                    })) = r_mapped.type_param.constraint.as_deref().map(|ty| ty.normalize())
-                                    {
-                                        if let Ok(()) = self.assign_with_opts(data, &l_index.params[0].ty, &&r_constraint, opts) {
-                                            if let Some(l_type_ann) = &l_index.type_ann {
-                                                if let Some(r_ty) = &r_mapped.ty {
-                                                    self.assign_with_opts(data, &l_type_ann, &r_ty, opts)
-                                                        .context("tried to assign a mapped type to an index signature")?;
-                                                }
-                                            }
-
-                                            return Ok(());
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsObjectKeyword,
-                        ..
-                    }) => {
-                        if lhs.is_empty() {
-                            return Ok(());
-                        } else {
-                            let err = Error::MissingFields {
-                                span,
-                                fields: lhs.to_vec(),
-                            }
-                            .context("keyword `object` is not assignable to a non-empty type literal");
-                            return Err(Error::Errors { span, errors: vec![err] });
-                        }
-                    }
-
-                    Type::EnumVariant(..) => return Err(Error::SimpleAssignFailed { span, cause: None }),
-
-                    Type::Keyword(..) => {
-                        let rhs = self
-                            .normalize(
-                                Some(span),
-                                Cow::Borrowed(&rhs),
-                                NormalizeTypeOpts {
-                                    normalize_keywords: true,
-                                    ..Default::default()
-                                },
-                            )
-                            .convert_err(|err| Error::SimpleAssignFailed {
-                                span: err.span(),
-                                cause: Some(box err),
-                            })
-                            .context("failed to normalize")?;
-
-                        if rhs.is_keyword() {
-                            return Err(
-                                Error::SimpleAssignFailed { span, cause: None }.context("failed to assign builtin type of a keyword")
-                            );
-                        }
-
-                        return self
-                            .assign_to_type_elements(data, lhs_span, lhs, &rhs, lhs_metadata, opts)
-                            .context("tried to assign using expanded builtin type");
-                    }
-
-                    Type::Tpl(TplType { span: rhs_span, .. }) => {
-                        if lhs.len() == 0 {
-                            return Ok(());
-                        }
-
-                        return self.assign_to_type_elements(
+                    return self
+                        .assign_to_type_elements(
                             data,
                             lhs_span,
                             lhs,
                             &Type::Keyword(KeywordType {
-                                span: *rhs_span,
-                                kind: TsKeywordTypeKind::TsStringKeyword,
+                                span,
+                                kind: match lit {
+                                    RTsLit::BigInt(_) => TsKeywordTypeKind::TsBigIntKeyword,
+                                    RTsLit::Number(_) => TsKeywordTypeKind::TsNumberKeyword,
+                                    RTsLit::Str(_) => TsKeywordTypeKind::TsStringKeyword,
+                                    RTsLit::Bool(_) => TsKeywordTypeKind::TsBooleanKeyword,
+                                    _ => {
+                                        unreachable!()
+                                    }
+                                },
                                 metadata: Default::default(),
                             }),
                             lhs_metadata,
                             opts,
-                        );
-                    }
-
-                    _ => {
-                        return Err(Error::Unimplemented {
-                            span,
-                            msg: format!("assign_to_type_elements - {:#?}", rhs),
-                        })
-                    }
+                        )
+                        .context("tried to assign a literal as keyword to type elements");
                 }
 
-                if !errors.is_empty() {
-                    return Err(Error::ObjectAssignFailed { span, errors })?;
-                }
+                Type::Param(..)
+                | Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsVoidKeyword,
+                    ..
+                }) => return Err(Error::SimpleAssignFailed { span, cause: None }),
 
-                if !unhandled_rhs.is_empty() {
-                    // The code below is invalid as c is not defined in type.
-                    //
-                    //      var c { [n: number]: { a: string; b: number; }; } = [{ a:
-                    // '', b: 0, c: '' }];
+                // TODO(kdy1): Strict mode
+                Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsNullKeyword,
+                    ..
+                }) => return Ok(()),
 
-                    return Err(Error::Errors {
-                        span,
-                        errors: unhandled_rhs
-                            .into_iter()
-                            .map(|span| Error::UnknownPropertyInObjectLiteralAssignment { span })
-                            .collect(),
-                    });
-                }
-            }
+                // TODO(kdy1): Strict mode
+                Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                }) => return Ok(()),
 
-            'l: for m in lhs {
-                // Handle `toString()`
-                match m {
-                    TypeElement::Method(ref m) => {
-                        if m.key == js_word!("toString") {
-                            continue;
-                        }
-                    }
-                    _ => {}
-                }
-
-                // Handle optional
-                match m {
-                    TypeElement::Method(ref m) if m.optional => continue,
-                    TypeElement::Property(ref m) if m.optional => continue,
-                    _ => {}
-                }
-
-                match *rhs.normalize() {
-                    // Check class members
-                    Type::Class(Class {
-                        def: box ClassDef { ref body, .. },
-                        ..
-                    }) => {
-                        match m {
-                            TypeElement::Call(_) => {
-                                unimplemented!("assign: interface {{ () => ret; }} = new Foo()")
-                            }
-                            TypeElement::Constructor(_) => {
-                                unimplemented!("assign: interface {{ new () => ret; }} = new Foo()")
-                            }
-                            TypeElement::Property(ref lp) => {
-                                for rm in body {
-                                    match rm {
-                                        ClassMember::Property(ref rp) => {
-                                            match rp.accessibility {
-                                                Some(Accessibility::Private) | Some(Accessibility::Protected) => {
-                                                    errors.push(Error::AccessibilityDiffers { span });
-                                                }
-                                                _ => {}
-                                            }
-
-                                            if lp.key.type_eq(&rp.key) {
-                                                continue 'l;
+                Type::Mapped(r_mapped) => {
+                    for l_el in lhs {
+                        match l_el {
+                            TypeElement::Call(_) => {}
+                            TypeElement::Constructor(_) => {}
+                            TypeElement::Property(_) => {}
+                            TypeElement::Method(_) => {}
+                            TypeElement::Index(l_index) => {
+                                if let Some(Type::Operator(Operator {
+                                    op: TsTypeOperatorOp::KeyOf,
+                                    ty: r_constraint,
+                                    ..
+                                })) = r_mapped.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                                {
+                                    if let Ok(()) = self.assign_with_opts(data, &l_index.params[0].ty, &&r_constraint, opts) {
+                                        if let Some(l_type_ann) = &l_index.type_ann {
+                                            if let Some(r_ty) = &r_mapped.ty {
+                                                self.assign_with_opts(data, &l_type_ann, &r_ty, opts)
+                                                    .context("tried to assign a mapped type to an index signature")?;
                                             }
                                         }
-                                        _ => {}
+
+                                        return Ok(());
                                     }
                                 }
-
-                                unimplemented!("assign: interface {{ prop: string; }} = new Foo()")
-                            }
-                            TypeElement::Method(_) => {
-                                unimplemented!("assign: interface {{ method() => ret; }} = new Foo()")
-                            }
-                            TypeElement::Index(_) => {
-                                unimplemented!("assign: interface {{ [key: string]: Type; }} = new Foo()")
                             }
                         }
-                        // TOOD: missing fields
+                    }
+                }
+
+                Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsObjectKeyword,
+                    ..
+                }) => {
+                    if lhs.is_empty() {
+                        return Ok(());
+                    } else {
+                        let err = Error::MissingFields {
+                            span,
+                            fields: lhs.to_vec(),
+                        }
+                        .context("keyword `object` is not assignable to a non-empty type literal");
+                        return Err(Error::Errors { span, errors: vec![err] });
+                    }
+                }
+
+                Type::EnumVariant(..) => return Err(Error::SimpleAssignFailed { span, cause: None }),
+
+                Type::Keyword(..) => {
+                    let rhs = self
+                        .normalize(
+                            Some(span),
+                            Cow::Borrowed(&rhs),
+                            NormalizeTypeOpts {
+                                normalize_keywords: true,
+                                ..Default::default()
+                            },
+                        )
+                        .convert_err(|err| Error::SimpleAssignFailed {
+                            span: err.span(),
+                            cause: Some(box err),
+                        })
+                        .context("failed to normalize")?;
+
+                    if rhs.is_keyword() {
+                        return Err(Error::SimpleAssignFailed { span, cause: None }.context("failed to assign builtin type of a keyword"));
                     }
 
-                    Type::Tuple(..)
-                    | Type::Array(..)
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                        ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsVoidKeyword,
-                        ..
-                    }) => return Ok(()),
-
-                    _ => {}
+                    return self
+                        .assign_to_type_elements(data, lhs_span, lhs, &rhs, lhs_metadata, opts)
+                        .context("tried to assign using expanded builtin type");
                 }
-            }
 
-            if !missing_fields.is_empty() {
-                errors.push(Error::MissingFields {
-                    span,
-                    fields: missing_fields,
-                });
+                Type::Tpl(TplType { span: rhs_span, .. }) => {
+                    if lhs.len() == 0 {
+                        return Ok(());
+                    }
+
+                    return self.assign_to_type_elements(
+                        data,
+                        lhs_span,
+                        lhs,
+                        &Type::Keyword(KeywordType {
+                            span: *rhs_span,
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                            metadata: Default::default(),
+                        }),
+                        lhs_metadata,
+                        opts,
+                    );
+                }
+
+                _ => {
+                    return Err(Error::Unimplemented {
+                        span,
+                        msg: format!("assign_to_type_elements - {:#?}", rhs),
+                    })
+                }
             }
 
             if !errors.is_empty() {
-                return Err(Error::Errors {
-                    span,
-                    errors: errors.into(),
-                });
+                return Err(Error::ObjectAssignFailed { span, errors })?;
             }
 
-            Ok(())
-        })();
+            if !unhandled_rhs.is_empty() {
+                // The code below is invalid as c is not defined in type.
+                //
+                //      var c { [n: number]: { a: string; b: number; }; } = [{ a:
+                // '', b: 0, c: '' }];
+
+                return Err(Error::Errors {
+                    span,
+                    errors: unhandled_rhs
+                        .into_iter()
+                        .map(|span| Error::UnknownPropertyInObjectLiteralAssignment { span })
+                        .collect(),
+                });
+            }
+        }
+
+        'l: for m in lhs {
+            // Handle `toString()`
+            match m {
+                TypeElement::Method(ref m) => {
+                    if m.key == js_word!("toString") {
+                        continue;
+                    }
+                }
+                _ => {}
+            }
+
+            // Handle optional
+            match m {
+                TypeElement::Method(ref m) if m.optional => continue,
+                TypeElement::Property(ref m) if m.optional => continue,
+                _ => {}
+            }
+
+            match *rhs.normalize() {
+                // Check class members
+                Type::Class(Class {
+                    def: box ClassDef { ref body, .. },
+                    ..
+                }) => {
+                    match m {
+                        TypeElement::Call(_) => {
+                            unimplemented!("assign: interface {{ () => ret; }} = new Foo()")
+                        }
+                        TypeElement::Constructor(_) => {
+                            unimplemented!("assign: interface {{ new () => ret; }} = new Foo()")
+                        }
+                        TypeElement::Property(ref lp) => {
+                            for rm in body {
+                                match rm {
+                                    ClassMember::Property(ref rp) => {
+                                        match rp.accessibility {
+                                            Some(Accessibility::Private) | Some(Accessibility::Protected) => {
+                                                errors.push(Error::AccessibilityDiffers { span });
+                                            }
+                                            _ => {}
+                                        }
+
+                                        if lp.key.type_eq(&rp.key) {
+                                            continue 'l;
+                                        }
+                                    }
+                                    _ => {}
+                                }
+                            }
+
+                            unimplemented!("assign: interface {{ prop: string; }} = new Foo()")
+                        }
+                        TypeElement::Method(_) => {
+                            unimplemented!("assign: interface {{ method() => ret; }} = new Foo()")
+                        }
+                        TypeElement::Index(_) => {
+                            unimplemented!("assign: interface {{ [key: string]: Type; }} = new Foo()")
+                        }
+                    }
+                    // TOOD: missing fields
+                }
+
+                Type::Tuple(..)
+                | Type::Array(..)
+                | Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                    ..
+                })
+                | Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsVoidKeyword,
+                    ..
+                }) => return Ok(()),
+
+                _ => {}
+            }
+        }
 
         let should_report_properties = (|| {
             let type_call_signatures = lhs
@@ -860,7 +839,13 @@ impl Analyzer<'_, '_> {
                 })
                 .count();
 
-            if (type_call_signatures > 0 || type_constructor_signatures > 0) && lhs.len() == 0 {
+            if (type_call_signatures > 0 || type_constructor_signatures > 0)
+                && lhs
+                    .iter()
+                    .filter(|el| matches!(el, TypeElement::Property(..) | TypeElement::Method(..)))
+                    .count()
+                    == 0
+            {
                 if let Ok(Some(rhs)) = self.convert_type_to_type_lit(span, Cow::Borrowed(rhs)) {
                     let rhs_call_count = rhs
                         .members
@@ -890,9 +875,28 @@ impl Analyzer<'_, '_> {
             true
         })();
 
-        if should_report_properties {}
+        if !missing_fields.is_empty() {
+            if should_report_properties {
+                errors.push(Error::MissingFields {
+                    span,
+                    fields: missing_fields,
+                });
+            } else {
+                errors.push(Error::ObjectAssignFailed {
+                    span,
+                    errors: vec![Error::SimpleAssignFailed { span, cause: None }],
+                })
+            }
+        }
 
-        res
+        if !errors.is_empty() {
+            return Err(Error::Errors {
+                span,
+                errors: errors.into(),
+            });
+        }
+
+        Ok(())
     }
 
     pub(super) fn try_assign_using_parent(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
