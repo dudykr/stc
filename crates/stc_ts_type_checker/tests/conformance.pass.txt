@@ -1916,6 +1916,7 @@ statements/continueStatements/doWhileContinueStatements.ts
 statements/continueStatements/forContinueStatements.ts
 statements/continueStatements/forInContinueStatements.ts
 statements/continueStatements/whileContinueStatements.ts
+statements/for-await-ofStatements/forAwaitPerIterationBindingDownlevel.ts
 statements/for-inStatements/for-inStatementsArray.ts
 statements/for-inStatements/for-inStatementsAsyncIdentifier.ts
 statements/for-inStatements/for-inStatementsDestructuring.ts
