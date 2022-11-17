@@ -2851,7 +2851,6 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        print_backtrace();
         unimplemented!(
             "access_property(MemberExpr):\nObject: {:?}\nProp: {:?}\nPath: {}",
             obj,

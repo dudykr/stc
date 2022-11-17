@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
-    debug::{dump_type_as_string, dump_type_map, print_backtrace, print_type},
+    debug::{dump_type_as_string, dump_type_map, print_type},
     DebugExt, Error,
 };
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -2345,10 +2345,7 @@ impl Analyzer<'_, '_> {
 
         {
             let arg_check_res = self.validate_arg_count(span, &params, args, arg_types, spread_arg_types);
-            match arg_check_res {
-                Err(..) => print_backtrace(),
-                _ => {}
-            }
+
             arg_check_res.report(&mut self.storage);
         }
 
