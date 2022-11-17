@@ -21,15 +21,7 @@ function identifyBeast(beast: Beast) {
 
         // All winged beasts with legs
         if (hasWings(beast)) {
-            if (beast.legs === 4) {
-                log(`pegasus - 4 legs, wings`);
-            }
-            else if (beast.legs === 2) {
-                log(`bird - 2 legs, wings`);
-            }
-            else {
-                log(`unknown - ${beast.legs} legs, wings`);
-            }
+
         }
 
         // All non-winged beasts with legs
@@ -38,13 +30,5 @@ function identifyBeast(beast: Beast) {
         }
     }
 
-    // All beasts without legs    
-    else {
-        if (hasWings(beast)) {
-            log(`quetzalcoatl - no legs, wings`)
-        }
-        else {
-            log(`snake - no legs, no wings`)
-        }
-    }
+
 }
