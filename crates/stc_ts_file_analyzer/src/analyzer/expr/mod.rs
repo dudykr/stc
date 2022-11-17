@@ -1274,7 +1274,18 @@ impl Analyzer<'_, '_> {
                         return self
                             .env
                             .get_global_var(*span, &sym)
-                            .context("tired to access a prperty of `globalTHis`")
+                            .context("tired to access a prperty of `globalThis`")
+                            .convert_err(|err| match err.actual() {
+                                Error::NoSuchVar { span, name } => Error::NoSuchProperty {
+                                    span: *span,
+                                    obj: Some(box obj.clone()),
+                                    prop: Some(box Key::Normal {
+                                        span: *span,
+                                        sym: name.sym().clone(),
+                                    }),
+                                },
+                                _ => err,
+                            })
                     }
                     _ => {
                         unimplemented!("access_property_inner: global_this: {:?}", prop);
