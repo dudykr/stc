@@ -1869,8 +1869,20 @@ impl Analyzer<'_, '_> {
 
             Type::This(ThisType { span, .. }) => return Err(Error::CannotAssingToThis { span: *span }),
 
-            Type::Interface(Interface { ref body, ref extends, .. }) => {
+            Type::Interface(Interface {
+                name,
+                ref body,
+                ref extends,
+                ..
+            }) => {
                 // TODO(kdy1): Optimize handling of unknown rhs
+
+                if name == "Function" {
+                    match rhs.normalize() {
+                        Type::Function(..) => return Ok(()),
+                        _ => {}
+                    }
+                }
 
                 self.assign_to_type_elements(
                     data,
