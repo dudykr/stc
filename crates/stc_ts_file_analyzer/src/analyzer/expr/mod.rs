@@ -1268,6 +1268,20 @@ impl Analyzer<'_, '_> {
                 }
             }
 
+            if obj.is_global_this() {
+                match prop {
+                    Key::Normal { span, sym } => {
+                        return self
+                            .env
+                            .get_global_var(*span, &sym)
+                            .context("tired to access a prperty of `globalTHis`")
+                    }
+                    _ => {
+                        unimplemented!("access_property_inner: global_this: {:?}", prop);
+                    }
+                }
+            }
+
             match &obj {
                 Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_object_lit() => {
                     if let Key::Computed(prop) = prop {
