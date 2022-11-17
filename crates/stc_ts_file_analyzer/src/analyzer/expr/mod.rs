@@ -1254,9 +1254,9 @@ impl Analyzer<'_, '_> {
 
         if obj.is_global_this() {
             match prop {
-                Key::Normal { span, sym }
+                Key::Normal { span: key_span, sym }
                 | Key::Computed(ComputedKey {
-                    span,
+                    span: key_span,
                     expr: box RExpr::Lit(RLit::Str(RStr { value: sym, .. })),
                     ..
                 }) => {
@@ -1268,12 +1268,12 @@ impl Analyzer<'_, '_> {
                         IdCtx::Var => {
                             let res = self
                                 .env
-                                .get_global_var(*span, &sym)
+                                .get_global_var(span, &sym)
                                 .context("tried to access a prperty of `globalThis`");
 
                             // TODO(kdy1): Apply correct rule
                             if res.is_err() {
-                                return Ok(Type::any(*span, Default::default()));
+                                return Ok(Type::any(span, Default::default()));
                             }
 
                             return res.convert_err(|err| match err.actual() {
@@ -1291,7 +1291,7 @@ impl Analyzer<'_, '_> {
                         IdCtx::Type => {
                             return self
                                 .env
-                                .get_global_type(*span, &sym)
+                                .get_global_type(span, &sym)
                                 .context("tried to access a prperty of `globalThis`")
                                 .convert_err(|err| match err.actual() {
                                     Error::NoSuchType { span, name } => Error::NoSuchProperty {
