@@ -1343,11 +1343,6 @@ impl Analyzer<'_, '_> {
 
         let ty = ty.map(|ty| ty.freezed());
 
-        if let Some(actual_ty) = &actual_ty {
-            if actual_ty.is_never() {
-                print_backtrace();
-            }
-        }
         let actual_ty = actual_ty
             .and_then(|ty| {
                 if ty.is_any()
