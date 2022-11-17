@@ -1481,7 +1481,7 @@ impl Analyzer<'_, '_> {
         };
         let mut obj = match obj.normalize() {
             Type::Conditional(..) | Type::Instance(..) => self.normalize(
-                None,
+                Some(span),
                 Cow::Borrowed(obj),
                 NormalizeTypeOpts {
                     preserve_intersection: true,
