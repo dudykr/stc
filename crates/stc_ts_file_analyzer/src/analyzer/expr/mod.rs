@@ -1270,7 +1270,12 @@ impl Analyzer<'_, '_> {
 
             if obj.is_global_this() {
                 match prop {
-                    Key::Normal { span, sym } => {
+                    Key::Normal { span, sym }
+                    | Key::Computed(ComputedKey {
+                        span,
+                        expr: box RExpr::Lit(RLit::Str(RStr { value: sym, .. })),
+                        ..
+                    }) => {
                         return self
                             .env
                             .get_global_var(*span, &sym)
