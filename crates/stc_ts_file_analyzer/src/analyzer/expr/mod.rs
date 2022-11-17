@@ -1477,11 +1477,12 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         let mut obj = match obj.normalize() {
-            Type::Conditional(..) | Type::Instance(..) => self.normalize(
+            Type::Conditional(..) | Type::Instance(..) | Type::Query(..) => self.normalize(
                 Some(span),
                 Cow::Borrowed(obj),
                 NormalizeTypeOpts {
                     preserve_intersection: true,
+                    preserve_global_this: true,
                     ..Default::default()
                 },
             )?,
@@ -2752,14 +2753,6 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 });
                 return Ok(ty);
-            }
-
-            Type::Query(QueryType {
-                expr: box QueryExpr::TsEntityName(name),
-                ..
-            }) => {
-                let obj = self.type_of_ts_entity_name(span, &name.clone().into(), None)?;
-                return self.access_property(span, &obj, prop, type_mode, id_ctx, opts);
             }
 
             Type::Function(f) if type_mode == TypeOfMode::RValue => {
