@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use stc_ts_errors::{DebugExt, Error};
-use stc_ts_types::{Class, ClassDef, ClassMember, QueryExpr, Type, TypeLitMetadata};
+use stc_ts_types::{Class, ClassDef, ClassMember, Type, TypeLitMetadata};
 use stc_utils::cache::Freeze;
 use swc_common::EqIgnoreSpan;
 use swc_ecma_ast::Accessibility;
@@ -16,25 +16,9 @@ use crate::{
 
 impl Analyzer<'_, '_> {
     pub(super) fn assign_to_class_def(&mut self, data: &mut AssignData, l: &ClassDef, r: &Type, opts: AssignOpts) -> VResult<()> {
-        let r = r.normalize();
+        let r = self.normalize(Some(opts.span), Cow::Borrowed(r), Default::default())?;
 
-        match r {
-            Type::Ref(..) => {
-                let r = self.expand_top_ref(opts.span, Cow::Borrowed(r), Default::default())?;
-                return self.assign_to_class_def(data, l, &r, opts);
-            }
-
-            Type::Query(r_ty) => match &*r_ty.expr {
-                QueryExpr::TsEntityName(e) => {
-                    let rhs = self
-                        .resolve_typeof(opts.span, e)
-                        .context("tried to resolve typeof for assignment")?;
-
-                    return self.assign_to_class_def(data, l, &rhs, opts);
-                }
-                QueryExpr::Import(_) => {}
-            },
-
+        match r.normalize() {
             Type::ClassDef(rc) => {
                 if l.eq_ignore_span(rc) {
                     return Ok(());
@@ -58,7 +42,7 @@ impl Analyzer<'_, '_> {
 
                 let new_body;
                 let r_body = if rc.super_class.is_some() {
-                    if let Some(members) = self.collect_class_members(&[], r)? {
+                    if let Some(members) = self.collect_class_members(&[], &r)? {
                         new_body = members;
                         &*new_body
                     } else {
@@ -80,7 +64,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::TypeLit(..) | Type::Interface(..) => {
-                let rhs = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(r))?.unwrap();
+                let rhs = self.convert_type_to_type_lit(opts.span, Cow::Borrowed(&*r))?.unwrap();
 
                 let mut lhs_members = vec![];
                 for lm in &l.body {
