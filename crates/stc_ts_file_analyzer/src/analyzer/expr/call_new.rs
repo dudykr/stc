@@ -3192,9 +3192,9 @@ impl Analyzer<'_, '_> {
                     .find_var_type(&var_name.clone().into(), TypeOfMode::RValue)
                     .map(Cow::into_owned)
                 {
-                    let new_ty = self.narrow_with_predicate(span, &previous_types, new_ty.clone())?.freezed();
+                    let narrowed_ty = self.narrow_with_predicate(span, &previous_types, new_ty.clone())?.freezed();
 
-                    self.add_type_fact(&var_name.into(), new_ty);
+                    self.add_type_fact(&var_name.into(), narrowed_ty);
                     return;
                 }
             }
