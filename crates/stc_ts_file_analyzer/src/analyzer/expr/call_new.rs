@@ -3067,6 +3067,7 @@ impl Analyzer<'_, '_> {
                                     let arg = &args[idx];
                                     match &*arg.expr {
                                         RExpr::Ident(var_name) => {
+                                            let ty = ty.clone().freezed();
                                             self.store_call_fact_for_var(var_name.span, var_name.into(), &ty);
                                         }
                                         _ => {}
