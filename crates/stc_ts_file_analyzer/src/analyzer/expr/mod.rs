@@ -1259,31 +1259,37 @@ impl Analyzer<'_, '_> {
                     span,
                     expr: box RExpr::Lit(RLit::Str(RStr { value: sym, .. })),
                     ..
-                }) => match id_ctx {
-                    IdCtx::Var => {
-                        return self
-                            .env
-                            .get_global_var(*span, &sym)
-                            .context("tried to access a prperty of `globalThis`")
-                            .convert_err(|err| match err.actual() {
-                                Error::NoSuchVar { span, name } => Error::NoSuchProperty {
-                                    span: *span,
-                                    obj: Some(box obj.clone()),
-                                    prop: Some(box Key::Normal {
+                }) => {
+                    if &*sym == "globalThis" {
+                        return Ok(obj.clone());
+                    }
+
+                    match id_ctx {
+                        IdCtx::Var => {
+                            return self
+                                .env
+                                .get_global_var(*span, &sym)
+                                .context("tried to access a prperty of `globalThis`")
+                                .convert_err(|err| match err.actual() {
+                                    Error::NoSuchVar { span, name } => Error::NoSuchProperty {
                                         span: *span,
-                                        sym: name.sym().clone(),
-                                    }),
-                                },
-                                _ => err,
-                            });
+                                        obj: Some(box obj.clone()),
+                                        prop: Some(box Key::Normal {
+                                            span: *span,
+                                            sym: name.sym().clone(),
+                                        }),
+                                    },
+                                    _ => err,
+                                });
+                        }
+                        IdCtx::Type => {
+                            return self
+                                .env
+                                .get_global_type(*span, &sym)
+                                .context("tried to access a prperty of `globalThis`");
+                        }
                     }
-                    IdCtx::Type => {
-                        return self
-                            .env
-                            .get_global_type(*span, &sym)
-                            .context("tried to access a prperty of `globalThis`");
-                    }
-                },
+                }
                 Key::Num(v) => {
                     return self.access_property_inner(
                         span,
