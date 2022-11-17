@@ -1297,10 +1297,50 @@ impl Analyzer<'_, '_> {
                         opts,
                     )
                 }
-                _ => {
-                    unimplemented!("access_property_inner: global_this: {:?}", prop);
-                }
+                Key::Computed(ComputedKey { ty, .. }) => match ty.normalize() {
+                    Type::Lit(LitType {
+                        lit:
+                            RTsLit::Str(RStr {
+                                span: str_span,
+                                value: sym,
+                                ..
+                            }),
+                        ..
+                    }) => {
+                        return self.access_property_inner(
+                            span,
+                            obj,
+                            &Key::Normal {
+                                span: *str_span,
+                                sym: sym.clone(),
+                            },
+                            type_mode,
+                            id_ctx,
+                            opts,
+                        )
+                    }
+                    Type::Lit(LitType {
+                        lit: RTsLit::Number(v), ..
+                    }) => {
+                        return self.access_property_inner(
+                            span,
+                            obj,
+                            &Key::Normal {
+                                span: v.span,
+                                sym: v.value.to_string().into(),
+                            },
+                            type_mode,
+                            id_ctx,
+                            opts,
+                        )
+                    }
+
+                    _ => {}
+                },
+                _ => {}
             }
+
+            unimplemented!("access_property_inner: global_this: {:?}", prop);
         }
 
         if id_ctx == IdCtx::Var {
