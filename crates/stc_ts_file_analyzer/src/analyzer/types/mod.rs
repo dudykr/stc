@@ -728,7 +728,14 @@ impl Analyzer<'_, '_> {
 
             for elem in types.iter() {
                 let elem = self
-                    .normalize(Some(span), Cow::Borrowed(elem), opts)
+                    .normalize(
+                        Some(span),
+                        Cow::Borrowed(elem),
+                        NormalizeTypeOpts {
+                            preserve_global_this: true,
+                            ..opts
+                        },
+                    )
                     .context("failed to normalize types while intersecting properties")?;
 
                 match elem.normalize_instance() {
