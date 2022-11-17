@@ -554,6 +554,7 @@ impl Analyzer<'_, '_> {
                     Cow::Borrowed(obj_type),
                     NormalizeTypeOpts {
                         preserve_intersection: true,
+                        preserve_global_this: true,
                         ..Default::default()
                     },
                 )
