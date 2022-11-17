@@ -1291,7 +1291,18 @@ impl Analyzer<'_, '_> {
                             return self
                                 .env
                                 .get_global_type(*span, &sym)
-                                .context("tried to access a prperty of `globalThis`");
+                                .context("tried to access a prperty of `globalThis`")
+                                .convert_err(|err| match err.actual() {
+                                    Error::NoSuchType { span, name } => Error::NoSuchProperty {
+                                        span: *span,
+                                        obj: Some(box obj.clone()),
+                                        prop: Some(box Key::Normal {
+                                            span: *span,
+                                            sym: name.sym().clone(),
+                                        }),
+                                    },
+                                    _ => err,
+                                });
                         }
                     }
                 }
