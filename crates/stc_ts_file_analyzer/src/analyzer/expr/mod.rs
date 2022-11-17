@@ -1266,21 +1266,26 @@ impl Analyzer<'_, '_> {
 
                     match id_ctx {
                         IdCtx::Var => {
-                            return self
+                            let res = self
                                 .env
                                 .get_global_var(*span, &sym)
-                                .context("tried to access a prperty of `globalThis`")
-                                .convert_err(|err| match err.actual() {
-                                    Error::NoSuchVar { span, name } => Error::NoSuchProperty {
+                                .context("tried to access a prperty of `globalThis`");
+
+                            if res.is_err() && type_mode == TypeOfMode::LValue {
+                                return Ok(Type::any(*span, Default::default()));
+                            }
+
+                            return res.convert_err(|err| match err.actual() {
+                                Error::NoSuchVar { span, name } => Error::NoSuchProperty {
+                                    span: *span,
+                                    obj: Some(box obj.clone()),
+                                    prop: Some(box Key::Normal {
                                         span: *span,
-                                        obj: Some(box obj.clone()),
-                                        prop: Some(box Key::Normal {
-                                            span: *span,
-                                            sym: name.sym().clone(),
-                                        }),
-                                    },
-                                    _ => err,
-                                });
+                                        sym: name.sym().clone(),
+                                    }),
+                                },
+                                _ => err,
+                            });
                         }
                         IdCtx::Type => {
                             return self
