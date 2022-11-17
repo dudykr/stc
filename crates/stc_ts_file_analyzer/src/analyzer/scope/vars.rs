@@ -702,7 +702,7 @@ impl Analyzer<'_, '_> {
 
         let ty = (|| -> VResult<_> {
             let mut ty = self.normalize(
-                None,
+                Some(span),
                 Cow::Borrowed(ty),
                 NormalizeTypeOpts {
                     preserve_mapped: false,
