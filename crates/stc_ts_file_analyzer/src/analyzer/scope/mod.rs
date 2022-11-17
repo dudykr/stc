@@ -2140,8 +2140,6 @@ impl Expander<'_, '_, '_> {
             }
         }
 
-        print_backtrace();
-
         Ok(Some(Type::any(span, Default::default())))
     }
 
