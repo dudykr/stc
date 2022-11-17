@@ -29,14 +29,14 @@ jobs:
               cargo build --release
               cp ./target/release/stc .
               chmod +x ./stc
-          - host: windows-latest
+          - host: windows-latest-8-cores
             build: |
               export CARGO_PROFILE_RELEASE_LTO=false
               cargo build --release
               cp ./target/release/stc .
               chmod +x ./stc
             target: x86_64-pc-windows-msvc
-          - host: windows-latest
+          - host: windows-latest-8-cores
             build: |
               export DISABLE_PLUGIN_E2E_TESTS=true
               export CARGO_PROFILE_RELEASE_LTO=false
@@ -44,7 +44,7 @@ jobs:
               cp target/i686-pc-windows-msvc/release/stc .
               chmod +x ./stc
             target: i686-pc-windows-msvc
-          - host: ubuntu-latest
+          - host: ubuntu-latest-8-cores
             target: x86_64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
             build: >-
@@ -52,7 +52,7 @@ jobs:
               unset CC_x86_64_unknown_linux_gnu && unset CC && RUSTFLAGS='-C target-feature=+sse2' cargo build --release &&
               rm -rf target/target/x86_64-unknown-linux-gnu/release/.cargo-lock &&
               cp target/x86_64-unknown-linux-gnu/release/stc . && chmod +x ./stc
-          - host: ubuntu-latest
+          - host: ubuntu-latest-8-cores
             target: x86_64-unknown-linux-musl
             # musl build is slow, let's disable the LTO
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
@@ -91,7 +91,7 @@ jobs:
               cargo build --release --target=armv7-unknown-linux-gnueabihf
               cp ./target/armv7-unknown-linux-gnueabihf/release/stc .
               chmod +x ./stc
-          - host: ubuntu-latest
+          - host: ubuntu-latest-8-cores
             target: aarch64-unknown-linux-musl
             downloadTarget: aarch64-unknown-linux-musl
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
@@ -101,7 +101,7 @@ jobs:
               RUSTFLAGS='-C target-feature=+crt-static -C link-arg=-lgcc' cargo build --release --target aarch64-unknown-linux-musl &&
               rm -rf target/release/.cargo-lock &&
               cp target/aarch64-unknown-linux-musl/release/stc . && chmod +x ./stc
-          - host: windows-latest
+          - host: windows-latest-8-cores
             target: aarch64-pc-windows-msvc
             # Disable `LTO` and increase `codegen-units` to avoid llvm `OOM` on GitHub Actions.
             build: |
