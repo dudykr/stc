@@ -3082,7 +3082,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    fn narrow_type_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult<Type> {
+    fn narrow_with_predicate(&mut self, span: Span, orig_ty: &Type, new_ty: Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
         let orig_ty = self
@@ -3192,7 +3192,7 @@ impl Analyzer<'_, '_> {
                     .find_var_type(&var_name.clone().into(), TypeOfMode::RValue)
                     .map(Cow::into_owned)
                 {
-                    let new_ty = self.narrow_type_with_predicate(span, &previous_types, new_ty.clone())?.freezed();
+                    let new_ty = self.narrow_with_predicate(span, &previous_types, new_ty.clone())?.freezed();
 
                     self.add_type_fact(&var_name.into(), new_ty);
                     return;
