@@ -1089,8 +1089,8 @@ impl Analyzer<'_, '_> {
     pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type, exclude: Type) {
         info!("add_type_fact({}); ty = {:?}", sym, ty);
 
-        ty.assert_valid();
         ty.assert_clone_cheap();
+        exclude.assert_clone_cheap();
 
         self.cur_facts.insert_var(sym, ty, exclude, false);
     }
