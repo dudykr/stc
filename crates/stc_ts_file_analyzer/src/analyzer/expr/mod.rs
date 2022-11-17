@@ -1271,7 +1271,8 @@ impl Analyzer<'_, '_> {
                                 .get_global_var(*span, &sym)
                                 .context("tried to access a prperty of `globalThis`");
 
-                            if res.is_err() && (type_mode == TypeOfMode::LValue || !self.rule().no_implicit_any) {
+                            // TODO(kdy1): Apply correct rule
+                            if res.is_err() {
                                 return Ok(Type::any(*span, Default::default()));
                             }
 
