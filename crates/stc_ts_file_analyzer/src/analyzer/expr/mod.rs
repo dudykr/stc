@@ -2263,7 +2263,6 @@ impl Analyzer<'_, '_> {
                             return Ok(ty);
                         }
 
-                        print_backtrace();
                         return Err(Error::NoSuchProperty {
                             span,
                             obj: Some(box obj),
@@ -2770,7 +2769,6 @@ impl Analyzer<'_, '_> {
             Type::Function(f) if type_mode == TypeOfMode::RValue => {
                 // Use builtin type `Function`
                 let interface = self.env.get_global_type(f.span, &js_word!("Function"))?;
-                print_backtrace();
                 return self.access_property(span, &interface, prop, type_mode, id_ctx, opts);
             }
 
