@@ -843,6 +843,55 @@ impl Analyzer<'_, '_> {
             Ok(())
         })();
 
+        let should_report_properties = (|| {
+            let type_call_signatures = lhs
+                .iter()
+                .filter_map(|m| match m {
+                    TypeElement::Call(ref m) => Some(m),
+                    _ => None,
+                })
+                .count();
+
+            let type_constructor_signatures = lhs
+                .iter()
+                .filter_map(|m| match m {
+                    TypeElement::Constructor(ref m) => Some(m),
+                    _ => None,
+                })
+                .count();
+
+            if (type_call_signatures > 0 || type_constructor_signatures > 0) && lhs.len() == 0 {
+                if let Ok(Some(rhs)) = self.convert_type_to_type_lit(span, Cow::Borrowed(rhs)) {
+                    let rhs_call_count = rhs
+                        .members
+                        .iter()
+                        .filter_map(|m| match m {
+                            TypeElement::Call(ref m) => Some(m),
+                            _ => None,
+                        })
+                        .count();
+                    let rhs_constructor_count = rhs
+                        .members
+                        .iter()
+                        .filter_map(|m| match m {
+                            TypeElement::Constructor(ref m) => Some(m),
+                            _ => None,
+                        })
+                        .count();
+
+                    if (rhs_call_count > 0 && type_call_signatures > 0) || (rhs_constructor_count > 0 && type_constructor_signatures > 0) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            true
+        })();
+
+        if should_report_properties {}
+
         res
     }
 
