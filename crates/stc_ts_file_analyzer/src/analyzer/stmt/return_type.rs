@@ -255,6 +255,12 @@ impl Analyzer<'_, '_> {
                 })));
             }
 
+            let is_all_null_or_undefined = actual.iter().all(|ty| ty.is_null_or_undefined());
+
+            if !actual.is_empty() && is_all_null_or_undefined {
+                return Ok(Some(Type::any(span, Default::default())));
+            }
+
             if actual.is_empty() {
                 return Ok(None);
             }
