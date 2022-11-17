@@ -444,10 +444,9 @@ impl Analyzer<'_, '_> {
                                         _ => {}
                                     }
 
-                                    let expanded_ty = self.resolve_typeof(actual_span, e).with_context(|| {
-                                        print_backtrace();
-                                        "tried to resolve typeof as a part of normalization".into()
-                                    })?;
+                                    let expanded_ty = self
+                                        .resolve_typeof(actual_span, e)
+                                        .with_context(|| "tried to resolve typeof as a part of normalization".into())?;
 
                                     if expanded_ty.is_global_this() {
                                         return Ok(Cow::Owned(expanded_ty));
