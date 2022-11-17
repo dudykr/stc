@@ -1086,13 +1086,13 @@ impl Analyzer<'_, '_> {
 
     /// While this type fact is in scope, the var named `sym` will be treated as
     /// `ty`.
-    pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type) {
+    pub(super) fn add_type_fact(&mut self, sym: &Id, ty: Type, exclude: Type) {
         info!("add_type_fact({}); ty = {:?}", sym, ty);
 
-        ty.assert_valid();
         ty.assert_clone_cheap();
+        exclude.assert_clone_cheap();
 
-        self.cur_facts.insert_var(sym, ty, false);
+        self.cur_facts.insert_var(sym, ty, exclude, false);
     }
 
     pub(super) fn add_deep_type_fact(&mut self, span: Span, name: Name, ty: Type, is_for_true: bool) {
@@ -1334,18 +1334,18 @@ impl Analyzer<'_, '_> {
 }
 
 impl Facts {
-    fn insert_var<N: Into<Name>>(&mut self, name: N, ty: Type, negate: bool) {
+    fn insert_var<N: Into<Name>>(&mut self, name: N, ty: Type, exclude: Type, negate: bool) {
         ty.assert_valid();
         ty.assert_clone_cheap();
 
         let name = name.into();
 
         if negate {
-            self.false_facts.vars.insert(name.clone(), ty.clone());
-            self.true_facts.excludes.entry(name).or_default().push(ty);
+            self.false_facts.vars.insert(name.clone(), ty);
+            self.true_facts.excludes.entry(name).or_default().push(exclude);
         } else {
-            self.true_facts.vars.insert(name.clone(), ty.clone());
-            self.false_facts.excludes.entry(name).or_default().push(ty);
+            self.true_facts.vars.insert(name.clone(), ty);
+            self.false_facts.excludes.entry(name).or_default().push(exclude);
         }
     }
 }
