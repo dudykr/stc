@@ -726,7 +726,10 @@ impl Analyzer<'_, '_> {
             }
 
             if !errors.is_empty() {
-                return Err(Error::ObjectAssignFailed { span, errors })?;
+                return Err(Error::ObjectAssignFailed {
+                    span,
+                    errors: Error::flatten(errors),
+                })?;
             }
 
             if !unhandled_rhs.is_empty() {
@@ -1466,7 +1469,10 @@ impl Analyzer<'_, '_> {
         }
 
         if !errors.is_empty() {
-            return Err(Error::ObjectAssignFailed { span, errors });
+            return Err(Error::ObjectAssignFailed {
+                span,
+                errors: Error::flatten(errors),
+            });
         }
 
         unhandled_rhs.clear();
