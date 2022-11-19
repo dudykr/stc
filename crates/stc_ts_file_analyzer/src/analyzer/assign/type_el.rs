@@ -726,7 +726,10 @@ impl Analyzer<'_, '_> {
             }
 
             if !errors.is_empty() {
-                return Err(Error::ObjectAssignFailed { span, errors })?;
+                return Err(Error::ObjectAssignFailed {
+                    span,
+                    errors: Error::flatten(errors),
+                })?;
             }
 
             if !unhandled_rhs.is_empty() {
@@ -823,10 +826,17 @@ impl Analyzer<'_, '_> {
         }
 
         if !missing_fields.is_empty() {
-            errors.push(Error::MissingFields {
-                span,
-                fields: missing_fields,
-            });
+            if self.should_report_properties(span, lhs, rhs) {
+                errors.push(Error::MissingFields {
+                    span,
+                    fields: missing_fields,
+                });
+            } else {
+                errors.push(Error::ObjectAssignFailed {
+                    span,
+                    errors: vec![Error::SimpleAssignFailed { span, cause: None }],
+                })
+            }
         }
 
         if !errors.is_empty() {
@@ -837,6 +847,59 @@ impl Analyzer<'_, '_> {
         }
 
         Ok(())
+    }
+
+    fn should_report_properties(&mut self, span: Span, lhs: &[TypeElement], rhs: &Type) -> bool {
+        let type_call_signatures = lhs
+            .iter()
+            .filter_map(|m| match m {
+                TypeElement::Call(ref m) => Some(m),
+                _ => None,
+            })
+            .count();
+
+        let type_constructor_signatures = lhs
+            .iter()
+            .filter_map(|m| match m {
+                TypeElement::Constructor(ref m) => Some(m),
+                _ => None,
+            })
+            .count();
+
+        if (type_call_signatures > 0 || type_constructor_signatures > 0)
+            && lhs
+                .iter()
+                .filter(|el| matches!(el, TypeElement::Property(..) | TypeElement::Method(..)))
+                .count()
+                == 0
+        {
+            if let Ok(Some(rhs)) = self.convert_type_to_type_lit(span, Cow::Borrowed(rhs)) {
+                let rhs_call_count = rhs
+                    .members
+                    .iter()
+                    .filter_map(|m| match m {
+                        TypeElement::Call(ref m) => Some(m),
+                        _ => None,
+                    })
+                    .count();
+                let rhs_constructor_count = rhs
+                    .members
+                    .iter()
+                    .filter_map(|m| match m {
+                        TypeElement::Constructor(ref m) => Some(m),
+                        _ => None,
+                    })
+                    .count();
+
+                if (rhs_call_count > 0 && type_call_signatures > 0) || (rhs_constructor_count > 0 && type_constructor_signatures > 0) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        true
     }
 
     pub(super) fn try_assign_using_parent(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
@@ -1406,7 +1469,10 @@ impl Analyzer<'_, '_> {
         }
 
         if !errors.is_empty() {
-            return Err(Error::ObjectAssignFailed { span, errors });
+            return Err(Error::ObjectAssignFailed {
+                span,
+                errors: Error::flatten(errors),
+            });
         }
 
         unhandled_rhs.clear();
