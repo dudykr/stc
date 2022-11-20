@@ -59,7 +59,8 @@ impl Analyzer<'_, '_> {
             };
 
             if let Err(err) = res {
-                self.storage.report(ErrorKind::InvalidInterfaceInheritance { span, cause: box err });
+                self.storage
+                    .report(ErrorKind::InvalidInterfaceInheritance { span, cause: box err }.into());
                 return;
             }
         }
@@ -98,16 +99,18 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     ) {
-                        match err.actual() {
+                        match &*err {
                             ErrorKind::MissingFields { .. } => {}
 
                             ErrorKind::Errors { errors, .. }
-                                if errors.iter().all(|err| match err.actual() {
+                                if errors.iter().all(|err| match &**err {
                                     ErrorKind::MissingFields { .. } => true,
                                     _ => false,
                                 }) => {}
 
-                            _ => self.storage.report(err.convert(|err| ErrorKind::InterfaceNotCompatible { span })),
+                            _ => self
+                                .storage
+                                .report(err.convert(|err| ErrorKind::InterfaceNotCompatible { span }.into())),
                         }
                     }
                 }

@@ -192,7 +192,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsIntrinsicKeyword,
                     }) if !child.is_builtin => {
                         let span = *span;
-                        child.storage.report(ErrorKind::IntrinsicIsBuiltinOnly { span });
+                        child.storage.report(ErrorKind::IntrinsicIsBuiltinOnly { span }.into());
                         Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
                     }
 
@@ -265,7 +265,7 @@ impl Analyzer<'_, '_> {
         let ty = self.with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<_> {
             match &*d.id.sym {
                 "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
-                    child.storage.report(ErrorKind::InvalidInterfaceName { span: d.id.span });
+                    child.storage.report(ErrorKind::InvalidInterfaceName { span: d.id.span }.into());
                 }
                 _ => {}
             }
@@ -736,14 +736,16 @@ impl Analyzer<'_, '_> {
 
                     if !self.is_builtin && !found && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
-                            self.storage.report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() });
+                            self.storage
+                                .report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() }.into());
                             reported_type_not_found = true;
                         }
                     }
                 } else {
                     if !self.is_builtin && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
-                            self.storage.report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() });
+                            self.storage
+                                .report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() }.into());
                             reported_type_not_found = true;
                         }
                     }
@@ -986,10 +988,13 @@ impl Analyzer<'_, '_> {
                         if !a.is_builtin {
                             let span = ty.span;
 
-                            a.storage.report(ErrorKind::NoSuchType {
-                                span,
-                                name: Id::word("intrinsic".into()),
-                            });
+                            a.storage.report(
+                                ErrorKind::NoSuchType {
+                                    span,
+                                    name: Id::word("intrinsic".into()),
+                                }
+                                .into(),
+                            );
                             return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                         }
                     }
@@ -1062,8 +1067,9 @@ impl Analyzer<'_, '_> {
                             continue;
                         }
                         if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(&*prev_key)) {
-                            self.storage.report(ErrorKind::DuplicateNameWithoutName { span: prev.span() });
-                            self.storage.report(ErrorKind::DuplicateNameWithoutName { span: key.span() });
+                            self.storage
+                                .report(ErrorKind::DuplicateNameWithoutName { span: prev.span() }.into());
+                            self.storage.report(ErrorKind::DuplicateNameWithoutName { span: key.span() }.into());
                         } else {
                             prev_keys.push(key);
                         }
@@ -1087,10 +1093,13 @@ impl Analyzer<'_, '_> {
             for id in ids {
                 if let Some(prev) = prev_ids.iter().find(|v| v.sym == id.sym) {
                     self.storage
-                        .report(ErrorKind::DuplicateName {
-                            span: prev.span,
-                            name: prev.into(),
-                        })
+                        .report(
+                            ErrorKind::DuplicateName {
+                                span: prev.span,
+                                name: prev.into(),
+                            }
+                            .into(),
+                        )
                         .into();
                     self.storage.report(
                         ErrorKind::DuplicateName {
@@ -1131,7 +1140,8 @@ impl Analyzer<'_, '_> {
         });
 
         if static_method.is_some() {
-            self.storage.report(ErrorKind::StaticMemberCannotUseTypeParamOfClass { span })
+            self.storage
+                .report(ErrorKind::StaticMemberCannotUseTypeParamOfClass { span }.into())
         }
     }
 

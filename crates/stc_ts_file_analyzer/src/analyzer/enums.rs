@@ -59,7 +59,7 @@ impl Analyzer<'_, '_> {
                 .map(|m| -> VResult<_> {
                     let id_span = m.id.span();
                     let val = eval
-                        .compute(id_span, Some(default), m.init.as_ref().map(|v| &**v))
+                        .compute(id_span, Some(default), m.init.as_deref())
                         .map(|val| {
                             match &val {
                                 RTsLit::Number(n) => {
