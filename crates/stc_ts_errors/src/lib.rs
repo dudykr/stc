@@ -88,7 +88,7 @@ impl Error {
 
 impl Debug for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        for ctx in self.contexts.iter() {
+        for ctx in self.contexts.iter().rev() {
             writeln!(f, "{}: {}", Yellow.paint("context"), ctx)?;
         }
 
