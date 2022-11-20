@@ -842,17 +842,19 @@ impl Analyzer<'_, '_> {
             let callee_str = dump_type_as_string(&self.cm, &callee);
 
             self.get_best_return_type(span, expr, callee, kind, type_args, args, &arg_types, &spread_arg_types, type_ann)
-                .convert_err(|err| match err {
+                .convert_err(|err| match &*err {
                     ErrorKind::NoCallSignature { span, .. } => ErrorKind::NoCallablePropertyWithName {
                         span,
                         obj: box obj_type.clone(),
                         key: box prop.clone(),
-                    },
+                    }
+                    .into(),
                     ErrorKind::NoNewSignature { span, .. } => ErrorKind::NoConstructablePropertyWithName {
                         span,
                         obj: box obj_type.clone(),
                         key: box prop.clone(),
-                    },
+                    }
+                    .into(),
                     _ => err,
                 })
                 .with_context(|| {

@@ -274,8 +274,8 @@ impl Analyzer<'_, '_> {
                     let res = self
                         .get_element_from_iterator(span, Cow::Borrowed(iterator_elem), n)
                         .with_context(|| format!("failed to get element type from {}th element", idx))
-                        .convert_err(|err| match err {
-                            ErrorKind::TupleIndexError { span, .. } => ErrorKind::TupleTooShort { span },
+                        .convert_err(|err| match &*err {
+                            ErrorKind::TupleIndexError { span, .. } => ErrorKind::TupleTooShort { span }.into(),
                             _ => err,
                         })
                         .map(Cow::into_owned);

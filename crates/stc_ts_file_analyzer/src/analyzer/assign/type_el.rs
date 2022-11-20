@@ -88,7 +88,8 @@ impl Analyzer<'_, '_> {
                         Err(ErrorKind::Errors {
                             span,
                             errors: errors.into(),
-                        })
+                        }
+                        .into())
                     };
                 }
 
@@ -226,7 +227,7 @@ impl Analyzer<'_, '_> {
                             .context("tried to assign to type elements by converting rhs to a type literal");
                     }
 
-                    return Err(ErrorKind::SimpleAssignFailed { span, cause: None });
+                    return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
                 }
 
                 Type::Tuple(..) | Type::Array(..) | Type::EnumVariant(..) if lhs.is_empty() => return Ok(()),
@@ -246,7 +247,7 @@ impl Analyzer<'_, '_> {
                         | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
                         _ => false,
                     }) {
-                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None });
+                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
                     }
 
                     match rhs.normalize() {
@@ -842,7 +843,7 @@ impl Analyzer<'_, '_> {
                 errors.push(
                     ErrorKind::ObjectAssignFailed {
                         span,
-                        errors: vec![ErrorKind::SimpleAssignFailed { span, cause: None }],
+                        errors: vec![ErrorKind::SimpleAssignFailed { span, cause: None }.into()],
                     }
                     .into(),
                 )
@@ -1484,7 +1485,8 @@ impl Analyzer<'_, '_> {
             return Err(ErrorKind::ObjectAssignFailed {
                 span,
                 errors: ErrorKind::flatten(errors),
-            });
+            }
+            .into());
         }
 
         unhandled_rhs.clear();

@@ -1765,7 +1765,8 @@ impl Analyzer<'_, '_> {
                                 return Err(ErrorKind::CannotAssignToNonVariable {
                                     span: rhs.span(),
                                     ty: box rhs.clone(),
-                                })
+                                }
+                                .into())
                             }
                             _ => {}
                         }
@@ -1848,9 +1849,12 @@ impl Analyzer<'_, '_> {
                             )?;
                             return self
                                 .assign_inner(data, &left, rhs, opts)
-                                .convert_err(|err| ErrorKind::SimpleAssignFailed {
-                                    span: err.span(),
-                                    cause: Some(box err),
+                                .convert_err(|err| {
+                                    ErrorKind::SimpleAssignFailed {
+                                        span: err.span(),
+                                        cause: Some(box err),
+                                    }
+                                    .into()
                                 })
                                 .context("tried to assign a type literal to an expanded keyword");
                         }
@@ -1885,7 +1889,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             },
 
-            Type::This(ThisType { span, .. }) => return Err(ErrorKind::CannotAssingToThis { span: *span }),
+            Type::This(ThisType { span, .. }) => return Err(ErrorKind::CannotAssingToThis { span: *span }.into()),
 
             Type::Interface(Interface {
                 name,
@@ -1981,7 +1985,8 @@ impl Analyzer<'_, '_> {
                         right: box rhs.clone(),
                         right_ident: opts.right_ident_span,
                         cause: errors,
-                    });
+                    }
+                    .into());
                 }
 
                 // We should check for unknown rhs, while allowing assignment to parent
@@ -2007,7 +2012,8 @@ impl Analyzer<'_, '_> {
                         right: box rhs.clone(),
                         right_ident: opts.right_ident_span,
                         cause: errors,
-                    });
+                    }
+                    .into());
                 }
 
                 return Ok(());
@@ -2091,13 +2097,13 @@ impl Analyzer<'_, '_> {
                         // TODO: Handle Type::Rest
 
                         if elems.len() < rhs_elems.len() {
-                            return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span });
+                            return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
                         }
 
                         // TODO: Handle Type::Rest
 
                         if elems.len() > rhs_elems.len() {
-                            return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span });
+                            return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
                         }
 
                         let mut errors = vec![];
@@ -2127,7 +2133,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if !errors.is_empty() {
-                            return Err(ErrorKind::TupleAssignError { span, errors });
+                            return Err(ErrorKind::TupleAssignError { span, errors }.into());
                         }
 
                         return Ok(());
