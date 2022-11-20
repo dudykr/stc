@@ -180,9 +180,9 @@ impl Analyzer<'_, '_> {
         if v.len() >= 2 {
             for &span in &*v {
                 if sym == js_word!("default") {
-                    self.storage.report(ErrorKind::DuplicateDefaultExport { span });
+                    self.storage.report(ErrorKind::DuplicateDefaultExport { span }.into());
                 } else {
-                    self.storage.report(ErrorKind::DuplicateExport { span });
+                    self.storage.report(ErrorKind::DuplicateExport { span }.into());
                 }
             }
         }
@@ -467,7 +467,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !did_work {
-            self.storage.report(ErrorKind::ExportFailed { span, orig, id })
+            self.storage.report(ErrorKind::ExportFailed { span, orig, id }.into())
         }
     }
 }

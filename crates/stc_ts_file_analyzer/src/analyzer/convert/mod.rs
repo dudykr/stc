@@ -1092,15 +1092,13 @@ impl Analyzer<'_, '_> {
 
             for id in ids {
                 if let Some(prev) = prev_ids.iter().find(|v| v.sym == id.sym) {
-                    self.storage
-                        .report(
-                            ErrorKind::DuplicateName {
-                                span: prev.span,
-                                name: prev.into(),
-                            }
-                            .into(),
-                        )
-                        .into();
+                    self.storage.report(
+                        ErrorKind::DuplicateName {
+                            span: prev.span,
+                            name: prev.into(),
+                        }
+                        .into(),
+                    );
                     self.storage.report(
                         ErrorKind::DuplicateName {
                             span: id.span,
