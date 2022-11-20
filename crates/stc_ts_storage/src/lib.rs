@@ -75,11 +75,11 @@ pub struct Single<'a> {
 
 impl ErrorStore for Single<'_> {
     fn report(&mut self, err: Error) {
-        self.info.errors.push(err);
+        self.info.errors.push(err.attach_context());
     }
 
     fn report_all(&mut self, err: Errors) {
-        self.info.errors.extend(err);
+        self.info.errors.extend(err.into_iter().map(|err| err.attach_context()));
     }
 
     fn take_errors(&mut self) -> Errors {
@@ -240,11 +240,11 @@ pub struct Group<'a> {
 
 impl ErrorStore for Group<'_> {
     fn report(&mut self, err: Error) {
-        self.errors.push(err);
+        self.errors.push(err.attach_context());
     }
 
     fn report_all(&mut self, err: Errors) {
-        self.errors.extend(err);
+        self.errors.extend(err.into_iter().map(|err| err.attach_context()));
     }
 
     fn take_errors(&mut self) -> Errors {
