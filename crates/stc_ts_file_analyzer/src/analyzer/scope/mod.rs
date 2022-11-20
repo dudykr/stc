@@ -13,7 +13,7 @@ use iter::once;
 use once_cell::sync::Lazy;
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, ErrorKind};
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
@@ -1282,16 +1282,22 @@ impl Analyzer<'_, '_> {
                 let mut done = false;
                 for (_, span) in &**spans {
                     if matches!(kind, VarKind::Param | VarKind::Class) {
-                        self.storage.report(Error::DuplicateName {
-                            name: name.clone(),
-                            span: *span,
-                        });
+                        self.storage.report(
+                            ErrorKind::DuplicateName {
+                                name: name.clone(),
+                                span: *span,
+                            }
+                            .into(),
+                        );
                         done = true;
                     } else {
-                        self.storage.report(Error::DuplicateVar {
-                            name: name.clone(),
-                            span: *span,
-                        });
+                        self.storage.report(
+                            ErrorKind::DuplicateVar {
+                                name: name.clone(),
+                                span: *span,
+                            }
+                            .into(),
+                        );
                     }
                 }
 

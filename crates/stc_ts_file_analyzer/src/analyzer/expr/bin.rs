@@ -476,7 +476,7 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         debug_assert!(!span.is_dummy());
-                        return Err(Error::Unknown { span });
+                        return Err(ErrorKind::Unknown { span }.into());
                     }
                     _ => {}
                 }
@@ -501,7 +501,7 @@ impl Analyzer<'_, '_> {
                     _ => None,
                 }) {
                     debug_assert!(!span.is_dummy());
-                    return Err(ErrorKind::Unknown { span });
+                    return Err(ErrorKind::Unknown { span }.into());
                 }
 
                 if lt.is_num() && rt.is_num() {
@@ -549,7 +549,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if c.any(|(_, ty)| ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)) {
-                    return Err(ErrorKind::TS2365 { span });
+                    return Err(ErrorKind::TS2365 { span }.into());
                 }
 
                 // Rule:
@@ -567,7 +567,7 @@ impl Analyzer<'_, '_> {
 
                     _ => false,
                 }) {
-                    return Err(ErrorKind::TS2365 { span });
+                    return Err(ErrorKind::TS2365 { span }.into());
                 }
 
                 if is_str_like_for_addition(&lt) || is_str_like_for_addition(&rt) {
@@ -594,7 +594,8 @@ impl Analyzer<'_, '_> {
                     op,
                     left: box lt,
                     right: box rt,
-                });
+                }
+                .into());
             }
             op!("*") | op!("/") => {
                 no_unknown!();
@@ -1892,7 +1893,7 @@ impl Analyzer<'_, '_> {
                 match operand {
                     RExpr::Bin(bin) => {
                         if bin.op == op!("||") || bin.op == op!("&&") {
-                            return Err(ErrorKind::NullishCoalescingMixedWithLogicalWithoutParen { span });
+                            return Err(ErrorKind::NullishCoalescingMixedWithLogicalWithoutParen { span }.into());
                         }
                     }
                     _ => {}
@@ -1901,7 +1902,7 @@ impl Analyzer<'_, '_> {
                 match operand {
                     RExpr::Bin(bin) => {
                         if bin.op == op!("??") {
-                            return Err(ErrorKind::NullishCoalescingMixedWithLogicalWithoutParen { span });
+                            return Err(ErrorKind::NullishCoalescingMixedWithLogicalWithoutParen { span }.into());
                         }
                     }
                     _ => {}
