@@ -61,7 +61,7 @@ impl Analyzer<'_, '_> {
                         "tried to assign class members to {}th class member\n{:#?}\n{:#?}",
                         i, lm, r_body
                     ));
-                    self.assign_class_members_to_class_member(data, lm, r_body, opts);
+                    self.assign_class_members_to_class_member(data, lm, r_body, opts)?;
                 }
 
                 return Ok(());

@@ -6,7 +6,7 @@ use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
 use stc_ts_errors::{
     ctx,
     debug::{dump_type_as_string, dump_type_map},
-    ErrorKind,
+    DebugExt, ErrorKind,
 };
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, debug_ctx};

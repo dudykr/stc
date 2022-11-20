@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use itertools::Itertools;
 use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, ErrorKind};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_type_ops::{widen::Widen, Fix};
 use stc_ts_types::{Array, Key, KeywordType, LitType, Ref, Tuple, Type, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::{run, PatExt};

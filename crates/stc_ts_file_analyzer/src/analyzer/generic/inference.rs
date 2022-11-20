@@ -6,7 +6,7 @@ use std::{
 use fxhash::FxHashMap;
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RTsEntityName, RTsLit};
-use stc_ts_errors::debug::dump_type_as_string;
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::expander::InferTypeResult;
 use stc_ts_type_form::{compare_type_forms, max_path, TypeForm};
 use stc_ts_type_ops::generalization::prevent_generalize;

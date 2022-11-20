@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use stc_ts_errors::debug::dump_type_as_string;
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_types::{ClassDef, ClassMember, IndexSignature, Type};
 use stc_utils::ext::ValueExt;
 use swc_common::Span;

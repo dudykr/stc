@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use stc_ts_ast_rnode::{RAwaitExpr, RIdent, RTsEntityName};
+use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{IdCtx, Key, Ref, Type, TypeParamInstantiation};
 use stc_utils::cache::Freeze;

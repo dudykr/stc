@@ -3,7 +3,7 @@ use std::{borrow::Cow, collections::HashMap};
 use rnode::{Visit, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::apply_mapped_flags;
-use stc_ts_errors::debug::dump_type_as_string;
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
 use stc_ts_generics::type_param::finder::TypeParamNameUsageFinder;
 use stc_ts_types::{
     Array, Conditional, FnParam, Id, IndexSignature, IndexedAccessType, Key, KeywordType, LitType, Mapped, Operator, PropertySignature,

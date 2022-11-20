@@ -2,7 +2,7 @@ use std::{borrow::Cow, time::Instant};
 
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::{RObjectLit, RPropOrSpread, RSpreadElement};
-use stc_ts_errors::ErrorKind;
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_type_ops::{union_normalization::UnionNormalizer, Fix};
 use stc_ts_types::{Accessor, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit, Union, UnionMetadata};

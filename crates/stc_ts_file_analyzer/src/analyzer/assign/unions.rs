@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use itertools::Itertools;
 use stc_ts_ast_rnode::RBool;
-use stc_ts_errors::ErrorKind;
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union, UnionMetadata,
