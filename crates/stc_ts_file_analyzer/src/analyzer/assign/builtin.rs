@@ -153,10 +153,8 @@ impl Analyzer<'_, '_> {
                     .or_else(|| unwrap_ref_with_single_arg(r, "Array"))
                     .or_else(|| unwrap_ref_with_single_arg(r, "ReadonlyArray"))
                 {
-                    return Some(
-                        self.assign_with_opts(data, &l.elem_type, &r_elem, opts)
-                            .context("tried fast-path assignment to an array"),
-                    );
+                    let _ctx = ctx!(|| "tried fast-path assignment to an array".into());
+                    return Some(self.assign_with_opts(data, &l.elem_type, &r_elem, opts));
                 }
             }
         }
@@ -260,10 +258,8 @@ impl Analyzer<'_, '_> {
 
         if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
             if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
-                return Some(
-                    self.assign_with_opts(data, l, r, opts)
-                        .context("tried to assign a promise to another using optimized algorithm"),
-                );
+                let _ctx = ctx!(|| "tried to assign a promise to another using optimized algorithm".into());
+                return Some(self.assign_with_opts(data, l, r, opts));
             }
         }
 
