@@ -1248,7 +1248,7 @@ impl Analyzer<'_, '_> {
         }) {
             Ok(ty) => ty,
             Err(err) => {
-                match err {
+                match *err {
                     ErrorKind::TS2585 { span } => Err(ErrorKind::TS2585 { span })?,
                     _ => {}
                 }
@@ -1271,7 +1271,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {}
             _ if is_symbol_access => {}
-            _ => errors.push(ErrorKind::TS1166 { span }),
+            _ => errors.push(ErrorKind::TS1166 { span }.into()),
         }
 
         if !errors.is_empty() {

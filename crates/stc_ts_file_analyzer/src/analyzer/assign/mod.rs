@@ -609,15 +609,15 @@ impl Analyzer<'_, '_> {
                     right: box rhs.clone(),
                     right_ident: opts.right_ident_span,
                     cause: vec![],
-                })
-                .with_context(|| {
+                }
+                .context({
                     format!(
                         "`fail!()` called from assign/mod.rs:{}\nLHS (final): {}\nRHS (final): {}",
                         line!(),
                         dump_type_as_string(&self.cm, to),
                         dump_type_as_string(&self.cm, rhs)
                     )
-                });
+                }));
             }};
         }
 
