@@ -768,7 +768,7 @@ impl Analyzer<'_, '_> {
                     // TODO
                     prop: None,
                 };
-                return Err(ErrorKind::Errors { span, errors: vec![err] });
+                return Err(ErrorKind::Errors { span, errors: vec![err] }.into());
             }
             _ => {}
         }
@@ -887,7 +887,7 @@ impl Analyzer<'_, '_> {
                         })
                         | Type::Interface(ref i) => {
                             if i.name.as_str() == *interface {
-                                return Err(ErrorKind::AssignedWrapperToPrimitive { span });
+                                return Err(ErrorKind::AssignedWrapperToPrimitive { span }.into());
                             }
                         }
                         _ => {}
@@ -941,7 +941,8 @@ impl Analyzer<'_, '_> {
                             return Err(ErrorKind::Unimplemented {
                                 span,
                                 msg: format!("{:?} = {:?}", l_variance, r_variance),
-                            })
+                            }
+                            .into())
                         }
                     }
                 }

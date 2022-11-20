@@ -1086,14 +1086,19 @@ impl Analyzer<'_, '_> {
 
             for id in ids {
                 if let Some(prev) = prev_ids.iter().find(|v| v.sym == id.sym) {
-                    self.storage.report(ErrorKind::DuplicateName {
-                        span: prev.span,
-                        name: prev.into(),
-                    });
-                    self.storage.report(ErrorKind::DuplicateName {
-                        span: id.span,
-                        name: id.into(),
-                    });
+                    self.storage
+                        .report(ErrorKind::DuplicateName {
+                            span: prev.span,
+                            name: prev.into(),
+                        })
+                        .into();
+                    self.storage.report(
+                        ErrorKind::DuplicateName {
+                            span: id.span,
+                            name: id.into(),
+                        }
+                        .into(),
+                    );
                 } else {
                     prev_ids.push(id);
                 }

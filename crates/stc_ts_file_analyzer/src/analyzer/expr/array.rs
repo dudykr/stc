@@ -349,7 +349,7 @@ impl Analyzer<'_, '_> {
                 None,
                 CallOpts { ..Default::default() },
             )
-            .convert_err(|err| match err {
+            .convert_err(|err| match &*err {
                 ErrorKind::NoCallablePropertyWithName { span, .. }
                 | ErrorKind::NoSuchProperty { span, .. }
                 | ErrorKind::NoSuchPropertyInClass { span, .. } => {
@@ -360,7 +360,8 @@ impl Analyzer<'_, '_> {
                                     span,
                                     obj: None,
                                     prop: None,
-                                };
+                                }
+                                .into();
                             }
                         }
                         _ => {}

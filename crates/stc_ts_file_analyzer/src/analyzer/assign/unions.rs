@@ -127,7 +127,7 @@ impl Analyzer<'_, '_> {
 
                 Ok(())
             }
-            _ => Err(ErrorKind::SimpleAssignFailed { span, cause: None }),
+            _ => Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
         }
     }
 
@@ -170,7 +170,7 @@ impl Analyzer<'_, '_> {
 
                 Ok(())
             }
-            _ => Err(ErrorKind::SimpleAssignFailed { span, cause: None }),
+            _ => Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
         }
     }
 

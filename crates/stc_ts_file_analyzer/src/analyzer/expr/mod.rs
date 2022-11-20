@@ -3086,17 +3086,18 @@ impl Analyzer<'_, '_> {
         let mut ty = self.type_of_raw_var(i, type_mode)?;
         if type_mode == TypeOfMode::LValue && (ty.is_class_def() || ty.is_enum_type()) {
             if ty.is_enum_type() {
-                return Err(ErrorKind::CannotAssignToEnum { span });
+                return Err(ErrorKind::CannotAssignToEnum { span }.into());
             }
             if ty.is_class_def() {
-                return Err(ErrorKind::CannotAssignToClass { span });
+                return Err(ErrorKind::CannotAssignToClass { span }.into());
             }
 
             return Err(ErrorKind::NotVariable {
                 span,
                 left: span,
                 ty: Some(box ty.clone()),
-            });
+            }
+            .into());
         }
         ty.assert_valid();
         if let Some(type_args) = type_args {
@@ -3134,7 +3135,8 @@ impl Analyzer<'_, '_> {
                                 span,
                                 left: span,
                                 ty: Some(box ty.normalize().clone()),
-                            })
+                            }
+                            .into())
                         }
                         _ => {}
                     }

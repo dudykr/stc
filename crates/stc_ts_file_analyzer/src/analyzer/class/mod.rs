@@ -93,7 +93,7 @@ impl Analyzer<'_, '_> {
                             )
                             .is_err()
                         {
-                            self.storage.report(ErrorKind::ClassPropNotInitialized { span })
+                            self.storage.report(ErrorKind::ClassPropNotInitialized { span }.into())
                         }
                     }
                 }
@@ -148,7 +148,7 @@ impl Analyzer<'_, '_> {
                 RPropName::Ident(i) => {
                     if &*i.sym == "prototype" {
                         self.storage
-                            .report(ErrorKind::StaticPropertyCannotBeNamedPrototype { span: i.span })
+                            .report(ErrorKind::StaticPropertyCannotBeNamedPrototype { span: i.span }.into())
                     }
                 }
                 _ => {}
@@ -645,7 +645,7 @@ impl Analyzer<'_, '_> {
 
                 let type_params = try_opt!(c.function.type_params.validate_with(child));
                 if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
-                    child.storage.report(ErrorKind::TS1094 { span: key_span })
+                    child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
                 }
 
                 let params = c.function.params.validate_with(child)?;
@@ -657,7 +657,7 @@ impl Analyzer<'_, '_> {
                 // }
 
                 if c.kind == MethodKind::Setter && c.function.return_type.is_some() {
-                    child.storage.report(ErrorKind::TS1095 { span: key_span })
+                    child.storage.report(ErrorKind::TS1095 { span: key_span }.into())
                 }
 
                 let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
@@ -1342,11 +1342,12 @@ impl Analyzer<'_, '_> {
                                 })
                                 .collect(),
                         }
+                        .into()
                     } else {
                         err.convert_all(|err| {
                             match err {
                                 ErrorKind::MissingFields { .. } => {
-                                    return ErrorKind::ClassIncorrectlyImplementsInterface { span: parent.span() }
+                                    return ErrorKind::ClassIncorrectlyImplementsInterface { span: parent.span() }.into()
                                 }
                                 _ => {}
                             }
