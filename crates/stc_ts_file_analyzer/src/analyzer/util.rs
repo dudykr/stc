@@ -58,7 +58,8 @@ impl Analyzer<'_, '_> {
         Err(ErrorKind::NoNewSignature {
             span,
             callee: box callee.clone(),
-        })
+        }
+        .into())
     }
 
     /// Make instance of `ty`. In case of error, error will be reported to user
@@ -76,7 +77,7 @@ impl Analyzer<'_, '_> {
         match res {
             Ok(ty) => ty,
             Err(err) => {
-                match err.actual() {
+                match &*err {
                     ErrorKind::NoNewSignature { .. } => {}
                     _ => {
                         self.storage.report(err);
@@ -161,7 +162,8 @@ impl Analyzer<'_, '_> {
         Err(ErrorKind::NoNewSignature {
             span,
             callee: box ty.clone(),
-        })
+        }
+        .into())
     }
 }
 

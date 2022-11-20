@@ -100,7 +100,7 @@ impl Analyzer<'_, '_> {
 
                 if type_args.is_some() {
                     // super<T>() is invalid.
-                    self.storage.report(ErrorKind::SuperCannotUseTypeArgs { span })
+                    self.storage.report(ErrorKind::SuperCannotUseTypeArgs { span }.into())
                 }
 
                 self.validate_args(args).report(&mut self.storage);
@@ -1472,16 +1472,18 @@ impl Analyzer<'_, '_> {
                 dbg!();
                 match kind {
                     ExtractKind::Call => {
-                        return Err(Error::NoCallSignature {
+                        return Err(ErrorKind::NoCallSignature {
                             span,
                             callee: box ty.clone(),
-                        })
+                        }
+                        .into())
                     }
                     ExtractKind::New => {
-                        return Err(Error::NoNewSignature {
+                        return Err(ErrorKind::NoNewSignature {
                             span,
                             callee: box ty.clone(),
-                        })
+                        }
+                        .into())
                     }
                 }
             }};
@@ -3326,7 +3328,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    fn validate_args(&mut self, args: &[RExprOrSpread]) -> Result<Vec<TypeOrSpread>, ErrorKind> {
+    fn validate_args(&mut self, args: &[RExprOrSpread]) -> VResult<Vec<TypeOrSpread>> {
         let ctx = Ctx {
             in_argument: true,
             should_store_truthy_for_access: false,
