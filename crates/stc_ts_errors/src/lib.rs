@@ -71,12 +71,23 @@ impl Error {
         self.contexts.push(context.to_string());
         self
     }
+
+    #[cold]
+    pub fn emit(&self, h: &Handler) {
+        let span = self.span();
+
+        let mut err = h.struct_span_err_with_code(
+            span,
+            &format!("{:?}", self),
+            DiagnosticId::Error(format!("TS{}", ErrorKind::normalize_error_code(self.code()))),
+        );
+
+        err.emit();
+    }
 }
 
 impl Debug for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut next = Some(self);
-
         for ctx in self.contexts.iter() {
             writeln!(f, "{}: {}", Yellow.paint("context"), ctx)?;
         }
@@ -1992,19 +2003,6 @@ impl ErrorKind {
 
             _ => format!("{:#?}", self).into(),
         }
-    }
-
-    #[cold]
-    pub fn emit(self, h: &Handler) {
-        let span = self.span();
-
-        let mut err = h.struct_span_err_with_code(
-            span,
-            &self.msg(),
-            DiagnosticId::Error(format!("TS{}", Self::normalize_error_code(self.code()))),
-        );
-
-        err.emit();
     }
 
     #[cold]
