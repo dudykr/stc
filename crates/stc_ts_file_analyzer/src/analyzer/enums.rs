@@ -56,7 +56,7 @@ impl Analyzer<'_, '_> {
             let members = e
                 .members
                 .iter()
-                .map(|m| -> Result<_, ErrorKind> {
+                .map(|m| -> VResult<_> {
                     let id_span = m.id.span();
                     let val = eval
                         .compute(id_span, Some(default), m.init.as_ref().map(|v| &**v))
@@ -191,9 +191,9 @@ impl Evaluator<'_> {
                     match &v {
                         RTsLit::Number(n) => {
                             if n.value.is_infinite() && self.e.is_const {
-                                return Err(ErrorKind::ConstEnumMemberHasInifinityAsInit { span: bin.span });
+                                return Err(ErrorKind::ConstEnumMemberHasInifinityAsInit { span: bin.span }.into());
                             } else if n.value.is_nan() && self.e.is_const {
-                                return Err(ErrorKind::ConstEnumMemberHasNaNAsInit { span: bin.span });
+                                return Err(ErrorKind::ConstEnumMemberHasNaNAsInit { span: bin.span }.into());
                             } else {
                                 return Ok(v);
                             }
@@ -206,10 +206,10 @@ impl Evaluator<'_> {
                 RExpr::Ident(ref id) => {
                     if self.e.is_const {
                         if id.sym == js_word!("NaN") {
-                            return Err(ErrorKind::ConstEnumMemberHasNaNAsInit { span: id.span });
+                            return Err(ErrorKind::ConstEnumMemberHasNaNAsInit { span: id.span }.into());
                         }
                         if id.sym == js_word!("Infinity") {
-                            return Err(ErrorKind::ConstEnumMemberHasInifinityAsInit { span: id.span });
+                            return Err(ErrorKind::ConstEnumMemberHasInifinityAsInit { span: id.span }.into());
                         }
                     }
 
@@ -226,7 +226,7 @@ impl Evaluator<'_> {
                             }
                         }
                     }
-                    return Err(ErrorKind::InvalidEnumInit { span });
+                    return Err(ErrorKind::InvalidEnumInit { span }.into());
                 }
                 RExpr::Unary(ref expr) => {
                     let v = self.compute(span, None, Some(&expr.arg))?;
@@ -278,7 +278,7 @@ impl Evaluator<'_> {
         Err(ErrorKind::InvalidEnumInit { span }.into())
     }
 
-    fn compute_bin(&mut self, span: Span, expr: &RBinExpr) -> Result<RTsLit, ErrorKind> {
+    fn compute_bin(&mut self, span: Span, expr: &RBinExpr) -> VResult<RTsLit> {
         let l = self.compute(span, None, Some(&expr.left))?;
         let r = self.compute(span, None, Some(&expr.right))?;
 
@@ -518,7 +518,8 @@ impl Analyzer<'_, '_> {
             Some(RExpr::Ident(..)) => {}
             Some(e) => {
                 if type_of_expr(&e).is_none() && !matches!(e, RExpr::Tpl(..) | RExpr::Bin(..) | RExpr::Member(..)) {
-                    self.storage.report(ErrorKind::ComputedMemberInEnumWithStrMember { span: m.span })
+                    self.storage
+                        .report(ErrorKind::ComputedMemberInEnumWithStrMember { span: m.span }.into())
                 }
             }
             _ => {}

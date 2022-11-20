@@ -2229,7 +2229,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )
-                .convert_err(|err| ErrorKind::WrongOverloadSignature { span: err.span() })?;
+                .convert_err(|err| ErrorKind::WrongOverloadSignature { span: err.span() }.into())?;
             }
         }
 

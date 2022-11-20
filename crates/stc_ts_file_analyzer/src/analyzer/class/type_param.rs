@@ -36,7 +36,7 @@ impl Visit<TypeParam> for StaticTypeParamValidator<'_, '_, '_> {
         if self.analyzer.is_type_param_declared_in_containing_class(&param.name) {
             self.analyzer
                 .storage
-                .report(ErrorKind::StaticMemberCannotUseTypeParamOfClass { span: self.span })
+                .report(ErrorKind::StaticMemberCannotUseTypeParamOfClass { span: self.span }.into())
         }
     }
 }

@@ -834,10 +834,13 @@ impl Analyzer<'_, '_> {
                     }
                 } else {
                     if !opts.ignore_lhs_errors {
-                        self.storage.report(ErrorKind::NoSuchVar {
-                            span,
-                            name: i.id.clone().into(),
-                        });
+                        self.storage.report(
+                            ErrorKind::NoSuchVar {
+                                span,
+                                name: i.id.clone().into(),
+                            }
+                            .into(),
+                        );
                     }
                     return Ok(());
                 }
@@ -876,7 +879,8 @@ impl Analyzer<'_, '_> {
                                         span: i.id.span,
                                         left: lhs.span(),
                                         ty: Some(box ty.normalize().clone()),
-                                    });
+                                    }
+                                    .into());
                                 }
                                 _ => {}
                             }
@@ -890,7 +894,8 @@ impl Analyzer<'_, '_> {
                         Err(ErrorKind::UndefinedSymbol {
                             sym: i.id.clone().into(),
                             span: i.id.span,
-                        })
+                        }
+                        .into())
                     };
                 };
 
@@ -1070,7 +1075,7 @@ impl Analyzer<'_, '_> {
             RPat::Expr(lhs) => {
                 match &**lhs {
                     RExpr::Lit(..) => {
-                        self.storage.report(ErrorKind::InvalidLhsOfAssign { span: lhs.span() });
+                        self.storage.report(ErrorKind::InvalidLhsOfAssign { span: lhs.span() }.into());
                         return Ok(());
                     }
                     _ => {}
@@ -1211,7 +1216,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            Err(err) => match err.actual() {
+            Err(err) => match *err {
                 ErrorKind::NoSuchProperty { .. } | ErrorKind::NoSuchPropertyInClass { .. } => {
                     return Ok(Type::never(
                         src.span(),
