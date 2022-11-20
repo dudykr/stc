@@ -380,15 +380,17 @@ impl Analyzer<'_, '_> {
                                 ..opts
                             },
                         )
-                        .convert_err(|err| match err {
+                        .convert_err(|err| match &*err {
                             ErrorKind::Errors { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
                                 cause: Some(box err),
-                            },
+                            }
+                            .into(),
                             ErrorKind::MissingFields { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
                                 cause: Some(box err),
-                            },
+                            }
+                            .into(),
                             _ => err,
                         })
                         .with_context(|| {
@@ -550,11 +552,12 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .map_err(|err| {
-                            err.convert_all(|err| match err {
+                            err.convert_all(|err| match *err {
                                 ErrorKind::MissingFields { .. } => ErrorKind::SimpleAssignFailed {
                                     span: err.span(),
                                     cause: Some(box err),
-                                },
+                                }
+                                .into(),
                                 _ => err,
                             })
                         })
@@ -612,7 +615,7 @@ impl Analyzer<'_, '_> {
                 | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
-                }) => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }),
+                }) => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
 
                 // TODO(kdy1): Strict mode
                 Type::Keyword(KeywordType {
@@ -684,9 +687,12 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         )
-                        .convert_err(|err| ErrorKind::SimpleAssignFailed {
-                            span: err.span(),
-                            cause: Some(box err),
+                        .convert_err(|err| {
+                            ErrorKind::SimpleAssignFailed {
+                                span: err.span(),
+                                cause: Some(box err),
+                            }
+                            .into()
                         })
                         .context("failed to normalize")?;
 
@@ -976,7 +982,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !errors.is_empty() {
-            return Err(ErrorKind::Errors { span, errors });
+            return Err(ErrorKind::Errors { span, errors }.into());
         }
 
         let lhs_index = lhs.iter().filter(|m| matches!(m, TypeElement::Index(_))).collect_vec();

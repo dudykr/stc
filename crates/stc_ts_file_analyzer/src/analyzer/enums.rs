@@ -275,7 +275,7 @@ impl Evaluator<'_> {
             }
         }
 
-        Err(ErrorKind::InvalidEnumInit { span })
+        Err(ErrorKind::InvalidEnumInit { span }.into())
     }
 
     fn compute_bin(&mut self, span: Span, expr: &RBinExpr) -> Result<RTsLit, ErrorKind> {
@@ -465,7 +465,7 @@ impl Analyzer<'_, '_> {
         match rhs_ty.normalize() {
             // Report an error for `a = G` where G is name of the const enum itself.
             Type::Enum(ref e) if e.is_const => {
-                self.storage.report(ErrorKind::InvalidUseOfConstEnum { span });
+                self.storage.report(ErrorKind::InvalidUseOfConstEnum { span }.into());
             }
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
@@ -474,7 +474,7 @@ impl Analyzer<'_, '_> {
                 if self.rule().strict_null_checks {
                     match lhs {
                         RPat::Array(_) | RPat::Rest(_) | RPat::Object(_) => {
-                            self.storage.report(ErrorKind::ObjectIsPossiblyUndefined { span });
+                            self.storage.report(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
                         }
                         _ => {}
                     }
