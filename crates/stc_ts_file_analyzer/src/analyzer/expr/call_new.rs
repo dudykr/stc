@@ -839,7 +839,7 @@ impl Analyzer<'_, '_> {
             match callee.normalize() {
                 Type::ClassDef(cls) => {
                     if cls.is_abstract {
-                        self.storage.report(ErrorKind::CannotCreateInstanceOfAbstractClass { span })
+                        self.storage.report(ErrorKind::CannotCreateInstanceOfAbstractClass { span }.into())
                     }
                 }
                 _ => {}
@@ -847,7 +847,7 @@ impl Analyzer<'_, '_> {
             let callee_str = dump_type_as_string(&self.cm, &callee);
 
             self.get_best_return_type(span, expr, callee, kind, type_args, args, &arg_types, &spread_arg_types, type_ann)
-                .convert_err(|err| match &*err {
+                .convert_err(|err| match err {
                     ErrorKind::NoCallSignature { span, .. } => ErrorKind::NoCallablePropertyWithName {
                         span,
                         obj: box obj_type.clone(),
@@ -1307,10 +1307,11 @@ impl Analyzer<'_, '_> {
                             return Err(ErrorKind::NoNewSignature {
                                 span,
                                 callee: box ty.clone(),
-                            });
+                            }
+                            .into());
                         }
 
-                        self.storage.report(ErrorKind::CannotCreateInstanceOfAbstractClass { span });
+                        self.storage.report(ErrorKind::CannotCreateInstanceOfAbstractClass { span }.into());
                         // The test classAbstractInstantiation1.ts says
                         //
                         //  new A(1); // should report 1 error
@@ -1407,7 +1408,8 @@ impl Analyzer<'_, '_> {
                         return Err(ErrorKind::NoNewSignature {
                             span,
                             callee: box ty.clone(),
-                        });
+                        }
+                        .into());
                     }
 
                     let ctx = Ctx {
@@ -1464,7 +1466,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Function(..) if self.rule().no_implicit_any => {
-                    return Err(ErrorKind::TargetLacksConstructSignature { span });
+                    return Err(ErrorKind::TargetLacksConstructSignature { span }.into());
                 }
 
                 _ => {}
@@ -1510,7 +1512,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 debug_assert!(!span.is_dummy());
-                return Err(ErrorKind::Unknown { span });
+                return Err(ErrorKind::Unknown { span }.into());
             }
 
             Type::Function(ref f) if kind == ExtractKind::Call => self.get_return_type(
@@ -2187,7 +2189,7 @@ impl Analyzer<'_, '_> {
             }
 
             if max_param.is_none() {
-                return Err(ErrorKind::ExpectedAtLeastNArgsButGotM { span, min: min_param });
+                return Err(ErrorKind::ExpectedAtLeastNArgsButGotM { span, min: min_param }.into());
             }
 
             // function foo(a) {}
@@ -2205,7 +2207,8 @@ impl Analyzer<'_, '_> {
                 span,
                 min: min_param,
                 max: max_param,
-            });
+            }
+            .into());
         }
     }
 
@@ -2839,7 +2842,7 @@ impl Analyzer<'_, '_> {
                                             )
                                             .convert_err(|err| ErrorKind::WrongArgType {
                                                 span: arg.span(),
-                                                inner: box err,
+                                                inner: box err.into(),
                                             })
                                             .context("tried to assign to first element of a tuple type of a parameter");
 
@@ -2877,7 +2880,7 @@ impl Analyzer<'_, '_> {
                                                 )
                                                 .convert_err(|err| ErrorKind::WrongArgType {
                                                     span: arg.span(),
-                                                    inner: box err,
+                                                    inner: box err.into(),
                                                 })
                                                 .context("tried to assign to element of a tuple type of a parameter");
 
@@ -2921,13 +2924,12 @@ impl Analyzer<'_, '_> {
                                         Err(err) => err,
                                     };
 
-                                    let err = err.convert(|err| {
-                                        ErrorKind::WrongArgType {
+                                    let err = err
+                                        .convert(|err| ErrorKind::WrongArgType {
                                             span: arg.span(),
-                                            inner: box err,
-                                        }
-                                        .context("tried assigning elem type of an array because parameter is declared as a rest pattern")
-                                    });
+                                            inner: box err.into(),
+                                        })
+                                        .context("tried assigning elem type of an array because parameter is declared as a rest pattern");
                                     report_err!(err);
                                     continue;
                                 }
@@ -2959,7 +2961,7 @@ impl Analyzer<'_, '_> {
                                     continue;
                                 }
                             }
-                            Err(err) => match err.actual() {
+                            Err(err) => match &*err {
                                 ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } => {
                                     report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: *span });
                                     continue;
@@ -2980,7 +2982,7 @@ impl Analyzer<'_, '_> {
                             )
                             .convert_err(|err| ErrorKind::WrongArgType {
                                 span: err.span(),
-                                inner: box err,
+                                inner: box err.into(),
                             })
                             .context("arg is spread");
                         if let Err(err) = res {
@@ -3012,7 +3014,7 @@ impl Analyzer<'_, '_> {
                                         return ErrorKind::Errors { span, errors }
                                     }
                                     ErrorKind::Errors { span, ref errors } => {
-                                        if errors.iter().all(|err| match err.actual() {
+                                        if errors.iter().all(|err| match &**err {
                                             ErrorKind::UnknownPropertyInObjectLiteralAssignment { span } => true,
                                             _ => false,
                                         }) {
@@ -3036,7 +3038,7 @@ impl Analyzer<'_, '_> {
 
                                 ErrorKind::WrongArgType {
                                     span: arg.span(),
-                                    inner: box err,
+                                    inner: box err.into(),
                                 }
                             });
 
