@@ -306,18 +306,24 @@ impl Analyzer<'_, '_> {
 
                 if !self.is_valid_for_switch_case(span, &lt, &rt)? {
                     if self.ctx.in_switch_case_test {
-                        self.storage.report(ErrorKind::SwitchCaseTestNotCompatible {
-                            span,
-                            disc: box lt.clone(),
-                            test: box rt.clone(),
-                        })
+                        self.storage.report(
+                            ErrorKind::SwitchCaseTestNotCompatible {
+                                span,
+                                disc: box lt.clone(),
+                                test: box rt.clone(),
+                            }
+                            .into(),
+                        )
                     } else {
-                        self.storage.report(ErrorKind::NoOverlap {
-                            span,
-                            value: true,
-                            left: box lt.clone(),
-                            right: box rt.clone(),
-                        })
+                        self.storage.report(
+                            ErrorKind::NoOverlap {
+                                span,
+                                value: true,
+                                left: box lt.clone(),
+                                right: box rt.clone(),
+                            }
+                            .into(),
+                        )
                     }
                 }
 
@@ -387,10 +393,13 @@ impl Analyzer<'_, '_> {
                         // Type guards involving type parameters produce intersection types
                         let mut orig_ty = self.type_of_var(i, TypeOfMode::RValue, None)?;
                         if !self.is_valid_lhs_of_instanceof(span, &orig_ty) {
-                            self.storage.report(ErrorKind::InvalidLhsInInstanceOf {
-                                ty: box lt.clone(),
-                                span: left.span(),
-                            })
+                            self.storage.report(
+                                ErrorKind::InvalidLhsInInstanceOf {
+                                    ty: box lt.clone(),
+                                    span: left.span(),
+                                }
+                                .into(),
+                            )
                         }
                         orig_ty.make_clone_cheap();
 
@@ -616,7 +625,7 @@ impl Analyzer<'_, '_> {
                         || lt.is_interface()
                         || lt.is_tpl()
                     {
-                        self.storage.report(ErrorKind::WrongTypeForLhsOfNumericOperation { span });
+                        self.storage.report(ErrorKind::WrongTypeForLhsOfNumericOperation { span }.into());
                     }
 
                     if !reported_null_or_undefined {
@@ -652,10 +661,13 @@ impl Analyzer<'_, '_> {
 
             op!("instanceof") => {
                 if !self.is_valid_lhs_of_instanceof(span, &lt) {
-                    self.storage.report(ErrorKind::InvalidLhsInInstanceOf {
-                        ty: box lt.clone(),
-                        span: left.span(),
-                    })
+                    self.storage.report(
+                        ErrorKind::InvalidLhsInInstanceOf {
+                            ty: box lt.clone(),
+                            span: left.span(),
+                        }
+                        .into(),
+                    )
                 }
 
                 return Ok(Type::Keyword(KeywordType {
