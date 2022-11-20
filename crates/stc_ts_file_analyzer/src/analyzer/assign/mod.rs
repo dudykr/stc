@@ -1,7 +1,7 @@
 use std::{borrow::Cow, collections::HashMap};
 
 use stc_ts_ast_rnode::{RBool, RIdent, RStr, RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
@@ -603,6 +603,12 @@ impl Analyzer<'_, '_> {
 
         macro_rules! fail {
             () => {{
+                let _ctx = ctx!(format!(
+                    "`fail!()` called from assign/mod.rs:{}\nLHS (final): {}\nRHS (final): {}",
+                    line!(),
+                    dump_type_as_string(&self.cm, to),
+                    dump_type_as_string(&self.cm, rhs)
+                ));
                 return Err(ErrorKind::AssignFailed {
                     span,
                     left: box to.clone(),
@@ -610,14 +616,7 @@ impl Analyzer<'_, '_> {
                     right_ident: opts.right_ident_span,
                     cause: vec![],
                 }
-                .context({
-                    format!(
-                        "`fail!()` called from assign/mod.rs:{}\nLHS (final): {}\nRHS (final): {}",
-                        line!(),
-                        dump_type_as_string(&self.cm, to),
-                        dump_type_as_string(&self.cm, rhs)
-                    )
-                }));
+                .into());
             }};
         }
 
