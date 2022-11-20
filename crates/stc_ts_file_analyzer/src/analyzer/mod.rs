@@ -1038,7 +1038,7 @@ impl Analyzer<'_, '_> {
                     if let Some(pos) = name.as_bytes().iter().position(|&c| c == b'*') {
                         if let Some(rpos) = name.as_bytes().iter().rposition(|&c| c == b'*') {
                             if pos != rpos {
-                                self.storage.report(ErrorKind::TooManyAsterisk { span: s.span });
+                                self.storage.report(ErrorKind::TooManyAsterisk { span: s.span }.into());
                             }
                         }
                     }

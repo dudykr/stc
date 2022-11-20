@@ -913,7 +913,8 @@ impl Analyzer<'_, '_> {
                 Err(ErrorKind::ObjectIsPossiblyUndefinedWithType {
                     span,
                     ty: box ty.into_owned(),
-                })
+                }
+                .into())
             }
         }
     }

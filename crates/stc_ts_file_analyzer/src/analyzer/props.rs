@@ -100,7 +100,7 @@ impl Analyzer<'_, '_> {
                 Ok(ty) => ty,
                 Err(err) => {
                     check_for_symbol_form = false;
-                    match err {
+                    match *err {
                         ErrorKind::TS2585 { span } => Err(ErrorKind::TS2585 { span })?,
                         _ => {}
                     }
@@ -123,7 +123,7 @@ impl Analyzer<'_, '_> {
 
                     analyzer
                         .storage
-                        .report(ErrorKind::InvalidTypeForComputedProperty { span, ty: box ty.clone() });
+                        .report(ErrorKind::InvalidTypeForComputedProperty { span, ty: box ty.clone() }.into());
                 }
             }
 
@@ -145,7 +145,7 @@ impl Analyzer<'_, '_> {
                                 _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() || ty.is_symbol() => {}
                                 _ => match mode {
                                     ComputedPropMode::Interface => {
-                                        errors.push(ErrorKind::TS1169 { span: node.span });
+                                        errors.push(ErrorKind::TS1169 { span: node.span }.into());
                                         check_for_symbol_form = false;
                                     }
                                     _ => {}
@@ -172,7 +172,9 @@ impl Analyzer<'_, '_> {
                     }) if ty.normalize_instance().is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
                     _ => {
                         //
-                        analyzer.storage.report(ErrorKind::NonSymbolComputedPropInFormOfSymbol { span });
+                        analyzer
+                            .storage
+                            .report(ErrorKind::NonSymbolComputedPropInFormOfSymbol { span }.into());
                     }
                 }
             }
@@ -253,7 +255,7 @@ impl Analyzer<'_, '_> {
                     ScopeKind::Class => {
                         if scope.declaring_type_params.contains(&used.name) {
                             self.storage
-                                .report(ErrorKind::DeclaringTypeParamReferencedByComputedPropName { span });
+                                .report(ErrorKind::DeclaringTypeParamReferencedByComputedPropName { span }.into());
                         }
                     }
                     _ => {
