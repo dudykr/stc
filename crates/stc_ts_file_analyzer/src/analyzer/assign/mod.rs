@@ -173,11 +173,11 @@ impl Analyzer<'_, '_> {
     /// of union.
     pub(crate) fn deny_null_or_undefined(&mut self, span: Span, ty: &Type) -> VResult<()> {
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) {
-            return Err(ErrorKind::ObjectIsPossiblyUndefined { span });
+            return Err(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
         }
 
         if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
-            return Err(ErrorKind::ObjectIsPossiblyNull { span });
+            return Err(ErrorKind::ObjectIsPossiblyNull { span }.into());
         }
 
         Ok(())
