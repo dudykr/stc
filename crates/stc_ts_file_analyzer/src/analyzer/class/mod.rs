@@ -1348,15 +1348,13 @@ impl Analyzer<'_, '_> {
                         }
                         .into()
                     } else {
-                        err.convert_all(|err| {
-                            match &*err {
-                                ErrorKind::MissingFields { .. } => {
-                                    return ErrorKind::ClassIncorrectlyImplementsInterface { span: parent.span() }.into()
-                                }
-                                _ => {}
+                        match err {
+                            ErrorKind::MissingFields { .. } => {
+                                return ErrorKind::ClassIncorrectlyImplementsInterface { span: parent.span() }.into()
                             }
-                            err
-                        })
+                            _ => {}
+                        }
+                        err
                     }
                 })?;
             };

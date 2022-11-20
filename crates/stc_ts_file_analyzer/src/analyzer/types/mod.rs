@@ -1671,7 +1671,8 @@ impl Analyzer<'_, '_> {
                     name: box name.into(),
                     ctxt: self.ctx.module_id,
                     type_args: type_args.cloned().map(Box::new),
-                })
+                }
+                .into())
             }
             RExpr::Ident(i) if &*i.sym == "globalThis" => return Ok(()),
             RExpr::Ident(_) => Err(ErrorKind::TypeNotFound {
@@ -1679,7 +1680,8 @@ impl Analyzer<'_, '_> {
                 name: box name.into(),
                 ctxt: self.ctx.module_id,
                 type_args: type_args.cloned().map(Box::new),
-            }),
+            }
+            .into()),
             _ => Ok(()),
         }
     }

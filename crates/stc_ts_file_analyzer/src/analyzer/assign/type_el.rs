@@ -380,15 +380,15 @@ impl Analyzer<'_, '_> {
                                 ..opts
                             },
                         )
-                        .convert_err(|err| match *err {
+                        .convert_err(|err| match err {
                             ErrorKind::Errors { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
-                                cause: Some(box err),
+                                cause: Some(box err.into()),
                             }
                             .into(),
                             ErrorKind::MissingFields { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
-                                cause: Some(box err),
+                                cause: Some(box err.into()),
                             }
                             .into(),
                             _ => err,
@@ -690,7 +690,7 @@ impl Analyzer<'_, '_> {
                         .convert_err(|err| {
                             ErrorKind::SimpleAssignFailed {
                                 span: err.span(),
-                                cause: Some(box err),
+                                cause: Some(box err.into()),
                             }
                             .into()
                         })
@@ -976,8 +976,10 @@ impl Analyzer<'_, '_> {
 
             match res {
                 Ok(()) => {}
-                Err(ErrorKind::Errors { ref errors, .. }) if errors.is_empty() => {}
-                Err(err) => errors.push(err),
+                Err(err) => match &*err {
+                    ErrorKind::Errors { ref errors, .. } if errors.is_empty() => {}
+                    _ => errors.push(err),
+                },
             }
         }
 

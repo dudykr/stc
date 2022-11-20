@@ -1129,7 +1129,7 @@ impl Analyzer<'_, '_> {
                             .convert_err(|err| {
                                 ErrorKind::SimpleAssignFailed {
                                     span: err.span(),
-                                    cause: Some(box err),
+                                    cause: Some(box err.into()),
                                 }
                                 .into()
                             })?;
@@ -1852,7 +1852,7 @@ impl Analyzer<'_, '_> {
                                 .convert_err(|err| {
                                     ErrorKind::SimpleAssignFailed {
                                         span: err.span(),
-                                        cause: Some(box err),
+                                        cause: Some(box err.into()),
                                     }
                                     .into()
                                 })
