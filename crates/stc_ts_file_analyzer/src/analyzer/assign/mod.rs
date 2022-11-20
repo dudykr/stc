@@ -454,13 +454,14 @@ impl Analyzer<'_, '_> {
     fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type) -> VResult<Cow<'a, Type>> {
         ty.assert_valid();
 
+        let _ctx = ctx!("tried to normalize a type for assignment");
         let ty = ty.normalize();
 
         match ty {
             Type::Instance(Instance { ty, .. }) => {
                 // Normalize further
                 if ty.is_ref_type() {
-                    let normalized = self.normalize_for_assign(span, ty).context("failed to normalize instance type")?;
+                    let normalized = self.normalize_for_assign(span, ty)?;
 
                     if normalized.is_keyword() {
                         return Ok(normalized);
@@ -468,7 +469,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if ty.is_mapped() {
-                    let ty = self.normalize_for_assign(span, ty).context("failed to normalize instance type")?;
+                    let ty = self.normalize_for_assign(span, ty)?;
 
                     return Ok(ty);
                 }
@@ -509,10 +510,7 @@ impl Analyzer<'_, '_> {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
             }) => {
-                let ty = self
-                    .normalize(Some(span), Cow::Borrowed(ty), Default::default())
-                    .context("tried to normalize a type for assignment")?
-                    .into_owned();
+                let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?.into_owned();
 
                 return Ok(Cow::Owned(ty));
             }
