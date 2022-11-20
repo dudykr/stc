@@ -119,7 +119,8 @@ impl Analyzer<'_, '_> {
                     return Some(Err(ErrorKind::NoCallSignature {
                         span: opts.span,
                         callee: box r.clone(),
-                    }));
+                    }
+                    .into()));
                 }
                 _ => {}
             },

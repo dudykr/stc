@@ -746,7 +746,8 @@ impl Analyzer<'_, '_> {
                         .into_iter()
                         .map(|span| ErrorKind::UnknownPropertyInObjectLiteralAssignment { span })
                         .collect(),
-                });
+                }
+                .into());
             }
         }
 

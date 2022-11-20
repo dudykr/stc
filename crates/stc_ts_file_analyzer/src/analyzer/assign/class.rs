@@ -25,7 +25,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !l.is_abstract && rc.is_abstract {
-                    return Err(ErrorKind::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
+                    return Err(ErrorKind::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span }.into());
                 }
 
                 if !rc.is_abstract {
@@ -49,7 +49,8 @@ impl Analyzer<'_, '_> {
                         return Err(ErrorKind::Unimplemented {
                             span: opts.span,
                             msg: format!("Failed to collect class members"),
-                        });
+                        }
+                        .into());
                     }
                 } else {
                     &*rc.body
@@ -104,7 +105,8 @@ impl Analyzer<'_, '_> {
         Err(ErrorKind::Unimplemented {
             span: opts.span,
             msg: format!("Assignment of non-class object to class definition\n{:#?}", r),
-        })
+        }
+        .into())
     }
 
     pub(super) fn assign_to_class(&mut self, data: &mut AssignData, l: &Class, r: &Type, opts: AssignOpts) -> VResult<()> {
@@ -133,7 +135,8 @@ impl Analyzer<'_, '_> {
                         return Err(ErrorKind::Unimplemented {
                             span: opts.span,
                             msg: format!("Failed to collect class members"),
-                        });
+                        }
+                        .into());
                     }
                 } else {
                     &*rc.def.body
