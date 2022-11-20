@@ -7,7 +7,7 @@ use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RNumber, RStr, RTplElement, RTsE
 use stc_ts_base_type_ops::bindings::{collect_bindings, BindingCollector, KnownTypeVisitor};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
-    DebugExt, Error,
+    DebugExt, ErrorKind,
 };
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
@@ -867,10 +867,10 @@ impl Analyzer<'_, '_> {
         }
 
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
-            return Err(Error::ObjectIsPossiblyUndefined { span });
+            return Err(ErrorKind::ObjectIsPossiblyUndefined { span });
         }
         if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
-            return Err(Error::ObjectIsPossiblyNull { span });
+            return Err(ErrorKind::ObjectIsPossiblyNull { span });
         }
 
         match &*ty {
@@ -893,15 +893,15 @@ impl Analyzer<'_, '_> {
 
                 // tsc is crazy. It uses different error code for these errors.
                 if has_null && has_undefined {
-                    return Err(Error::ObjectIsPossiblyNullOrUndefined { span });
+                    return Err(ErrorKind::ObjectIsPossiblyNullOrUndefined { span });
                 }
 
                 if has_null {
-                    return Err(Error::ObjectIsPossiblyNull { span });
+                    return Err(ErrorKind::ObjectIsPossiblyNull { span });
                 }
 
                 if has_undefined {
-                    return Err(Error::ObjectIsPossiblyUndefined { span });
+                    return Err(ErrorKind::ObjectIsPossiblyUndefined { span });
                 }
 
                 Ok(())
@@ -910,7 +910,7 @@ impl Analyzer<'_, '_> {
                 if !self.rule().strict_null_checks {
                     return Ok(());
                 }
-                Err(Error::ObjectIsPossiblyUndefinedWithType {
+                Err(ErrorKind::ObjectIsPossiblyUndefinedWithType {
                     span,
                     ty: box ty.into_owned(),
                 })
@@ -1666,7 +1666,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Err(Error::NamspaceNotFound {
+                Err(ErrorKind::NamspaceNotFound {
                     span,
                     name: box name.into(),
                     ctxt: self.ctx.module_id,
@@ -1674,7 +1674,7 @@ impl Analyzer<'_, '_> {
                 })
             }
             RExpr::Ident(i) if &*i.sym == "globalThis" => return Ok(()),
-            RExpr::Ident(_) => Err(Error::TypeNotFound {
+            RExpr::Ident(_) => Err(ErrorKind::TypeNotFound {
                 span,
                 name: box name.into(),
                 ctxt: self.ctx.module_id,

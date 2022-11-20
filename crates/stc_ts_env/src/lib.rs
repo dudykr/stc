@@ -4,7 +4,7 @@ use derivative::Derivative;
 use parking_lot::Mutex;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Type};
 use stc_utils::cache::Freeze;
@@ -94,7 +94,7 @@ impl Env {
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
+    pub fn get_global_var(&self, span: Span, name: &JsWord) -> Result<Type, ErrorKind> {
         if let Some(ty) = self.global_vars.lock().get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
             return Ok((*ty).clone());
@@ -105,14 +105,14 @@ impl Env {
             return Ok(v.clone());
         }
 
-        Err(Error::NoSuchVar {
+        Err(ErrorKind::NoSuchVar {
             span,
             name: Id::word(name.clone()),
         })
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Type, Error> {
+    pub fn get_global_type(&self, span: Span, name: &JsWord) -> Result<Type, ErrorKind> {
         if let Some(ty) = self.global_types.lock().get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", *ty);
             return Ok((*ty).clone());
@@ -123,7 +123,7 @@ impl Env {
             return Ok(ty.clone());
         }
 
-        Err(Error::NoSuchType {
+        Err(ErrorKind::NoSuchType {
             span,
             name: Id::word(name.clone()),
         })

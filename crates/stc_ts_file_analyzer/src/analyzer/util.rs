@@ -2,7 +2,7 @@ use std::{borrow::Cow, iter::once};
 
 use rnode::{Fold, FoldWith, Visit};
 use stc_ts_ast_rnode::{RExpr, RIdent, RPropName, RStr, RTsEntityName, RTsType};
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
@@ -55,7 +55,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Err(Error::NoNewSignature {
+        Err(ErrorKind::NoNewSignature {
             span,
             callee: box callee.clone(),
         })
@@ -77,7 +77,7 @@ impl Analyzer<'_, '_> {
             Ok(ty) => ty,
             Err(err) => {
                 match err.actual() {
-                    Error::NoNewSignature { .. } => {}
+                    ErrorKind::NoNewSignature { .. } => {}
                     _ => {
                         self.storage.report(err);
                     }
@@ -158,7 +158,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::NoNewSignature {
+        Err(ErrorKind::NoNewSignature {
             span,
             callee: box ty.clone(),
         })
@@ -288,10 +288,10 @@ impl Analyzer<'_, '_> {
     //    }
 }
 
-pub trait ResultExt<T>: Into<Result<T, Error>> {
+pub trait ResultExt<T>: Into<Result<T, ErrorKind>> {
     fn store<V>(self, to: &mut V) -> Option<T>
     where
-        V: Extend<Error>,
+        V: Extend<ErrorKind>,
     {
         match self.into() {
             Ok(val) => Some(val),
@@ -313,7 +313,7 @@ pub trait ResultExt<T>: Into<Result<T, Error>> {
     }
 }
 
-impl<T> ResultExt<T> for Result<T, Error> {}
+impl<T> ResultExt<T> for Result<T, ErrorKind> {}
 
 /// Simple utility to check (l, r) and (r, l) with same code.
 #[derive(Debug, Clone, Copy)]

@@ -2,7 +2,7 @@ use std::{borrow::Cow, time::Instant};
 
 use rnode::VisitMutWith;
 use stc_ts_ast_rnode::{RObjectLit, RPropOrSpread, RSpreadElement};
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_type_ops::{union_normalization::UnionNormalizer, Fix};
 use stc_ts_types::{Accessor, Key, MethodSignature, PropertySignature, Type, TypeElement, TypeLit, Union, UnionMetadata};
@@ -85,7 +85,7 @@ impl Analyzer<'_, '_> {
                     if let Some(prev) = keys.iter().find(|v| v.0.type_eq(key)) {
                         if *optional != prev.1 {
                             self.storage
-                                .report(Error::OptionalAndNonOptionalMethodPropertyMixed { span: key.span() });
+                                .report(ErrorKind::OptionalAndNonOptionalMethodPropertyMixed { span: key.span() });
                             continue;
                         }
                     }
@@ -142,7 +142,7 @@ impl Analyzer<'_, '_> {
                                     prev_key.type_eq(&key)
                                 })
                             {
-                                self.storage.report(Error::DuplicateProperty { span })
+                                self.storage.report(ErrorKind::DuplicateProperty { span })
                             } else {
                                 known_keys.push(key);
                             }

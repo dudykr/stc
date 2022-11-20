@@ -1,26 +1,26 @@
-use crate::Error;
+use crate::ErrorKind;
 
-pub trait DebugExt<T>: Into<Result<T, Error>> {
-    fn convert_err<F>(self, op: F) -> Result<T, Error>
+pub trait DebugExt<T>: Into<Result<T, ErrorKind>> {
+    fn convert_err<F>(self, op: F) -> Result<T, ErrorKind>
     where
-        F: FnOnce(Error) -> Error,
+        F: FnOnce(ErrorKind) -> ErrorKind,
     {
-        self.into().map_err(|err: Error| err.convert(op))
+        self.into().map_err(|err: ErrorKind| err.convert(op))
     }
 
     #[inline]
     #[track_caller]
-    fn context(self, msg: &str) -> Result<T, Error> {
+    fn context(self, msg: &str) -> Result<T, ErrorKind> {
         if !cfg!(debug_assertions) {
             return self.into();
         }
 
-        self.into().map_err(|err: Error| err.context(msg))
+        self.into().map_err(|err: ErrorKind| err.context(msg))
     }
 
     #[inline]
     #[track_caller]
-    fn with_context<F>(self, msg: F) -> Result<T, Error>
+    fn with_context<F>(self, msg: F) -> Result<T, ErrorKind>
     where
         F: FnOnce() -> String,
     {
@@ -28,8 +28,8 @@ pub trait DebugExt<T>: Into<Result<T, Error>> {
             return self.into();
         }
 
-        self.into().map_err(|err: Error| err.context(msg()))
+        self.into().map_err(|err: ErrorKind| err.context(msg()))
     }
 }
 
-impl<T> DebugExt<T> for Result<T, Error> {}
+impl<T> DebugExt<T> for Result<T, ErrorKind> {}

@@ -12,7 +12,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_env::MarkExt;
 use stc_ts_errors::{
     debug::{dump_type_as_string, dump_type_map, print_type},
-    DebugExt, Error,
+    DebugExt, ErrorKind,
 };
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_generics::type_param::finder::TypeParamUsageFinder;
@@ -100,7 +100,7 @@ impl Analyzer<'_, '_> {
 
                 if type_args.is_some() {
                     // super<T>() is invalid.
-                    self.storage.report(Error::SuperCannotUseTypeArgs { span })
+                    self.storage.report(ErrorKind::SuperCannotUseTypeArgs { span })
                 }
 
                 self.validate_args(args).report(&mut self.storage);
@@ -297,7 +297,7 @@ impl Analyzer<'_, '_> {
                 //     })
                 //     .into());
                 // }
-                Err(Error::UndefinedSymbol {
+                Err(ErrorKind::UndefinedSymbol {
                     sym: i.into(),
                     span: i.span(),
                 })?
@@ -311,7 +311,7 @@ impl Analyzer<'_, '_> {
                 sym: js_word!("Symbol"), ..
             }) => {
                 if kind == ExtractKind::New {
-                    self.storage.report(Error::CannotCallWithNewNonVoidFunction { span })
+                    self.storage.report(ErrorKind::CannotCallWithNewNonVoidFunction { span })
                 }
 
                 // Symbol uses special type
@@ -438,7 +438,7 @@ impl Analyzer<'_, '_> {
                     }) if type_args.is_some() => {
                         // If it's implicit any, we should postpone this check.
                         if !analyzer.is_implicitly_typed(&callee_ty) {
-                            analyzer.storage.report(Error::AnyTypeUsedAsCalleeWithTypeArgs { span })
+                            analyzer.storage.report(ErrorKind::AnyTypeUsedAsCalleeWithTypeArgs { span })
                         }
                     }
                     _ => {}
@@ -572,7 +572,7 @@ impl Analyzer<'_, '_> {
 
                 Type::This(..) => {
                     if self.ctx.in_computed_prop_name {
-                        self.storage.report(Error::CannotReferenceThisInComputedPropName { span });
+                        self.storage.report(ErrorKind::CannotReferenceThisInComputedPropName { span });
                         // Return any to prevent other errors
                         return Ok(Type::any(span, Default::default()));
                     }
@@ -632,13 +632,13 @@ impl Analyzer<'_, '_> {
 
                     if types.is_empty() {
                         if kind == ExtractKind::Call {
-                            return Err(Error::NoCallablePropertyWithName {
+                            return Err(ErrorKind::NoCallablePropertyWithName {
                                 span,
                                 obj: box obj_type.clone(),
                                 key: box prop.clone(),
                             });
                         } else {
-                            return Err(Error::NoSuchConstructor {
+                            return Err(ErrorKind::NoSuchConstructor {
                                 span,
                                 key: box prop.clone(),
                             });
@@ -805,12 +805,12 @@ impl Analyzer<'_, '_> {
             match obj_type.normalize() {
                 Type::Class(..) => {
                     return Err(match kind {
-                        ExtractKind::Call => Error::NoCallablePropertyWithName {
+                        ExtractKind::Call => ErrorKind::NoCallablePropertyWithName {
                             span,
                             obj: box obj_type.clone(),
                             key: box prop.clone(),
                         },
-                        ExtractKind::New => Error::NoSuchConstructor {
+                        ExtractKind::New => ErrorKind::NoSuchConstructor {
                             span,
                             key: box prop.clone(),
                         },
@@ -834,7 +834,7 @@ impl Analyzer<'_, '_> {
             match callee.normalize() {
                 Type::ClassDef(cls) => {
                     if cls.is_abstract {
-                        self.storage.report(Error::CannotCreateInstanceOfAbstractClass { span })
+                        self.storage.report(ErrorKind::CannotCreateInstanceOfAbstractClass { span })
                     }
                 }
                 _ => {}
@@ -843,12 +843,12 @@ impl Analyzer<'_, '_> {
 
             self.get_best_return_type(span, expr, callee, kind, type_args, args, &arg_types, &spread_arg_types, type_ann)
                 .convert_err(|err| match err {
-                    Error::NoCallSignature { span, .. } => Error::NoCallablePropertyWithName {
+                    ErrorKind::NoCallSignature { span, .. } => ErrorKind::NoCallablePropertyWithName {
                         span,
                         obj: box obj_type.clone(),
                         key: box prop.clone(),
                     },
-                    Error::NoNewSignature { span, .. } => Error::NoConstructablePropertyWithName {
+                    ErrorKind::NoNewSignature { span, .. } => ErrorKind::NoConstructablePropertyWithName {
                         span,
                         obj: box obj_type.clone(),
                         key: box prop.clone(),
@@ -1175,7 +1175,7 @@ impl Analyzer<'_, '_> {
             return Ok(v);
         }
 
-        Err(Error::NoSuchProperty {
+        Err(ErrorKind::NoSuchProperty {
             span,
             obj: Some(box obj.clone()),
             prop: Some(box prop.clone()),
@@ -1297,13 +1297,13 @@ impl Analyzer<'_, '_> {
 
                     if cls.is_abstract {
                         if opts.disallow_invoking_implicit_constructors {
-                            return Err(Error::NoNewSignature {
+                            return Err(ErrorKind::NoNewSignature {
                                 span,
                                 callee: box ty.clone(),
                             });
                         }
 
-                        self.storage.report(Error::CannotCreateInstanceOfAbstractClass { span });
+                        self.storage.report(ErrorKind::CannotCreateInstanceOfAbstractClass { span });
                         // The test classAbstractInstantiation1.ts says
                         //
                         //  new A(1); // should report 1 error
@@ -1397,7 +1397,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     if opts.disallow_invoking_implicit_constructors {
-                        return Err(Error::NoNewSignature {
+                        return Err(ErrorKind::NoNewSignature {
                             span,
                             callee: box ty.clone(),
                         });
@@ -1457,7 +1457,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Function(..) if self.rule().no_implicit_any => {
-                    return Err(Error::TargetLacksConstructSignature { span });
+                    return Err(ErrorKind::TargetLacksConstructSignature { span });
                 }
 
                 _ => {}
@@ -1501,7 +1501,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 debug_assert!(!span.is_dummy());
-                return Err(Error::Unknown { span });
+                return Err(ErrorKind::Unknown { span });
             }
 
             Type::Function(ref f) if kind == ExtractKind::Call => self.get_return_type(
@@ -1750,12 +1750,12 @@ impl Analyzer<'_, '_> {
         }
 
         match kind {
-            ExtractKind::Call => Err(Error::NoCallSignature {
+            ExtractKind::Call => Err(ErrorKind::NoCallSignature {
                 span,
                 callee: box callee_ty.clone(),
             }
             .context("failed to select the element to invoke")),
-            ExtractKind::New => Err(Error::NoNewSignature {
+            ExtractKind::New => Err(ErrorKind::NoNewSignature {
                 span,
                 callee: box callee_ty.clone(),
             }
@@ -2007,9 +2007,9 @@ impl Analyzer<'_, '_> {
         }
 
         return Err(if kind == ExtractKind::Call {
-            Error::NoCallSignature { span, callee: box callee }.context("tried to calculate return type")
+            ErrorKind::NoCallSignature { span, callee: box callee }.context("tried to calculate return type")
         } else {
-            Error::NoNewSignature { span, callee: box callee }.context("tried to calculate return type")
+            ErrorKind::NoNewSignature { span, callee: box callee }.context("tried to calculate return type")
         });
     }
 
@@ -2178,7 +2178,7 @@ impl Analyzer<'_, '_> {
             }
 
             if max_param.is_none() {
-                return Err(Error::ExpectedAtLeastNArgsButGotM { span, min: min_param });
+                return Err(ErrorKind::ExpectedAtLeastNArgsButGotM { span, min: min_param });
             }
 
             // function foo(a) {}
@@ -2192,7 +2192,7 @@ impl Analyzer<'_, '_> {
                 })
                 .unwrap_or(span);
 
-            return Err(Error::ExpectedNArgsButGotM {
+            return Err(ErrorKind::ExpectedNArgsButGotM {
                 span,
                 min: min_param,
                 max: max_param,
@@ -2761,14 +2761,14 @@ impl Analyzer<'_, '_> {
                     if idx < rest_idx {
                         match arg.ty.normalize() {
                             Type::Tuple(..) => {
-                                report_err!(Error::ExpectedAtLeastNArgsButGotMOrMore {
+                                report_err!(ErrorKind::ExpectedAtLeastNArgsButGotMOrMore {
                                     span: arg.span(),
                                     min: rest_idx - 1,
                                 })
                             }
 
                             _ => {
-                                report_err!(Error::SpreadMustBeTupleOrPassedToRest { span: arg.span() })
+                                report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: arg.span() })
                             }
                         }
                     }
@@ -2828,7 +2828,7 @@ impl Analyzer<'_, '_> {
                                                     ..Default::default()
                                                 },
                                             )
-                                            .convert_err(|err| Error::WrongArgType {
+                                            .convert_err(|err| ErrorKind::WrongArgType {
                                                 span: arg.span(),
                                                 inner: box err,
                                             })
@@ -2866,7 +2866,7 @@ impl Analyzer<'_, '_> {
                                                         ..Default::default()
                                                     },
                                                 )
-                                                .convert_err(|err| Error::WrongArgType {
+                                                .convert_err(|err| ErrorKind::WrongArgType {
                                                     span: arg.span(),
                                                     inner: box err,
                                                 })
@@ -2913,7 +2913,7 @@ impl Analyzer<'_, '_> {
                                     };
 
                                     let err = err.convert(|err| {
-                                        Error::WrongArgType {
+                                        ErrorKind::WrongArgType {
                                             span: arg.span(),
                                             inner: box err,
                                         }
@@ -2951,8 +2951,8 @@ impl Analyzer<'_, '_> {
                                 }
                             }
                             Err(err) => match err.actual() {
-                                Error::MustHaveSymbolIteratorThatReturnsIterator { span } => {
-                                    report_err!(Error::SpreadMustBeTupleOrPassedToRest { span: *span });
+                                ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } => {
+                                    report_err!(ErrorKind::SpreadMustBeTupleOrPassedToRest { span: *span });
                                     continue;
                                 }
                                 _ => {}
@@ -2969,7 +2969,7 @@ impl Analyzer<'_, '_> {
                                     ..Default::default()
                                 },
                             )
-                            .convert_err(|err| Error::WrongArgType {
+                            .convert_err(|err| ErrorKind::WrongArgType {
                                 span: err.span(),
                                 inner: box err,
                             })
@@ -2996,22 +2996,22 @@ impl Analyzer<'_, '_> {
                         ) {
                             let err = err.convert(|err| {
                                 match err {
-                                    Error::TupleAssignError { span, errors } if !arg.ty.metadata().resolved_from_var => {
-                                        return Error::Errors { span, errors }.context("tuple")
+                                    ErrorKind::TupleAssignError { span, errors } if !arg.ty.metadata().resolved_from_var => {
+                                        return ErrorKind::Errors { span, errors }.context("tuple")
                                     }
-                                    Error::ObjectAssignFailed { span, errors } if !arg.ty.metadata().resolved_from_var => {
-                                        return Error::Errors { span, errors }.context("object")
+                                    ErrorKind::ObjectAssignFailed { span, errors } if !arg.ty.metadata().resolved_from_var => {
+                                        return ErrorKind::Errors { span, errors }.context("object")
                                     }
-                                    Error::Errors { span, ref errors } => {
+                                    ErrorKind::Errors { span, ref errors } => {
                                         if errors.iter().all(|err| match err.actual() {
-                                            Error::UnknownPropertyInObjectLiteralAssignment { span } => true,
+                                            ErrorKind::UnknownPropertyInObjectLiteralAssignment { span } => true,
                                             _ => false,
                                         }) {
-                                            return Error::Errors {
+                                            return ErrorKind::Errors {
                                                 span,
                                                 errors: errors
                                                     .iter()
-                                                    .map(|err| Error::WrongArgType {
+                                                    .map(|err| ErrorKind::WrongArgType {
                                                         span: err.span(),
                                                         inner: box err.clone(),
                                                     })
@@ -3022,7 +3022,7 @@ impl Analyzer<'_, '_> {
                                     _ => {}
                                 }
 
-                                Error::WrongArgType {
+                                ErrorKind::WrongArgType {
                                     span: arg.span(),
                                     inner: box err,
                                 }
@@ -3215,7 +3215,7 @@ impl Analyzer<'_, '_> {
             if let Some(type_args) = type_args {
                 // TODO(kdy1): Handle defaults of the type parameter (Change to range)
                 if type_params.len() != type_args.params.len() {
-                    return Err(Error::TypeParameterCountMismatch {
+                    return Err(ErrorKind::TypeParameterCountMismatch {
                         span,
                         max: type_params.len(),
                         min: type_params.len(),
@@ -3324,7 +3324,7 @@ impl Analyzer<'_, '_> {
         })
     }
 
-    fn validate_args(&mut self, args: &[RExprOrSpread]) -> Result<Vec<TypeOrSpread>, Error> {
+    fn validate_args(&mut self, args: &[RExprOrSpread]) -> Result<Vec<TypeOrSpread>, ErrorKind> {
         let ctx = Ctx {
             in_argument: true,
             should_store_truthy_for_access: false,

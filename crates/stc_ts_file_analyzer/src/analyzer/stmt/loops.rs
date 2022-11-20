@@ -4,7 +4,7 @@ use rnode::VisitWith;
 use stc_ts_ast_rnode::{
     RDoWhileStmt, RExpr, RForInStmt, RForOfStmt, RIdent, RPat, RStmt, RTsEntityName, RVarDecl, RVarDeclOrPat, RWhileStmt,
 };
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{Id, KeywordType, KeywordTypeMetadata, Operator, Ref, RefMetadata, TypeParamInstantiation};
 use stc_ts_utils::{find_ids_in_pat, PatExt};
@@ -127,7 +127,7 @@ impl Analyzer<'_, '_> {
                         match kind {
                             ForHeadKind::In => {
                                 if err.is_assign_failure() {
-                                    return Error::WrongTypeForLhsOfForInLoop { span: err.span() };
+                                    return ErrorKind::WrongTypeForLhsOfForInLoop { span: err.span() };
                                 }
                             }
                             _ => {}
@@ -156,7 +156,7 @@ impl Analyzer<'_, '_> {
     fn validate_lhs_of_for_in_of_loop_pat(&mut self, p: &RPat, kind: ForHeadKind) -> VResult<()> {
         match p {
             RPat::Object(..) | RPat::Array(..) => match kind {
-                ForHeadKind::In => Err(Error::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() }),
+                ForHeadKind::In => Err(ErrorKind::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() }),
                 ForHeadKind::Of { .. } => Ok(()),
             },
             RPat::Expr(e) => self.validate_lhs_of_for_in_of_loop_expr(e, kind),
@@ -169,8 +169,8 @@ impl Analyzer<'_, '_> {
         use crate::analyzer::expr::optional_chaining::is_obj_opt_chaining;
         if is_obj_opt_chaining(&e) {
             return match kind {
-                ForHeadKind::In => Err(Error::InvalidRestPatternInForIn { span: e.span() }),
-                ForHeadKind::Of { .. } => Err(Error::InvalidRestPatternInForOf { span: e.span() }),
+                ForHeadKind::In => Err(ErrorKind::InvalidRestPatternInForIn { span: e.span() }),
+                ForHeadKind::Of { .. } => Err(ErrorKind::InvalidRestPatternInForOf { span: e.span() }),
             };
         }
 
@@ -179,8 +179,8 @@ impl Analyzer<'_, '_> {
             // We use different error code for this.
             RExpr::Assign(..) => Ok(()),
             _ => match kind {
-                ForHeadKind::In => Err(Error::InvalidExprOfLhsOfForIn { span: e.span() }),
-                ForHeadKind::Of { .. } => Err(Error::InvalidExprOfLhsOfForOf { span: e.span() }),
+                ForHeadKind::In => Err(ErrorKind::InvalidExprOfLhsOfForIn { span: e.span() }),
+                ForHeadKind::Of { .. } => Err(ErrorKind::InvalidExprOfLhsOfForOf { span: e.span() }),
             },
         }
     }
@@ -300,10 +300,10 @@ impl Analyzer<'_, '_> {
                         if decls[0].name.get_ty().is_some() {
                             match kind {
                                 ForHeadKind::In => {
-                                    child.storage.report(Error::TypeAnnOnLhsOfForInLoops { span: decls[0].span });
+                                    child.storage.report(ErrorKind::TypeAnnOnLhsOfForInLoops { span: decls[0].span });
                                 }
                                 ForHeadKind::Of { .. } => {
-                                    child.storage.report(Error::TypeAnnOnLhsOfForOfLoops { span: decls[0].span });
+                                    child.storage.report(ErrorKind::TypeAnnOnLhsOfForOfLoops { span: decls[0].span });
                                 }
                             }
                         }
@@ -334,7 +334,7 @@ impl Analyzer<'_, '_> {
                             .flat_map(|ty| ty.iter_union())
                             .any(|ty| is_str_or_union(&ty))
                         {
-                            child.storage.report(Error::ForOfStringUsedInEs3 { span })
+                            child.storage.report(ErrorKind::ForOfStringUsedInEs3 { span })
                         }
                     }
                 }
@@ -345,13 +345,13 @@ impl Analyzer<'_, '_> {
                 ForHeadKind::Of { is_awaited: false } => child
                     .get_iterator_element_type(rhs.span(), Cow::Owned(rty), false, Default::default())
                     .convert_err(|err| match err {
-                        Error::NotArrayType { span }
+                        ErrorKind::NotArrayType { span }
                             if match rhs {
                                 RExpr::Lit(..) => true,
                                 _ => false,
                             } =>
                         {
-                            Error::NotArrayTypeNorStringType { span }
+                            ErrorKind::NotArrayTypeNorStringType { span }
                         }
                         _ => err,
                     })

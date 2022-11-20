@@ -3,7 +3,7 @@ use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RCallExpr, RCallee, RExportAll, RExpr, RImportDecl, RImportSpecifier, RLit, RModuleItem, RNamedExport, RStr, RTsExternalModuleRef,
 };
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_storage::Storage;
 use stc_ts_types::{Id, ModuleId, Type};
@@ -29,7 +29,7 @@ impl Analyzer<'_, '_> {
         let dep_id = match dep_id {
             Some(v) => v,
             None => {
-                self.storage.report(Error::ModuleNotFound { span });
+                self.storage.report(ErrorKind::ModuleNotFound { span });
 
                 return (ctxt, Type::any(span, Default::default()));
             }
@@ -37,7 +37,7 @@ impl Analyzer<'_, '_> {
         let data = match self.imports.get(&(ctxt, dep_id)).cloned() {
             Some(v) => v,
             None => {
-                self.storage.report(Error::ModuleNotFound { span });
+                self.storage.report(ErrorKind::ModuleNotFound { span });
 
                 return (ctxt, Type::any(span, Default::default()));
             }
@@ -89,7 +89,7 @@ impl Analyzer<'_, '_> {
             let dep_id = match dep_id {
                 Some(v) => v,
                 None => {
-                    self.storage.report(Error::ModuleNotFound { span });
+                    self.storage.report(ErrorKind::ModuleNotFound { span });
                     continue;
                 }
             };
@@ -177,7 +177,7 @@ impl Analyzer<'_, '_> {
             if ctxt != target {
                 // If import was successful but the entry is not found, the error should point
                 // the specifier.
-                self.storage.report(Error::ImportFailed { span, orig, id });
+                self.storage.report(ErrorKind::ImportFailed { span, orig, id });
             }
         }
     }

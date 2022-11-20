@@ -5,7 +5,7 @@ use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
 use stc_ts_errors::{
     debug::{dump_type_as_string, dump_type_map},
-    DebugExt, Error,
+    DebugExt, ErrorKind,
 };
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, debug_ctx};
@@ -464,7 +464,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::SimpleAssignFailed { span, cause: None })
+        Err(ErrorKind::SimpleAssignFailed { span, cause: None })
     }
 
     ///
@@ -537,7 +537,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             Type::Lit(..) | Type::ClassDef(ClassDef { is_abstract: true, .. }) | Type::Function(..) => {
-                return Err(Error::SimpleAssignFailed { span, cause: None })
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None })
             }
 
             Type::TypeLit(rt) => {
@@ -575,7 +575,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !errors.is_empty() {
-                    return Err(Error::SimpleAssignFailedWithCause { span, cause: errors });
+                    return Err(ErrorKind::SimpleAssignFailedWithCause { span, cause: errors });
                 }
             }
             Type::Interface(..) => {
@@ -592,7 +592,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::SimpleAssignFailed { span, cause: None })
+        Err(ErrorKind::SimpleAssignFailed { span, cause: None })
     }
 
     /// Assigns a parameter to another one.
@@ -671,17 +671,17 @@ impl Analyzer<'_, '_> {
         };
 
         res.convert_err(|err| match &err {
-            Error::MissingFields { span, .. } => Error::SimpleAssignFailed {
+            ErrorKind::MissingFields { span, .. } => ErrorKind::SimpleAssignFailed {
                 span: *span,
                 cause: Some(box err),
             },
 
-            Error::Errors { errors, .. } => {
+            ErrorKind::Errors { errors, .. } => {
                 if errors.iter().all(|err| match err.actual() {
-                    Error::MissingFields { .. } => true,
+                    ErrorKind::MissingFields { .. } => true,
                     _ => false,
                 }) {
-                    Error::SimpleAssignFailed {
+                    ErrorKind::SimpleAssignFailed {
                         span,
                         cause: Some(box err),
                     }
@@ -745,7 +745,7 @@ impl Analyzer<'_, '_> {
 
         if opts.for_overload {
             if required_li.clone().count() > required_ri.clone().count() {
-                return Err(Error::SimpleAssignFailed { span, cause: None }).context("l.params.required.len > r.params.required.len");
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }).context("l.params.required.len > r.params.required.len");
             }
         }
 
@@ -758,7 +758,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(Error::SimpleAssignFailed { span, cause: None }).with_context(|| {
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }).with_context(|| {
                     format!(
                         "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: {:?}\nRight: {:?}\n",
                         required_non_void_li.collect_vec(),

@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use stc_ts_ast_rnode::{RTsAsExpr, RTsLit, RTsTypeAssertion};
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{Interface, KeywordType, LitType, TypeElement, TypeParamInstantiation};
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, TypeEq};
@@ -136,7 +136,7 @@ impl Analyzer<'_, '_> {
                     Type::Tuple(ref rt) => {
                         //
                         if lt.elems.len() != rt.elems.len() {
-                            Err(Error::InvalidTupleCast {
+                            Err(ErrorKind::InvalidTupleCast {
                                 span,
                                 left: lt.span(),
                                 right: rt.span(),
@@ -225,10 +225,10 @@ impl Analyzer<'_, '_> {
                 if castable {
                     Ok(())
                 } else {
-                    Err(Error::NonOverlappingTypeCast { span })
+                    Err(ErrorKind::NonOverlappingTypeCast { span })
                 }
             })
-            .convert_err(|err| Error::NonOverlappingTypeCast { span })
+            .convert_err(|err| ErrorKind::NonOverlappingTypeCast { span })
     }
 
     pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type, opts: CastableOpts) -> VResult<bool> {

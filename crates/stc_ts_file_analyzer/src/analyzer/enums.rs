@@ -3,7 +3,7 @@ use rnode::{NodeId, Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RExpr, RIdent, RLit, RNumber, RPat, RStr, RTsEnumDecl, RTsEnumMember, RTsEnumMemberId, RTsLit,
 };
-use stc_ts_errors::{Error, Errors};
+use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_types::{
     Accessor, EnumVariant, FnParam, Id, IndexSignature, Key, KeywordType, LitType, LitTypeMetadata, PropertySignature, TypeElement, TypeLit,
 };
@@ -56,7 +56,7 @@ impl Analyzer<'_, '_> {
             let members = e
                 .members
                 .iter()
-                .map(|m| -> Result<_, Error> {
+                .map(|m| -> Result<_, ErrorKind> {
                     let id_span = m.id.span();
                     let val = eval
                         .compute(id_span, Some(default), m.init.as_ref().map(|v| &**v))
@@ -158,7 +158,7 @@ impl Analyzer<'_, '_> {
                     init.visit_with(&mut v);
                     self.storage.report_all(v.errors);
                     if v.error {
-                        self.storage.report(Error::InvalidInitInConstEnum { span: init.span() })
+                        self.storage.report(ErrorKind::InvalidInitInConstEnum { span: init.span() })
                     }
                 }
             }
@@ -191,9 +191,9 @@ impl Evaluator<'_> {
                     match &v {
                         RTsLit::Number(n) => {
                             if n.value.is_infinite() && self.e.is_const {
-                                return Err(Error::ConstEnumMemberHasInifinityAsInit { span: bin.span });
+                                return Err(ErrorKind::ConstEnumMemberHasInifinityAsInit { span: bin.span });
                             } else if n.value.is_nan() && self.e.is_const {
-                                return Err(Error::ConstEnumMemberHasNaNAsInit { span: bin.span });
+                                return Err(ErrorKind::ConstEnumMemberHasNaNAsInit { span: bin.span });
                             } else {
                                 return Ok(v);
                             }
@@ -206,10 +206,10 @@ impl Evaluator<'_> {
                 RExpr::Ident(ref id) => {
                     if self.e.is_const {
                         if id.sym == js_word!("NaN") {
-                            return Err(Error::ConstEnumMemberHasNaNAsInit { span: id.span });
+                            return Err(ErrorKind::ConstEnumMemberHasNaNAsInit { span: id.span });
                         }
                         if id.sym == js_word!("Infinity") {
-                            return Err(Error::ConstEnumMemberHasInifinityAsInit { span: id.span });
+                            return Err(ErrorKind::ConstEnumMemberHasInifinityAsInit { span: id.span });
                         }
                     }
 
@@ -226,7 +226,7 @@ impl Evaluator<'_> {
                             }
                         }
                     }
-                    return Err(Error::InvalidEnumInit { span });
+                    return Err(ErrorKind::InvalidEnumInit { span });
                 }
                 RExpr::Unary(ref expr) => {
                     let v = self.compute(span, None, Some(&expr.arg))?;
@@ -245,7 +245,7 @@ impl Evaluator<'_> {
                                         }
                                     }
                                     op!("~") => (!(v as i32)) as f64,
-                                    _ => Err(Error::InvalidEnumInit { span })?,
+                                    _ => Err(ErrorKind::InvalidEnumInit { span })?,
                                 },
                                 raw: None,
                             }))
@@ -275,10 +275,10 @@ impl Evaluator<'_> {
             }
         }
 
-        Err(Error::InvalidEnumInit { span })
+        Err(ErrorKind::InvalidEnumInit { span })
     }
 
-    fn compute_bin(&mut self, span: Span, expr: &RBinExpr) -> Result<RTsLit, Error> {
+    fn compute_bin(&mut self, span: Span, expr: &RBinExpr) -> Result<RTsLit, ErrorKind> {
         let l = self.compute(span, None, Some(&expr.left))?;
         let r = self.compute(span, None, Some(&expr.right))?;
 
@@ -301,7 +301,7 @@ impl Evaluator<'_> {
                         op!(">>") => ((l.round() as i64) >> (r.round() as i64)) as _,
                         // TODO(kdy1): Verify this
                         op!(">>>") => ((l.round() as u64) >> (r.round() as u64)) as _,
-                        _ => Err(Error::InvalidEnumInit { span })?,
+                        _ => Err(ErrorKind::InvalidEnumInit { span })?,
                     },
 
                     raw: None,
@@ -322,7 +322,7 @@ impl Evaluator<'_> {
                 value: format!("{}{}", l.value, r.value).into(),
                 raw: None,
             }),
-            _ => Err(Error::InvalidEnumInit { span })?,
+            _ => Err(ErrorKind::InvalidEnumInit { span })?,
         })
     }
 
@@ -340,7 +340,7 @@ impl Analyzer<'_, '_> {
             RTsEnumMemberId::Ident(i) => {}
             RTsEnumMemberId::Str(s) => {
                 if s.value.starts_with(|c: char| c.is_digit(10)) {
-                    Err(Error::EnumMemberIdCannotBeNumber { span: s.span })?
+                    Err(ErrorKind::EnumMemberIdCannotBeNumber { span: s.span })?
                 }
             }
         }
@@ -465,7 +465,7 @@ impl Analyzer<'_, '_> {
         match rhs_ty.normalize() {
             // Report an error for `a = G` where G is name of the const enum itself.
             Type::Enum(ref e) if e.is_const => {
-                self.storage.report(Error::InvalidUseOfConstEnum { span });
+                self.storage.report(ErrorKind::InvalidUseOfConstEnum { span });
             }
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsVoidKeyword,
@@ -474,7 +474,7 @@ impl Analyzer<'_, '_> {
                 if self.rule().strict_null_checks {
                     match lhs {
                         RPat::Array(_) | RPat::Rest(_) | RPat::Object(_) => {
-                            self.storage.report(Error::ObjectIsPossiblyUndefined { span });
+                            self.storage.report(ErrorKind::ObjectIsPossiblyUndefined { span });
                         }
                         _ => {}
                     }
@@ -518,7 +518,7 @@ impl Analyzer<'_, '_> {
             Some(RExpr::Ident(..)) => {}
             Some(e) => {
                 if type_of_expr(&e).is_none() && !matches!(e, RExpr::Tpl(..) | RExpr::Bin(..) | RExpr::Member(..)) {
-                    self.storage.report(Error::ComputedMemberInEnumWithStrMember { span: m.span })
+                    self.storage.report(ErrorKind::ComputedMemberInEnumWithStrMember { span: m.span })
                 }
             }
             _ => {}

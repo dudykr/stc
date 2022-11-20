@@ -4,7 +4,7 @@ use std::{collections::hash_map::Entry, mem::take, sync::Arc};
 
 use auto_impl::auto_impl;
 use fxhash::FxHashMap;
-use stc_ts_errors::{Error, Errors};
+use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, Type};
 use stc_utils::cache::Freeze;
 use swc_atoms::JsWord;
@@ -20,7 +20,7 @@ pub type Storage<'b> = Box<dyn 'b + Mode>;
 
 #[auto_impl(&mut, Box)]
 pub trait ErrorStore {
-    fn report(&mut self, err: Error);
+    fn report(&mut self, err: ErrorKind);
     fn report_all(&mut self, err: Errors);
     fn take_errors(&mut self) -> Errors;
 }
@@ -74,7 +74,7 @@ pub struct Single<'a> {
 }
 
 impl ErrorStore for Single<'_> {
-    fn report(&mut self, err: Error) {
+    fn report(&mut self, err: ErrorKind) {
         self.info.errors.push(err.attach_context());
     }
 
@@ -134,7 +134,7 @@ impl TypeStore for Single<'_> {
             },
             None => {
                 dbg!();
-                self.report(Error::NoSuchVar { span, name: id })
+                self.report(ErrorKind::NoSuchVar { span, name: id })
             }
         }
     }
@@ -148,7 +148,7 @@ impl TypeStore for Single<'_> {
             }
             None => {
                 dbg!();
-                self.report(Error::NoSuchVar { span, name: id })
+                self.report(ErrorKind::NoSuchVar { span, name: id })
             }
         }
     }
@@ -239,7 +239,7 @@ pub struct Group<'a> {
 }
 
 impl ErrorStore for Group<'_> {
-    fn report(&mut self, err: Error) {
+    fn report(&mut self, err: ErrorKind) {
         self.errors.push(err.attach_context());
     }
 
@@ -287,7 +287,7 @@ impl TypeStore for Group<'_> {
             }
             None => {
                 dbg!();
-                self.report(Error::NoSuchVar { span, name: id })
+                self.report(ErrorKind::NoSuchVar { span, name: id })
             }
         }
     }
@@ -298,7 +298,7 @@ impl TypeStore for Group<'_> {
             Some(v) => {
                 e.types.insert(id.sym().clone(), v.clone());
             }
-            None => self.report(Error::NoSuchType { span, name: id }),
+            None => self.report(ErrorKind::NoSuchType { span, name: id }),
         }
     }
 
@@ -385,7 +385,7 @@ pub struct Builtin {
 }
 
 impl ErrorStore for Builtin {
-    fn report(&mut self, err: Error) {
+    fn report(&mut self, err: ErrorKind) {
         unreachable!("builtin error: {:?}", err);
     }
 

@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use itertools::Itertools;
 use rnode::NodeId;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, Operator, PropertySignature, Ref, TplType,
@@ -85,7 +85,7 @@ impl Analyzer<'_, '_> {
                     return if errors.is_empty() {
                         Ok(())
                     } else {
-                        Err(Error::Errors {
+                        Err(ErrorKind::Errors {
                             span,
                             errors: errors.into(),
                         })
@@ -226,7 +226,7 @@ impl Analyzer<'_, '_> {
                             .context("tried to assign to type elements by converting rhs to a type literal");
                     }
 
-                    return Err(Error::SimpleAssignFailed { span, cause: None });
+                    return Err(ErrorKind::SimpleAssignFailed { span, cause: None });
                 }
 
                 Type::Tuple(..) | Type::Array(..) | Type::EnumVariant(..) if lhs.is_empty() => return Ok(()),
@@ -246,7 +246,7 @@ impl Analyzer<'_, '_> {
                         | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
                         _ => false,
                     }) {
-                        return Err(Error::SimpleAssignFailed { span, cause: None });
+                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None });
                     }
 
                     match rhs.normalize() {
@@ -380,11 +380,11 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .convert_err(|err| match err {
-                            Error::Errors { span, .. } => Error::SimpleAssignFailed {
+                            ErrorKind::Errors { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
                                 cause: Some(box err),
                             },
-                            Error::MissingFields { span, .. } => Error::SimpleAssignFailed {
+                            ErrorKind::MissingFields { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
                                 cause: Some(box err),
                             },
@@ -401,7 +401,7 @@ impl Analyzer<'_, '_> {
                 Type::Class(rhs_cls) => {
                     // TODO(kdy1): Check if constructor exists.
                     if rhs_cls.def.is_abstract {
-                        return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
+                        return Err(ErrorKind::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
                     }
 
                     // TODO(kdy1): Optimize
@@ -550,7 +550,7 @@ impl Analyzer<'_, '_> {
                         )
                         .map_err(|err| {
                             err.convert_all(|err| match err {
-                                Error::MissingFields { .. } => Error::SimpleAssignFailed {
+                                ErrorKind::MissingFields { .. } => ErrorKind::SimpleAssignFailed {
                                     span: err.span(),
                                     cause: Some(box err),
                                 },
@@ -611,7 +611,7 @@ impl Analyzer<'_, '_> {
                 | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
-                }) => return Err(Error::SimpleAssignFailed { span, cause: None }),
+                }) => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }),
 
                 // TODO(kdy1): Strict mode
                 Type::Keyword(KeywordType {
@@ -662,16 +662,16 @@ impl Analyzer<'_, '_> {
                     if lhs.is_empty() {
                         return Ok(());
                     } else {
-                        let err = Error::MissingFields {
+                        let err = ErrorKind::MissingFields {
                             span,
                             fields: lhs.to_vec(),
                         }
                         .context("keyword `object` is not assignable to a non-empty type literal");
-                        return Err(Error::Errors { span, errors: vec![err] });
+                        return Err(ErrorKind::Errors { span, errors: vec![err] });
                     }
                 }
 
-                Type::EnumVariant(..) => return Err(Error::SimpleAssignFailed { span, cause: None }),
+                Type::EnumVariant(..) => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }),
 
                 Type::Keyword(..) => {
                     let rhs = self
@@ -683,14 +683,16 @@ impl Analyzer<'_, '_> {
                                 ..Default::default()
                             },
                         )
-                        .convert_err(|err| Error::SimpleAssignFailed {
+                        .convert_err(|err| ErrorKind::SimpleAssignFailed {
                             span: err.span(),
                             cause: Some(box err),
                         })
                         .context("failed to normalize")?;
 
                     if rhs.is_keyword() {
-                        return Err(Error::SimpleAssignFailed { span, cause: None }.context("failed to assign builtin type of a keyword"));
+                        return Err(
+                            ErrorKind::SimpleAssignFailed { span, cause: None }.context("failed to assign builtin type of a keyword")
+                        );
                     }
 
                     return self
@@ -718,7 +720,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 _ => {
-                    return Err(Error::Unimplemented {
+                    return Err(ErrorKind::Unimplemented {
                         span,
                         msg: format!("assign_to_type_elements - {:#?}", rhs),
                     })
@@ -726,9 +728,9 @@ impl Analyzer<'_, '_> {
             }
 
             if !errors.is_empty() {
-                return Err(Error::ObjectAssignFailed {
+                return Err(ErrorKind::ObjectAssignFailed {
                     span,
-                    errors: Error::flatten(errors),
+                    errors: ErrorKind::flatten(errors),
                 })?;
             }
 
@@ -738,11 +740,11 @@ impl Analyzer<'_, '_> {
                 //      var c { [n: number]: { a: string; b: number; }; } = [{ a:
                 // '', b: 0, c: '' }];
 
-                return Err(Error::Errors {
+                return Err(ErrorKind::Errors {
                     span,
                     errors: unhandled_rhs
                         .into_iter()
-                        .map(|span| Error::UnknownPropertyInObjectLiteralAssignment { span })
+                        .map(|span| ErrorKind::UnknownPropertyInObjectLiteralAssignment { span })
                         .collect(),
                 });
             }
@@ -785,7 +787,7 @@ impl Analyzer<'_, '_> {
                                     ClassMember::Property(ref rp) => {
                                         match rp.accessibility {
                                             Some(Accessibility::Private) | Some(Accessibility::Protected) => {
-                                                errors.push(Error::AccessibilityDiffers { span });
+                                                errors.push(ErrorKind::AccessibilityDiffers { span });
                                             }
                                             _ => {}
                                         }
@@ -827,20 +829,20 @@ impl Analyzer<'_, '_> {
 
         if !missing_fields.is_empty() {
             if self.should_report_properties(span, lhs, rhs) {
-                errors.push(Error::MissingFields {
+                errors.push(ErrorKind::MissingFields {
                     span,
                     fields: missing_fields,
                 });
             } else {
-                errors.push(Error::ObjectAssignFailed {
+                errors.push(ErrorKind::ObjectAssignFailed {
                     span,
-                    errors: vec![Error::SimpleAssignFailed { span, cause: None }],
+                    errors: vec![ErrorKind::SimpleAssignFailed { span, cause: None }],
                 })
             }
         }
 
         if !errors.is_empty() {
-            return Err(Error::Errors {
+            return Err(ErrorKind::Errors {
                 span,
                 errors: errors.into(),
             });
@@ -958,13 +960,13 @@ impl Analyzer<'_, '_> {
 
             match res {
                 Ok(()) => {}
-                Err(Error::Errors { ref errors, .. }) if errors.is_empty() => {}
+                Err(ErrorKind::Errors { ref errors, .. }) if errors.is_empty() => {}
                 Err(err) => errors.push(err),
             }
         }
 
         if !errors.is_empty() {
-            return Err(Error::Errors { span, errors });
+            return Err(ErrorKind::Errors { span, errors });
         }
 
         let lhs_index = lhs.iter().filter(|m| matches!(m, TypeElement::Index(_))).collect_vec();
@@ -996,7 +998,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !errors.is_empty() {
-            return Err(Error::Errors { span, errors });
+            return Err(ErrorKind::Errors { span, errors });
         }
 
         Ok(())
@@ -1078,13 +1080,13 @@ impl Analyzer<'_, '_> {
                                             if lp.accessibility == Some(Accessibility::Private)
                                                 || rp.accessibility == Some(Accessibility::Private)
                                             {
-                                                return Err(Error::AssignFailedDueToAccessibility { span });
+                                                return Err(ErrorKind::AssignFailedDueToAccessibility { span });
                                             }
                                         }
 
                                         if !opts.for_castablity {
                                             if !lp.optional && rp.optional {
-                                                return Err(Error::AssignFailedDueToOptionalityDifference { span });
+                                                return Err(ErrorKind::AssignFailedDueToOptionalityDifference { span });
                                             }
                                         }
 
@@ -1337,7 +1339,8 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     errors.push(
-                                        Error::SimpleAssignFailed { span, cause: None }.context("failed to assign to an index signature"),
+                                        ErrorKind::SimpleAssignFailed { span, cause: None }
+                                            .context("failed to assign to an index signature"),
                                     );
                                 }
                             }
@@ -1453,7 +1456,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if !opts.is_assigning_to_class_members {
-                            return Err(Error::SimpleAssignFailed { span, cause: None }.context("failed to assign to a constructor"));
+                            return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("failed to assign to a constructor"));
                         }
                     }
 
@@ -1469,9 +1472,9 @@ impl Analyzer<'_, '_> {
         }
 
         if !errors.is_empty() {
-            return Err(Error::ObjectAssignFailed {
+            return Err(ErrorKind::ObjectAssignFailed {
                 span,
-                errors: Error::flatten(errors),
+                errors: ErrorKind::flatten(errors),
             });
         }
 

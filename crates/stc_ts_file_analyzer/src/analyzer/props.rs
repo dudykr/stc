@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{RComputedPropName, RExpr, RGetterProp, RIdent, RMemberExpr, RPrivateName, RProp, RPropName};
-use stc_ts_errors::{Error, Errors};
+use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{Accessor, ComputedKey, Key, KeywordType, PrivateName, TypeParam};
 use stc_ts_utils::PatExt;
@@ -101,7 +101,7 @@ impl Analyzer<'_, '_> {
                 Err(err) => {
                     check_for_symbol_form = false;
                     match err {
-                        Error::TS2585 { span } => Err(Error::TS2585 { span })?,
+                        ErrorKind::TS2585 { span } => Err(ErrorKind::TS2585 { span })?,
                         _ => {}
                     }
 
@@ -123,7 +123,7 @@ impl Analyzer<'_, '_> {
 
                     analyzer
                         .storage
-                        .report(Error::InvalidTypeForComputedProperty { span, ty: box ty.clone() });
+                        .report(ErrorKind::InvalidTypeForComputedProperty { span, ty: box ty.clone() });
                 }
             }
 
@@ -145,7 +145,7 @@ impl Analyzer<'_, '_> {
                                 _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() || ty.is_symbol() => {}
                                 _ => match mode {
                                     ComputedPropMode::Interface => {
-                                        errors.push(Error::TS1169 { span: node.span });
+                                        errors.push(ErrorKind::TS1169 { span: node.span });
                                         check_for_symbol_form = false;
                                     }
                                     _ => {}
@@ -172,7 +172,7 @@ impl Analyzer<'_, '_> {
                     }) if ty.normalize_instance().is_kwd(TsKeywordTypeKind::TsSymbolKeyword) => {}
                     _ => {
                         //
-                        analyzer.storage.report(Error::NonSymbolComputedPropInFormOfSymbol { span });
+                        analyzer.storage.report(ErrorKind::NonSymbolComputedPropInFormOfSymbol { span });
                     }
                 }
             }
@@ -252,7 +252,8 @@ impl Analyzer<'_, '_> {
                 match scope.kind() {
                     ScopeKind::Class => {
                         if scope.declaring_type_params.contains(&used.name) {
-                            self.storage.report(Error::DeclaringTypeParamReferencedByComputedPropName { span });
+                            self.storage
+                                .report(ErrorKind::DeclaringTypeParamReferencedByComputedPropName { span });
                         }
                     }
                     _ => {
@@ -577,7 +578,7 @@ impl Analyzer<'_, '_> {
                         let ret_ty = child.visit_stmts_for_return(n.span, false, false, &body.stmts)?;
                         if let None = ret_ty {
                             // getter property must have return statements.
-                            child.storage.report(Error::TS2378 { span: n.key.span() });
+                            child.storage.report(ErrorKind::TS2378 { span: n.key.span() });
                         }
 
                         return Ok(ret_ty);

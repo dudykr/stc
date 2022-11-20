@@ -8,7 +8,7 @@ use stc_ts_ast_rnode::{
     RArrayPat, RAssignPat, RBindingIdent, RDecl, RExpr, RIdent, RModuleDecl, RModuleItem, RObjectPat, RPat, RPropName, RRestPat, RStmt,
     RTsEntityName, RTsType, RTsTypeAnn,
 };
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 use swc_common::Spanned;
 
 pub use self::{comments::StcComments, map_with_mut::MapWithMut};
@@ -240,6 +240,6 @@ impl PatExt for RPat {
 }
 
 /// Type annotation
-pub fn run<Ret>(op: impl FnOnce() -> Result<Ret, Error>) -> Result<Ret, Error> {
+pub fn run<Ret>(op: impl FnOnce() -> Result<Ret, ErrorKind>) -> Result<Ret, ErrorKind> {
     op()
 }

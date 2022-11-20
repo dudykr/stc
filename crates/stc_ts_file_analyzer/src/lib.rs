@@ -17,7 +17,7 @@
 use std::path::PathBuf;
 
 use stc_ts_env::StableEnv;
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer_macros::validator;
 pub use stc_ts_types::{Id, ModuleTypeData};
 use swc_atoms::JsWord;
@@ -34,7 +34,7 @@ pub mod util;
 pub mod validator;
 
 /// Validation result
-pub type VResult<T> = Result<T, Error>;
+pub type VResult<T> = Result<T, ErrorKind>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct DepInfo {

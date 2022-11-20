@@ -1,5 +1,5 @@
 use stc_ts_ast_rnode::{RExpr, RIdent, RTsEntityName};
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{Array, ArrayMetadata, Ref, Type, TypeElement};
 use swc_atoms::js_word;
 use swc_common::{Spanned, TypeEq};
@@ -50,7 +50,7 @@ impl Analyzer<'_, '_> {
                             errors.extend(self.assign_inner(data, &type_args.params[0], &el.ty, opts).err());
                         }
                         if !errors.is_empty() {
-                            return Some(Err(Error::TupleAssignError { span, errors }));
+                            return Some(Err(ErrorKind::TupleAssignError { span, errors }));
                         }
                     }
                     return Some(Ok(()));
@@ -79,7 +79,7 @@ impl Analyzer<'_, '_> {
                         return Some(Ok(()));
                     }
 
-                    return Some(Err(Error::NoCallSignature {
+                    return Some(Err(ErrorKind::NoCallSignature {
                         span: opts.span,
                         callee: box r.clone(),
                     }));
@@ -115,7 +115,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return Some(Err(Error::NoCallSignature {
+                    return Some(Err(ErrorKind::NoCallSignature {
                         span: opts.span,
                         callee: box r.clone(),
                     }));
@@ -215,7 +215,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if done {
-                            return Some(Err(Error::SimpleAssignFailed { span, cause: None }
+                            return Some(Err(ErrorKind::SimpleAssignFailed { span, cause: None }
                                 .context("tried optimized assignment of `Promise<T>` to union")));
                         }
                     }

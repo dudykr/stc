@@ -11,7 +11,7 @@ use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase, RSwitchStmt,
 };
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
 use stc_ts_utils::MapWithMut;
@@ -723,7 +723,7 @@ impl Analyzer<'_, '_> {
                                     self.assign_with_op(span, op, &lhs, &ty)?;
                                 }
                             }
-                            _ => Err(Error::InvalidOperatorForLhs { span, op })?,
+                            _ => Err(ErrorKind::InvalidOperatorForLhs { span, op })?,
                         }
                     }
                 }
@@ -834,7 +834,7 @@ impl Analyzer<'_, '_> {
                     }
                 } else {
                     if !opts.ignore_lhs_errors {
-                        self.storage.report(Error::NoSuchVar {
+                        self.storage.report(ErrorKind::NoSuchVar {
                             span,
                             name: i.id.clone().into(),
                         });
@@ -872,7 +872,7 @@ impl Analyzer<'_, '_> {
                         for ty in types {
                             match ty.normalize() {
                                 Type::Module(..) => {
-                                    return Err(Error::NotVariable {
+                                    return Err(ErrorKind::NotVariable {
                                         span: i.id.span,
                                         left: lhs.span(),
                                         ty: Some(box ty.normalize().clone()),
@@ -887,7 +887,7 @@ impl Analyzer<'_, '_> {
                         Ok(())
                     } else {
                         // undefined symbol
-                        Err(Error::UndefinedSymbol {
+                        Err(ErrorKind::UndefinedSymbol {
                             sym: i.id.clone().into(),
                             span: i.id.span,
                         })
@@ -1018,27 +1018,31 @@ impl Analyzer<'_, '_> {
                                 RPat::Ident(_) => {}
 
                                 RPat::Array(_) => {
-                                    self.storage.report(Error::NotArrayType { span: r.arg.span() });
-                                    self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                    self.storage.report(ErrorKind::NotArrayType { span: r.arg.span() });
+                                    self.storage
+                                        .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
 
                                 RPat::Object(_) => {
-                                    self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                    self.storage
+                                        .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
 
                                 RPat::Expr(expr) => {
                                     // { ...obj?.a["b"] }
                                     if is_obj_opt_chaining(&expr) {
-                                        return Err(Error::InvalidRestPatternInOptionalChain { span: r.span });
+                                        return Err(ErrorKind::InvalidRestPatternInOptionalChain { span: r.span });
                                     }
 
-                                    self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                    self.storage
+                                        .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
                                 }
 
                                 RPat::Invalid(_) => {
                                     // self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span:
                                     // r.arg.span() });
-                                    self.storage.report(Error::RestArgMustBeVarOrMemberAccess { span: r.arg.span() });
+                                    self.storage
+                                        .report(ErrorKind::RestArgMustBeVarOrMemberAccess { span: r.arg.span() });
                                 }
 
                                 _ => {}
@@ -1066,7 +1070,7 @@ impl Analyzer<'_, '_> {
             RPat::Expr(lhs) => {
                 match &**lhs {
                     RExpr::Lit(..) => {
-                        self.storage.report(Error::InvalidLhsOfAssign { span: lhs.span() });
+                        self.storage.report(ErrorKind::InvalidLhsOfAssign { span: lhs.span() });
                         return Ok(());
                     }
                     _ => {}
@@ -1208,7 +1212,7 @@ impl Analyzer<'_, '_> {
                 }
             }
             Err(err) => match err.actual() {
-                Error::NoSuchProperty { .. } | Error::NoSuchPropertyInClass { .. } => {
+                ErrorKind::NoSuchProperty { .. } | ErrorKind::NoSuchPropertyInClass { .. } => {
                     return Ok(Type::never(
                         src.span(),
                         KeywordTypeMetadata {

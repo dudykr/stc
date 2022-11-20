@@ -14,7 +14,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_base_type_ops::bindings::Bindings;
 use stc_ts_dts_mutations::Mutations;
 use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
-use stc_ts_errors::{debug::debugger::Debugger, Error};
+use stc_ts_errors::{debug::debugger::Debugger, ErrorKind};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
 use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
@@ -398,7 +398,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         debugger: Option<Debugger>,
     ) -> Self {
         if env.rule().use_define_property_for_class_fields && env.target() == EsVersion::Es3 {
-            storage.report(Error::OptionInvalidForEs3 { span: DUMMY_SP })
+            storage.report(ErrorKind::OptionInvalidForEs3 { span: DUMMY_SP })
         }
 
         Self::new_inner(
@@ -780,7 +780,8 @@ impl Analyzer<'_, '_> {
                         self.export_equals_span = decl.span;
                     }
                     if !is_dts && has_normal_export {
-                        self.storage.report(Error::ExportEqualsMixedWithOtherExports { span: decl.span });
+                        self.storage
+                            .report(ErrorKind::ExportEqualsMixedWithOtherExports { span: decl.span });
                     }
 
                     //
@@ -793,7 +794,7 @@ impl Analyzer<'_, '_> {
                     | RModuleDecl::TsNamespaceExport(..) => {
                         has_normal_export = true;
                         if !is_dts && !self.export_equals_span.is_dummy() {
-                            self.storage.report(Error::ExportEqualsMixedWithOtherExports {
+                            self.storage.report(ErrorKind::ExportEqualsMixedWithOtherExports {
                                 span: self.export_equals_span,
                             });
                         }
@@ -1034,7 +1035,7 @@ impl Analyzer<'_, '_> {
                     if let Some(pos) = name.as_bytes().iter().position(|&c| c == b'*') {
                         if let Some(rpos) = name.as_bytes().iter().rposition(|&c| c == b'*') {
                             if pos != rpos {
-                                self.storage.report(Error::TooManyAsterisk { span: s.span });
+                                self.storage.report(ErrorKind::TooManyAsterisk { span: s.span });
                             }
                         }
                     }

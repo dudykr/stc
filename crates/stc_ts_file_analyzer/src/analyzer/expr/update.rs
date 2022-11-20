@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use stc_ts_ast_rnode::{RExpr, RLit, RParenExpr, RTsLit, RUpdateExpr};
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 use stc_ts_types::{KeywordType, LitType, Type};
 use stc_utils::cache::Freeze;
 use swc_common::Spanned;
@@ -20,7 +20,7 @@ impl Analyzer<'_, '_> {
         let span = e.span;
 
         match &*e.arg {
-            RExpr::New(..) => self.storage.report(Error::ExprInvalidForUpdateArg { span }),
+            RExpr::New(..) => self.storage.report(ErrorKind::ExprInvalidForUpdateArg { span }),
             _ => {}
         }
 
@@ -52,7 +52,7 @@ impl Analyzer<'_, '_> {
                 | Type::This(..)
                 | Type::Function(..) => {
                     errored = true;
-                    Err(Error::TypeInvalidForUpdateArg {
+                    Err(ErrorKind::TypeInvalidForUpdateArg {
                         span: e.arg.span(),
                         ty: box ty.clone(),
                     })
@@ -61,7 +61,7 @@ impl Analyzer<'_, '_> {
                 _ if ty.is_global_this() => {
                     errored = true;
 
-                    Err(Error::TypeInvalidForUpdateArg {
+                    Err(ErrorKind::TypeInvalidForUpdateArg {
                         span: e.arg.span(),
                         ty: box ty.clone(),
                     })
@@ -70,7 +70,7 @@ impl Analyzer<'_, '_> {
                 Type::Enum(..) => {
                     errored = true;
 
-                    Err(Error::CannotAssignToEnum { span: e.arg.span() })
+                    Err(ErrorKind::CannotAssignToEnum { span: e.arg.span() })
                 }
 
                 Type::Lit(LitType {
@@ -82,7 +82,7 @@ impl Analyzer<'_, '_> {
                 }) => {
                     match &*e.arg {
                         RExpr::Lit(RLit::Num(..)) | RExpr::Call(..) | RExpr::Paren(..) => {
-                            self.storage.report(Error::ExprInvalidForUpdateArg { span });
+                            self.storage.report(ErrorKind::ExprInvalidForUpdateArg { span });
                         }
 
                         _ => {}
@@ -96,7 +96,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = ty {
             if let Some(false) = self.is_update_operand_valid(&ty).report(&mut self.storage) {
-                self.storage.report(Error::InvalidNumericOperand { span: e.arg.span() })
+                self.storage.report(ErrorKind::InvalidNumericOperand { span: e.arg.span() })
             }
         } else {
             if !errored
@@ -108,7 +108,7 @@ impl Analyzer<'_, '_> {
                     _ => false,
                 }
             {
-                self.storage.report(Error::UpdateArgMustBeVariableOrPropertyAccess { span });
+                self.storage.report(ErrorKind::UpdateArgMustBeVariableOrPropertyAccess { span });
             }
         }
 

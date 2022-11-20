@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith};
 use stc_ts_ast_rnode::{RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName};
-use stc_ts_errors::{Error, Errors};
+use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Interface, KeywordType, KeywordTypeMetadata, Ref, TypeElement,
@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Make this efficient by report same error only once.
                 if v.len() >= 2 {
                     for &span in &*v {
-                        self.storage.report(Error::DuplicateFnImpl { span })
+                        self.storage.report(ErrorKind::DuplicateFnImpl { span })
                     }
                 }
             }
@@ -67,7 +67,7 @@ impl Analyzer<'_, '_> {
                             })
                             | RPat::Rest(..) => {}
                             _ => {
-                                child.storage.report(Error::TS1016 { span: p.span() });
+                                child.storage.report(ErrorKind::TS1016 { span: p.span() });
                             }
                         }
                     }
@@ -177,12 +177,12 @@ impl Analyzer<'_, '_> {
                         if f.is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
                             child
                                 .storage
-                                .report(Error::GeneratorCannotHaveVoidAsReturnType { span: declared.span() })
+                                .report(ErrorKind::GeneratorCannotHaveVoidAsReturnType { span: declared.span() })
                         }
                     } else {
                         if child.rule().no_implicit_any {
                             if child.is_implicitly_typed(&inferred_return_type) {
-                                child.storage.report(Error::ImplicitReturnType { span })
+                                child.storage.report(ErrorKind::ImplicitReturnType { span })
                             }
                         }
 
@@ -213,7 +213,7 @@ impl Analyzer<'_, '_> {
                                 kind: TsKeywordTypeKind::TsNeverKeyword,
                                 ..
                             }) => {}
-                            _ => errors.push(Error::ReturnRequired { span }),
+                            _ => errors.push(ErrorKind::ReturnRequired { span }),
                         }
                     }
 
@@ -317,7 +317,8 @@ impl Analyzer<'_, '_> {
                 if let Some(default) = default {
                     args.params.push(default);
                 } else {
-                    self.storage.report(Error::ImplicitAny { span }.context("qualify_ref_type_args"));
+                    self.storage
+                        .report(ErrorKind::ImplicitAny { span }.context("qualify_ref_type_args"));
                     args.params
                         .push(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                 }

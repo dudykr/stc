@@ -2,7 +2,7 @@ use stc_ts_ast_rnode::{
     RBigInt, RBool, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, RNumber, ROptChainBase, ROptChainExpr, RParenExpr, RStr, RTsLit,
     RUnaryExpr,
 };
-use stc_ts_errors::{DebugExt, Error, Errors};
+use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};
@@ -66,7 +66,7 @@ impl Analyzer<'_, '_> {
             op!(unary, "+") | op!(unary, "-") | op!("~") => {
                 if let Some(arg) = &arg_ty {
                     if arg.is_symbol_like() {
-                        self.storage.report(Error::NumericOpToSymbol { span: arg.span() })
+                        self.storage.report(ErrorKind::NumericOpToSymbol { span: arg.span() })
                     }
                 }
             }
@@ -156,7 +156,7 @@ impl Analyzer<'_, '_> {
                 ..
             })) => {
                 debug_assert!(!arg.span().is_dummy());
-                return Err(Error::Unknown { span: arg.span() });
+                return Err(ErrorKind::Unknown { span: arg.span() });
             }
             _ => {}
         }
@@ -196,7 +196,7 @@ impl Analyzer<'_, '_> {
                 obj: box RExpr::This(..),
                 prop: RMemberProp::PrivateName(..),
                 ..
-            }) => Err(Error::CannotDeletePrivateProperty { span }),
+            }) => Err(ErrorKind::CannotDeletePrivateProperty { span }),
 
             RExpr::Paren(RParenExpr {
                 expr: box RExpr::Member(expr),
@@ -209,13 +209,13 @@ impl Analyzer<'_, '_> {
             | RExpr::Member(expr) => {
                 if self.rule().strict_null_checks {
                     let ty = self.type_of_member_expr(expr, TypeOfMode::RValue).convert_err(|err| match &err {
-                        Error::ObjectIsPossiblyNull { span, .. }
-                        | Error::ObjectIsPossiblyUndefined { span, .. }
-                        | Error::ObjectIsPossiblyNullOrUndefined { span, .. } => Error::DeleteOperandMustBeOptional { span: *span },
+                        ErrorKind::ObjectIsPossiblyNull { span, .. }
+                        | ErrorKind::ObjectIsPossiblyUndefined { span, .. }
+                        | ErrorKind::ObjectIsPossiblyNullOrUndefined { span, .. } => ErrorKind::DeleteOperandMustBeOptional { span: *span },
                         _ => err,
                     })?;
                     if !self.can_be_undefined(span, &ty)? {
-                        return Err(Error::DeleteOperandMustBeOptional { span });
+                        return Err(ErrorKind::DeleteOperandMustBeOptional { span });
                     }
                 }
                 return Ok(());
@@ -228,9 +228,9 @@ impl Analyzer<'_, '_> {
                 return self.validate_delete_operand(expr);
             }
 
-            RExpr::Await(..) => Err(Error::InvalidDeleteOperand { span }),
+            RExpr::Await(..) => Err(ErrorKind::InvalidDeleteOperand { span }),
 
-            _ => Err(Error::InvalidDeleteOperand { span }),
+            _ => Err(ErrorKind::InvalidDeleteOperand { span }),
         }
     }
 
@@ -244,7 +244,7 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => {
                     self.storage
-                        .report(Error::UndefinedOrNullIsNotValidOperand { span: arg_expr.span() });
+                        .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: arg_expr.span() });
                     return;
                 }
                 _ => {}
@@ -255,7 +255,7 @@ impl Analyzer<'_, '_> {
 
         match op {
             op!("typeof") | op!("delete") | op!("void") => match arg.normalize() {
-                Type::EnumVariant(..) if op == op!("delete") => errors.push(Error::TS2704 { span: arg.span() }),
+                Type::EnumVariant(..) if op == op!("delete") => errors.push(ErrorKind::TS2704 { span: arg.span() }),
 
                 _ => {}
             },
@@ -269,12 +269,12 @@ impl Analyzer<'_, '_> {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
-                }) => errors.push(Error::TS2531 { span: arg.span() }),
+                }) => errors.push(ErrorKind::TS2531 { span: arg.span() }),
 
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
-                }) => errors.push(Error::ObjectIsPossiblyUndefined { span: arg.span() }),
+                }) => errors.push(ErrorKind::ObjectIsPossiblyUndefined { span: arg.span() }),
 
                 _ => {
                     //

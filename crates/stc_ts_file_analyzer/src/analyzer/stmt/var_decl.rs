@@ -4,7 +4,7 @@ use rnode::{FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RCallExpr, RCallee, RExpr, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsTypeAssertion, RVarDecl, RVarDeclarator,
 };
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind, Errors};
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     Array, EnumVariant, Id, Instance, InstanceMetadata, KeywordType, KeywordTypeMetadata, Operator, OperatorMetadata, QueryExpr, QueryType,
@@ -596,12 +596,12 @@ impl Analyzer<'_, '_> {
                                         match v.name {
                                             RPat::Ident(ref i) => {
                                                 let span = i.id.span;
-                                                type_errors.push(Error::ImplicitAny { span }.context("tuple type widenning"));
+                                                type_errors.push(ErrorKind::ImplicitAny { span }.context("tuple type widenning"));
                                                 break;
                                             }
                                             RPat::Array(RArrayPat { ref elems, .. }) => {
                                                 let span = elems[i].span();
-                                                type_errors.push(Error::ImplicitAny { span }.context("tuple type widenning"));
+                                                type_errors.push(ErrorKind::ImplicitAny { span }.context("tuple type widenning"));
                                             }
                                             _ => {}
                                         }

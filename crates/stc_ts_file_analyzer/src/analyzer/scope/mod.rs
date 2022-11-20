@@ -13,7 +13,7 @@ use iter::once;
 use once_cell::sync::Lazy;
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
@@ -767,7 +767,7 @@ impl Analyzer<'_, '_> {
 
         if v.len() >= 2 {
             for span in v.iter().copied() {
-                self.storage.report(Error::DuplicateName { span, name: id.clone() })
+                self.storage.report(ErrorKind::DuplicateName { span, name: id.clone() })
             }
         }
     }
@@ -793,9 +793,9 @@ impl Analyzer<'_, '_> {
                 self.data.exported_type_decls.entry(name.clone()).or_default().push(ty.span());
 
                 if let Some(spans) = self.data.local_type_decls.get(&name) {
-                    self.storage.report(Error::ExportMixedWithLocal { span: ty.span() });
+                    self.storage.report(ErrorKind::ExportMixedWithLocal { span: ty.span() });
                     for (i, span) in spans.iter().copied().enumerate() {
-                        self.storage.report(Error::ExportMixedWithLocal { span });
+                        self.storage.report(ErrorKind::ExportMixedWithLocal { span });
                         if i == 0 {
                             self.data.unmergable_type_decls.remove(&name);
                         }
@@ -805,10 +805,10 @@ impl Analyzer<'_, '_> {
                 self.data.local_type_decls.entry(name.clone()).or_default().push(ty.span());
 
                 if let Some(spans) = self.data.exported_type_decls.get(&name) {
-                    self.storage.report(Error::ExportMixedWithLocal { span: ty.span() });
+                    self.storage.report(ErrorKind::ExportMixedWithLocal { span: ty.span() });
 
                     for (i, span) in spans.iter().copied().enumerate() {
-                        self.storage.report(Error::ExportMixedWithLocal { span });
+                        self.storage.report(ErrorKind::ExportMixedWithLocal { span });
 
                         if i == 0 {
                             self.data.unmergable_type_decls.remove(&name);
@@ -1282,13 +1282,13 @@ impl Analyzer<'_, '_> {
                 let mut done = false;
                 for (_, span) in &**spans {
                     if matches!(kind, VarKind::Param | VarKind::Class) {
-                        self.storage.report(Error::DuplicateName {
+                        self.storage.report(ErrorKind::DuplicateName {
                             name: name.clone(),
                             span: *span,
                         });
                         done = true;
                     } else {
-                        self.storage.report(Error::DuplicateVar {
+                        self.storage.report(ErrorKind::DuplicateVar {
                             name: name.clone(),
                             span: *span,
                         });
@@ -1304,7 +1304,7 @@ impl Analyzer<'_, '_> {
         match kind {
             VarKind::Var(VarDeclKind::Let | VarDeclKind::Const) => {
                 if *name.sym() == js_word!("let") || *name.sym() == js_word!("const") {
-                    self.storage.report(Error::LetOrConstIsNotValidIdInLetOrConstVarDecls { span });
+                    self.storage.report(ErrorKind::LetOrConstIsNotValidIdInLetOrConstVarDecls { span });
                 }
             }
             _ => {}
@@ -1442,7 +1442,7 @@ impl Analyzer<'_, '_> {
                                     Type::Query(..) => {}
                                     // Allow overloading query type.
                                     Type::Function(..) => {}
-                                    Type::ClassDef(..) => return Err(Error::DuplicateName { name: name.clone(), span }),
+                                    Type::ClassDef(..) => return Err(ErrorKind::DuplicateName { name: name.clone(), span }),
                                     Type::Union(..) => {
                                         // TODO(kdy1): Check if all types are
                                         // query or
@@ -1463,7 +1463,7 @@ impl Analyzer<'_, '_> {
                                                 },
                                             )
                                             .context("tried to validate a varaible declared multiple times")
-                                            .convert_err(|err| Error::VarDeclNotCompatible {
+                                            .convert_err(|err| ErrorKind::VarDeclNotCompatible {
                                                 span: err.span(),
                                                 cause: box err,
                                             });
@@ -1563,7 +1563,7 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )
-                    .convert_err(|err| Error::ImcompatibleFnOverload {
+                    .convert_err(|err| ErrorKind::ImcompatibleFnOverload {
                         span: orig.span(),
                         cause: box err,
                     })
@@ -1963,7 +1963,7 @@ impl Expander<'_, '_, '_> {
 
                             ty @ Type::Enum(..) => {
                                 if let Some(..) = type_args {
-                                    Err(Error::NotGeneric { span })?;
+                                    Err(ErrorKind::NotGeneric { span })?;
                                 }
                                 verify!(ty);
                                 return Ok(Some(ty.clone()));
@@ -1971,7 +1971,7 @@ impl Expander<'_, '_, '_> {
 
                             ty @ Type::Param(..) => {
                                 if let Some(..) = type_args {
-                                    Err(Error::NotGeneric { span })?;
+                                    Err(ErrorKind::NotGeneric { span })?;
                                 }
 
                                 verify!(ty);

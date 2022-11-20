@@ -34,7 +34,7 @@ mod result_ext;
 
 impl Errors {
     /// This is used for debugging (by calling [pacic]).
-    fn validate(&self, err: &Error) {
+    fn validate(&self, err: &ErrorKind) {
         if let Ok(var) = std::env::var("DBG_ERROR") {
             let s = format!("{:?}", err);
             if var != "" && s.contains(&var) {
@@ -44,13 +44,13 @@ impl Errors {
 
         match err {
             // Error::UndefinedSymbol { .. } => panic!(),
-            Error::Errors { ref errors, .. } => {
+            ErrorKind::Errors { ref errors, .. } => {
                 for err in errors {
                     self.validate(err)
                 }
                 return;
             }
-            Error::DebugContext { .. } => return,
+            ErrorKind::DebugContext { .. } => return,
             _ => {}
         }
 
@@ -65,11 +65,11 @@ impl Errors {
 
 #[derive(Derivative, Clone, PartialEq, Spanned)]
 #[derivative(Debug)]
-pub enum Error {
+pub enum ErrorKind {
     /// TS2430
     InvalidInterfaceInheritance {
         span: Span,
-        cause: Box<Error>,
+        cause: Box<ErrorKind>,
     },
 
     /// TS2339
@@ -81,7 +81,7 @@ pub enum Error {
     VarDeclNotCompatible {
         span: Span,
 
-        cause: Box<Error>,
+        cause: Box<ErrorKind>,
     },
 
     /// TS2795
@@ -450,7 +450,7 @@ pub enum Error {
     /// TS2394
     ImcompatibleFnOverload {
         span: Span,
-        cause: Box<Error>,
+        cause: Box<ErrorKind>,
     },
 
     /// TS2371
@@ -525,7 +525,7 @@ pub enum Error {
     /// TS2420
     InvalidImplOfInterface {
         span: Span,
-        cause: Box<Error>,
+        cause: Box<ErrorKind>,
     },
 
     /// TS2302
@@ -668,7 +668,7 @@ pub enum Error {
         /// Span of argument.
         span: Span,
 
-        inner: Box<Error>,
+        inner: Box<ErrorKind>,
     },
 
     ImportFailed {
@@ -810,12 +810,12 @@ pub enum Error {
 
     TupleAssignError {
         span: Span,
-        errors: Vec<Error>,
+        errors: Vec<ErrorKind>,
     },
 
     Errors {
         span: Span,
-        errors: Vec<Error>,
+        errors: Vec<ErrorKind>,
     },
 
     RedeclaredVarWithDifferentType {
@@ -979,7 +979,7 @@ pub enum Error {
         right_ident: Option<Span>,
         #[derivative(Debug = "ignore")]
         right: Box<Type>,
-        cause: Vec<Error>,
+        cause: Vec<ErrorKind>,
     },
 
     /// TS2322
@@ -994,17 +994,17 @@ pub enum Error {
 
     ObjectAssignFailed {
         span: Span,
-        errors: Vec<Error>,
+        errors: Vec<ErrorKind>,
     },
 
     SimpleAssignFailed {
         span: Span,
-        cause: Option<Box<Error>>,
+        cause: Option<Box<ErrorKind>>,
     },
 
     SimpleAssignFailedWithCause {
         span: Span,
-        cause: Vec<Error>,
+        cause: Vec<ErrorKind>,
     },
 
     InvalidAssignmentOfArray {
@@ -1014,12 +1014,12 @@ pub enum Error {
     /// a or b or c
     UnionError {
         span: Span,
-        errors: Vec<Error>,
+        errors: Vec<ErrorKind>,
     },
 
     IntersectionError {
         span: Span,
-        error: Box<Error>,
+        error: Box<ErrorKind>,
     },
 
     CannotAssingToThis {
@@ -1373,17 +1373,17 @@ pub enum Error {
 }
 
 #[cfg(target_pointer_width = "64")]
-assert_eq_size!(Error, [u8; 72]);
+assert_eq_size!(ErrorKind, [u8; 72]);
 
-impl Error {
+impl ErrorKind {
     pub fn convert<F>(self, op: F) -> Self
     where
         F: FnOnce(Self) -> Self,
     {
         match self {
-            Error::DebugContext(c) => {
+            ErrorKind::DebugContext(c) => {
                 let c = c.convert(op);
-                Error::DebugContext(c)
+                ErrorKind::DebugContext(c)
             }
             _ => op(self),
         }
@@ -1401,7 +1401,7 @@ impl Error {
     #[cfg_attr(not(debug_assertions), inline(always))]
     pub fn actual(&self) -> &Self {
         match self {
-            Error::DebugContext(ctx) => ctx.inner.actual(),
+            ErrorKind::DebugContext(ctx) => ctx.inner.actual(),
             _ => self,
         }
     }
@@ -1411,18 +1411,18 @@ impl Error {
         F: FnMut(Self) -> Self,
     {
         match self {
-            Error::DebugContext(c) => {
+            ErrorKind::DebugContext(c) => {
                 let c = c.convert_all(op);
-                Error::DebugContext(c)
+                ErrorKind::DebugContext(c)
             }
 
-            Error::Errors { span, errors } => {
+            ErrorKind::Errors { span, errors } => {
                 let mut new = Vec::with_capacity(errors.capacity());
                 for err in errors {
                     new.push(err.convert_all_inner(op));
                 }
 
-                Error::Errors { span, errors: new }
+                ErrorKind::Errors { span, errors: new }
             }
 
             _ => op(self),
@@ -1433,7 +1433,7 @@ impl Error {
 impl DebugContext {
     fn convert<F>(self, op: F) -> Self
     where
-        F: FnOnce(Error) -> Error,
+        F: FnOnce(ErrorKind) -> ErrorKind,
     {
         let inner = box self.inner.convert(op);
 
@@ -1442,7 +1442,7 @@ impl DebugContext {
 
     fn convert_all<F>(self, op: &mut F) -> Self
     where
-        F: FnMut(Error) -> Error,
+        F: FnMut(ErrorKind) -> ErrorKind,
     {
         let inner = box self.inner.convert_all_inner(op);
 
@@ -1454,7 +1454,7 @@ impl DebugContext {
 pub struct DebugContext {
     pub span: Span,
     pub context: String,
-    pub inner: Box<Error>,
+    pub inner: Box<ErrorKind>,
 }
 
 impl Debug for DebugContext {
@@ -1465,7 +1465,7 @@ impl Debug for DebugContext {
             writeln!(f, "{}: {}", Yellow.paint("context"), cur.context)?;
 
             match &*cur.inner {
-                Error::DebugContext(c) => next = Some(c),
+                ErrorKind::DebugContext(c) => next = Some(c),
                 _ => {
                     Debug::fmt(&cur.inner, f)?;
                     break;
@@ -1477,7 +1477,7 @@ impl Debug for DebugContext {
     }
 }
 
-impl Error {
+impl ErrorKind {
     pub fn normalize_error_code(code: usize) -> usize {
         match code {
             // TS2304: Type not found.
@@ -1571,7 +1571,7 @@ impl Error {
                 let context = ctx();
 
                 match err {
-                    Error::Errors { .. } | Error::DebugContext { .. } => {}
+                    ErrorKind::Errors { .. } | ErrorKind::DebugContext { .. } => {}
                     _ => {
                         if err.span().is_dummy() {
                             unreachable!("Error with dummy span found(context: {}): {:#?}", context, err)
@@ -1579,7 +1579,7 @@ impl Error {
                     }
                 }
 
-                err = Error::DebugContext(DebugContext {
+                err = ErrorKind::DebugContext(DebugContext {
                     span: err.span(),
                     context,
                     inner: box err,
@@ -1597,7 +1597,7 @@ impl Error {
         }
 
         match self {
-            Error::Errors { .. } | Error::DebugContext { .. } => {}
+            ErrorKind::Errors { .. } | ErrorKind::DebugContext { .. } => {}
             _ => {
                 if self.span().is_dummy() {
                     unreachable!("Error with dummy span found(context: {}): {:#?}", context, self)
@@ -1605,7 +1605,7 @@ impl Error {
             }
         }
 
-        Error::DebugContext(DebugContext {
+        ErrorKind::DebugContext(DebugContext {
             span: self.span(),
             context: context.to_string(),
             inner: box self,
@@ -1624,7 +1624,7 @@ impl Error {
                     .into_causes()
                     .into_iter()
                     .map(|err| {
-                        Error::DebugContext(DebugContext {
+                        ErrorKind::DebugContext(DebugContext {
                             span,
                             inner: box err,
                             context: context.clone(),
@@ -1641,383 +1641,383 @@ impl Error {
     /// TypeScript error code.
     pub fn code(&self) -> usize {
         match self {
-            Error::TS1016 { .. } => 1016,
-            Error::TS1063 { .. } => 1063,
-            Error::TS1094 { .. } => 1094,
-            Error::TS1095 { .. } => 1095,
-            Error::TS1168 { .. } => 1168,
-            Error::TS1169 { .. } => 1169,
-            Error::TS1183 { .. } => 1183,
-            Error::TS1318 { .. } => 1318,
-            Error::TS1319 { .. } => 1319,
-            Error::ExportEqualsMixedWithOtherExports { .. } => 2309,
-            Error::AnyTypeUsedAsCalleeWithTypeArgs { .. } => 2347,
-            Error::TS2360 { .. } => 2360,
-            Error::InvalidRhsForInOperator { .. } => 2638,
-            Error::WrongTypeForLhsOfNumericOperation { .. } => 2362,
-            Error::WrongTypeForRhsOfNumericOperation { .. } => 2363,
-            Error::TS2365 { .. } => 2365,
-            Error::TS2370 { .. } => 2370,
-            Error::WrongOverloadSignature { .. } => 2394,
-            Error::TS1166 { .. } => 1166,
-            Error::TS1345 { .. } => 1345,
-            Error::TS2353 { .. } => 2353,
-            Error::ConstructorImplMissingOrNotFollowedByDecl { .. } => 2390,
-            Error::FnImplMissingOrNotFollowedByDecl { .. } => 2391,
-            Error::InvalidTypeForComputedProperty { .. } => 2464,
+            ErrorKind::TS1016 { .. } => 1016,
+            ErrorKind::TS1063 { .. } => 1063,
+            ErrorKind::TS1094 { .. } => 1094,
+            ErrorKind::TS1095 { .. } => 1095,
+            ErrorKind::TS1168 { .. } => 1168,
+            ErrorKind::TS1169 { .. } => 1169,
+            ErrorKind::TS1183 { .. } => 1183,
+            ErrorKind::TS1318 { .. } => 1318,
+            ErrorKind::TS1319 { .. } => 1319,
+            ErrorKind::ExportEqualsMixedWithOtherExports { .. } => 2309,
+            ErrorKind::AnyTypeUsedAsCalleeWithTypeArgs { .. } => 2347,
+            ErrorKind::TS2360 { .. } => 2360,
+            ErrorKind::InvalidRhsForInOperator { .. } => 2638,
+            ErrorKind::WrongTypeForLhsOfNumericOperation { .. } => 2362,
+            ErrorKind::WrongTypeForRhsOfNumericOperation { .. } => 2363,
+            ErrorKind::TS2365 { .. } => 2365,
+            ErrorKind::TS2370 { .. } => 2370,
+            ErrorKind::WrongOverloadSignature { .. } => 2394,
+            ErrorKind::TS1166 { .. } => 1166,
+            ErrorKind::TS1345 { .. } => 1345,
+            ErrorKind::TS2353 { .. } => 2353,
+            ErrorKind::ConstructorImplMissingOrNotFollowedByDecl { .. } => 2390,
+            ErrorKind::FnImplMissingOrNotFollowedByDecl { .. } => 2391,
+            ErrorKind::InvalidTypeForComputedProperty { .. } => 2464,
 
-            Error::ParamPropIsNotAllowedInAmbientConstructorx { .. } => 2369,
-            Error::TS2389 { .. } => 2389,
-            Error::TS2447 { .. } => 2447,
-            Error::ClassDoesNotImplementMemeber { .. } => 2515,
-            Error::TS2531 { .. } => 2531,
-            Error::TS2567 { .. } => 2567,
-            Error::TS2585 { .. } => 2585,
-            Error::TS2704 { .. } => 2704,
+            ErrorKind::ParamPropIsNotAllowedInAmbientConstructorx { .. } => 2369,
+            ErrorKind::TS2389 { .. } => 2389,
+            ErrorKind::TS2447 { .. } => 2447,
+            ErrorKind::ClassDoesNotImplementMemeber { .. } => 2515,
+            ErrorKind::TS2531 { .. } => 2531,
+            ErrorKind::TS2567 { .. } => 2567,
+            ErrorKind::TS2585 { .. } => 2585,
+            ErrorKind::TS2704 { .. } => 2704,
 
-            Error::AssignFailed { .. }
-            | Error::AssignFailedDueToAccessibility { .. }
-            | Error::ObjectAssignFailed { .. }
-            | Error::SimpleAssignFailed { .. }
-            | Error::SimpleAssignFailedWithCause { .. }
-            | Error::InvalidAssignmentOfArray { .. }
-            | Error::UnknownPropertyInObjectLiteralAssignment { .. }
-            | Error::InvalidOpAssign { .. }
-            | Error::TupleAssignError { .. } => 2322,
+            ErrorKind::AssignFailed { .. }
+            | ErrorKind::AssignFailedDueToAccessibility { .. }
+            | ErrorKind::ObjectAssignFailed { .. }
+            | ErrorKind::SimpleAssignFailed { .. }
+            | ErrorKind::SimpleAssignFailedWithCause { .. }
+            | ErrorKind::InvalidAssignmentOfArray { .. }
+            | ErrorKind::UnknownPropertyInObjectLiteralAssignment { .. }
+            | ErrorKind::InvalidOpAssign { .. }
+            | ErrorKind::TupleAssignError { .. } => 2322,
 
-            Error::NonOverlappingTypeCast { .. } => 2352,
+            ErrorKind::NonOverlappingTypeCast { .. } => 2352,
 
-            Error::SuperInClassWithoutSuper { .. } => 2335,
+            ErrorKind::SuperInClassWithoutSuper { .. } => 2335,
 
-            Error::NoSuchProperty { .. }
-            | Error::NoSuchPropertyInThis { .. }
-            | Error::NoSuchPropertyInClass { .. }
-            | Error::NoSuchPropertyInModule { .. } => 2339,
+            ErrorKind::NoSuchProperty { .. }
+            | ErrorKind::NoSuchPropertyInThis { .. }
+            | ErrorKind::NoSuchPropertyInClass { .. }
+            | ErrorKind::NoSuchPropertyInModule { .. } => 2339,
 
-            Error::AssignOpCannotBeApplied { .. } => 2365,
-            Error::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
-            Error::TypeUsedAsVar { .. } => 2693,
-            Error::TypeNotFound { .. } => 2304,
+            ErrorKind::AssignOpCannotBeApplied { .. } => 2365,
+            ErrorKind::NonSymbolComputedPropInFormOfSymbol { .. } => 2471,
+            ErrorKind::TypeUsedAsVar { .. } => 2693,
+            ErrorKind::TypeNotFound { .. } => 2304,
 
-            Error::NotVariable { .. } => 2539,
+            ErrorKind::NotVariable { .. } => 2539,
 
-            Error::NoInitAndNoDefault { .. } => 2525,
+            ErrorKind::NoInitAndNoDefault { .. } => 2525,
 
-            Error::ExpectedNArgsButGotM { .. } => 2554,
-            Error::ExpectedAtLeastNArgsButGotM { .. } => 2555,
-            Error::ExpectedNArgsButGotMOrMore { .. } => 2556,
-            Error::ExpectedAtLeastNArgsButGotMOrMore { .. } => 2557,
-            Error::SpreadMustBeTupleOrPassedToRest { .. } => 2556,
+            ErrorKind::ExpectedNArgsButGotM { .. } => 2554,
+            ErrorKind::ExpectedAtLeastNArgsButGotM { .. } => 2555,
+            ErrorKind::ExpectedNArgsButGotMOrMore { .. } => 2556,
+            ErrorKind::ExpectedAtLeastNArgsButGotMOrMore { .. } => 2557,
+            ErrorKind::SpreadMustBeTupleOrPassedToRest { .. } => 2556,
 
-            Error::ReferencedInInit { .. } => 2372,
+            ErrorKind::ReferencedInInit { .. } => 2372,
 
-            Error::InvalidDeleteOperand { .. } => 2703,
+            ErrorKind::InvalidDeleteOperand { .. } => 2703,
 
-            Error::DuplicateName { .. } | Error::DuplicateNameWithoutName { .. } => 2300,
+            ErrorKind::DuplicateName { .. } | ErrorKind::DuplicateNameWithoutName { .. } => 2300,
 
-            Error::NoSuchVar { .. } => 2304,
-            Error::NoSuchType { .. } => 2304,
-            Error::NoSuchTypeButVarExists { .. } => 2749,
-            Error::NoSuchVarButThisHasSuchProperty { .. } => 2663,
+            ErrorKind::NoSuchVar { .. } => 2304,
+            ErrorKind::NoSuchType { .. } => 2304,
+            ErrorKind::NoSuchTypeButVarExists { .. } => 2749,
+            ErrorKind::NoSuchVarButThisHasSuchProperty { .. } => 2663,
 
-            Error::CannotAssignAbstractConstructorToNonAbstractConstructor { .. } => 2322,
-            Error::CannotCreateInstanceOfAbstractClass { .. } => 2511,
-            Error::WrongArgType { .. } => 2345,
+            ErrorKind::CannotAssignAbstractConstructorToNonAbstractConstructor { .. } => 2322,
+            ErrorKind::CannotCreateInstanceOfAbstractClass { .. } => 2511,
+            ErrorKind::WrongArgType { .. } => 2345,
 
-            Error::ComputedMemberInEnumWithStrMember { .. } => 2553,
+            ErrorKind::ComputedMemberInEnumWithStrMember { .. } => 2553,
 
-            Error::TupleIndexError { .. } => 2493,
-            Error::NegativeTupleIndex { .. } => 2514,
-            Error::InvalidLValue { .. } => 2540,
+            ErrorKind::TupleIndexError { .. } => 2493,
+            ErrorKind::NegativeTupleIndex { .. } => 2514,
+            ErrorKind::InvalidLValue { .. } => 2540,
 
-            Error::TS2378 { .. } => 2378,
+            ErrorKind::TS2378 { .. } => 2378,
 
-            Error::ConstEnumNonIndexAccess { .. } => 2476,
+            ErrorKind::ConstEnumNonIndexAccess { .. } => 2476,
 
-            Error::InvalidUseOfConstEnum { .. } => 2475,
+            ErrorKind::InvalidUseOfConstEnum { .. } => 2475,
 
-            Error::DebugContext(c) => c.inner.code(),
+            ErrorKind::DebugContext(c) => c.inner.code(),
 
-            Error::ObjectIsPossiblyNull { .. } => 2531,
-            Error::ObjectIsPossiblyUndefined { .. } | Error::ObjectIsPossiblyUndefinedWithType { .. } => 2532,
-            Error::ObjectIsPossiblyNullOrUndefined { .. } => 2533,
+            ErrorKind::ObjectIsPossiblyNull { .. } => 2531,
+            ErrorKind::ObjectIsPossiblyUndefined { .. } | ErrorKind::ObjectIsPossiblyUndefinedWithType { .. } => 2532,
+            ErrorKind::ObjectIsPossiblyNullOrUndefined { .. } => 2533,
 
-            Error::InvalidBinaryOp { .. } => 2365,
+            ErrorKind::InvalidBinaryOp { .. } => 2365,
 
-            Error::CannotCompareWithOp { .. } => 2365,
+            ErrorKind::CannotCompareWithOp { .. } => 2365,
 
-            Error::TypeInvalidForUpdateArg { .. } => 2356,
-            Error::ExprInvalidForUpdateArg { .. } => 2357,
+            ErrorKind::TypeInvalidForUpdateArg { .. } => 2356,
+            ErrorKind::ExprInvalidForUpdateArg { .. } => 2357,
 
-            Error::CannotAssignToNonVariable { .. } => 2539,
-            Error::CannotAssignToModule { .. } => 2708,
-            Error::CannotAssignToClass { .. } => 2629,
-            Error::CannotAssignToEnum { .. } => 2628,
-            Error::CannotAssignToFunction { .. } => 2630,
+            ErrorKind::CannotAssignToNonVariable { .. } => 2539,
+            ErrorKind::CannotAssignToModule { .. } => 2708,
+            ErrorKind::CannotAssignToClass { .. } => 2629,
+            ErrorKind::CannotAssignToEnum { .. } => 2628,
+            ErrorKind::CannotAssignToFunction { .. } => 2630,
 
-            Error::AssignedWrapperToPrimitive { .. } => 2322,
+            ErrorKind::AssignedWrapperToPrimitive { .. } => 2322,
 
-            Error::AccessibilityDiffers { .. } => 2322,
+            ErrorKind::AccessibilityDiffers { .. } => 2322,
 
-            Error::InvalidInitInConstEnum { .. } => 2474,
+            ErrorKind::InvalidInitInConstEnum { .. } => 2474,
 
-            Error::InvalidTupleCast { .. } => 2352,
+            ErrorKind::InvalidTupleCast { .. } => 2352,
 
-            Error::NoOverlap { .. } => 2367,
+            ErrorKind::NoOverlap { .. } => 2367,
 
-            Error::InvalidLhsInInstanceOf { .. } => 2358,
+            ErrorKind::InvalidLhsInInstanceOf { .. } => 2358,
 
-            Error::InvalidRhsInInstanceOf { .. } => 2359,
+            ErrorKind::InvalidRhsInInstanceOf { .. } => 2359,
 
-            Error::NumericOpToSymbol { .. } => 2469,
+            ErrorKind::NumericOpToSymbol { .. } => 2469,
 
-            Error::InvalidNumericOperand { .. } => 2356,
+            ErrorKind::InvalidNumericOperand { .. } => 2356,
 
-            Error::UpdateOpToSymbol { .. } => 2469,
+            ErrorKind::UpdateOpToSymbol { .. } => 2469,
 
-            Error::UselessSeqExpr { .. } => 2695,
+            ErrorKind::UselessSeqExpr { .. } => 2695,
 
-            Error::EnumCannotBeLValue { .. } => 2540,
+            ErrorKind::EnumCannotBeLValue { .. } => 2540,
 
-            Error::NoSuchEnumVariant { .. } => 2339,
+            ErrorKind::NoSuchEnumVariant { .. } => 2339,
 
-            Error::TupleTooShort { .. } => 2339,
+            ErrorKind::TupleTooShort { .. } => 2339,
 
-            Error::SwitchCaseTestNotCompatible { .. } => 2678,
+            ErrorKind::SwitchCaseTestNotCompatible { .. } => 2678,
 
-            Error::NullishCoalescingMixedWithLogicalWithoutParen { .. } => 5076,
+            ErrorKind::NullishCoalescingMixedWithLogicalWithoutParen { .. } => 5076,
 
-            Error::OptionalBindingPatternInImplSignature { .. } => 2463,
+            ErrorKind::OptionalBindingPatternInImplSignature { .. } => 2463,
 
-            Error::GeneratorCannotHaveVoidAsReturnType { .. } => 2505,
+            ErrorKind::GeneratorCannotHaveVoidAsReturnType { .. } => 2505,
 
-            Error::MissingFields { .. } => 2741,
+            ErrorKind::MissingFields { .. } => 2741,
 
-            Error::MustHaveSymbolIteratorThatReturnsIterator { .. } => 2488,
+            ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { .. } => 2488,
 
-            Error::MustHaveSymbolAsyncIteratorThatReturnsIterator { .. } => 2504,
+            ErrorKind::MustHaveSymbolAsyncIteratorThatReturnsIterator { .. } => 2504,
 
-            Error::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { .. } => 2548,
+            ErrorKind::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { .. } => 2548,
 
-            Error::NoSuchPropertyWhileDeclWithBidningPat { .. } => 2525,
+            ErrorKind::NoSuchPropertyWhileDeclWithBidningPat { .. } => 2525,
 
-            Error::NoNewSignature { .. } => 2351,
+            ErrorKind::NoNewSignature { .. } => 2351,
 
-            Error::Unknown { .. } => 2571,
+            ErrorKind::Unknown { .. } => 2571,
 
-            Error::ReturnRequired { .. } => 2355,
+            ErrorKind::ReturnRequired { .. } => 2355,
 
-            Error::ThisRefToModuleOrNamespace { .. } => 2331,
+            ErrorKind::ThisRefToModuleOrNamespace { .. } => 2331,
 
-            Error::CannotReferenceThisInComputedPropName { .. } => 2465,
-            Error::CannotReferenceSuperInComputedPropName { .. } => 2466,
-            Error::DeclaringTypeParamReferencedByComputedPropName { .. } => 2467,
+            ErrorKind::CannotReferenceThisInComputedPropName { .. } => 2465,
+            ErrorKind::CannotReferenceSuperInComputedPropName { .. } => 2466,
+            ErrorKind::DeclaringTypeParamReferencedByComputedPropName { .. } => 2467,
 
-            Error::StaticMemberCannotUseTypeParamOfClass { .. } => 2302,
+            ErrorKind::StaticMemberCannotUseTypeParamOfClass { .. } => 2302,
 
-            Error::InvalidImplOfInterface { .. } => 2420,
+            ErrorKind::InvalidImplOfInterface { .. } => 2420,
 
-            Error::ClassIncorrectlyImplementsInterface { .. } => 2420,
+            ErrorKind::ClassIncorrectlyImplementsInterface { .. } => 2420,
 
-            Error::ExportMixedWithLocal { .. } => 2395,
+            ErrorKind::ExportMixedWithLocal { .. } => 2395,
 
-            Error::NotConstructorType { .. } => 2507,
+            ErrorKind::NotConstructorType { .. } => 2507,
 
-            Error::SelfReferentialSuperClass { .. } => 2506,
+            ErrorKind::SelfReferentialSuperClass { .. } => 2506,
 
-            Error::StaticPropertyCannotBeNamedPrototype { .. } => 2699,
+            ErrorKind::StaticPropertyCannotBeNamedPrototype { .. } => 2699,
 
-            Error::CannotExportNonLocalVar { .. } => 2661,
+            ErrorKind::CannotExportNonLocalVar { .. } => 2661,
 
-            Error::DuplicateProperty { .. } => 2300,
+            ErrorKind::DuplicateProperty { .. } => 2300,
 
-            Error::CannotCallWithNewNonVoidFunction { .. } => 2350,
+            ErrorKind::CannotCallWithNewNonVoidFunction { .. } => 2350,
 
-            Error::InvalidInterfaceName { .. } => 2427,
+            ErrorKind::InvalidInterfaceName { .. } => 2427,
 
-            Error::InvalidUseOfArgumentsInEs3OrEs5 { .. } => 2496,
+            ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { .. } => 2496,
 
-            Error::ArgumentsCannotBeUsedInAsyncFnInEs3OrEs5 { .. } => 2522,
+            ErrorKind::ArgumentsCannotBeUsedInAsyncFnInEs3OrEs5 { .. } => 2522,
 
-            Error::NoMatchingOverload { .. } => 2769,
+            ErrorKind::NoMatchingOverload { .. } => 2769,
 
-            Error::NoSuchVarForShorthand { .. } => 18004,
+            ErrorKind::NoSuchVarForShorthand { .. } => 18004,
 
-            Error::NoCallSignature { .. } => 2349,
+            ErrorKind::NoCallSignature { .. } => 2349,
 
-            Error::InvalidClassName { .. } => 2414,
+            ErrorKind::InvalidClassName { .. } => 2414,
 
-            Error::InitializerDisallowedInAmbientContext { .. } => 2371,
+            ErrorKind::InitializerDisallowedInAmbientContext { .. } => 2371,
 
-            Error::ImcompatibleFnOverload { .. } => 2394,
+            ErrorKind::ImcompatibleFnOverload { .. } => 2394,
 
-            Error::ImplicitReturnType { .. } => 7010,
+            ErrorKind::ImplicitReturnType { .. } => 7010,
 
-            Error::InvalidLhsOfAssign { .. } => 2364,
+            ErrorKind::InvalidLhsOfAssign { .. } => 2364,
 
-            Error::EnumMemberIdCannotBeNumber { .. } => 2452,
+            ErrorKind::EnumMemberIdCannotBeNumber { .. } => 2452,
 
-            Error::NamspaceNotFound { .. } => 2503,
+            ErrorKind::NamspaceNotFound { .. } => 2503,
 
-            Error::WithStmtNotSupported { .. } => 2410,
+            ErrorKind::WithStmtNotSupported { .. } => 2410,
 
-            Error::InvalidSuperClass { .. } => 2507,
+            ErrorKind::InvalidSuperClass { .. } => 2507,
 
-            Error::ThisInConstructorParam { .. } => 2333,
+            ErrorKind::ThisInConstructorParam { .. } => 2333,
 
-            Error::ThisInStaticPropertyInitializer { .. } => 2334,
+            ErrorKind::ThisInStaticPropertyInitializer { .. } => 2334,
 
-            Error::ImplicitAny { .. } => 7005,
+            ErrorKind::ImplicitAny { .. } => 7005,
 
-            Error::ImplicitAnyBecauseNoIndexSignatureExists { .. } => 7052,
+            ErrorKind::ImplicitAnyBecauseNoIndexSignatureExists { .. } => 7052,
 
-            Error::ImplicitAnyBecauseIndexTypeIsWrong { .. } => 7053,
+            ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { .. } => 7053,
 
-            Error::ImplicitAnyBecauseOfSelfRef { .. } => 7022,
+            ErrorKind::ImplicitAnyBecauseOfSelfRef { .. } => 7022,
 
-            Error::ConstructorIsKeyword { .. } => 18012,
+            ErrorKind::ConstructorIsKeyword { .. } => 18012,
 
-            Error::PrivateIdUsedAsMethodName { .. } => 18022,
+            ErrorKind::PrivateIdUsedAsMethodName { .. } => 18022,
 
-            Error::UndefinedOrNullIsNotValidOperand { .. } => 18050,
+            ErrorKind::UndefinedOrNullIsNotValidOperand { .. } => 18050,
 
-            Error::CannotDeletePrivateProperty { .. } => 18011,
+            ErrorKind::CannotDeletePrivateProperty { .. } => 18011,
 
-            Error::CannotAccessPrivatePropertyFromOutside { .. } => 18013,
+            ErrorKind::CannotAccessPrivatePropertyFromOutside { .. } => 18013,
 
-            Error::OptionalChainCannotContainPrivateIdentifier { .. } => 18030,
+            ErrorKind::OptionalChainCannotContainPrivateIdentifier { .. } => 18030,
 
-            Error::TypeAnnOnLhsOfForInLoops { .. } => 2404,
-            Error::TypeAnnOnLhsOfForOfLoops { .. } => 2483,
+            ErrorKind::TypeAnnOnLhsOfForInLoops { .. } => 2404,
+            ErrorKind::TypeAnnOnLhsOfForOfLoops { .. } => 2483,
 
-            Error::DestructuringBindingNotAllowedInLhsOfForIn { .. } => 2491,
+            ErrorKind::DestructuringBindingNotAllowedInLhsOfForIn { .. } => 2491,
 
-            Error::WrongTypeForLhsOfForInLoop { .. } => 2405,
+            ErrorKind::WrongTypeForLhsOfForInLoop { .. } => 2405,
 
-            Error::InvalidExprOfLhsOfForIn { .. } => 2406,
-            Error::InvalidExprOfLhsOfForOf { .. } => 2487,
+            ErrorKind::InvalidExprOfLhsOfForIn { .. } => 2406,
+            ErrorKind::InvalidExprOfLhsOfForOf { .. } => 2487,
 
-            Error::LetOrConstIsNotValidIdInLetOrConstVarDecls { .. } => 2480,
-            Error::ForOfStringUsedInEs3 { .. } => 2494,
+            ErrorKind::LetOrConstIsNotValidIdInLetOrConstVarDecls { .. } => 2480,
+            ErrorKind::ForOfStringUsedInEs3 { .. } => 2494,
 
-            Error::NotArrayType { .. } => 2461,
-            Error::NotArrayTypeNorStringType { .. } => 2495,
-            Error::NotArrayTypeNorStringTypeButDownlevelIterationWouldWork { .. } => 2569,
+            ErrorKind::NotArrayType { .. } => 2461,
+            ErrorKind::NotArrayTypeNorStringType { .. } => 2495,
+            ErrorKind::NotArrayTypeNorStringTypeButDownlevelIterationWouldWork { .. } => 2569,
 
-            Error::NoConstructablePropertyWithName { .. } => 2348,
+            ErrorKind::NoConstructablePropertyWithName { .. } => 2348,
 
-            Error::NoCallablePropertyWithName { .. } => 2349,
+            ErrorKind::NoCallablePropertyWithName { .. } => 2349,
 
-            Error::NoMethodNamedNext { .. } => 2489,
+            ErrorKind::NoMethodNamedNext { .. } => 2489,
 
-            Error::NotGeneric { .. } => 2315,
+            ErrorKind::NotGeneric { .. } => 2315,
 
-            Error::CannotAssignToReadonlyProperty { .. } => 2540,
+            ErrorKind::CannotAssignToReadonlyProperty { .. } => 2540,
 
-            Error::ReadOnly { .. } => 2546,
+            ErrorKind::ReadOnly { .. } => 2546,
 
-            Error::ClassNameCannotBeObjectWhenTargetingEs5WithModule { .. } => 2725,
+            ErrorKind::ClassNameCannotBeObjectWhenTargetingEs5WithModule { .. } => 2725,
 
-            Error::DuplicateVar { .. } => 2451,
+            ErrorKind::DuplicateVar { .. } => 2451,
 
-            Error::TooManyAsterisk { .. } => 5061,
+            ErrorKind::TooManyAsterisk { .. } => 5061,
 
-            Error::ModuleNotFound { .. } => 2307,
+            ErrorKind::ModuleNotFound { .. } => 2307,
 
-            Error::DuplicateConstructor { .. } => 2392,
+            ErrorKind::DuplicateConstructor { .. } => 2392,
 
-            Error::DuplicateFnImpl { .. } => 2393,
+            ErrorKind::DuplicateFnImpl { .. } => 2393,
 
-            Error::DuplicateDefaultExport { .. } => 2528,
-            Error::DuplicateExport { .. } => 2323,
+            ErrorKind::DuplicateDefaultExport { .. } => 2528,
+            ErrorKind::DuplicateExport { .. } => 2323,
 
-            Error::BlockScopedVarUsedBeforeInit { .. } => 2448,
+            ErrorKind::BlockScopedVarUsedBeforeInit { .. } => 2448,
 
-            Error::SuperCannotUseTypeArgs { .. } => 2754,
+            ErrorKind::SuperCannotUseTypeArgs { .. } => 2754,
 
-            Error::DeleteOperandMustBeOptional { .. } => 2790,
+            ErrorKind::DeleteOperandMustBeOptional { .. } => 2790,
 
-            Error::BindingPatNotAllowedInRestPatArg { .. } => 2501,
+            ErrorKind::BindingPatNotAllowedInRestPatArg { .. } => 2501,
 
-            Error::RestArgMustBeVarOrMemberAccess { .. } => 2701,
+            ErrorKind::RestArgMustBeVarOrMemberAccess { .. } => 2701,
 
-            Error::CannotAssignToNamespace { .. } => 2631,
+            ErrorKind::CannotAssignToNamespace { .. } => 2631,
 
-            Error::ReturnPropertyOfIteratorMustBeMethod { .. } => 2767,
+            ErrorKind::ReturnPropertyOfIteratorMustBeMethod { .. } => 2767,
 
-            Error::NextOfItertorShouldReturnTypeWithPropertyValue { .. } => 2490,
+            ErrorKind::NextOfItertorShouldReturnTypeWithPropertyValue { .. } => 2490,
 
-            Error::InvalidUsageOfNewTarget { .. } => 17013,
+            ErrorKind::InvalidUsageOfNewTarget { .. } => 17013,
 
-            Error::AssignFailedBecauseTupleLengthDiffers { .. } => 2322,
+            ErrorKind::AssignFailedBecauseTupleLengthDiffers { .. } => 2322,
 
-            Error::ClassMemberNotCompatibleWithStringIndexSignature { .. } => 2411,
+            ErrorKind::ClassMemberNotCompatibleWithStringIndexSignature { .. } => 2411,
 
-            Error::ClassMemberNotCompatibleWithNumericIndexSignature { .. } => 2411,
+            ErrorKind::ClassMemberNotCompatibleWithNumericIndexSignature { .. } => 2411,
 
-            Error::AbstractAndConcreteIsMixed { .. } => 2512,
+            ErrorKind::AbstractAndConcreteIsMixed { .. } => 2512,
 
-            Error::AbstractClassMethodShouldBeSequntial { .. } => 2516,
+            ErrorKind::AbstractClassMethodShouldBeSequntial { .. } => 2516,
 
-            Error::OperatorCannotBeAppliedToTypes { .. } => 2365,
+            ErrorKind::OperatorCannotBeAppliedToTypes { .. } => 2365,
 
-            Error::CannotAccessAbstractMember { .. } => 2513,
+            ErrorKind::CannotAccessAbstractMember { .. } => 2513,
 
-            Error::SuperNotCalled { .. } => 2377,
+            ErrorKind::SuperNotCalled { .. } => 2377,
 
-            Error::SuperInNestedFunction { .. } => 2337,
+            ErrorKind::SuperInNestedFunction { .. } => 2337,
 
-            Error::InvalidOperandOfIncDecOptionalProp { .. } => 2777,
+            ErrorKind::InvalidOperandOfIncDecOptionalProp { .. } => 2777,
 
-            Error::InvalidRestPatternInOptionalChain { .. } => 2778,
+            ErrorKind::InvalidRestPatternInOptionalChain { .. } => 2778,
 
-            Error::InvalidLhsOfAssignOptionalProp { .. } => 2779,
+            ErrorKind::InvalidLhsOfAssignOptionalProp { .. } => 2779,
 
-            Error::InvalidRestPatternInForIn { .. } => 2780,
+            ErrorKind::InvalidRestPatternInForIn { .. } => 2780,
 
-            Error::InvalidRestPatternInForOf { .. } => 2781,
+            ErrorKind::InvalidRestPatternInForOf { .. } => 2781,
 
-            Error::ThisUsedBeforeCallingSuper { .. } => 17009,
+            ErrorKind::ThisUsedBeforeCallingSuper { .. } => 17009,
 
-            Error::SuperUsedBeforeCallingSuper { .. } => 17011,
+            ErrorKind::SuperUsedBeforeCallingSuper { .. } => 17011,
 
-            Error::OptionInvalidForEs3 { .. } => 5048,
+            ErrorKind::OptionInvalidForEs3 { .. } => 5048,
 
-            Error::ShouldBeStaticMethod { .. } => 2387,
+            ErrorKind::ShouldBeStaticMethod { .. } => 2387,
 
-            Error::ShouldBeInstanceMethod { .. } => 2388,
+            ErrorKind::ShouldBeInstanceMethod { .. } => 2388,
 
-            Error::DefinedWitHAccessorInSuper { .. } => 2610,
+            ErrorKind::DefinedWitHAccessorInSuper { .. } => 2610,
 
-            Error::ClassPropNotInitialized { .. } => 2564,
+            ErrorKind::ClassPropNotInitialized { .. } => 2564,
 
-            Error::VarMayNotBeInitialized { .. } => 2454,
+            ErrorKind::VarMayNotBeInitialized { .. } => 2454,
 
-            Error::UnreachableCode { .. } => 7027,
+            ErrorKind::UnreachableCode { .. } => 7027,
 
-            Error::ConstEnumMemberHasInifinityAsInit { .. } => 2477,
+            ErrorKind::ConstEnumMemberHasInifinityAsInit { .. } => 2477,
 
-            Error::ConstEnumMemberHasNaNAsInit { .. } => 2478,
+            ErrorKind::ConstEnumMemberHasNaNAsInit { .. } => 2478,
 
-            Error::OnlyOneEnumCanOmitInit { .. } => 2432,
+            ErrorKind::OnlyOneEnumCanOmitInit { .. } => 2432,
 
-            Error::CannotUseTypeAsIndexIndex { .. } => 2538,
+            ErrorKind::CannotUseTypeAsIndexIndex { .. } => 2538,
 
-            Error::InterfaceNotCompatible { .. } => 2320,
+            ErrorKind::InterfaceNotCompatible { .. } => 2320,
 
-            Error::UpdateArgMustBeVariableOrPropertyAccess { .. } => 2357,
+            ErrorKind::UpdateArgMustBeVariableOrPropertyAccess { .. } => 2357,
 
-            Error::OptionalAndNonOptionalMethodPropertyMixed { .. } => 2386,
+            ErrorKind::OptionalAndNonOptionalMethodPropertyMixed { .. } => 2386,
 
-            Error::TypeParamsProvidedButCalleeIsNotGeneric { .. } => 2347,
+            ErrorKind::TypeParamsProvidedButCalleeIsNotGeneric { .. } => 2347,
 
-            Error::IntrinsicIsBuiltinOnly { .. } => 2795,
+            ErrorKind::IntrinsicIsBuiltinOnly { .. } => 2795,
 
-            Error::VarDeclNotCompatible { .. } => 2403,
+            ErrorKind::VarDeclNotCompatible { .. } => 2403,
 
-            Error::InvalidInterfaceInheritance { .. } => 2430,
+            ErrorKind::InvalidInterfaceInheritance { .. } => 2430,
 
-            Error::TargetLacksConstructSignature { .. } => 7009,
+            ErrorKind::TargetLacksConstructSignature { .. } => 7009,
 
             _ => 0,
         }
@@ -2025,10 +2025,10 @@ impl Error {
 
     pub fn is_property_not_found(&self) -> bool {
         match self.actual() {
-            Error::NoSuchProperty { .. }
-            | Error::NoSuchPropertyInClass { .. }
-            | Error::NoSuchPropertyInModule { .. }
-            | Error::NoSuchPropertyInThis { .. } => true,
+            ErrorKind::NoSuchProperty { .. }
+            | ErrorKind::NoSuchPropertyInClass { .. }
+            | ErrorKind::NoSuchPropertyInModule { .. }
+            | ErrorKind::NoSuchPropertyInThis { .. } => true,
             _ => false,
         }
     }
@@ -2073,16 +2073,16 @@ impl Error {
     }
 
     #[cold]
-    pub fn flatten(vec: Vec<Error>) -> Vec<Error> {
+    pub fn flatten(vec: Vec<ErrorKind>) -> Vec<ErrorKind> {
         let mut buf = Vec::with_capacity(vec.len());
 
         for e in vec {
             match e {
-                Error::Errors { errors, .. } | Error::TupleAssignError { errors, .. } => buf.extend(Self::flatten(errors)),
-                Error::DebugContext(DebugContext { inner, context, .. }) => {
+                ErrorKind::Errors { errors, .. } | ErrorKind::TupleAssignError { errors, .. } => buf.extend(Self::flatten(errors)),
+                ErrorKind::DebugContext(DebugContext { inner, context, .. }) => {
                     //
                     buf.extend(Self::flatten(vec![*inner]).into_iter().map(|inner| {
-                        Error::DebugContext(DebugContext {
+                        ErrorKind::DebugContext(DebugContext {
                             span: inner.span(),
                             context: context.clone(),
                             inner: box inner,
@@ -2097,14 +2097,14 @@ impl Error {
     }
 }
 
-impl From<Vec<Error>> for Error {
+impl From<Vec<ErrorKind>> for ErrorKind {
     #[inline]
-    fn from(errors: Vec<Error>) -> Self {
-        Error::Errors { span: DUMMY_SP, errors }
+    fn from(errors: Vec<ErrorKind>) -> Self {
+        ErrorKind::Errors { span: DUMMY_SP, errors }
     }
 }
 
-impl From<Errors> for Error {
+impl From<Errors> for ErrorKind {
     #[inline]
     fn from(errors: Errors) -> Self {
         errors.0.into()
@@ -2113,9 +2113,9 @@ impl From<Errors> for Error {
 
 /// A utility type to track
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct Errors(Vec<Error>);
+pub struct Errors(Vec<ErrorKind>);
 
-impl From<Errors> for Vec<Error> {
+impl From<Errors> for Vec<ErrorKind> {
     #[inline]
     fn from(e: Errors) -> Self {
         e.0
@@ -2123,8 +2123,8 @@ impl From<Errors> for Vec<Error> {
 }
 
 impl IntoIterator for Errors {
-    type IntoIter = <Vec<Error> as IntoIterator>::IntoIter;
-    type Item = Error;
+    type IntoIter = <Vec<ErrorKind> as IntoIterator>::IntoIter;
+    type Item = ErrorKind;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -2144,7 +2144,7 @@ impl Errors {
     }
 
     #[inline]
-    pub fn push(&mut self, err: Error) {
+    pub fn push(&mut self, err: ErrorKind) {
         self.validate(&err);
 
         self.0.push(err);
@@ -2156,7 +2156,7 @@ impl Errors {
     }
 
     #[inline]
-    pub fn append(&mut self, other: &mut Vec<Error>) {
+    pub fn append(&mut self, other: &mut Vec<ErrorKind>) {
         for err in &*other {
             self.validate(err)
         }
@@ -2170,9 +2170,9 @@ impl Errors {
     }
 }
 
-impl Extend<Error> for Errors {
+impl Extend<ErrorKind> for Errors {
     #[inline]
-    fn extend<T: IntoIterator<Item = Error>>(&mut self, iter: T) {
+    fn extend<T: IntoIterator<Item = ErrorKind>>(&mut self, iter: T) {
         if cfg!(debug_assertions) {
             for err in iter {
                 self.push(err)
@@ -2183,8 +2183,8 @@ impl Extend<Error> for Errors {
     }
 }
 
-impl From<StackOverflowError> for Error {
+impl From<StackOverflowError> for ErrorKind {
     fn from(e: StackOverflowError) -> Self {
-        Error::StackOverflow { span: e.span }
+        ErrorKind::StackOverflow { span: e.span }
     }
 }

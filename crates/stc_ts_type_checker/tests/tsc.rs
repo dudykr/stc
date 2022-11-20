@@ -280,7 +280,7 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
 
         for err in &mut errors {
             let orig_code = err.code.replace("TS", "").parse().expect("failed to parse error code");
-            let code = stc_ts_errors::Error::normalize_error_code(orig_code);
+            let code = stc_ts_errors::ErrorKind::normalize_error_code(orig_code);
 
             if orig_code != code {
                 err.code = format!("TS{}", code);
@@ -610,7 +610,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
                 time_of_check = end - start;
 
-                let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
+                let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
 
                 checker.run(|| {
                     for e in errors {
