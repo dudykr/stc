@@ -398,7 +398,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         debugger: Option<Debugger>,
     ) -> Self {
         if env.rule().use_define_property_for_class_fields && env.target() == EsVersion::Es3 {
-            storage.report(ErrorKind::OptionInvalidForEs3 { span: DUMMY_SP })
+            storage.report(ErrorKind::OptionInvalidForEs3 { span: DUMMY_SP }.into())
         }
 
         Self::new_inner(
@@ -781,7 +781,7 @@ impl Analyzer<'_, '_> {
                     }
                     if !is_dts && has_normal_export {
                         self.storage
-                            .report(ErrorKind::ExportEqualsMixedWithOtherExports { span: decl.span });
+                            .report(ErrorKind::ExportEqualsMixedWithOtherExports { span: decl.span }.into());
                     }
 
                     //
@@ -794,9 +794,12 @@ impl Analyzer<'_, '_> {
                     | RModuleDecl::TsNamespaceExport(..) => {
                         has_normal_export = true;
                         if !is_dts && !self.export_equals_span.is_dummy() {
-                            self.storage.report(ErrorKind::ExportEqualsMixedWithOtherExports {
-                                span: self.export_equals_span,
-                            });
+                            self.storage.report(
+                                ErrorKind::ExportEqualsMixedWithOtherExports {
+                                    span: self.export_equals_span,
+                                }
+                                .into(),
+                            );
                         }
                     }
                     _ => {}

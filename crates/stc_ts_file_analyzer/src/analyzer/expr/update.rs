@@ -20,7 +20,7 @@ impl Analyzer<'_, '_> {
         let span = e.span;
 
         match &*e.arg {
-            RExpr::New(..) => self.storage.report(ErrorKind::ExprInvalidForUpdateArg { span }),
+            RExpr::New(..) => self.storage.report(ErrorKind::ExprInvalidForUpdateArg { span }.into()),
             _ => {}
         }
 
@@ -55,7 +55,8 @@ impl Analyzer<'_, '_> {
                     Err(ErrorKind::TypeInvalidForUpdateArg {
                         span: e.arg.span(),
                         ty: box ty.clone(),
-                    })
+                    }
+                    .into())
                 }
 
                 _ if ty.is_global_this() => {
@@ -64,13 +65,14 @@ impl Analyzer<'_, '_> {
                     Err(ErrorKind::TypeInvalidForUpdateArg {
                         span: e.arg.span(),
                         ty: box ty.clone(),
-                    })
+                    }
+                    .into())
                 }
 
                 Type::Enum(..) => {
                     errored = true;
 
-                    Err(ErrorKind::CannotAssignToEnum { span: e.arg.span() })
+                    Err(ErrorKind::CannotAssignToEnum { span: e.arg.span() }.into())
                 }
 
                 Type::Lit(LitType {
@@ -82,7 +84,7 @@ impl Analyzer<'_, '_> {
                 }) => {
                     match &*e.arg {
                         RExpr::Lit(RLit::Num(..)) | RExpr::Call(..) | RExpr::Paren(..) => {
-                            self.storage.report(ErrorKind::ExprInvalidForUpdateArg { span });
+                            self.storage.report(ErrorKind::ExprInvalidForUpdateArg { span }.into());
                         }
 
                         _ => {}
@@ -96,7 +98,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = ty {
             if let Some(false) = self.is_update_operand_valid(&ty).report(&mut self.storage) {
-                self.storage.report(ErrorKind::InvalidNumericOperand { span: e.arg.span() })
+                self.storage.report(ErrorKind::InvalidNumericOperand { span: e.arg.span() }.into())
             }
         } else {
             if !errored
@@ -108,7 +110,8 @@ impl Analyzer<'_, '_> {
                     _ => false,
                 }
             {
-                self.storage.report(ErrorKind::UpdateArgMustBeVariableOrPropertyAccess { span });
+                self.storage
+                    .report(ErrorKind::UpdateArgMustBeVariableOrPropertyAccess { span }.into());
             }
         }
 

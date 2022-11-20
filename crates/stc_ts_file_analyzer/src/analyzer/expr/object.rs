@@ -85,7 +85,7 @@ impl Analyzer<'_, '_> {
                     if let Some(prev) = keys.iter().find(|v| v.0.type_eq(key)) {
                         if *optional != prev.1 {
                             self.storage
-                                .report(ErrorKind::OptionalAndNonOptionalMethodPropertyMixed { span: key.span() });
+                                .report(ErrorKind::OptionalAndNonOptionalMethodPropertyMixed { span: key.span() }.into());
                             continue;
                         }
                     }
