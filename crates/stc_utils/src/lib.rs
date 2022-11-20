@@ -6,6 +6,8 @@ extern crate swc_node_base;
 use std::{
     collections::{HashMap, HashSet},
     env,
+    fmt::Debug,
+    ops::{Deref, DerefMut},
 };
 
 use once_cell::sync::Lazy;
@@ -50,3 +52,27 @@ pub trait TryOpt<T>: Sized + Into<Option<T>> {
 }
 
 impl<T> TryOpt<T> for Option<T> {}
+
+#[repr(transparent)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct DebugIgnore<T>(pub T);
+
+impl<T> Deref for DebugIgnore<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T> DerefMut for DebugIgnore<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<T> Debug for DebugIgnore<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("<unknown>").finish()
+    }
+}
