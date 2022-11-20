@@ -194,22 +194,22 @@ impl Analyzer<'_, '_> {
                     new_r_params.make_clone_cheap();
                     new_r_ret_ty.make_clone_cheap();
 
-                    return self
-                        .assign_to_fn_like(
-                            data,
-                            is_call,
-                            l_type_params,
-                            l_params,
-                            l_ret_ty,
-                            None,
-                            &new_r_params,
-                            new_r_ret_ty.as_ref(),
-                            AssignOpts {
-                                allow_assignment_of_void: Some(false),
-                                ..opts
-                            },
-                        )
-                        .context("tried to assign to a mapped (wrong) function");
+                    let _ctx = ctx!("tried to assign to a mapped (wrong) function");
+
+                    return self.assign_to_fn_like(
+                        data,
+                        is_call,
+                        l_type_params,
+                        l_params,
+                        l_ret_ty,
+                        None,
+                        &new_r_params,
+                        new_r_ret_ty.as_ref(),
+                        AssignOpts {
+                            allow_assignment_of_void: Some(false),
+                            ..opts
+                        },
+                    );
                 }
             }
 
