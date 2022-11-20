@@ -1,5 +1,5 @@
 use stc_ts_ast_rnode::{RExpr, RIdent, RTsEntityName};
-use stc_ts_errors::{DebugExt, ErrorKind};
+use stc_ts_errors::{ctx, ErrorKind};
 use stc_ts_types::{Array, ArrayMetadata, Ref, Type, TypeElement};
 use swc_atoms::js_word;
 use swc_common::{Spanned, TypeEq};
@@ -134,10 +134,8 @@ impl Analyzer<'_, '_> {
                     if type_args.params.len() == 1 {
                         match r {
                             Type::Array(Array { elem_type, .. }) => {
-                                return Some(
-                                    self.assign_inner(data, &type_args.params[0], elem_type, opts)
-                                        .context("tried to assign an array to a readonly array (builtin)"),
-                                );
+                                let _ctx = ctx!(|| "tried to assign an array to a readonly array (builtin)".into());
+                                return Some(self.assign_inner(data, &type_args.params[0], elem_type, opts));
                             }
                             _ => {}
                         }
