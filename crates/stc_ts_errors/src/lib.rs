@@ -31,12 +31,16 @@ use crate::context::with_ctx;
 pub mod context;
 pub mod debug;
 mod result_ext;
+#[cfg(debug_assertions)]
+type Contexts = Vec<String>;
+
+#[cfg(not(debug_assertions))]
+type Contexts = ();
 
 /// [ErrorKind] with debug contexts attached.
 #[derive(Clone, PartialEq, Spanned)]
 pub struct Error {
-    #[cfg(debug_assertions)]
-    contexts: Vec<String>,
+    contexts: Contexts,
     #[span]
     inner: Box<ErrorKind>,
 }
@@ -53,8 +57,19 @@ impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         Self {
             contexts: with_ctx(|contexts| contexts.iter().map(|v| v()).collect()),
-            inner: Box::new(kind.attach_context()),
+            inner: Box::new(kind),
         }
+    }
+}
+
+impl Error {
+    pub fn context(mut self, context: impl Display) -> Error {
+        if !cfg!(debug_assertions) {
+            return self;
+        }
+
+        self.contexts.push(context.to_string());
+        self
     }
 }
 
@@ -90,7 +105,6 @@ impl Errors {
                 }
                 return;
             }
-            ErrorKind::DebugContext { .. } => return,
             _ => {}
         }
 
@@ -1408,25 +1422,17 @@ pub enum ErrorKind {
     ShouldBeInstanceMethod {
         span: Span,
     },
-
-    DebugContext(DebugContext),
 }
 
 #[cfg(target_pointer_width = "64")]
 assert_eq_size!(ErrorKind, [u8; 72]);
 
-impl ErrorKind {
+impl Error {
     pub fn convert<F>(self, op: F) -> Self
     where
         F: FnOnce(Self) -> Self,
     {
-        match self {
-            ErrorKind::DebugContext(c) => {
-                let c = c.convert(op);
-                ErrorKind::DebugContext(c)
-            }
-            _ => op(self),
-        }
+        op(self)
     }
 
     /// Convert all errors if `self` is [Error::Errors] and convert itself
@@ -1438,57 +1444,22 @@ impl ErrorKind {
         self.convert_all_inner(&mut op)
     }
 
-    #[cfg_attr(not(debug_assertions), inline(always))]
-    pub fn actual(&self) -> &Self {
-        match self {
-            ErrorKind::DebugContext(ctx) => ctx.inner.actual(),
-            _ => self,
-        }
-    }
-
     fn convert_all_inner<F>(self, op: &mut F) -> Self
     where
         F: FnMut(Self) -> Self,
     {
-        match self {
-            ErrorKind::DebugContext(c) => {
-                let c = c.convert_all(op);
-                ErrorKind::DebugContext(c)
-            }
-
+        match *self.inner {
             ErrorKind::Errors { span, errors } => {
                 let mut new = Vec::with_capacity(errors.capacity());
                 for err in errors {
-                    new.push(Error {
-                        inner: box err.inner.convert_all_inner(op),
-                    });
+                    new.push(err.convert_all_inner(op));
                 }
 
-                ErrorKind::Errors { span, errors: new }
+                ErrorKind::Errors { span, errors: new }.into()
             }
 
             _ => op(self),
         }
-    }
-}
-
-impl DebugContext {
-    fn convert<F>(self, op: F) -> Self
-    where
-        F: FnOnce(ErrorKind) -> ErrorKind,
-    {
-        let inner = box self.inner.convert(op);
-
-        Self { inner, ..self }
-    }
-
-    fn convert_all<F>(self, op: &mut F) -> Self
-    where
-        F: FnMut(ErrorKind) -> ErrorKind,
-    {
-        let inner = box self.inner.convert_all_inner(op);
-
-        Self { inner, ..self }
     }
 }
 
@@ -1570,48 +1541,14 @@ impl ErrorKind {
         }
     }
 
-    /// Returns a wrapped error with contexts provided to [`ctx`].
-    ///
-    /// This is noop in a release build.
-    fn attach_context(self) -> Self {
-        if !cfg!(debug_assertions) {
-            return self;
-        }
-
-        with_ctx(|contexts| {
-            let mut err = self;
-
-            for ctx in contexts.iter().rev() {
-                let context = ctx();
-
-                match err {
-                    ErrorKind::Errors { .. } | ErrorKind::DebugContext { .. } => {}
-                    _ => {
-                        if err.span().is_dummy() {
-                            unreachable!("Error with dummy span found(context: {}): {:#?}", context, err)
-                        }
-                    }
-                }
-
-                err = ErrorKind::DebugContext(DebugContext {
-                    span: err.span(),
-                    context,
-                    inner: box err,
-                });
-            }
-
-            err
-        })
-    }
-
     #[track_caller]
-    pub fn context(self, context: impl Display) -> Self {
+    pub fn context(self, context: impl Display) -> Error {
         if !cfg!(debug_assertions) {
-            return self;
+            return self.into();
         }
 
         match self {
-            ErrorKind::Errors { .. } | ErrorKind::DebugContext { .. } => {}
+            ErrorKind::Errors { .. } => {}
             _ => {
                 if self.span().is_dummy() {
                     unreachable!("Error with dummy span found(context: {}): {:#?}", context, self)
@@ -1619,11 +1556,8 @@ impl ErrorKind {
             }
         }
 
-        ErrorKind::DebugContext(DebugContext {
-            span: self.span(),
-            context: context.to_string(),
-            inner: box self,
-        })
+        let err: Error = self.into();
+        err.context(context.to_string())
     }
 
     /// Split error into causes.
@@ -1631,23 +1565,11 @@ impl ErrorKind {
         match self {
             Self::AssignFailed { cause, .. } => cause,
             Self::ObjectAssignFailed { errors, .. } => errors,
-            Self::DebugContext(c) => {
-                let DebugContext { span, context, .. } = c;
-
-                c.inner
-                    .into_causes()
-                    .into_iter()
-                    .map(|err| Error {
-                        inner: box ErrorKind::DebugContext(DebugContext {
-                            span,
-                            inner: err.inner,
-                            context: context.clone(),
-                        }),
-                    })
-                    .collect()
-            }
             _ => {
-                vec![Error { inner: box self }]
+                vec![Error {
+                    contexts: Default::default(),
+                    inner: box self,
+                }]
             }
         }
     }
@@ -1749,8 +1671,6 @@ impl ErrorKind {
             ErrorKind::ConstEnumNonIndexAccess { .. } => 2476,
 
             ErrorKind::InvalidUseOfConstEnum { .. } => 2475,
-
-            ErrorKind::DebugContext(c) => c.inner.code(),
 
             ErrorKind::ObjectIsPossiblyNull { .. } => 2531,
             ErrorKind::ObjectIsPossiblyUndefined { .. } | ErrorKind::ObjectIsPossiblyUndefinedWithType { .. } => 2532,
@@ -2038,7 +1958,7 @@ impl ErrorKind {
     }
 
     pub fn is_property_not_found(&self) -> bool {
-        match self.actual() {
+        match self {
             ErrorKind::NoSuchProperty { .. }
             | ErrorKind::NoSuchPropertyInClass { .. }
             | ErrorKind::NoSuchPropertyInModule { .. }
@@ -2048,7 +1968,7 @@ impl ErrorKind {
     }
 
     pub fn is_var_not_found(&self) -> bool {
-        match self.actual() {
+        match self {
             Self::NoSuchVar { .. } | Self::NoSuchVarButThisHasSuchProperty { .. } | Self::NoSuchVarForShorthand { .. } => true,
             _ => false,
         }
@@ -2059,7 +1979,7 @@ impl ErrorKind {
     }
 
     pub fn is_type_not_found(&self) -> bool {
-        match self.actual() {
+        match self {
             Self::NoSuchType { .. } | Self::NoSuchTypeButVarExists { .. } => true,
             _ => false,
         }
@@ -2093,16 +2013,6 @@ impl ErrorKind {
         for e in vec {
             match *e.inner {
                 ErrorKind::Errors { errors, .. } | ErrorKind::TupleAssignError { errors, .. } => buf.extend(Self::flatten(errors)),
-                ErrorKind::DebugContext(DebugContext { inner, context, .. }) => {
-                    //
-                    buf.extend(Self::flatten(vec![Error { inner }]).into_iter().map(|inner| Error {
-                        inner: box ErrorKind::DebugContext(DebugContext {
-                            span: inner.span(),
-                            context: context.clone(),
-                            inner: inner.inner,
-                        }),
-                    }))
-                }
                 _ => buf.push(e),
             }
         }
