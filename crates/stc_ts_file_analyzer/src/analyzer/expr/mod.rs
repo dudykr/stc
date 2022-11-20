@@ -615,10 +615,12 @@ impl Analyzer<'_, '_> {
                 let mut a = self.with_ctx(ctx);
                 match e.validate_with_default(&mut *a) {
                     Ok(..) => {}
-                    Err(ErrorKind::ReferencedInInit { .. }) => {
-                        is_any = true;
-                    }
-                    Err(err) => a.storage.report(err),
+                    Err(err) => match *err {
+                        ErrorKind::ReferencedInInit { .. } => {
+                            is_any = true;
+                        }
+                        _ => a.storage.report(err),
+                    },
                 }
             }
         }
