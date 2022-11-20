@@ -29,7 +29,7 @@ impl Analyzer<'_, '_> {
         let dep_id = match dep_id {
             Some(v) => v,
             None => {
-                self.storage.report(ErrorKind::ModuleNotFound { span });
+                self.storage.report(ErrorKind::ModuleNotFound { span }.into());
 
                 return (ctxt, Type::any(span, Default::default()));
             }
@@ -37,7 +37,7 @@ impl Analyzer<'_, '_> {
         let data = match self.imports.get(&(ctxt, dep_id)).cloned() {
             Some(v) => v,
             None => {
-                self.storage.report(ErrorKind::ModuleNotFound { span });
+                self.storage.report(ErrorKind::ModuleNotFound { span }.into());
 
                 return (ctxt, Type::any(span, Default::default()));
             }
@@ -89,7 +89,7 @@ impl Analyzer<'_, '_> {
             let dep_id = match dep_id {
                 Some(v) => v,
                 None => {
-                    self.storage.report(ErrorKind::ModuleNotFound { span });
+                    self.storage.report(ErrorKind::ModuleNotFound { span }.into());
                     continue;
                 }
             };
@@ -177,7 +177,7 @@ impl Analyzer<'_, '_> {
             if ctxt != target {
                 // If import was successful but the entry is not found, the error should point
                 // the specifier.
-                self.storage.report(ErrorKind::ImportFailed { span, orig, id });
+                self.storage.report(ErrorKind::ImportFailed { span, orig, id }.into());
             }
         }
     }

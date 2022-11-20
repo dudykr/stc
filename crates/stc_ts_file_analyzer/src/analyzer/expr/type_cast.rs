@@ -225,10 +225,10 @@ impl Analyzer<'_, '_> {
                 if castable {
                     Ok(())
                 } else {
-                    Err(ErrorKind::NonOverlappingTypeCast { span })
+                    Err(ErrorKind::NonOverlappingTypeCast { span }.into())
                 }
             })
-            .convert_err(|err| ErrorKind::NonOverlappingTypeCast { span })
+            .convert_err(|err| ErrorKind::NonOverlappingTypeCast { span }.into())
     }
 
     pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type, opts: CastableOpts) -> VResult<bool> {

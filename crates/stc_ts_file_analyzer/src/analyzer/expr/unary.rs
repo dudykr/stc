@@ -156,7 +156,7 @@ impl Analyzer<'_, '_> {
                 ..
             })) => {
                 debug_assert!(!arg.span().is_dummy());
-                return Err(ErrorKind::Unknown { span: arg.span() });
+                return Err(ErrorKind::Unknown { span: arg.span() }.into());
             }
             _ => {}
         }
