@@ -37,7 +37,7 @@ impl Drop for ErrorContextGuard {
 }
 
 #[cfg(debug_assertions)]
-fn with_ctx(f: impl FnOnce(&mut Vec<String>)) {
+pub(crate) fn with_ctx(f: impl FnOnce(&mut Vec<String>)) {
     thread_local! {
         static CTX: RefCell<Vec<String>> = RefCell::new(Vec::new());
     }

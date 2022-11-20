@@ -23,7 +23,7 @@ use swc_common::{
     errors::{DiagnosticId, Handler},
     Span, Spanned, DUMMY_SP,
 };
-use swc_ecma_ast::{AssignOp, BinaryOp, UnaryOp, UpdateOp};
+use swc_ecma_ast::{AssignOp, BinaryOp, UpdateOp};
 
 pub use self::result_ext::DebugExt;
 
