@@ -1,5 +1,4 @@
 use stc_ts_ast_rnode::{RTsInstantiation, RTsSatisfiesExpr};
-use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{Type, TypeParamInstantiation};
 

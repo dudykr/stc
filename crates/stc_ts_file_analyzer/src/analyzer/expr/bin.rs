@@ -8,7 +8,7 @@ use stc_ts_ast_rnode::{
     RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
     RTsEntityName, RTsLit, RUnaryExpr,
 };
-use stc_ts_errors::{DebugExt, ErrorKind, Errors};
+use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{

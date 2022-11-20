@@ -7,7 +7,7 @@ use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RNumber, RStr, RTplElement, RTsE
 use stc_ts_base_type_ops::bindings::{collect_bindings, BindingCollector, KnownTypeVisitor};
 use stc_ts_errors::{
     debug::{dump_type_as_string, print_backtrace},
-    DebugExt, ErrorKind,
+    ErrorKind,
 };
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};

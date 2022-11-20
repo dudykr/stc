@@ -11,7 +11,7 @@ use rnode::{NodeId, VisitWith};
 use stc_ts_ast_rnode::{
     RBinExpr, RBindingIdent, RCondExpr, RExpr, RIdent, RIfStmt, RObjectPatProp, RPat, RPatOrExpr, RStmt, RSwitchCase, RSwitchStmt,
 };
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{debug::dump_type_as_string, ErrorKind};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{name::Name, Array, ArrayMetadata, Id, Key, KeywordType, KeywordTypeMetadata, Union};
 use stc_ts_utils::MapWithMut;

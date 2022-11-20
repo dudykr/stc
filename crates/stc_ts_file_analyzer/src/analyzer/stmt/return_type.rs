@@ -2,7 +2,7 @@ use std::{borrow::Cow, mem::take, ops::AddAssign};
 
 use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RYieldExpr};
-use stc_ts_errors::{DebugExt, ErrorKind};
+use stc_ts_errors::ErrorKind;
 use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
 use stc_ts_types::{
     CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, Operator, PropertySignature,

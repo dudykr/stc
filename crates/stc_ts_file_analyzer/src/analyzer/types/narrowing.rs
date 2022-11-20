@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 
-use stc_ts_errors::DebugExt;
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{KeywordTypeMetadata, Type, Union, UnionMetadata};
 use stc_utils::{cache::Freeze, ext::TypeVecExt};

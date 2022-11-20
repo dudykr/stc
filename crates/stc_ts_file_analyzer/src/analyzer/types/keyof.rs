@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use itertools::Itertools;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_errors::debug::dump_type_as_string;
 use stc_ts_type_ops::is_str_lit_or_union;
 use stc_ts_types::{
     Class, ClassMember, ClassProperty, KeywordType, KeywordTypeMetadata, Method, MethodSignature, PropertySignature, Ref, Type,

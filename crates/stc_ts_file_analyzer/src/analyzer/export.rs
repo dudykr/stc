@@ -4,7 +4,7 @@ use stc_ts_ast_rnode::{
     RExportSpecifier, RExpr, RIdent, RModuleExportName, RNamedExport, RPat, RStmt, RTsExportAssignment, RTsModuleName, RTsTypeAnn,
     RVarDecl, RVarDeclarator,
 };
-use stc_ts_errors::{DebugExt, ErrorKind};
+use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{Id, IdCtx, ModuleId};
 use stc_ts_utils::find_ids_in_pat;
