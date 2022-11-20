@@ -23,7 +23,6 @@ use anyhow::{Context, Error};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use serde::Deserialize;
-use stc_testing::init_tracing;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_file_analyzer::env::EnvFactory;
@@ -540,7 +539,6 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 }
 
 fn do_test(file_name: &Path) -> Result<(), StdErr> {
-    let file_stem = file_name.file_stem().unwrap();
     let fname = file_name.display().to_string();
     let mut expected_errors = load_expected_errors(&file_name).unwrap();
     expected_errors.sort();

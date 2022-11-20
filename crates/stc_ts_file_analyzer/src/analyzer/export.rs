@@ -4,7 +4,7 @@ use stc_ts_ast_rnode::{
     RExportSpecifier, RExpr, RIdent, RModuleExportName, RNamedExport, RPat, RStmt, RTsExportAssignment, RTsModuleName, RTsTypeAnn,
     RVarDecl, RVarDeclarator,
 };
-use stc_ts_errors::{DebugExt, ErrorKind};
+use stc_ts_errors::{ctx, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{Id, IdCtx, ModuleId};
 use stc_ts_utils::find_ids_in_pat;
@@ -322,6 +322,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx).validate_with(|a| {
+            let ctx = ctx!("tried to reexport with named export specifier");
             a.type_of_var(
                 &match &node.orig {
                     RModuleExportName::Ident(v) => v.clone(),
@@ -329,8 +330,7 @@ impl Analyzer<'_, '_> {
                 },
                 TypeOfMode::RValue,
                 None,
-            )
-            .context("failed to reexport with named export specifier")?;
+            )?;
 
             Ok(())
         });

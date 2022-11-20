@@ -4,6 +4,7 @@ use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
 use stc_ts_errors::{
+    ctx,
     debug::{dump_type_as_string, dump_type_map},
     DebugExt, ErrorKind,
 };
@@ -148,19 +149,18 @@ impl Analyzer<'_, '_> {
                         vec.make_clone_cheap();
 
                         for new_l_params in vec {
-                            return self
-                                .assign_to_fn_like(
-                                    data,
-                                    is_call,
-                                    l_type_params,
-                                    &new_l_params,
-                                    l_ret_ty,
-                                    r_type_params,
-                                    r_params,
-                                    r_ret_ty,
-                                    opts,
-                                )
-                                .context("tried to assign by expanding overloads in a type literal");
+                            let _ctx = ctx!("tried to assign by expanding overloads in a type literal");
+                            return self.assign_to_fn_like(
+                                data,
+                                is_call,
+                                l_type_params,
+                                &new_l_params,
+                                l_ret_ty,
+                                r_type_params,
+                                r_params,
+                                r_ret_ty,
+                                opts,
+                            );
                         }
                     }
                 }};
@@ -194,22 +194,22 @@ impl Analyzer<'_, '_> {
                     new_r_params.make_clone_cheap();
                     new_r_ret_ty.make_clone_cheap();
 
-                    return self
-                        .assign_to_fn_like(
-                            data,
-                            is_call,
-                            l_type_params,
-                            l_params,
-                            l_ret_ty,
-                            None,
-                            &new_r_params,
-                            new_r_ret_ty.as_ref(),
-                            AssignOpts {
-                                allow_assignment_of_void: Some(false),
-                                ..opts
-                            },
-                        )
-                        .context("tried to assign to a mapped (wrong) function");
+                    let _ctx = ctx!("tried to assign to a mapped (wrong) function");
+
+                    return self.assign_to_fn_like(
+                        data,
+                        is_call,
+                        l_type_params,
+                        l_params,
+                        l_ret_ty,
+                        None,
+                        &new_r_params,
+                        new_r_ret_ty.as_ref(),
+                        AssignOpts {
+                            allow_assignment_of_void: Some(false),
+                            ..opts
+                        },
+                    );
                 }
             }
 
@@ -456,9 +456,8 @@ impl Analyzer<'_, '_> {
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {
-                    return self
-                        .assign_to_function(data, lt, l, &ty, opts)
-                        .context("tried to assign an expanded type to a function");
+                    let _ctx = ctx!("tried to assign an expanded type to a function");
+                    return self.assign_to_function(data, lt, l, &ty, opts);
                 }
             }
             _ => {}
@@ -784,6 +783,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
+                    let _ctx = ctx!(format!("tried to assign a parameter to another parameter"));
                     self.assign_param(
                         data,
                         lp,
@@ -792,8 +792,7 @@ impl Analyzer<'_, '_> {
                             allow_unknown_type: true,
                             ..opts
                         },
-                    )
-                    .with_context(|| format!("tried to assign a parameter to another parameter",))?;
+                    )?;
                 }
                 EitherOrBoth::Left(_) => {}
                 EitherOrBoth::Right(_) => {}

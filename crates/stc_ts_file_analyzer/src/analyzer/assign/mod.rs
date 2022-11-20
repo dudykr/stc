@@ -1,7 +1,7 @@
 use std::{borrow::Cow, collections::HashMap};
 
 use stc_ts_ast_rnode::{RBool, RIdent, RStr, RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::context;
 use stc_ts_types::{
     Array, Conditional, EnumVariant, Instance, Interface, Intersection, Intrinsic, IntrinsicKind, Key, KeywordType, KeywordTypeMetadata,
@@ -234,8 +234,8 @@ impl Analyzer<'_, '_> {
                     self.storage
                         .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: rhs.span() }.into());
                 } else {
-                    self.deny_null_or_undefined(rhs.span(), rhs)
-                        .context("checking operands of a numeric assignment")?;
+                    let _ctx = ctx!("tried to check operands of a numeric assignment");
+                    self.deny_null_or_undefined(rhs.span(), rhs)?;
                 }
 
                 match lhs {
@@ -454,13 +454,14 @@ impl Analyzer<'_, '_> {
     fn normalize_for_assign<'a>(&mut self, span: Span, ty: &'a Type) -> VResult<Cow<'a, Type>> {
         ty.assert_valid();
 
+        let _ctx = ctx!("tried to normalize a type for assignment");
         let ty = ty.normalize();
 
         match ty {
             Type::Instance(Instance { ty, .. }) => {
                 // Normalize further
                 if ty.is_ref_type() {
-                    let normalized = self.normalize_for_assign(span, ty).context("failed to normalize instance type")?;
+                    let normalized = self.normalize_for_assign(span, ty)?;
 
                     if normalized.is_keyword() {
                         return Ok(normalized);
@@ -468,7 +469,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if ty.is_mapped() {
-                    let ty = self.normalize_for_assign(span, ty).context("failed to normalize instance type")?;
+                    let ty = self.normalize_for_assign(span, ty)?;
 
                     return Ok(ty);
                 }
@@ -509,10 +510,7 @@ impl Analyzer<'_, '_> {
                 op: TsTypeOperatorOp::KeyOf,
                 ..
             }) => {
-                let ty = self
-                    .normalize(Some(span), Cow::Borrowed(ty), Default::default())
-                    .context("tried to normalize a type for assignment")?
-                    .into_owned();
+                let ty = self.normalize(Some(span), Cow::Borrowed(ty), Default::default())?.into_owned();
 
                 return Ok(Cow::Owned(ty));
             }
@@ -603,6 +601,12 @@ impl Analyzer<'_, '_> {
 
         macro_rules! fail {
             () => {{
+                let _ctx = ctx!(format!(
+                    "`fail!()` called from assign/mod.rs:{}\nLHS (final): {}\nRHS (final): {}",
+                    line!(),
+                    dump_type_as_string(&self.cm, to),
+                    dump_type_as_string(&self.cm, rhs)
+                ));
                 return Err(ErrorKind::AssignFailed {
                     span,
                     left: box to.clone(),
@@ -610,14 +614,7 @@ impl Analyzer<'_, '_> {
                     right_ident: opts.right_ident_span,
                     cause: vec![],
                 }
-                .context({
-                    format!(
-                        "`fail!()` called from assign/mod.rs:{}\nLHS (final): {}\nRHS (final): {}",
-                        line!(),
-                        dump_type_as_string(&self.cm, to),
-                        dump_type_as_string(&self.cm, rhs)
-                    )
-                }));
+                .into());
             }};
         }
 

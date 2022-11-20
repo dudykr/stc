@@ -4,7 +4,6 @@
 #![feature(specialization)]
 
 use std::{
-    borrow::Cow,
     fmt,
     fmt::{Debug, Display},
     ops::RangeInclusive,
@@ -1997,14 +1996,6 @@ impl ErrorKind {
         }
     }
 
-    fn msg(&self) -> Cow<'static, str> {
-        match self {
-            Self::Unimplemented { msg, .. } => format!("unimplemented: {}", msg).into(),
-
-            _ => format!("{:#?}", self).into(),
-        }
-    }
-
     #[cold]
     pub fn flatten(vec: Vec<Error>) -> Vec<Error> {
         let mut buf = Vec::with_capacity(vec.len());
@@ -2012,7 +2003,13 @@ impl ErrorKind {
         for e in vec {
             match *e.inner {
                 ErrorKind::Errors { errors, .. } | ErrorKind::TupleAssignError { errors, .. } => buf.extend(Self::flatten(errors)),
-                _ => buf.push(e),
+                _ => {
+                    if let Some(idx) = buf.iter().position(|prev| prev.inner == e.inner) {
+                        buf[idx].contexts.push(format!("duplicate: {}", e.contexts.join("\n")));
+                        continue;
+                    }
+                    buf.push(e)
+                }
             }
         }
 
