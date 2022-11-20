@@ -3,7 +3,13 @@
 #![feature(box_syntax)]
 #![feature(specialization)]
 
-use std::{borrow::Cow, fmt, fmt::Debug, ops::RangeInclusive, path::PathBuf};
+use std::{
+    borrow::Cow,
+    fmt,
+    fmt::{Debug, Display},
+    ops::RangeInclusive,
+    path::PathBuf,
+};
 
 use ansi_term::Color::Yellow;
 use derivative::Derivative;
@@ -1581,6 +1587,28 @@ impl Error {
             }
 
             err
+        })
+    }
+
+    #[track_caller]
+    pub fn context(self, context: impl Display) -> Self {
+        if !cfg!(debug_assertions) {
+            return self;
+        }
+
+        match self {
+            Error::Errors { .. } | Error::DebugContext { .. } => {}
+            _ => {
+                if self.span().is_dummy() {
+                    unreachable!("Error with dummy span found(context: {}): {:#?}", context, self)
+                }
+            }
+        }
+
+        Error::DebugContext(DebugContext {
+            span: self.span(),
+            context: context.to_string(),
+            inner: box self,
         })
     }
 
