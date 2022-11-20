@@ -2,7 +2,7 @@ use std::{borrow::Cow, iter::once};
 
 use rnode::{Fold, FoldWith, Visit};
 use stc_ts_ast_rnode::{RExpr, RIdent, RPropName, RStr, RTsEntityName, RTsType};
-use stc_ts_errors::ErrorKind;
+use stc_ts_errors::{Error, ErrorKind};
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
@@ -288,10 +288,10 @@ impl Analyzer<'_, '_> {
     //    }
 }
 
-pub trait ResultExt<T>: Into<Result<T, ErrorKind>> {
+pub trait ResultExt<T>: Into<Result<T, Error>> {
     fn store<V>(self, to: &mut V) -> Option<T>
     where
-        V: Extend<ErrorKind>,
+        V: Extend<Error>,
     {
         match self.into() {
             Ok(val) => Some(val),
@@ -313,7 +313,7 @@ pub trait ResultExt<T>: Into<Result<T, ErrorKind>> {
     }
 }
 
-impl<T> ResultExt<T> for Result<T, ErrorKind> {}
+impl<T> ResultExt<T> for Result<T, Error> {}
 
 /// Simple utility to check (l, r) and (r, l) with same code.
 #[derive(Debug, Clone, Copy)]
