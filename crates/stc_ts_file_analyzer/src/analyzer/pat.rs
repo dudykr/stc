@@ -182,7 +182,7 @@ impl Analyzer<'_, '_> {
             match p {
                 RPat::Assign(p) => self
                     .storage
-                    .report(ErrorKind::InitializerDisallowedInAmbientContext { span: p.span }),
+                    .report(ErrorKind::InitializerDisallowedInAmbientContext { span: p.span }.into()),
                 _ => {}
             }
         }
@@ -191,7 +191,7 @@ impl Analyzer<'_, '_> {
             match p {
                 RPat::Array(RArrayPat { span, optional: true, .. }) | RPat::Object(RObjectPat { span, optional: true, .. }) => self
                     .storage
-                    .report(ErrorKind::OptionalBindingPatternInImplSignature { span: *span }),
+                    .report(ErrorKind::OptionalBindingPatternInImplSignature { span: *span }.into()),
                 _ => {}
             }
         }
@@ -520,7 +520,7 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
 
-                                    self.storage.report(ErrorKind::TS2353 { span: prop.span() })
+                                    self.storage.report(ErrorKind::TS2353 { span: prop.span() }.into())
                                 }
                                 _ => {}
                             }

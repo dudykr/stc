@@ -142,7 +142,7 @@ impl Analyzer<'_, '_> {
                                     prev_key.type_eq(&key)
                                 })
                             {
-                                self.storage.report(ErrorKind::DuplicateProperty { span })
+                                self.storage.report(ErrorKind::DuplicateProperty { span }.into())
                             } else {
                                 known_keys.push(key);
                             }

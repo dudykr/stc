@@ -2728,7 +2728,7 @@ impl Analyzer<'_, '_> {
 
         macro_rules! report_err {
             ($err:expr) => {{
-                self.storage.report($err);
+                self.storage.report($err.into());
                 if is_generic {
                     return;
                 }

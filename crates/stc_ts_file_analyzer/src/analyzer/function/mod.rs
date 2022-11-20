@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Make this efficient by report same error only once.
                 if v.len() >= 2 {
                     for &span in &*v {
-                        self.storage.report(ErrorKind::DuplicateFnImpl { span })
+                        self.storage.report(ErrorKind::DuplicateFnImpl { span }.into())
                     }
                 }
             }
@@ -67,7 +67,7 @@ impl Analyzer<'_, '_> {
                             })
                             | RPat::Rest(..) => {}
                             _ => {
-                                child.storage.report(ErrorKind::TS1016 { span: p.span() });
+                                child.storage.report(ErrorKind::TS1016 { span: p.span() }.into());
                             }
                         }
                     }
@@ -177,12 +177,12 @@ impl Analyzer<'_, '_> {
                         if f.is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
                             child
                                 .storage
-                                .report(ErrorKind::GeneratorCannotHaveVoidAsReturnType { span: declared.span() })
+                                .report(ErrorKind::GeneratorCannotHaveVoidAsReturnType { span: declared.span() }.into())
                         }
                     } else {
                         if child.rule().no_implicit_any {
                             if child.is_implicitly_typed(&inferred_return_type) {
-                                child.storage.report(ErrorKind::ImplicitReturnType { span })
+                                child.storage.report(ErrorKind::ImplicitReturnType { span }.into())
                             }
                         }
 
@@ -213,7 +213,7 @@ impl Analyzer<'_, '_> {
                                 kind: TsKeywordTypeKind::TsNeverKeyword,
                                 ..
                             }) => {}
-                            _ => errors.push(ErrorKind::ReturnRequired { span }),
+                            _ => errors.push(ErrorKind::ReturnRequired { span }.into()),
                         }
                     }
 
