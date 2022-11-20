@@ -1444,7 +1444,7 @@ impl ErrorKind {
                 let mut new = Vec::with_capacity(errors.capacity());
                 for err in errors {
                     new.push(Error {
-                        inner: box err.convert_all_inner(op),
+                        inner: box err.inner.convert_all_inner(op),
                     });
                 }
 
