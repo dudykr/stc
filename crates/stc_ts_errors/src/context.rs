@@ -15,11 +15,19 @@ macro_rules! ctx {
 
 #[cfg(not(debug_assertions))]
 #[inline(always)]
-pub fn new(_: String) -> () {}
+pub fn new(_: impl Fn() -> String) -> () {}
 
 #[cfg(debug_assertions)]
-pub fn new(context: String) -> ErrorContextGuard {
-    with_ctx(|ctx| ctx.push(context));
+pub fn new(context: impl Fn() -> String) -> ErrorContextGuard {
+    use std::mem::transmute;
+    let context = box context as Ctx<'_>;
+    let tr = unsafe {
+        // Safety: We are creating a scoped context that is only valid while the guard
+        // is alive.
+        transmute(context)
+    };
+
+    with_ctx(|ctx| ctx.push(tr));
     ErrorContextGuard { _priv: () }
 }
 
@@ -36,10 +44,12 @@ impl Drop for ErrorContextGuard {
     }
 }
 
+type Ctx<'a> = Box<dyn 'a + Fn() -> String>;
+
 #[cfg(debug_assertions)]
-pub(crate) fn with_ctx(f: impl FnOnce(&mut Vec<String>)) {
+pub(crate) fn with_ctx(f: impl FnOnce(&mut Vec<Ctx>)) {
     thread_local! {
-        static CTX: RefCell<Vec<String>> = RefCell::new(Vec::new());
+        static CTX: RefCell<Vec<Ctx<'static>>> = RefCell::new(Vec::new());
     }
     CTX.with(|ctx| f(&mut *ctx.borrow_mut()))
 }
