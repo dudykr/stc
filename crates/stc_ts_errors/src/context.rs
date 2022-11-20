@@ -4,9 +4,9 @@ use std::cell::RefCell;
 /// the returned RAII guard is alive.
 #[macro_export]
 macro_rules! ctx {
-    ($s:expr) => {{
+    ($($t:tt)*) => {{
         if cfg!(debug_assertions) {
-            Some($crate::context::new($s))
+            Some($crate::context::new(|| $($t)*))
         } else {
             None
         }
