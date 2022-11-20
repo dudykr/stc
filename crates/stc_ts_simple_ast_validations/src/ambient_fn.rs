@@ -19,7 +19,8 @@ pub struct AmbientFunctionHandler<'a, 'b> {
 impl AmbientFunctionHandler<'_, '_> {
     pub fn handle_missing_impl(&mut self) {
         if let Some(id) = self.last_ambient_name.take() {
-            self.errors.report(ErrorKind::FnImplMissingOrNotFollowedByDecl { span: id.span })
+            self.errors
+                .report(ErrorKind::FnImplMissingOrNotFollowedByDecl { span: id.span }.into())
         }
     }
 }
@@ -46,7 +47,8 @@ impl Visit<RFnDecl> for AmbientFunctionHandler<'_, '_> {
         if node.function.body.is_none() {
             if let Some(ref name) = self.last_ambient_name {
                 if node.ident.sym != name.sym {
-                    self.errors.report(ErrorKind::FnImplMissingOrNotFollowedByDecl { span: name.span });
+                    self.errors
+                        .report(ErrorKind::FnImplMissingOrNotFollowedByDecl { span: name.span }.into());
                 }
             }
             self.last_ambient_name = Some(node.ident.clone());
@@ -55,7 +57,7 @@ impl Visit<RFnDecl> for AmbientFunctionHandler<'_, '_> {
                 if node.ident.sym == name.sym {
                     self.last_ambient_name = None;
                 } else {
-                    self.errors.report(ErrorKind::TS2389 { span: node.ident.span });
+                    self.errors.report(ErrorKind::TS2389 { span: node.ident.span }.into());
                     self.last_ambient_name = None;
                 }
             }
