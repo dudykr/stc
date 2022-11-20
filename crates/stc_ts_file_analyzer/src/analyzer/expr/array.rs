@@ -625,7 +625,7 @@ impl Analyzer<'_, '_> {
                 if !opts.disallow_str {
                     return Ok(ty);
                 } else {
-                    return Err(ErrorKind::NotArrayType { span });
+                    return Err(ErrorKind::NotArrayType { span }.into());
                 }
             }
 
@@ -653,7 +653,7 @@ impl Analyzer<'_, '_> {
                 | Type::Lit(LitType {
                     lit: RTsLit::BigInt(..), ..
                 })
-                | Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => return Err(ErrorKind::NotArrayType { span }),
+                | Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => return Err(ErrorKind::NotArrayType { span }.into()),
 
                 Type::Array(..) | Type::Tuple(..) => return Ok(ty),
                 Type::Union(u) => {
@@ -721,7 +721,7 @@ impl Analyzer<'_, '_> {
             .convert_err(|err| match err {
                 ErrorKind::NoCallablePropertyWithName { span, .. }
                 | ErrorKind::NoSuchPropertyInClass { span, .. }
-                | ErrorKind::NoSuchProperty { span, .. } => ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span },
+                | ErrorKind::NoSuchProperty { span, .. } => ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span }.into(),
                 _ => err,
             })
             .map(Cow::Owned)

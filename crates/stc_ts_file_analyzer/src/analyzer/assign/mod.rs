@@ -1134,7 +1134,7 @@ impl Analyzer<'_, '_> {
                                 .into()
                             })?;
 
-                        errors.retain(|err| match &*err {
+                        errors.retain(|err| match &**err {
                             ErrorKind::UnknownPropertyInObjectLiteralAssignment { .. } => false,
                             _ => true,
                         });
@@ -1309,7 +1309,7 @@ impl Analyzer<'_, '_> {
                     .into());
                 }
 
-                return Err(ErrorKind::Errors { span, errors });
+                return Err(ErrorKind::Errors { span, errors }.into());
             }
 
             Type::Union(r) => {

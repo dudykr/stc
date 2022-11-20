@@ -667,11 +667,11 @@ impl Analyzer<'_, '_> {
                             fields: lhs.to_vec(),
                         }
                         .context("keyword `object` is not assignable to a non-empty type literal");
-                        return Err(ErrorKind::Errors { span, errors: vec![err] });
+                        return Err(ErrorKind::Errors { span, errors: vec![err] }.into());
                     }
                 }
 
-                Type::EnumVariant(..) => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }),
+                Type::EnumVariant(..) => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
 
                 Type::Keyword(..) => {
                     let rhs = self
@@ -723,7 +723,8 @@ impl Analyzer<'_, '_> {
                     return Err(ErrorKind::Unimplemented {
                         span,
                         msg: format!("assign_to_type_elements - {:#?}", rhs),
-                    })
+                    }
+                    .into())
                 }
             }
 
@@ -744,7 +745,7 @@ impl Analyzer<'_, '_> {
                     span,
                     errors: unhandled_rhs
                         .into_iter()
-                        .map(|span| ErrorKind::UnknownPropertyInObjectLiteralAssignment { span })
+                        .map(|span| ErrorKind::UnknownPropertyInObjectLiteralAssignment { span }.into())
                         .collect(),
                 }
                 .into());
@@ -830,15 +831,21 @@ impl Analyzer<'_, '_> {
 
         if !missing_fields.is_empty() {
             if self.should_report_properties(span, lhs, rhs) {
-                errors.push(ErrorKind::MissingFields {
-                    span,
-                    fields: missing_fields,
-                });
+                errors.push(
+                    ErrorKind::MissingFields {
+                        span,
+                        fields: missing_fields,
+                    }
+                    .into(),
+                );
             } else {
-                errors.push(ErrorKind::ObjectAssignFailed {
-                    span,
-                    errors: vec![ErrorKind::SimpleAssignFailed { span, cause: None }],
-                })
+                errors.push(
+                    ErrorKind::ObjectAssignFailed {
+                        span,
+                        errors: vec![ErrorKind::SimpleAssignFailed { span, cause: None }],
+                    }
+                    .into(),
+                )
             }
         }
 
@@ -846,7 +853,8 @@ impl Analyzer<'_, '_> {
             return Err(ErrorKind::Errors {
                 span,
                 errors: errors.into(),
-            });
+            }
+            .into());
         }
 
         Ok(())

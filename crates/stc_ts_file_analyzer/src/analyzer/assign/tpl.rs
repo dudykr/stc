@@ -100,14 +100,14 @@ impl Analyzer<'_, '_> {
                             positions.push(pos);
                             start += pos + 1;
                         }
-                        None => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }),
+                        None => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
                     }
                 }
 
                 Ok(())
             }
 
-            _ => Err(ErrorKind::SimpleAssignFailed { span, cause: None }),
+            _ => Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
         }
     }
 }
