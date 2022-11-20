@@ -434,7 +434,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        res.convert_err(|err| match err {
+        res.convert_err(|err| match &*err {
             ErrorKind::AssignFailed { .. }
             | ErrorKind::Errors { .. }
             | ErrorKind::Unimplemented { .. }
@@ -446,7 +446,8 @@ impl Analyzer<'_, '_> {
                 right: box right.clone(),
                 right_ident: opts.right_ident_span,
                 cause: vec![err],
-            },
+            }
+            .into(),
         })
     }
 

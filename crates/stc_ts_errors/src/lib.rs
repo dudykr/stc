@@ -2112,3 +2112,9 @@ impl From<StackOverflowError> for ErrorKind {
         ErrorKind::StackOverflow { span: e.span }
     }
 }
+
+impl From<StackOverflowError> for Error {
+    fn from(e: StackOverflowError) -> Self {
+        ErrorKind::from(e).into()
+    }
+}
