@@ -417,7 +417,7 @@ impl Analyzer<'_, '_> {
                         })
                         .convert_err(|err| {
                             skip_right = true;
-                            match err {
+                            match &err {
                                 ErrorKind::CannotAssignToNonVariable { ty, .. } | ErrorKind::NotVariable { ty: Some(ty), .. } => {
                                     match ty.normalize() {
                                         Type::Module(..) => ErrorKind::CannotAssignToNamespace { span }.into(),
