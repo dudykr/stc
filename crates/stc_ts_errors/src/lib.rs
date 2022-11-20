@@ -3,13 +3,7 @@
 #![feature(box_syntax)]
 #![feature(specialization)]
 
-use std::{
-    borrow::Cow,
-    fmt,
-    fmt::{Debug, Display},
-    ops::RangeInclusive,
-    path::PathBuf,
-};
+use std::{borrow::Cow, fmt, fmt::Debug, ops::RangeInclusive, path::PathBuf};
 
 use ansi_term::Color::Yellow;
 use derivative::Derivative;
@@ -26,6 +20,7 @@ use swc_common::{
 use swc_ecma_ast::{AssignOp, BinaryOp, UpdateOp};
 
 pub use self::result_ext::DebugExt;
+use crate::context::with_ctx;
 
 pub mod context;
 pub mod debug;
@@ -1554,25 +1549,38 @@ impl Error {
         }
     }
 
+    /// Returns a wrapped error with contexts provided to [`ctx`].
+    ///
+    /// This is noop in a release build.
     #[track_caller]
-    pub fn context(self, context: impl Display) -> Self {
+    pub fn attach_context(self) -> Self {
         if !cfg!(debug_assertions) {
             return self;
         }
 
-        match self {
-            Error::Errors { .. } | Error::DebugContext { .. } => {}
-            _ => {
-                if self.span().is_dummy() {
-                    unreachable!("Error with dummy span found(context: {}): {:#?}", context, self)
-                }
-            }
-        }
+        with_ctx(|contexts| {
+            let mut err = self;
 
-        Error::DebugContext(DebugContext {
-            span: self.span(),
-            context: context.to_string(),
-            inner: box self,
+            for ctx in contexts.iter().rev() {
+                let context = ctx();
+
+                match err {
+                    Error::Errors { .. } | Error::DebugContext { .. } => {}
+                    _ => {
+                        if err.span().is_dummy() {
+                            unreachable!("Error with dummy span found(context: {}): {:#?}", context, err)
+                        }
+                    }
+                }
+
+                err = Error::DebugContext(DebugContext {
+                    span: err.span(),
+                    context,
+                    inner: box err,
+                });
+            }
+
+            err
         })
     }
 

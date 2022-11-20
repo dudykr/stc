@@ -47,7 +47,7 @@ impl Drop for ErrorContextGuard {
 type Ctx<'a> = Box<dyn 'a + Fn() -> String>;
 
 #[cfg(debug_assertions)]
-pub(crate) fn with_ctx(f: impl FnOnce(&mut Vec<Ctx>)) {
+pub(crate) fn with_ctx<R>(f: impl FnOnce(&mut Vec<Ctx>) -> R) -> R {
     thread_local! {
         static CTX: RefCell<Vec<Ctx<'static>>> = RefCell::new(Vec::new());
     }
