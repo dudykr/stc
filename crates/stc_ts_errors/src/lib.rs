@@ -38,6 +38,14 @@ pub struct Error {
     inner: Box<ErrorKind>,
 }
 
+impl std::ops::Deref for Error {
+    type Target = ErrorKind;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
 impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         Self {
@@ -58,7 +66,7 @@ impl Errors {
             }
         }
 
-        match err {
+        match &*err.inner {
             // Error::UndefinedSymbol { .. } => panic!(),
             ErrorKind::Errors { ref errors, .. } => {
                 for err in errors {
@@ -1470,7 +1478,7 @@ impl DebugContext {
 pub struct DebugContext {
     pub span: Span,
     pub context: String,
-    pub inner: Box<Error>,
+    pub inner: Box<ErrorKind>,
 }
 
 impl Debug for DebugContext {
