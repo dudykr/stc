@@ -78,7 +78,7 @@ impl Error {
 
         let mut err = h.struct_span_err_with_code(
             span,
-            &format!("{:?}", self),
+            &format!("{:#?}", self),
             DiagnosticId::Error(format!("TS{}", ErrorKind::normalize_error_code(self.code()))),
         );
 
