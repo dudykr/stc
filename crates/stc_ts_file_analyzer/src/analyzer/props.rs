@@ -580,7 +580,7 @@ impl Analyzer<'_, '_> {
                         let ret_ty = child.visit_stmts_for_return(n.span, false, false, &body.stmts)?;
                         if let None = ret_ty {
                             // getter property must have return statements.
-                            child.storage.report(ErrorKind::TS2378 { span: n.key.span() });
+                            child.storage.report(ErrorKind::TS2378 { span: n.key.span() }.into());
                         }
 
                         return Ok(ret_ty);

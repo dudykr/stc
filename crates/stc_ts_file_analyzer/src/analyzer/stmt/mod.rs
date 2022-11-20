@@ -46,7 +46,7 @@ impl Analyzer<'_, '_> {
         let start = Instant::now();
 
         if self.rule().always_strict && !self.rule().allow_unreachable_code && self.ctx.in_unreachable {
-            self.storage.report(ErrorKind::UnreachableCode { span: s.span() });
+            self.storage.report(ErrorKind::UnreachableCode { span: s.span() }.into());
         }
 
         let old_in_conditional = self.scope.return_values.in_conditional;
@@ -122,7 +122,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RWithStmt) {
-        self.storage.report(ErrorKind::WithStmtNotSupported { span: s.span });
+        self.storage.report(ErrorKind::WithStmtNotSupported { span: s.span }.into());
 
         s.obj.visit_with(self);
 

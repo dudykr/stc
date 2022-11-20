@@ -13,7 +13,7 @@ use iter::once;
 use once_cell::sync::Lazy;
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, ErrorKind};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
@@ -767,7 +767,7 @@ impl Analyzer<'_, '_> {
 
         if v.len() >= 2 {
             for span in v.iter().copied() {
-                self.storage.report(ErrorKind::DuplicateName { span, name: id.clone() })
+                self.storage.report(ErrorKind::DuplicateName { span, name: id.clone() }.into())
             }
         }
     }
@@ -793,9 +793,9 @@ impl Analyzer<'_, '_> {
                 self.data.exported_type_decls.entry(name.clone()).or_default().push(ty.span());
 
                 if let Some(spans) = self.data.local_type_decls.get(&name) {
-                    self.storage.report(ErrorKind::ExportMixedWithLocal { span: ty.span() });
+                    self.storage.report(ErrorKind::ExportMixedWithLocal { span: ty.span() }.into());
                     for (i, span) in spans.iter().copied().enumerate() {
-                        self.storage.report(ErrorKind::ExportMixedWithLocal { span });
+                        self.storage.report(ErrorKind::ExportMixedWithLocal { span }.into());
                         if i == 0 {
                             self.data.unmergable_type_decls.remove(&name);
                         }
@@ -805,10 +805,10 @@ impl Analyzer<'_, '_> {
                 self.data.local_type_decls.entry(name.clone()).or_default().push(ty.span());
 
                 if let Some(spans) = self.data.exported_type_decls.get(&name) {
-                    self.storage.report(ErrorKind::ExportMixedWithLocal { span: ty.span() });
+                    self.storage.report(ErrorKind::ExportMixedWithLocal { span: ty.span() }.into());
 
                     for (i, span) in spans.iter().copied().enumerate() {
-                        self.storage.report(ErrorKind::ExportMixedWithLocal { span });
+                        self.storage.report(ErrorKind::ExportMixedWithLocal { span }.into());
 
                         if i == 0 {
                             self.data.unmergable_type_decls.remove(&name);
@@ -1310,7 +1310,8 @@ impl Analyzer<'_, '_> {
         match kind {
             VarKind::Var(VarDeclKind::Let | VarDeclKind::Const) => {
                 if *name.sym() == js_word!("let") || *name.sym() == js_word!("const") {
-                    self.storage.report(ErrorKind::LetOrConstIsNotValidIdInLetOrConstVarDecls { span });
+                    self.storage
+                        .report(ErrorKind::LetOrConstIsNotValidIdInLetOrConstVarDecls { span }.into());
                 }
             }
             _ => {}
@@ -1448,7 +1449,7 @@ impl Analyzer<'_, '_> {
                                     Type::Query(..) => {}
                                     // Allow overloading query type.
                                     Type::Function(..) => {}
-                                    Type::ClassDef(..) => return Err(ErrorKind::DuplicateName { name: name.clone(), span }),
+                                    Type::ClassDef(..) => return Err(ErrorKind::DuplicateName { name: name.clone(), span }.into()),
                                     Type::Union(..) => {
                                         // TODO(kdy1): Check if all types are
                                         // query or
@@ -1471,7 +1472,7 @@ impl Analyzer<'_, '_> {
                                             .context("tried to validate a varaible declared multiple times")
                                             .convert_err(|err| ErrorKind::VarDeclNotCompatible {
                                                 span: err.span(),
-                                                cause: box err,
+                                                cause: box err.into(),
                                             });
 
                                         if let Err(err) = res {
@@ -1571,7 +1572,7 @@ impl Analyzer<'_, '_> {
                     )
                     .convert_err(|err| ErrorKind::ImcompatibleFnOverload {
                         span: orig.span(),
-                        cause: box err,
+                        cause: box err.into(),
                     })
                     .context("tried to validate signatures of overloaded functions")?;
                 }
