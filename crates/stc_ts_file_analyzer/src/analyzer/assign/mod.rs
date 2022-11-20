@@ -598,7 +598,7 @@ impl Analyzer<'_, '_> {
 
         macro_rules! fail {
             () => {{
-                return Err(Error::AssignFailed {
+                return Err(ErrorKind::AssignFailed {
                     span,
                     left: box to.clone(),
                     right: box rhs.clone(),

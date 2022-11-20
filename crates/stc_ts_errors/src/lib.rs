@@ -32,9 +32,25 @@ pub mod context;
 pub mod debug;
 mod result_ext;
 
+#[derive(Debug, Clone, PartialEq, Spanned)]
+pub struct Error {
+    #[span]
+    inner: Box<ErrorKind>,
+}
+
+impl From<ErrorKind> for Error {
+    fn from(kind: ErrorKind) -> Self {
+        Self {
+            inner: Box::new(kind.attach_context()),
+        }
+    }
+}
+
+impl Error {}
+
 impl Errors {
     /// This is used for debugging (by calling [pacic]).
-    fn validate(&self, err: &ErrorKind) {
+    fn validate(&self, err: &Error) {
         if let Ok(var) = std::env::var("DBG_ERROR") {
             let s = format!("{:?}", err);
             if var != "" && s.contains(&var) {
@@ -69,7 +85,7 @@ pub enum ErrorKind {
     /// TS2430
     InvalidInterfaceInheritance {
         span: Span,
-        cause: Box<ErrorKind>,
+        cause: Box<Error>,
     },
 
     /// TS2339
@@ -81,7 +97,7 @@ pub enum ErrorKind {
     VarDeclNotCompatible {
         span: Span,
 
-        cause: Box<ErrorKind>,
+        cause: Box<Error>,
     },
 
     /// TS2795
@@ -450,7 +466,7 @@ pub enum ErrorKind {
     /// TS2394
     ImcompatibleFnOverload {
         span: Span,
-        cause: Box<ErrorKind>,
+        cause: Box<Error>,
     },
 
     /// TS2371
@@ -525,7 +541,7 @@ pub enum ErrorKind {
     /// TS2420
     InvalidImplOfInterface {
         span: Span,
-        cause: Box<ErrorKind>,
+        cause: Box<Error>,
     },
 
     /// TS2302
@@ -668,7 +684,7 @@ pub enum ErrorKind {
         /// Span of argument.
         span: Span,
 
-        inner: Box<ErrorKind>,
+        inner: Box<Error>,
     },
 
     ImportFailed {
@@ -810,12 +826,12 @@ pub enum ErrorKind {
 
     TupleAssignError {
         span: Span,
-        errors: Vec<ErrorKind>,
+        errors: Vec<Error>,
     },
 
     Errors {
         span: Span,
-        errors: Vec<ErrorKind>,
+        errors: Vec<Error>,
     },
 
     RedeclaredVarWithDifferentType {
@@ -979,7 +995,7 @@ pub enum ErrorKind {
         right_ident: Option<Span>,
         #[derivative(Debug = "ignore")]
         right: Box<Type>,
-        cause: Vec<ErrorKind>,
+        cause: Vec<Error>,
     },
 
     /// TS2322
@@ -994,17 +1010,17 @@ pub enum ErrorKind {
 
     ObjectAssignFailed {
         span: Span,
-        errors: Vec<ErrorKind>,
+        errors: Vec<Error>,
     },
 
     SimpleAssignFailed {
         span: Span,
-        cause: Option<Box<ErrorKind>>,
+        cause: Option<Box<Error>>,
     },
 
     SimpleAssignFailedWithCause {
         span: Span,
-        cause: Vec<ErrorKind>,
+        cause: Vec<Error>,
     },
 
     InvalidAssignmentOfArray {
@@ -1014,12 +1030,12 @@ pub enum ErrorKind {
     /// a or b or c
     UnionError {
         span: Span,
-        errors: Vec<ErrorKind>,
+        errors: Vec<Error>,
     },
 
     IntersectionError {
         span: Span,
-        error: Box<ErrorKind>,
+        error: Box<Error>,
     },
 
     CannotAssingToThis {
@@ -1454,7 +1470,7 @@ impl DebugContext {
 pub struct DebugContext {
     pub span: Span,
     pub context: String,
-    pub inner: Box<ErrorKind>,
+    pub inner: Box<Error>,
 }
 
 impl Debug for DebugContext {
@@ -1558,8 +1574,7 @@ impl ErrorKind {
     /// Returns a wrapped error with contexts provided to [`ctx`].
     ///
     /// This is noop in a release build.
-    #[track_caller]
-    pub fn attach_context(self) -> Self {
+    fn attach_context(self) -> Self {
         if !cfg!(debug_assertions) {
             return self;
         }
@@ -2073,7 +2088,7 @@ impl ErrorKind {
     }
 
     #[cold]
-    pub fn flatten(vec: Vec<ErrorKind>) -> Vec<ErrorKind> {
+    pub fn flatten(vec: Vec<Error>) -> Vec<Error> {
         let mut buf = Vec::with_capacity(vec.len());
 
         for e in vec {
@@ -2097,9 +2112,9 @@ impl ErrorKind {
     }
 }
 
-impl From<Vec<ErrorKind>> for ErrorKind {
+impl From<Vec<Error>> for ErrorKind {
     #[inline]
-    fn from(errors: Vec<ErrorKind>) -> Self {
+    fn from(errors: Vec<Error>) -> Self {
         ErrorKind::Errors { span: DUMMY_SP, errors }
     }
 }
@@ -2113,9 +2128,9 @@ impl From<Errors> for ErrorKind {
 
 /// A utility type to track
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct Errors(Vec<ErrorKind>);
+pub struct Errors(Vec<Error>);
 
-impl From<Errors> for Vec<ErrorKind> {
+impl From<Errors> for Vec<Error> {
     #[inline]
     fn from(e: Errors) -> Self {
         e.0
@@ -2123,7 +2138,7 @@ impl From<Errors> for Vec<ErrorKind> {
 }
 
 impl IntoIterator for Errors {
-    type IntoIter = <Vec<ErrorKind> as IntoIterator>::IntoIter;
+    type IntoIter = <Vec<Error> as IntoIterator>::IntoIter;
     type Item = ErrorKind;
 
     #[inline]
@@ -2144,7 +2159,7 @@ impl Errors {
     }
 
     #[inline]
-    pub fn push(&mut self, err: ErrorKind) {
+    pub fn push(&mut self, err: Error) {
         self.validate(&err);
 
         self.0.push(err);
@@ -2156,7 +2171,7 @@ impl Errors {
     }
 
     #[inline]
-    pub fn append(&mut self, other: &mut Vec<ErrorKind>) {
+    pub fn append(&mut self, other: &mut Vec<Error>) {
         for err in &*other {
             self.validate(err)
         }
@@ -2170,7 +2185,7 @@ impl Errors {
     }
 }
 
-impl Extend<ErrorKind> for Errors {
+impl Extend<Error> for Errors {
     #[inline]
     fn extend<T: IntoIterator<Item = ErrorKind>>(&mut self, iter: T) {
         if cfg!(debug_assertions) {
