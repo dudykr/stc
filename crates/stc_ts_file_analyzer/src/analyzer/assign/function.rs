@@ -675,7 +675,7 @@ impl Analyzer<'_, '_> {
                 span,
                 cause: Some(box err.into()),
             },
-            ErrorKind::Errors { errors, .. } => {
+            ErrorKind::Errors { ref errors, .. } => {
                 if errors.iter().all(|err| match &**err {
                     ErrorKind::MissingFields { .. } => true,
                     _ => false,
