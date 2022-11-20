@@ -132,13 +132,13 @@ impl Analyzer<'_, '_> {
                     let span = *span;
 
                     if self.ctx.in_static_property_initializer {
-                        self.storage.report(ErrorKind::ThisInStaticPropertyInitializer { span })
+                        self.storage.report(ErrorKind::ThisInStaticPropertyInitializer { span }.into())
                     } else if self.ctx.in_constructor_param {
-                        self.storage.report(ErrorKind::ThisInConstructorParam { span })
+                        self.storage.report(ErrorKind::ThisInConstructorParam { span }.into())
                     }
 
                     if self.scope.cannot_use_this_because_super_not_called() {
-                        self.storage.report(ErrorKind::ThisUsedBeforeCallingSuper { span })
+                        self.storage.report(ErrorKind::ThisUsedBeforeCallingSuper { span }.into())
                     }
 
                     let is_ref_to_module = match self.scope.kind() {
@@ -150,7 +150,7 @@ impl Analyzer<'_, '_> {
                             _ => false,
                         });
                     if is_ref_to_module {
-                        self.storage.report(ErrorKind::ThisRefToModuleOrNamespace { span })
+                        self.storage.report(ErrorKind::ThisRefToModuleOrNamespace { span }.into())
                     }
 
                     // Use globalThis
@@ -417,14 +417,14 @@ impl Analyzer<'_, '_> {
                         })
                         .convert_err(|err| {
                             skip_right = true;
-                            match err.actual() {
+                            match &*err {
                                 ErrorKind::CannotAssignToNonVariable { ty, .. } | ErrorKind::NotVariable { ty: Some(ty), .. } => {
                                     match ty.normalize() {
-                                        Type::Module(..) => ErrorKind::CannotAssignToNamespace { span },
-                                        Type::Namespace(..) => ErrorKind::CannotAssignToModule { span },
-                                        Type::ClassDef(..) => ErrorKind::CannotAssignToClass { span },
-                                        Type::Enum(..) => ErrorKind::CannotAssignToEnum { span },
-                                        Type::Function(..) => ErrorKind::CannotAssignToFunction { span },
+                                        Type::Module(..) => ErrorKind::CannotAssignToNamespace { span }.into(),
+                                        Type::Namespace(..) => ErrorKind::CannotAssignToModule { span }.into(),
+                                        Type::ClassDef(..) => ErrorKind::CannotAssignToClass { span }.into(),
+                                        Type::Enum(..) => ErrorKind::CannotAssignToEnum { span }.into(),
+                                        Type::Function(..) => ErrorKind::CannotAssignToFunction { span }.into(),
                                         _ => err,
                                     }
                                 }
@@ -581,7 +581,7 @@ impl Analyzer<'_, '_> {
             if !is_last {
                 match **e {
                     RExpr::Arrow(..) if !self.rule().allow_unreachable_code => {
-                        self.storage.report(ErrorKind::UselessSeqExpr { span });
+                        self.storage.report(ErrorKind::UselessSeqExpr { span }.into());
                     }
                     RExpr::Ident(..)
                     | RExpr::Cond(..)
@@ -592,7 +592,7 @@ impl Analyzer<'_, '_> {
                     | RExpr::Unary(RUnaryExpr { op: op!("typeof"), .. })
                         if !self.rule().allow_unreachable_code =>
                     {
-                        self.storage.report(ErrorKind::UselessSeqExpr { span });
+                        self.storage.report(ErrorKind::UselessSeqExpr { span }.into());
                     }
 
                     _ => {}
@@ -849,7 +849,7 @@ impl Analyzer<'_, '_> {
                     match el {
                         TypeElement::Property(ref p) => {
                             if type_mode == TypeOfMode::LValue && p.readonly {
-                                return Err(ErrorKind::ReadOnly { span });
+                                return Err(ErrorKind::ReadOnly { span }.into());
                             }
 
                             if let Some(ref type_ann) = p.type_ann {
@@ -1243,7 +1243,7 @@ impl Analyzer<'_, '_> {
 
         if self.ctx.in_opt_chain {
             if let Key::Private(p) = prop {
-                return Err(ErrorKind::OptionalChainCannotContainPrivateIdentifier { span: p.span });
+                return Err(ErrorKind::OptionalChainCannotContainPrivateIdentifier { span: p.span }.into());
             }
         }
 
@@ -1276,7 +1276,7 @@ impl Analyzer<'_, '_> {
                                 return Ok(Type::any(span, Default::default()));
                             }
 
-                            return res.convert_err(|err| match err.actual() {
+                            return res.convert_err(|err| match &*err {
                                 ErrorKind::NoSuchVar { span, name } => ErrorKind::NoSuchProperty {
                                     span: *span,
                                     obj: Some(box obj.clone()),
@@ -1284,7 +1284,8 @@ impl Analyzer<'_, '_> {
                                         span: *span,
                                         sym: name.sym().clone(),
                                     }),
-                                },
+                                }
+                                .into(),
                                 _ => err,
                             });
                         }
@@ -1293,7 +1294,7 @@ impl Analyzer<'_, '_> {
                                 .env
                                 .get_global_type(span, &sym)
                                 .context("tried to access a prperty of `globalThis`")
-                                .convert_err(|err| match err.actual() {
+                                .convert_err(|err| match &*err {
                                     ErrorKind::NoSuchType { span, name } => ErrorKind::NoSuchProperty {
                                         span: *span,
                                         obj: Some(box obj.clone()),
@@ -1301,7 +1302,8 @@ impl Analyzer<'_, '_> {
                                             span: *span,
                                             sym: name.sym().clone(),
                                         }),
-                                    },
+                                    }
+                                    .into(),
                                     _ => err,
                                 });
                         }
