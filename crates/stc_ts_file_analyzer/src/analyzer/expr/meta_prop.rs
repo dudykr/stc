@@ -13,7 +13,7 @@ impl Analyzer<'_, '_> {
         match e.kind {
             MetaPropKind::NewTarget => {
                 if !self.ctx.allow_new_target {
-                    self.storage.report(ErrorKind::InvalidUsageOfNewTarget { span: e.span() })
+                    self.storage.report(ErrorKind::InvalidUsageOfNewTarget { span: e.span() }.into())
                 }
 
                 return Ok(Type::any(e.span, Default::default()));

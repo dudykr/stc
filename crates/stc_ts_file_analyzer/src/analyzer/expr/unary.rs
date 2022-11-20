@@ -208,12 +208,10 @@ impl Analyzer<'_, '_> {
             })
             | RExpr::Member(expr) => {
                 if self.rule().strict_null_checks {
-                    let ty = self.type_of_member_expr(expr, TypeOfMode::RValue).convert_err(|err| match &*err {
+                    let ty = self.type_of_member_expr(expr, TypeOfMode::RValue).convert_err(|err| match err {
                         ErrorKind::ObjectIsPossiblyNull { span, .. }
                         | ErrorKind::ObjectIsPossiblyUndefined { span, .. }
-                        | ErrorKind::ObjectIsPossiblyNullOrUndefined { span, .. } => {
-                            ErrorKind::DeleteOperandMustBeOptional { span: *span }.into()
-                        }
+                        | ErrorKind::ObjectIsPossiblyNullOrUndefined { span, .. } => ErrorKind::DeleteOperandMustBeOptional { span }.into(),
                         _ => err,
                     })?;
                     if !self.can_be_undefined(span, &ty)? {

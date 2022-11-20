@@ -417,7 +417,7 @@ impl Analyzer<'_, '_> {
                         })
                         .convert_err(|err| {
                             skip_right = true;
-                            match &*err {
+                            match err {
                                 ErrorKind::CannotAssignToNonVariable { ty, .. } | ErrorKind::NotVariable { ty: Some(ty), .. } => {
                                     match ty.normalize() {
                                         Type::Module(..) => ErrorKind::CannotAssignToNamespace { span }.into(),
@@ -1276,12 +1276,12 @@ impl Analyzer<'_, '_> {
                                 return Ok(Type::any(span, Default::default()));
                             }
 
-                            return res.convert_err(|err| match &*err {
+                            return res.convert_err(|err| match err {
                                 ErrorKind::NoSuchVar { span, name } => ErrorKind::NoSuchProperty {
-                                    span: *span,
+                                    span,
                                     obj: Some(box obj.clone()),
                                     prop: Some(box Key::Normal {
-                                        span: *span,
+                                        span,
                                         sym: name.sym().clone(),
                                     }),
                                 }
@@ -1294,12 +1294,12 @@ impl Analyzer<'_, '_> {
                                 .env
                                 .get_global_type(span, &sym)
                                 .context("tried to access a prperty of `globalThis`")
-                                .convert_err(|err| match &*err {
+                                .convert_err(|err| match err {
                                     ErrorKind::NoSuchType { span, name } => ErrorKind::NoSuchProperty {
-                                        span: *span,
+                                        span,
                                         obj: Some(box obj.clone()),
                                         prop: Some(box Key::Normal {
-                                            span: *span,
+                                            span,
                                             sym: name.sym().clone(),
                                         }),
                                     }
@@ -1851,7 +1851,8 @@ impl Analyzer<'_, '_> {
                         }
                         ClassMember::Method(ref mtd @ Method { is_static: false, .. }) => {
                             if mtd.key.is_private() {
-                                self.storage.report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span });
+                                self.storage
+                                    .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
                                 return Ok(Type::any(span, Default::default()));
                             }
 
@@ -3322,7 +3323,7 @@ impl Analyzer<'_, '_> {
             }
             js_word!("void") => return Ok(Type::any(span, Default::default())),
             js_word!("eval") => match type_mode {
-                TypeOfMode::LValue => return Err(ErrorKind::CannotAssignToFunction { span }),
+                TypeOfMode::LValue => return Err(ErrorKind::CannotAssignToFunction { span }.into()),
                 _ => {}
             },
             _ => {}
@@ -3470,11 +3471,11 @@ impl Analyzer<'_, '_> {
                         });
 
                     if !self.scope.is_arguments_implicitly_defined() || arguments_point_to_arrow {
-                        self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span })
+                        self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span }.into())
                     }
                 } else {
                     if !self.scope.is_arguments_implicitly_defined() {
-                        self.storage.report(ErrorKind::NoSuchVar { span, name: i.into() })
+                        self.storage.report(ErrorKind::NoSuchVar { span, name: i.into() }.into())
                     }
                 }
 
@@ -4161,16 +4162,16 @@ impl Analyzer<'_, '_> {
     }
 }
 
-fn is_valid_lhs(l: &RPatOrExpr) -> Result<(), ErrorKind> {
-    fn is_valid_lhs_expr(e: &RExpr) -> Result<(), ErrorKind> {
+fn is_valid_lhs(l: &RPatOrExpr) -> VResult<()> {
+    fn is_valid_lhs_expr(e: &RExpr) -> VResult<()> {
         // obj?.a["b"] += 1;
         if is_obj_opt_chaining(&e) {
-            return Err(ErrorKind::InvalidLhsOfAssignOptionalProp { span: e.span() });
+            return Err(ErrorKind::InvalidLhsOfAssignOptionalProp { span: e.span() }.into());
         }
         match e {
             RExpr::Ident(..) | RExpr::Member(..) | RExpr::SuperProp(..) => Ok(()),
             RExpr::Paren(e) => is_valid_lhs_expr(&e.expr),
-            _ => Err(ErrorKind::InvalidLhsOfAssign { span: e.span() }),
+            _ => Err(ErrorKind::InvalidLhsOfAssign { span: e.span() }.into()),
         }
     }
 
