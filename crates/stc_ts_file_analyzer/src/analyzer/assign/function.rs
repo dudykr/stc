@@ -5,7 +5,7 @@ use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
 use stc_ts_errors::{
     debug::{dump_type_as_string, dump_type_map},
-    DebugExt, ErrorKind,
+    ErrorKind,
 };
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, debug_ctx};

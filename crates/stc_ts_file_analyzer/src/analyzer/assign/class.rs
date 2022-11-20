@@ -287,6 +287,7 @@ impl Analyzer<'_, '_> {
                                     return Err(ErrorKind::PrivateMethodIsDifferent { span }.into());
                                 }
 
+                                let _ctx = ctx!("tried to assign a class method to another one");
                                 self.assign_to_fn_like(
                                     data,
                                     true,
@@ -297,8 +298,7 @@ impl Analyzer<'_, '_> {
                                     &rm.params,
                                     Some(&rm.ret_ty),
                                     opts,
-                                )
-                                .context("tried to assign a class method to another one")?;
+                                )?;
 
                                 return Ok(());
                             }
@@ -330,8 +330,8 @@ impl Analyzer<'_, '_> {
                             {
                                 if let Some(lt) = &lp.value {
                                     if let Some(rt) = &rp.value {
-                                        self.assign_inner(data, &lt, &rt, opts)
-                                            .context("tried to assign a class proeprty to another")?;
+                                        let _ctx = ctx!("tried to assign a class proeprty to another");
+                                        self.assign_inner(data, &lt, &rt, opts)?;
                                     }
                                 }
 
