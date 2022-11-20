@@ -240,7 +240,8 @@ impl Analyzer<'_, '_> {
         Err(ErrorKind::Unimplemented {
             span: opts.span,
             msg: format!("Assignment of non-class object to class\n{:#?}", r),
-        })
+        }
+        .into())
     }
 
     fn assign_class_members_to_class_member(
@@ -277,7 +278,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 if rm.accessibility == Some(Accessibility::Private) || rm.key.is_private() {
-                                    return Err(ErrorKind::PrivateMethodIsDifferent { span });
+                                    return Err(ErrorKind::PrivateMethodIsDifferent { span }.into());
                                 }
 
                                 self.assign_to_fn_like(
@@ -302,14 +303,14 @@ impl Analyzer<'_, '_> {
                 }
 
                 if lm.accessibility == Some(Accessibility::Private) || lm.key.is_private() {
-                    return Err(ErrorKind::PrivateMethodIsDifferent { span });
+                    return Err(ErrorKind::PrivateMethodIsDifferent { span }.into());
                 }
 
                 if lm.is_optional {
                     return Ok(());
                 }
 
-                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }).context("failed to assign a class member to another one");
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("failed to assign a class member to another one"));
             }
             ClassMember::Property(lp) => {
                 for rm in r {
@@ -333,7 +334,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 if rp.accessibility == Some(Accessibility::Private) || rp.key.is_private() {
-                                    return Err(ErrorKind::PrivatePropertyIsDifferent { span });
+                                    return Err(ErrorKind::PrivatePropertyIsDifferent { span }.into());
                                 }
 
                                 return Ok(());
@@ -344,7 +345,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if lp.accessibility == Some(Accessibility::Private) || lp.key.is_private() {
-                    return Err(ErrorKind::PrivatePropertyIsDifferent { span });
+                    return Err(ErrorKind::PrivatePropertyIsDifferent { span }.into());
                 }
 
                 if lp.is_optional {
@@ -352,10 +353,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 if opts.use_missing_fields_for_class {
-                    let err = ErrorKind::MissingFields { span, fields: vec![] };
-                    return Err(ErrorKind::Errors { span, errors: vec![err] });
+                    let err = ErrorKind::MissingFields { span, fields: vec![] }.into();
+                    return Err(ErrorKind::Errors { span, errors: vec![err] }.into());
                 } else {
-                    return Err(ErrorKind::SimpleAssignFailed { span, cause: None });
+                    return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
                 }
             }
             ClassMember::IndexSignature(_) => {}
@@ -364,6 +365,7 @@ impl Analyzer<'_, '_> {
         Err(ErrorKind::Unimplemented {
             span: opts.span,
             msg: format!("fine-grained class assignment to lhs member: {:#?}", l),
-        })
+        }
+        .into())
     }
 }

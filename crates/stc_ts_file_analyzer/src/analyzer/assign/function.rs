@@ -464,7 +464,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(ErrorKind::SimpleAssignFailed { span, cause: None })
+        Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into())
     }
 
     ///

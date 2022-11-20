@@ -788,7 +788,7 @@ impl Analyzer<'_, '_> {
                                     ClassMember::Property(ref rp) => {
                                         match rp.accessibility {
                                             Some(Accessibility::Private) | Some(Accessibility::Protected) => {
-                                                errors.push(ErrorKind::AccessibilityDiffers { span });
+                                                errors.push(ErrorKind::AccessibilityDiffers { span }.into());
                                             }
                                             _ => {}
                                         }

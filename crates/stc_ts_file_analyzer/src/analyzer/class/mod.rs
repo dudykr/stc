@@ -1123,9 +1123,9 @@ impl Analyzer<'_, '_> {
                         if name.is_some() && !is_key_optional(&m.key) && !is_prop_name_eq_include_computed(&name.unwrap(), &m.key) {
                             for (span, is_constructor) in replace(&mut spans, vec![]) {
                                 if is_constructor {
-                                    errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+                                    errors.push(ErrorKind::ConstructorImplMissingOrNotFollowedByDecl { span }.into());
                                 } else {
-                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                    errors.push(ErrorKind::FnImplMissingOrNotFollowedByDecl { span }.into());
                                 }
                             }
                         }
