@@ -1428,11 +1428,12 @@ pub enum ErrorKind {
 assert_eq_size!(ErrorKind, [u8; 72]);
 
 impl Error {
-    pub fn convert<F>(self, op: F) -> Self
+    pub fn convert<F>(mut self, op: F) -> Self
     where
-        F: FnOnce(Self) -> Self,
+        F: FnOnce(ErrorKind) -> ErrorKind,
     {
-        op(self)
+        self.inner = box op(*self.inner);
+        self
     }
 
     /// Convert all errors if `self` is [Error::Errors] and convert itself

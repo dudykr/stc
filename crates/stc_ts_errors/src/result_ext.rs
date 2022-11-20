@@ -3,7 +3,7 @@ use crate::{Error, ErrorKind};
 pub trait DebugExt<T>: Into<Result<T, Error>> {
     fn convert_err<F>(self, op: F) -> Result<T, Error>
     where
-        F: FnOnce(Error) -> Error,
+        F: FnOnce(ErrorKind) -> ErrorKind,
     {
         self.into().map_err(|err: Error| err.convert(op))
     }
