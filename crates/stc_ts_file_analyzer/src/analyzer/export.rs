@@ -322,6 +322,7 @@ impl Analyzer<'_, '_> {
             ..self.ctx
         };
         self.with_ctx(ctx).validate_with(|a| {
+            let ctx = ctx!("tried to reexport with named export specifier");
             a.type_of_var(
                 &match &node.orig {
                     RModuleExportName::Ident(v) => v.clone(),
@@ -329,8 +330,7 @@ impl Analyzer<'_, '_> {
                 },
                 TypeOfMode::RValue,
                 None,
-            )
-            .context("failed to reexport with named export specifier")?;
+            )?;
 
             Ok(())
         });
