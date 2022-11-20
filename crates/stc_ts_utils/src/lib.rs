@@ -17,6 +17,13 @@ mod comments;
 pub mod imports;
 mod map_with_mut;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Ternary {
+    True,
+    False,
+    Unknown,
+}
+
 pub trait AsModuleDecl {
     const IS_MODULE_ITEM: bool;
     fn as_module_decl(&self) -> Result<&RModuleDecl, &RStmt>;
