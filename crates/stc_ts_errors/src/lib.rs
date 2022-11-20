@@ -33,8 +33,10 @@ pub mod debug;
 mod result_ext;
 
 /// [ErrorKind] with debug contexts attached.
-#[derive(Debug, Clone, PartialEq, Spanned)]
+#[derive(Clone, PartialEq, Spanned)]
 pub struct Error {
+    #[cfg(debug_assertions)]
+    contexts: Vec<String>,
     #[span]
     inner: Box<ErrorKind>,
 }
@@ -50,12 +52,25 @@ impl std::ops::Deref for Error {
 impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         Self {
+            contexts: with_ctx(|contexts| contexts.iter().map(|v| v()).collect()),
             inner: Box::new(kind.attach_context()),
         }
     }
 }
 
-impl Error {}
+impl Debug for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let mut next = Some(self);
+
+        for ctx in self.contexts.iter() {
+            writeln!(f, "{}: {}", Yellow.paint("context"), ctx)?;
+        }
+
+        Debug::fmt(&self.inner, f)?;
+
+        Ok(())
+    }
+}
 
 impl Errors {
     /// This is used for debugging (by calling [pacic]).
@@ -1474,33 +1489,6 @@ impl DebugContext {
         let inner = box self.inner.convert_all_inner(op);
 
         Self { inner, ..self }
-    }
-}
-
-#[derive(Clone, PartialEq, Spanned)]
-pub struct DebugContext {
-    pub span: Span,
-    pub context: String,
-    pub inner: Box<ErrorKind>,
-}
-
-impl Debug for DebugContext {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut next = Some(self);
-
-        while let Some(cur) = next.take() {
-            writeln!(f, "{}: {}", Yellow.paint("context"), cur.context)?;
-
-            match &*cur.inner {
-                ErrorKind::DebugContext(c) => next = Some(c),
-                _ => {
-                    Debug::fmt(&cur.inner, f)?;
-                    break;
-                }
-            }
-        }
-
-        Ok(())
     }
 }
 
