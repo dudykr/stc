@@ -59,7 +59,7 @@ impl Analyzer<'_, '_> {
         is_async: bool,
         is_generator: bool,
         stmts: &Vec<RStmt>,
-    ) -> Result<Option<Type>, ErrorKind> {
+    ) -> VResult<Option<Type>> {
         let marks = self.marks();
 
         debug_assert_eq!(span.ctxt, SyntaxContext::empty());

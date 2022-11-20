@@ -380,7 +380,7 @@ impl Analyzer<'_, '_> {
                                 ..opts
                             },
                         )
-                        .convert_err(|err| match &*err {
+                        .convert_err(|err| match *err {
                             ErrorKind::Errors { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
                                 cause: Some(box err),
@@ -404,7 +404,7 @@ impl Analyzer<'_, '_> {
                 Type::Class(rhs_cls) => {
                     // TODO(kdy1): Check if constructor exists.
                     if rhs_cls.def.is_abstract {
-                        return Err(ErrorKind::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
+                        return Err(ErrorKind::CannotAssignAbstractConstructorToNonAbstractConstructor { span }.into());
                     }
 
                     // TODO(kdy1): Optimize
@@ -1014,7 +1014,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !errors.is_empty() {
-            return Err(ErrorKind::Errors { span, errors });
+            return Err(ErrorKind::Errors { span, errors }.into());
         }
 
         Ok(())
@@ -1096,13 +1096,13 @@ impl Analyzer<'_, '_> {
                                             if lp.accessibility == Some(Accessibility::Private)
                                                 || rp.accessibility == Some(Accessibility::Private)
                                             {
-                                                return Err(ErrorKind::AssignFailedDueToAccessibility { span });
+                                                return Err(ErrorKind::AssignFailedDueToAccessibility { span }.into());
                                             }
                                         }
 
                                         if !opts.for_castablity {
                                             if !lp.optional && rp.optional {
-                                                return Err(ErrorKind::AssignFailedDueToOptionalityDifference { span });
+                                                return Err(ErrorKind::AssignFailedDueToOptionalityDifference { span }.into());
                                             }
                                         }
 
