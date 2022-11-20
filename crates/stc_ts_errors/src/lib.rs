@@ -56,7 +56,7 @@ impl std::ops::Deref for Error {
 impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
         Self {
-            contexts: with_ctx(|contexts| contexts.iter().map(|v| v()).collect()),
+            contexts: with_ctx(|contexts| contexts.iter().rev().map(|v| v()).collect()),
             inner: Box::new(kind),
         }
     }
