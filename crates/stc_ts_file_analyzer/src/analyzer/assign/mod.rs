@@ -1348,7 +1348,9 @@ impl Analyzer<'_, '_> {
                 if errors.is_empty() {
                     return Ok(());
                 }
-                return Err(ErrorKind::Errors { span, errors }.context("tried to assign a union to other type"));
+                return Err(ErrorKind::Errors { span, errors }
+                    .context("tried to assign a union to other type")
+                    .into());
             }
 
             Type::Keyword(KeywordType {

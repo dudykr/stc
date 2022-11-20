@@ -50,7 +50,7 @@ impl Analyzer<'_, '_> {
                             errors.extend(self.assign_inner(data, &type_args.params[0], &el.ty, opts).err());
                         }
                         if !errors.is_empty() {
-                            return Some(Err(ErrorKind::TupleAssignError { span, errors }));
+                            return Some(Err(ErrorKind::TupleAssignError { span, errors }.into()));
                         }
                     }
                     return Some(Ok(()));
@@ -82,7 +82,8 @@ impl Analyzer<'_, '_> {
                     return Some(Err(ErrorKind::NoCallSignature {
                         span: opts.span,
                         callee: box r.clone(),
-                    }));
+                    }
+                    .into()));
                 }
                 Type::Interface(ri) => {
                     if *ri.name.sym() == js_word!("Function") {

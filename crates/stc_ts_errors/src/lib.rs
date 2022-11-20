@@ -32,6 +32,7 @@ pub mod context;
 pub mod debug;
 mod result_ext;
 
+/// [ErrorKind] with debug contexts attached.
 #[derive(Debug, Clone, PartialEq, Spanned)]
 pub struct Error {
     #[span]
