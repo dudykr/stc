@@ -27,6 +27,7 @@ use swc_ecma_ast::{AssignOp, BinaryOp, UnaryOp, UpdateOp};
 
 pub use self::result_ext::DebugExt;
 
+pub mod context;
 pub mod debug;
 mod result_ext;
 
