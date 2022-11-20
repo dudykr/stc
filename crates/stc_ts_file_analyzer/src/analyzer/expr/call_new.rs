@@ -3001,10 +3001,10 @@ impl Analyzer<'_, '_> {
                             let err = err.convert(|err| {
                                 match err {
                                     ErrorKind::TupleAssignError { span, errors } if !arg.ty.metadata().resolved_from_var => {
-                                        return ErrorKind::Errors { span, errors }.context("tuple")
+                                        return ErrorKind::Errors { span, errors }
                                     }
                                     ErrorKind::ObjectAssignFailed { span, errors } if !arg.ty.metadata().resolved_from_var => {
-                                        return ErrorKind::Errors { span, errors }.context("object")
+                                        return ErrorKind::Errors { span, errors }
                                     }
                                     ErrorKind::Errors { span, ref errors } => {
                                         if errors.iter().all(|err| match err.actual() {
@@ -3015,9 +3015,12 @@ impl Analyzer<'_, '_> {
                                                 span,
                                                 errors: errors
                                                     .iter()
-                                                    .map(|err| ErrorKind::WrongArgType {
-                                                        span: err.span(),
-                                                        inner: box err.clone(),
+                                                    .map(|err| {
+                                                        ErrorKind::WrongArgType {
+                                                            span: err.span(),
+                                                            inner: box err.clone(),
+                                                        }
+                                                        .into()
                                                     })
                                                     .collect(),
                                             };
@@ -3030,7 +3033,6 @@ impl Analyzer<'_, '_> {
                                     span: arg.span(),
                                     inner: box err,
                                 }
-                                .context("tried basical argument assignment")
                             });
 
                             report_err!(err);
@@ -3224,7 +3226,8 @@ impl Analyzer<'_, '_> {
                         max: type_params.len(),
                         min: type_params.len(),
                         actual: type_args.params.len(),
-                    });
+                    }
+                    .into());
                 }
             }
         }

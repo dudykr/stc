@@ -670,13 +670,11 @@ impl Analyzer<'_, '_> {
                 .context("tried to assign the type of a parameter to another (reversed due to variance)")
         };
 
-        res.convert_err(|err| match &*err {
+        res.convert_err(|err| match err {
             ErrorKind::MissingFields { span, .. } => ErrorKind::SimpleAssignFailed {
-                span: *span,
-                cause: Some(box err),
-            }
-            .into(),
-
+                span,
+                cause: Some(box err.into()),
+            },
             ErrorKind::Errors { errors, .. } => {
                 if errors.iter().all(|err| match &**err {
                     ErrorKind::MissingFields { .. } => true,
@@ -684,7 +682,7 @@ impl Analyzer<'_, '_> {
                 }) {
                     ErrorKind::SimpleAssignFailed {
                         span,
-                        cause: Some(box err),
+                        cause: Some(box err.into()),
                     }
                     .into()
                 } else {

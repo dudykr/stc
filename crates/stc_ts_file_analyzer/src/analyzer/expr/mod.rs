@@ -3437,17 +3437,17 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                self.storage.report(ErrorKind::BlockScopedVarUsedBeforeInit { span })
+                self.storage.report(ErrorKind::BlockScopedVarUsedBeforeInit { span }.into())
             })();
 
             if self.ctx.allow_ref_declaring {
                 if self.rule().no_implicit_any {
-                    self.storage.report(ErrorKind::ImplicitAnyBecauseOfSelfRef { span });
+                    self.storage.report(ErrorKind::ImplicitAnyBecauseOfSelfRef { span }.into());
                 }
 
                 return Ok(Type::any(span, Default::default()));
             } else {
-                return Err(ErrorKind::ReferencedInInit { span });
+                return Err(ErrorKind::ReferencedInInit { span }.into());
             }
         }
 
@@ -3496,7 +3496,8 @@ impl Analyzer<'_, '_> {
             Err(ErrorKind::TypeUsedAsVar {
                 span,
                 name: i.clone().into(),
-            })
+            }
+            .into())
         } else {
             if let Some(scope) = self.scope.first_kind(|kind| match kind {
                 ScopeKind::Class | ScopeKind::ObjectLit => true,
@@ -3508,7 +3509,8 @@ impl Analyzer<'_, '_> {
                             return Err(ErrorKind::NoSuchVar {
                                 span,
                                 name: i.clone().into(),
-                            });
+                            }
+                            .into());
                         }
                     }
                 }
@@ -3536,18 +3538,21 @@ impl Analyzer<'_, '_> {
                 Err(ErrorKind::NoSuchVarButThisHasSuchProperty {
                     span,
                     name: i.clone().into(),
-                })
+                }
+                .into())
             } else {
                 if self.ctx.in_shorthand {
                     Err(ErrorKind::NoSuchVarForShorthand {
                         span,
                         name: i.clone().into(),
-                    })
+                    }
+                    .into())
                 } else {
                     Err(ErrorKind::NoSuchVar {
                         span,
                         name: i.clone().into(),
-                    })
+                    }
+                    .into())
                 }
             }
         }
@@ -3638,7 +3643,9 @@ impl Analyzer<'_, '_> {
                                         }) => {
                                             params = self.instantiate_type_params_using_args(span, type_params, type_args).map(Some)?;
                                         }
-                                        _ => self.storage.report(ErrorKind::TypeParamsProvidedButCalleeIsNotGeneric { span }),
+                                        _ => self
+                                            .storage
+                                            .report(ErrorKind::TypeParamsProvidedButCalleeIsNotGeneric { span }.into()),
                                     }
                                 }
                                 if let Some(params) = params {
@@ -3909,7 +3916,7 @@ impl Analyzer<'_, '_> {
         let mut obj_ty = match *obj {
             RSuper { span, .. } => {
                 if self.scope.cannot_use_this_because_super_not_called() {
-                    self.storage.report(ErrorKind::SuperUsedBeforeCallingSuper { span })
+                    self.storage.report(ErrorKind::SuperUsedBeforeCallingSuper { span }.into())
                 }
 
                 self.report_error_for_super_reference_in_compute_keys(span, false);
@@ -3917,7 +3924,7 @@ impl Analyzer<'_, '_> {
                 if let Some(v) = self.scope.get_super_class() {
                     v.clone()
                 } else {
-                    self.storage.report(ErrorKind::SuperInClassWithoutSuper { span });
+                    self.storage.report(ErrorKind::SuperInClassWithoutSuper { span }.into());
                     Type::any(span, Default::default())
                 }
             }
@@ -4051,7 +4058,8 @@ impl Analyzer<'_, '_> {
         {
             Some(ScopeKind::Class) => {
                 // Using proerties of super class in class property names are not allowed.
-                self.storage.report(ErrorKind::CannotReferenceSuperInComputedPropName { span })
+                self.storage
+                    .report(ErrorKind::CannotReferenceSuperInComputedPropName { span }.into())
             }
 
             Some(ScopeKind::ArrowFn) => {
@@ -4059,7 +4067,8 @@ impl Analyzer<'_, '_> {
                     return;
                 }
 
-                self.storage.report(ErrorKind::CannotReferenceSuperInComputedPropName { span })
+                self.storage
+                    .report(ErrorKind::CannotReferenceSuperInComputedPropName { span }.into())
             }
 
             kind => {

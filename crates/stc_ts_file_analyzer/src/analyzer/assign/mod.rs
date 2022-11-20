@@ -429,12 +429,12 @@ impl Analyzer<'_, '_> {
         // self.verify_before_assign("rhs", right);
         let res = self.assign_inner(data, left, right, opts);
 
-        match res {
+        match res.as_ref().map_err(|e| &**e) {
             Err(ErrorKind::Errors { errors, .. }) if errors.is_empty() => return Ok(()),
             _ => {}
         }
 
-        res.convert_err(|err| match &*err {
+        res.convert_err(|err| match err {
             ErrorKind::AssignFailed { .. }
             | ErrorKind::Errors { .. }
             | ErrorKind::Unimplemented { .. }
@@ -445,7 +445,7 @@ impl Analyzer<'_, '_> {
                 left: box left.clone(),
                 right: box right.clone(),
                 right_ident: opts.right_ident_span,
-                cause: vec![err],
+                cause: vec![err.into()],
             }
             .into(),
         })
@@ -1100,7 +1100,7 @@ impl Analyzer<'_, '_> {
                         .convert_err(|err| {
                             ErrorKind::SimpleAssignFailed {
                                 span: err.span(),
-                                cause: Some(box err),
+                                cause: Some(box err.into()),
                             }
                             .into()
                         }) {
