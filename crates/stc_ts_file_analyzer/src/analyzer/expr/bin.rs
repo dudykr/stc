@@ -640,7 +640,7 @@ impl Analyzer<'_, '_> {
                         || rt.is_interface()
                         || rt.is_tpl()
                     {
-                        self.storage.report(ErrorKind::WrongTypeForRhsOfNumericOperation { span });
+                        self.storage.report(ErrorKind::WrongTypeForRhsOfNumericOperation { span }.into());
                     }
                 }
 
