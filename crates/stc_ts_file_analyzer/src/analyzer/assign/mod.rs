@@ -234,8 +234,8 @@ impl Analyzer<'_, '_> {
                     self.storage
                         .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: rhs.span() }.into());
                 } else {
-                    self.deny_null_or_undefined(rhs.span(), rhs)
-                        .context("checking operands of a numeric assignment")?;
+                    let _ctx = ctx!("tried to check operands of a numeric assignment");
+                    self.deny_null_or_undefined(rhs.span(), rhs)?;
                 }
 
                 match lhs {
