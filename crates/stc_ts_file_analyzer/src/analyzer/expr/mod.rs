@@ -1673,7 +1673,8 @@ impl Analyzer<'_, '_> {
                     span,
                     obj: Some(box obj.clone()),
                     prop: Some(box prop.clone()),
-                })
+                }
+                .into())
             }
 
             Type::Enum(ref e) => {
@@ -1686,7 +1687,7 @@ impl Analyzer<'_, '_> {
                             RTsEnumMemberId::Str(s) => s.value == *sym,
                         });
                         if !has_such_member {
-                            return Err(ErrorKind::NoSuchEnumVariant { span, name: sym.clone() });
+                            return Err(ErrorKind::NoSuchEnumVariant { span, name: sym.clone() }.into());
                         }
 
                         // Computed values are not permitted in an enum with string valued members.
@@ -1718,7 +1719,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if type_mode == TypeOfMode::LValue {
-                            return Err(ErrorKind::EnumCannotBeLValue { span: prop.span() });
+                            return Err(ErrorKind::EnumCannotBeLValue { span: prop.span() }.into());
                         }
 
                         return Ok(Type::EnumVariant(EnumVariant {
@@ -1760,7 +1761,7 @@ impl Analyzer<'_, '_> {
 
                     _ => {
                         if e.is_const {
-                            return Err(ErrorKind::ConstEnumNonIndexAccess { span: prop.span() });
+                            return Err(ErrorKind::ConstEnumNonIndexAccess { span: prop.span() }.into());
                         }
 
                         // TODO(kdy1): Validate type of enum
@@ -1825,13 +1826,14 @@ impl Analyzer<'_, '_> {
                     match v {
                         ClassMember::Property(ref class_prop @ ClassProperty { is_static: false, .. }) => {
                             if class_prop.key.is_private() {
-                                self.storage.report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span });
+                                self.storage
+                                    .report(ErrorKind::CannotAccessPrivatePropertyFromOutside { span }.into());
                                 return Ok(Type::any(span, Default::default()));
                             }
 
                             if let Some(declaring) = self.scope.declaring_prop.as_ref() {
                                 if class_prop.key == *declaring.sym() {
-                                    return Err(ErrorKind::ReferencedInInit { span });
+                                    return Err(ErrorKind::ReferencedInInit { span }.into());
                                 }
                             }
 
@@ -1851,7 +1853,7 @@ impl Analyzer<'_, '_> {
 
                             if self.key_matches(span, &mtd.key, prop, false) {
                                 if mtd.is_abstract {
-                                    self.storage.report(ErrorKind::CannotAccessAbstractMember { span });
+                                    self.storage.report(ErrorKind::CannotAccessAbstractMember { span }.into());
                                     return Ok(Type::any(span, Default::default()));
                                 }
 
@@ -1941,7 +1943,8 @@ impl Analyzer<'_, '_> {
                     span,
                     class_name: c.def.name.clone(),
                     prop: prop.clone(),
-                });
+                }
+                .into());
             }
 
             Type::Param(TypeParam {
@@ -2063,7 +2066,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 debug_assert!(!span.is_dummy());
-                return Err(ErrorKind::Unknown { span });
+                return Err(ErrorKind::Unknown { span }.into());
             }
 
             Type::Keyword(KeywordType { kind, .. }) if !self.is_builtin => {
@@ -2098,7 +2101,8 @@ impl Analyzer<'_, '_> {
                             span: prop.span(),
                             obj: Some(box obj),
                             prop: Some(box prop.clone()),
-                        });
+                        }
+                        .into());
                     }
                 };
                 let interface = self.env.get_global_type(span, &word)?;
@@ -2245,7 +2249,8 @@ impl Analyzer<'_, '_> {
                     span,
                     obj: Some(box obj),
                     prop: Some(box prop.clone()),
-                });
+                }
+                .into());
             }
 
             Type::TypeLit(TypeLit { ref members, metadata, .. }) => {
@@ -2302,7 +2307,8 @@ impl Analyzer<'_, '_> {
                     span,
                     obj: Some(box obj),
                     prop: Some(box prop.clone()),
-                });
+                }
+                .into());
             }
 
             Type::Union(ty::Union { types, .. }) => {
@@ -2317,15 +2323,15 @@ impl Analyzer<'_, '_> {
                 // tsc is crazy. It uses different error code for these errors.
                 if !self.ctx.in_opt_chain && self.rule().strict_null_checks {
                     if has_null && has_undefined {
-                        return Err(ErrorKind::ObjectIsPossiblyNullOrUndefined { span });
+                        return Err(ErrorKind::ObjectIsPossiblyNullOrUndefined { span }.into());
                     }
 
                     if has_null {
-                        return Err(ErrorKind::ObjectIsPossiblyNull { span });
+                        return Err(ErrorKind::ObjectIsPossiblyNull { span }.into());
                     }
 
                     if has_undefined {
-                        return Err(ErrorKind::ObjectIsPossiblyUndefined { span });
+                        return Err(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
                     }
                 }
 
@@ -2379,7 +2385,8 @@ impl Analyzer<'_, '_> {
                             span,
                             obj: Some(box obj),
                             prop: Some(box prop.clone()),
-                        });
+                        }
+                        .into());
                     }
                 }
 
@@ -2401,7 +2408,8 @@ impl Analyzer<'_, '_> {
                                 span: n.span(),
                                 index: v,
                                 len: elems.len() as u64,
-                            });
+                            }
+                            .into());
                         }
 
                         if (v as usize) + 1 >= elems.len() {
@@ -2576,7 +2584,8 @@ impl Analyzer<'_, '_> {
                     span,
                     class_name: cls.name.clone(),
                     prop: prop.clone(),
-                });
+                }
+                .into());
             }
 
             Type::Module(ty::Module { name, ref exports, .. }) => {
@@ -2618,14 +2627,16 @@ impl Analyzer<'_, '_> {
                 return Err(ErrorKind::NoSuchPropertyInModule {
                     span,
                     name: box name.clone(),
-                });
+                }
+                .into());
             }
 
             Type::This(..) => {
                 // TODO(kdy1): Use parent scope in computed property names.
                 if let Some(this) = self.scope.this().map(|this| this.into_owned()) {
                     if self.ctx.in_computed_prop_name {
-                        self.storage.report(ErrorKind::CannotReferenceThisInComputedPropName { span });
+                        self.storage
+                            .report(ErrorKind::CannotReferenceThisInComputedPropName { span }.into());
                         // Return any to prevent other errors
                         return Ok(Type::any(span, Default::default()));
                     }
@@ -2943,7 +2954,7 @@ impl Analyzer<'_, '_> {
 
             Type::Optional(OptionalType { ty, .. }) => {
                 if self.rule().strict_null_checks {
-                    return Err(ErrorKind::ObjectIsPossiblyUndefined { span });
+                    return Err(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
                 }
 
                 return self.access_property(span, &ty, prop, type_mode, id_ctx, opts);
@@ -3276,12 +3287,13 @@ impl Analyzer<'_, '_> {
                     let is_argument_defined_in_current_scope = self.scope.vars.contains_key(&i.clone().into());
 
                     if !self.scope.is_arguments_implicitly_defined() {
-                        self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span })
+                        self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span }.into())
                     } else if arguments_point_to_arrow && !is_argument_defined_in_current_scope {
-                        self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span });
+                        self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span }.into());
                         return Ok(Type::any(span, Default::default()));
                     } else if arguments_points_async_fn && !is_argument_defined_in_current_scope {
-                        self.storage.report(ErrorKind::ArgumentsCannotBeUsedInAsyncFnInEs3OrEs5 { span });
+                        self.storage
+                            .report(ErrorKind::ArgumentsCannotBeUsedInAsyncFnInEs3OrEs5 { span }.into());
                         return Ok(Type::any(span, Default::default()));
                     }
                 }
@@ -3292,11 +3304,14 @@ impl Analyzer<'_, '_> {
         match i.sym {
             js_word!("undefined") => {
                 match type_mode {
-                    TypeOfMode::LValue => self.storage.report(ErrorKind::NotVariable {
-                        span,
-                        left: span,
-                        ty: None,
-                    }),
+                    TypeOfMode::LValue => self.storage.report(
+                        ErrorKind::NotVariable {
+                            span,
+                            left: span,
+                            ty: None,
+                        }
+                        .into(),
+                    ),
                     TypeOfMode::RValue => {}
                 }
                 return Ok(Type::undefined(span, Default::default()));
@@ -3321,7 +3336,7 @@ impl Analyzer<'_, '_> {
         if let Some(v) = self.scope.vars.get(&i.into()) {
             if let VarKind::Fn = v.kind {
                 if let TypeOfMode::LValue = type_mode {
-                    return Err(ErrorKind::CannotAssignToFunction { span });
+                    return Err(ErrorKind::CannotAssignToFunction { span }.into());
                 }
             }
 
@@ -3377,7 +3392,7 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             if let Ok(ty) = self.env.get_global_var(span, &i.sym) {
                 if self.ctx.report_error_for_non_local_vars {
-                    self.storage.report(ErrorKind::CannotExportNonLocalVar { span: i.span });
+                    self.storage.report(ErrorKind::CannotExportNonLocalVar { span: i.span }.into());
                 }
 
                 return Ok(ty);

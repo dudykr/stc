@@ -358,7 +358,7 @@ impl Analyzer<'_, '_> {
                         Type::Union(iterator) => {
                             if iterator.types.iter().all(|ty| ty.is_tuple()) {
                                 return ErrorKind::NoSuchProperty {
-                                    span,
+                                    span: *span,
                                     obj: None,
                                     prop: None,
                                 }
@@ -367,7 +367,7 @@ impl Analyzer<'_, '_> {
                         }
                         _ => {}
                     }
-                    ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span }
+                    ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span: *span }.into()
                 }
                 _ => err,
             })
@@ -485,9 +485,9 @@ impl Analyzer<'_, '_> {
         let elem_ty = self
             .get_iterator_element_type(span, ty, true, Default::default())
             .context("tried to get element of iterator as a fallback logic for async iterator")
-            .convert_err(|err| match err {
+            .convert_err(|err| match &*err {
                 ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } => {
-                    ErrorKind::MustHaveSymbolAsyncIteratorThatReturnsIterator { span }
+                    ErrorKind::MustHaveSymbolAsyncIteratorThatReturnsIterator { span: *span }.into()
                 }
                 _ => err,
             })?;
@@ -514,7 +514,7 @@ impl Analyzer<'_, '_> {
                 },
             )
             .context("tried to get the type of property named `value` to determine the type of an iterator")
-            .convert_err(|err| ErrorKind::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() })?;
+            .convert_err(|err| ErrorKind::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() }.into())?;
 
         // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
         if matches!(elem_ty.normalize(), Type::Union(..)) {
@@ -601,7 +601,7 @@ impl Analyzer<'_, '_> {
                     Default::default(),
                 ) {
                     if !return_prop_ty.is_fn_type() {
-                        self.storage.report(ErrorKind::ReturnPropertyOfIteratorMustBeMethod { span })
+                        self.storage.report(ErrorKind::ReturnPropertyOfIteratorMustBeMethod { span }.into())
                     }
                 }
             }
@@ -664,9 +664,9 @@ impl Analyzer<'_, '_> {
                         .map(|v| self.get_iterator(span, Cow::Borrowed(v), opts))
                         .map(|res| res.map(Cow::into_owned))
                         .collect::<Result<_, _>>()
-                        .convert_err(|err| match err {
+                        .convert_err(|err| match &*err {
                             ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } => {
-                                ErrorKind::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { span }
+                                ErrorKind::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { span: *span }.into()
                             }
                             _ => err,
                         })?;
@@ -719,10 +719,10 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )
-            .convert_err(|err| match err {
+            .convert_err(|err| match &*err {
                 ErrorKind::NoCallablePropertyWithName { span, .. }
                 | ErrorKind::NoSuchPropertyInClass { span, .. }
-                | ErrorKind::NoSuchProperty { span, .. } => ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span }.into(),
+                | ErrorKind::NoSuchProperty { span, .. } => ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span: *span }.into(),
                 _ => err,
             })
             .map(Cow::Owned)
@@ -856,8 +856,8 @@ impl Analyzer<'_, '_> {
                 None,
                 Default::default(),
             )
-            .convert_err(|err| match err {
-                ErrorKind::NoCallablePropertyWithName { span, .. } => ErrorKind::NoMethodNamedNext { span },
+            .convert_err(|err| match &*err {
+                ErrorKind::NoCallablePropertyWithName { span, .. } => ErrorKind::NoMethodNamedNext { span: *span }.into(),
                 _ => err,
             })
             .context("tried calling `next()` to get element type of iterator")?;
