@@ -228,7 +228,7 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
 
             checker.check(Arc::new(FileName::Real(path.into())));
 
-            let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
+            let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
 
             checker.run(|| {
                 for e in errors {

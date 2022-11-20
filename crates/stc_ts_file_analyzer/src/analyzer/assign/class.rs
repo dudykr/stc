@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{Class, ClassDef, ClassMember, Type, TypeLitMetadata};
 use stc_utils::cache::Freeze;
 use swc_common::EqIgnoreSpan;
@@ -25,7 +25,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !l.is_abstract && rc.is_abstract {
-                    return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span });
+                    return Err(ErrorKind::CannotAssignAbstractConstructorToNonAbstractConstructor { span: opts.span }.into());
                 }
 
                 if !rc.is_abstract {
@@ -46,10 +46,11 @@ impl Analyzer<'_, '_> {
                         new_body = members;
                         &*new_body
                     } else {
-                        return Err(Error::Unimplemented {
+                        return Err(ErrorKind::Unimplemented {
                             span: opts.span,
                             msg: format!("Failed to collect class members"),
-                        });
+                        }
+                        .into());
                     }
                 } else {
                     &*rc.body
@@ -101,10 +102,11 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::Unimplemented {
+        Err(ErrorKind::Unimplemented {
             span: opts.span,
             msg: format!("Assignment of non-class object to class definition\n{:#?}", r),
-        })
+        }
+        .into())
     }
 
     pub(super) fn assign_to_class(&mut self, data: &mut AssignData, l: &Class, r: &Type, opts: AssignOpts) -> VResult<()> {
@@ -130,10 +132,11 @@ impl Analyzer<'_, '_> {
                         new_body = members;
                         &*new_body
                     } else {
-                        return Err(Error::Unimplemented {
+                        return Err(ErrorKind::Unimplemented {
                             span: opts.span,
                             msg: format!("Failed to collect class members"),
-                        });
+                        }
+                        .into());
                     }
                 } else {
                     &*rc.def.body
@@ -160,7 +163,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if opts.disallow_different_classes {
-                    return Err(Error::SimpleAssignFailed {
+                    return Err(ErrorKind::SimpleAssignFailed {
                         span: opts.span,
                         cause: None,
                     }
@@ -225,7 +228,7 @@ impl Analyzer<'_, '_> {
 
         match r {
             Type::Lit(..) | Type::Keyword(..) => {
-                return Err(Error::SimpleAssignFailed {
+                return Err(ErrorKind::SimpleAssignFailed {
                     span: opts.span,
                     cause: None,
                 }
@@ -234,10 +237,11 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::Unimplemented {
+        Err(ErrorKind::Unimplemented {
             span: opts.span,
             msg: format!("Assignment of non-class object to class\n{:#?}", r),
-        })
+        }
+        .into())
     }
 
     fn assign_class_members_to_class_member(
@@ -274,7 +278,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 if rm.accessibility == Some(Accessibility::Private) || rm.key.is_private() {
-                                    return Err(Error::PrivateMethodIsDifferent { span });
+                                    return Err(ErrorKind::PrivateMethodIsDifferent { span }.into());
                                 }
 
                                 self.assign_to_fn_like(
@@ -299,14 +303,14 @@ impl Analyzer<'_, '_> {
                 }
 
                 if lm.accessibility == Some(Accessibility::Private) || lm.key.is_private() {
-                    return Err(Error::PrivateMethodIsDifferent { span });
+                    return Err(ErrorKind::PrivateMethodIsDifferent { span }.into());
                 }
 
                 if lm.is_optional {
                     return Ok(());
                 }
 
-                return Err(Error::SimpleAssignFailed { span, cause: None }).context("failed to assign a class member to another one");
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("failed to assign a class member to another one"));
             }
             ClassMember::Property(lp) => {
                 for rm in r {
@@ -330,7 +334,7 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 if rp.accessibility == Some(Accessibility::Private) || rp.key.is_private() {
-                                    return Err(Error::PrivatePropertyIsDifferent { span });
+                                    return Err(ErrorKind::PrivatePropertyIsDifferent { span }.into());
                                 }
 
                                 return Ok(());
@@ -341,7 +345,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if lp.accessibility == Some(Accessibility::Private) || lp.key.is_private() {
-                    return Err(Error::PrivatePropertyIsDifferent { span });
+                    return Err(ErrorKind::PrivatePropertyIsDifferent { span }.into());
                 }
 
                 if lp.is_optional {
@@ -349,18 +353,19 @@ impl Analyzer<'_, '_> {
                 }
 
                 if opts.use_missing_fields_for_class {
-                    let err = Error::MissingFields { span, fields: vec![] };
-                    return Err(Error::Errors { span, errors: vec![err] });
+                    let err = ErrorKind::MissingFields { span, fields: vec![] }.into();
+                    return Err(ErrorKind::Errors { span, errors: vec![err] }.into());
                 } else {
-                    return Err(Error::SimpleAssignFailed { span, cause: None });
+                    return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
                 }
             }
             ClassMember::IndexSignature(_) => {}
         }
 
-        Err(Error::Unimplemented {
+        Err(ErrorKind::Unimplemented {
             span: opts.span,
             msg: format!("fine-grained class assignment to lhs member: {:#?}", l),
-        })
+        }
+        .into())
     }
 }

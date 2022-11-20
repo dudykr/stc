@@ -1,4 +1,4 @@
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{QueryExpr, QueryType, Type};
 
 use crate::{
@@ -20,7 +20,7 @@ impl Analyzer<'_, '_> {
                     .context("tried to resolve typeof for assignment")?;
 
                 if to.is_global_this() {
-                    return Err(Error::SimpleAssignFailed {
+                    return Err(ErrorKind::SimpleAssignFailed {
                         span: opts.span,
                         cause: None,
                     }
@@ -44,7 +44,7 @@ impl Analyzer<'_, '_> {
                 .context("tried to resolve typeof for assignment")?;
 
             if rhs.is_global_this() {
-                return Err(Error::SimpleAssignFailed {
+                return Err(ErrorKind::SimpleAssignFailed {
                     span: opts.span,
                     cause: None,
                 }

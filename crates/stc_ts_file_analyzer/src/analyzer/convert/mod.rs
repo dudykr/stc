@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::{
     RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation, RTsTypePredicate,
     RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
@@ -64,7 +64,7 @@ impl Analyzer<'_, '_> {
                 for name in names {
                     if !found.insert(name.sym.clone()) {
                         self.storage.report(
-                            Error::DuplicateName {
+                            ErrorKind::DuplicateName {
                                 span: name.span,
                                 name: name.into(),
                             }
@@ -192,7 +192,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsIntrinsicKeyword,
                     }) if !child.is_builtin => {
                         let span = *span;
-                        child.storage.report(Error::IntrinsicIsBuiltinOnly { span });
+                        child.storage.report(ErrorKind::IntrinsicIsBuiltinOnly { span }.into());
                         Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
                     }
 
@@ -265,7 +265,7 @@ impl Analyzer<'_, '_> {
         let ty = self.with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<_> {
             match &*d.id.sym {
                 "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
-                    child.storage.report(Error::InvalidInterfaceName { span: d.id.span });
+                    child.storage.report(ErrorKind::InvalidInterfaceName { span: d.id.span }.into());
                 }
                 _ => {}
             }
@@ -736,14 +736,16 @@ impl Analyzer<'_, '_> {
 
                     if !self.is_builtin && !found && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
-                            self.storage.report(Error::NoSuchTypeButVarExists { span, name: i.into() });
+                            self.storage
+                                .report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() }.into());
                             reported_type_not_found = true;
                         }
                     }
                 } else {
                     if !self.is_builtin && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
-                            self.storage.report(Error::NoSuchTypeButVarExists { span, name: i.into() });
+                            self.storage
+                                .report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() }.into());
                             reported_type_not_found = true;
                         }
                     }
@@ -986,10 +988,13 @@ impl Analyzer<'_, '_> {
                         if !a.is_builtin {
                             let span = ty.span;
 
-                            a.storage.report(Error::NoSuchType {
-                                span,
-                                name: Id::word("intrinsic".into()),
-                            });
+                            a.storage.report(
+                                ErrorKind::NoSuchType {
+                                    span,
+                                    name: Id::word("intrinsic".into()),
+                                }
+                                .into(),
+                            );
                             return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                         }
                     }
@@ -1062,8 +1067,9 @@ impl Analyzer<'_, '_> {
                             continue;
                         }
                         if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(&*prev_key)) {
-                            self.storage.report(Error::DuplicateNameWithoutName { span: prev.span() });
-                            self.storage.report(Error::DuplicateNameWithoutName { span: key.span() });
+                            self.storage
+                                .report(ErrorKind::DuplicateNameWithoutName { span: prev.span() }.into());
+                            self.storage.report(ErrorKind::DuplicateNameWithoutName { span: key.span() }.into());
                         } else {
                             prev_keys.push(key);
                         }
@@ -1086,14 +1092,20 @@ impl Analyzer<'_, '_> {
 
             for id in ids {
                 if let Some(prev) = prev_ids.iter().find(|v| v.sym == id.sym) {
-                    self.storage.report(Error::DuplicateName {
-                        span: prev.span,
-                        name: prev.into(),
-                    });
-                    self.storage.report(Error::DuplicateName {
-                        span: id.span,
-                        name: id.into(),
-                    });
+                    self.storage.report(
+                        ErrorKind::DuplicateName {
+                            span: prev.span,
+                            name: prev.into(),
+                        }
+                        .into(),
+                    );
+                    self.storage.report(
+                        ErrorKind::DuplicateName {
+                            span: id.span,
+                            name: id.into(),
+                        }
+                        .into(),
+                    );
                 } else {
                     prev_ids.push(id);
                 }
@@ -1126,7 +1138,8 @@ impl Analyzer<'_, '_> {
         });
 
         if static_method.is_some() {
-            self.storage.report(Error::StaticMemberCannotUseTypeParamOfClass { span })
+            self.storage
+                .report(ErrorKind::StaticMemberCannotUseTypeParamOfClass { span }.into())
         }
     }
 
@@ -1156,7 +1169,8 @@ impl Analyzer<'_, '_> {
             let no_type_ann =
                 !self.ctx.in_argument && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type) && !self.ctx.in_assign_rhs;
             if no_type_ann || self.ctx.in_useless_expr_for_seq || self.ctx.check_for_implicit_any {
-                self.storage.report(Error::ImplicitAny { span: i.id.span }.context("default type"));
+                self.storage
+                    .report(ErrorKind::ImplicitAny { span: i.id.span }.context("default type"));
             }
         }
 

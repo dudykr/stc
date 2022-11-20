@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use itertools::Itertools;
 use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_type_ops::{widen::Widen, Fix};
 use stc_ts_types::{Array, Key, KeywordType, LitType, Ref, Tuple, Type, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::{run, PatExt};
@@ -270,8 +270,8 @@ impl Analyzer<'_, '_> {
 
                                     match result {
                                         Ok(ty) => Ok(ty.into_owned()),
-                                        Err(err) => match err.actual() {
-                                            Error::TupleIndexError { .. } => match elem {
+                                        Err(err) => match &*err {
+                                            ErrorKind::TupleIndexError { .. } => match elem {
                                                 RPat::Assign(p) => {
                                                     let type_ann = p.left.get_ty();
                                                     let type_ann: Option<Type> =
@@ -488,12 +488,12 @@ impl Analyzer<'_, '_> {
                                 }
 
                                 Err(err) => {
-                                    match err.actual() {
-                                        Error::NoSuchProperty { span, .. } | Error::NoSuchPropertyInClass { span, .. }
+                                    match &*err {
+                                        ErrorKind::NoSuchProperty { span, .. } | ErrorKind::NoSuchPropertyInClass { span, .. }
                                             if !should_use_no_such_property =>
                                         {
                                             if default_prop_ty.is_none() {
-                                                self.storage.report(Error::NoInitAndNoDefault { span: *span })
+                                                self.storage.report(ErrorKind::NoInitAndNoDefault { span: *span }.into())
                                             }
                                         }
                                         _ => self.storage.report(err),
@@ -633,12 +633,12 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                                 Err(err) => {
-                                    match err.actual() {
-                                        Error::NoSuchProperty { span, .. } | Error::NoSuchPropertyInClass { span, .. }
+                                    match &*err {
+                                        ErrorKind::NoSuchProperty { span, .. } | ErrorKind::NoSuchPropertyInClass { span, .. }
                                             if !should_use_no_such_property =>
                                         {
                                             if default_prop_ty.is_none() {
-                                                self.storage.report(Error::NoInitAndNoDefault { span: *span })
+                                                self.storage.report(ErrorKind::NoInitAndNoDefault { span: *span }.into())
                                             }
                                         }
                                         _ => self.storage.report(err),

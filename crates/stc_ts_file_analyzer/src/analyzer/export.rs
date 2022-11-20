@@ -4,7 +4,7 @@ use stc_ts_ast_rnode::{
     RExportSpecifier, RExpr, RIdent, RModuleExportName, RNamedExport, RPat, RStmt, RTsExportAssignment, RTsModuleName, RTsTypeAnn,
     RVarDecl, RVarDeclarator,
 };
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{Id, IdCtx, ModuleId};
 use stc_ts_utils::find_ids_in_pat;
@@ -180,9 +180,9 @@ impl Analyzer<'_, '_> {
         if v.len() >= 2 {
             for &span in &*v {
                 if sym == js_word!("default") {
-                    self.storage.report(Error::DuplicateDefaultExport { span });
+                    self.storage.report(ErrorKind::DuplicateDefaultExport { span }.into());
                 } else {
-                    self.storage.report(Error::DuplicateExport { span });
+                    self.storage.report(ErrorKind::DuplicateExport { span }.into());
                 }
             }
         }
@@ -467,7 +467,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !did_work {
-            self.storage.report(Error::ExportFailed { span, orig, id })
+            self.storage.report(ErrorKind::ExportFailed { span, orig, id }.into())
         }
     }
 }

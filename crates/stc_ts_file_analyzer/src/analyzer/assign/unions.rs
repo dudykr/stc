@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use itertools::Itertools;
 use stc_ts_ast_rnode::RBool;
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union, UnionMetadata,
@@ -127,7 +127,7 @@ impl Analyzer<'_, '_> {
 
                 Ok(())
             }
-            _ => Err(Error::SimpleAssignFailed { span, cause: None }),
+            _ => Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
         }
     }
 
@@ -170,7 +170,7 @@ impl Analyzer<'_, '_> {
 
                 Ok(())
             }
-            _ => Err(Error::SimpleAssignFailed { span, cause: None }),
+            _ => Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
         }
     }
 

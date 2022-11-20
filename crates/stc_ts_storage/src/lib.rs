@@ -4,7 +4,7 @@ use std::{collections::hash_map::Entry, mem::take, sync::Arc};
 
 use auto_impl::auto_impl;
 use fxhash::FxHashMap;
-use stc_ts_errors::{Error, Errors};
+use stc_ts_errors::{Error, ErrorKind, Errors};
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, Type};
 use stc_utils::cache::Freeze;
 use swc_atoms::JsWord;
@@ -132,10 +132,7 @@ impl TypeStore for Single<'_> {
                 Some(..) => {}
                 None => {}
             },
-            None => {
-                dbg!();
-                self.report(Error::NoSuchVar { span, name: id })
-            }
+            None => self.report(ErrorKind::NoSuchVar { span, name: id }.into()),
         }
     }
 
@@ -146,10 +143,7 @@ impl TypeStore for Single<'_> {
             Some(ty) => {
                 *self.info.exports.types.entry(id.sym().clone()).or_default() = ty.clone();
             }
-            None => {
-                dbg!();
-                self.report(Error::NoSuchVar { span, name: id })
-            }
+            None => self.report(ErrorKind::NoSuchVar { span, name: id }.into()),
         }
     }
 
@@ -287,7 +281,7 @@ impl TypeStore for Group<'_> {
             }
             None => {
                 dbg!();
-                self.report(Error::NoSuchVar { span, name: id })
+                self.report(ErrorKind::NoSuchVar { span, name: id }.into())
             }
         }
     }
@@ -298,7 +292,7 @@ impl TypeStore for Group<'_> {
             Some(v) => {
                 e.types.insert(id.sym().clone(), v.clone());
             }
-            None => self.report(Error::NoSuchType { span, name: id }),
+            None => self.report(ErrorKind::NoSuchType { span, name: id }.into()),
         }
     }
 

@@ -12,7 +12,7 @@ use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
-use stc_ts_errors::{debug::debugger::Debugger, Error};
+use stc_ts_errors::{debug::debugger::Debugger, ErrorKind};
 use stc_ts_file_analyzer::{
     analyzer::{Analyzer, NoopLoader},
     env::EnvFactory,
@@ -104,7 +104,7 @@ fn validate(input: &Path) -> Vec<StcError> {
                 module.visit_with(&mut analyzer);
             }
 
-            let errors = ::stc_ts_errors::Error::flatten(storage.info.errors.into_iter().collect());
+            let errors = ::stc_ts_errors::ErrorKind::flatten(storage.info.errors.into_iter().collect());
 
             GLOBALS.set(env.shared().swc_globals(), || {
                 for e in errors {
@@ -193,7 +193,7 @@ fn errors(input: PathBuf) {
             module.visit_with(&mut analyzer);
         }
 
-        let errors = ::stc_ts_errors::Error::flatten(storage.info.errors.into_iter().collect());
+        let errors = ::stc_ts_errors::ErrorKind::flatten(storage.info.errors.into_iter().collect());
 
         if errors.is_empty() {
             panic!("Should emit at least one error")
@@ -261,7 +261,7 @@ fn pass_only(input: PathBuf) {
             module.visit_with(&mut analyzer);
         }
 
-        let errors = ::stc_ts_errors::Error::flatten(storage.info.errors.into_iter().collect());
+        let errors = ::stc_ts_errors::ErrorKind::flatten(storage.info.errors.into_iter().collect());
         let ok = errors.is_empty();
 
         GLOBALS.set(env.shared().swc_globals(), || {
@@ -442,7 +442,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
 
             if for_error {
                 let errors = storage.take_errors();
-                let errors = Error::flatten(errors.into());
+                let errors = ErrorKind::flatten(errors.into());
 
                 for err in errors {
                     err.emit(&handler);

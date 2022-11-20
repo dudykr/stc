@@ -2,7 +2,7 @@ use std::{borrow::Cow, mem::take, ops::AddAssign};
 
 use rnode::{Fold, FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{RBreakStmt, RIdent, RReturnStmt, RStmt, RStr, RThrowStmt, RTsEntityName, RTsLit, RYieldExpr};
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_simple_ast_validations::yield_check::YieldValueUsageFinder;
 use stc_ts_types::{
     CommonTypeMetadata, IndexedAccessType, Key, KeywordType, KeywordTypeMetadata, LitType, MethodSignature, Operator, PropertySignature,
@@ -59,7 +59,7 @@ impl Analyzer<'_, '_> {
         is_async: bool,
         is_generator: bool,
         stmts: &Vec<RStmt>,
-    ) -> Result<Option<Type>, Error> {
+    ) -> VResult<Option<Type>> {
         let marks = self.marks();
 
         debug_assert_eq!(span.ctxt, SyntaxContext::empty());
@@ -482,10 +482,13 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     Err(err) => {
-                        self.storage.report(Error::SimpleAssignFailed {
-                            span,
-                            cause: Some(box err),
-                        });
+                        self.storage.report(
+                            ErrorKind::SimpleAssignFailed {
+                                span,
+                                cause: Some(box err),
+                            }
+                            .into(),
+                        );
                         return Ok(Type::any(span, Default::default()));
                     }
                 }

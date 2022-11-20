@@ -11,7 +11,7 @@ use rnode::{NodeIdGenerator, RNode, VisitWith};
 use stc_ts_ast_rnode::{RModule, RStr, RTsModuleName};
 use stc_ts_dts::{apply_mutations, cleanup_module_for_dts};
 use stc_ts_env::Env;
-use stc_ts_errors::{debug::debugger::Debugger, Error};
+use stc_ts_errors::{debug::debugger::Debugger, Error, ErrorKind};
 use stc_ts_file_analyzer::{analyzer::Analyzer, loader::Load, validator::ValidateWith, ModuleTypeData, VResult};
 use stc_ts_module_loader::ModuleGraph;
 use stc_ts_storage::{ErrorStore, File, Group, Single};

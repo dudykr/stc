@@ -84,7 +84,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         let id = checker.check(Arc::new(file_name.clone().into()));
 
-        let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
+        let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
 
         let expected_module = {
             let mut buf = vec![];

@@ -4,7 +4,7 @@ use derivative::Derivative;
 use parking_lot::Mutex;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use stc_ts_errors::Error;
+use stc_ts_errors::{Error, ErrorKind};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Type};
 use stc_utils::cache::Freeze;
@@ -105,10 +105,11 @@ impl Env {
             return Ok(v.clone());
         }
 
-        Err(Error::NoSuchVar {
+        Err(ErrorKind::NoSuchVar {
             span,
             name: Id::word(name.clone()),
-        })
+        }
+        .into())
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
@@ -123,10 +124,11 @@ impl Env {
             return Ok(ty.clone());
         }
 
-        Err(Error::NoSuchType {
+        Err(ErrorKind::NoSuchType {
             span,
             name: Id::word(name.clone()),
-        })
+        }
+        .into())
     }
 }
 
