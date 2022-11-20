@@ -14,8 +14,6 @@
 #![feature(specialization)]
 #![recursion_limit = "1024"]
 
-use std::path::PathBuf;
-
 use stc_ts_env::StableEnv;
 use stc_ts_errors::Error;
 use stc_ts_file_analyzer_macros::validator;
@@ -50,10 +48,5 @@ pub struct Specifier {
 
 #[derive(Debug)]
 pub struct Config {
-    /// Should we generate .d.ts?
-    declaration: bool,
-    /// Directory to store .d.ts files.
-    declaration_dir: PathBuf,
-
     pub env: StableEnv,
 }

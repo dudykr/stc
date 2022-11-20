@@ -1887,13 +1887,6 @@ impl Analyzer<'_, '_> {
     }
 }
 
-pub(crate) fn left(t: &RTsEntityName) -> &RIdent {
-    match t {
-        RTsEntityName::TsQualifiedName(t) => left(&t.left),
-        RTsEntityName::Ident(i) => i,
-    }
-}
-
 pub(crate) fn left_of_expr(t: &RExpr) -> Option<&RIdent> {
     match t {
         RExpr::Member(t) => left_of_expr(&t.obj),

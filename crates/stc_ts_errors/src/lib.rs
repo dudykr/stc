@@ -4,7 +4,6 @@
 #![feature(specialization)]
 
 use std::{
-    borrow::Cow,
     fmt,
     fmt::{Debug, Display},
     ops::RangeInclusive,
@@ -1994,14 +1993,6 @@ impl ErrorKind {
         match self {
             Self::NoSuchType { .. } | Self::NoSuchTypeButVarExists { .. } => true,
             _ => false,
-        }
-    }
-
-    fn msg(&self) -> Cow<'static, str> {
-        match self {
-            Self::Unimplemented { msg, .. } => format!("unimplemented: {}", msg).into(),
-
-            _ => format!("{:#?}", self).into(),
         }
     }
 
