@@ -275,7 +275,7 @@ impl Analyzer<'_, '_> {
                         .get_element_from_iterator(span, Cow::Borrowed(iterator_elem), n)
                         .with_context(|| format!("failed to get element type from {}th element", idx))
                         .convert_err(|err| match &*err {
-                            ErrorKind::TupleIndexError { span, .. } => ErrorKind::TupleTooShort { span }.into(),
+                            ErrorKind::TupleIndexError { span, .. } => ErrorKind::TupleTooShort { span: *span }.into(),
                             _ => err,
                         })
                         .map(Cow::into_owned);
@@ -305,7 +305,8 @@ impl Analyzer<'_, '_> {
                         span,
                         obj: Some(box iterator.into_owned()),
                         prop: None,
-                    });
+                    }
+                    .into());
                 }
 
                 types.dedup_type();
