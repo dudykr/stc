@@ -760,11 +760,11 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }).context(format!(
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context(format!(
                     "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: {:?}\nRight: {:?}\n",
                     required_non_void_li.collect_vec(),
                     required_non_void_ri.collect_vec()
-                ));
+                )));
             }
         }
 

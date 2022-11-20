@@ -196,7 +196,7 @@ impl Analyzer<'_, '_> {
         if op == op!("+=") {
             if lhs.is_enum_variant() {
                 if rhs.is_type_lit() || rhs.is_bool() || rhs.is_symbol_like() {
-                    return Err(ErrorKind::OperatorCannotBeAppliedToTypes { span });
+                    return Err(ErrorKind::OperatorCannotBeAppliedToTypes { span }.into());
                 }
             }
         }
@@ -214,7 +214,7 @@ impl Analyzer<'_, '_> {
             | op!(">>=")
             | op!(">>>=") => {
                 if lhs.is_symbol_like() {
-                    return Err(ErrorKind::WrongTypeForLhsOfNumericOperation { span });
+                    return Err(ErrorKind::WrongTypeForLhsOfNumericOperation { span }.into());
                 }
             }
             _ => {}
@@ -239,17 +239,17 @@ impl Analyzer<'_, '_> {
                 }
 
                 match lhs {
-                    Type::TypeLit(..) => return Err(ErrorKind::WrongTypeForLhsOfNumericOperation { span }),
+                    Type::TypeLit(..) => return Err(ErrorKind::WrongTypeForLhsOfNumericOperation { span }.into()),
                     ty if ty.is_bool() || ty.is_str() || ty.is_tpl() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
-                        return Err(ErrorKind::WrongTypeForLhsOfNumericOperation { span });
+                        return Err(ErrorKind::WrongTypeForLhsOfNumericOperation { span }.into());
                     }
                     _ => {}
                 }
 
                 match rhs {
-                    Type::TypeLit(..) => return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span }),
+                    Type::TypeLit(..) => return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span }.into()),
                     ty if ty.is_bool() || ty.is_str() || ty.is_tpl() || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) => {
-                        return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span })
+                        return Err(ErrorKind::WrongTypeForRhsOfNumericOperation { span }.into())
                     }
                     _ => {}
                 }
@@ -306,7 +306,7 @@ impl Analyzer<'_, '_> {
                 if rhs_errored {
                     return Ok(());
                 }
-                return Err(ErrorKind::AssignOpCannotBeApplied { span, op });
+                return Err(ErrorKind::AssignOpCannotBeApplied { span, op }.into());
             }
         }
 
@@ -357,7 +357,8 @@ impl Analyzer<'_, '_> {
                             op,
                             lhs: box l.into_owned().clone(),
                             rhs: box r.into_owned().clone(),
-                        });
+                        }
+                        .into());
                     }
 
                     return Ok(());
@@ -375,11 +376,14 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )
-                    .convert_err(|err| ErrorKind::InvalidOpAssign {
-                        span,
-                        op,
-                        lhs: box l.into_owned().clone(),
-                        rhs: box r.into_owned().clone(),
+                    .convert_err(|err| {
+                        ErrorKind::InvalidOpAssign {
+                            span,
+                            op,
+                            lhs: box l.into_owned().clone(),
+                            rhs: box r.into_owned().clone(),
+                        }
+                        .into()
                     });
             }
             _ => {}
@@ -389,7 +393,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        Err(ErrorKind::AssignOpCannotBeApplied { span, op })
+        Err(ErrorKind::AssignOpCannotBeApplied { span, op }.into())
     }
 
     /// Assign `right` to `left`. You can just use default for [AssignData].
