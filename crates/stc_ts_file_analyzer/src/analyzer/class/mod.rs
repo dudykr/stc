@@ -205,7 +205,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RPrivateProp) -> VResult<ClassProperty> {
         match p.key.id.sym {
             js_word!("constructor") => {
-                self.storage.report(ErrorKind::ConstructorIsKeyword { span: p.key.id.span });
+                self.storage.report(ErrorKind::ConstructorIsKeyword { span: p.key.id.span }.into());
             }
             _ => {}
         }
@@ -294,7 +294,7 @@ impl Analyzer<'_, '_> {
                                     })
                                     | RPat::Rest(..) => {}
                                     _ => {
-                                        child.storage.report(ErrorKind::TS1016 { span: p.span() });
+                                        child.storage.report(ErrorKind::TS1016 { span: p.span() }.into());
                                     }
                                 },
                                 _ => {}
@@ -367,7 +367,7 @@ impl Analyzer<'_, '_> {
             match p.param {
                 RTsParamPropParam::Assign(..) => self
                     .storage
-                    .report(ErrorKind::InitializerDisallowedInAmbientContext { span: p.span }),
+                    .report(ErrorKind::InitializerDisallowedInAmbientContext { span: p.span }.into()),
                 _ => {}
             }
         }
@@ -486,7 +486,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RPrivateMethod) -> VResult<ClassMember> {
         match c.key.id.sym {
             js_word!("constructor") => {
-                self.storage.report(ErrorKind::ConstructorIsKeyword { span: c.key.id.span });
+                self.storage.report(ErrorKind::ConstructorIsKeyword { span: c.key.id.span }.into());
             }
             _ => {}
         }
@@ -500,7 +500,7 @@ impl Analyzer<'_, '_> {
             |child: &mut Analyzer| -> VResult<_> {
                 let type_params = try_opt!(c.function.type_params.validate_with(child));
                 if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
-                    child.storage.report(ErrorKind::TS1094 { span: key_span })
+                    child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
                 }
 
                 let params = c.function.params.validate_with(child)?;
@@ -607,7 +607,7 @@ impl Analyzer<'_, '_> {
                     // It's error if abstract method has a body
 
                     if c.is_abstract && c.function.body.is_some() {
-                        child.storage.report(ErrorKind::TS1318 { span: key_span });
+                        child.storage.report(ErrorKind::TS1318 { span: key_span }.into());
                     }
                 }
 
@@ -624,7 +624,7 @@ impl Analyzer<'_, '_> {
                                 })
                                 | RPat::Rest(..) => {}
                                 _ => {
-                                    child.storage.report(ErrorKind::TS1016 { span: p.span() });
+                                    child.storage.report(ErrorKind::TS1016 { span: p.span() }.into());
                                 }
                             }
                         }
@@ -688,7 +688,7 @@ impl Analyzer<'_, '_> {
 
             // getter property must have return statements.
             if let None = inferred_ret_ty {
-                self.storage.report(ErrorKind::TS2378 { span: key_span });
+                self.storage.report(ErrorKind::TS2378 { span: key_span }.into());
             }
         }
 
@@ -874,7 +874,7 @@ impl Analyzer<'_, '_> {
                         continue;
                     }
 
-                    self.storage.report(ErrorKind::DuplicateNameWithoutName { span: l.0.span() });
+                    self.storage.report(ErrorKind::DuplicateNameWithoutName { span: l.0.span() }.into());
                 }
             }
         }
@@ -895,7 +895,7 @@ impl Analyzer<'_, '_> {
                         continue;
                     }
 
-                    self.storage.report(ErrorKind::DuplicateNameWithoutName { span: l.0.span() });
+                    self.storage.report(ErrorKind::DuplicateNameWithoutName { span: l.0.span() }.into());
                 }
             }
         }
@@ -1059,9 +1059,9 @@ impl Analyzer<'_, '_> {
 
                                     for (span, is_abstract) in spans_for_error {
                                         if report_error_for_abstract && is_abstract {
-                                            self.storage.report(ErrorKind::AbstractAndConcreteIsMixed { span })
+                                            self.storage.report(ErrorKind::AbstractAndConcreteIsMixed { span }.into())
                                         } else if !report_error_for_abstract && !is_abstract {
-                                            self.storage.report(ErrorKind::AbstractAndConcreteIsMixed { span })
+                                            self.storage.report(ErrorKind::AbstractAndConcreteIsMixed { span }.into())
                                         }
                                     }
                                 }
@@ -1096,7 +1096,8 @@ impl Analyzer<'_, '_> {
                             // In this case, we report `abstract methods must be
                             // sequential`
                             if let Some((span, _)) = spans.last() {
-                                self.storage.report(ErrorKind::AbstractClassMethodShouldBeSequntial { span: *span })
+                                self.storage
+                                    .report(ErrorKind::AbstractClassMethodShouldBeSequntial { span: *span }.into())
                             }
                         }
                     }
@@ -1160,23 +1161,23 @@ impl Analyzer<'_, '_> {
                             if is_prop_name_eq_include_computed(&name.unwrap(), &constructor_name) {
                                 for (span, is_constructor) in replace(&mut spans, vec![]) {
                                     if is_constructor {
-                                        errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+                                        errors.push(ErrorKind::ConstructorImplMissingOrNotFollowedByDecl { span }.into());
                                     } else {
-                                        errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                        errors.push(ErrorKind::FnImplMissingOrNotFollowedByDecl { span }.into());
                                     }
                                 }
                             } else if is_prop_name_eq_include_computed(&m.key, &constructor_name) {
                                 for (span, is_constructor) in replace(&mut spans, vec![]) {
                                     if is_constructor {
-                                        errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+                                        errors.push(ErrorKind::ConstructorImplMissingOrNotFollowedByDecl { span }.into());
                                     } else {
-                                        errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                        errors.push(ErrorKind::FnImplMissingOrNotFollowedByDecl { span }.into());
                                     }
                                 }
                             } else {
                                 spans = vec![];
 
-                                errors.push(Error::TS2389 { span: m.key.span() });
+                                errors.push(ErrorKind::TS2389 { span: m.key.span() }.into());
                             }
 
                             name = None;
@@ -1213,9 +1214,9 @@ impl Analyzer<'_, '_> {
         // Class definition ended with `foo();`
         for (span, is_constructor) in replace(&mut spans, vec![]) {
             if is_constructor {
-                errors.push(ErrorKind::ConstructorImplMissingOrNotFollowedByDecl { span });
+                errors.push(ErrorKind::ConstructorImplMissingOrNotFollowedByDecl { span }.into());
             } else {
-                errors.push(ErrorKind::FnImplMissingOrNotFollowedByDecl { span });
+                errors.push(ErrorKind::FnImplMissingOrNotFollowedByDecl { span }.into());
             }
         }
 
