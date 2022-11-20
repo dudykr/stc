@@ -228,7 +228,7 @@ impl Analyzer<'_, '_> {
 
         let (mut lt, mut rt): (Type, Type) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
-            _ => return Err(ErrorKind::Errors { span, errors }),
+            _ => return Err(ErrorKind::Errors { span, errors }.into()),
         };
         lt.make_clone_cheap();
         rt.make_clone_cheap();
@@ -266,7 +266,7 @@ impl Analyzer<'_, '_> {
                         })
                 ) {
                     self.storage
-                        .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: e.left.span() });
+                        .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: e.left.span() }.into());
                     reported_null_or_undefined = true;
                 }
 
@@ -279,7 +279,7 @@ impl Analyzer<'_, '_> {
                         })
                 ) {
                     self.storage
-                        .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: e.right.span() });
+                        .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: e.right.span() }.into());
                     reported_null_or_undefined = true;
                 }
             }
@@ -1208,12 +1208,15 @@ impl Analyzer<'_, '_> {
                                     continue;
                                 }
                                 //
-                                self.storage.report(ErrorKind::CannotCompareWithOp {
-                                    span,
-                                    op,
-                                    left: box l.clone(),
-                                    right: box r.clone(),
-                                });
+                                self.storage.report(
+                                    ErrorKind::CannotCompareWithOp {
+                                        span,
+                                        op,
+                                        left: box l.clone(),
+                                        right: box r.clone(),
+                                    }
+                                    .into(),
+                                );
                                 return;
                             }
                             _ => {}
@@ -1235,24 +1238,27 @@ impl Analyzer<'_, '_> {
 
         macro_rules! error {
             () => {{
-                self.storage.report(Error::CannotCompareWithOp {
-                    span,
-                    op,
-                    left: box l.clone(),
-                    right: box r.clone(),
-                });
+                self.storage.report(
+                    ErrorKind::CannotCompareWithOp {
+                        span,
+                        op,
+                        left: box l.clone(),
+                        right: box r.clone(),
+                    }
+                    .into(),
+                );
                 return Ok(());
             }};
         }
 
         {
             if l.is_symbol_like() {
-                self.storage.report(ErrorKind::NumericOpToSymbol { span: l.span() });
+                self.storage.report(ErrorKind::NumericOpToSymbol { span: l.span() }.into());
                 return Ok(());
             }
 
             if r.is_symbol_like() {
-                self.storage.report(ErrorKind::NumericOpToSymbol { span: r.span() });
+                self.storage.report(ErrorKind::NumericOpToSymbol { span: r.span() }.into());
                 return Ok(());
             }
         }
@@ -1458,17 +1464,23 @@ impl Analyzer<'_, '_> {
                 ..
             })
             | Type::Symbol(..) => {
-                self.storage.report(ErrorKind::InvalidRhsInInstanceOf {
-                    span,
-                    ty: box type_for_error.clone(),
-                });
+                self.storage.report(
+                    ErrorKind::InvalidRhsInInstanceOf {
+                        span,
+                        ty: box type_for_error.clone(),
+                    }
+                    .into(),
+                );
             }
 
             Type::TypeLit(e) if e.members.is_empty() => {
-                self.storage.report(ErrorKind::InvalidRhsInInstanceOf {
-                    span,
-                    ty: box type_for_error.clone(),
-                });
+                self.storage.report(
+                    ErrorKind::InvalidRhsInInstanceOf {
+                        span,
+                        ty: box type_for_error.clone(),
+                    }
+                    .into(),
+                );
             }
 
             Type::Union(u) => {
@@ -1503,10 +1515,13 @@ impl Analyzer<'_, '_> {
                     }),
                     &ty,
                 ) {
-                    self.storage.report(ErrorKind::InvalidRhsInInstanceOf {
-                        span,
-                        ty: box type_for_error.clone(),
-                    });
+                    self.storage.report(
+                        ErrorKind::InvalidRhsInInstanceOf {
+                            span,
+                            ty: box type_for_error.clone(),
+                        }
+                        .into(),
+                    );
                 }
             }
 
@@ -1669,7 +1684,7 @@ impl Analyzer<'_, '_> {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
-                }) => errors.push(ErrorKind::TS1345 { span }),
+                }) => errors.push(ErrorKind::TS1345 { span }.into()),
                 _ => {}
             },
 
@@ -1690,9 +1705,9 @@ impl Analyzer<'_, '_> {
                         }) => {}
 
                         _ => errors.push(if is_left {
-                            ErrorKind::WrongTypeForLhsOfNumericOperation { span: ty.span() }
+                            ErrorKind::WrongTypeForLhsOfNumericOperation { span: ty.span() }.into()
                         } else {
-                            ErrorKind::WrongTypeForRhsOfNumericOperation { span: ty.span() }
+                            ErrorKind::WrongTypeForRhsOfNumericOperation { span: ty.span() }.into()
                         }),
                     }
                 };
@@ -1715,7 +1730,7 @@ impl Analyzer<'_, '_> {
                         _ => false,
                     }
                 {
-                    errors.push(ErrorKind::TS2447 { span });
+                    errors.push(ErrorKind::TS2447 { span }.into());
                 } else {
                     check(&lt, true);
                     check(&rt, false);
@@ -1728,19 +1743,19 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
                     }) => {
-                        self.storage.report(ErrorKind::ObjectIsPossiblyNull { span });
+                        self.storage.report(ErrorKind::ObjectIsPossiblyNull { span }.into());
                     }
 
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         ..
                     }) => {
-                        self.storage.report(ErrorKind::ObjectIsPossiblyUndefined { span });
+                        self.storage.report(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
                     }
 
                     ty => {
                         if !self.is_valid_lhs_of_in(&ty) {
-                            errors.push(ErrorKind::TS2360 { span: ls });
+                            errors.push(ErrorKind::TS2360 { span: ls }.into());
                         }
                     }
                 }
@@ -1750,22 +1765,25 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
                     }) => {
-                        self.storage.report(ErrorKind::ObjectIsPossiblyNull { span });
+                        self.storage.report(ErrorKind::ObjectIsPossiblyNull { span }.into());
                     }
 
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         ..
                     }) => {
-                        self.storage.report(ErrorKind::ObjectIsPossiblyUndefined { span });
+                        self.storage.report(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
                     }
 
                     _ => {
                         if !self.is_valid_rhs_of_in(rs, &rt) {
-                            errors.push(ErrorKind::InvalidRhsForInOperator {
-                                span: rs,
-                                ty: box rt.clone(),
-                            })
+                            errors.push(
+                                ErrorKind::InvalidRhsForInOperator {
+                                    span: rs,
+                                    ty: box rt.clone(),
+                                }
+                                .into(),
+                            )
                         }
                     }
                 }
