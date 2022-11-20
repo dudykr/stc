@@ -21,7 +21,7 @@ mod map_with_mut;
 pub enum Ternary {
     True,
     False,
-    Unknown,
+    Maybe,
 }
 
 pub trait AsModuleDecl {
