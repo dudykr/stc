@@ -127,7 +127,7 @@ impl Analyzer<'_, '_> {
                         match kind {
                             ForHeadKind::In => {
                                 if err.is_assign_failure() {
-                                    return ErrorKind::WrongTypeForLhsOfForInLoop { span: err.span() };
+                                    return ErrorKind::WrongTypeForLhsOfForInLoop { span: err.span() }.into();
                                 }
                             }
                             _ => {}
@@ -156,7 +156,7 @@ impl Analyzer<'_, '_> {
     fn validate_lhs_of_for_in_of_loop_pat(&mut self, p: &RPat, kind: ForHeadKind) -> VResult<()> {
         match p {
             RPat::Object(..) | RPat::Array(..) => match kind {
-                ForHeadKind::In => Err(ErrorKind::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() }),
+                ForHeadKind::In => Err(ErrorKind::DestructuringBindingNotAllowedInLhsOfForIn { span: p.span() }.into()),
                 ForHeadKind::Of { .. } => Ok(()),
             },
             RPat::Expr(e) => self.validate_lhs_of_for_in_of_loop_expr(e, kind),

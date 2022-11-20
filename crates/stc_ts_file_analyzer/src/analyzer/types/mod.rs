@@ -867,10 +867,10 @@ impl Analyzer<'_, '_> {
         }
 
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
-            return Err(ErrorKind::ObjectIsPossiblyUndefined { span });
+            return Err(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
         }
         if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
-            return Err(ErrorKind::ObjectIsPossiblyNull { span });
+            return Err(ErrorKind::ObjectIsPossiblyNull { span }.into());
         }
 
         match &*ty {
@@ -893,15 +893,15 @@ impl Analyzer<'_, '_> {
 
                 // tsc is crazy. It uses different error code for these errors.
                 if has_null && has_undefined {
-                    return Err(ErrorKind::ObjectIsPossiblyNullOrUndefined { span });
+                    return Err(ErrorKind::ObjectIsPossiblyNullOrUndefined { span }.into());
                 }
 
                 if has_null {
-                    return Err(ErrorKind::ObjectIsPossiblyNull { span });
+                    return Err(ErrorKind::ObjectIsPossiblyNull { span }.into());
                 }
 
                 if has_undefined {
-                    return Err(ErrorKind::ObjectIsPossiblyUndefined { span });
+                    return Err(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
                 }
 
                 Ok(())

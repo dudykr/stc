@@ -66,7 +66,7 @@ impl Analyzer<'_, '_> {
             op!(unary, "+") | op!(unary, "-") | op!("~") => {
                 if let Some(arg) = &arg_ty {
                     if arg.is_symbol_like() {
-                        self.storage.report(ErrorKind::NumericOpToSymbol { span: arg.span() })
+                        self.storage.report(ErrorKind::NumericOpToSymbol { span: arg.span() }.into())
                     }
                 }
             }
@@ -196,7 +196,7 @@ impl Analyzer<'_, '_> {
                 obj: box RExpr::This(..),
                 prop: RMemberProp::PrivateName(..),
                 ..
-            }) => Err(ErrorKind::CannotDeletePrivateProperty { span }),
+            }) => Err(ErrorKind::CannotDeletePrivateProperty { span }.into()),
 
             RExpr::Paren(RParenExpr {
                 expr: box RExpr::Member(expr),
@@ -208,14 +208,16 @@ impl Analyzer<'_, '_> {
             })
             | RExpr::Member(expr) => {
                 if self.rule().strict_null_checks {
-                    let ty = self.type_of_member_expr(expr, TypeOfMode::RValue).convert_err(|err| match &err {
+                    let ty = self.type_of_member_expr(expr, TypeOfMode::RValue).convert_err(|err| match &*err {
                         ErrorKind::ObjectIsPossiblyNull { span, .. }
                         | ErrorKind::ObjectIsPossiblyUndefined { span, .. }
-                        | ErrorKind::ObjectIsPossiblyNullOrUndefined { span, .. } => ErrorKind::DeleteOperandMustBeOptional { span: *span },
+                        | ErrorKind::ObjectIsPossiblyNullOrUndefined { span, .. } => {
+                            ErrorKind::DeleteOperandMustBeOptional { span: *span }.into()
+                        }
                         _ => err,
                     })?;
                     if !self.can_be_undefined(span, &ty)? {
-                        return Err(ErrorKind::DeleteOperandMustBeOptional { span });
+                        return Err(ErrorKind::DeleteOperandMustBeOptional { span }.into());
                     }
                 }
                 return Ok(());
@@ -228,9 +230,9 @@ impl Analyzer<'_, '_> {
                 return self.validate_delete_operand(expr);
             }
 
-            RExpr::Await(..) => Err(ErrorKind::InvalidDeleteOperand { span }),
+            RExpr::Await(..) => Err(ErrorKind::InvalidDeleteOperand { span }.into()),
 
-            _ => Err(ErrorKind::InvalidDeleteOperand { span }),
+            _ => Err(ErrorKind::InvalidDeleteOperand { span }.into()),
         }
     }
 
@@ -244,7 +246,7 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => {
                     self.storage
-                        .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: arg_expr.span() });
+                        .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: arg_expr.span() }.into());
                     return;
                 }
                 _ => {}
@@ -255,7 +257,7 @@ impl Analyzer<'_, '_> {
 
         match op {
             op!("typeof") | op!("delete") | op!("void") => match arg.normalize() {
-                Type::EnumVariant(..) if op == op!("delete") => errors.push(ErrorKind::TS2704 { span: arg.span() }),
+                Type::EnumVariant(..) if op == op!("delete") => errors.push(ErrorKind::TS2704 { span: arg.span() }.into()),
 
                 _ => {}
             },
@@ -269,12 +271,12 @@ impl Analyzer<'_, '_> {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
-                }) => errors.push(ErrorKind::TS2531 { span: arg.span() }),
+                }) => errors.push(ErrorKind::TS2531 { span: arg.span() }.into()),
 
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
-                }) => errors.push(ErrorKind::ObjectIsPossiblyUndefined { span: arg.span() }),
+                }) => errors.push(ErrorKind::ObjectIsPossiblyUndefined { span: arg.span() }.into()),
 
                 _ => {
                     //
