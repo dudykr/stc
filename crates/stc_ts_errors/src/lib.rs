@@ -1443,7 +1443,9 @@ impl ErrorKind {
             ErrorKind::Errors { span, errors } => {
                 let mut new = Vec::with_capacity(errors.capacity());
                 for err in errors {
-                    new.push(err.convert_all_inner(op));
+                    new.push(Error {
+                        inner: box err.convert_all_inner(op),
+                    });
                 }
 
                 ErrorKind::Errors { span, errors: new }
@@ -1636,7 +1638,7 @@ impl ErrorKind {
     }
 
     /// Split error into causes.
-    pub fn into_causes(self) -> Vec<Self> {
+    pub fn into_causes(self) -> Vec<Error> {
         match self {
             Self::AssignFailed { cause, .. } => cause,
             Self::ObjectAssignFailed { errors, .. } => errors,
@@ -1646,17 +1648,17 @@ impl ErrorKind {
                 c.inner
                     .into_causes()
                     .into_iter()
-                    .map(|err| {
-                        ErrorKind::DebugContext(DebugContext {
+                    .map(|err| Error {
+                        inner: box ErrorKind::DebugContext(DebugContext {
                             span,
-                            inner: box err,
+                            inner: err.inner,
                             context: context.clone(),
-                        })
+                        }),
                     })
                     .collect()
             }
             _ => {
-                vec![self]
+                vec![Error { inner: box self }]
             }
         }
     }
@@ -2100,16 +2102,16 @@ impl ErrorKind {
         let mut buf = Vec::with_capacity(vec.len());
 
         for e in vec {
-            match e {
+            match *e.inner {
                 ErrorKind::Errors { errors, .. } | ErrorKind::TupleAssignError { errors, .. } => buf.extend(Self::flatten(errors)),
                 ErrorKind::DebugContext(DebugContext { inner, context, .. }) => {
                     //
-                    buf.extend(Self::flatten(vec![*inner]).into_iter().map(|inner| {
-                        ErrorKind::DebugContext(DebugContext {
+                    buf.extend(Self::flatten(vec![Error { inner }]).into_iter().map(|inner| Error {
+                        inner: box ErrorKind::DebugContext(DebugContext {
                             span: inner.span(),
                             context: context.clone(),
-                            inner: box inner,
-                        })
+                            inner: inner.inner,
+                        }),
                     }))
                 }
                 _ => buf.push(e),
@@ -2147,7 +2149,7 @@ impl From<Errors> for Vec<Error> {
 
 impl IntoIterator for Errors {
     type IntoIter = <Vec<Error> as IntoIterator>::IntoIter;
-    type Item = ErrorKind;
+    type Item = Error;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -2195,7 +2197,7 @@ impl Errors {
 
 impl Extend<Error> for Errors {
     #[inline]
-    fn extend<T: IntoIterator<Item = ErrorKind>>(&mut self, iter: T) {
+    fn extend<T: IntoIterator<Item = Error>>(&mut self, iter: T) {
         if cfg!(debug_assertions) {
             for err in iter {
                 self.push(err)
