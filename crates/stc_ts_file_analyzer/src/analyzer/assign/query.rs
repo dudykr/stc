@@ -1,4 +1,4 @@
-use stc_ts_errors::{DebugExt, ErrorKind};
+use stc_ts_errors::{ctx, ErrorKind};
 use stc_ts_types::{QueryExpr, QueryType, Type};
 
 use crate::{
@@ -15,9 +15,8 @@ impl Analyzer<'_, '_> {
 
         match &*to.expr {
             QueryExpr::TsEntityName(e) => {
-                let to = self
-                    .resolve_typeof(opts.span, e)
-                    .context("tried to resolve typeof for assignment")?;
+                let _ctx = ctx!("tried to resolve typeof for assignment");
+                let to = self.resolve_typeof(opts.span, e)?;
 
                 if to.is_global_this() {
                     return Err(ErrorKind::SimpleAssignFailed {
