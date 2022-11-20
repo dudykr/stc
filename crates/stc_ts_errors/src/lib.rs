@@ -2003,7 +2003,13 @@ impl ErrorKind {
         for e in vec {
             match *e.inner {
                 ErrorKind::Errors { errors, .. } | ErrorKind::TupleAssignError { errors, .. } => buf.extend(Self::flatten(errors)),
-                _ => buf.push(e),
+                _ => {
+                    if let Some(idx) = buf.iter().position(|prev| prev.inner == e.inner) {
+                        buf[idx].contexts.push(format!("duplicate: {}", e.contexts.join("\n")));
+                        continue;
+                    }
+                    buf.push(e)
+                }
             }
         }
 
