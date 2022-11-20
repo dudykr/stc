@@ -767,7 +767,8 @@ impl Analyzer<'_, '_> {
                     obj: Some(rhs.obj_type.clone()),
                     // TODO
                     prop: None,
-                };
+                }
+                .into();
                 return Err(ErrorKind::Errors { span, errors: vec![err] }.into());
             }
             _ => {}
@@ -998,7 +999,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
                 dbg!();
-                return Err(ErrorKind::InvalidLValue { span: to.span() });
+                return Err(ErrorKind::InvalidLValue { span: to.span() }.into());
             }
             Type::Enum(..) => fail!(),
 
@@ -1067,7 +1068,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 dbg!();
-                return Err(ErrorKind::InvalidLValue { span: e.span });
+                return Err(ErrorKind::InvalidLValue { span: e.span }.into());
             }
 
             Type::Intersection(ref li) => {
@@ -1096,9 +1097,12 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .context("tried to assign to an element of an intersection type")
-                        .convert_err(|err| ErrorKind::SimpleAssignFailed {
-                            span: err.span(),
-                            cause: Some(box err),
+                        .convert_err(|err| {
+                            ErrorKind::SimpleAssignFailed {
+                                span: err.span(),
+                                cause: Some(box err),
+                            }
+                            .into()
                         }) {
                         Ok(..) => {}
                         Err(err) => errors.push(err),
@@ -1122,12 +1126,15 @@ impl Analyzer<'_, '_> {
                                     dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
                                 )
                             })
-                            .convert_err(|err| ErrorKind::SimpleAssignFailed {
-                                span: err.span(),
-                                cause: Some(box err),
+                            .convert_err(|err| {
+                                ErrorKind::SimpleAssignFailed {
+                                    span: err.span(),
+                                    cause: Some(box err),
+                                }
+                                .into()
                             })?;
 
-                        errors.retain(|err| match err.actual() {
+                        errors.retain(|err| match err {
                             ErrorKind::UnknownPropertyInObjectLiteralAssignment { .. } => false,
                             _ => true,
                         });
@@ -1138,7 +1145,7 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(ErrorKind::Errors { span, errors });
+                return Err(ErrorKind::Errors { span, errors }.into());
             }
 
             Type::Class(l) => match rhs {
@@ -1298,7 +1305,8 @@ impl Analyzer<'_, '_> {
                         right_ident: None,
                         right: box rhs.clone(),
                         cause: errors,
-                    });
+                    }
+                    .into());
                 }
 
                 return Err(ErrorKind::Errors { span, errors });
@@ -1646,7 +1654,8 @@ impl Analyzer<'_, '_> {
                         left: box to.clone(),
                         right: box rhs.clone(),
                         right_ident: opts.right_ident_span,
-                    });
+                    }
+                    .into());
                 } else {
                     return Err(ErrorKind::Errors { span, errors }.context("tried to assign a type to a union type"));
                 }
@@ -1658,7 +1667,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Multiple error
                 for v in vs {
                     if let Err(error) = v {
-                        return Err(ErrorKind::IntersectionError { span, error: box error });
+                        return Err(ErrorKind::IntersectionError { span, error: box error }.into());
                     }
                 }
 

@@ -260,14 +260,14 @@ impl Analyzer<'_, '_> {
             let mut v = ConstructorSuperCallFinder::default();
             c.visit_with(&mut v);
             if !v.has_valid_super_call {
-                self.storage.report(ErrorKind::SuperNotCalled { span: c.span });
+                self.storage.report(ErrorKind::SuperNotCalled { span: c.span }.into());
             } else {
                 debug_assert_eq!(self.scope.kind(), ScopeKind::Class);
                 *self.scope.class.need_super_call.borrow_mut() = true;
             }
 
             for span in v.nested_super_calls {
-                self.storage.report(ErrorKind::SuperInNestedFunction { span })
+                self.storage.report(ErrorKind::SuperInNestedFunction { span }.into())
             }
         }
 
