@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use stc_ts_errors::{DebugExt, ErrorKind};
+use stc_ts_errors::{ctx, ErrorKind};
 use stc_ts_types::{Class, ClassDef, ClassMember, Type, TypeLitMetadata};
 use stc_utils::cache::Freeze;
 use swc_common::EqIgnoreSpan;
@@ -57,8 +57,11 @@ impl Analyzer<'_, '_> {
                 };
 
                 for (i, lm) in l.body.iter().enumerate() {
-                    self.assign_class_members_to_class_member(data, lm, r_body, opts)
-                        .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}\n{:#?}", i, lm, r_body))?;
+                    let _ctx = ctx!(format!(
+                        "tried to assign class members to {}th class member\n{:#?}\n{:#?}",
+                        i, lm, r_body
+                    ));
+                    self.assign_class_members_to_class_member(data, lm, r_body, opts);
                 }
 
                 return Ok(());

@@ -134,7 +134,7 @@ impl Analyzer<'_, '_> {
                     if type_args.params.len() == 1 {
                         match r {
                             Type::Array(Array { elem_type, .. }) => {
-                                let _ctx = ctx!(|| "tried to assign an array to a readonly array (builtin)".into());
+                                let _ctx = ctx!("tried to assign an array to a readonly array (builtin)");
                                 return Some(self.assign_inner(data, &type_args.params[0], elem_type, opts));
                             }
                             _ => {}
@@ -153,7 +153,7 @@ impl Analyzer<'_, '_> {
                     .or_else(|| unwrap_ref_with_single_arg(r, "Array"))
                     .or_else(|| unwrap_ref_with_single_arg(r, "ReadonlyArray"))
                 {
-                    let _ctx = ctx!(|| "tried fast-path assignment to an array".into());
+                    let _ctx = ctx!("tried fast-path assignment to an array");
                     return Some(self.assign_with_opts(data, &l.elem_type, &r_elem, opts));
                 }
             }
@@ -258,7 +258,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(l) = unwrap_ref_with_single_arg(l, "Promise") {
             if let Some(r) = unwrap_ref_with_single_arg(r, "Promise") {
-                let _ctx = ctx!(|| "tried to assign a promise to another using optimized algorithm".into());
+                let _ctx = ctx!("tried to assign a promise to another using optimized algorithm");
                 return Some(self.assign_with_opts(data, l, r, opts));
             }
         }
