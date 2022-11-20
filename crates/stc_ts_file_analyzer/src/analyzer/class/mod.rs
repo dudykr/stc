@@ -945,9 +945,9 @@ impl Analyzer<'_, '_> {
 
                             for (span, is_staitc) in spans_for_error {
                                 if report_error_for_static && is_staitc {
-                                    self.storage.report(ErrorKind::ShouldBeInstanceMethod { span })
+                                    self.storage.report(ErrorKind::ShouldBeInstanceMethod { span }.into())
                                 } else if !report_error_for_static && !is_staitc {
-                                    self.storage.report(ErrorKind::ShouldBeStaticMethod { span })
+                                    self.storage.report(ErrorKind::ShouldBeStaticMethod { span }.into())
                                 }
                             }
                         }
@@ -1513,7 +1513,7 @@ impl Analyzer<'_, '_> {
 
                     ModuleConfig::None | ModuleConfig::Umd | ModuleConfig::System | ModuleConfig::Amd | ModuleConfig::CommonJs => {
                         self.storage
-                            .report(ErrorKind::ClassNameCannotBeObjectWhenTargetingEs5WithModule { span: c.span });
+                            .report(ErrorKind::ClassNameCannotBeObjectWhenTargetingEs5WithModule { span: c.span }.into());
                     }
                     _ => {}
                 },
@@ -1569,7 +1569,7 @@ impl Analyzer<'_, '_> {
                             | Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                                 ..
-                            }) => Err(ErrorKind::InvalidSuperClass { span: super_ty.span() }),
+                            }) => Err(ErrorKind::InvalidSuperClass { span: super_ty.span() }.into()),
                             _ => Ok(()),
                         });
 
@@ -1697,7 +1697,7 @@ impl Analyzer<'_, '_> {
 
                 if constructors_with_body.len() >= 2 {
                     for &span in &constructors_with_body {
-                        child.storage.report(ErrorKind::DuplicateConstructor { span })
+                        child.storage.report(ErrorKind::DuplicateConstructor { span }.into())
                     }
                 }
 
@@ -1710,7 +1710,7 @@ impl Analyzer<'_, '_> {
                                     match *p {
                                         RParamOrTsParamProp::TsParamProp(..) => child
                                             .storage
-                                            .report(ErrorKind::ParamPropIsNotAllowedInAmbientConstructorx { span: p.span() }),
+                                            .report(ErrorKind::ParamPropIsNotAllowedInAmbientConstructorx { span: p.span() }.into()),
                                         _ => {}
                                     }
                                 }
