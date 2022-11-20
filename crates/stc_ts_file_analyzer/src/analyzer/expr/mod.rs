@@ -1475,7 +1475,8 @@ impl Analyzer<'_, '_> {
                             span,
                             class_name: self.scope.get_this_class_name(),
                             prop: prop.clone(),
-                        });
+                        }
+                        .into());
                     }
 
                     if let Some(super_class) = self.scope.get_super_class() {
@@ -1556,7 +1557,8 @@ impl Analyzer<'_, '_> {
                         span: *span,
                         obj: Some(box obj.clone()),
                         prop: Some(box prop.clone()),
-                    });
+                    }
+                    .into());
                 }
 
                 _ => {}
@@ -2080,7 +2082,7 @@ impl Analyzer<'_, '_> {
                             }),
                         ) => {
                             if self.rule().no_implicit_any && !self.rule().suppress_implicit_any_index_errors {
-                                self.storage.report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span });
+                                self.storage.report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span }.into());
                             }
 
                             return Ok(Type::any(span, Default::default()));
@@ -2365,7 +2367,7 @@ impl Analyzer<'_, '_> {
                 if type_mode == TypeOfMode::LValue {
                     if !errors.is_empty() {
                         assert_ne!(errors.len(), 0);
-                        return Err(ErrorKind::UnionError { span, errors });
+                        return Err(ErrorKind::UnionError { span, errors }.into());
                     }
                 } else {
                     if !errors.is_empty() {
