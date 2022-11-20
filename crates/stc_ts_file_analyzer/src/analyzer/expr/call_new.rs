@@ -311,7 +311,7 @@ impl Analyzer<'_, '_> {
                 sym: js_word!("Symbol"), ..
             }) => {
                 if kind == ExtractKind::New {
-                    self.storage.report(ErrorKind::CannotCallWithNewNonVoidFunction { span })
+                    self.storage.report(ErrorKind::CannotCallWithNewNonVoidFunction { span }.into())
                 }
 
                 // Symbol uses special type
@@ -438,7 +438,7 @@ impl Analyzer<'_, '_> {
                     }) if type_args.is_some() => {
                         // If it's implicit any, we should postpone this check.
                         if !analyzer.is_implicitly_typed(&callee_ty) {
-                            analyzer.storage.report(ErrorKind::AnyTypeUsedAsCalleeWithTypeArgs { span })
+                            analyzer.storage.report(ErrorKind::AnyTypeUsedAsCalleeWithTypeArgs { span }.into())
                         }
                     }
                     _ => {}
@@ -572,7 +572,8 @@ impl Analyzer<'_, '_> {
 
                 Type::This(..) => {
                     if self.ctx.in_computed_prop_name {
-                        self.storage.report(ErrorKind::CannotReferenceThisInComputedPropName { span });
+                        self.storage
+                            .report(ErrorKind::CannotReferenceThisInComputedPropName { span }.into());
                         // Return any to prevent other errors
                         return Ok(Type::any(span, Default::default()));
                     }
@@ -636,12 +637,14 @@ impl Analyzer<'_, '_> {
                                 span,
                                 obj: box obj_type.clone(),
                                 key: box prop.clone(),
-                            });
+                            }
+                            .into());
                         } else {
                             return Err(ErrorKind::NoSuchConstructor {
                                 span,
                                 key: box prop.clone(),
-                            });
+                            }
+                            .into());
                         }
                     }
 
@@ -809,11 +812,13 @@ impl Analyzer<'_, '_> {
                             span,
                             obj: box obj_type.clone(),
                             key: box prop.clone(),
-                        },
+                        }
+                        .into(),
                         ExtractKind::New => ErrorKind::NoSuchConstructor {
                             span,
                             key: box prop.clone(),
-                        },
+                        }
+                        .into(),
                     });
                 }
                 _ => {}
