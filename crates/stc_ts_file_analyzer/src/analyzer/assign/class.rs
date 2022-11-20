@@ -146,8 +146,11 @@ impl Analyzer<'_, '_> {
                 };
 
                 for (i, lm) in l.def.body.iter().enumerate() {
-                    self.assign_class_members_to_class_member(data, lm, r_body, opts)
-                        .with_context(|| format!("tried to assign class members to {}th class member\n{:#?}\n{:#?}", i, lm, r_body))?;
+                    let _ctx = ctx!(format!(
+                        "tried to assign class members to {}th class member\n{:#?}\n{:#?}",
+                        i, lm, r_body
+                    ));
+                    self.assign_class_members_to_class_member(data, lm, r_body, opts)?;
                 }
 
                 if !rc.def.is_abstract {
@@ -156,9 +159,8 @@ impl Analyzer<'_, '_> {
                     // let p: Parent;
                     // `p = c` is valid
                     if let Some(parent) = &rc.def.super_class {
-                        let parent = self
-                            .instantiate_class(opts.span, &parent)
-                            .context("tried to instantiated class to assign the super class to a class")?;
+                        let _ctx = ctx!("tried to instantiated class to assign the super class to a class");
+                        let parent = self.instantiate_class(opts.span, &parent)?;
                         if self.assign_to_class(data, l, &parent, opts).is_ok() {
                             return Ok(());
                         }
