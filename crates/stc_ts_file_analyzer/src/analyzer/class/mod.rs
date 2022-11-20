@@ -1331,13 +1331,16 @@ impl Analyzer<'_, '_> {
                                 .into_causes()
                                 .into_iter()
                                 .map(|err| {
-                                    err.convert_all(|err| ErrorKind::InvalidImplOfInterface {
-                                        span: match &err {
-                                            ErrorKind::AssignFailed { right_ident: Some(s), .. } => *s,
-                                            ErrorKind::AssignFailed { left, .. } => left.span(),
-                                            _ => err.span(),
-                                        },
-                                        cause: box err,
+                                    err.convert_all(|err| {
+                                        ErrorKind::InvalidImplOfInterface {
+                                            span: match &*err {
+                                                ErrorKind::AssignFailed { right_ident: Some(s), .. } => *s,
+                                                ErrorKind::AssignFailed { left, .. } => left.span(),
+                                                _ => err.span(),
+                                            },
+                                            cause: box err,
+                                        }
+                                        .into()
                                     })
                                 })
                                 .collect(),
@@ -1345,7 +1348,7 @@ impl Analyzer<'_, '_> {
                         .into()
                     } else {
                         err.convert_all(|err| {
-                            match err {
+                            match &*err {
                                 ErrorKind::MissingFields { .. } => {
                                     return ErrorKind::ClassIncorrectlyImplementsInterface { span: parent.span() }.into()
                                 }
@@ -1410,7 +1413,8 @@ impl Analyzer<'_, '_> {
                                                 && p.accessor != super_property.accessor
                                                 && (super_property.accessor.getter || super_property.accessor.setter)
                                             {
-                                                self.storage.report(ErrorKind::DefinedWitHAccessorInSuper { span: p.key.span() })
+                                                self.storage
+                                                    .report(ErrorKind::DefinedWitHAccessorInSuper { span: p.key.span() }.into())
                                             }
 
                                             continue 'outer;
@@ -1456,10 +1460,13 @@ impl Analyzer<'_, '_> {
                         }
 
                         if let Some(key) = sm.key() {
-                            errors.push(ErrorKind::ClassDoesNotImplementMemeber {
-                                span,
-                                key: box key.into_owned(),
-                            });
+                            errors.push(
+                                ErrorKind::ClassDoesNotImplementMemeber {
+                                    span,
+                                    key: box key.into_owned(),
+                                }
+                                .into(),
+                            );
                         }
                     }
 
@@ -1506,7 +1513,7 @@ impl Analyzer<'_, '_> {
         match &name {
             Some(i) => match &**i.sym() {
                 "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
-                    self.storage.report(ErrorKind::InvalidClassName { span: c.span });
+                    self.storage.report(ErrorKind::InvalidClassName { span: c.span }.into());
                 }
                 "Object" if self.env.target() <= EsVersion::Es5 => match self.env.module() {
                     ModuleConfig::None if self.ctx.in_declare => {}
@@ -1761,7 +1768,7 @@ impl Analyzer<'_, '_> {
                                 if let Some(key) = member.key() {
                                     // TODO(kdy1): Use better logic for testing key equality
                                     if declared_static_keys.iter().any(|prev: &Key| prev.type_eq(&*key)) {
-                                        child.storage.report(ErrorKind::DuplicateProperty { span: key.span() })
+                                        child.storage.report(ErrorKind::DuplicateProperty { span: key.span() }.into())
                                     }
                                     declared_static_keys.push(key.into_owned());
                                 }
@@ -1883,7 +1890,7 @@ impl Analyzer<'_, '_> {
                                 if let Some(key) = member.key() {
                                     // TODO(kdy1): Use better logic for testing key equality
                                     if declared_instance_keys.iter().any(|prev: &Key| prev.type_eq(&*key)) {
-                                        child.storage.report(ErrorKind::DuplicateProperty { span: key.span() })
+                                        child.storage.report(ErrorKind::DuplicateProperty { span: key.span() }.into())
                                     }
                                     declared_instance_keys.push(key.into_owned());
                                 }
@@ -2186,9 +2193,9 @@ impl Analyzer<'_, '_> {
                     )
                     .convert_err(|_err| {
                         if index.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
-                            ErrorKind::ClassMemberNotCompatibleWithNumericIndexSignature { span }
+                            ErrorKind::ClassMemberNotCompatibleWithNumericIndexSignature { span }.into()
                         } else {
-                            ErrorKind::ClassMemberNotCompatibleWithStringIndexSignature { span }
+                            ErrorKind::ClassMemberNotCompatibleWithStringIndexSignature { span }.into()
                         }
                     })?;
                 }

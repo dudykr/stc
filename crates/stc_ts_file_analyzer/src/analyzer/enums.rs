@@ -158,7 +158,7 @@ impl Analyzer<'_, '_> {
                     init.visit_with(&mut v);
                     self.storage.report_all(v.errors);
                     if v.error {
-                        self.storage.report(ErrorKind::InvalidInitInConstEnum { span: init.span() })
+                        self.storage.report(ErrorKind::InvalidInitInConstEnum { span: init.span() }.into())
                     }
                 }
             }

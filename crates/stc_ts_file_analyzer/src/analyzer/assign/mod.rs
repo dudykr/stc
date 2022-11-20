@@ -1134,7 +1134,7 @@ impl Analyzer<'_, '_> {
                                 .into()
                             })?;
 
-                        errors.retain(|err| match err {
+                        errors.retain(|err| match &*err {
                             ErrorKind::UnknownPropertyInObjectLiteralAssignment { .. } => false,
                             _ => true,
                         });

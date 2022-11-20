@@ -1018,31 +1018,31 @@ impl Analyzer<'_, '_> {
                                 RPat::Ident(_) => {}
 
                                 RPat::Array(_) => {
-                                    self.storage.report(ErrorKind::NotArrayType { span: r.arg.span() });
+                                    self.storage.report(ErrorKind::NotArrayType { span: r.arg.span() }.into());
                                     self.storage
-                                        .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                        .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
                                 }
 
                                 RPat::Object(_) => {
                                     self.storage
-                                        .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                        .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
                                 }
 
                                 RPat::Expr(expr) => {
                                     // { ...obj?.a["b"] }
                                     if is_obj_opt_chaining(&expr) {
-                                        return Err(ErrorKind::InvalidRestPatternInOptionalChain { span: r.span });
+                                        return Err(ErrorKind::InvalidRestPatternInOptionalChain { span: r.span }.into());
                                     }
 
                                     self.storage
-                                        .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() });
+                                        .report(ErrorKind::BindingPatNotAllowedInRestPatArg { span: r.arg.span() }.into());
                                 }
 
                                 RPat::Invalid(_) => {
                                     // self.storage.report(Error::BindingPatNotAllowedInRestPatArg { span:
                                     // r.arg.span() });
                                     self.storage
-                                        .report(ErrorKind::RestArgMustBeVarOrMemberAccess { span: r.arg.span() });
+                                        .report(ErrorKind::RestArgMustBeVarOrMemberAccess { span: r.arg.span() }.into());
                                 }
 
                                 _ => {}
