@@ -169,8 +169,8 @@ impl Analyzer<'_, '_> {
         use crate::analyzer::expr::optional_chaining::is_obj_opt_chaining;
         if is_obj_opt_chaining(&e) {
             return match kind {
-                ForHeadKind::In => Err(ErrorKind::InvalidRestPatternInForIn { span: e.span() }),
-                ForHeadKind::Of { .. } => Err(ErrorKind::InvalidRestPatternInForOf { span: e.span() }),
+                ForHeadKind::In => Err(ErrorKind::InvalidRestPatternInForIn { span: e.span() }.into()),
+                ForHeadKind::Of { .. } => Err(ErrorKind::InvalidRestPatternInForOf { span: e.span() }.into()),
             };
         }
 
@@ -179,8 +179,8 @@ impl Analyzer<'_, '_> {
             // We use different error code for this.
             RExpr::Assign(..) => Ok(()),
             _ => match kind {
-                ForHeadKind::In => Err(ErrorKind::InvalidExprOfLhsOfForIn { span: e.span() }),
-                ForHeadKind::Of { .. } => Err(ErrorKind::InvalidExprOfLhsOfForOf { span: e.span() }),
+                ForHeadKind::In => Err(ErrorKind::InvalidExprOfLhsOfForIn { span: e.span() }.into()),
+                ForHeadKind::Of { .. } => Err(ErrorKind::InvalidExprOfLhsOfForOf { span: e.span() }.into()),
             },
         }
     }
@@ -300,10 +300,14 @@ impl Analyzer<'_, '_> {
                         if decls[0].name.get_ty().is_some() {
                             match kind {
                                 ForHeadKind::In => {
-                                    child.storage.report(ErrorKind::TypeAnnOnLhsOfForInLoops { span: decls[0].span });
+                                    child
+                                        .storage
+                                        .report(ErrorKind::TypeAnnOnLhsOfForInLoops { span: decls[0].span }.into());
                                 }
                                 ForHeadKind::Of { .. } => {
-                                    child.storage.report(ErrorKind::TypeAnnOnLhsOfForOfLoops { span: decls[0].span });
+                                    child
+                                        .storage
+                                        .report(ErrorKind::TypeAnnOnLhsOfForOfLoops { span: decls[0].span }.into());
                                 }
                             }
                         }
@@ -334,7 +338,7 @@ impl Analyzer<'_, '_> {
                             .flat_map(|ty| ty.iter_union())
                             .any(|ty| is_str_or_union(&ty))
                         {
-                            child.storage.report(ErrorKind::ForOfStringUsedInEs3 { span })
+                            child.storage.report(ErrorKind::ForOfStringUsedInEs3 { span }.into())
                         }
                     }
                 }
@@ -344,14 +348,14 @@ impl Analyzer<'_, '_> {
             let mut elem_ty = match kind {
                 ForHeadKind::Of { is_awaited: false } => child
                     .get_iterator_element_type(rhs.span(), Cow::Owned(rty), false, Default::default())
-                    .convert_err(|err| match err {
+                    .convert_err(|err| match *err {
                         ErrorKind::NotArrayType { span }
                             if match rhs {
                                 RExpr::Lit(..) => true,
                                 _ => false,
                             } =>
                         {
-                            ErrorKind::NotArrayTypeNorStringType { span }
+                            ErrorKind::NotArrayTypeNorStringType { span }.into()
                         }
                         _ => err,
                     })
