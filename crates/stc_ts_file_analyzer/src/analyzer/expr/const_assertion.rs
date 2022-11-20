@@ -41,7 +41,8 @@ impl Analyzer<'_, '_> {
             return Err(ErrorKind::Unimplemented {
                 span,
                 msg: format!("Proper error reporting for using const assertion expression in left hand side of an assignment expression"),
-            });
+            }
+            .into());
         }
     }
 }
