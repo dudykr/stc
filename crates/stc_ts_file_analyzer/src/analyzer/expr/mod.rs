@@ -2605,7 +2605,7 @@ impl Analyzer<'_, '_> {
                 let mut new = vec![];
                 for ty in types {
                     let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
-                    if let Some(v) = self.access_property(span, &ty, prop, type_mode, id_ctx, opts).ok() {
+                    if let Ok(v) = self.access_property(span, &ty, prop, type_mode, id_ctx, opts) {
                         new.push(v);
                     }
                 }
@@ -2658,7 +2658,7 @@ impl Analyzer<'_, '_> {
                         // {
                         //     [P in string]: number;
                         // };
-                        if let Ok(()) = self.assign(span, &mut Default::default(), &index, &prop.ty()) {
+                        if let Ok(()) = self.assign(span, &mut Default::default(), index, &prop.ty()) {
                             // We handle `Partial<string>` at here.
                             let ty = m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default()));
 
@@ -2692,28 +2692,26 @@ impl Analyzer<'_, '_> {
                     return self.access_property(span, obj, prop, type_mode, id_ctx, opts);
                 }
 
-                match constraint.as_ref().map(Type::normalize) {
-                    Some(Type::Operator(Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ty,
-                        ..
-                    })) => {
-                        // Check if we can index the object with given key.
-                        if let Ok(index_type) = self.keyof(span, &ty) {
-                            if let Ok(()) = self.assign_with_opts(
-                                &mut Default::default(),
-                                &index_type,
-                                &prop.ty(),
-                                AssignOpts {
-                                    span,
-                                    ..Default::default()
-                                },
-                            ) {
-                                return Ok(m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default())));
-                            }
+                if let Some(Type::Operator(Operator {
+                    op: TsTypeOperatorOp::KeyOf,
+                    ty,
+                    ..
+                })) = constraint.as_ref().map(Type::normalize)
+                {
+                    // Check if we can index the object with given key.
+                    if let Ok(index_type) = self.keyof(span, ty) {
+                        if let Ok(()) = self.assign_with_opts(
+                            &mut Default::default(),
+                            &index_type,
+                            &prop.ty(),
+                            AssignOpts {
+                                span,
+                                ..Default::default()
+                            },
+                        ) {
+                            return Ok(m.ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default())));
                         }
                     }
-                    _ => {}
                 }
 
                 warn!("Creating an indexed access type with mapped type as the object");
@@ -2729,22 +2727,19 @@ impl Analyzer<'_, '_> {
 
             Type::Ref(r) => {
                 if let Key::Computed(computed) = prop {
-                    match obj.normalize() {
-                        Type::Param(..) => {
-                            let index_type = computed.ty.clone();
+                    if let Type::Param(..) = obj.normalize() {
+                        let index_type = computed.ty.clone();
 
-                            warn!("Creating an indexed access type with a type parameter as the object");
+                        warn!("Creating an indexed access type with a type parameter as the object");
 
-                            // Return something like SimpleDBRecord<Flag>[Flag];
-                            return Ok(Type::IndexedAccessType(IndexedAccessType {
-                                span,
-                                readonly: false,
-                                obj_type: box obj,
-                                index_type,
-                                metadata: Default::default(),
-                            }));
-                        }
-                        _ => {}
+                        // Return something like SimpleDBRecord<Flag>[Flag];
+                        return Ok(Type::IndexedAccessType(IndexedAccessType {
+                            span,
+                            readonly: false,
+                            obj_type: box obj,
+                            index_type,
+                            metadata: Default::default(),
+                        }));
                     }
                 } else {
                     match &r.type_name {
@@ -2869,7 +2864,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 if let TypeOfMode::RValue = type_mode {
-                    return self.access_property(span, &ty, prop, type_mode, id_ctx, opts);
+                    return self.access_property(span, ty, prop, type_mode, id_ctx, opts);
                 }
             }
 
@@ -2878,7 +2873,7 @@ impl Analyzer<'_, '_> {
                     return Err(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
                 }
 
-                return self.access_property(span, &ty, prop, type_mode, id_ctx, opts);
+                return self.access_property(span, ty, prop, type_mode, id_ctx, opts);
             }
 
             _ => {}
@@ -2902,10 +2897,7 @@ impl Analyzer<'_, '_> {
 
         match ty.normalize() {
             Type::Union(ref union_ty) => {
-                let is_all_fn = union_ty.types.iter().all(|v| match v.normalize() {
-                    Type::Function(f) => true,
-                    _ => false,
-                });
+                let is_all_fn = union_ty.types.iter().all(|v| matches!(v.normalize(), Type::Function(f)));
                 if is_all_fn {
                     // We should return typeof function name
                     return Type::Query(QueryType {
@@ -2914,9 +2906,9 @@ impl Analyzer<'_, '_> {
                         metadata: Default::default(),
                     });
                 }
-                return ty;
+                ty
             }
-            _ => return ty,
+            _ => ty,
         }
     }
 
