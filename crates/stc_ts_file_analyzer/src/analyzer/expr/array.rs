@@ -475,7 +475,7 @@ impl Analyzer<'_, '_> {
             .context("tried to get element of iterator as a fallback logic for async iterator")
             .convert_err(|err| match err {
                 ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } => {
-                    ErrorKind::MustHaveSymbolAsyncIteratorThatReturnsIterator { span }.into()
+                    ErrorKind::MustHaveSymbolAsyncIteratorThatReturnsIterator { span }
                 }
                 _ => err,
             })?;
@@ -646,7 +646,7 @@ impl Analyzer<'_, '_> {
                         .collect::<Result<_, _>>()
                         .convert_err(|err| match err {
                             ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } => {
-                                ErrorKind::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { span }.into()
+                                ErrorKind::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { span }
                             }
                             _ => err,
                         })?;
@@ -702,7 +702,7 @@ impl Analyzer<'_, '_> {
             .convert_err(|err| match err {
                 ErrorKind::NoCallablePropertyWithName { span, .. }
                 | ErrorKind::NoSuchPropertyInClass { span, .. }
-                | ErrorKind::NoSuchProperty { span, .. } => ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span }.into(),
+                | ErrorKind::NoSuchProperty { span, .. } => ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span },
                 _ => err,
             })
             .map(Cow::Owned)
@@ -837,7 +837,7 @@ impl Analyzer<'_, '_> {
                 Default::default(),
             )
             .convert_err(|err| match err {
-                ErrorKind::NoCallablePropertyWithName { span, .. } => ErrorKind::NoMethodNamedNext { span }.into(),
+                ErrorKind::NoCallablePropertyWithName { span, .. } => ErrorKind::NoMethodNamedNext { span },
                 _ => err,
             })
             .context("tried calling `next()` to get element type of iterator")?;

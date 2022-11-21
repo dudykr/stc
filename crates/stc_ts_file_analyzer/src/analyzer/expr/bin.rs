@@ -1067,7 +1067,7 @@ impl Analyzer<'_, '_> {
                         if let TypeElement::Constructor(c) = m {
                             if let Some(ret_ty) = &c.ret_ty {
                                 return self
-                                    .narrow_with_instanceof(span, Cow::Borrowed(&ret_ty), &orig_ty)
+                                    .narrow_with_instanceof(span, Cow::Borrowed(ret_ty), &orig_ty)
                                     .context("tried to narrow consturctor return type");
                             }
                         }
@@ -1123,15 +1123,12 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match ty.normalize() {
-            Type::ClassDef(def) => {
-                return Ok(Type::Class(Class {
-                    span,
-                    def: box def.clone(),
-                    metadata: Default::default(),
-                }))
-            }
-            _ => {}
+        if let Type::ClassDef(def) = ty.normalize() {
+            return Ok(Type::Class(Class {
+                span,
+                def: box def.clone(),
+                metadata: Default::default(),
+            }));
         }
         Ok(ty.into_owned())
     }
@@ -1163,8 +1160,8 @@ impl Analyzer<'_, '_> {
                             (TypeElement::Index(lm), TypeElement::Index(rm)) if lm.params.type_eq(&rm.params) => {
                                 if let Some(lt) = &lm.type_ann {
                                     if let Some(rt) = &rm.type_ann {
-                                        if self.assign(span, &mut Default::default(), &lt, &rt).is_ok()
-                                            || self.assign(span, &mut Default::default(), &rt, &lt).is_ok()
+                                        if self.assign(span, &mut Default::default(), lt, rt).is_ok()
+                                            || self.assign(span, &mut Default::default(), rt, lt).is_ok()
                                         {
                                             continue;
                                         }
@@ -1307,7 +1304,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if self.has_overlap(span, &l, &r, Default::default())? {
+        if self.has_overlap(span, l, r, Default::default())? {
             return Ok(());
         }
 
@@ -1344,8 +1341,8 @@ impl Analyzer<'_, '_> {
                         let ret_ty_res = match (lm.ret_ty.as_deref(), rm.ret_ty.as_deref()) {
                             (Some(lt), Some(rt)) => self.assign_with_opts(
                                 &mut Default::default(),
-                                &lt,
-                                &rt,
+                                lt,
+                                rt,
                                 AssignOpts {
                                     span,
                                     allow_unknown_rhs: Some(true),

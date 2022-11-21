@@ -156,6 +156,7 @@ impl Scope<'_> {
     }
 
     /// If `filter` returns [Some], this method returns it.
+    #[allow(unused)]
     pub fn matches_kind<F>(&self, mut filter: F) -> Option<bool>
     where
         F: FnMut(ScopeKind) -> Option<bool>,
