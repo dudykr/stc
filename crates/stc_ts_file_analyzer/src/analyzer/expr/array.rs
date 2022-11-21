@@ -141,10 +141,7 @@ impl Analyzer<'_, '_> {
                     }
                     continue;
                 }
-                None => {
-                    let ty = Type::undefined(span, Default::default());
-                    ty
-                }
+                None => Type::undefined(span, Default::default()),
             };
             elements.push(TupleElement {
                 span,
@@ -227,11 +224,11 @@ impl Analyzer<'_, '_> {
             });
         }
 
-        return Ok(Type::Tuple(Tuple {
+        Ok(Type::Tuple(Tuple {
             span,
             elems: elements,
             metadata: Default::default(),
-        }));
+        }))
     }
 }
 

@@ -289,8 +289,8 @@ impl Analyzer<'_, '_> {
 }
 
 fn negate(ty: Type) -> Type {
-    match ty {
-        Type::Lit(LitType { ref lit, span, metadata }) => match *lit {
+    if let Type::Lit(LitType { ref lit, span, metadata }) = ty {
+        match *lit {
             RTsLit::Bool(ref v) => {
                 return Type::Lit(LitType {
                     lit: RTsLit::Bool(RBool {
@@ -342,9 +342,7 @@ fn negate(ty: Type) -> Type {
                     metadata,
                 });
             }
-        },
-
-        _ => {}
+        }
     }
 
     KeywordType {
