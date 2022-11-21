@@ -1929,17 +1929,14 @@ impl Analyzer<'_, '_> {
             }) => {
                 {
                     // Check for `T extends { a: { x: any } }`
-                    match constraint {
-                        Some(constraint) => {
-                            let ctx = Ctx {
-                                ignore_errors: true,
-                                ..self.ctx
-                            };
-                            if let Ok(ty) = self.with_ctx(ctx).access_property(span, &constraint, prop, type_mode, id_ctx, opts) {
-                                return Ok(ty);
-                            }
+                    if let Some(constraint) = constraint {
+                        let ctx = Ctx {
+                            ignore_errors: true,
+                            ..self.ctx
+                        };
+                        if let Ok(ty) = self.with_ctx(ctx).access_property(span, constraint, prop, type_mode, id_ctx, opts) {
+                            return Ok(ty);
                         }
-                        _ => {}
                     }
                 }
 
@@ -3380,12 +3377,10 @@ impl Analyzer<'_, '_> {
                         return true;
                     }
 
-                    match scope.kind() {
-                        ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn | ScopeKind::Constructor => {
-                            return true;
-                        }
-                        _ => false,
-                    }
+                    matches!(
+                        scope.kind(),
+                        ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn | ScopeKind::Constructor
+                    )
                 }) {
                     if !scope.is_root() {
                         match scope.kind() {
@@ -3875,20 +3870,19 @@ impl Analyzer<'_, '_> {
         } = *expr;
         let computed = matches!(prop, RSuperProp::Computed(_));
 
-        let mut obj_ty = match *obj {
-            RSuper { span, .. } => {
-                if self.scope.cannot_use_this_because_super_not_called() {
-                    self.storage.report(ErrorKind::SuperUsedBeforeCallingSuper { span }.into())
-                }
+        let RSuper { span, .. } = *obj;
+        let mut obj_ty = {
+            if self.scope.cannot_use_this_because_super_not_called() {
+                self.storage.report(ErrorKind::SuperUsedBeforeCallingSuper { span }.into())
+            }
 
-                self.report_error_for_super_reference_in_compute_keys(span, false);
+            self.report_error_for_super_reference_in_compute_keys(span, false);
 
-                if let Some(v) = self.scope.get_super_class() {
-                    v.clone()
-                } else {
-                    self.storage.report(ErrorKind::SuperInClassWithoutSuper { span }.into());
-                    Type::any(span, Default::default())
-                }
+            if let Some(v) = self.scope.get_super_class() {
+                v.clone()
+            } else {
+                self.storage.report(ErrorKind::SuperInClassWithoutSuper { span }.into());
+                Type::any(span, Default::default())
             }
         };
         obj_ty.make_clone_cheap();

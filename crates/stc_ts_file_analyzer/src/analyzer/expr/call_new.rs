@@ -2535,7 +2535,7 @@ impl Analyzer<'_, '_> {
             if arg_types.len() > expanded_param_types.len() {
                 for idx in expanded_param_types.len()..arg_types.len() {
                     let ty = &arg_types[idx].ty;
-                    print_type(&format!("Expanded param type at {}", idx), &self.cm, &ty);
+                    print_type(&format!("Expanded param type at {}", idx), &self.cm, ty);
                 }
                 new_args.extend(arg_types[expanded_param_types.len()..].iter().cloned());
             }

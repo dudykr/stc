@@ -38,11 +38,12 @@ impl Analyzer<'_, '_> {
 
             Ok(ty)
         } else {
-            return Err(ErrorKind::Unimplemented {
+            Err(ErrorKind::Unimplemented {
                 span,
-                msg: format!("Proper error reporting for using const assertion expression in left hand side of an assignment expression"),
+                msg: "Proper error reporting for using const assertion expression in left hand side of an assignment expression"
+                    .to_string(),
             }
-            .into());
+            .into())
         }
     }
 }

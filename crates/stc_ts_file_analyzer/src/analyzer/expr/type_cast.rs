@@ -117,55 +117,47 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        match orig.normalize() {
-            Type::Union(ref rt) => {
-                let castable = rt.types.iter().any(|v| casted.type_eq(v));
+        if let Type::Union(ref rt) = orig.normalize() {
+            let castable = rt.types.iter().any(|v| casted.type_eq(v));
 
-                if castable {
-                    return Ok(());
-                }
+            if castable {
+                return Ok(());
             }
-
-            _ => {}
         }
 
         match casted.normalize() {
             Type::Tuple(ref lt) => {
                 //
-                match orig.normalize() {
-                    Type::Tuple(ref rt) => {
-                        //
-                        if lt.elems.len() != rt.elems.len() {
-                            Err(ErrorKind::InvalidTupleCast {
-                                span,
-                                left: lt.span(),
-                                right: rt.span(),
-                            })?;
-                        }
+                if let Type::Tuple(ref rt) = orig.normalize() {
+                    //
+                    if lt.elems.len() != rt.elems.len() {
+                        Err(ErrorKind::InvalidTupleCast {
+                            span,
+                            left: lt.span(),
+                            right: rt.span(),
+                        })?;
+                    }
 
-                        let mut all_castable = true;
-                        //
-                        for (i, left_element) in lt.elems.iter().enumerate() {
-                            // if rt.types.len() >= i {
-                            //     all_castable = false;
-                            //     break;
-                            // }
-                            let right_element = &rt.elems[i];
+                    let mut all_castable = true;
+                    //
+                    for (i, left_element) in lt.elems.iter().enumerate() {
+                        // if rt.types.len() >= i {
+                        //     all_castable = false;
+                        //     break;
+                        // }
+                        let right_element = &rt.elems[i];
 
-                            let res = self.validate_type_cast_inner(span, &right_element.ty, &left_element.ty);
+                        let res = self.validate_type_cast_inner(span, &right_element.ty, &left_element.ty);
 
-                            if res.is_err() {
-                                all_castable = false;
-                                break;
-                            }
-                        }
-
-                        if all_castable {
-                            return Ok(());
+                        if res.is_err() {
+                            all_castable = false;
+                            break;
                         }
                     }
 
-                    _ => {}
+                    if all_castable {
+                        return Ok(());
+                    }
                 }
             }
 
