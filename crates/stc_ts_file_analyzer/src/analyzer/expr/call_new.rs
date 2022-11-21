@@ -1615,7 +1615,7 @@ impl Analyzer<'_, '_> {
             Type::TypeLit(ref l) => self.call_type_element(
                 span,
                 expr,
-                &ty,
+                ty,
                 None,
                 &l.members,
                 kind,
