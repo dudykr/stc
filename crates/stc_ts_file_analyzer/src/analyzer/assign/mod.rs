@@ -1104,10 +1104,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 let left_contains_object = li.types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
-                let rhs_requires_unknown_property_check = match rhs.normalize() {
-                    Type::Keyword(..) => false,
-                    _ => true,
-                };
+                let rhs_requires_unknown_property_check = !matches!(rhs.normalize(), Type::Keyword(..));
 
                 if !left_contains_object && rhs_requires_unknown_property_check && !opts.allow_unknown_rhs.unwrap_or_default() {
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
