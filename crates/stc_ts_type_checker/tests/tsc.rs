@@ -223,9 +223,8 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
             }
 
             // These are actually parser test.
-            match &*err.code {
-                "TS2369" => return None,
-                _ => {}
+            if let "TS2369" = &*err.code {
+                return None;
             }
         }
     }
@@ -384,115 +383,112 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
         let span = program.span();
         let cmts = comments.leading.get(&span.lo());
-        match cmts {
-            Some(ref cmts) => {
-                let directive_start = cmts.iter().position(|cmt| cmt.text.trim().starts_with('@')).unwrap_or(0);
-                let cmt_start_line = if directive_start == 0 {
-                    0
+        if let Some(ref cmts) = cmts {
+            let directive_start = cmts.iter().position(|cmt| cmt.text.trim().starts_with('@')).unwrap_or(0);
+            let cmt_start_line = if directive_start == 0 {
+                0
+            } else {
+                cmts.iter()
+                    .find(|cmt| cmt.text.trim().starts_with('@'))
+                    .map(|cmt| cm.lookup_char_pos(cmt.span.hi).line)
+                    .unwrap_or(0)
+            };
+
+            for cmt in cmts.iter().skip(directive_start) {
+                let s = cmt.text.trim();
+                if !s.starts_with('@') {
+                    if had_comment {
+                        err_shift_n = cm.lookup_char_pos(cmt.span.hi).line - 1 - cmt_start_line;
+                        break;
+                    }
+                    continue;
+                }
+                had_comment = true;
+                err_shift_n = cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line - cmt_start_line;
+                let s = &s[1..]; // '@'
+
+                if s.starts_with("target:") || s.starts_with("Target:") {
+                    let s = s["target:".len()..].trim().to_lowercase();
+                    targets = parse_targets(&s).into_iter().map(|v| (v, true)).collect();
+                } else if s.starts_with("strict:") {
+                    let strict = s["strict:".len()..].trim().parse().unwrap();
+                    rule.no_implicit_any = strict;
+                    rule.no_implicit_this = strict;
+                    rule.always_strict = strict;
+                    rule.strict_null_checks = strict;
+                    rule.strict_function_types = strict;
+                } else if s.starts_with("noLib:") {
+                    let v = s["noLib:".len()..].trim().parse().unwrap();
+                    if v {
+                        libs = vec![];
+                    }
+                } else if s.to_lowercase().starts_with("noimplicitany:") {
+                    let v = s["noImplicitAny:".len()..].trim().parse().unwrap();
+                    rule.no_implicit_any = v;
+                } else if s.starts_with("noImplicitReturns:") {
+                    let v = s["noImplicitReturns:".len()..].trim().parse().unwrap();
+                    rule.no_implicit_returns = v;
+                } else if s.starts_with("declaration") {
+                } else if s.starts_with("stripInternal:") {
+                    // TODO(kdy1): Handle
+                } else if s.starts_with("traceResolution") {
+                    // no-op
+                } else if s.starts_with("allowUnusedLabels:") {
+                    let v = s["allowUnusedLabels:".len()..].trim().parse().unwrap();
+                    rule.allow_unused_labels = v;
+                } else if s.starts_with("noEmitHelpers") {
+                    // TODO
+                } else if s.starts_with("downlevelIteration:") {
+                    // TODO
+                } else if s.starts_with("sourceMap:") || s.starts_with("sourcemap:") {
+                    // TODO
+                } else if s.starts_with("isolatedModules:") {
+                    // TODO
+                } else if s.starts_with("lib:") {
+                    let s = s["lib:".len()..].trim();
+                    let mut ls = HashSet::<_>::default();
+                    for v in s.split(',') {
+                        ls.extend(Lib::load(&v.to_lowercase().replace("es6", "es2015")))
+                    }
+                    libs = ls.into_iter().collect()
+                } else if s.starts_with("allowUnreachableCode:") {
+                    let v = s["allowUnreachableCode:".len()..].trim().parse().unwrap();
+                    rule.allow_unreachable_code = v;
+                } else if s.starts_with("strictNullChecks:") {
+                    let v = s["strictNullChecks:".len()..].trim().parse().unwrap();
+                    rule.strict_null_checks = v;
+                } else if s.starts_with("noImplicitThis:") {
+                    let v = s["noImplicitThis:".len()..].trim().parse().unwrap();
+                    rule.no_implicit_this = v;
+                } else if s.starts_with("skipDefaultLibCheck") {
+                    // TODO
+                } else if s.starts_with("suppressImplicitAnyIndexErrors:") {
+                    // TODO
+                    let v = s["suppressImplicitAnyIndexErrors:".len()..].trim().parse().unwrap();
+                    rule.suppress_implicit_any_index_errors = v;
+                } else if s.starts_with("module:") {
+                    let v = s["module:".len()..].trim().parse().unwrap();
+                    module_config = v;
+                } else if s.to_lowercase().starts_with("notypesandsymbols") {
+                    // Ignored as we don't generate them.
+                } else if s.to_lowercase().starts_with("usedefineforclassfields") {
+                    rule.use_define_property_for_class_fields = true;
+                } else if s.to_lowercase().starts_with("noemit")
+                    || s.to_lowercase().starts_with("jsx")
+                    || s.to_lowercase().starts_with("preserveconstenums")
+                {
+                    // Ignored as we only checks type.
+                } else if s.starts_with("strict") {
+                    let strict = true;
+                    rule.no_implicit_any = strict;
+                    rule.no_implicit_this = strict;
+                    rule.always_strict = strict;
+                    rule.strict_null_checks = strict;
+                    rule.strict_function_types = strict;
                 } else {
-                    cmts.iter()
-                        .find(|cmt| cmt.text.trim().starts_with('@'))
-                        .map(|cmt| cm.lookup_char_pos(cmt.span.hi).line)
-                        .unwrap_or(0)
-                };
-
-                for cmt in cmts.iter().skip(directive_start) {
-                    let s = cmt.text.trim();
-                    if !s.starts_with('@') {
-                        if had_comment {
-                            err_shift_n = cm.lookup_char_pos(cmt.span.hi).line - 1 - cmt_start_line;
-                            break;
-                        }
-                        continue;
-                    }
-                    had_comment = true;
-                    err_shift_n = cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line - cmt_start_line;
-                    let s = &s[1..]; // '@'
-
-                    if s.starts_with("target:") || s.starts_with("Target:") {
-                        let s = s["target:".len()..].trim().to_lowercase();
-                        targets = parse_targets(&s).into_iter().map(|v| (v, true)).collect();
-                    } else if s.starts_with("strict:") {
-                        let strict = s["strict:".len()..].trim().parse().unwrap();
-                        rule.no_implicit_any = strict;
-                        rule.no_implicit_this = strict;
-                        rule.always_strict = strict;
-                        rule.strict_null_checks = strict;
-                        rule.strict_function_types = strict;
-                    } else if s.starts_with("noLib:") {
-                        let v = s["noLib:".len()..].trim().parse().unwrap();
-                        if v {
-                            libs = vec![];
-                        }
-                    } else if s.to_lowercase().starts_with("noimplicitany:") {
-                        let v = s["noImplicitAny:".len()..].trim().parse().unwrap();
-                        rule.no_implicit_any = v;
-                    } else if s.starts_with("noImplicitReturns:") {
-                        let v = s["noImplicitReturns:".len()..].trim().parse().unwrap();
-                        rule.no_implicit_returns = v;
-                    } else if s.starts_with("declaration") {
-                    } else if s.starts_with("stripInternal:") {
-                        // TODO(kdy1): Handle
-                    } else if s.starts_with("traceResolution") {
-                        // no-op
-                    } else if s.starts_with("allowUnusedLabels:") {
-                        let v = s["allowUnusedLabels:".len()..].trim().parse().unwrap();
-                        rule.allow_unused_labels = v;
-                    } else if s.starts_with("noEmitHelpers") {
-                        // TODO
-                    } else if s.starts_with("downlevelIteration:") {
-                        // TODO
-                    } else if s.starts_with("sourceMap:") || s.starts_with("sourcemap:") {
-                        // TODO
-                    } else if s.starts_with("isolatedModules:") {
-                        // TODO
-                    } else if s.starts_with("lib:") {
-                        let s = s["lib:".len()..].trim();
-                        let mut ls = HashSet::<_>::default();
-                        for v in s.split(',') {
-                            ls.extend(Lib::load(&v.to_lowercase().replace("es6", "es2015")))
-                        }
-                        libs = ls.into_iter().collect()
-                    } else if s.starts_with("allowUnreachableCode:") {
-                        let v = s["allowUnreachableCode:".len()..].trim().parse().unwrap();
-                        rule.allow_unreachable_code = v;
-                    } else if s.starts_with("strictNullChecks:") {
-                        let v = s["strictNullChecks:".len()..].trim().parse().unwrap();
-                        rule.strict_null_checks = v;
-                    } else if s.starts_with("noImplicitThis:") {
-                        let v = s["noImplicitThis:".len()..].trim().parse().unwrap();
-                        rule.no_implicit_this = v;
-                    } else if s.starts_with("skipDefaultLibCheck") {
-                        // TODO
-                    } else if s.starts_with("suppressImplicitAnyIndexErrors:") {
-                        // TODO
-                        let v = s["suppressImplicitAnyIndexErrors:".len()..].trim().parse().unwrap();
-                        rule.suppress_implicit_any_index_errors = v;
-                    } else if s.starts_with("module:") {
-                        let v = s["module:".len()..].trim().parse().unwrap();
-                        module_config = v;
-                    } else if s.to_lowercase().starts_with("notypesandsymbols") {
-                        // Ignored as we don't generate them.
-                    } else if s.to_lowercase().starts_with("usedefineforclassfields") {
-                        rule.use_define_property_for_class_fields = true;
-                    } else if s.to_lowercase().starts_with("noemit")
-                        || s.to_lowercase().starts_with("jsx")
-                        || s.to_lowercase().starts_with("preserveconstenums")
-                    {
-                        // Ignored as we only checks type.
-                    } else if s.starts_with("strict") {
-                        let strict = true;
-                        rule.no_implicit_any = strict;
-                        rule.no_implicit_this = strict;
-                        rule.always_strict = strict;
-                        rule.strict_null_checks = strict;
-                        rule.strict_function_types = strict;
-                    } else {
-                        panic!("Comment is not handled: {}", s);
-                    }
+                    panic!("Comment is not handled: {}", s);
                 }
             }
-            None => {}
         }
 
         libs.sort();
