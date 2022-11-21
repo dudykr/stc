@@ -881,10 +881,12 @@ impl Analyzer<'_, '_> {
         }) {
             Some((Ok(name), (Some(t), Some(f)))) => {
                 // If typeof foo.bar is `string`, `foo` cannot be undefined nor null
-                for idx in 1..name.as_ids().len() {
-                    let sub = Name::from(&name.as_ids()[..idx]);
+                if t != TypeFacts::EQUndefined {
+                    for idx in 1..name.as_ids().len() {
+                        let sub = Name::from(&name.as_ids()[..idx]);
 
-                    self.cur_facts.true_facts.facts.insert(sub.clone(), TypeFacts::NEUndefinedOrNull);
+                        self.cur_facts.true_facts.facts.insert(sub.clone(), TypeFacts::NEUndefinedOrNull);
+                    }
                 }
 
                 // Add type facts
