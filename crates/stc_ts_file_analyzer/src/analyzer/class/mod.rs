@@ -13,7 +13,6 @@ use stc_ts_ast_rnode::{
 };
 use stc_ts_env::ModuleConfig;
 use stc_ts_errors::{DebugExt, ErrorKind, Errors};
-use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_simple_ast_validations::consturctor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
 use stc_ts_types::{
@@ -914,8 +913,8 @@ impl Analyzer<'_, '_> {
                     if last || !name.unwrap().eq_ignore_span(&m.key) {
                         let spans_for_error = take(&mut spans);
 
-                        let has_static = spans_for_error.iter().any(|(_, v)| *v == true);
-                        let has_instance = spans_for_error.iter().any(|(_, v)| *v == false);
+                        let has_static = spans_for_error.iter().any(|(_, v)| *v);
+                        let has_instance = spans_for_error.iter().any(|(_, v)| !*v);
 
                         if has_static && has_instance {
                             let report_error_for_static = !spans_for_error.first().unwrap().1;
@@ -1196,7 +1195,7 @@ impl Analyzer<'_, '_> {
     pub(super) fn validate_computed_prop_key(&mut self, span: Span, key: &RExpr) -> VResult<()> {
         if self.is_builtin {
             // We don't need to validate builtins
-            return;
+            return Ok(());
         }
 
         let mut errors = Errors::default();
@@ -1249,6 +1248,8 @@ impl Analyzer<'_, '_> {
                 errors: errors.into(),
             })?
         }
+
+        Ok(())
     }
 
     /// TODO(kdy1): Implement this.
