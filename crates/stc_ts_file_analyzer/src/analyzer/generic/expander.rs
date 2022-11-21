@@ -211,9 +211,8 @@ impl Analyzer<'_, '_> {
                         },
                     )
                     .unwrap();
-                match parent.normalize() {
-                    Type::Ref(..) => return None,
-                    _ => {}
+                if let Type::Ref(..) = parent.normalize() {
+                    return None;
                 }
                 parent.make_clone_cheap();
 

@@ -130,7 +130,7 @@ impl Analyzer<'_, '_> {
             args
         };
 
-        let skip = if params.len() == 0 {
+        let skip = if params.is_empty() {
             0
         } else {
             match &params[0].pat {
@@ -143,10 +143,7 @@ impl Analyzer<'_, '_> {
         };
 
         for (idx, p) in params.iter().skip(skip).enumerate() {
-            let is_rest = match &p.pat {
-                RPat::Rest(_) => true,
-                _ => false,
-            };
+            let is_rest = matches!(&p.pat, RPat::Rest(_));
 
             if !is_rest {
                 if let Some(arg) = args.get(idx) {
