@@ -1103,7 +1103,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let obj_str = dump_type_as_string(&self.cm, &obj);
+        let obj_str = dump_type_as_string(&self.cm, obj);
 
         // We use child scope to store type parameters.
         let mut res = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> VResult<_> {
@@ -1118,7 +1118,7 @@ impl Analyzer<'_, '_> {
             res = res.with_context(|| {
                 format!(
                     "tried to access property of an object ({}, id_ctx = {:?})\nProp={:?}",
-                    dump_type_as_string(&self.cm, &obj),
+                    dump_type_as_string(&self.cm, obj),
                     id_ctx,
                     prop
                 )
@@ -1217,7 +1217,7 @@ impl Analyzer<'_, '_> {
                         IdCtx::Var => {
                             let res = self
                                 .env
-                                .get_global_var(span, &sym)
+                                .get_global_var(span, sym)
                                 .context("tried to access a prperty of `globalThis`");
 
                             // TODO(kdy1): Apply correct rule
@@ -1513,24 +1513,21 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match obj.normalize() {
-            Type::This(..) => {
-                let scope = if self.ctx.in_computed_prop_name {
-                    self.scope.scope_of_computed_props()
-                } else {
-                    Some(&self.scope)
-                };
-                if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
-                    if this.is_this() {
-                        unreachable!("this() should not be `this`")
-                    }
-
-                    return self
-                        .access_property(span, &this, prop, type_mode, id_ctx, opts)
-                        .context("tried to access property of `this`");
+        if let Type::This(..) = obj.normalize() {
+            let scope = if self.ctx.in_computed_prop_name {
+                self.scope.scope_of_computed_props()
+            } else {
+                Some(&self.scope)
+            };
+            if let Some(this) = scope.and_then(|scope| scope.this().map(Cow::into_owned)) {
+                if this.is_this() {
+                    unreachable!("this() should not be `this`")
                 }
+
+                return self
+                    .access_property(span, &this, prop, type_mode, id_ctx, opts)
+                    .context("tried to access property of `this`");
             }
-            _ => {}
         }
 
         let ctx = Ctx {
@@ -2068,7 +2065,7 @@ impl Analyzer<'_, '_> {
                         })
                         | Type::Lit(LitType {
                             lit: RTsLit::Number(..), ..
-                        }) => return Ok(*elem_type.clone()),
+                        }) => return Ok(*elem_type),
 
                         _ => {}
                     }
@@ -2248,7 +2245,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Union(ty::Union { types, .. }) => {
-                debug_assert!(types.len() >= 1);
+                debug_assert!(!types.is_empty());
 
                 let mut tys = vec![];
                 let mut errors = Vec::with_capacity(types.len());
@@ -2349,32 +2346,26 @@ impl Analyzer<'_, '_> {
                         }
 
                         if (v as usize) + 1 >= elems.len() {
-                            match elems.last() {
-                                Some(elem) => {
-                                    match elem.ty.normalize() {
-                                        Type::Rest(rest_ty) => {
-                                            if let Ok(ty) = self.access_property(
-                                                span,
-                                                &rest_ty.ty,
-                                                &Key::Num(RNumber {
-                                                    span: n.span,
-                                                    value: (v + 1i64 - (elems.len() as i64)) as _,
-                                                    raw: None,
-                                                }),
-                                                type_mode,
-                                                id_ctx,
-                                                opts,
-                                            ) {
-                                                return Ok(ty);
-                                            }
-
-                                            // debug_assert!(rest_ty.ty.is_clone_cheap());
-                                            return Ok(*rest_ty.ty.clone());
-                                        }
-                                        _ => {}
+                            if let Some(elem) = elems.last() {
+                                if let Type::Rest(rest_ty) = elem.ty.normalize() {
+                                    if let Ok(ty) = self.access_property(
+                                        span,
+                                        &rest_ty.ty,
+                                        &Key::Num(RNumber {
+                                            span: n.span,
+                                            value: (v + 1i64 - (elems.len() as i64)) as _,
+                                            raw: None,
+                                        }),
+                                        type_mode,
+                                        id_ctx,
+                                        opts,
+                                    ) {
+                                        return Ok(ty);
                                     }
+
+                                    // debug_assert!(rest_ty.ty.is_clone_cheap());
+                                    return Ok(*rest_ty.ty.clone());
                                 }
-                                _ => {}
                             }
                         }
 

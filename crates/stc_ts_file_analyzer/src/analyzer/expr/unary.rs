@@ -324,7 +324,7 @@ fn negate(ty: Type) -> Type {
             RTsLit::Tpl(ref v) => {
                 return Type::Lit(LitType {
                     lit: RTsLit::Bool(RBool {
-                        value: !v.quasis.iter().next().as_ref().unwrap().raw.is_empty(),
+                        value: !v.quasis.first().as_ref().unwrap().raw.is_empty(),
                         span: v.span,
                     }),
                     span,
