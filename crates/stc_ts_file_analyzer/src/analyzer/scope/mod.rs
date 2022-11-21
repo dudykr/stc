@@ -2290,11 +2290,8 @@ impl Expander<'_, '_, '_> {
                             _ => return Type::Ref(r.clone()),
                         }
                     } else {
-                        match ty {
-                            Some(ty) => {
-                                return ty;
-                            }
-                            None => {}
+                        if let Some(ty) = ty {
+                            return ty;
                         }
                     }
                 }
@@ -2340,58 +2337,52 @@ impl Expander<'_, '_, '_> {
                             ..
                         })),
                     ..
-                }) if constraint.type_eq(&obj_type) && *name == index_type.name => {
+                }) if constraint.type_eq(obj_type) && *name == index_type.name => {
                     let unwrap_type = |ty: &Type| match ty {
                         Type::IndexedAccessType(IndexedAccessType {
                             obj_type,
                             index_type: box Type::Param(index_type),
                             ..
-                        }) if index_type.name == *name => {
-                            return (true, *obj_type.clone());
-                        }
+                        }) if index_type.name == *name => (true, *obj_type.clone()),
                         _ => (false, ty.clone()),
                     };
 
-                    match &**obj_type {
-                        Type::Tuple(obj_type) => {
-                            let elements = obj_type
-                                .elems
-                                .iter()
-                                .cloned()
-                                .enumerate()
-                                .map(|(idx, mut element)| {
-                                    if let Some(v) = self.analyzer.extends(span, &element.ty, &extends_type, Default::default()) {
-                                        let ty = if v { true_type } else { false_type };
+                    if let Type::Tuple(obj_type) = obj_type.normalize() {
+                        let elements = obj_type
+                            .elems
+                            .iter()
+                            .cloned()
+                            .enumerate()
+                            .map(|(idx, mut element)| {
+                                if let Some(v) = self.analyzer.extends(span, &element.ty, &extends_type, Default::default()) {
+                                    let ty = if v { true_type } else { false_type };
 
-                                        let (unwrapped, ty) = unwrap_type(&ty);
-                                        let mut ty = ty;
-                                        if unwrapped {
-                                            match ty.normalize() {
-                                                Type::Tuple(Tuple { elems, .. }) => ty = *elems[idx].ty.clone(),
-                                                _ => {}
-                                            };
-                                        }
-                                        let type_params = self
-                                            .analyzer
-                                            .infer_ts_infer_types(span, &extends_type, &element.ty, Default::default())
-                                            .ok();
-                                        if let Some(type_params) = type_params {
-                                            ty = self.analyzer.expand_type_params(&type_params, ty, Default::default()).unwrap();
-                                        }
-
-                                        element.ty = box ty;
+                                    let (unwrapped, ty) = unwrap_type(ty);
+                                    let mut ty = ty;
+                                    if unwrapped {
+                                        if let Type::Tuple(Tuple { elems, .. }) = ty.normalize() {
+                                            ty = *elems[idx].ty.clone()
+                                        };
+                                    }
+                                    let type_params = self
+                                        .analyzer
+                                        .infer_ts_infer_types(span, extends_type, &element.ty, Default::default())
+                                        .ok();
+                                    if let Some(type_params) = type_params {
+                                        ty = self.analyzer.expand_type_params(&type_params, ty, Default::default()).unwrap();
                                     }
 
-                                    element
-                                })
-                                .collect();
+                                    element.ty = box ty;
+                                }
 
-                            return Type::Tuple(Tuple {
-                                elems: elements,
-                                ..obj_type.clone()
-                            });
-                        }
-                        _ => {}
+                                element
+                            })
+                            .collect();
+
+                        return Type::Tuple(Tuple {
+                            elems: elements,
+                            ..obj_type.clone()
+                        });
                     }
 
                     if let Some(v) = self.analyzer.extends(span, &obj_type, &extends_type, Default::default()) {
