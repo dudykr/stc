@@ -768,13 +768,6 @@ impl Analyzer<'_, '_> {
             RClassMember::Method(method) => {
                 let v = method.validate_with(self)?;
 
-                if let Some(Accessibility::Private) = method.accessibility {
-                    let computed = match method.key {
-                        RPropName::Computed(_) => true,
-                        _ => false,
-                    };
-                }
-
                 Some(v)
             }
             RClassMember::ClassProp(v) => Some(ClassMember::Property(v.validate_with(self)?)),
@@ -869,7 +862,7 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
 
-                if l.0.eq_ignore_span(&r.0) && l.1 == r.1 {
+                if l.0.eq_ignore_span(r.0) && l.1 == r.1 {
                     if is_private_props.contains(&i) && is_private_props.contains(&j) {
                         continue;
                     }
@@ -975,7 +968,7 @@ impl Analyzer<'_, '_> {
         fn is_prop_name_eq_include_computed(l: &RPropName, r: &RPropName) -> bool {
             if let RPropName::Computed(l) = l {
                 if let RPropName::Computed(r) = r {
-                    if l.eq_ignore_span(&r) {
+                    if l.eq_ignore_span(r) {
                         // TODO(kdy1): Return true only if l and r are both
                         // symbol type
                         return true;
