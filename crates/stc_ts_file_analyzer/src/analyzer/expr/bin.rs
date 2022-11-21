@@ -938,7 +938,7 @@ impl Analyzer<'_, '_> {
             right: (r, rt),
         };
 
-        match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
+        if let Some((names, r_ty)) = c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
             (
                 RExpr::Ident(RIdent {
                     sym: js_word!("undefined"),
@@ -957,14 +957,11 @@ impl Analyzer<'_, '_> {
                 Some((names, r_ty))
             }
         }) {
-            Some((names, r_ty)) => {
-                if !self.can_be_undefined(span, &r_ty)? {
-                    for name in names {
-                        self.cur_facts.false_facts.facts.insert(name.clone(), TypeFacts::NEUndefined);
-                    }
+            if !self.can_be_undefined(span, r_ty)? {
+                for name in names {
+                    self.cur_facts.false_facts.facts.insert(name.clone(), TypeFacts::NEUndefined);
                 }
             }
-            _ => {}
         }
 
         // TODO
@@ -991,8 +988,8 @@ impl Analyzer<'_, '_> {
 
         self.has_overlap(
             span,
-            &disc_ty,
-            &case_ty,
+            disc_ty,
+            case_ty,
             CastableOpts {
                 allow_assignment_to_param_constraint: true,
                 ..Default::default()
@@ -1038,25 +1035,21 @@ impl Analyzer<'_, '_> {
 
         let _stack = stack::track(span)?;
 
-        match orig_ty.normalize() {
-            Type::Union(orig) => {
-                let mut new_types = orig
-                    .types
-                    .iter()
-                    .map(|orig_ty| self.narrow_with_instanceof(span, ty.clone(), orig_ty))
-                    .collect::<Result<Vec<_>, _>>()?;
+        if let Type::Union(orig) = orig_ty.normalize() {
+            let mut new_types = orig
+                .types
+                .iter()
+                .map(|orig_ty| self.narrow_with_instanceof(span, ty.clone(), orig_ty))
+                .collect::<Result<Vec<_>, _>>()?;
 
-                new_types.retain(|ty| !ty.is_never());
+            new_types.retain(|ty| !ty.is_never());
 
-                return Ok(Type::Union(Union {
-                    span: orig.span,
-                    types: new_types,
-                    metadata: orig.metadata,
-                })
-                .fixed());
-            }
-
-            _ => {}
+            return Ok(Type::Union(Union {
+                span: orig.span,
+                types: new_types,
+                metadata: orig.metadata,
+            })
+            .fixed());
         }
 
         if orig_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
@@ -1084,15 +1077,12 @@ impl Analyzer<'_, '_> {
                 // Find constructor signature
                 if let Some(ty) = self.convert_type_to_type_lit(span, Cow::Borrowed(&ty))? {
                     for m in &ty.members {
-                        match m {
-                            TypeElement::Constructor(c) => {
-                                if let Some(ret_ty) = &c.ret_ty {
-                                    return self
-                                        .narrow_with_instanceof(span, Cow::Borrowed(&ret_ty), &orig_ty)
-                                        .context("tried to narrow consturctor return type");
-                                }
+                        if let TypeElement::Constructor(c) = m {
+                            if let Some(ret_ty) = &c.ret_ty {
+                                return self
+                                    .narrow_with_instanceof(span, Cow::Borrowed(&ret_ty), &orig_ty)
+                                    .context("tried to narrow consturctor return type");
                             }
-                            _ => {}
                         }
                     }
                 }
@@ -1110,21 +1100,17 @@ impl Analyzer<'_, '_> {
             },
         ) {
             if v {
-                match orig_ty.normalize() {
-                    Type::ClassDef(def) => {
-                        return Ok(Type::Class(Class {
-                            span,
-                            def: box def.clone(),
-                            metadata: Default::default(),
-                        }))
-                    }
-                    _ => {}
+                if let Type::ClassDef(def) = orig_ty.normalize() {
+                    return Ok(Type::Class(Class {
+                        span,
+                        def: box def.clone(),
+                        metadata: Default::default(),
+                    }));
                 }
                 return Ok(orig_ty.into_owned());
             } else {
-                match (orig_ty.normalize(), ty.normalize()) {
-                    (Type::Interface(..), Type::Interface(..)) => return Ok(ty.into_owned()),
-                    _ => {}
+                if let (Type::Interface(..), Type::Interface(..)) = (orig_ty.normalize(), ty.normalize()) {
+                    return Ok(ty.into_owned());
                 }
 
                 if !self
