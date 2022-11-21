@@ -421,11 +421,10 @@ impl Fold<Type> for Simplifier<'_> {
                 let mut types = obj
                     .types
                     .into_iter()
-                    .map(|ty| match ty.foldable() {
+                    .flat_map(|ty| match ty.foldable() {
                         Type::TypeLit(ty) => ty.members,
                         _ => unreachable!(),
                     })
-                    .flatten()
                     .filter_map(|element| {
                         let span = element.span();
 
@@ -609,14 +608,14 @@ impl Fold<Type> for Simplifier<'_> {
                 obj_type: box Type::TypeLit(TypeLit { members, .. }),
                 index_type: box Type::Lit(LitType { lit: RTsLit::Str(v), .. }),
                 ..
-            }) if members.iter().any(|element| match element.key().as_deref() {
+            }) if members.iter().any(|element| match element.key() {
                 Some(key) => *key == v.value,
                 _ => false,
             }) =>
             {
                 let el = members
                     .into_iter()
-                    .find(|element| match element.key().as_deref() {
+                    .find(|element| match element.key() {
                         Some(key) => *key == v.value,
                         _ => false,
                     })
@@ -689,7 +688,7 @@ impl Fold<Type> for Simplifier<'_> {
                     }),
                 index_type: box Type::Union(keys),
                 ..
-            }) if keys.types.iter().all(|ty| is_str_lit_or_union(&ty)) => {
+            }) if keys.types.iter().all(|ty| is_str_lit_or_union(ty)) => {
                 let mut new_types = keys
                     .types
                     .into_iter()
@@ -715,7 +714,7 @@ impl Fold<Type> for Simplifier<'_> {
                                     return *value.clone();
                                 }
 
-                                return Type::any(p.span, Default::default());
+                                Type::any(p.span, Default::default())
                             }
                             ClassMember::Constructor(_) => unreachable!(),
                             ClassMember::IndexSignature(_) => unreachable!(),
