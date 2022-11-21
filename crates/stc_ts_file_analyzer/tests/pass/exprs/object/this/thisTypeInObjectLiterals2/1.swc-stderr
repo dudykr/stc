@@ -6,7 +6,12 @@
     `----
 
 Error: 
-  > Point
+  > {
+  |     x: number;
+  |     y: number;
+  |     z?: number;
+  |     moveBy(dx: number, dy: number, dz?: number): void;
+  | }
 
   x Type
     ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:14:9]
@@ -42,7 +47,12 @@ Error:
     `----
 
 Error: 
-  > Point
+  > {
+  |     x: number;
+  |     y: number;
+  |     z?: number;
+  |     moveBy(dx: number, dy: number, dz?: number): void;
+  | }
 
   x Type
     ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:15:9]
@@ -78,7 +88,12 @@ Error:
     `----
 
 Error: 
-  > Point
+  > {
+  |     x: number;
+  |     y: number;
+  |     z?: number;
+  |     moveBy(dx: number, dy: number, dz?: number): void;
+  | }
 
   x Type
     ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:16:9]
@@ -114,7 +129,12 @@ Error:
     `----
 
 Error: 
-  > Point
+  > {
+  |     x: number;
+  |     y: number;
+  |     z?: number;
+  |     moveBy(dx: number, dy: number, dz?: number): void;
+  | }
 
   x Type
     ,-[$DIR/tests/pass/exprs/object/this/thisTypeInObjectLiterals2/1.ts:17:13]
