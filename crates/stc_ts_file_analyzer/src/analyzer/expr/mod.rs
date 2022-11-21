@@ -3603,7 +3603,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match &*n {
+        match n {
             RExpr::Ident(ref i) => {
                 if i.sym == js_word!("Array") {
                     if let Some(type_args) = type_args {

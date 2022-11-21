@@ -121,7 +121,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Ok(ty.or_else(|| value_ty).map(|ty| match ty {
+        Ok(ty.or(value_ty).map(|ty| match ty {
             Type::Symbol(..) if readonly && is_static => Type::Operator(Operator {
                 span: ty.span(),
                 op: TsTypeOperatorOp::Unique,
