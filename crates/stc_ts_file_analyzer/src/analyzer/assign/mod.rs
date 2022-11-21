@@ -1705,10 +1705,11 @@ impl Analyzer<'_, '_> {
                 }
 
                 match kind {
-                    TsKeywordTypeKind::TsStringKeyword => match *rhs {
-                        Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => return Ok(()),
-                        _ => {}
-                    },
+                    TsKeywordTypeKind::TsStringKeyword => {
+                        if let Type::Lit(LitType { lit: RTsLit::Str(..), .. }) = *rhs {
+                            return Ok(());
+                        }
+                    }
 
                     TsKeywordTypeKind::TsNumberKeyword => match *rhs {
                         Type::Lit(LitType {
@@ -1720,14 +1721,11 @@ impl Analyzer<'_, '_> {
                             // number.
                             if let Some(types) = self.find_type(&v.enum_name)? {
                                 for ty in types {
-                                    match *ty.normalize() {
-                                        Type::Enum(ref e) => {
-                                            let is_num = !e.has_str;
-                                            if is_num {
-                                                return Ok(());
-                                            }
+                                    if let Type::Enum(ref e) = *ty.normalize() {
+                                        let is_num = !e.has_str;
+                                        if is_num {
+                                            return Ok(());
                                         }
-                                        _ => {}
                                     }
                                 }
                             }
@@ -1737,10 +1735,11 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     },
 
-                    TsKeywordTypeKind::TsBooleanKeyword => match *rhs {
-                        Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => return Ok(()),
-                        _ => {}
-                    },
+                    TsKeywordTypeKind::TsBooleanKeyword => {
+                        if let Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) = *rhs {
+                            return Ok(());
+                        }
+                    }
 
                     TsKeywordTypeKind::TsVoidKeyword | TsKeywordTypeKind::TsUndefinedKeyword => {
                         //
