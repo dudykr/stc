@@ -1093,7 +1093,7 @@ impl Analyzer<'_, '_> {
                     }) = constraint.normalize()
                     {
                         //
-                        if constraint_ty.as_ref().type_eq(&*obj) {
+                        if constraint_ty.as_ref().type_eq(obj) {
                             return Ok(Type::any(DUMMY_SP, Default::default()));
                         }
                     }
@@ -1240,7 +1240,7 @@ impl Analyzer<'_, '_> {
                         IdCtx::Type => {
                             return self
                                 .env
-                                .get_global_type(span, &sym)
+                                .get_global_type(span, sym)
                                 .context("tried to access a prperty of `globalThis`")
                                 .convert_err(|err| match err {
                                     ErrorKind::NoSuchType { span, name } => ErrorKind::NoSuchProperty {
@@ -2621,10 +2621,7 @@ impl Analyzer<'_, '_> {
                 // Exclude accesses to type params.
                 if new.len() >= 2 {
                     new.retain(|prop_ty| match prop_ty.normalize() {
-                        Type::IndexedAccessType(iat) => match iat.obj_type.normalize() {
-                            Type::Param(..) => false,
-                            _ => true,
-                        },
+                        Type::IndexedAccessType(iat) => !matches!(iat.obj_type.normalize(), Type::Param(..)),
                         _ => true,
                     });
                 }

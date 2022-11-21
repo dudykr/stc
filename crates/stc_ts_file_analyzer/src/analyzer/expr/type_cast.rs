@@ -176,18 +176,6 @@ impl Analyzer<'_, '_> {
 
         // self.assign(&casted_ty, &orig_ty, span)?;
 
-        match casted.normalize() {
-            Type::Tuple(ref rt) => {
-                //
-                match orig.normalize() {
-                    Type::Tuple(ref lt) => {}
-                    _ => {}
-                }
-            }
-
-            _ => {}
-        }
-
         // interface P {}
         // interface C extends P {}
         //
