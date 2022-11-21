@@ -574,19 +574,15 @@ impl VisitMut<Type> for IndexedAccessTypeReplacer<'_> {
         // TODO(kdy1): PERF
         ty.normalize_mut();
 
-        match ty {
-            Type::IndexedAccessType(n) => {
-                if (&*n.obj_type).type_eq(self.obj)
-                    && match n.index_type.normalize() {
-                        Type::Param(index) => *self.key == index.name,
-                        _ => false,
-                    }
-                {
-                    *ty = self.obj.clone();
-                    return;
+        if let Type::IndexedAccessType(n) = ty {
+            if (*n.obj_type).type_eq(self.obj)
+                && match n.index_type.normalize() {
+                    Type::Param(index) => *self.key == index.name,
+                    _ => false,
                 }
+            {
+                *ty = self.obj.clone();
             }
-            _ => {}
         }
     }
 }

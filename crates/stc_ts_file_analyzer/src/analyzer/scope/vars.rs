@@ -506,7 +506,7 @@ impl Analyzer<'_, '_> {
                                 self.with_ctx(ctx)
                                     .access_property(
                                         span,
-                                        &ty,
+                                        ty,
                                         &key,
                                         TypeOfMode::RValue,
                                         IdCtx::Var,
@@ -595,7 +595,7 @@ impl Analyzer<'_, '_> {
                                                         id: prop.key.clone(),
                                                         type_ann: None,
                                                     }),
-                                                    &prop_ty,
+                                                    prop_ty,
                                                 )
                                                 .context("tried to assign default values")
                                                 .report(&mut self.storage);
@@ -673,7 +673,7 @@ impl Analyzer<'_, '_> {
                 let actual = actual.map(|ty| self.ensure_iterable(span, ty)).transpose()?;
                 let default = default.map(|ty| self.ensure_iterable(span, ty)).transpose()?;
 
-                return self.add_vars(&pat.arg, ty, actual, default, opts);
+                self.add_vars(&pat.arg, ty, actual, default, opts)
             }
 
             _ => {
@@ -707,7 +707,7 @@ impl Analyzer<'_, '_> {
                     'outer: for m in &lit.members {
                         if let Some(key) = m.key() {
                             for prop in keys {
-                                if self.key_matches(span, &key, prop, false) {
+                                if self.key_matches(span, key, prop, false) {
                                     continue 'outer;
                                 }
                             }
