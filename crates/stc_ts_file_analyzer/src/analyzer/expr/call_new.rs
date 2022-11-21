@@ -804,23 +804,20 @@ impl Analyzer<'_, '_> {
             }
 
             // Use proper error.
-            match obj_type.normalize() {
-                Type::Class(..) => {
-                    return Err(match kind {
-                        ExtractKind::Call => ErrorKind::NoCallablePropertyWithName {
-                            span,
-                            obj: box obj_type.clone(),
-                            key: box prop.clone(),
-                        }
-                        .into(),
-                        ExtractKind::New => ErrorKind::NoSuchConstructor {
-                            span,
-                            key: box prop.clone(),
-                        }
-                        .into(),
-                    });
-                }
-                _ => {}
+            if let Type::Class(..) = obj_type.normalize() {
+                return Err(match kind {
+                    ExtractKind::Call => ErrorKind::NoCallablePropertyWithName {
+                        span,
+                        obj: box obj_type.clone(),
+                        key: box prop.clone(),
+                    }
+                    .into(),
+                    ExtractKind::New => ErrorKind::NoSuchConstructor {
+                        span,
+                        key: box prop.clone(),
+                    }
+                    .into(),
+                });
             }
 
             let ctx = Ctx {

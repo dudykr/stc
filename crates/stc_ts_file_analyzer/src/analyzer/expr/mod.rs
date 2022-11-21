@@ -3945,8 +3945,6 @@ impl Analyzer<'_, '_> {
         } = *expr;
         let computed = matches!(prop, RSuperProp::Computed(_));
 
-        let mut errors = Errors::default();
-
         let mut is_obj_opt_chain = false;
         let mut should_be_optional = false;
         let mut obj_ty = match *obj {
@@ -3966,8 +3964,6 @@ impl Analyzer<'_, '_> {
             }
         };
         obj_ty.make_clone_cheap();
-
-        self.storage.report_all(errors);
 
         let mut prop = self
             .validate_key(
