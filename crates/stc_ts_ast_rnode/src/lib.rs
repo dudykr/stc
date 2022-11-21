@@ -20,13 +20,13 @@ impl RIdent {
 
 impl RExpr {
     pub fn is_new_target(&self) -> bool {
-        match self {
+        matches!(
+            self,
             RExpr::MetaProp(RMetaPropExpr {
                 kind: MetaPropKind::NewTarget,
                 ..
-            }) => true,
-            _ => false,
-        }
+            })
+        )
     }
 }
 
