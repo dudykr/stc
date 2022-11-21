@@ -1295,7 +1295,7 @@ impl Analyzer<'_, '_> {
                                     {
                                         if let Some(l_index_ret_ty) = &li.type_ann {
                                             if let Some(r_prop_ty) = &r_prop.type_ann {
-                                                self.assign_with_opts(data, &l_index_ret_ty, &&r_prop_ty, opts)
+                                                self.assign_with_opts(data, l_index_ret_ty, r_prop_ty, opts)
                                                     .context("tried to assign a type of property to thr type of an index signature")?;
                                             }
                                         }
