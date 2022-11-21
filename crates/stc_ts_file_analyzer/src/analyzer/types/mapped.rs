@@ -434,7 +434,7 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, &ty) })
+                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, ty) })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 let mut result: Vec<PropertyName> = vec![];
@@ -457,18 +457,18 @@ impl Analyzer<'_, '_> {
             }
             Type::Tuple(..) | Type::Array(..) => return Ok(None),
 
-            Type::Mapped(m) => match m.type_param.constraint.as_deref().map(|ty| ty.normalize()) {
-                Some(Type::Operator(Operator {
+            Type::Mapped(m) => {
+                if let Some(Type::Operator(Operator {
                     op: TsTypeOperatorOp::KeyOf,
                     ty,
                     ..
-                })) => {
+                })) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                {
                     return self
                         .get_property_names_for_mapped_type(span, ty)
-                        .context("tried to get property names by using `keyof` constraint")
+                        .context("tried to get property names by using `keyof` constraint");
                 }
-                _ => {}
-            },
+            }
 
             _ => {}
         }
@@ -531,7 +531,7 @@ impl Visit<Conditional> for IndexedAccessTypeFinder<'_> {
 
 impl Visit<IndexedAccessType> for IndexedAccessTypeFinder<'_> {
     fn visit(&mut self, n: &IndexedAccessType) {
-        if (&*n.obj_type).type_eq(self.obj)
+        if (*n.obj_type).type_eq(self.obj)
             && match n.index_type.normalize() {
                 Type::Param(index) => *self.key == index.name,
                 _ => false,
