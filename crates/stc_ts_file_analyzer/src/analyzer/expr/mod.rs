@@ -436,11 +436,11 @@ impl Analyzer<'_, '_> {
                             match &err {
                                 ErrorKind::CannotAssignToNonVariable { ty, .. } | ErrorKind::NotVariable { ty: Some(ty), .. } => {
                                     match ty.normalize() {
-                                        Type::Module(..) => ErrorKind::CannotAssignToNamespace { span }.into(),
-                                        Type::Namespace(..) => ErrorKind::CannotAssignToModule { span }.into(),
-                                        Type::ClassDef(..) => ErrorKind::CannotAssignToClass { span }.into(),
-                                        Type::Enum(..) => ErrorKind::CannotAssignToEnum { span }.into(),
-                                        Type::Function(..) => ErrorKind::CannotAssignToFunction { span }.into(),
+                                        Type::Module(..) => ErrorKind::CannotAssignToNamespace { span },
+                                        Type::Namespace(..) => ErrorKind::CannotAssignToModule { span },
+                                        Type::ClassDef(..) => ErrorKind::CannotAssignToClass { span },
+                                        Type::Enum(..) => ErrorKind::CannotAssignToEnum { span },
+                                        Type::Function(..) => ErrorKind::CannotAssignToFunction { span },
                                         _ => err,
                                     }
                                 }
