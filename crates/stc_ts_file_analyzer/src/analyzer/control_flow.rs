@@ -1136,6 +1136,7 @@ impl Analyzer<'_, '_> {
             Cow::Borrowed(src),
             NormalizeTypeOpts {
                 preserve_union: true,
+                preserve_global_this: true,
                 ..Default::default()
             },
         )?;
