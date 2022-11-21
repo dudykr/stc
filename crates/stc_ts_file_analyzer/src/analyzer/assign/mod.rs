@@ -1798,12 +1798,9 @@ impl Analyzer<'_, '_> {
                             )?;
                             return self
                                 .assign_inner(data, &left, rhs, opts)
-                                .convert_err(|err| {
-                                    ErrorKind::SimpleAssignFailed {
-                                        span: err.span(),
-                                        cause: Some(box err.into()),
-                                    }
-                                    .into()
+                                .convert_err(|err| ErrorKind::SimpleAssignFailed {
+                                    span: err.span(),
+                                    cause: Some(box err.into()),
                                 })
                                 .context("tried to assign a type literal to an expanded keyword");
                         }
@@ -1849,16 +1846,15 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Optimize handling of unknown rhs
 
                 if name == "Function" {
-                    match rhs.normalize() {
-                        Type::Function(..) => return Ok(()),
-                        _ => {}
+                    if let Type::Function(..) = rhs.normalize() {
+                        return Ok(());
                     }
                 }
 
                 self.assign_to_type_elements(
                     data,
                     span,
-                    &body,
+                    body,
                     rhs,
                     Default::default(),
                     AssignOpts {
