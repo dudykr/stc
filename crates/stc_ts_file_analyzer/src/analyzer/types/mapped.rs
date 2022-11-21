@@ -92,7 +92,7 @@ impl Analyzer<'_, '_> {
                                 PropertyName::Key(key) => {
                                     let ty = match &m.ty {
                                         Some(mapped_ty) => self
-                                            .expand_key_in_mapped(m.type_param.name.clone(), &mapped_ty, &key)
+                                            .expand_key_in_mapped(m.type_param.name.clone(), mapped_ty, &key)
                                             .map(Box::new)
                                             .map(Some)?,
                                         None => None,
@@ -196,7 +196,7 @@ impl Analyzer<'_, '_> {
                             .map(|key| -> VResult<_> {
                                 let ty = match &m.ty {
                                     Some(mapped_ty) => self
-                                        .expand_key_in_mapped(m.type_param.name.clone(), &mapped_ty, &key)
+                                        .expand_key_in_mapped(m.type_param.name.clone(), mapped_ty, &key)
                                         .map(Box::new)
                                         .map(Some)?,
                                     None => None,
@@ -269,7 +269,7 @@ impl Analyzer<'_, '_> {
                         _ => return Ok(None),
                     },
                 }])),
-                RTsLit::Bool(_) | RTsLit::Tpl(_) => return Ok(None),
+                RTsLit::Bool(_) | RTsLit::Tpl(_) => Ok(None),
             },
 
             Type::Union(u) => {
@@ -286,7 +286,7 @@ impl Analyzer<'_, '_> {
                 Ok(Some(keys))
             }
 
-            Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) => return Ok(None),
+            Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) => Ok(None),
 
             _ => {
                 error!("unimplemented: convert_type_to_keys: {:#?}", ty);
