@@ -717,13 +717,13 @@ impl Analyzer<'_, '_> {
         match (to, rhs) {
             (Type::Rest(lr), r) => {
                 if let Type::Array(la) = lr.ty.normalize() {
-                    return self.assign_with_opts(data, &la.elem_type, &r, opts);
+                    return self.assign_with_opts(data, &la.elem_type, r, opts);
                 }
             }
 
             (l, Type::Rest(rr)) => {
                 if let Type::Array(ra) = rr.ty.normalize() {
-                    return self.assign_with_opts(data, &l, &ra.elem_type, opts);
+                    return self.assign_with_opts(data, l, &ra.elem_type, opts);
                 }
             }
 
@@ -934,9 +934,9 @@ impl Analyzer<'_, '_> {
             }
 
             (Type::Conditional(lc), _) => {
-                self.assign_with_opts(data, &lc.true_type, &rhs, opts)
+                self.assign_with_opts(data, &lc.true_type, rhs, opts)
                     .context("tried to assign to the true type")?;
-                self.assign_with_opts(data, &lc.false_type, &rhs, opts)
+                self.assign_with_opts(data, &lc.false_type, rhs, opts)
                     .context("tried to assign to the false type")?;
 
                 return Ok(());
