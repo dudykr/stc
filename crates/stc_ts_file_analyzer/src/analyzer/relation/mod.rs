@@ -4,15 +4,17 @@ use swc_common::Span;
 
 use crate::analyzer::Analyzer;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IsRelatedOpts {
+    pub span: Span,
+
     /// If this is [Some], errors are reported with this span. Otherwise, errors
     /// are ignored.
-    pub span: Option<Span>,
+    pub error_span: Option<Span>,
 }
 
 impl Analyzer<'_, '_> {
-    pub fn check_type_related_to(&mut self, src: &Type, target: &Type) -> bool {}
+    pub fn check_type_related_to(&mut self, src: &Type, target: &Type, opts: IsRelatedOpts) -> bool {}
 
-    fn is_related(&mut self, src: &Type, target: &Type) -> Ternary {}
+    fn is_related(&mut self, src: &Type, target: &Type, opts: IsRelatedOpts) -> Ternary {}
 }
