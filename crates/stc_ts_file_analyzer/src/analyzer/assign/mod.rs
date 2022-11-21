@@ -1325,9 +1325,7 @@ impl Analyzer<'_, '_> {
                 if errors.is_empty() {
                     return Ok(());
                 }
-                return Err(ErrorKind::Errors { span, errors }
-                    .context("tried to assign a union to other type")
-                    .into());
+                return Err(ErrorKind::Errors { span, errors }.context("tried to assign a union to other type"));
             }
 
             Type::Keyword(KeywordType {
@@ -1505,18 +1503,22 @@ impl Analyzer<'_, '_> {
             Type::Union(lu) => {
                 // true | false = boolean
                 if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
-                    if lu.types.iter().any(|ty| match ty.normalize() {
-                        Type::Lit(LitType {
-                            lit: RTsLit::Bool(RBool { value: true, .. }),
-                            ..
-                        }) => true,
-                        _ => false,
-                    }) && lu.types.iter().any(|ty| match ty.normalize() {
-                        Type::Lit(LitType {
-                            lit: RTsLit::Bool(RBool { value: false, .. }),
-                            ..
-                        }) => true,
-                        _ => false,
+                    if lu.types.iter().any(|ty| {
+                        matches!(
+                            ty.normalize(),
+                            Type::Lit(LitType {
+                                lit: RTsLit::Bool(RBool { value: true, .. }),
+                                ..
+                            })
+                        )
+                    }) && lu.types.iter().any(|ty| {
+                        matches!(
+                            ty.normalize(),
+                            Type::Lit(LitType {
+                                lit: RTsLit::Bool(RBool { value: false, .. }),
+                                ..
+                            })
+                        )
                     }) {
                         return Ok(());
                     }
