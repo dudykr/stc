@@ -1068,7 +1068,7 @@ impl Analyzer<'_, '_> {
                     return;
                 }
 
-                if self.key_matches(span, &p.key, &prop, false) {
+                if self.key_matches(span, &p.key, prop, false) {
                     // TODO(kdy1): Remove useless clone
                     let ty = *p.type_ann.clone().unwrap_or(box Type::any(m.span(), Default::default())).clone();
                     let mut ty = self

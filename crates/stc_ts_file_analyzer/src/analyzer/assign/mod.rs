@@ -1562,49 +1562,42 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                match rhs {
-                    Type::Tuple(..) | Type::TypeLit(..) | Type::Union(..) | Type::Alias(..) | Type::Interface(..) => {
-                        if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
-                            return res.context("tried to assign using `assign_to_union`");
-                        }
+                if let Type::Tuple(..) | Type::TypeLit(..) | Type::Union(..) | Type::Alias(..) | Type::Interface(..) = rhs {
+                    if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
+                        return res.context("tried to assign using `assign_to_union`");
                     }
-                    _ => {}
                 }
 
                 // Same operation as above, but for enums.
-                match rhs {
-                    Type::EnumVariant(EnumVariant { enum_name, name: None, .. }) => {
-                        // If `types` contains all variant of the enum, the
-                        // assignment is valid.
-                        let patched_types = lu
-                            .types
-                            .iter()
-                            .map(|ty| {
-                                self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
-                                    .map(Cow::into_owned)
-                            })
-                            .collect::<Result<Vec<_>, _>>()?;
+                if let Type::EnumVariant(EnumVariant { enum_name, name: None, .. }) = rhs {
+                    // If `types` contains all variant of the enum, the
+                    // assignment is valid.
+                    let patched_types = lu
+                        .types
+                        .iter()
+                        .map(|ty| {
+                            self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
+                                .map(Cow::into_owned)
+                        })
+                        .collect::<Result<Vec<_>, _>>()?;
 
-                        if patched_types.iter().all(|ty| match ty.normalize() {
-                            Type::EnumVariant(ev) => ev.enum_name == *enum_name,
-                            _ => false,
-                        }) {
-                            if let Ok(Some(lhs)) = self.find_type(&enum_name) {
-                                for ty in lhs {
-                                    match ty.normalize() {
-                                        Type::Enum(e) => {
-                                            if e.members.len() == lu.types.len() {
-                                                return Ok(());
-                                            }
+                    if patched_types.iter().all(|ty| match ty.normalize() {
+                        Type::EnumVariant(ev) => ev.enum_name == *enum_name,
+                        _ => false,
+                    }) {
+                        if let Ok(Some(lhs)) = self.find_type(&enum_name) {
+                            for ty in lhs {
+                                match ty.normalize() {
+                                    Type::Enum(e) => {
+                                        if e.members.len() == lu.types.len() {
+                                            return Ok(());
                                         }
-                                        _ => {}
                                     }
+                                    _ => {}
                                 }
                             }
                         }
                     }
-
-                    _ => {}
                 }
 
                 let results = lu
@@ -2561,17 +2554,15 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_contravariant(&mut self, check_type: &Type, output_type: &Type) -> VResult<bool> {
-        match output_type.normalize() {
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
-                ty,
-                ..
-            }) => {
-                if output_type.type_eq(&**ty) {
-                    return Ok(true);
-                }
+        if let Type::Operator(Operator {
+            op: TsTypeOperatorOp::KeyOf,
+            ty,
+            ..
+        }) = output_type.normalize()
+        {
+            if output_type.type_eq(&**ty) {
+                return Ok(true);
             }
-            _ => {}
         }
 
         Ok(false)
