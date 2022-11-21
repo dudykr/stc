@@ -80,19 +80,19 @@ impl CondFacts {
             return;
         }
 
-        for (_, ty) in &self.vars {
+        for ty in self.vars.values() {
             if !ty.is_union_type() {
                 debug_assert!(ty.is_clone_cheap(), "ty.is_clone_cheap() should be true:\n{:?}", &self.vars);
             }
         }
 
-        for (_, types) in &self.excludes {
+        for types in self.excludes.values() {
             for ty in types {
                 debug_assert!(ty.is_clone_cheap());
             }
         }
 
-        for (_, ty) in &self.types {
+        for ty in self.types.values() {
             debug_assert!(ty.is_clone_cheap());
         }
     }
