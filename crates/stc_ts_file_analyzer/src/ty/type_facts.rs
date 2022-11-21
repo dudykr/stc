@@ -195,6 +195,16 @@ impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
             }
         }
 
+        if (self.facts.contains(TypeFacts::NEUndefined) && ty.kind == TsKeywordTypeKind::TsUndefinedKeyword)
+            || (self.facts.contains(TypeFacts::NENull) && ty.kind == TsKeywordTypeKind::TsNullKeyword)
+        {
+            return KeywordType {
+                span: ty.span,
+                kind: TsKeywordTypeKind::TsNeverKeyword,
+                metadata: ty.metadata,
+            };
+        }
+
         if ty.kind == TsKeywordTypeKind::TsNullKeyword && self.facts.contains(TypeFacts::NENull) {
             return KeywordType {
                 kind: TsKeywordTypeKind::TsNeverKeyword,
