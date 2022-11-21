@@ -1389,18 +1389,15 @@ impl Analyzer<'_, '_> {
                             }
 
                             for m in members {
-                                match m {
-                                    ClassMember::Method(ref m) => {
-                                        if !&m.key.type_eq(&super_method.key) {
-                                            continue;
-                                        }
-
-                                        // TODO(kdy1): Validate parameters
-
-                                        // TODO(kdy1): Validate return type
-                                        continue 'outer;
+                                if let ClassMember::Method(ref m) = m {
+                                    if !&m.key.type_eq(&super_method.key) {
+                                        continue;
                                     }
-                                    _ => {}
+
+                                    // TODO(kdy1): Validate parameters
+
+                                    // TODO(kdy1): Validate return type
+                                    continue 'outer;
                                 }
                             }
                         }
@@ -1425,7 +1422,7 @@ impl Analyzer<'_, '_> {
                     // Check super class of super class
                     if let Some(super_ty) = &sc.super_class {
                         new_members.extend(members.to_vec());
-                        self.report_error_for_wrong_super_class_inheritance(span, &new_members, &super_ty);
+                        self.report_error_for_wrong_super_class_inheritance(span, &new_members, super_ty);
                     }
                 }
             }
@@ -1505,10 +1502,7 @@ impl Analyzer<'_, '_> {
                 let super_type_params = try_opt!(c.super_type_params.validate_with(child));
                 match &c.super_class {
                     Some(box expr) => {
-                        let need_base_class = match expr {
-                            RExpr::Ident(..) => false,
-                            _ => true,
-                        };
+                        let need_base_class = !matches!(expr, RExpr::Ident(..));
                         let super_ty = expr.validate_with_args(child, (TypeOfMode::RValue, super_type_params.as_ref(), None))?;
 
                         child.validate_with(|a| match super_ty.normalize() {
@@ -1654,46 +1648,36 @@ impl Analyzer<'_, '_> {
                 }
 
                 for m in c.body.iter() {
-                    match *m {
-                        RClassMember::Constructor(ref cons) => {
-                            //
-                            if cons.body.is_none() {
-                                for p in &cons.params {
-                                    match *p {
-                                        RParamOrTsParamProp::TsParamProp(..) => child
-                                            .storage
-                                            .report(ErrorKind::ParamPropIsNotAllowedInAmbientConstructorx { span: p.span() }.into()),
-                                        _ => {}
-                                    }
+                    if let RClassMember::Constructor(ref cons) = *m {
+                        //
+                        if cons.body.is_none() {
+                            for p in &cons.params {
+                                if let RParamOrTsParamProp::TsParamProp(..) = *p {
+                                    child
+                                        .storage
+                                        .report(ErrorKind::ParamPropIsNotAllowedInAmbientConstructorx { span: p.span() }.into())
                                 }
                             }
                         }
-
-                        _ => {}
                     }
                 }
             }
 
             {
                 // Remove class members with const EnumVariant keys.
-                c.body.iter().for_each(|v| match v {
-                    RClassMember::Method(method) => match &method.key {
-                        RPropName::Computed(c) => match c.validate_with(child) {
-                            Ok(Key::Computed(ComputedKey { ty, .. })) => match ty.normalize() {
-                                Type::EnumVariant(e) => {
+                c.body.iter().for_each(|v| {
+                    if let RClassMember::Method(method) = v {
+                        if let RPropName::Computed(c) = &method.key {
+                            if let Ok(Key::Computed(ComputedKey { ty, .. })) = c.validate_with(child) {
+                                if let Type::EnumVariant(e) = ty.normalize() {
                                     //
                                     if let Some(m) = &mut child.mutations {
                                         m.for_class_members.entry(method.node_id).or_default().remove = true;
                                     }
                                 }
-                                _ => {}
-                            },
-                            _ => {}
-                        },
-                        _ => {}
-                    },
-
-                    _ => {}
+                            }
+                        }
+                    }
                 });
             }
 
@@ -2178,26 +2162,22 @@ impl Analyzer<'_, '_> {
         }
 
         let res: VResult<_> = try {
-            match ty.normalize() {
-                Type::Ref(Ref {
-                    type_name: RTsEntityName::Ident(i),
-                    ..
-                }) => {
-                    if let Some(name) = &self.scope.this_class_name {
-                        if *name == i {
-                            Err(ErrorKind::SelfReferentialSuperClass { span: i.span })?
-                        }
+            if let Type::Ref(Ref {
+                type_name: RTsEntityName::Ident(i),
+                ..
+            }) = ty.normalize()
+            {
+                if let Some(name) = &self.scope.this_class_name {
+                    if *name == i {
+                        Err(ErrorKind::SelfReferentialSuperClass { span: i.span })?
                     }
                 }
-                _ => {}
             }
 
             let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
 
-            match ty.normalize() {
-                Type::Function(..) => Err(ErrorKind::NotConstructorType { span: ty.span() })?,
-
-                _ => {}
+            if let Type::Function(..) = ty.normalize() {
+                Err(ErrorKind::NotConstructorType { span: ty.span() })?
             }
         };
 
