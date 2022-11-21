@@ -4,6 +4,7 @@
 
 #![allow(incomplete_features)]
 #![allow(unused_variables)] // temporary
+#![allow(clippy::needless_update)]
 #![deny(unused_must_use)]
 #![deny(unreachable_patterns)]
 #![deny(unused_imports)]

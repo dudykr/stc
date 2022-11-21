@@ -3,9 +3,11 @@
 //! The visitor is too slow to compile every time I make change.
 #![deny(deprecated)]
 #![allow(incomplete_features)]
+#![allow(clippy::needless_update)]
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(specialization)]
+
 use std::{
     self,
     borrow::Cow,
