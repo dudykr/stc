@@ -617,7 +617,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(p_ret) = &p.ret_ty {
                             if let Some(a_ret) = &a.ret_ty {
-                                self.infer_type(span, inferred, &p_ret, &a_ret, opts)?;
+                                self.infer_type(span, inferred, p_ret, a_ret, opts)?;
                             }
                         }
 
@@ -629,7 +629,7 @@ impl Analyzer<'_, '_> {
 
                         if let Some(p_ret) = &p.ret_ty {
                             if let Some(a_ret) = &a.ret_ty {
-                                self.infer_type(span, inferred, &p_ret, &a_ret, opts)?;
+                                self.infer_type(span, inferred, p_ret, a_ret, opts)?;
                             }
                         }
 
@@ -759,16 +759,15 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        match ty.normalize() {
-            Type::Tuple(..) => match ty.normalize_mut() {
+        if let Type::Tuple(..) = ty.normalize() {
+            match ty.normalize_mut() {
                 Type::Tuple(ty) => {
                     for elem in ty.elems.iter_mut() {
                         self.replace_null_or_undefined_while_defaulting_to_any(&mut elem.ty);
                     }
                 }
                 _ => unreachable!(),
-            },
-            _ => {}
+            }
         }
     }
 
@@ -819,7 +818,7 @@ fn should_prevent_generalization(constraint: &Type) -> bool {
             kind: TsKeywordTypeKind::TsStringKeyword | TsKeywordTypeKind::TsNumberKeyword | TsKeywordTypeKind::TsBooleanKeyword,
             ..
         }) => true,
-        Type::Union(Union { ref types, .. }) => types.iter().all(|ty| should_prevent_generalization(&ty)),
+        Type::Union(Union { ref types, .. }) => types.iter().all(should_prevent_generalization),
         _ => false,
     }
 }
