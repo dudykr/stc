@@ -1159,7 +1159,7 @@ impl Analyzer<'_, '_> {
                                             } else {
                                                 self.assign_with_opts(
                                                     data,
-                                                    &lp_ty,
+                                                    lp_ty,
                                                     &Type::Function(Function {
                                                         span,
                                                         type_params: rm.type_params.clone(),
