@@ -1755,6 +1755,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
+    #[allow(unused)]
     fn check_method_call(
         &mut self,
         span: Span,
@@ -2602,7 +2603,7 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            self.validate_arg_types(&expanded_param_types, &spread_arg_types, true);
+            self.validate_arg_types(&expanded_param_types, spread_arg_types, true);
 
             if self.ctx.is_instantiating_class {
                 for tp in type_params.iter() {
@@ -3051,13 +3052,10 @@ impl Analyzer<'_, '_> {
             .freezed();
 
         let use_simple_intersection = (|| {
-            match (orig_ty.normalize(), new_ty.normalize()) {
-                (Type::Interface(orig), Type::Interface(new)) => {
-                    if orig.extends.is_empty() && new.extends.is_empty() {
-                        return true;
-                    }
+            if let (Type::Interface(orig), Type::Interface(new)) = (orig_ty.normalize(), new_ty.normalize()) {
+                if orig.extends.is_empty() && new.extends.is_empty() {
+                    return true;
                 }
-                _ => {}
             }
 
             false
