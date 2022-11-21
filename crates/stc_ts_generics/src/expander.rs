@@ -474,11 +474,11 @@ impl Fold<Type> for GenericExpander<'_> {
         let _stack = match stack::track(ty.span()) {
             Ok(v) => v,
             _ => {
-                error!("[generic/expander] Stack overflow: {}", dump_type_as_string(&self.cm, &ty));
+                error!("[generic/expander] Stack overflow: {}", dump_type_as_string(&ty));
                 return ty;
             }
         };
-        let _context = debug_ctx!(format!("Expanding generics of {}", dump_type_as_string(&self.cm, &ty)));
+        let _context = debug_ctx!(format!("Expanding generics of {}", dump_type_as_string(&ty)));
 
         let old_fully = self.fully;
         self.fully |= matches!(ty.normalize(), Type::Mapped(..));
@@ -492,10 +492,10 @@ impl Fold<Type> for GenericExpander<'_> {
             }
         }
 
-        let start = dump_type_as_string(&self.cm, &ty);
+        let start = dump_type_as_string(&ty);
         let ty = self.fold_type(ty).fixed();
         ty.assert_valid();
-        let expanded = dump_type_as_string(&self.cm, &ty);
+        let expanded = dump_type_as_string(&ty);
 
         debug!(op = "generic:expand", "Expanded {} => {}", start, expanded,);
 

@@ -1977,13 +1977,13 @@ impl Expander<'_, '_, '_> {
                                         ty.make_clone_cheap();
                                     });
 
-                                    let before = dump_type_as_string(&self.analyzer.cm, &ty);
+                                    let before = dump_type_as_string(&ty);
                                     // TODO(kdy1): PERF
                                     let mut ty = self
                                         .analyzer
                                         .expand_type_params(&inferred.types, ty.foldable(), self.opts.generic)?;
 
-                                    let after = dump_type_as_string(&self.analyzer.cm, &ty);
+                                    let after = dump_type_as_string(&ty);
                                     if cfg!(debug_assertions) {
                                         debug!("[expand] Expanded generics: {} => {}", before, after);
                                     }
@@ -2140,7 +2140,7 @@ impl Expander<'_, '_, '_> {
         let _stack = match stack::track(self.span) {
             Ok(v) => v,
             Err(..) => {
-                error!("[expander] Stack overflow: {}", dump_type_as_string(&self.analyzer.cm, &ty));
+                error!("[expander] Stack overflow: {}", dump_type_as_string(&ty));
                 return ty;
             }
         };
@@ -2434,7 +2434,7 @@ impl Expander<'_, '_, '_> {
             }
         };
 
-        let _ctx = debug_ctx!(format!("Expander.expand_type: {}", dump_type_as_string(&self.analyzer.cm, &ty)));
+        let _ctx = debug_ctx!(format!("Expander.expand_type: {}", dump_type_as_string(&ty)));
 
         if let Type::Conditional(Conditional {
             span,
@@ -2532,7 +2532,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
             }
             _ => {}
         }
-        let before = dump_type_as_string(&self.analyzer.cm, &ty);
+        let before = dump_type_as_string(&ty);
         let start = Instant::now();
         let expanded = self.expand_type(ty).fixed();
         let end = Instant::now();
@@ -2545,7 +2545,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
             "[expander (time = {:?})]: {} => {}",
             end - start,
             before,
-            dump_type_as_string(&self.analyzer.cm, &expanded)
+            dump_type_as_string(&expanded)
         );
 
         expanded
