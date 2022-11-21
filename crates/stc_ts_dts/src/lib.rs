@@ -253,16 +253,14 @@ impl VisitMut<Vec<RVarDeclarator>> for Dts {
                     ..
                 }) => {
                     //
-                    for elem in elems.into_iter() {
-                        if let Some(name) = elem {
-                            decls.push(RVarDeclarator {
-                                node_id: NodeId::invalid(),
-                                span,
-                                name,
-                                init: None,
-                                definite: false,
-                            })
-                        }
+                    for name in elems.into_iter().flatten() {
+                        decls.push(RVarDeclarator {
+                            node_id: NodeId::invalid(),
+                            span,
+                            name,
+                            init: None,
+                            definite: false,
+                        })
                     }
                 }
                 // TODO
