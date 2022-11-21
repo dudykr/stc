@@ -42,7 +42,7 @@ fn fixture(input: PathBuf) {
 
 fn do_test(file_name: &Path) -> Result<(), StdErr> {
     if let Ok(test) = env::var("TEST") {
-        if !file_name.to_string_lossy().replace("/", "::").contains(&test) {
+        if !file_name.to_string_lossy().replace('/', "::").contains(&test) {
             return Ok(());
         }
     }
@@ -133,11 +133,11 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                         cfg: Default::default(),
                         comments: None,
                         cm: cm.clone(),
-                        wr: box JsWriter::new(cm.clone(), "\n", &mut buf, None),
+                        wr: box JsWriter::new(cm, "\n", &mut buf, None),
                     };
 
                     emitter
-                        .emit_module(&dts.clone().fold_with(&mut HygieneVisualizer))
+                        .emit_module(&dts.fold_with(&mut HygieneVisualizer))
                         .context("failed to emit module")
                         .unwrap();
                 }

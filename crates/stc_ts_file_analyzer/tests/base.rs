@@ -1,4 +1,5 @@
 #![feature(box_syntax)]
+#![allow(clippy::manual_strip)]
 
 use std::{
     path::{Path, PathBuf},
