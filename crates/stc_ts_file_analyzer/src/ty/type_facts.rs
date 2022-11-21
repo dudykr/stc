@@ -48,11 +48,11 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let cnt = if facts.contains(TypeFacts::TypeofEQString) { 1 } else { 0 }
-            + if facts.contains(TypeFacts::TypeofEQNumber) { 1 } else { 0 }
-            + if facts.contains(TypeFacts::TypeofEQBigInt) { 1 } else { 0 }
-            + if facts.contains(TypeFacts::TypeofEQBoolean) { 1 } else { 0 };
-        if cnt >= 2 {
+        let cnt = i32::from(facts.contains(TypeFacts::TypeofEQString))
+            + i32::from(facts.contains(TypeFacts::TypeofEQNumber))
+            + i32::from(facts.contains(TypeFacts::TypeofEQBigInt))
+            + i32::from(facts.contains(TypeFacts::TypeofEQBoolean));
+        if cnt > 1 {
             return Type::never(
                 ty.span(),
                 KeywordTypeMetadata {
@@ -94,10 +94,7 @@ impl Analyzer<'_, '_> {
             // TODO(kdy1): PERF
             match ty.normalize_mut() {
                 Type::Union(u) => {
-                    let has_fn = u.types.iter().any(|ty| match ty.normalize() {
-                        Type::Function(..) => true,
-                        _ => false,
-                    });
+                    let has_fn = u.types.iter().any(|ty| matches!(ty.normalize(), Type::Function(..)));
 
                     if !has_fn {
                         u.types.push(fn_type)
@@ -319,10 +316,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
         u.types.retain(|v| !v.is_never());
 
         if self.facts.contains(TypeFacts::TypeofNEFunction) {
-            u.types.retain(|ty| match ty.normalize() {
-                Type::Function(..) => false,
-                _ => true,
-            });
+            u.types.retain(|ty| !matches!(ty.normalize(), Type::Function(..)));
         }
 
         if self.facts != TypeFacts::None {
@@ -353,7 +347,7 @@ impl Fold<Union> for TypeFactsHandler<'_, '_, '_> {
 
                     Type::Param(..) => false,
 
-                    _ => self.can_be_primitive(&ty),
+                    _ => self.can_be_primitive(ty),
                 });
             }
         }
@@ -387,34 +381,32 @@ impl Fold<Type> for TypeFactsHandler<'_, '_, '_> {
 
         // TODO(kdy1): Don't do anything if type fact is none.
 
-        match ty.normalize() {
-            Type::Lit(LitType {
-                span,
-                lit: RTsLit::Bool(v),
-                metadata,
-                ..
-            }) => {
-                if self.facts.contains(TypeFacts::Truthy) && !v.value {
-                    return Type::never(
-                        *span,
-                        KeywordTypeMetadata {
-                            common: metadata.common,
-                            ..Default::default()
-                        },
-                    );
-                }
-
-                if self.facts.contains(TypeFacts::Falsy) && v.value {
-                    return Type::never(
-                        *span,
-                        KeywordTypeMetadata {
-                            common: metadata.common,
-                            ..Default::default()
-                        },
-                    );
-                }
+        if let Type::Lit(LitType {
+            span,
+            lit: RTsLit::Bool(v),
+            metadata,
+            ..
+        }) = ty.normalize()
+        {
+            if self.facts.contains(TypeFacts::Truthy) && !v.value {
+                return Type::never(
+                    *span,
+                    KeywordTypeMetadata {
+                        common: metadata.common,
+                        ..Default::default()
+                    },
+                );
             }
-            _ => {}
+
+            if self.facts.contains(TypeFacts::Falsy) && v.value {
+                return Type::never(
+                    *span,
+                    KeywordTypeMetadata {
+                        common: metadata.common,
+                        ..Default::default()
+                    },
+                );
+            }
         }
 
         if !span.is_dummy() {
