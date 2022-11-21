@@ -200,33 +200,30 @@ impl Analyzer<'_, '_> {
                 continue;
             }
 
-            match type_param.constraint {
-                Some(box Type::Param(ref p)) => {
-                    // TODO(kdy1): Handle complex inheritance like
-                    //      function foo<A extends B, B extends C>(){ }
+            if let Some(Type::Param(ref p)) = type_param.constraint.as_deref().map(Type::normalize) {
+                // TODO(kdy1): Handle complex inheritance like
+                //      function foo<A extends B, B extends C>(){ }
 
-                    if let Some(actual) = inferred.type_params.remove(&p.name) {
-                        info!(
-                            "infer_arg_type: {} => {} => {:?} because of the extends clause",
-                            type_param.name, p.name, actual
-                        );
-                        inferred.type_params.insert(p.name.clone(), actual.clone());
-                        inferred.type_params.insert(type_param.name.clone(), actual);
-                    } else {
-                        info!("infer_arg_type: {} => {} because of the extends clause", type_param.name, p.name);
-                        self.insert_inferred(span, &mut inferred, &type_param, Cow::Owned(Type::Param(p.clone())), opts)?;
-                    }
-                    continue;
+                if let Some(actual) = inferred.type_params.remove(&p.name) {
+                    info!(
+                        "infer_arg_type: {} => {} => {:?} because of the extends clause",
+                        type_param.name, p.name, actual
+                    );
+                    inferred.type_params.insert(p.name.clone(), actual.clone());
+                    inferred.type_params.insert(type_param.name.clone(), actual);
+                } else {
+                    info!("infer_arg_type: {} => {} because of the extends clause", type_param.name, p.name);
+                    self.insert_inferred(span, &mut inferred, type_param, Cow::Owned(Type::Param(p.clone())), opts)?;
                 }
-                _ => {}
+                continue;
             }
 
-            if type_param.constraint.is_some() && is_literals(&type_param.constraint.as_ref().unwrap()) {
+            if type_param.constraint.is_some() && is_literals(type_param.constraint.as_ref().unwrap()) {
                 self.insert_inferred(
                     span,
                     &mut inferred,
-                    &type_param,
-                    Cow::Borrowed(&type_param.constraint.as_deref().unwrap()),
+                    type_param,
+                    Cow::Borrowed(type_param.constraint.as_deref().unwrap()),
                     opts,
                 )?;
                 continue;

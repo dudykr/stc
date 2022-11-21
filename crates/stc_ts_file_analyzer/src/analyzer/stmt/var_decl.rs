@@ -53,33 +53,25 @@ impl Analyzer<'_, '_> {
 
         // Set type of tuples.
         for decl in &var.decls {
-            match &decl.name {
-                RPat::Array(RArrayPat { span, elems, node_id, .. }) => {
-                    if let Some(m) = &self.mutations {
-                        if let Some(Type::Tuple(tuple)) = m.for_pats.get(&node_id).map(|m| &m.ty).cloned().flatten() {
-                            for (i, elem) in elems.iter().enumerate() {
-                                match elem {
-                                    Some(pat) => {
-                                        //
-                                        if i < tuple.elems.len() {
-                                            let ty = &tuple.elems[i].ty;
-                                            if let Some(node_id) = pat.node_id() {
-                                                if let Some(m) = &mut self.mutations {
-                                                    m.for_pats.entry(node_id).or_default().ty = Some(*ty.clone());
-                                                }
-                                            }
+            if let RPat::Array(RArrayPat { span, elems, node_id, .. }) = &decl.name {
+                if let Some(m) = &self.mutations {
+                    if let Some(Type::Tuple(tuple)) = m.for_pats.get(&node_id).map(|m| &m.ty).cloned().flatten() {
+                        for (i, elem) in elems.iter().enumerate() {
+                            if let Some(pat) = elem {
+                                //
+                                if i < tuple.elems.len() {
+                                    let ty = &tuple.elems[i].ty;
+                                    if let Some(node_id) = pat.node_id() {
+                                        if let Some(m) = &mut self.mutations {
+                                            m.for_pats.entry(node_id).or_default().ty = Some(*ty.clone());
                                         }
                                     }
-                                    None => {}
                                 }
                             }
                         }
                     }
-                    //
                 }
-                // TODO
-                //  RPat::Object(obj) => {}
-                _ => {}
+                //
             }
         }
 
