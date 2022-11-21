@@ -1527,25 +1527,22 @@ impl Analyzer<'_, '_> {
         }
 
         for orig in orig.iter_union() {
-            match orig.normalize() {
-                Type::Function(..) => {
-                    self.assign_with_opts(
-                        &mut Default::default(),
-                        &new,
-                        &orig,
-                        AssignOpts {
-                            span,
-                            for_overload: true,
-                            ..Default::default()
-                        },
-                    )
-                    .convert_err(|err| ErrorKind::ImcompatibleFnOverload {
-                        span: orig.span(),
-                        cause: box err.into(),
-                    })
-                    .context("tried to validate signatures of overloaded functions")?;
-                }
-                _ => {}
+            if let Type::Function(..) = orig.normalize() {
+                self.assign_with_opts(
+                    &mut Default::default(),
+                    new,
+                    orig,
+                    AssignOpts {
+                        span,
+                        for_overload: true,
+                        ..Default::default()
+                    },
+                )
+                .convert_err(|err| ErrorKind::ImcompatibleFnOverload {
+                    span: orig.span(),
+                    cause: box err.into(),
+                })
+                .context("tried to validate signatures of overloaded functions")?;
             }
         }
 
@@ -1737,7 +1734,7 @@ impl<'a> Scope<'a> {
 
     pub(super) fn depth(&self) -> usize {
         match self.parent {
-            Some(ref p) => p.depth() + 1,
+            Some(p) => p.depth() + 1,
             None => 0,
         }
     }
@@ -1752,7 +1749,7 @@ impl<'a> Scope<'a> {
         if let Some(ty) = self.facts.types.get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
             // println!("({}) find_type({}): Found (cond facts)", self.depth(), name);
-            return Some(ItemRef::Single(iter::once(&ty)));
+            return Some(ItemRef::Single(iter::once(ty)));
         }
 
         if let Some(ty) = self.types.get(name) {
@@ -1760,11 +1757,11 @@ impl<'a> Scope<'a> {
 
             // println!("({}) find_type({}): Found", self.depth(), name);
 
-            return Some(ItemRef::Single(once(&*ty)));
+            return Some(ItemRef::Single(once(ty)));
         }
 
         match self.parent {
-            Some(ref parent) => parent.find_type(name),
+            Some(parent) => parent.find_type(name),
             None => None,
         }
     }
@@ -1846,10 +1843,7 @@ pub(crate) enum ScopeKind {
 impl ScopeKind {
     /// TODO(kdy1): Change
     pub fn allows_respanning(self) -> bool {
-        match self {
-            ScopeKind::Flow | ScopeKind::Class | ScopeKind::ObjectLit => false,
-            _ => true,
-        }
+        !matches!(self, ScopeKind::Flow | ScopeKind::Class | ScopeKind::ObjectLit)
     }
 }
 
@@ -1865,7 +1859,6 @@ struct Expander<'a, 'b, 'c> {
 }
 
 impl Expander<'_, '_, '_> {
-    #[instrument(name = "Expander.expand_ts_entity_name", skip_all)]
     fn expand_ts_entity_name(
         &mut self,
         span: Span,
@@ -1921,10 +1914,7 @@ impl Expander<'_, '_, '_> {
                             }
                         }
                         // We should expand alias again.
-                        let is_alias = match t.normalize() {
-                            Type::Alias(..) => true,
-                            _ => false,
-                        };
+                        let is_alias = matches!(t.normalize(), Type::Alias(..));
 
                         match t.normalize() {
                             Type::Intersection(..) => return Ok(Some(t.into_owned().clone())),
