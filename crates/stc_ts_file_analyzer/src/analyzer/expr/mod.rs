@@ -180,6 +180,11 @@ impl Analyzer<'_, '_> {
 
                                 ty.assert_valid();
 
+                                // TODO(kdy1): Skip this logic if the `this` is binded
+                                ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, ty);
+
+                                ty.assert_valid();
+
                                 self.exclude_types_using_fact(span, &name, &mut ty);
                             }
 
