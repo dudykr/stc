@@ -405,16 +405,16 @@ impl Analyzer<'_, '_> {
                         // `can't narrow type from 'any' to 'Object'`
                         // `can't narrow type from 'any' to 'Function'
                         let cannot_narrow = orig_ty.is_any()
-                            && match &**right {
+                            && matches!(
+                                &**right,
                                 RExpr::Ident(RIdent {
-                                    sym: js_word!("Object"), ..
+                                    sym: js_word!("Object"),
+                                    ..
+                                }) | RExpr::Ident(RIdent {
+                                    sym: js_word!("Function"),
+                                    ..
                                 })
-                                | RExpr::Ident(RIdent {
-                                    sym: js_word!("Function"), ..
-                                }) => true,
-
-                                _ => false,
-                            };
+                            );
 
                         if self.ctx.in_cond && !cannot_narrow {
                             let narrowed_ty = self
