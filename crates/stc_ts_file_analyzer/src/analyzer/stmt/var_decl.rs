@@ -149,16 +149,16 @@ impl Analyzer<'_, '_> {
 
             if let Some(ref init) = v.init {
                 let span = init.span();
-                let is_symbol_call = match &**init {
+                let is_symbol_call = matches!(
+                    &**init,
                     RExpr::Call(RCallExpr {
-                        callee:
-                            RCallee::Expr(box RExpr::Ident(RIdent {
-                                sym: js_word!("Symbol"), ..
-                            })),
+                        callee: RCallee::Expr(box RExpr::Ident(RIdent {
+                            sym: js_word!("Symbol"),
+                            ..
+                        })),
                         ..
-                    }) => true,
-                    _ => false,
-                };
+                    })
+                );
 
                 // Set `this` in
                 //
