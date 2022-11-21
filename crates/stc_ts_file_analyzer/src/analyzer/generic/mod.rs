@@ -483,21 +483,18 @@ impl Analyzer<'_, '_> {
                 ..opts
             };
             if let Some(param_elem) = unwrap_ref_with_single_arg(param, "Array")
-                .or_else(|| unwrap_ref_with_single_arg(&param, "ArrayLike"))
-                .or_else(|| unwrap_ref_with_single_arg(&param, "ReadonlyArray"))
+                .or_else(|| unwrap_ref_with_single_arg(param, "ArrayLike"))
+                .or_else(|| unwrap_ref_with_single_arg(param, "ReadonlyArray"))
             {
-                match arg {
-                    Type::Array(arg) => {
-                        return self.infer_type(span, inferred, &param_elem, &arg.elem_type, opts);
-                    }
-                    _ => {}
+                if let Type::Array(arg) = arg {
+                    return self.infer_type(span, inferred, param_elem, &arg.elem_type, opts);
                 }
 
                 if let Some(arg_elem) = unwrap_ref_with_single_arg(arg, "Array")
                     .or_else(|| unwrap_ref_with_single_arg(arg, "ArrayLike"))
-                    .or_else(|| unwrap_ref_with_single_arg(&arg, "ReadonlyArray"))
+                    .or_else(|| unwrap_ref_with_single_arg(arg, "ReadonlyArray"))
                 {
-                    return self.infer_type(span, inferred, &param_elem, &arg_elem, opts);
+                    return self.infer_type(span, inferred, param_elem, arg_elem, opts);
                 }
             }
         }
