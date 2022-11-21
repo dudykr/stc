@@ -163,6 +163,7 @@ struct Evaluator<'a> {
     e: &'a RTsEnumDecl,
     values: &'a mut EnumValues,
 
+    #[allow(unused)]
     errors: Errors,
 }
 

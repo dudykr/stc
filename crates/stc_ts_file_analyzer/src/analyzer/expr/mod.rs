@@ -1718,10 +1718,7 @@ impl Analyzer<'_, '_> {
                         let idx = value.round() as usize;
                         if e.members.len() > idx {
                             let v = &e.members[idx];
-                            if match *v.val {
-                                RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => true,
-                                _ => false,
-                            } {
+                            if matches!(*v.val, RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..))) {
                                 let new_obj_ty = Type::Lit(LitType {
                                     span,
                                     lit: match *v.val.clone() {
@@ -1773,30 +1770,24 @@ impl Analyzer<'_, '_> {
                 Some(types) => {
                     //
                     for ty in types {
-                        match ty.normalize() {
-                            Type::Enum(ref e) => {
-                                for v in e.members.iter() {
-                                    if match *v.val {
-                                        RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => true,
-                                        _ => false,
-                                    } {
-                                        let new_obj_ty = Type::Lit(LitType {
-                                            span: *span,
-                                            lit: match *v.val.clone() {
-                                                RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
-                                                RExpr::Lit(RLit::Num(v)) => RTsLit::Number(v),
-                                                _ => unreachable!(),
-                                            },
-                                            metadata: LitTypeMetadata {
-                                                common: metadata.common,
-                                                ..Default::default()
-                                            },
-                                        });
-                                        return self.access_property(*span, &new_obj_ty, prop, type_mode, id_ctx, opts);
-                                    }
+                        if let Type::Enum(ref e) = ty.normalize() {
+                            for v in e.members.iter() {
+                                if matches!(*v.val, RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..))) {
+                                    let new_obj_ty = Type::Lit(LitType {
+                                        span: *span,
+                                        lit: match *v.val.clone() {
+                                            RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
+                                            RExpr::Lit(RLit::Num(v)) => RTsLit::Number(v),
+                                            _ => unreachable!(),
+                                        },
+                                        metadata: LitTypeMetadata {
+                                            common: metadata.common,
+                                            ..Default::default()
+                                        },
+                                    });
+                                    return self.access_property(*span, &new_obj_ty, prop, type_mode, id_ctx, opts);
                                 }
                             }
-                            _ => {}
                         }
                     }
                 }
@@ -1890,7 +1881,7 @@ impl Analyzer<'_, '_> {
 
                 // check for super class
                 if let Some(super_ty) = &c.def.super_class {
-                    let super_ty = self.instantiate_class(span, &super_ty)?;
+                    let super_ty = self.instantiate_class(span, super_ty)?;
 
                     if let Ok(v) = self.access_property(span, &super_ty, prop, type_mode, id_ctx, opts) {
                         return Ok(v);
@@ -2053,24 +2044,21 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Keyword(KeywordType { kind, .. }) if !self.is_builtin => {
-                match prop {
-                    Key::Computed(prop) => match (*kind, prop.ty.normalize()) {
-                        (
-                            TsKeywordTypeKind::TsObjectKeyword,
-                            Type::Keyword(KeywordType {
-                                kind: TsKeywordTypeKind::TsStringKeyword,
-                                ..
-                            }),
-                        ) => {
-                            if self.rule().no_implicit_any && !self.rule().suppress_implicit_any_index_errors {
-                                self.storage.report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span }.into());
-                            }
-
-                            return Ok(Type::any(span, Default::default()));
+                if let Key::Computed(prop) = prop {
+                    if let (
+                        TsKeywordTypeKind::TsObjectKeyword,
+                        Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsStringKeyword,
+                            ..
+                        }),
+                    ) = (*kind, prop.ty.normalize())
+                    {
+                        if self.rule().no_implicit_any && !self.rule().suppress_implicit_any_index_errors {
+                            self.storage.report(ErrorKind::ImplicitAnyBecauseIndexTypeIsWrong { span }.into());
                         }
-                        _ => {}
-                    },
-                    _ => {}
+
+                        return Ok(Type::any(span, Default::default()));
+                    }
                 }
 
                 let word = match kind {
