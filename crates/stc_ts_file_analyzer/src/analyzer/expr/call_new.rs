@@ -1716,7 +1716,7 @@ impl Analyzer<'_, '_> {
                     type_params: type_params
                         .clone()
                         .map(|v| v.params)
-                        .or_else(|| type_params_of_type.clone().map(|v| v.to_vec())),
+                        .or_else(|| type_params_of_type.map(|v| v.to_vec())),
                     ret_ty: ret_ty.clone().map(|v| *v).unwrap_or_else(|| Type::any(*span, Default::default())),
                 }),
                 _ => None,
@@ -1788,14 +1788,13 @@ impl Analyzer<'_, '_> {
         // TODO(kdy1): Check if signature match.
         match callee.normalize_instance() {
             Type::Intersection(i) => {
-                let candidates = i
+                return Ok(i
                     .types
                     .iter()
                     .map(|callee| self.extract_callee_candidates(span, kind, callee))
                     .filter_map(Result::ok)
-                    .collect::<Vec<_>>();
-
-                return Ok(candidates.into_iter().flatten().collect());
+                    .flatten()
+                    .collect());
             }
 
             Type::Constructor(c) if kind == ExtractKind::New => {
@@ -3179,7 +3178,7 @@ impl Analyzer<'_, '_> {
             return false;
         }
 
-        self.assign(span, &mut Default::default(), &arg, &param).is_ok()
+        self.assign(span, &mut Default::default(), &arg, param).is_ok()
     }
 
     /// This method return [Err] if call is invalid
