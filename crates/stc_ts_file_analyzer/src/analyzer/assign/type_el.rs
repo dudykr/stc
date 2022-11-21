@@ -107,10 +107,10 @@ impl Analyzer<'_, '_> {
                     }),
                     ..
                 }) => {
-                    if lhs.iter().any(|el| match el {
-                        TypeElement::Call(..) | TypeElement::Constructor(..) => true,
-                        _ => false,
-                    }) {
+                    if lhs
+                        .iter()
+                        .any(|el| matches!(el, TypeElement::Call(..) | TypeElement::Constructor(..)))
+                    {
                         return Ok(());
                     }
                 }
@@ -151,7 +151,7 @@ impl Analyzer<'_, '_> {
                     };
 
                     let rhs_members = rhs_members
-                        .into_iter()
+                        .iter()
                         .enumerate()
                         .filter(|(index, _)| valid_rhs_indexes.contains(index))
                         .map(|(_, v)| v.clone())
