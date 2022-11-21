@@ -113,7 +113,7 @@ impl Analyzer<'_, '_> {
             RCallee::Import(..) => todo!("dynamic import"),
         };
 
-        let is_callee_iife = is_fn_expr(&callee);
+        let is_callee_iife = is_fn_expr(callee);
 
         // TODO(kdy1): validate children
 

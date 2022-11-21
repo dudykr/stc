@@ -989,8 +989,8 @@ impl Analyzer<'_, '_> {
         }
 
         fn is_prop_name_eq_include_computed(l: &RPropName, r: &RPropName) -> bool {
-            match l {
-                RPropName::Computed(l) => match r {
+            if let RPropName::Computed(l) = l {
+                match r {
                     RPropName::Computed(r) => {
                         if l.eq_ignore_span(&r) {
                             // TODO(kdy1): Return true only if l and r are both
@@ -999,8 +999,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     _ => {}
-                },
-                _ => {}
+                }
             }
 
             is_prop_name_eq(l, r)
