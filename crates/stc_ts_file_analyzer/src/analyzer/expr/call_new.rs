@@ -835,7 +835,7 @@ impl Analyzer<'_, '_> {
             }
             let callee_str = dump_type_as_string(&self.cm, &callee);
 
-            self.get_best_return_type(span, expr, callee, kind, type_args, args, &arg_types, &spread_arg_types, type_ann)
+            self.get_best_return_type(span, expr, callee, kind, type_args, args, arg_types, spread_arg_types, type_ann)
                 .convert_err(|err| match err {
                     ErrorKind::NoCallSignature { span, .. } => ErrorKind::NoCallablePropertyWithName {
                         span,
@@ -3291,7 +3291,7 @@ impl Analyzer<'_, '_> {
         };
         self.with_ctx(ctx).with(|a: &mut Analyzer| {
             let args: Vec<_> = args
-                .into_iter()
+                .iter()
                 .map(|arg| {
                     arg.validate_with(a).report(&mut a.storage).unwrap_or_else(|| TypeOrSpread {
                         span: arg.span(),
@@ -3382,7 +3382,7 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 let mut types: Vec<Type> = vec![];
 
                 for index_ty in index_type.iter_union() {
-                    let (lit_span, value) = match &*index_ty {
+                    let (lit_span, value) = match index_ty.normalize() {
                         Type::Lit(LitType {
                             span: lit_span,
                             lit: RTsLit::Str(RStr { value, .. }),
