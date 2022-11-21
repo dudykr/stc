@@ -195,7 +195,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        self.castable(span, &orig, &casted, Default::default())
+        self.castable(span, orig, casted, Default::default())
             .and_then(|castable| {
                 if castable {
                     Ok(())
@@ -203,7 +203,7 @@ impl Analyzer<'_, '_> {
                     Err(ErrorKind::NonOverlappingTypeCast { span }.into())
                 }
             })
-            .convert_err(|err| ErrorKind::NonOverlappingTypeCast { span }.into())
+            .convert_err(|err| ErrorKind::NonOverlappingTypeCast { span })
     }
 
     pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type, opts: CastableOpts) -> VResult<bool> {
@@ -348,17 +348,14 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        match from {
-            Type::Union(l) => {
-                for l in &l.types {
-                    if self.castable(span, l, to, opts)? {
-                        return Ok(true);
-                    }
+        if let Type::Union(l) = from {
+            for l in &l.types {
+                if self.castable(span, l, to, opts)? {
+                    return Ok(true);
                 }
-
-                return Ok(false);
             }
-            _ => {}
+
+            return Ok(false);
         }
 
         match to {

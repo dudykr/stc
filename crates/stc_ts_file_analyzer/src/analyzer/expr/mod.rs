@@ -2949,7 +2949,7 @@ impl Analyzer<'_, '_> {
         type_mode: TypeOfMode,
         type_args: Option<&TypeParamInstantiation>,
     ) -> VResult<Type> {
-        assert!(name.len() > 0, "Cannot determine type of empty name");
+        assert!(!name.is_empty(), "Cannot determine type of empty name");
 
         let mut id: RIdent = name[0].clone().into();
         id.span.lo = span.lo;
@@ -3130,14 +3130,11 @@ impl Analyzer<'_, '_> {
             let ty = self.find_type(&cur_module)?;
             if let Some(ty) = ty {
                 for ty in ty {
-                    match ty.normalize() {
-                        Type::Module(module) => {
-                            //
-                            if let Some(var_ty) = module.exports.vars.get(&i.sym).cloned() {
-                                return Ok(var_ty);
-                            }
+                    if let Type::Module(module) = ty.normalize() {
+                        //
+                        if let Some(var_ty) = module.exports.vars.get(&i.sym).cloned() {
+                            return Ok(var_ty);
                         }
-                        _ => {}
                     }
                 }
             }
@@ -3218,10 +3215,11 @@ impl Analyzer<'_, '_> {
                 return Ok(Type::undefined(span, Default::default()));
             }
             js_word!("void") => return Ok(Type::any(span, Default::default())),
-            js_word!("eval") => match type_mode {
-                TypeOfMode::LValue => return Err(ErrorKind::CannotAssignToFunction { span }.into()),
-                _ => {}
-            },
+            js_word!("eval") => {
+                if let TypeOfMode::LValue = type_mode {
+                    return Err(ErrorKind::CannotAssignToFunction { span }.into());
+                }
+            }
             _ => {}
         }
 
@@ -3231,7 +3229,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = self.find_imported_var(&i.into())? {
             debug!("({}) type_of({}): resolved import", self.scope.depth(), Id::from(i));
-            return Ok(ty.clone());
+            return Ok(ty);
         }
 
         if let Some(v) = self.scope.vars.get(&i.into()) {
