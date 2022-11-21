@@ -2684,13 +2684,13 @@ impl Analyzer<'_, '_> {
             ty.make_clone_cheap();
 
             if kind == ExtractKind::Call {
-                self.add_call_facts(&expanded_param_types, &args, &mut ty);
+                self.add_call_facts(&expanded_param_types, args, &mut ty);
             }
 
             return Ok(ty);
         }
 
-        self.validate_arg_types(&params, &spread_arg_types, type_params.is_some());
+        self.validate_arg_types(&params, spread_arg_types, type_params.is_some());
 
         print_type("Return", &self.cm, &ret_ty);
 
@@ -2703,10 +2703,10 @@ impl Analyzer<'_, '_> {
         ret_ty.make_clone_cheap();
 
         if kind == ExtractKind::Call {
-            self.add_call_facts(&params, &args, &mut ret_ty);
+            self.add_call_facts(&params, args, &mut ret_ty);
         }
 
-        return Ok(ret_ty);
+        Ok(ret_ty)
     }
 
     fn validate_arg_types(&mut self, params: &[FnParam], spread_arg_types: &[TypeOrSpread], is_generic: bool) {
