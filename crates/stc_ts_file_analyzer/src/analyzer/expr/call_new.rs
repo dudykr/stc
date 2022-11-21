@@ -826,7 +826,9 @@ impl Analyzer<'_, '_> {
                 .context("tried to access property to call it")?;
 
             let callee_before_expanding = dump_type_as_string(&callee);
-            let callee = self.expand_top_ref(span, Cow::Owned(callee), Default::default())?.into_owned();
+            let callee = self
+                .normalize(Some(span), Cow::Owned(callee), NormalizeTypeOpts { ..Default::default() })?
+                .into_owned();
 
             if let Type::ClassDef(cls) = callee.normalize() {
                 if cls.is_abstract {
