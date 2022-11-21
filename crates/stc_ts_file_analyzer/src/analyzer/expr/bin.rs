@@ -830,12 +830,13 @@ impl Analyzer<'_, '_> {
         let c = Comparator { left: l, right: r };
 
         // Check typeof a === 'string'
-        match c.take_if_any_matches(|l, r| match l {
-            RExpr::Unary(RUnaryExpr {
+        if let Some((Ok(name), (Some(t), Some(f)))) = c.take_if_any_matches(|l, r| {
+            if let RExpr::Unary(RUnaryExpr {
                 op: op!("typeof"),
                 ref arg,
                 ..
-            }) => {
+            }) = l
+            {
                 //
                 let name = Name::try_from(&**arg);
                 info!("cond_facts: typeof {:?}", name);
@@ -845,40 +846,38 @@ impl Analyzer<'_, '_> {
                         Some((
                             name,
                             if is_eq {
-                                (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
+                                (TypeFacts::typeof_eq(value), TypeFacts::typeof_neq(value))
                             } else {
-                                (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
+                                (TypeFacts::typeof_neq(value), TypeFacts::typeof_eq(value))
                             },
                         ))
                     }
                     RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some((
                         name,
                         if is_eq {
-                            (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
+                            (TypeFacts::typeof_eq(value), TypeFacts::typeof_neq(value))
                         } else {
-                            (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
+                            (TypeFacts::typeof_neq(value), TypeFacts::typeof_eq(value))
                         },
                     )),
                     _ => None,
                 }
+            } else {
+                None
             }
-            _ => None,
         }) {
-            Some((Ok(name), (Some(t), Some(f)))) => {
-                // If typeof foo.bar is `string`, `foo` cannot be undefined nor null
-                if t != TypeFacts::EQUndefined {
-                    for idx in 1..name.as_ids().len() {
-                        let sub = Name::from(&name.as_ids()[..idx]);
+            // If typeof foo.bar is `string`, `foo` cannot be undefined nor null
+            if t != TypeFacts::EQUndefined {
+                for idx in 1..name.as_ids().len() {
+                    let sub = Name::from(&name.as_ids()[..idx]);
 
-                        self.cur_facts.true_facts.facts.insert(sub.clone(), TypeFacts::NEUndefinedOrNull);
-                    }
+                    self.cur_facts.true_facts.facts.insert(sub.clone(), TypeFacts::NEUndefinedOrNull);
                 }
-
-                // Add type facts
-                self.cur_facts.true_facts.facts.insert(name.clone(), t);
-                self.cur_facts.false_facts.facts.insert(name.clone(), f);
             }
-            _ => {}
+
+            // Add type facts
+            self.cur_facts.true_facts.facts.insert(name.clone(), t);
+            self.cur_facts.false_facts.facts.insert(name, f);
         }
 
         Ok(())
