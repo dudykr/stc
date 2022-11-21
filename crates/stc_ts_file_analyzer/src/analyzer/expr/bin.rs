@@ -1319,46 +1319,42 @@ impl Analyzer<'_, '_> {
     fn can_compare_type_elements_relatively(&mut self, span: Span, l: &[TypeElement], r: &[TypeElement]) -> VResult<Option<bool>> {
         for lm in l {
             for rm in r {
-                match (lm, rm) {
-                    (TypeElement::Method(lm), TypeElement::Method(rm)) => {
-                        if let Ok(()) = self.assign(span, &mut Default::default(), &lm.key.ty(), &rm.key.ty()) {
-                            if lm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
-                                != rm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
-                            {
-                                return Ok(Some(true));
-                            }
+                if let (TypeElement::Method(lm), TypeElement::Method(rm)) = (lm, rm) {
+                    if let Ok(()) = self.assign(span, &mut Default::default(), &lm.key.ty(), &rm.key.ty()) {
+                        if lm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
+                            != rm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
+                        {
+                            return Ok(Some(true));
+                        }
 
-                            let params_res = self.assign_params(
+                        let params_res = self.assign_params(
+                            &mut Default::default(),
+                            &lm.params,
+                            &rm.params,
+                            AssignOpts {
+                                span,
+                                ..Default::default()
+                            },
+                        );
+
+                        if params_res.is_err() {
+                            return Ok(Some(true));
+                        }
+
+                        let ret_ty_res = match (lm.ret_ty.as_deref(), rm.ret_ty.as_deref()) {
+                            (Some(lt), Some(rt)) => self.assign_with_opts(
                                 &mut Default::default(),
-                                &lm.params,
-                                &rm.params,
+                                &lt,
+                                &rt,
                                 AssignOpts {
                                     span,
+                                    allow_unknown_rhs: Some(true),
                                     ..Default::default()
                                 },
-                            );
-
-                            if params_res.is_err() {
-                                return Ok(Some(true));
-                            }
-
-                            let ret_ty_res = match (lm.ret_ty.as_deref(), rm.ret_ty.as_deref()) {
-                                (Some(lt), Some(rt)) => self.assign_with_opts(
-                                    &mut Default::default(),
-                                    &lt,
-                                    &rt,
-                                    AssignOpts {
-                                        span,
-                                        allow_unknown_rhs: Some(true),
-                                        ..Default::default()
-                                    },
-                                ),
-                                _ => Ok(()),
-                            };
-                        }
+                            ),
+                            _ => Ok(()),
+                        };
                     }
-
-                    _ => {}
                 }
             }
         }
@@ -1535,32 +1531,26 @@ impl Analyzer<'_, '_> {
         let ty = self.type_of_name(span, &name.as_ids()[..name.len() - 1], TypeOfMode::RValue, None)?;
         let ty = self.expand_top_ref(span, Cow::Owned(ty), Default::default())?.into_owned();
 
-        match ty.normalize() {
-            Type::Union(u) => {
-                let mut candidates = vec![];
-                for ty in &u.types {
-                    let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
+        if let Type::Union(u) = ty.normalize() {
+            let mut candidates = vec![];
+            for ty in &u.types {
+                let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
 
-                    match prop_res {
-                        Ok(prop_ty) => {
-                            let prop_ty = self.expand_top_ref(prop_ty.span(), Cow::Owned(prop_ty), Default::default())?;
-                            let possible = match prop_ty.normalize() {
-                                // Type parameters might have same value.
-                                Type::Param(..) => true,
-                                _ => prop_ty.type_eq(equals_to),
-                            };
-                            if possible {
-                                candidates.push(ty.clone())
-                            }
-                        }
-                        _ => {}
+                if let Ok(prop_ty) = prop_res {
+                    let prop_ty = self.expand_top_ref(prop_ty.span(), Cow::Owned(prop_ty), Default::default())?;
+                    let possible = match prop_ty.normalize() {
+                        // Type parameters might have same value.
+                        Type::Param(..) => true,
+                        _ => prop_ty.type_eq(equals_to),
+                    };
+                    if possible {
+                        candidates.push(ty.clone())
                     }
                 }
-                let actual = Name::from(&name.as_ids()[..name.len() - 1]);
-
-                return Ok((actual, Type::union(candidates)));
             }
-            _ => {}
+            let actual = Name::from(&name.as_ids()[..name.len() - 1]);
+
+            return Ok((actual, Type::union(candidates)));
         }
 
         Ok((name, eq_ty.clone()))
@@ -1576,7 +1566,7 @@ impl Analyzer<'_, '_> {
     fn narrow_with_equality(&mut self, orig_ty: &Type, equals_to: &Type) -> VResult<Type> {
         let span = equals_to.span();
 
-        if orig_ty.type_eq(&equals_to) {
+        if orig_ty.type_eq(equals_to) {
             return Ok(orig_ty.clone());
         }
 
@@ -1588,32 +1578,29 @@ impl Analyzer<'_, '_> {
         }
 
         // Exclude nevers.
-        match &*orig_ty {
-            Type::Union(orig) => {
-                let mut types = vec![];
-                // We
-                for orig in &orig.types {
-                    let new_ty = self
-                        .narrow_with_equality(&orig, &equals_to)
-                        .context("tried to narrow element of a union type")?;
+        if let Type::Union(orig) = &*orig_ty {
+            let mut types = vec![];
+            // We
+            for orig in &orig.types {
+                let new_ty = self
+                    .narrow_with_equality(orig, &equals_to)
+                    .context("tried to narrow element of a union type")?;
 
-                    if new_ty.is_never() {
-                        continue;
-                    }
-                    types.push(new_ty);
+                if new_ty.is_never() {
+                    continue;
                 }
-
-                return Ok(Type::Union(Union {
-                    span,
-                    types,
-                    metadata: UnionMetadata {
-                        common: equals_to.metadata(),
-                        ..Default::default()
-                    },
-                })
-                .fixed());
+                types.push(new_ty);
             }
-            _ => {}
+
+            return Ok(Type::Union(Union {
+                span,
+                types,
+                metadata: UnionMetadata {
+                    common: equals_to.metadata(),
+                    ..Default::default()
+                },
+            })
+            .fixed());
         }
 
         // At here two variants are different from each other because we checked with
