@@ -303,7 +303,7 @@ impl Analyzer<'_, '_> {
                                 .reduce_conditional_type(
                                     c.span,
                                     &check_type,
-                                    &check_type_constraint,
+                                    check_type_constraint,
                                     &extends_type,
                                     &c.true_type,
                                     &c.false_type,
@@ -373,7 +373,7 @@ impl Analyzer<'_, '_> {
                                 let mut all = true;
                                 let mut types = vec![];
                                 for check_type in &check_type_union.types {
-                                    let res = self.extends(ty.span(), &check_type, &extends_type, Default::default());
+                                    let res = self.extends(ty.span(), check_type, &extends_type, Default::default());
                                     if let Some(v) = res {
                                         if v {
                                             if !c.true_type.is_never() {
