@@ -22,14 +22,14 @@ impl Analyzer<'_, '_> {
         declared.make_clone_cheap();
 
         let mut actual = self
-            .normalize(Some(span), Cow::Borrowed(&actual), Default::default())
+            .normalize(Some(span), Cow::Borrowed(actual), Default::default())
             .context("tried to normalize decalred type")?;
         actual.make_clone_cheap();
 
         if let Type::Union(actual) = actual.normalize() {
             let mut new_types = vec![];
             for actual in &actual.types {
-                let ty = self.narrowed_type_of_assignment(span, declared.clone().into_owned(), &actual)?;
+                let ty = self.narrowed_type_of_assignment(span, declared.clone().into_owned(), actual)?;
                 new_types.push(ty);
             }
 

@@ -612,48 +612,42 @@ impl Analyzer<'_, '_> {
         let mut true_type = self.normalize(Some(span), Cow::Borrowed(true_type), Default::default())?;
         let mut false_type = self.normalize(Some(span), Cow::Borrowed(false_type), Default::default())?;
 
-        match true_type.normalize() {
-            Type::Conditional(c) => {
-                if (*c.check_type).type_eq(check_type) {
-                    if let Some(ty) = self.reduce_conditional_type(
-                        span,
-                        check_type,
-                        &extends_type,
-                        &c.extends_type,
-                        &c.true_type,
-                        &c.false_type,
-                        c.metadata,
-                    )? {
-                        worked = true;
-                        true_type = Cow::Owned(ty)
-                    }
+        if let Type::Conditional(c) = true_type.normalize() {
+            if (*c.check_type).type_eq(check_type) {
+                if let Some(ty) = self.reduce_conditional_type(
+                    span,
+                    check_type,
+                    extends_type,
+                    &c.extends_type,
+                    &c.true_type,
+                    &c.false_type,
+                    c.metadata,
+                )? {
+                    worked = true;
+                    true_type = Cow::Owned(ty)
                 }
             }
-            _ => {}
         }
 
-        match false_type.normalize() {
-            Type::Conditional(c) => {
-                if (*c.check_type).type_eq(check_type) {
-                    let mut check_type_constraint = check_type_constraint.clone();
-                    self.exclude_type(span, &mut check_type_constraint, extends_type);
-                    check_type_constraint.fix();
+        if let Type::Conditional(c) = false_type.normalize() {
+            if (*c.check_type).type_eq(check_type) {
+                let mut check_type_constraint = check_type_constraint.clone();
+                self.exclude_type(span, &mut check_type_constraint, extends_type);
+                check_type_constraint.fix();
 
-                    if let Some(ty) = self.reduce_conditional_type(
-                        span,
-                        check_type,
-                        &check_type_constraint,
-                        &c.extends_type,
-                        &c.true_type,
-                        &c.false_type,
-                        c.metadata,
-                    )? {
-                        worked = true;
-                        false_type = Cow::Owned(ty)
-                    }
+                if let Some(ty) = self.reduce_conditional_type(
+                    span,
+                    check_type,
+                    &check_type_constraint,
+                    &c.extends_type,
+                    &c.true_type,
+                    &c.false_type,
+                    c.metadata,
+                )? {
+                    worked = true;
+                    false_type = Cow::Owned(ty)
                 }
             }
-            _ => {}
         }
 
         match check_type_constraint.normalize() {

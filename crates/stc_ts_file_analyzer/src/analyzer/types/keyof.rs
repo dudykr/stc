@@ -270,7 +270,7 @@ impl Analyzer<'_, '_> {
                         .map(|ty| self.keyof(span, ty).context("tried to get keys of an element of a union type"))
                         .collect::<Result<Vec<_>, _>>()?;
 
-                    if key_types.iter().all(|ty| is_str_lit_or_union(&ty)) {
+                    if key_types.iter().all(|ty| is_str_lit_or_union(ty)) {
                         let mut keys = key_types
                             .into_iter()
                             .map(|ty| match ty.foldable() {

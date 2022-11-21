@@ -212,7 +212,7 @@ impl Analyzer<'_, '_> {
                     }};
                 }
 
-                debug_assert_eq!(self.ctx.allow_ref_declaring, true);
+                debug_assert!(self.ctx.allow_ref_declaring);
 
                 //  Check if v_ty is assignable to ty
                 match declared_ty {
