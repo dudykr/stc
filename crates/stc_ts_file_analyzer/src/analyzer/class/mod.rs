@@ -1077,7 +1077,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         let is_not_finished = c.body[idx..].iter().any(|member| match member {
-                            RClassMember::Method(m) => m.key.eq_ignore_span(&name.unwrap()),
+                            RClassMember::Method(m) => m.key.eq_ignore_span(name.unwrap()),
                             _ => false,
                         });
 
@@ -1189,7 +1189,7 @@ impl Analyzer<'_, '_> {
                 RClassMember::Method(ref m @ RClassMethod { is_abstract: false, .. }) => {
                     if ignore_not_following_for
                         .iter()
-                        .any(|item| is_prop_name_eq_include_computed(&item, &m.key))
+                        .any(|item| is_prop_name_eq_include_computed(item, &m.key))
                     {
                         continue;
                     }
@@ -1498,8 +1498,8 @@ impl Analyzer<'_, '_> {
 
         c.decorators.visit_with(self);
         let name = self.scope.this_class_name.take();
-        match &name {
-            Some(i) => match &**i.sym() {
+        if let Some(i) = &name {
+            match &**i.sym() {
                 "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
                     self.storage.report(ErrorKind::InvalidClassName { span: c.span }.into());
                 }
@@ -1513,8 +1513,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 },
                 _ => {}
-            },
-            _ => {}
+            }
         }
 
         let mut types_to_register: Vec<(Id, _)> = vec![];
