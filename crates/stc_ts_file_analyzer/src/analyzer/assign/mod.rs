@@ -254,7 +254,7 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), &rhs);
+                let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), rhs);
                 if r_castable {
                     if l.is_num() {
                         return Ok(());
@@ -332,17 +332,14 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match op {
-            op!("&&=") => {
-                if rhs.is_bool() {
-                    return Ok(());
-                }
-
-                if self.can_be_casted_to_number_in_rhs(span, &l) && self.can_be_casted_to_number_in_rhs(span, &r) {
-                    return Ok(());
-                }
+        if let op!("&&=") = op {
+            if rhs.is_bool() {
+                return Ok(());
             }
-            _ => {}
+
+            if self.can_be_casted_to_number_in_rhs(span, &l) && self.can_be_casted_to_number_in_rhs(span, &r) {
+                return Ok(());
+            }
         }
 
         match op {
@@ -373,14 +370,11 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )
-                    .convert_err(|err| {
-                        ErrorKind::InvalidOpAssign {
-                            span,
-                            op,
-                            lhs: box l.into_owned().clone(),
-                            rhs: box r.into_owned().clone(),
-                        }
-                        .into()
+                    .convert_err(|err| ErrorKind::InvalidOpAssign {
+                        span,
+                        op,
+                        lhs: box l.into_owned().clone(),
+                        rhs: box r.into_owned().clone(),
                     });
             }
             _ => {}
@@ -443,8 +437,7 @@ impl Analyzer<'_, '_> {
                 right: box right.clone(),
                 right_ident: opts.right_ident_span,
                 cause: vec![err.into()],
-            }
-            .into(),
+            },
         })
     }
 
@@ -454,24 +447,21 @@ impl Analyzer<'_, '_> {
         let _ctx = ctx!("tried to normalize a type for assignment");
         let ty = ty.normalize();
 
-        match ty {
-            Type::Instance(Instance { ty, .. }) => {
-                // Normalize further
-                if ty.is_ref_type() {
-                    let normalized = self.normalize_for_assign(span, ty)?;
+        if let Type::Instance(Instance { ty, .. }) = ty {
+            // Normalize further
+            if ty.is_ref_type() {
+                let normalized = self.normalize_for_assign(span, ty)?;
 
-                    if normalized.is_keyword() {
-                        return Ok(normalized);
-                    }
-                }
-
-                if ty.is_mapped() {
-                    let ty = self.normalize_for_assign(span, ty)?;
-
-                    return Ok(ty);
+                if normalized.is_keyword() {
+                    return Ok(normalized);
                 }
             }
-            _ => {}
+
+            if ty.is_mapped() {
+                let ty = self.normalize_for_assign(span, ty)?;
+
+                return Ok(ty);
+            }
         }
 
         match ty {
