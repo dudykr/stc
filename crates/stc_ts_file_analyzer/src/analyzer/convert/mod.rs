@@ -1048,34 +1048,31 @@ impl Analyzer<'_, '_> {
         let mut prev_keys: Vec<Cow<_>> = vec![];
 
         for elem in elems {
-            match elem {
-                // TODO(kdy1): Handle getter / setter
-                TypeElement::Property(PropertySignature {
-                    accessor:
-                        Accessor {
-                            getter: false,
-                            setter: false,
-                            ..
-                        },
-                    ..
-                }) => {
-                    if let Some(key) = elem.key() {
-                        let key = key.normalize();
-                        let key_ty = key.ty();
+            if let TypeElement::Property(PropertySignature {
+                accessor:
+                    Accessor {
+                        getter: false,
+                        setter: false,
+                        ..
+                    },
+                ..
+            }) = elem
+            {
+                if let Some(key) = elem.key() {
+                    let key = key.normalize();
+                    let key_ty = key.ty();
 
-                        if key_ty.is_symbol() {
-                            continue;
-                        }
-                        if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(&*prev_key)) {
-                            self.storage
-                                .report(ErrorKind::DuplicateNameWithoutName { span: prev.span() }.into());
-                            self.storage.report(ErrorKind::DuplicateNameWithoutName { span: key.span() }.into());
-                        } else {
-                            prev_keys.push(key);
-                        }
+                    if key_ty.is_symbol() {
+                        continue;
+                    }
+                    if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(&*prev_key)) {
+                        self.storage
+                            .report(ErrorKind::DuplicateNameWithoutName { span: prev.span() }.into());
+                        self.storage.report(ErrorKind::DuplicateNameWithoutName { span: key.span() }.into());
+                    } else {
+                        prev_keys.push(key);
                     }
                 }
-                _ => {}
             }
         }
     }

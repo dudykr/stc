@@ -2331,7 +2331,7 @@ impl Analyzer<'_, '_> {
         let keys = keys.normalize();
         let rhs = rhs.normalize();
 
-        let mut rhs_keys = self.extract_keys(opts.span, &rhs)?;
+        let mut rhs_keys = self.extract_keys(opts.span, rhs)?;
         rhs_keys.make_clone_cheap();
 
         self.assign_with_opts(

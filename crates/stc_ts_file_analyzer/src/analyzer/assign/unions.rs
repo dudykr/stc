@@ -84,7 +84,7 @@ impl Analyzer<'_, '_> {
     fn append_type_element_to_type(&mut self, span: Span, to: &mut Type, el: &TypeElement) -> VResult<()> {
         if let TypeElement::Property(el) = el {
             if let Some(el_ty) = &el.type_ann {
-                if let Some(ty) = self.expand_union_for_assignment(span, &el_ty) {
+                if let Some(ty) = self.expand_union_for_assignment(span, el_ty) {
                     let mut to_types = (0..ty.types.len()).map(|_| ALLOW_DEEP_CLONE.set(&(), || to.clone())).collect_vec();
 
                     for (idx, el_ty) in ty.types.iter().enumerate() {

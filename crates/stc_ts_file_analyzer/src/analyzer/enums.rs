@@ -323,6 +323,7 @@ impl Evaluator<'_> {
         })
     }
 
+    #[allow(unused)]
     fn try_str(e: &RExpr) -> Result<RStr, ()> {
         match *e {
             RExpr::Lit(RLit::Str(ref s)) => return Ok(s.clone()),
