@@ -1002,9 +1002,9 @@ impl Analyzer<'_, '_> {
 
         types_to_exclude.extend(self.cur_facts.true_facts.excludes.get(name).cloned().into_iter().flatten());
 
-        let before = dump_type_as_string(&self.cm, &ty);
+        let before = dump_type_as_string(&self.cm, ty);
         self.exclude_types(span, ty, Some(types_to_exclude));
-        let after = dump_type_as_string(&self.cm, &ty);
+        let after = dump_type_as_string(&self.cm, ty);
 
         debug!("[types/facts] Excluded types: {} => {}", before, after);
     }
@@ -1059,21 +1059,19 @@ impl Analyzer<'_, '_> {
                         excluded.extend(members.iter());
                         // TODO(kdy1): Override
 
-                        if let Some(super_members) = self.collect_class_members(&excluded, &sc)? {
+                        if let Some(super_members) = self.collect_class_members(&excluded, sc)? {
                             members.extend(super_members)
                         }
 
-                        return Ok(Some(members));
+                        Ok(Some(members))
                     }
-                    None => {
-                        return Ok(Some(members));
-                    }
+                    None => Ok(Some(members)),
                 }
             }
             Type::Class(c) => self.collect_class_members(excluded, &Type::ClassDef(*c.def.clone())),
             _ => {
                 error!("unimplemented: collect_class_members: {:?}", ty);
-                return Ok(None);
+                Ok(None)
             }
         }
     }

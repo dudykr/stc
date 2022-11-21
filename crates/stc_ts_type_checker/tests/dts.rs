@@ -2,6 +2,7 @@
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(test)]
+#![allow(clippy::vec_box)]
 
 extern crate test;
 
