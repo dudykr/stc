@@ -562,6 +562,9 @@ pub(crate) struct AccessPropertyOpts {
     ///
     /// This is true for destructuring variable declarations.
     pub disallow_inexact: bool,
+
+    /// Check if `obj` is undefined or null
+    pub check_for_undefined_or_null: bool,
 }
 
 #[validator]
@@ -1224,8 +1227,10 @@ impl Analyzer<'_, '_> {
             debug!("access_property: obj = {}", dump_type_as_string(&self.cm, &obj));
         }
 
-        if obj.is_undefined() && self.rule().strict_null_checks {
-            return Err(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
+        if opts.check_for_undefined_or_null && self.rule().strict_null_checks {
+            if obj.is_undefined() {
+                return Err(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
+            }
         }
 
         let _stack = stack::track(span)?;
@@ -3857,7 +3862,17 @@ impl Analyzer<'_, '_> {
 
         let mut ty = self
             .with_ctx(prop_access_ctx)
-            .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var, Default::default())
+            .access_property(
+                span,
+                &obj_ty,
+                &prop,
+                type_mode,
+                IdCtx::Var,
+                AccessPropertyOpts {
+                    check_for_undefined_or_null: true,
+                    ..Default::default()
+                },
+            )
             .context("tried to access property of an object to calculate type of a member expression")?;
 
         if !self.is_builtin {
