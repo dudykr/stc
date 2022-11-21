@@ -56,6 +56,9 @@ pub(crate) struct NormalizeTypeOpts {
     /// Should we preserve [Type::Intersection]?
     pub preserve_intersection: bool,
 
+    /// Should we preserve [Type::Union]?
+    pub preserve_union: bool,
+
     //// If `true`, we will not expand generics.
     pub process_only_key: bool,
 }
@@ -223,40 +226,42 @@ impl Analyzer<'_, '_> {
                     Type::Infer(_) | Type::StaticThis(_) | Type::This(_) => {}
 
                     Type::Union(ty) => {
-                        let mut types = vec![];
+                        if !opts.preserve_union {
+                            let mut types = vec![];
 
-                        for ty in ty.types.iter() {
-                            let mut ty = self
-                                .normalize(span, Cow::Borrowed(ty), opts)
-                                .context("tried to normalize an element of a union type")?;
-                            ty.make_clone_cheap();
-                            let mut ty = ty.into_owned();
+                            for ty in ty.types.iter() {
+                                let mut ty = self
+                                    .normalize(span, Cow::Borrowed(ty), opts)
+                                    .context("tried to normalize an element of a union type")?;
+                                ty.make_clone_cheap();
+                                let mut ty = ty.into_owned();
 
-                            if let Some(u) = ty.as_union_type_mut() {
-                                types.append(&mut u.types);
-                            } else {
-                                types.push(ty);
+                                if let Some(u) = ty.as_union_type_mut() {
+                                    types.append(&mut u.types);
+                                } else {
+                                    types.push(ty);
+                                }
                             }
+
+                            types.dedup_type();
+                            types.retain(|ty| !ty.is_never());
+
+                            if types.is_empty() {
+                                return Ok(Cow::Owned(Type::never(
+                                    ty.span,
+                                    KeywordTypeMetadata {
+                                        common: ty.metadata.common,
+                                    },
+                                )));
+                            }
+                            if types.len() == 1 {
+                                return Ok(Cow::Owned(types.into_iter().next().unwrap()));
+                            }
+
+                            let ty = Type::Union(Union { types, ..*ty }).freezed();
+
+                            return Ok(Cow::Owned(ty));
                         }
-
-                        types.dedup_type();
-                        types.retain(|ty| !ty.is_never());
-
-                        if types.is_empty() {
-                            return Ok(Cow::Owned(Type::never(
-                                ty.span,
-                                KeywordTypeMetadata {
-                                    common: ty.metadata.common,
-                                },
-                            )));
-                        }
-                        if types.len() == 1 {
-                            return Ok(Cow::Owned(types.into_iter().next().unwrap()));
-                        }
-
-                        let ty = Type::Union(Union { types, ..*ty }).freezed();
-
-                        return Ok(Cow::Owned(ty));
                     }
 
                     Type::Intersection(ty) => {
@@ -816,7 +821,7 @@ impl Analyzer<'_, '_> {
                 Type::Intersection(Intersection { types, ..ty }).fixed()
             }
 
-            Type::Union(ty) => {
+            Type::Union(ty) if !opts.preserve_union => {
                 let types = ty
                     .types
                     .into_iter()
