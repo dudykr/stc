@@ -1207,7 +1207,7 @@ impl Analyzer<'_, '_> {
             Type::ClassDef(c) => {
                 let mut members = vec![];
                 if let Some(super_class) = &c.super_class {
-                    let super_els = self.convert_type_to_type_lit(span, Cow::Borrowed(&super_class))?;
+                    let super_els = self.convert_type_to_type_lit(span, Cow::Borrowed(super_class))?;
                     members.extend(super_els.map(|ty| ty.into_owned().members).into_iter().flatten());
                 }
 
@@ -1384,7 +1384,7 @@ impl Analyzer<'_, '_> {
 
             Ok(new)
         })
-        .with_context(|| format!("tried to merge type elements"))
+        .with_context(|| "tried to merge type elements".to_string())
     }
 
     fn merge_type_element(&mut self, span: Span, to: &mut TypeElement, from: TypeElement) -> VResult<()> {
@@ -1461,25 +1461,22 @@ impl Analyzer<'_, '_> {
     /// - `Promise<T>` => `T`
     /// - `T | PromiseLike<T>` => `T`
     pub(crate) fn normalize_promise_arg<'a>(&mut self, arg: &'a Type) -> Cow<'a, Type> {
-        if let Some(arg) = unwrap_ref_with_single_arg(&arg, "Promise") {
-            return self.normalize_promise_arg(&arg);
+        if let Some(arg) = unwrap_ref_with_single_arg(arg, "Promise") {
+            return self.normalize_promise_arg(arg);
         }
 
-        match arg.normalize() {
-            Type::Union(u) => {
-                // Part of `Promise<T | PromiseLike<T>> => Promise<T>`
-                if u.types.len() == 2 {
-                    let first = u.types[0].normalize();
-                    let second = u.types[1].normalize();
+        if let Type::Union(u) = arg.normalize() {
+            // Part of `Promise<T | PromiseLike<T>> => Promise<T>`
+            if u.types.len() == 2 {
+                let first = u.types[0].normalize();
+                let second = u.types[1].normalize();
 
-                    if let Some(second_arg) = unwrap_ref_with_single_arg(&second, "PromiseLike") {
-                        if second_arg.type_eq(first) {
-                            return Cow::Borrowed(first);
-                        }
+                if let Some(second_arg) = unwrap_ref_with_single_arg(second, "PromiseLike") {
+                    if second_arg.type_eq(first) {
+                        return Cow::Borrowed(first);
                     }
                 }
             }
-            _ => {}
         }
 
         Cow::Borrowed(arg)
