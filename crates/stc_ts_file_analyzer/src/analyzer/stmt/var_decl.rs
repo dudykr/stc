@@ -609,7 +609,7 @@ impl Analyzer<'_, '_> {
                         })()?
                         .freezed();
 
-                        self.declare_complex_vars(VarKind::Var(kind), &v.name, var_ty.clone(), None, None)
+                        self.declare_complex_vars(VarKind::Var(kind), &v.name, var_ty, None, None)
                             .report(&mut self.storage);
                         remove_declaring!();
                         return Ok(());
@@ -648,11 +648,8 @@ impl Analyzer<'_, '_> {
                                 metadata: Default::default(),
                             })
                         });
-                        match ty {
-                            Some(ref mut ty) => {
-                                self.prevent_expansion(&mut *ty);
-                            }
-                            _ => {}
+                        if let Some(ref mut ty) = ty {
+                            self.prevent_expansion(&mut *ty);
                         }
 
                         ty.make_clone_cheap();
@@ -705,7 +702,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             };
 
-            debug_assert_eq!(self.ctx.allow_ref_declaring, true);
+            debug_assert!(self.ctx.allow_ref_declaring);
             if v.name.get_ty().is_none() {
                 self.declare_vars(VarKind::Var(kind), &v.name).report(&mut self.storage);
             }
