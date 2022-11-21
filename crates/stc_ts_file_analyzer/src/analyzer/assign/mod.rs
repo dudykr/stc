@@ -842,7 +842,7 @@ impl Analyzer<'_, '_> {
 
         if match rhs.normalize_instance() {
             Type::Lit(..) => true,
-            Type::Interface(i) => matches!(&**i.name.sym(), "Boolean" | "String" | "Number"),
+            Type::Interface(i) => matches!(&**i.name.sym(), "Boolean" | "String" | "Number" | "BigInt"),
             _ => false,
         } {
             // Handle special cases.
@@ -852,6 +852,7 @@ impl Analyzer<'_, '_> {
                 (TsKeywordTypeKind::TsBooleanKeyword, "Boolean"),
                 (TsKeywordTypeKind::TsStringKeyword, "String"),
                 (TsKeywordTypeKind::TsNumberKeyword, "Number"),
+                (TsKeywordTypeKind::TsBigIntKeyword, "BigInt"),
             ];
 
             let rhs = rhs.clone().generalize_lit();
