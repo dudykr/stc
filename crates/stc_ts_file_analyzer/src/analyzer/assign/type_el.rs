@@ -761,13 +761,10 @@ impl Analyzer<'_, '_> {
 
         'l: for m in lhs {
             // Handle `toString()`
-            match m {
-                TypeElement::Method(ref m) => {
-                    if m.key == js_word!("toString") {
-                        continue;
-                    }
+            if let TypeElement::Method(ref m) = m {
+                if m.key == js_word!("toString") {
+                    continue;
                 }
-                _ => {}
             }
 
             // Handle optional
@@ -792,20 +789,17 @@ impl Analyzer<'_, '_> {
                         }
                         TypeElement::Property(ref lp) => {
                             for rm in body {
-                                match rm {
-                                    ClassMember::Property(ref rp) => {
-                                        match rp.accessibility {
-                                            Some(Accessibility::Private) | Some(Accessibility::Protected) => {
-                                                errors.push(ErrorKind::AccessibilityDiffers { span }.into());
-                                            }
-                                            _ => {}
+                                if let ClassMember::Property(ref rp) = rm {
+                                    match rp.accessibility {
+                                        Some(Accessibility::Private) | Some(Accessibility::Protected) => {
+                                            errors.push(ErrorKind::AccessibilityDiffers { span }.into());
                                         }
-
-                                        if lp.key.type_eq(&rp.key) {
-                                            continue 'l;
-                                        }
+                                        _ => {}
                                     }
-                                    _ => {}
+
+                                    if lp.key.type_eq(&rp.key) {
+                                        continue 'l;
+                                    }
                                 }
                             }
 
@@ -857,11 +851,7 @@ impl Analyzer<'_, '_> {
         }
 
         if !errors.is_empty() {
-            return Err(ErrorKind::Errors {
-                span,
-                errors: errors.into(),
-            }
-            .into());
+            return Err(ErrorKind::Errors { span, errors }.into());
         }
 
         Ok(())
@@ -934,7 +924,7 @@ impl Analyzer<'_, '_> {
 
                         let res = self.assign_with_opts(
                             data,
-                            &l,
+                            l,
                             &parent,
                             AssignOpts {
                                 allow_unknown_rhs: Some(true),
@@ -1349,7 +1339,7 @@ impl Analyzer<'_, '_> {
 
                                         if let Some(lt) = &li.type_ann {
                                             if let Some(rt) = &ri.type_ann {
-                                                self.assign_with_opts(data, &lt, &rt, opts)?;
+                                                self.assign_with_opts(data, lt, rt, opts)?;
                                             }
                                         }
 
