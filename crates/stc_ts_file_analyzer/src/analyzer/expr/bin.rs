@@ -1647,20 +1647,22 @@ impl Analyzer<'_, '_> {
                 // validation of types is required to compute type of the
                 // expression.
             }
-            op!("||") | op!("&&") => match lt.normalize() {
-                Type::Keyword(KeywordType {
+            op!("||") | op!("&&") => {
+                if let Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
-                }) => errors.push(ErrorKind::TS1345 { span }.into()),
-                _ => {}
-            },
+                }) = lt.normalize()
+                {
+                    errors.push(ErrorKind::TS1345 { span }.into())
+                }
+            }
 
             op!("*") | op!("/") | op!("%") | op!(bin, "-") | op!("<<") | op!(">>") | op!(">>>") | op!("&") | op!("^") | op!("|") => {
                 let mut check = |ty: &Type, is_left| {
                     if ty.is_any() {
                         return;
                     }
-                    if self.can_be_casted_to_number_in_rhs(ty.span(), &ty) {
+                    if self.can_be_casted_to_number_in_rhs(ty.span(), ty) {
                         return;
                     }
 
@@ -1680,22 +1682,20 @@ impl Analyzer<'_, '_> {
                 };
 
                 if (op == op!("&") || op == op!("^") || op == op!("|"))
-                    && match lt.normalize() {
+                    && matches!(
+                        lt.normalize(),
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsBooleanKeyword,
                             ..
-                        })
-                        | Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => true,
-                        _ => false,
-                    }
-                    && match rt.normalize() {
+                        }) | Type::Lit(LitType { lit: RTsLit::Bool(..), .. })
+                    )
+                    && matches!(
+                        rt.normalize(),
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsBooleanKeyword,
                             ..
-                        })
-                        | Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => true,
-                        _ => false,
-                    }
+                        }) | Type::Lit(LitType { lit: RTsLit::Bool(..), .. })
+                    )
                 {
                     errors.push(ErrorKind::TS2447 { span }.into());
                 } else {

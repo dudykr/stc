@@ -3026,11 +3026,9 @@ impl Analyzer<'_, '_> {
         id.span.hi = span.hi;
 
         match name.len() {
-            1 => {
-                return self
-                    .type_of_var(&id, TypeOfMode::RValue, None)
-                    .context("tried to get type of a name with len == 1");
-            }
+            1 => self
+                .type_of_var(&id, TypeOfMode::RValue, None)
+                .context("tried to get type of a name with len == 1"),
 
             _ => {
                 let last_id = name.last().unwrap();
