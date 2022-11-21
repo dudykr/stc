@@ -717,7 +717,7 @@ impl Analyzer<'_, '_> {
             }
 
             RTsEntityName::Ident(ref i) => {
-                self.report_error_for_type_param_usages_in_static_members(&i);
+                self.report_error_for_type_param_usages_in_static_members(i);
 
                 if let Some(types) = self.find_type(&i.into())? {
                     let mut found = false;
@@ -1230,7 +1230,7 @@ impl Analyzer<'_, '_> {
             metadata: Default::default(),
         });
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert_with(|| ty);
+            m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert(ty);
         }
     }
 
@@ -1249,7 +1249,7 @@ impl Analyzer<'_, '_> {
                     let key = p.key.validate_with(self)?;
                     match *p.value {
                         RPat::Array(_) | RPat::Object(_) => {
-                            self.default_any_pat(&*p.value);
+                            self.default_any_pat(&p.value);
                         }
                         _ => {}
                     }
