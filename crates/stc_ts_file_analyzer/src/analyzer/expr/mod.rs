@@ -3593,7 +3593,7 @@ impl Analyzer<'_, '_> {
     fn type_of_ts_entity_name_inner(&mut self, span: Span, n: &RExpr, type_args: Option<&TypeParamInstantiation>) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
         {
-            let res = self.report_error_for_unresolve_type(span, &n, type_args);
+            let res = self.report_error_for_unresolve_type(span, n, type_args);
             match res {
                 Ok(()) => {}
                 Err(err) => {
@@ -3732,7 +3732,7 @@ impl Analyzer<'_, '_> {
                 prop: RMemberProp::Ident(right),
                 ..
             }) => {
-                let obj_ty = self.type_of_ts_entity_name(span, &obj, None)?;
+                let obj_ty = self.type_of_ts_entity_name(span, obj, None)?;
                 obj_ty.assert_valid();
 
                 self.access_property(
@@ -3813,7 +3813,7 @@ impl Analyzer<'_, '_> {
         let is_obj_opt_chain;
         let mut should_be_optional = false;
         let mut obj_ty = {
-            is_obj_opt_chain = is_obj_opt_chaining(&obj);
+            is_obj_opt_chain = is_obj_opt_chaining(obj);
 
             let obj_ctx = Ctx {
                 allow_module_var: true,
@@ -4142,26 +4142,25 @@ impl Analyzer<'_, '_> {
             }));
         }
 
+        // TODO(kdy1): This seems wrong. We should remove this if block and preserve
+        // only prevent_generalization part
         if let Some(type_ann) = type_ann {
-            match self
+            if let Type::Tpl(TplType { span, quasis, types, .. }) = self
                 .normalize(None, Cow::Borrowed(type_ann.normalize_instance()), Default::default())?
                 .as_ref()
                 .normalize()
             {
-                Type::Tpl(TplType { span, quasis, types, .. }) => {
-                    return Ok(Type::Tpl(TplType {
-                        span: *span,
-                        quasis: quasis.clone(),
-                        types: types.clone(),
-                        metadata: TplTypeMetadata {
-                            common: CommonTypeMetadata {
-                                prevent_generalization: true,
-                                ..Default::default()
-                            },
+                return Ok(Type::Tpl(TplType {
+                    span: *span,
+                    quasis: quasis.clone(),
+                    types: types.clone(),
+                    metadata: TplTypeMetadata {
+                        common: CommonTypeMetadata {
+                            prevent_generalization: true,
+                            ..Default::default()
                         },
-                    }))
-                }
-                _ => {}
+                    },
+                }));
             }
         }
 
@@ -4197,9 +4196,9 @@ fn is_valid_lhs(l: &RPatOrExpr) -> VResult<()> {
 
     match l {
         RPatOrExpr::Pat(pat) => match &**pat {
-            RPat::Expr(e) => is_valid_lhs_expr(&e),
+            RPat::Expr(e) => is_valid_lhs_expr(e),
             _ => Ok(()),
         },
-        RPatOrExpr::Expr(e) => is_valid_lhs_expr(&e),
+        RPatOrExpr::Expr(e) => is_valid_lhs_expr(e),
     }
 }
