@@ -793,12 +793,9 @@ impl Analyzer<'_, '_> {
             Type::EnumVariant(EnumVariant { enum_name, name: None, .. }) => {
                 if let Ok(Some(types)) = self.find_type(enum_name) {
                     for ty in types {
-                        match ty.normalize() {
-                            Type::Enum(e) => {
-                                let e = e.clone();
-                                return self.check_if_type_matches_key(span, declared, &Type::Enum(e), allow_union);
-                            }
-                            _ => {}
+                        if let Type::Enum(e) = ty.normalize() {
+                            let e = e.clone();
+                            return self.check_if_type_matches_key(span, declared, &Type::Enum(e), allow_union);
                         }
                     }
                 }
@@ -809,21 +806,18 @@ impl Analyzer<'_, '_> {
             Type::Enum(e) if allow_union => {
                 //
                 for m in &e.members {
-                    match &*m.val {
-                        RExpr::Lit(RLit::Str(s)) => {
-                            if self.key_matches(
-                                span,
-                                declared,
-                                &Key::Normal {
-                                    span: s.span,
-                                    sym: s.value.clone(),
-                                },
-                                true,
-                            ) {
-                                return true;
-                            }
+                    if let RExpr::Lit(RLit::Str(s)) = &*m.val {
+                        if self.key_matches(
+                            span,
+                            declared,
+                            &Key::Normal {
+                                span: s.span,
+                                sym: s.value.clone(),
+                            },
+                            true,
+                        ) {
+                            return true;
                         }
-                        _ => {}
                     }
                 }
             }
@@ -896,48 +890,46 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                match (key, prop) {
-                    (
-                        Key::Num(key),
-                        Key::Normal {
-                            span: prop_span,
-                            sym: prop_sym,
-                        },
-                    ) => {
-                        // If we are accessing an object which has 0b11010 (26,
-                        // binary number) and the accessor is "26" (string), it
-                        // should be any.
-                        //
-                        //
-                        if *prop_sym == js_word!("Infinity") {
-                            return Ok(Some(Type::any(span, Default::default())));
-                        } else if prop_sym.starts_with("0b") || prop_sym.starts_with("0B") {
-                            let prop_num = lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 2);
+                if let (
+                    Key::Num(key),
+                    Key::Normal {
+                        span: prop_span,
+                        sym: prop_sym,
+                    },
+                ) = (key, prop)
+                {
+                    // If we are accessing an object which has 0b11010 (26,
+                    // binary number) and the accessor is "26" (string), it
+                    // should be any.
+                    //
+                    //
+                    if *prop_sym == js_word!("Infinity") {
+                        return Ok(Some(Type::any(span, Default::default())));
+                    } else if prop_sym.starts_with("0b") || prop_sym.starts_with("0B") {
+                        let prop_num = lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 2);
 
-                            if let Ok(prop_num) = prop_num {
-                                if key.value == prop_num {
-                                    return Ok(Some(Type::any(span, Default::default())));
-                                }
+                        if let Ok(prop_num) = prop_num {
+                            if key.value == prop_num {
+                                return Ok(Some(Type::any(span, Default::default())));
                             }
-                        } else if prop_sym.starts_with("0o") || prop_sym.starts_with("0O") {
-                            let prop_num = lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 8);
+                        }
+                    } else if prop_sym.starts_with("0o") || prop_sym.starts_with("0O") {
+                        let prop_num = lexical::parse_radix::<f64, _>(prop_sym[2..].as_bytes(), 8);
 
-                            if let Ok(prop_num) = prop_num {
-                                if key.value == prop_num {
-                                    return Ok(Some(Type::any(span, Default::default())));
-                                }
+                        if let Ok(prop_num) = prop_num {
+                            if key.value == prop_num {
+                                return Ok(Some(Type::any(span, Default::default())));
                             }
-                        } else {
-                            let prop_num = lexical::parse_radix::<f64, _>(prop_sym.as_bytes(), 10);
+                        }
+                    } else {
+                        let prop_num = lexical::parse_radix::<f64, _>(prop_sym.as_bytes(), 10);
 
-                            if let Ok(prop_num) = prop_num {
-                                if key.value == prop_num {
-                                    return Ok(Some(Type::any(span, Default::default())));
-                                }
+                        if let Ok(prop_num) = prop_num {
+                            if key.value == prop_num {
+                                return Ok(Some(Type::any(span, Default::default())));
                             }
                         }
                     }
-                    _ => {}
                 }
             }
         }
@@ -946,10 +938,7 @@ impl Analyzer<'_, '_> {
             return Ok(matching_elements.pop());
         }
 
-        let is_callable = members.iter().any(|element| match element {
-            TypeElement::Call(_) => true,
-            _ => false,
-        });
+        let is_callable = members.iter().any(|element| matches!(element, TypeElement::Call(_)));
 
         if is_callable {
             // Handle funciton-like interfaces
@@ -964,63 +953,56 @@ impl Analyzer<'_, '_> {
 
         let mut has_index_signature = false;
         for el in members.iter().rev() {
-            match el {
-                TypeElement::Index(IndexSignature {
-                    ref params,
-                    ref type_ann,
-                    readonly,
-                    ..
-                }) => {
-                    has_index_signature = true;
+            if let TypeElement::Index(IndexSignature {
+                ref params,
+                ref type_ann,
+                readonly,
+                ..
+            }) = el
+            {
+                has_index_signature = true;
 
-                    if params.len() != 1 {
-                        unimplemented!("Index signature with multiple parameters")
-                    }
-
-                    let index_ty = &params[0].ty;
-
-                    let prop_ty = prop.ty();
-
-                    // Don't know exact reason, but you can index `{ [x: string]: boolean }`
-                    // with number type.
-                    //
-                    // Reverse also works, although it returns any
-                    //
-                    // I guess it's because javascript work in that way.
-
-                    if index_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) && prop_ty.is_str() && prop.is_computed() {
-                        return Ok(Some(Type::any(span, Default::default())));
-                    }
-
-                    let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) && prop_ty.is_num())
-                        || self.assign(span, &mut Default::default(), &index_ty, &prop_ty).is_ok();
-
-                    if indexed {
-                        if let Some(ref type_ann) = type_ann {
-                            let ty = self.expand_top_ref(span, Cow::Borrowed(type_ann), Default::default())?;
-                            return Ok(Some(ty.into_owned()));
-                        }
-
-                        return Ok(Some(Type::any(span, Default::default())));
-                    }
-
-                    if (&**index_ty).type_eq(&*prop_ty) {
-                        return Ok(Some(
-                            type_ann.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default())),
-                        ));
-                    }
-
-                    match prop_ty.normalize() {
-                        // TODO(kdy1): Only string or number
-                        Type::EnumVariant(..) => {
-                            matching_elements.extend(type_ann.clone().map(|v| *v));
-                            continue;
-                        }
-
-                        _ => {}
-                    }
+                if params.len() != 1 {
+                    unimplemented!("Index signature with multiple parameters")
                 }
-                _ => {}
+
+                let index_ty = &params[0].ty;
+
+                let prop_ty = prop.ty();
+
+                // Don't know exact reason, but you can index `{ [x: string]: boolean }`
+                // with number type.
+                //
+                // Reverse also works, although it returns any
+                //
+                // I guess it's because javascript work in that way.
+
+                if index_ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) && prop_ty.is_str() && prop.is_computed() {
+                    return Ok(Some(Type::any(span, Default::default())));
+                }
+
+                let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) && prop_ty.is_num())
+                    || self.assign(span, &mut Default::default(), index_ty, &prop_ty).is_ok();
+
+                if indexed {
+                    if let Some(ref type_ann) = type_ann {
+                        let ty = self.expand_top_ref(span, Cow::Borrowed(type_ann), Default::default())?;
+                        return Ok(Some(ty.into_owned()));
+                    }
+
+                    return Ok(Some(Type::any(span, Default::default())));
+                }
+
+                if (**index_ty).type_eq(&*prop_ty) {
+                    return Ok(Some(
+                        type_ann.clone().map(|v| *v).unwrap_or_else(|| Type::any(span, Default::default())),
+                    ));
+                }
+
+                if let Type::EnumVariant(..) = prop_ty.normalize() {
+                    matching_elements.extend(type_ann.clone().map(|v| *v));
+                    continue;
+                }
             }
         }
 
@@ -1078,16 +1060,13 @@ impl Analyzer<'_, '_> {
 
         // Try some easier assignments.
         if prop.is_computed() {
-            if match obj.normalize() {
-                Type::Tuple(..) => true,
-                _ => false,
-            } {
+            if matches!(obj.normalize(), Type::Tuple(..)) {
                 // See if key is number.
-                match prop.ty().normalize() {
-                    Type::Lit(LitType {
-                        lit: RTsLit::Number(prop), ..
-                    }) => return self.access_property(span, obj, &Key::Num(prop.clone()), type_mode, id_ctx, opts),
-                    _ => {}
+                if let Type::Lit(LitType {
+                    lit: RTsLit::Number(prop), ..
+                }) = prop.ty().normalize()
+                {
+                    return self.access_property(span, obj, &Key::Num(prop.clone()), type_mode, id_ctx, opts);
                 }
             }
 
@@ -1138,20 +1117,19 @@ impl Analyzer<'_, '_> {
                 Type::Param(TypeParam {
                     constraint: Some(constraint),
                     ..
-                }) if opts.for_validation_of_indexed_access_type => match constraint.normalize() {
-                    Type::Operator(Operator {
+                }) if opts.for_validation_of_indexed_access_type => {
+                    if let Type::Operator(Operator {
                         op: TsTypeOperatorOp::KeyOf,
                         ty: constraint_ty,
                         ..
-                    }) => {
+                    }) = constraint.normalize()
+                    {
                         //
                         if constraint_ty.as_ref().type_eq(&*obj) {
                             return Ok(Type::any(DUMMY_SP, Default::default()));
                         }
                     }
-
-                    _ => {}
-                },
+                }
 
                 _ => {}
             }
@@ -1287,8 +1265,7 @@ impl Analyzer<'_, '_> {
                                         span,
                                         sym: name.sym().clone(),
                                     }),
-                                }
-                                .into(),
+                                },
                                 _ => err,
                             });
                         }
@@ -1305,8 +1282,7 @@ impl Analyzer<'_, '_> {
                                             span,
                                             sym: name.sym().clone(),
                                         }),
-                                    }
-                                    .into(),
+                                    },
                                     _ => err,
                                 });
                         }
