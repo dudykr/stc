@@ -888,45 +888,42 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match (to, rhs) {
-            (Type::Conditional(lc), Type::Conditional(rc)) => {
-                if lc.check_type.type_eq(&rc.check_type) && lc.extends_type.type_eq(&rc.extends_type) {
-                    self.assign_with_opts(data, &lc.true_type, &rc.true_type, opts)
-                        .context("tried to assign the true type of a conditional type to it of similar conditional type")?;
+        if let (Type::Conditional(lc), Type::Conditional(rc)) = (to, rhs) {
+            if lc.check_type.type_eq(&rc.check_type) && lc.extends_type.type_eq(&rc.extends_type) {
+                self.assign_with_opts(data, &lc.true_type, &rc.true_type, opts)
+                    .context("tried to assign the true type of a conditional type to it of similar conditional type")?;
 
-                    self.assign_with_opts(data, &lc.false_type, &rc.false_type, opts)
-                        .context("tried to assign the true type of a conditional type to it of similar conditional type")?;
+                self.assign_with_opts(data, &lc.false_type, &rc.false_type, opts)
+                    .context("tried to assign the true type of a conditional type to it of similar conditional type")?;
 
-                    return Ok(());
-                }
+                return Ok(());
+            }
 
-                if lc.extends_type.type_eq(&rc.extends_type) {
-                    //
-                    let l_variance = self.variance(&lc)?;
-                    let r_variance = self.variance(&rc)?;
+            if lc.extends_type.type_eq(&rc.extends_type) {
+                //
+                let l_variance = self.variance(lc)?;
+                let r_variance = self.variance(rc)?;
 
-                    match (l_variance, r_variance) {
-                        (Variance::Covariant, Variance::Covariant) => {
-                            return self
-                                .assign_with_opts(data, &lc.check_type, &rc.check_type, opts)
-                                .context("tried assignment of covariant types")
+                match (l_variance, r_variance) {
+                    (Variance::Covariant, Variance::Covariant) => {
+                        return self
+                            .assign_with_opts(data, &lc.check_type, &rc.check_type, opts)
+                            .context("tried assignment of covariant types")
+                    }
+                    (Variance::Contravariant, Variance::Contravariant) => {
+                        return self
+                            .assign_with_opts(data, &rc.check_type, &lc.check_type, opts)
+                            .context("tried assignment of contravariant types")
+                    }
+                    _ => {
+                        return Err(ErrorKind::Unimplemented {
+                            span,
+                            msg: format!("{:?} = {:?}", l_variance, r_variance),
                         }
-                        (Variance::Contravariant, Variance::Contravariant) => {
-                            return self
-                                .assign_with_opts(data, &rc.check_type, &lc.check_type, opts)
-                                .context("tried assignment of contravariant types")
-                        }
-                        _ => {
-                            return Err(ErrorKind::Unimplemented {
-                                span,
-                                msg: format!("{:?} = {:?}", l_variance, r_variance),
-                            }
-                            .into())
-                        }
+                        .into())
                     }
                 }
             }
-            _ => {}
         }
 
         match (to, rhs) {
@@ -1461,20 +1458,17 @@ impl Analyzer<'_, '_> {
                     let r = self.convert_type_to_type_lit(span, Cow::Borrowed(rhs))?;
                     if let Some(r) = r {
                         for m in &r.members {
-                            match m {
-                                TypeElement::Index(m) => match m.params[0].ty.normalize() {
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                                        ..
-                                    }) => {
-                                        if let Some(type_ann) = &m.type_ann {
-                                            return self.assign_with_opts(data, elem_type, type_ann, opts);
-                                        }
+                            if let TypeElement::Index(m) = m {
+                                if let Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    ..
+                                }) = m.params[0].ty.normalize()
+                                {
+                                    if let Some(type_ann) = &m.type_ann {
+                                        return self.assign_with_opts(data, elem_type, type_ann, opts);
                                     }
-                                    _ => {}
-                                },
-                                _ => {}
+                                }
                             }
                         }
                     }
@@ -1501,11 +1495,8 @@ impl Analyzer<'_, '_> {
                             )?;
                         };
 
-                        match res {
-                            Ok(_) => return Ok(()),
-                            Err(_) => {
-                                // TODO(kdy1): Log?
-                            }
+                        if res.is_ok() {
+                            return Ok(());
                         }
                     }
 
