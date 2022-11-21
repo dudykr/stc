@@ -704,11 +704,11 @@ impl Analyzer<'_, '_> {
                         span,
                         &obj_type,
                         &t.members,
-                        &prop,
+                        prop,
                         type_args,
                         args,
-                        &arg_types,
-                        &spread_arg_types,
+                        arg_types,
+                        spread_arg_types,
                         type_ann,
                         opts,
                     );
@@ -826,7 +826,7 @@ impl Analyzer<'_, '_> {
             };
             let callee = self
                 .with_ctx(ctx)
-                .access_property(span, &obj_type, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                .access_property(span, &obj_type, prop, TypeOfMode::RValue, IdCtx::Var, Default::default())
                 .context("tried to access property to call it")?;
 
             let callee_before_expanding = dump_type_as_string(&self.cm, &callee);
@@ -1536,20 +1536,18 @@ impl Analyzer<'_, '_> {
             Type::Param(TypeParam {
                 constraint: Some(constraint),
                 ..
-            }) => {
-                return self.extract(
-                    span,
-                    expr,
-                    constraint,
-                    kind,
-                    args,
-                    arg_types,
-                    spread_arg_types,
-                    type_args,
-                    type_ann,
-                    opts,
-                )
-            }
+            }) => self.extract(
+                span,
+                expr,
+                constraint,
+                kind,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_args,
+                type_ann,
+                opts,
+            ),
 
             // Type::Constructor(ty::Constructor {
             //     ref params,
