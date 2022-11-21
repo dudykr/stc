@@ -1002,7 +1002,7 @@ impl Analyzer<'_, '_> {
         if !lhs_call.is_empty() {
             let res = self
                 .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &lhs_call, lhs_metadata, rhs, opts)
-                .with_context(|| format!("tried to assign to an element (not a key-based)"));
+                .with_context(|| "tried to assign to an element (not a key-based)".to_string());
 
             errors.extend(res.err());
         }
@@ -1010,7 +1010,7 @@ impl Analyzer<'_, '_> {
         if !lhs_constructor.is_empty() {
             let res = self
                 .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &lhs_constructor, lhs_metadata, rhs, opts)
-                .with_context(|| format!("tried to assign to an element (not a key-based)"));
+                .with_context(|| "tried to assign to an element (not a key-based)".to_string());
 
             errors.extend(res.err());
         }
@@ -1090,7 +1090,7 @@ impl Analyzer<'_, '_> {
                             right_ident_span: Some(r_key.span()),
                             ..opts
                         };
-                        if l_key.type_eq(&*r_key) {
+                        if l_key.type_eq(r_key) {
                             match lm {
                                 TypeElement::Property(ref lp) => match rm {
                                     TypeElement::Property(ref rp) => {
