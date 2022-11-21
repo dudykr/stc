@@ -187,7 +187,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate_delete_operand(&mut self, arg: &RExpr) -> VResult<()> {
         let span = arg.span();
-        match &*arg {
+        match arg {
             RExpr::Member(RMemberExpr {
                 obj: box RExpr::This(..),
                 prop: RMemberProp::PrivateName(..),
@@ -207,22 +207,20 @@ impl Analyzer<'_, '_> {
                     let ty = self.type_of_member_expr(expr, TypeOfMode::RValue).convert_err(|err| match err {
                         ErrorKind::ObjectIsPossiblyNull { span, .. }
                         | ErrorKind::ObjectIsPossiblyUndefined { span, .. }
-                        | ErrorKind::ObjectIsPossiblyNullOrUndefined { span, .. } => ErrorKind::DeleteOperandMustBeOptional { span }.into(),
+                        | ErrorKind::ObjectIsPossiblyNullOrUndefined { span, .. } => ErrorKind::DeleteOperandMustBeOptional { span },
                         _ => err,
                     })?;
                     if !self.can_be_undefined(span, &ty)? {
                         return Err(ErrorKind::DeleteOperandMustBeOptional { span }.into());
                     }
                 }
-                return Ok(());
+                Ok(())
             }
 
             //
             // delete (o4.b?.c.d);
             // delete (o4.b?.c.d)?.e;
-            RExpr::Paren(RParenExpr { expr, .. }) => {
-                return self.validate_delete_operand(expr);
-            }
+            RExpr::Paren(RParenExpr { expr, .. }) => self.validate_delete_operand(expr),
 
             RExpr::Await(..) => Err(ErrorKind::InvalidDeleteOperand { span }.into()),
 
