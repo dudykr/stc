@@ -335,22 +335,18 @@ impl Analyzer<'_, '_> {
                 // annotation is different.
                 for lm in &lt.members {
                     for rm in &rt.members {
-                        match (lm, rm) {
-                            (TypeElement::Index(lm), TypeElement::Index(rm)) => {
-                                if lm.params.type_eq(&rm.params) {
-                                    if let Some(lt) = &lm.type_ann {
-                                        if let Some(rt) = &rm.type_ann {
-                                            if self.assign(span, &mut Default::default(), &lt, &rt).is_err()
-                                                && self.assign(span, &mut Default::default(), &rt, &lt).is_err()
-                                            {
-                                                return Ok(false);
-                                            }
+                        if let (TypeElement::Index(lm), TypeElement::Index(rm)) = (lm, rm) {
+                            if lm.params.type_eq(&rm.params) {
+                                if let Some(lt) = &lm.type_ann {
+                                    if let Some(rt) = &rm.type_ann {
+                                        if self.assign(span, &mut Default::default(), lt, rt).is_err()
+                                            && self.assign(span, &mut Default::default(), rt, lt).is_err()
+                                        {
+                                            return Ok(false);
                                         }
                                     }
                                 }
                             }
-
-                            _ => {}
                         }
                     }
                 }

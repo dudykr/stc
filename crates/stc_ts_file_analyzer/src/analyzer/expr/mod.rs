@@ -2835,16 +2835,15 @@ impl Analyzer<'_, '_> {
                 }
             },
 
-            Type::Conditional(..) => match prop {
-                Key::Num(..) => {
+            Type::Conditional(..) => {
+                if let Key::Num(..) = prop {
                     return Ok(Type::TypeLit(TypeLit {
                         span,
                         members: Default::default(),
                         metadata: Default::default(),
-                    }))
+                    }));
                 }
-                _ => {}
-            },
+            }
 
             Type::Rest(rest) => {
                 // I'm not sure if this impl is correct, so let's print a log for debugging.
