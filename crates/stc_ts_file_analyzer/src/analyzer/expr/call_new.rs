@@ -1378,7 +1378,7 @@ impl Analyzer<'_, '_> {
                         if let Ok(v) = self.extract(
                             span,
                             expr,
-                            &super_class,
+                            super_class,
                             kind,
                             args,
                             arg_types,
@@ -1488,20 +1488,20 @@ impl Analyzer<'_, '_> {
         match ty.normalize() {
             Type::Intersection(..) if kind == ExtractKind::New => {
                 // TODO(kdy1): Check if all types has constructor signature
-                return Ok(make_instance_type(ty.clone()));
+                Ok(make_instance_type(ty.clone()))
             }
 
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsAnyKeyword,
                 ..
-            }) => return Ok(Type::any(span, Default::default())),
+            }) => Ok(Type::any(span, Default::default())),
 
             Type::Keyword(KeywordType {
                 kind: TsKeywordTypeKind::TsUnknownKeyword,
                 ..
             }) => {
                 debug_assert!(!span.is_dummy());
-                return Err(ErrorKind::Unknown { span }.into());
+                Err(ErrorKind::Unknown { span }.into())
             }
 
             Type::Function(ref f) if kind == ExtractKind::Call => self.get_return_type(
@@ -1596,7 +1596,7 @@ impl Analyzer<'_, '_> {
                     type_args,
                     type_ann,
                 ) {
-                    Ok(ty) => Ok(ty.clone()),
+                    Ok(ty) => Ok(ty),
                     Err(first_err) => {
                         //  Check parent interface
                         for parent in &i.extends {
@@ -1622,30 +1622,28 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::TypeLit(ref l) => {
-                return self.call_type_element(
-                    span,
-                    expr,
-                    &ty,
-                    None,
-                    &l.members,
-                    kind,
-                    args,
-                    arg_types,
-                    spread_arg_types,
-                    type_args,
-                    type_ann,
-                );
-            }
+            Type::TypeLit(ref l) => self.call_type_element(
+                span,
+                expr,
+                &ty,
+                None,
+                &l.members,
+                kind,
+                args,
+                arg_types,
+                spread_arg_types,
+                type_args,
+                type_ann,
+            ),
 
             Type::ClassDef(ref def) if kind == ExtractKind::New => {
                 // TODO(kdy1): Remove clone
-                return Ok(Class {
+                Ok(Class {
                     span,
                     def: box def.clone(),
                     metadata: Default::default(),
                 }
-                .into());
+                .into())
             }
 
             Type::Intersection(i) => {
