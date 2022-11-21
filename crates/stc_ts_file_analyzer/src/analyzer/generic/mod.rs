@@ -1060,8 +1060,8 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Constructor(param) => match arg {
-                Type::Class(arg_class) => {
+            Type::Constructor(param) => {
+                if let Type::Class(arg_class) = arg {
                     for member in &arg_class.def.body {
                         match member {
                             ClassMember::Constructor(constructor) => {
@@ -1079,26 +1079,27 @@ impl Analyzer<'_, '_> {
 
                     return self.infer_type(span, inferred, &param.type_ann, arg, opts);
                 }
-                _ => {}
-            },
+            }
 
-            Type::Class(param) => match arg {
-                Type::Class(arg) => return self.infer_types_using_class(span, inferred, param, arg, opts),
-                _ => {}
-            },
+            Type::Class(param) => {
+                if let Type::Class(arg) = arg {
+                    return self.infer_types_using_class(span, inferred, param, arg, opts);
+                }
+            }
 
-            Type::ClassDef(param) => match arg {
-                Type::ClassDef(arg) => return self.infer_types_using_class_def(span, inferred, param, arg, opts),
-                _ => {}
-            },
+            Type::ClassDef(param) => {
+                if let Type::ClassDef(arg) = arg {
+                    return self.infer_types_using_class_def(span, inferred, param, arg, opts);
+                }
+            }
 
             Type::Operator(param) => {
                 self.infer_type_using_operator(span, inferred, param, arg, opts)?;
 
                 // We need to check parents
-                match arg {
-                    Type::Interface(..) => {}
-                    _ => return Ok(()),
+                if let Type::Interface(..) = arg {
+                } else {
+                    return Ok(());
                 }
             }
 
@@ -1112,8 +1113,7 @@ impl Analyzer<'_, '_> {
             Type::Array(arr) => {
                 debug_assert_eq!(span.ctxt, SyntaxContext::empty());
 
-                let mut params = vec![];
-                params.push(*arr.elem_type.clone());
+                let params = vec![*arr.elem_type.clone()];
                 return self.infer_type(
                     span,
                     inferred,
