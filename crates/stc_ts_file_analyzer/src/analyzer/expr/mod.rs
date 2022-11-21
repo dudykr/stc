@@ -3980,7 +3980,7 @@ impl Analyzer<'_, '_> {
         let ty = self
             .with_ctx(prop_access_ctx)
             .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var, Default::default())
-            .context("tried to access property of an object to calculate type of a super propertt expression")?;
+            .context("tried to access property of an object to calculate type of a super property expression")?;
 
         if should_be_optional {
             Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
