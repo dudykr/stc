@@ -206,7 +206,7 @@ pub enum ErrorKind {
     },
 
     /// TS2610
-    DefinedWitHAccessorInSuper {
+    DefinedWithAccessorInSuper {
         span: Span,
     },
     /// TS5048
@@ -1929,7 +1929,7 @@ impl ErrorKind {
 
             ErrorKind::ShouldBeInstanceMethod { .. } => 2388,
 
-            ErrorKind::DefinedWitHAccessorInSuper { .. } => 2610,
+            ErrorKind::DefinedWithAccessorInSuper { .. } => 2610,
 
             ErrorKind::ClassPropNotInitialized { .. } => 2564,
 

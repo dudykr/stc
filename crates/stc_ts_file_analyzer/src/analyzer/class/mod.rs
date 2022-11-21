@@ -1325,7 +1325,7 @@ impl Analyzer<'_, '_> {
             return;
         }
 
-        let span = name.unwrap_or_else(|| {
+        let span = name.unwrap_or({
             // TODD: c.span().lo() + BytePos(5) (aka class token)
             class.span
         });
@@ -1333,7 +1333,7 @@ impl Analyzer<'_, '_> {
         if let Some(super_ty) = &class.super_class {
             self.validate_super_class(super_ty);
 
-            self.report_error_for_wrong_super_class_inheritance(span, &class.body, &super_ty)
+            self.report_error_for_wrong_super_class_inheritance(span, &class.body, super_ty)
         }
     }
 
@@ -1351,89 +1351,83 @@ impl Analyzer<'_, '_> {
         let mut new_members = vec![];
 
         let res: VResult<()> = try {
-            match super_ty.normalize() {
-                Type::ClassDef(sc) => {
-                    'outer: for sm in &sc.body {
-                        match sm {
-                            ClassMember::Property(super_property) => {
-                                for m in members {
-                                    match m {
-                                        ClassMember::Property(ref p) => {
-                                            if !&p.key.type_eq(&super_property.key) {
-                                                continue;
-                                            }
-
-                                            if !p.is_static
-                                                && !super_property.is_static
-                                                && p.accessor != super_property.accessor
-                                                && (super_property.accessor.getter || super_property.accessor.setter)
-                                            {
-                                                self.storage
-                                                    .report(ErrorKind::DefinedWitHAccessorInSuper { span: p.key.span() }.into())
-                                            }
-
-                                            continue 'outer;
-                                        }
-                                        _ => {}
+            if let Type::ClassDef(sc) = super_ty.normalize() {
+                'outer: for sm in &sc.body {
+                    match sm {
+                        ClassMember::Property(super_property) => {
+                            for m in members {
+                                if let ClassMember::Property(ref p) = m {
+                                    if !&p.key.type_eq(&super_property.key) {
+                                        continue;
                                     }
-                                }
 
-                                continue 'outer;
-                            }
-                            ClassMember::Method(super_method) => {
-                                if !super_method.is_abstract {
-                                    new_members.push(sm.clone());
+                                    if !p.is_static
+                                        && !super_property.is_static
+                                        && p.accessor != super_property.accessor
+                                        && (super_property.accessor.getter || super_property.accessor.setter)
+                                    {
+                                        self.storage
+                                            .report(ErrorKind::DefinedWithAccessorInSuper { span: p.key.span() }.into())
+                                    }
+
                                     continue 'outer;
                                 }
-                                if super_method.is_optional {
-                                    // TODO(kdy1): Validate parameters
-
-                                    // TODO(kdy1): Validate return type
-                                    continue 'outer;
-                                }
-
-                                for m in members {
-                                    match m {
-                                        ClassMember::Method(ref m) => {
-                                            if !&m.key.type_eq(&super_method.key) {
-                                                continue;
-                                            }
-
-                                            // TODO(kdy1): Validate parameters
-
-                                            // TODO(kdy1): Validate return type
-                                            continue 'outer;
-                                        }
-                                        _ => {}
-                                    }
-                                }
                             }
-                            _ => {
-                                // TODO(kdy1): Verify
+
+                            continue 'outer;
+                        }
+                        ClassMember::Method(super_method) => {
+                            if !super_method.is_abstract {
+                                new_members.push(sm.clone());
                                 continue 'outer;
+                            }
+                            if super_method.is_optional {
+                                // TODO(kdy1): Validate parameters
+
+                                // TODO(kdy1): Validate return type
+                                continue 'outer;
+                            }
+
+                            for m in members {
+                                match m {
+                                    ClassMember::Method(ref m) => {
+                                        if !&m.key.type_eq(&super_method.key) {
+                                            continue;
+                                        }
+
+                                        // TODO(kdy1): Validate parameters
+
+                                        // TODO(kdy1): Validate return type
+                                        continue 'outer;
+                                    }
+                                    _ => {}
+                                }
                             }
                         }
-
-                        if let Some(key) = sm.key() {
-                            errors.push(
-                                ErrorKind::ClassDoesNotImplementMemeber {
-                                    span,
-                                    key: box key.into_owned(),
-                                }
-                                .into(),
-                            );
+                        _ => {
+                            // TODO(kdy1): Verify
+                            continue 'outer;
                         }
                     }
 
-                    if sc.is_abstract {
-                        // Check super class of super class
-                        if let Some(super_ty) = &sc.super_class {
-                            new_members.extend(members.to_vec());
-                            self.report_error_for_wrong_super_class_inheritance(span, &new_members, &super_ty);
-                        }
+                    if let Some(key) = sm.key() {
+                        errors.push(
+                            ErrorKind::ClassDoesNotImplementMemeber {
+                                span,
+                                key: box key.into_owned(),
+                            }
+                            .into(),
+                        );
                     }
                 }
-                _ => {}
+
+                if sc.is_abstract {
+                    // Check super class of super class
+                    if let Some(super_ty) = &sc.super_class {
+                        new_members.extend(members.to_vec());
+                        self.report_error_for_wrong_super_class_inheritance(span, &new_members, &super_ty);
+                    }
+                }
             }
         };
 
