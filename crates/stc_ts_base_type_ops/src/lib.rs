@@ -5,6 +5,7 @@
 #![feature(box_syntax)]
 #![feature(specialization)]
 #![allow(incomplete_features)]
+#![allow(clippy::needless_update)]
 
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_types::{LitType, Type, TypeElement, Union};
@@ -14,8 +15,8 @@ pub mod bindings;
 pub mod fix;
 
 pub fn apply_mapped_flags(el: &mut TypeElement, optional: Option<TruePlusMinus>, readonly: Option<TruePlusMinus>) {
-    match optional {
-        Some(v) => match el {
+    if let Some(v) = optional {
+        match el {
             TypeElement::Call(_) => {}
             TypeElement::Constructor(_) => {}
             TypeElement::Property(p) => match v {
@@ -41,12 +42,11 @@ pub fn apply_mapped_flags(el: &mut TypeElement, optional: Option<TruePlusMinus>,
                 }
             },
             TypeElement::Index(_) => {}
-        },
-        None => {}
+        }
     }
 
-    match readonly {
-        Some(v) => match el {
+    if let Some(v) = readonly {
+        match el {
             TypeElement::Call(_) => {}
             TypeElement::Constructor(_) => {}
             TypeElement::Property(p) => match v {
@@ -72,8 +72,7 @@ pub fn apply_mapped_flags(el: &mut TypeElement, optional: Option<TruePlusMinus>,
                     m.readonly = false;
                 }
             },
-        },
-        None => {}
+        }
     }
 }
 
