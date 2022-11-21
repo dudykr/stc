@@ -1956,25 +1956,24 @@ impl Analyzer<'_, '_> {
 
         {
             match &param.type_param.constraint {
-                Some(constraint) => match constraint.normalize() {
-                    Type::Operator(
+                Some(constraint) => {
+                    if let Type::Operator(
                         operator @ Operator {
                             op: TsTypeOperatorOp::KeyOf,
                             ty: box Type::Mapped(Mapped { ty: Some(..), .. }),
                             ..
                         },
-                    ) => match operator.ty.normalize() {
-                        Type::Mapped(..) => {
+                    ) = constraint.normalize()
+                    {
+                        if let Type::Mapped(..) = operator.ty.normalize() {
                             let reversed_param_ty = param.ty.as_ref().unwrap().clone().fold_with(&mut MappedReverser::default());
 
                             self.infer_type(span, inferred, &reversed_param_ty, arg, opts)?;
 
                             return Ok(true);
                         }
-                        _ => {}
-                    },
-                    _ => {}
-                },
+                    }
+                }
                 None => {}
             }
         }
@@ -1988,30 +1987,24 @@ impl Analyzer<'_, '_> {
             // declare type Boxified<Pick<P, T>> = {
             //     [BoxifiedP in keyof Pick<P, K>[BoxifiedT]]: Box<Pick<P, K>[BoxifiedP]>;
             // };
-            match &param.type_param.constraint {
-                Some(constraint) => match constraint.normalize() {
-                    Type::Operator(Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ty,
-                        ..
-                    }) => match &param.ty {
-                        Some(param_ty) => match arg {
-                            Type::TypeLit(arg_lit) => {
-                                let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).freezed();
-                                print_type(&"reversed", &self.cm, &reversed_param_ty);
+            if let Some(constraint) = &param.type_param.constraint {
+                if let Type::Operator(Operator {
+                    op: TsTypeOperatorOp::KeyOf,
+                    ty,
+                    ..
+                }) = constraint.normalize()
+                {
+                    if let Some(param_ty) = &param.ty {
+                        if let Type::TypeLit(arg_lit) = arg {
+                            let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).freezed();
+                            print_type("reversed", &self.cm, &reversed_param_ty);
 
-                                self.infer_type(span, inferred, &reversed_param_ty, arg, opts)?;
+                            self.infer_type(span, inferred, &reversed_param_ty, arg, opts)?;
 
-                                return Ok(true);
-                            }
-
-                            _ => {}
-                        },
-                        _ => {}
-                    },
-                    _ => {}
-                },
-                _ => {}
+                            return Ok(true);
+                        }
+                    }
+                }
             }
         }
 
