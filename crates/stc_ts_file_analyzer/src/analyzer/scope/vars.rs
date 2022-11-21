@@ -89,22 +89,16 @@ impl Analyzer<'_, '_> {
 
         let span = pat.span().with_ctxt(SyntaxContext::empty());
 
-        if match pat {
-            RPat::Ident(..) => false,
-            _ => true,
-        } {
-            match ty.as_ref().map(Type::normalize) {
-                Some(ty @ Type::Ref(..)) => {
-                    let mut ty = self
-                        .expand_top_ref(ty.span(), Cow::Borrowed(&ty), Default::default())
-                        .context("tried to expand reference to declare a complex variable")?
-                        .into_owned();
+        if !matches!(pat, RPat::Ident(..)) {
+            if let Some(ty @ Type::Ref(..)) = ty.as_ref().map(Type::normalize) {
+                let mut ty = self
+                    .expand_top_ref(ty.span(), Cow::Borrowed(&ty), Default::default())
+                    .context("tried to expand reference to declare a complex variable")?
+                    .into_owned();
 
-                    ty.make_clone_cheap();
+                ty.make_clone_cheap();
 
-                    return self.add_vars(pat, Some(ty), actual, default, opts);
-                }
-                _ => {}
+                return self.add_vars(pat, Some(ty), actual, default, opts);
             }
         }
 
@@ -185,7 +179,7 @@ impl Analyzer<'_, '_> {
                 if let Some(left) = &type_ann {
                     self.assign_with_opts(
                         &mut Default::default(),
-                        &left,
+                        left,
                         &right,
                         AssignOpts {
                             span: p.right.span(),

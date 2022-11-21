@@ -1018,20 +1018,15 @@ impl Analyzer<'_, '_> {
                 };
                 ty.assert_clone_cheap();
 
-                if let Some(ref excludes) = self.scope.facts.excludes.get(&name) {
-                    if ty.is_union_type() {
-                        match ty.normalize_mut() {
-                            Type::Union(ty::Union { ref mut types, .. }) => {
-                                for ty in types {
-                                    let span = (*ty).span();
-                                    for excluded_ty in excludes.iter() {
-                                        if ty.type_eq(excluded_ty) {
-                                            *ty = Type::never(span, KeywordTypeMetadata { common: ty.metadata() })
-                                        }
-                                    }
+                if let Some(excludes) = self.scope.facts.excludes.get(&name) {
+                    if let Some(ty::Union { ref mut types, .. }) = ty.as_union_type_mut() {
+                        for ty in types {
+                            let span = (*ty).span();
+                            for excluded_ty in excludes.iter() {
+                                if ty.type_eq(excluded_ty) {
+                                    *ty = Type::never(span, KeywordTypeMetadata { common: ty.metadata() })
                                 }
                             }
-                            _ => {}
                         }
                     }
 
