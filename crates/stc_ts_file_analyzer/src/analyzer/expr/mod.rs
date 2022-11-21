@@ -1227,12 +1227,6 @@ impl Analyzer<'_, '_> {
             debug!("access_property: obj = {}", dump_type_as_string(&self.cm, &obj));
         }
 
-        if opts.check_for_undefined_or_null && self.rule().strict_null_checks {
-            if obj.is_undefined() {
-                return Err(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
-            }
-        }
-
         let _stack = stack::track(span)?;
 
         let marks = self.marks();
@@ -1377,6 +1371,10 @@ impl Analyzer<'_, '_> {
             }
 
             unimplemented!("access_property_inner: global_this: {:?}", prop);
+        }
+
+        if opts.check_for_undefined_or_null && self.rule().strict_null_checks {
+            self.deny_null_or_undefined(span, obj)?
         }
 
         if id_ctx == IdCtx::Var {
