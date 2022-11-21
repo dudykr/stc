@@ -197,7 +197,7 @@ impl Analyzer<'_, '_> {
                     data,
                     l.span,
                     &lhs_members,
-                    &r,
+                    r,
                     TypeLitMetadata {
                         specified: true,
                         ..Default::default()
@@ -218,29 +218,18 @@ impl Analyzer<'_, '_> {
         // Everything left is assignable to empty classes, including classes with only
         // constructors.
         if !opts.disallow_special_assignment_to_empty_class {
-            let is_empty = l
-                .def
-                .body
-                .iter()
-                .find(|member| match member {
-                    ClassMember::Constructor(_) => false,
-                    _ => true,
-                })
-                .is_none();
+            let is_empty = !l.def.body.iter().any(|member| !matches!(&member, ClassMember::Constructor(_)));
             if !l.def.is_abstract && is_empty {
                 return Ok(());
             }
         }
 
-        match r {
-            Type::Lit(..) | Type::Keyword(..) => {
-                return Err(ErrorKind::SimpleAssignFailed {
-                    span: opts.span,
-                    cause: None,
-                }
-                .context("cannot assign literal or keyword to a class"))
+        if let Type::Lit(..) | Type::Keyword(..) = r {
+            return Err(ErrorKind::SimpleAssignFailed {
+                span: opts.span,
+                cause: None,
             }
-            _ => {}
+            .context("cannot assign literal or keyword to a class"));
         }
 
         Err(ErrorKind::Unimplemented {
@@ -262,13 +251,10 @@ impl Analyzer<'_, '_> {
         match l {
             ClassMember::Constructor(lc) => {
                 for rm in r {
-                    match rm {
-                        ClassMember::Constructor(rc) => {
-                            self.assign_params(data, &lc.params, &rc.params, opts)?;
-                            // TODO(kdy1): Validate parameters and etc..
-                            return Ok(());
-                        }
-                        _ => {}
+                    if let ClassMember::Constructor(rc) = rm {
+                        self.assign_params(data, &lc.params, &rc.params, opts)?;
+                        // TODO(kdy1): Validate parameters and etc..
+                        return Ok(());
                     }
                 }
             }
