@@ -2368,7 +2368,7 @@ impl Analyzer<'_, '_> {
                 expanded_params = params
                     .into_iter()
                     .map(|v| -> VResult<_> {
-                        let ty = box self.expand_type_params(&map, *v.ty, Default::default())?;
+                        let ty = box self.expand_type_params(map, *v.ty, Default::default())?;
 
                         Ok(FnParam { ty, ..v })
                     })
@@ -2393,7 +2393,7 @@ impl Analyzer<'_, '_> {
                 type_args,
                 type_params,
                 &params,
-                &spread_arg_types,
+                spread_arg_types,
                 None,
                 InferTypeOpts {
                     is_type_ann: type_ann.is_some(),
@@ -2422,8 +2422,8 @@ impl Analyzer<'_, '_> {
 
             for (idx, (arg, param)) in args.iter().zip(expanded_param_types.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
-                print_type(&&format!("Expanded parameter at {}", idx), &self.cm, &param.ty);
-                print_type(&&format!("Original argument at {}", idx), &self.cm, &arg_ty.ty);
+                print_type(&format!("Expanded parameter at {}", idx), &self.cm, &param.ty);
+                print_type(&format!("Original argument at {}", idx), &self.cm, &arg_ty.ty);
 
                 let (type_param_decl, actual_params) = match param.ty.normalize() {
                     Type::Function(f) => (&f.type_params, &f.params),
@@ -2752,7 +2752,7 @@ impl Analyzer<'_, '_> {
                 })
             )
         });
-        let mut args_iter = spread_arg_types.into_iter();
+        let mut args_iter = spread_arg_types.iter();
 
         loop {
             let param = params_iter.next();

@@ -1726,7 +1726,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     ty => {
-                        if !self.is_valid_lhs_of_in(&ty) {
+                        if !self.is_valid_lhs_of_in(ty) {
                             errors.push(ErrorKind::TS2360 { span: ls }.into());
                         }
                     }
@@ -1813,7 +1813,7 @@ impl Analyzer<'_, '_> {
             | Type::Symbol(..)
             | Type::Tpl(..) => true,
 
-            Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_lhs_of_in(&ty)),
+            Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_lhs_of_in(ty)),
 
             _ => false,
         }
@@ -1861,22 +1861,16 @@ impl Analyzer<'_, '_> {
     fn report_errors_for_mixed_nullish_coalescing(&mut self, e: &RBinExpr) {
         fn search(span: Span, op: BinaryOp, operand: &RExpr) -> VResult<()> {
             if op == op!("??") {
-                match operand {
-                    RExpr::Bin(bin) => {
-                        if bin.op == op!("||") || bin.op == op!("&&") {
-                            return Err(ErrorKind::NullishCoalescingMixedWithLogicalWithoutParen { span }.into());
-                        }
+                if let RExpr::Bin(bin) = operand {
+                    if bin.op == op!("||") || bin.op == op!("&&") {
+                        return Err(ErrorKind::NullishCoalescingMixedWithLogicalWithoutParen { span }.into());
                     }
-                    _ => {}
                 }
             } else if op == op!("||") || op == op!("&&") {
-                match operand {
-                    RExpr::Bin(bin) => {
-                        if bin.op == op!("??") {
-                            return Err(ErrorKind::NullishCoalescingMixedWithLogicalWithoutParen { span }.into());
-                        }
+                if let RExpr::Bin(bin) = operand {
+                    if bin.op == op!("??") {
+                        return Err(ErrorKind::NullishCoalescingMixedWithLogicalWithoutParen { span }.into());
                     }
-                    _ => {}
                 }
             }
 
@@ -1925,8 +1919,8 @@ fn is_str_like_for_addition(t: &Type) -> bool {
             kind: TsKeywordTypeKind::TsStringKeyword,
             ..
         }) => true,
-        Type::Intersection(Intersection { types, .. }) => types.iter().any(|ty| is_str_like_for_addition(&ty)),
-        Type::Union(Union { types, .. }) => types.iter().all(|ty| is_str_like_for_addition(&ty)),
+        Type::Intersection(Intersection { types, .. }) => types.iter().any(is_str_like_for_addition),
+        Type::Union(Union { types, .. }) => types.iter().all(is_str_like_for_addition),
         _ => false,
     }
 }
