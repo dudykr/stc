@@ -1185,7 +1185,7 @@ impl Analyzer<'_, '_> {
 
             Type::Query(rhs) => {
                 return self
-                    .assign_query_type_to_type(data, to, &rhs, opts)
+                    .assign_query_type_to_type(data, to, rhs, opts)
                     .context("tried to assign a query type to another type")
             }
 
@@ -1459,7 +1459,7 @@ impl Analyzer<'_, '_> {
                     if opts.allow_iterable_on_rhs {
                         let res: VResult<_> = try {
                             let r = self
-                                .get_iterator(span, Cow::Borrowed(&rhs), Default::default())
+                                .get_iterator(span, Cow::Borrowed(rhs), Default::default())
                                 .context("tried to convert a type to an iterator to assign to a tuple")?;
                             //
                             let rhs_el = self
@@ -2036,7 +2036,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         let mut errors = vec![];
-                        for (l, r) in elems.into_iter().zip(rhs_elems) {
+                        for (l, r) in elems.iter().zip(rhs_elems) {
                             for el in elems {
                                 if let Type::Keyword(KeywordType {
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
@@ -2079,7 +2079,7 @@ impl Analyzer<'_, '_> {
                             Type::Rest(RestType { ty: l_ty, .. }) => {
                                 self.assign_inner(
                                     data,
-                                    &l_ty,
+                                    l_ty,
                                     rhs_elem_type,
                                     AssignOpts {
                                         allow_unknown_rhs: Some(true),
@@ -2102,7 +2102,7 @@ impl Analyzer<'_, '_> {
                         // Try to assign by converting rhs to an iterable.
                         if opts.allow_iterable_on_rhs {
                             let r = self
-                                .get_iterator(span, Cow::Borrowed(&rhs), Default::default())
+                                .get_iterator(span, Cow::Borrowed(rhs), Default::default())
                                 .context("tried to convert a type to an iterator to assign to a tuple")?;
                             //
                             for (i, elem) in elems.iter().enumerate() {
@@ -2129,7 +2129,7 @@ impl Analyzer<'_, '_> {
 
             Type::Constructor(ref lc) => {
                 return self
-                    .assign_to_constructor(data, to, &lc, rhs, opts)
+                    .assign_to_constructor(data, to, lc, rhs, opts)
                     .context("tried to assign to a constructor type")
             }
 
