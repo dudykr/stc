@@ -2347,7 +2347,7 @@ impl Analyzer<'_, '_> {
 
         self.assign_with_opts(
             data,
-            &keys,
+            keys,
             &rhs_keys,
             AssignOpts {
                 allow_unknown_rhs: Some(true),
@@ -2463,17 +2463,11 @@ impl Analyzer<'_, '_> {
         match r.normalize() {
             Type::Union(..) => return Ok(true),
             Type::TypeLit(r) => {
-                if r.members.iter().all(|el| match el {
-                    TypeElement::Call(..) => true,
-                    _ => false,
-                }) {
+                if r.members.iter().all(|el| matches!(el, TypeElement::Call(..))) {
                     return Ok(true);
                 }
 
-                if r.members.iter().all(|el| match el {
-                    TypeElement::Constructor(..) => true,
-                    _ => false,
-                }) {
+                if r.members.iter().all(|el| matches!(el, TypeElement::Constructor(..))) {
                     return Ok(true);
                 }
             }
