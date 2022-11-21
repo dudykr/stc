@@ -3378,9 +3378,8 @@ impl Analyzer<'_, '_> {
                 debug_assert!(ty.is_clone_cheap());
                 ty.assert_valid();
 
-                match ty.normalize() {
-                    Type::Module(..) => return Ok(ty.clone().into_owned()),
-                    _ => {}
+                if let Type::Module(..) = ty.normalize() {
+                    return Ok(ty.clone().into_owned());
                 }
             }
             Err(ErrorKind::TypeUsedAsVar {
@@ -3389,10 +3388,10 @@ impl Analyzer<'_, '_> {
             }
             .into())
         } else {
-            if let Some(scope) = self.scope.first_kind(|kind| match kind {
-                ScopeKind::Class | ScopeKind::ObjectLit => true,
-                _ => false,
-            }) {
+            if let Some(scope) = self
+                .scope
+                .first_kind(|kind| matches!(kind, ScopeKind::Class | ScopeKind::ObjectLit))
+            {
                 if let ScopeKind::ObjectLit = scope.kind() {
                     if let Some(declaring_prop) = self.scope.declaring_prop() {
                         if *declaring_prop.sym() == i.sym {
@@ -3501,13 +3500,13 @@ impl Analyzer<'_, '_> {
                             | Type::Function(_)
                             | Type::TypeLit(_)
                             | Type::Tpl(_) => {
-                                let mut ty = ty.into_owned().clone();
+                                let mut ty = ty.into_owned();
                                 ty.respan(span);
                                 return Ok(ty);
                             }
 
                             Type::Interface(_) | Type::Class(_) | Type::ClassDef(_) | Type::Alias(_) => {
-                                let mut ty = ty.into_owned().clone();
+                                let mut ty = ty.into_owned();
                                 let mut params = None;
                                 if let Some(type_args) = type_args {
                                     match ty.normalize() {
