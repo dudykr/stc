@@ -280,8 +280,8 @@ impl Analyzer<'_, '_> {
                     let mut has_optional = false;
                     for p in params.iter() {
                         if has_optional {
-                            match p {
-                                RParamOrTsParamProp::Param(RParam { pat, .. }) => match pat {
+                            if let RParamOrTsParamProp::Param(RParam { pat, .. }) = p {
+                                match pat {
                                     RPat::Ident(RBindingIdent {
                                         id: RIdent { optional: true, .. },
                                         ..
@@ -290,25 +290,22 @@ impl Analyzer<'_, '_> {
                                     _ => {
                                         child.storage.report(ErrorKind::TS1016 { span: p.span() }.into());
                                     }
-                                },
-                                _ => {}
+                                }
                             }
                         }
 
-                        match *p {
-                            RParamOrTsParamProp::Param(RParam {
-                                pat:
-                                    RPat::Ident(RBindingIdent {
-                                        id: RIdent { optional, .. },
-                                        ..
-                                    }),
-                                ..
-                            }) => {
-                                if optional {
-                                    has_optional = true;
-                                }
+                        if let RParamOrTsParamProp::Param(RParam {
+                            pat:
+                                RPat::Ident(RBindingIdent {
+                                    id: RIdent { optional, .. },
+                                    ..
+                                }),
+                            ..
+                        }) = *p
+                        {
+                            if optional {
+                                has_optional = true;
                             }
-                            _ => {}
                         }
                     }
                 }

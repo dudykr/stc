@@ -1659,7 +1659,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Intersection(Intersection { ref types, .. }) => {
-                let vs = types.iter().map(|to| self.assign_inner(data, &to, rhs, opts)).collect::<Vec<_>>();
+                let vs = types.iter().map(|to| self.assign_inner(data, to, rhs, opts)).collect::<Vec<_>>();
 
                 // TODO(kdy1): Multiple error
                 for v in vs {
@@ -1929,7 +1929,7 @@ impl Analyzer<'_, '_> {
                     let res = self.assign_with_opts(
                         data,
                         &parent,
-                        &rhs,
+                        rhs,
                         AssignOpts {
                             allow_unknown_rhs: Some(true),
                             ..opts

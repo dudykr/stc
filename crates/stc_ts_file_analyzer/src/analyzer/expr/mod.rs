@@ -4183,7 +4183,7 @@ impl Analyzer<'_, '_> {
 fn is_valid_lhs(l: &RPatOrExpr) -> VResult<()> {
     fn is_valid_lhs_expr(e: &RExpr) -> VResult<()> {
         // obj?.a["b"] += 1;
-        if is_obj_opt_chaining(&e) {
+        if is_obj_opt_chaining(e) {
             return Err(ErrorKind::InvalidLhsOfAssignOptionalProp { span: e.span() }.into());
         }
         match e {
