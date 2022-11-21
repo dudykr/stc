@@ -545,9 +545,11 @@ fn should_preserve_ref(ty: &Type) -> bool {
 ///     a: string;
 ///     b: string;
 /// };
-/// `T[keyof S2]`;
-/// =>
-/// `T["a" | "b"]`
+/// T[keyof S2];
+///
+/// // becomes
+///
+/// T["a" | "b"]
 /// ```
 struct KeyInliner<'a, 'b, 'c> {
     analyzer: &'a mut Analyzer<'b, 'c>,
