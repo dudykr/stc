@@ -218,11 +218,8 @@ impl Checker {
                             }
 
                             // TODO(kdy1): Prevent duplicate work.
-                            match self.dts_modules.insert(*id, dts_module) {
-                                Some(..) => {
-                                    warn!("Duplicated work: `{}`: (.d.ts already computed)", path);
-                                }
-                                None => {}
+                            if let Some(..) = self.dts_modules.insert(*id, dts_module) {
+                                warn!("Duplicated work: `{}`: (.d.ts already computed)", path);
                             }
                         }
 

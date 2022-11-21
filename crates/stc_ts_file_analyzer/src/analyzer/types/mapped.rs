@@ -416,7 +416,7 @@ impl Analyzer<'_, '_> {
                         sets.iter().all(|set| set.is_none() || set.as_ref().unwrap().contains(item))
                     }
                 }) {
-                    if result.iter().any(|prev| prev.type_eq(&key)) {
+                    if result.iter().any(|prev| prev.type_eq(key)) {
                         continue;
                     }
 
@@ -443,18 +443,13 @@ impl Analyzer<'_, '_> {
                     return Ok(None);
                 }
 
-                for keys in keys_types {
-                    match keys {
-                        Some(keys) => {
-                            for key in keys {
-                                if result.iter().any(|prev| prev.type_eq(&key)) {
-                                    continue;
-                                }
-
-                                result.push(key);
-                            }
+                for keys in keys_types.into_iter().flatten() {
+                    for key in keys {
+                        if result.iter().any(|prev| prev.type_eq(&key)) {
+                            continue;
                         }
-                        None => {}
+
+                        result.push(key);
                     }
                 }
 
