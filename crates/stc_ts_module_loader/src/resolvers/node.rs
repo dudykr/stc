@@ -74,11 +74,9 @@ impl NodeResolver {
         let reader = BufReader::new(file);
         let pkg: PackageJson = serde_json::from_reader(reader).context("failed to deserialize package.json")?;
 
-        for main in &[&pkg.types] {
-            if let Some(target) = main {
-                let path = pkg_dir.join(target);
-                return self.resolve_as_file(&path).or_else(|_| self.resolve_as_directory(&path));
-            }
+        if let Some(target) = &pkg.types {
+            let path = pkg_dir.join(target);
+            return self.resolve_as_file(&path).or_else(|_| self.resolve_as_directory(&path));
         }
 
         bail!("package.json does not contain a \"main\" string")
