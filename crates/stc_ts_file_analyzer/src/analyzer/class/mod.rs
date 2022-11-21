@@ -2152,36 +2152,34 @@ impl Analyzer<'_, '_> {
         };
 
         for member in &class.body {
-            match member {
-                ClassMember::Property(ClassProperty {
-                    key, value: Some(value), ..
-                }) => {
-                    let span = key.span();
+            if let ClassMember::Property(ClassProperty {
+                key, value: Some(value), ..
+            }) = member
+            {
+                let span = key.span();
 
-                    if !index.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
-                        && self.assign(span, &mut Default::default(), &index.params[0].ty, &key.ty()).is_err()
-                    {
-                        continue;
-                    }
-
-                    self.assign_with_opts(
-                        &mut Default::default(),
-                        &index_ret_ty,
-                        &value,
-                        AssignOpts {
-                            span,
-                            ..Default::default()
-                        },
-                    )
-                    .convert_err(|_err| {
-                        if index.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
-                            ErrorKind::ClassMemberNotCompatibleWithNumericIndexSignature { span }.into()
-                        } else {
-                            ErrorKind::ClassMemberNotCompatibleWithStringIndexSignature { span }.into()
-                        }
-                    })?;
+                if !index.params[0].ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
+                    && self.assign(span, &mut Default::default(), &index.params[0].ty, &key.ty()).is_err()
+                {
+                    continue;
                 }
-                _ => {}
+
+                self.assign_with_opts(
+                    &mut Default::default(),
+                    &index_ret_ty,
+                    &value,
+                    AssignOpts {
+                        span,
+                        ..Default::default()
+                    },
+                )
+                .convert_err(|_err| {
+                    if index.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
+                        ErrorKind::ClassMemberNotCompatibleWithNumericIndexSignature { span }
+                    } else {
+                        ErrorKind::ClassMemberNotCompatibleWithStringIndexSignature { span }
+                    }
+                })?;
             }
         }
 

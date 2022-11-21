@@ -1573,7 +1573,7 @@ impl Analyzer<'_, '_> {
                         if type_args.params.len() == 1 {
                             return Ok(Type::Array(Array {
                                 span,
-                                elem_type: box type_args.params.iter().next().cloned().unwrap(),
+                                elem_type: box type_args.params.first().cloned().unwrap(),
                                 metadata: Default::default(),
                             }));
                         }
