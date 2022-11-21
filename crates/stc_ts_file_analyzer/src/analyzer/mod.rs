@@ -698,7 +698,7 @@ impl<'b, 'c> Deref for WithCtx<'_, 'b, 'c> {
     type Target = Analyzer<'b, 'c>;
 
     fn deref(&self) -> &Self::Target {
-        &self.analyzer
+        self.analyzer
     }
 }
 
@@ -1032,7 +1032,7 @@ impl Analyzer<'_, '_> {
                     self.register_type(i.into(), ty.clone());
                 }
                 RTsModuleName::Str(s) => {
-                    let name: &str = &*s.value;
+                    let name: &str = &s.value;
 
                     if let Some(pos) = name.as_bytes().iter().position(|&c| c == b'*') {
                         if let Some(rpos) = name.as_bytes().iter().rposition(|&c| c == b'*') {

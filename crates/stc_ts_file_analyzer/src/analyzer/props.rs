@@ -80,15 +80,16 @@ impl Analyzer<'_, '_> {
         let span = node.span;
         let mode = self.ctx.computed_prop_mode;
 
-        let is_symbol_access = match *node.expr {
+        let is_symbol_access = matches!(
+            *node.expr,
             RExpr::Member(RMemberExpr {
                 obj: box RExpr::Ident(RIdent {
-                    sym: js_word!("Symbol"), ..
+                    sym: js_word!("Symbol"),
+                    ..
                 }),
                 ..
-            }) => true,
-            _ => false,
-        };
+            })
+        );
 
         self.with_ctx(ctx).with(|analyzer: &mut Analyzer| {
             let mut check_for_validity = true;
@@ -100,9 +101,8 @@ impl Analyzer<'_, '_> {
                 Ok(ty) => ty,
                 Err(err) => {
                     check_for_symbol_form = false;
-                    match *err {
-                        ErrorKind::TS2585 { span } => Err(ErrorKind::TS2585 { span })?,
-                        _ => {}
+                    if let ErrorKind::TS2585 { span } = *err {
+                        Err(ErrorKind::TS2585 { span })?
                     }
 
                     errors.push(err);
