@@ -99,6 +99,7 @@ impl Debug for Error {
 
 impl Errors {
     /// This is used for debugging (by calling [pacic]).
+    #[allow(clippy::only_used_in_recursion)]
     fn validate(&self, err: &Error) {
         if let Ok(var) = std::env::var("DBG_ERROR") {
             let s = format!("{:?}", err);
