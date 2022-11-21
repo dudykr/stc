@@ -429,6 +429,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         )
     }
 
+    #[allow(clippy::wrong_self_convention)]
     fn new(&'b self, scope: Scope<'scope>, data: AnalyzerData) -> Self {
         Self::new_inner(
             self.env.clone(),

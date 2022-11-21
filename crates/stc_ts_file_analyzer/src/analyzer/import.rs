@@ -25,7 +25,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn get_imported_items(&mut self, span: Span, dst: &JsWord) -> (ModuleId, Type) {
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);
-        let dep_id = self.loader.module_id(&base, &dst);
+        let dep_id = self.loader.module_id(&base, dst);
         let dep_id = match dep_id {
             Some(v) => v,
             None => {
@@ -47,7 +47,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn find_imported_var(&self, id: &Id) -> VResult<Option<Type>> {
-        if let Some(ModuleInfo { module_id, data }) = self.imports_by_id.get(&id) {
+        if let Some(ModuleInfo { module_id, data }) = self.imports_by_id.get(id) {
             match data.normalize() {
                 Type::Module(data) => {
                     if let Some(dep) = data.exports.vars.get(id.sym()).cloned() {
@@ -77,7 +77,7 @@ impl Analyzer<'_, '_> {
             return;
         }
         // We first load non-circular imports.
-        let imports = ImportFinder::find_imports(&self.comments, module_spans, &self.storage, &*items);
+        let imports = ImportFinder::find_imports(&self.comments, module_spans, &self.storage, items);
 
         let loader = self.loader;
         let mut normal_imports = vec![];

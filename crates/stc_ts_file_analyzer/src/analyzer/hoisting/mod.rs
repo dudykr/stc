@@ -11,6 +11,7 @@ use crate::{analyzer::Analyzer, util::ModuleItemOrStmt};
 mod tests;
 
 impl Analyzer<'_, '_> {
+    #[allow(clippy::ptr_arg)]
     pub(super) fn validate_stmts_with_hoisting<T>(&mut self, stmts: &Vec<&T>)
     where
         T: AsModuleDecl + ModuleItemOrStmt + VisitWith<Self> + From<RStmt> + HasNodeId + Sortable<Id = TypedId>,
@@ -36,7 +37,7 @@ impl Analyzer<'_, '_> {
 
             if skip.contains(&idx) {
             } else {
-                let type_decl_id = type_decl_id(&*stmts[idx]);
+                let type_decl_id = type_decl_id(stmts[idx]);
 
                 let node_id = stmts[idx].node_id();
                 stmts[idx].visit_with(self);
