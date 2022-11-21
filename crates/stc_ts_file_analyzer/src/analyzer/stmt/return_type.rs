@@ -273,7 +273,7 @@ impl Analyzer<'_, '_> {
             let ty = Type::union(actual);
             let ty = self.simplify(ty);
 
-            // print_type("Return", &self.cm, &ty);
+            // print_type("Return",  &ty);
 
             Ok(Some(ty))
         })()?;

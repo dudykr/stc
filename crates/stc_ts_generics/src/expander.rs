@@ -59,7 +59,7 @@ impl GenericExpander<'_> {
                         info!(
                             "generic_expand: Expanding type parameter `{}` => {}",
                             param.name,
-                            dump_type_as_string(&self.cm, ty)
+                            dump_type_as_string(ty)
                         );
 
                         // If it's not self-referential, we fold it again.

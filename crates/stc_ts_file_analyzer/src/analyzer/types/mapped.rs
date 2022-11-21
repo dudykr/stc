@@ -31,12 +31,12 @@ impl Analyzer<'_, '_> {
     /// TODO(kdy1): Handle index signatures.
     #[instrument(name = "expand_mapped", skip(self, span, m))]
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
-        let orig = dump_type_as_string(&self.cm, &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
+        let orig = dump_type_as_string(&ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
 
         let ty = self.expand_mapped_inner(span, m)?;
 
         if let Some(ty) = &ty {
-            let expanded = dump_type_as_string(&self.cm, ty);
+            let expanded = dump_type_as_string(ty);
 
             debug!("[types/mapped]: Expanded {} as {}", orig, expanded);
         }

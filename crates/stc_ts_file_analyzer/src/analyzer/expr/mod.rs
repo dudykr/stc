@@ -1013,8 +1013,8 @@ impl Analyzer<'_, '_> {
         }
 
         let _tracing = if cfg!(debug_assertions) {
-            let obj = dump_type_as_string(&self.cm, obj);
-            // let prop_ty = dump_type_as_string(&self.cm, &prop.ty());
+            let obj = dump_type_as_string(obj);
+            // let prop_ty = dump_type_as_string( &prop.ty());
 
             Some(tracing::span!(Level::ERROR, "access_property", obj = &*obj).entered())
         } else {
@@ -1103,7 +1103,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let obj_str = dump_type_as_string(&self.cm, obj);
+        let obj_str = dump_type_as_string(obj);
 
         // We use child scope to store type parameters.
         let mut res = self.with_scope_for_type_params(|analyzer: &mut Analyzer| -> VResult<_> {
@@ -1118,7 +1118,7 @@ impl Analyzer<'_, '_> {
             res = res.with_context(|| {
                 format!(
                     "tried to access property of an object ({}, id_ctx = {:?})\nProp={:?}",
-                    dump_type_as_string(&self.cm, obj),
+                    dump_type_as_string(obj),
                     id_ctx,
                     prop
                 )
@@ -1142,7 +1142,7 @@ impl Analyzer<'_, '_> {
 
         ty.assert_valid();
 
-        let ty_str = dump_type_as_string(&self.cm, &ty);
+        let ty_str = dump_type_as_string(&ty);
 
         debug!(
             "[expr] Accessed property:\nObject: {}\nResult: {}\n{:?}",
@@ -1168,7 +1168,7 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy());
 
-            debug!("access_property: obj = {}", dump_type_as_string(&self.cm, obj));
+            debug!("access_property: obj = {}", dump_type_as_string(obj));
         }
 
         let _stack = stack::track(span)?;
@@ -2824,10 +2824,7 @@ impl Analyzer<'_, '_> {
 
             Type::Rest(rest) => {
                 // I'm not sure if this impl is correct, so let's print a log for debugging.
-                warn!(
-                    "[expr] accessing property of rest type({})",
-                    dump_type_as_string(&self.cm, &rest.ty)
-                );
+                warn!("[expr] accessing property of rest type({})", dump_type_as_string(&rest.ty));
                 return self
                     .access_property(span, &rest.ty, prop, type_mode, id_ctx, opts)
                     .context("tried to access property of a rest type");
@@ -3264,7 +3261,7 @@ impl Analyzer<'_, '_> {
         if let Some(ty) = self.find_var_type(&i.into(), type_mode) {
             ty.assert_valid();
 
-            let ty_str = dump_type_as_string(&self.cm, &ty);
+            let ty_str = dump_type_as_string(&ty);
             debug!("find_var_type returned a type: {}", ty_str);
             let mut ty = ty.into_owned();
             if self.scope.kind().allows_respanning() {

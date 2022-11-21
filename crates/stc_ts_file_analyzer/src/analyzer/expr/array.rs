@@ -235,10 +235,7 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     /// Get `n`th element from the `iterator`.
     pub(crate) fn get_element_from_iterator<'a>(&mut self, span: Span, iterator: Cow<'a, Type>, n: usize) -> VResult<Cow<'a, Type>> {
-        debug!(
-            "Caculating element type of an iterator ({})",
-            dump_type_as_string(&self.cm, &iterator)
-        );
+        debug!("Caculating element type of an iterator ({})", dump_type_as_string(&iterator));
 
         if iterator.is_any() {
             return Ok(iterator);
@@ -592,7 +589,7 @@ impl Analyzer<'_, '_> {
     }
 
     fn get_iterator_inner<'a>(&mut self, span: Span, ty: Cow<'a, Type>, opts: GetIteratorOpts) -> VResult<Cow<'a, Type>> {
-        let ty_str = dump_type_as_string(&self.cm, &ty);
+        let ty_str = dump_type_as_string(&ty);
         debug!("[exprs/array] get_iterator({})", ty_str);
         ty.assert_valid();
 
@@ -724,7 +721,7 @@ impl Analyzer<'_, '_> {
         try_next_value: bool,
         opts: GetIteratorOpts,
     ) -> VResult<Cow<'a, Type>> {
-        let ty_str = dump_type_as_string(&self.cm, &ty);
+        let ty_str = dump_type_as_string(&ty);
 
         if try_next_value {
             if let Ok(ty) = self.get_next_value_type_of_iterator(span, Cow::Borrowed(&ty)) {

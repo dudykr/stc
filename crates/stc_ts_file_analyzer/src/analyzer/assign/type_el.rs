@@ -195,22 +195,16 @@ impl Analyzer<'_, '_> {
                     .with_context(|| {
                         format!(
                             "tried assignment of a type literal to a type literals\nLHS={}\nRHS={}",
-                            dump_type_as_string(
-                                &self.cm,
-                                &Type::TypeLit(TypeLit {
-                                    span: DUMMY_SP,
-                                    members: lhs.to_vec(),
-                                    metadata: Default::default()
-                                })
-                            ),
-                            dump_type_as_string(
-                                &self.cm,
-                                &Type::TypeLit(TypeLit {
-                                    span: DUMMY_SP,
-                                    members: rhs_members.to_vec(),
-                                    metadata: Default::default()
-                                })
-                            ),
+                            dump_type_as_string(&Type::TypeLit(TypeLit {
+                                span: DUMMY_SP,
+                                members: lhs.to_vec(),
+                                metadata: Default::default()
+                            })),
+                            dump_type_as_string(&Type::TypeLit(TypeLit {
+                                span: DUMMY_SP,
+                                members: rhs_members.to_vec(),
+                                metadata: Default::default()
+                            })),
                         )
                     })
                     .store(&mut errors);
@@ -398,7 +392,7 @@ impl Analyzer<'_, '_> {
                         .with_context(|| {
                             format!(
                                 "tried to assign a class definition to type elements\nRHS = {}",
-                                dump_type_as_string(&self.cm, &rhs),
+                                dump_type_as_string(&rhs),
                             )
                         });
                 }
@@ -497,7 +491,7 @@ impl Analyzer<'_, '_> {
                         .with_context(|| {
                             format!(
                                 "tried to assign the converted type to type elements:\nRHS={}",
-                                dump_type_as_string(&self.cm, &rhs)
+                                dump_type_as_string(&rhs)
                             )
                         });
                 }
@@ -566,7 +560,7 @@ impl Analyzer<'_, '_> {
                         .with_context(|| {
                             format!(
                                 "tried to assign a keyword as builtin to type elements\nRHS = {}",
-                                dump_type_as_string(&self.cm, &rhs)
+                                dump_type_as_string(&rhs)
                             )
                         });
                 }

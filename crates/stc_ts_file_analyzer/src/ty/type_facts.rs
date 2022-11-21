@@ -62,7 +62,7 @@ impl Analyzer<'_, '_> {
             );
         }
 
-        let before = dump_type_as_string(&self.cm, &ty);
+        let before = dump_type_as_string(&ty);
         ty = ty.fold_with(&mut TypeFactsHandler { analyzer: self, facts });
 
         // Add `(...args: any) => any` for typeof foo === 'function'
@@ -110,7 +110,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        let after = dump_type_as_string(&self.cm, &ty);
+        let after = dump_type_as_string(&ty);
 
         debug!("[types/fact] {} => {}\nTypeFacts: {:?}", before, after, facts);
 

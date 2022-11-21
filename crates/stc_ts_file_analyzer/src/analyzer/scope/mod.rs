@@ -677,8 +677,8 @@ impl Analyzer<'_, '_> {
 
         ty.assert_valid();
 
-        let _ctx = debug_ctx!(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
-        let orig = dump_type_as_string(&self.cm, &ty);
+        let _ctx = debug_ctx!(format!("expand: {}", dump_type_as_string(&ty)));
+        let orig = dump_type_as_string(&ty);
 
         let mut v = Expander {
             span,
@@ -693,7 +693,7 @@ impl Analyzer<'_, '_> {
         let ty = ty.foldable().fold_with(&mut v).fixed();
         ty.assert_valid();
 
-        let new = dump_type_as_string(&self.cm, &ty);
+        let new = dump_type_as_string(&ty);
         debug!("[expander] expand: {} => {}", orig, new);
 
         Ok(ty)
@@ -1122,7 +1122,7 @@ impl Analyzer<'_, '_> {
                 debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
                 if cfg!(debug_assertions) {
-                    debug!("Using builtin / global type: {}", dump_type_as_string(&self.cm, &ty));
+                    debug!("Using builtin / global type: {}", dump_type_as_string(&ty));
                 }
                 src.push(ty);
             }
@@ -1202,12 +1202,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = &ty {
             ty.assert_valid();
-            debug!(
-                "[({})/vars]: Declaring {} as {}",
-                self.scope.depth(),
-                name,
-                dump_type_as_string(&self.cm, ty)
-            );
+            debug!("[({})/vars]: Declaring {} as {}", self.scope.depth(), name, dump_type_as_string(ty));
         } else {
             debug!("[({})/vars]: Declaring {} without type", self.scope.depth(), name,);
         }
@@ -1311,7 +1306,7 @@ impl Analyzer<'_, '_> {
         };
 
         if let Some(ty) = &ty {
-            debug!("[vars]: Expanded {} as {}", name, dump_type_as_string(&self.cm, ty));
+            debug!("[vars]: Expanded {} as {}", name, dump_type_as_string(ty));
         }
 
         let ty = ty.map(|ty| ty.freezed());

@@ -53,7 +53,7 @@ impl Analyzer<'_, '_> {
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(super) fn simplify(&self, ty: Type) -> Type {
-        info!("Simplifying {}", dump_type_as_string(&self.cm, &ty));
+        info!("Simplifying {}", dump_type_as_string(&ty));
         ty.fold_with(&mut Simplifier { env: &self.env })
     }
 }

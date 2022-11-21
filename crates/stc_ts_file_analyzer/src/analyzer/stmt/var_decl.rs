@@ -336,7 +336,7 @@ impl Analyzer<'_, '_> {
 
                         ty.assert_valid();
 
-                        debug!("[vars]: Type after generalization: {}", dump_type_as_string(&self.cm, &ty));
+                        debug!("[vars]: Type after generalization: {}", dump_type_as_string(&ty));
 
                         if should_generalize_fully {
                             match v.name {
@@ -357,7 +357,7 @@ impl Analyzer<'_, '_> {
                             };
                         }
 
-                        debug!("[vars]: Type after normalization: {}", dump_type_as_string(&self.cm, &ty));
+                        debug!("[vars]: Type after normalization: {}", dump_type_as_string(&ty));
 
                         if let Type::Ref(..) = ty.normalize() {
                             let ctx = Ctx {
@@ -369,7 +369,7 @@ impl Analyzer<'_, '_> {
                             ty = self.with_ctx(ctx).expand(span, ty, Default::default())?;
                             ty.assert_valid();
 
-                            debug!("[vars]: Type after expansion: {}", dump_type_as_string(&self.cm, &ty));
+                            debug!("[vars]: Type after expansion: {}", dump_type_as_string(&ty));
                         }
 
                         ty.assert_valid();

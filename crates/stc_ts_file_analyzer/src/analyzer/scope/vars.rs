@@ -107,7 +107,7 @@ impl Analyzer<'_, '_> {
             RPat::Ident(i) => {
                 if let Some(ty) = &ty {
                     if cfg!(debug_assertions) {
-                        debug!("[vars]: Declaring {} as {}", i.id.sym, dump_type_as_string(&self.cm, ty));
+                        debug!("[vars]: Declaring {} as {}", i.id.sym, dump_type_as_string(ty));
                     }
                 } else {
                     if cfg!(debug_assertions) {
@@ -806,7 +806,7 @@ impl Analyzer<'_, '_> {
                 _ => {}
             }
 
-            unimplemented!("exclude_props: {}", dump_type_as_string(&self.cm, &ty))
+            unimplemented!("exclude_props: {}", dump_type_as_string(&ty))
         })()?;
 
         Ok(ty.fixed())

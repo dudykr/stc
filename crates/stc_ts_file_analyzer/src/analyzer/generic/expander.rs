@@ -120,8 +120,8 @@ impl Analyzer<'_, '_> {
 
         debug!(
             "[generic/extends] Checking if {} extends {}",
-            dump_type_as_string(&self.cm, child),
-            dump_type_as_string(&self.cm, parent),
+            dump_type_as_string(child),
+            dump_type_as_string(parent),
         );
 
         if let Type::Param(TypeParam {

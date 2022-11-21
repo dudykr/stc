@@ -508,8 +508,8 @@ impl Analyzer<'_, '_> {
         left.assert_valid();
         right.assert_valid();
 
-        let l = dump_type_as_string(&self.cm, left);
-        let r = dump_type_as_string(&self.cm, right);
+        let l = dump_type_as_string(left);
+        let r = dump_type_as_string(right);
 
         let _panic_ctx = debug_ctx!(format!("left = {}", l));
         let _panic_ctx = debug_ctx!(format!("right = {}", r));
@@ -530,8 +530,8 @@ impl Analyzer<'_, '_> {
 
         let res = self.assign_without_wrapping(data, left, right, opts).with_context(|| {
             //
-            let l = dump_type_as_string(&self.cm, left);
-            let r = dump_type_as_string(&self.cm, right);
+            let l = dump_type_as_string(left);
+            let r = dump_type_as_string(right);
 
             format!("\nlhs = {}\nrhs = {}", l, r)
         });
@@ -553,8 +553,8 @@ impl Analyzer<'_, '_> {
         }
 
         let _tracing = if cfg!(debug_assertions) {
-            let lhs = dump_type_as_string(&self.cm, to);
-            let rhs = dump_type_as_string(&self.cm, rhs);
+            let lhs = dump_type_as_string(to);
+            let rhs = dump_type_as_string(rhs);
 
             Some(span!(Level::ERROR, "assign", lhs = &*lhs, rhs = &*rhs).entered())
         } else {
@@ -588,8 +588,8 @@ impl Analyzer<'_, '_> {
                 let _ctx = ctx!(format!(
                     "`fail!()` called from assign/mod.rs:{}\nLHS (final): {}\nRHS (final): {}",
                     line!(),
-                    dump_type_as_string(&self.cm, to),
-                    dump_type_as_string(&self.cm, rhs)
+                    dump_type_as_string(to),
+                    dump_type_as_string(rhs)
                 ));
                 return Err(ErrorKind::AssignFailed {
                     span,
@@ -1082,7 +1082,7 @@ impl Analyzer<'_, '_> {
                             .with_context(|| {
                                 format!(
                                     "tried to check if unknown rhs exists while assigning to an intersection type:\nLHS: {}",
-                                    dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
+                                    dump_type_as_string(&Type::TypeLit(lhs.into_owned()))
                                 )
                             })
                             .convert_err(|err| ErrorKind::SimpleAssignFailed {
@@ -1926,8 +1926,8 @@ impl Analyzer<'_, '_> {
                             .with_context(|| {
                                 format!(
                                     "tried to assign a type to an interface to check if unknown rhs exists\nLHS: {}\nRHS: {}",
-                                    dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned())),
-                                    dump_type_as_string(&self.cm, rhs)
+                                    dump_type_as_string(&Type::TypeLit(lhs.into_owned())),
+                                    dump_type_as_string(rhs)
                                 )
                             })?;
                     }
@@ -1980,7 +1980,7 @@ impl Analyzer<'_, '_> {
                     return self.assign_to_function(data, to, lf, rhs, opts).with_context(|| {
                         format!(
                             "tried to assign to a function type: {}",
-                            dump_type_as_string(&self.cm, &Type::Function(lf.clone()))
+                            dump_type_as_string(&Type::Function(lf.clone()))
                         )
                     })
                 }
@@ -2246,8 +2246,8 @@ impl Analyzer<'_, '_> {
         // TODO(kdy1): Implement full type checker
         error!(
             "unimplemented: assign: \nLeft: {}\nRight: {}",
-            dump_type_as_string(&self.cm, to),
-            dump_type_as_string(&self.cm, rhs)
+            dump_type_as_string(to),
+            dump_type_as_string(rhs)
         );
         Ok(())
     }
@@ -2261,11 +2261,7 @@ impl Analyzer<'_, '_> {
             IntrinsicKind::Uncapitalize => {}
         }
 
-        error!(
-            "unimplemented: assign to intrinsic type\n{:?}\n{}",
-            to,
-            dump_type_as_string(&self.cm, r)
-        );
+        error!("unimplemented: assign to intrinsic type\n{:?}\n{}", to, dump_type_as_string(r));
         Ok(())
     }
 
@@ -2422,11 +2418,7 @@ impl Analyzer<'_, '_> {
                             if let Some(r) = &new_r_ty {
                                 Err(ErrorKind::Unimplemented {
                                     span: opts.span,
-                                    msg: format!(
-                                        "Assignment to mapped type\n{}\n{}",
-                                        dump_type_as_string(&self.cm, l),
-                                        dump_type_as_string(&self.cm, r),
-                                    ),
+                                    msg: format!("Assignment to mapped type\n{}\n{}", dump_type_as_string(l), dump_type_as_string(r),),
                                 })?
                             }
                         }
@@ -2441,7 +2433,7 @@ impl Analyzer<'_, '_> {
             })?
         };
 
-        res.with_context(|| format!("tried to assign {} to a mapped type", dump_type_as_string(&self.cm, &r)))
+        res.with_context(|| format!("tried to assign {} to a mapped type", dump_type_as_string(&r)))
     }
 
     /// Returns true for `A | B | | C = A | B` and simillar cases.

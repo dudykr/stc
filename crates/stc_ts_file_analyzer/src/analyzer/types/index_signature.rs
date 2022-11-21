@@ -20,7 +20,7 @@ impl Analyzer<'_, '_> {
                 _ => Ok(None),
             }
         })()
-        .with_context(|| format!("tried to get index signature of '{}'", dump_type_as_string(&self.cm, ty)))
+        .with_context(|| format!("tried to get index signature of '{}'", dump_type_as_string(ty)))
     }
 
     pub(crate) fn get_index_signature_from_class(&mut self, span: Span, class: &ClassDef) -> VResult<Option<IndexSignature>> {
