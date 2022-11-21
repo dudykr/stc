@@ -14,11 +14,8 @@ impl Analyzer<'_, '_> {
         ty.visit_with(&mut finder);
 
         if finder.used.is_empty() {
-            match ty {
-                Type::Function(f) => {
-                    f.type_params = None;
-                }
-                _ => {}
+            if let Type::Function(f) = ty {
+                f.type_params = None;
             }
             return;
         }
@@ -62,11 +59,8 @@ impl Visit<Type> for TypeParamUsageFinder {
     fn visit(&mut self, ty: &Type) {
         ty.visit_children_with(self);
 
-        match ty.normalize() {
-            Type::Param(p) => {
-                self.used.insert(p.name.clone());
-            }
-            _ => {}
+        if let Type::Param(p) = ty.normalize() {
+            self.used.insert(p.name.clone());
         }
     }
 }

@@ -1754,7 +1754,7 @@ impl Analyzer<'_, '_> {
         if let Type::Union(excluded) = excluded.normalize() {
             //
             for excluded in &excluded.types {
-                self.exclude_type(span, ty, &excluded)
+                self.exclude_type(span, ty, excluded)
             }
 
             return;
@@ -1782,7 +1782,7 @@ impl Analyzer<'_, '_> {
             Type::Class(cls) => {
                 //
                 if let Some(super_def) = &cls.def.super_class {
-                    if let Ok(mut super_instance) = self.instantiate_class(cls.span, &super_def) {
+                    if let Ok(mut super_instance) = self.instantiate_class(cls.span, super_def) {
                         self.exclude_type(span, &mut super_instance, &excluded);
                         if super_instance.is_never() {
                             *ty = Type::never(
