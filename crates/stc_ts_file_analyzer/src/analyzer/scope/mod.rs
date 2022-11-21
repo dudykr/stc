@@ -1917,7 +1917,7 @@ impl Expander<'_, '_, '_> {
                         let is_alias = matches!(t.normalize(), Type::Alias(..));
 
                         match t.normalize() {
-                            Type::Intersection(..) => return Ok(Some(t.into_owned().clone())),
+                            Type::Intersection(..) => return Ok(Some(t.into_owned())),
 
                             // Result of type expansion should not be Ref unless really required.
                             Type::Ref(r) => {
@@ -1993,15 +1993,12 @@ impl Expander<'_, '_, '_> {
                                         debug!("[expand] Expanded generics: {} => {}", before, after);
                                     }
 
-                                    match ty {
-                                        Type::ClassDef(def) => {
-                                            ty = Type::Class(Class {
-                                                span: self.span,
-                                                def: box def,
-                                                metadata: Default::default(),
-                                            });
-                                        }
-                                        _ => {}
+                                    if let Type::ClassDef(def) = ty {
+                                        ty = Type::Class(Class {
+                                            span: self.span,
+                                            def: box def,
+                                            metadata: Default::default(),
+                                        });
                                     };
 
                                     if is_alias {
@@ -2020,11 +2017,8 @@ impl Expander<'_, '_, '_> {
                                     _ => {}
                                 }
 
-                                match ty.normalize() {
-                                    Type::Alias(..) => {
-                                        self.expand_top_level = true;
-                                    }
-                                    _ => {}
+                                if let Type::Alias(..) = ty.normalize() {
+                                    self.expand_top_level = true;
                                 }
 
                                 // TODO(kdy1): PERF
@@ -2036,15 +2030,12 @@ impl Expander<'_, '_, '_> {
                                     self.dejavu.remove(&i.into());
                                 }
 
-                                match ty {
-                                    Type::ClassDef(def) => {
-                                        ty = Type::Class(Class {
-                                            span: self.span,
-                                            def: box def,
-                                            metadata: Default::default(),
-                                        });
-                                    }
-                                    _ => {}
+                                if let Type::ClassDef(def) = ty {
+                                    ty = Type::Class(Class {
+                                        span: self.span,
+                                        def: box def,
+                                        metadata: Default::default(),
+                                    });
                                 };
 
                                 return Ok(Some(ty));
@@ -2159,10 +2150,7 @@ impl Expander<'_, '_, '_> {
             }
         };
 
-        self.full |= match ty {
-            Type::Mapped(..) => true,
-            _ => false,
-        };
+        self.full |= matches!(ty, Type::Mapped(..));
 
         let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
 
