@@ -961,16 +961,12 @@ impl Analyzer<'_, '_> {
             Type::Interface(ref i) if i.name.as_str() == "Object" => return Ok(()),
 
             Type::Module(to) => {
-                match rhs {
-                    // TODO(kdy1): Use unique id for module type.
-                    Type::Module(rhs) => {
-                        if to.name.eq_ignore_span(&rhs.name) {
-                            return Ok(());
-                        }
+                // TODO(kdy1): Use unique id for module type.
+                if let Type::Module(rhs) = rhs {
+                    if to.name.eq_ignore_span(&rhs.name) {
+                        return Ok(());
                     }
-                    _ => {}
                 }
-                dbg!();
                 return Err(ErrorKind::InvalidLValue { span: to.span() }.into());
             }
             Type::Enum(..) => fail!(),
@@ -1069,12 +1065,9 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .context("tried to assign to an element of an intersection type")
-                        .convert_err(|err| {
-                            ErrorKind::SimpleAssignFailed {
-                                span: err.span(),
-                                cause: Some(box err.into()),
-                            }
-                            .into()
+                        .convert_err(|err| ErrorKind::SimpleAssignFailed {
+                            span: err.span(),
+                            cause: Some(box err.into()),
                         }) {
                         Ok(..) => {}
                         Err(err) => errors.push(err),
