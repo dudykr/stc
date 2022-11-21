@@ -157,22 +157,23 @@ impl GenericExpander<'_> {
             Type::Mapped(mut m @ Mapped { ty: Some(..), .. }) => {
                 m.make_clone_cheap();
 
-                match &m.type_param.constraint {
-                    Some(constraint) => match constraint.normalize() {
-                        Type::Operator(
-                            operator @ Operator {
-                                op: TsTypeOperatorOp::KeyOf,
-                                ..
-                            },
-                        ) => match operator.ty.normalize() {
+                if let Some(constraint) = &m.type_param.constraint {
+                    if let Type::Operator(
+                        operator @ Operator {
+                            op: TsTypeOperatorOp::KeyOf,
+                            ..
+                        },
+                    ) = constraint.normalize()
+                    {
+                        match operator.ty.normalize() {
                             Type::Param(param) if self.params.contains_key(&param.name) => {
                                 let ty = self.params.get(&param.name).unwrap();
                                 match ty.normalize() {
                                     Type::TypeLit(ty)
-                                        if ty.members.iter().all(|element| match element {
-                                            TypeElement::Property(..) | TypeElement::Method(..) => true,
-                                            _ => false,
-                                        }) =>
+                                        if ty
+                                            .members
+                                            .iter()
+                                            .all(|element| matches!(element, TypeElement::Property(..) | TypeElement::Method(..))) =>
                                     {
                                         let mut members = vec![];
 
@@ -233,10 +234,8 @@ impl GenericExpander<'_> {
                                 }
                             }
                             _ => {}
-                        },
-                        _ => {}
-                    },
-                    _ => {}
+                        }
+                    }
                 }
 
                 // let m_ty = m.clone();
@@ -304,11 +303,9 @@ impl GenericExpander<'_> {
                         match *obj_type {
                             Type::TypeLit(TypeLit {
                                 span, members, metadata, ..
-                            }) if members.iter().all(|m| match m {
-                                TypeElement::Property(_) => true,
-                                TypeElement::Method(_) => true,
-                                _ => false,
-                            }) =>
+                            }) if members
+                                .iter()
+                                .all(|m| matches!(m, TypeElement::Property(_) | TypeElement::Method(_))) =>
                             {
                                 let mut new_members = Vec::with_capacity(members.len());
                                 for m in members {
@@ -344,24 +341,23 @@ impl GenericExpander<'_> {
                 };
 
                 if let Some(constraint) = &m.type_param.constraint {
-                    match &**constraint {
-                        Type::Operator(Operator {
-                            span,
-                            op: TsTypeOperatorOp::KeyOf,
-                            ty,
-                            ..
-                        }) => match ty.normalize() {
+                    if let Type::Operator(Operator {
+                        span,
+                        op: TsTypeOperatorOp::KeyOf,
+                        ty,
+                        ..
+                    }) = constraint.normalize()
+                    {
+                        match ty.normalize() {
                             Type::Keyword(..) if m.optional.is_none() && m.readonly.is_none() => return *ty.clone(),
                             Type::TypeLit(TypeLit {
                                 span,
                                 members,
                                 metadata: ty_metadata,
                                 ..
-                            }) if members.iter().all(|m| match m {
-                                TypeElement::Property(_) => true,
-                                TypeElement::Method(_) => true,
-                                _ => false,
-                            }) =>
+                            }) if members
+                                .iter()
+                                .all(|m| matches!(m, TypeElement::Property(_) | TypeElement::Method(_))) =>
                             {
                                 let mut new_members = Vec::with_capacity(members.len());
                                 for member in members {
@@ -403,9 +399,7 @@ impl GenericExpander<'_> {
                                 });
                             }
                             _ => {}
-                        },
-
-                        _ => {}
+                        }
                     }
                 }
 
@@ -487,10 +481,7 @@ impl Fold<Type> for GenericExpander<'_> {
         let _context = debug_ctx!(format!("Expanding generics of {}", dump_type_as_string(&self.cm, &ty)));
 
         let old_fully = self.fully;
-        self.fully |= match ty.normalize() {
-            Type::Mapped(..) => true,
-            _ => false,
-        };
+        self.fully |= matches!(ty.normalize(), Type::Mapped(..));
 
         {
             let mut v = TypeParamNameUsageFinder::default();
@@ -599,14 +590,11 @@ struct GenericChecker<'a> {
 
 impl Visit<Type> for GenericChecker<'_> {
     fn visit(&mut self, ty: &Type) {
-        match ty.normalize() {
-            Type::Param(p) => {
-                if self.params.contains_key(&p.name) {
-                    self.found = true;
-                    return;
-                }
+        if let Type::Param(p) = ty.normalize() {
+            if self.params.contains_key(&p.name) {
+                self.found = true;
+                return;
             }
-            _ => {}
         }
 
         ty.visit_children_with(self);
