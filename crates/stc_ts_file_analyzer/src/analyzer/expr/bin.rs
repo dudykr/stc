@@ -694,7 +694,7 @@ impl Analyzer<'_, '_> {
                         if let Some(property) = left {
                             let new_ty = self.filter_types_with_property(span, &rt, &property, None)?.fixed().freezed();
 
-                            self.add_deep_type_fact(span, name.clone(), new_ty.clone(), true);
+                            self.add_deep_type_fact(span, name, new_ty, true);
                         }
                     }
                 }
@@ -715,11 +715,7 @@ impl Analyzer<'_, '_> {
                     return Ok(lt);
                 }
 
-                let can_generalize = type_ann.is_none()
-                    && match (&**left, &**right) {
-                        (_, RExpr::Ident(..)) => false,
-                        _ => true,
-                    };
+                let can_generalize = type_ann.is_none() && !matches!((&**left, &**right), (_, RExpr::Ident(..)));
 
                 if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&lt)) {
                     lt = lt.generalize_lit();
@@ -734,13 +730,12 @@ impl Analyzer<'_, '_> {
                     return Ok(lt);
                 }
 
-                match lt.normalize() {
-                    Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                        ..
-                    }) => return Ok(Type::any(span, Default::default())),
-
-                    _ => {}
+                if let Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsAnyKeyword,
+                    ..
+                }) = lt.normalize()
+                {
+                    return Ok(Type::any(span, Default::default()));
                 }
 
                 match op {
@@ -783,7 +778,7 @@ impl Analyzer<'_, '_> {
 
                     _ => unreachable!(),
                 }
-                return Ok(rt);
+                Ok(rt)
             }
 
             op!("??") => {
