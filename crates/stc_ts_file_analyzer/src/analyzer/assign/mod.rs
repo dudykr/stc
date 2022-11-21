@@ -165,7 +165,6 @@ pub(crate) struct AssignOpts {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Relation {
     Assignable,
-    Compable,
     Castable,
     Subtype,
 }

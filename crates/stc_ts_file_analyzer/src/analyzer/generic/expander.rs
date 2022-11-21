@@ -10,7 +10,11 @@ use swc_ecma_ast::*;
 use tracing::debug;
 
 use crate::{
-    analyzer::{assign::AssignOpts, scope::ExpandOpts, Analyzer, Ctx},
+    analyzer::{
+        assign::{AssignOpts, Relation},
+        scope::ExpandOpts,
+        Analyzer, Ctx,
+    },
     ty::Type,
     VResult,
 };
@@ -354,6 +358,7 @@ impl Analyzer<'_, '_> {
             child,
             AssignOpts {
                 span,
+                kind: Relation::Subtype,
                 disallow_special_assignment_to_empty_class: true,
                 disallow_different_classes: opts.disallow_different_classes,
                 allow_assignment_to_param_constraint: true,
