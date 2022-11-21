@@ -718,15 +718,17 @@ impl Analyzer<'_, '_> {
         };
 
         match (to, rhs) {
-            (Type::Rest(lr), r) => match lr.ty.normalize() {
-                Type::Array(la) => return self.assign_with_opts(data, &la.elem_type, &r, opts),
-                _ => {}
-            },
+            (Type::Rest(lr), r) => {
+                if let Type::Array(la) = lr.ty.normalize() {
+                    return self.assign_with_opts(data, &la.elem_type, &r, opts);
+                }
+            }
 
-            (l, Type::Rest(rr)) => match rr.ty.normalize() {
-                Type::Array(ra) => return self.assign_with_opts(data, &l, &ra.elem_type, opts),
-                _ => {}
-            },
+            (l, Type::Rest(rr)) => {
+                if let Type::Array(ra) = rr.ty.normalize() {
+                    return self.assign_with_opts(data, &l, &ra.elem_type, opts);
+                }
+            }
 
             (Type::Tuple(..) | Type::Array(..), Type::Function(..) | Type::Constructor(..)) => {
                 fail!()
@@ -744,18 +746,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match rhs {
-            Type::IndexedAccessType(rhs) => {
-                let err = ErrorKind::NoSuchProperty {
-                    span,
-                    obj: Some(rhs.obj_type.clone()),
-                    // TODO
-                    prop: None,
-                }
-                .into();
-                return Err(ErrorKind::Errors { span, errors: vec![err] }.into());
+        if let Type::IndexedAccessType(rhs) = rhs {
+            let err = ErrorKind::NoSuchProperty {
+                span,
+                obj: Some(rhs.obj_type.clone()),
+                // TODO
+                prop: None,
             }
-            _ => {}
+            .into();
+            return Err(ErrorKind::Errors { span, errors: vec![err] }.into());
         }
 
         match to {
@@ -789,14 +788,11 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Ref(left) => {
-                match rhs {
-                    Type::Ref(right) => {
-                        // We need this as type may recurse, and thus cannot be handled by expander.
-                        if left.type_name.type_eq(&right.type_name) && left.type_args.type_eq(&right.type_args) {
-                            return Ok(());
-                        }
+                if let Type::Ref(right) = rhs {
+                    // We need this as type may recurse, and thus cannot be handled by expander.
+                    if left.type_name.type_eq(&right.type_name) && left.type_args.type_eq(&right.type_args) {
+                        return Ok(());
                     }
-                    _ => {}
                 }
 
                 let new_lhs = self.expand_top_ref(span, Cow::Borrowed(to), Default::default())?.freezed();
@@ -846,10 +842,7 @@ impl Analyzer<'_, '_> {
 
         if match rhs.normalize_instance() {
             Type::Lit(..) => true,
-            Type::Interface(i) => match &**i.name.sym() {
-                "Boolean" | "String" | "Number" => true,
-                _ => false,
-            },
+            Type::Interface(i) => matches!(&**i.name.sym(), "Boolean" | "String" | "Number"),
             _ => false,
         } {
             // Handle special cases.

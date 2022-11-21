@@ -314,7 +314,7 @@ impl Analyzer<'_, '_> {
                                 if let Some(lt) = &lp.value {
                                     if let Some(rt) = &rp.value {
                                         let _ctx = ctx!("tried to assign a class proeprty to another");
-                                        self.assign_inner(data, &lt, &rt, opts)?;
+                                        self.assign_inner(data, lt, rt, opts)?;
                                     }
                                 }
 
