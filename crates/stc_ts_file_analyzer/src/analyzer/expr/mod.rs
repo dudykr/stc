@@ -4105,13 +4105,13 @@ impl Analyzer<'_, '_> {
                 if el.params.is_empty() {
                     return false;
                 }
-                match el.params[0].ty.normalize() {
+                matches!(
+                    el.params[0].ty.normalize(),
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsNumberKeyword,
                         ..
-                    }) => true,
-                    _ => false,
-                }
+                    })
+                )
             }
             _ => false,
         }) {
@@ -4120,10 +4120,9 @@ impl Analyzer<'_, '_> {
 
         // Check for numeric keys like '0', '1', '2'.
         elems.is_empty()
-            || elems.iter().any(|el| match el {
-                TypeElement::Property(PropertySignature { key: Key::Num(..), .. }) => true,
-                _ => false,
-            })
+            || elems
+                .iter()
+                .any(|el| matches!(el, TypeElement::Property(PropertySignature { key: Key::Num(..), .. })))
     }
 }
 
