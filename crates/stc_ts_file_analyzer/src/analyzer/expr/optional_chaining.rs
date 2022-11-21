@@ -85,16 +85,13 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        match obj.normalize() {
-            Type::Union(u) => {
-                for ty in u.types.iter() {
-                    if self.is_obj_optional(ty)? {
-                        return Ok(true);
-                    }
+        if let Type::Union(u) = obj.normalize() {
+            for ty in u.types.iter() {
+                if self.is_obj_optional(ty)? {
+                    return Ok(true);
                 }
-                return Ok(false);
             }
-            _ => {}
+            return Ok(false);
         }
 
         Ok(false)
@@ -104,7 +101,7 @@ impl Analyzer<'_, '_> {
 pub(crate) fn is_obj_opt_chaining(obj: &RExpr) -> bool {
     match obj {
         RExpr::OptChain(..) => true,
-        RExpr::Member(RMemberExpr { obj, .. }) => is_obj_opt_chaining(&obj),
+        RExpr::Member(RMemberExpr { obj, .. }) => is_obj_opt_chaining(obj),
         _ => false,
     }
 }

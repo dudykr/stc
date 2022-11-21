@@ -22,7 +22,7 @@ fn main() {
             "es2015.full",
             "es5.full",
         ] {
-            libs.extend(Lib::load(&s));
+            libs.extend(Lib::load(s));
         }
         libs.sort();
         libs.dedup();

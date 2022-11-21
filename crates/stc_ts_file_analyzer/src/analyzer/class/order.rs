@@ -121,20 +121,17 @@ impl Visit<RMemberExpr> for MethodAnalyzer {
             e.prop.visit_with(self);
         }
 
-        match &*e.obj {
-            RExpr::This(..) => {
-                // We detects this.#foo and this.foo
-                match &e.prop {
-                    RMemberProp::Ident(i) => {
-                        self.result.depends_on.insert(Key::Id(i.into()));
-                    }
-                    RMemberProp::PrivateName(i) => {
-                        self.result.depends_on.insert(Key::Private(i.id.clone().into()));
-                    }
-                    _ => {}
+        if let RExpr::This(..) = &*e.obj {
+            // We detects this.#foo and this.foo
+            match &e.prop {
+                RMemberProp::Ident(i) => {
+                    self.result.depends_on.insert(Key::Id(i.into()));
                 }
+                RMemberProp::PrivateName(i) => {
+                    self.result.depends_on.insert(Key::Private(i.id.clone().into()));
+                }
+                _ => {}
             }
-            _ => {}
         }
     }
 }

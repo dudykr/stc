@@ -55,7 +55,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
     let res = ::testing::run_test2(false, |cm, handler| {
         let handler = Arc::new(handler);
         let mut checker = Checker::new(
-            cm.clone(),
+            cm,
             handler.clone(),
             Env::simple(rule, target, ModuleConfig::None, &libs),
             TsConfig {

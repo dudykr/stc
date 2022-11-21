@@ -80,19 +80,16 @@ impl Analyzer<'_, '_> {
     pub(crate) fn report_errors_for_mixed_optional_method_signatures(&mut self, elems: &[TypeElement]) {
         let mut keys: Vec<(&Key, bool)> = vec![];
         for elem in elems {
-            match elem {
-                TypeElement::Method(MethodSignature { key, optional, .. }) => {
-                    if let Some(prev) = keys.iter().find(|v| v.0.type_eq(key)) {
-                        if *optional != prev.1 {
-                            self.storage
-                                .report(ErrorKind::OptionalAndNonOptionalMethodPropertyMixed { span: key.span() }.into());
-                            continue;
-                        }
+            if let TypeElement::Method(MethodSignature { key, optional, .. }) = elem {
+                if let Some(prev) = keys.iter().find(|v| v.0.type_eq(key)) {
+                    if *optional != prev.1 {
+                        self.storage
+                            .report(ErrorKind::OptionalAndNonOptionalMethodPropertyMixed { span: key.span() }.into());
+                        continue;
                     }
-
-                    keys.push((key, *optional));
                 }
-                _ => {}
+
+                keys.push((key, *optional));
             }
         }
     }
@@ -166,15 +163,12 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        match to.normalize() {
-            Type::Function(..) => {
-                // objectSpead.ts says
-                //
-                //
-                // functions result in { }
-                return Ok(to);
-            }
-            _ => {}
+        if let Type::Function(..) = to.normalize() {
+            // objectSpead.ts says
+            //
+            //
+            // functions result in { }
+            return Ok(to);
         }
 
         if rhs.is_any() || rhs.is_unknown() {

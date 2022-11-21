@@ -14,11 +14,8 @@ impl Analyzer<'_, '_> {
         ty.visit_with(&mut finder);
 
         if finder.used.is_empty() {
-            match ty {
-                Type::Function(f) => {
-                    f.type_params = None;
-                }
-                _ => {}
+            if let Type::Function(f) = ty {
+                f.type_params = None;
             }
             return;
         }
@@ -34,17 +31,14 @@ impl Analyzer<'_, '_> {
                 metadata: Default::default(),
             })
             .collect_vec();
-        match ty {
-            Type::Function(f) => {
-                // Create new type param decls if required.
-                match &mut f.type_params {
-                    Some(v) => {
-                        v.params = params;
-                    }
-                    None => f.type_params = Some(TypeParamDecl { span: DUMMY_SP, params }),
+        if let Type::Function(f) = ty {
+            // Create new type param decls if required.
+            match &mut f.type_params {
+                Some(v) => {
+                    v.params = params;
                 }
+                None => f.type_params = Some(TypeParamDecl { span: DUMMY_SP, params }),
             }
-            _ => {}
         }
     }
 }
@@ -65,11 +59,8 @@ impl Visit<Type> for TypeParamUsageFinder {
     fn visit(&mut self, ty: &Type) {
         ty.visit_children_with(self);
 
-        match ty.normalize() {
-            Type::Param(p) => {
-                self.used.insert(p.name.clone());
-            }
-            _ => {}
+        if let Type::Param(p) = ty.normalize() {
+            self.used.insert(p.name.clone());
         }
     }
 }

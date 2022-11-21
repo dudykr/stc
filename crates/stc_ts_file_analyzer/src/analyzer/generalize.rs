@@ -71,12 +71,10 @@ impl Simplifier<'_> {
 
 impl Fold<Union> for Simplifier<'_> {
     fn fold(&mut self, mut union: Union) -> Union {
-        let should_remove_null_and_undefined = union.types.iter().any(|ty| match ty.normalize() {
-            Type::TypeLit(..) => true,
-            Type::Ref(..) => true,
-            Type::Function(..) => true,
-            _ => false,
-        });
+        let should_remove_null_and_undefined = union
+            .types
+            .iter()
+            .any(|ty| matches!(ty.normalize(), Type::TypeLit(..) | Type::Ref(..) | Type::Function(..)));
 
         if should_remove_null_and_undefined {
             union.types.retain(|ty| {
@@ -88,10 +86,7 @@ impl Fold<Union> for Simplifier<'_> {
             });
         }
 
-        let has_array = union.types.iter().any(|ty| match ty.normalize() {
-            Type::Array(..) => true,
-            _ => false,
-        });
+        let has_array = union.types.iter().any(|ty| matches!(ty.normalize(), Type::Array(..)));
 
         // Remove empty tuple
         if has_array {
@@ -112,38 +107,35 @@ impl Fold<Type> for Simplifier<'_> {
         // TODO(kdy1): PERF
         ty.normalize_mut();
 
-        match ty.normalize() {
-            Type::Array(Array {
-                elem_type:
-                    box Type::IndexedAccessType(IndexedAccessType {
-                        obj_type: box Type::Param(..),
-                        index_type:
-                            box Type::Param(TypeParam {
-                                constraint:
-                                    Some(box Type::Operator(Operator {
-                                        op: TsTypeOperatorOp::KeyOf,
-                                        ty: box Type::Param(..),
-                                        ..
-                                    })),
-                                ..
-                            }),
-                        ..
-                    }),
-                ..
-            }) => return ty,
-
-            _ => {}
+        if let Type::Array(Array {
+            elem_type:
+                box Type::IndexedAccessType(IndexedAccessType {
+                    obj_type: box Type::Param(..),
+                    index_type:
+                        box Type::Param(TypeParam {
+                            constraint:
+                                Some(box Type::Operator(Operator {
+                                    op: TsTypeOperatorOp::KeyOf,
+                                    ty: box Type::Param(..),
+                                    ..
+                                })),
+                            ..
+                        }),
+                    ..
+                }),
+            ..
+        }) = ty.normalize()
+        {
+            return ty;
         }
 
         if self.should_skip_inference(&ty) {
-            match ty.normalize() {
-                Type::IndexedAccessType(IndexedAccessType {
-                    obj_type: box Type::Param(TypeParam { constraint: Some(..), .. }),
-                    ..
-                }) => {
-                    return ty;
-                }
-                _ => {}
+            if let Type::IndexedAccessType(IndexedAccessType {
+                obj_type: box Type::Param(TypeParam { constraint: Some(..), .. }),
+                ..
+            }) = ty.normalize()
+            {
+                return ty;
             }
         }
 
@@ -358,13 +350,15 @@ impl Fold<Type> for Simplifier<'_> {
                 index_type: index_type @ box Type::Lit(LitType { lit: RTsLit::Str(..), .. }),
                 metadata,
                 ..
-            }) if obj.types.iter().all(|ty| match ty.normalize() {
-                Type::TypeLit(..) => true,
-                Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsUnknownKeyword,
-                    ..
-                }) => true,
-                _ => false,
+            }) if obj.types.iter().all(|ty| {
+                matches!(
+                    ty.normalize(),
+                    Type::TypeLit(..)
+                        | Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsUnknownKeyword,
+                            ..
+                        })
+                )
             }) =>
             {
                 let inexact = obj
@@ -391,11 +385,7 @@ impl Fold<Type> for Simplifier<'_> {
                 members.dedup_by(|a, b| {
                     if let Some(a_key) = a.key() {
                         if let Some(b_key) = b.key() {
-                            if a_key.eq_ignore_span(&*b_key) {
-                                true
-                            } else {
-                                false
-                            }
+                            a_key.eq_ignore_span(b_key)
                         } else {
                             false
                         }
@@ -427,19 +417,14 @@ impl Fold<Type> for Simplifier<'_> {
                 obj_type: box Type::Union(obj),
                 index_type: box Type::Lit(LitType { lit: RTsLit::Str(s), .. }),
                 ..
-            }) if obj.types.iter().all(|ty| match ty.normalize() {
-                Type::TypeLit(..) => true,
-                _ => false,
-            }) =>
-            {
+            }) if obj.types.iter().all(|ty| matches!(ty.normalize(), Type::TypeLit(..))) => {
                 let mut types = obj
                     .types
                     .into_iter()
-                    .map(|ty| match ty.foldable() {
+                    .flat_map(|ty| match ty.foldable() {
                         Type::TypeLit(ty) => ty.members,
                         _ => unreachable!(),
                     })
-                    .flatten()
                     .filter_map(|element| {
                         let span = element.span();
 
@@ -623,14 +608,14 @@ impl Fold<Type> for Simplifier<'_> {
                 obj_type: box Type::TypeLit(TypeLit { members, .. }),
                 index_type: box Type::Lit(LitType { lit: RTsLit::Str(v), .. }),
                 ..
-            }) if members.iter().any(|element| match element.key().as_deref() {
+            }) if members.iter().any(|element| match element.key() {
                 Some(key) => *key == v.value,
                 _ => false,
             }) =>
             {
                 let el = members
                     .into_iter()
-                    .find(|element| match element.key().as_deref() {
+                    .find(|element| match element.key() {
                         Some(key) => *key == v.value,
                         _ => false,
                     })
@@ -703,7 +688,7 @@ impl Fold<Type> for Simplifier<'_> {
                     }),
                 index_type: box Type::Union(keys),
                 ..
-            }) if keys.types.iter().all(|ty| is_str_lit_or_union(&ty)) => {
+            }) if keys.types.iter().all(is_str_lit_or_union) => {
                 let mut new_types = keys
                     .types
                     .into_iter()
@@ -729,7 +714,7 @@ impl Fold<Type> for Simplifier<'_> {
                                     return *value.clone();
                                 }
 
-                                return Type::any(p.span, Default::default());
+                                Type::any(p.span, Default::default())
                             }
                             ClassMember::Constructor(_) => unreachable!(),
                             ClassMember::IndexSignature(_) => unreachable!(),

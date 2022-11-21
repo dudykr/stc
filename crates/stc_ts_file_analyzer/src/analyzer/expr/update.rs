@@ -19,9 +19,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RUpdateExpr) -> VResult<Type> {
         let span = e.span;
 
-        match &*e.arg {
-            RExpr::New(..) => self.storage.report(ErrorKind::ExprInvalidForUpdateArg { span }.into()),
-            _ => {}
+        if let RExpr::New(..) = &*e.arg {
+            self.storage.report(ErrorKind::ExprInvalidForUpdateArg { span }.into())
         }
 
         let res = e
@@ -89,7 +88,7 @@ impl Analyzer<'_, '_> {
 
                         _ => {}
                     }
-                    return Ok(ty);
+                    Ok(ty)
                 }
 
                 _ => Ok(ty),
@@ -102,13 +101,13 @@ impl Analyzer<'_, '_> {
             }
         } else {
             if !errored
-                && match &*e.arg {
+                && matches!(
+                    &*e.arg,
                     RExpr::Paren(RParenExpr {
-                        expr: box RExpr::Bin(..), ..
-                    })
-                    | RExpr::Bin(..) => true,
-                    _ => false,
-                }
+                        expr: box RExpr::Bin(..),
+                        ..
+                    }) | RExpr::Bin(..)
+                )
             {
                 self.storage
                     .report(ErrorKind::UpdateArgMustBeVariableOrPropertyAccess { span }.into());
@@ -131,15 +130,12 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        match ty.normalize() {
-            Type::Union(ty) => {
-                for ty in &ty.types {
-                    if !self.is_update_operand_valid(ty)? {
-                        return Ok(false);
-                    }
+        if let Type::Union(ty) = ty.normalize() {
+            for ty in &ty.types {
+                if !self.is_update_operand_valid(ty)? {
+                    return Ok(false);
                 }
             }
-            _ => {}
         }
 
         Ok(true)

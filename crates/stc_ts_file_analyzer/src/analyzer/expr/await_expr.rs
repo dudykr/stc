@@ -24,20 +24,17 @@ impl Analyzer<'_, '_> {
             .map(|ty| {
                 // If type annotation is Promise<T>, we use PromiseLike<T> as the annotation.
 
-                match ty.normalize() {
-                    Type::Ref(Ref {
-                        type_name:
-                            RTsEntityName::Ident(RIdent {
-                                sym: js_word!("Promise"), ..
-                            }),
-                        type_args: Some(type_args),
-                        ..
-                    }) => {
-                        if let Some(ty) = type_args.params.first() {
-                            return ty;
-                        }
+                if let Type::Ref(Ref {
+                    type_name: RTsEntityName::Ident(RIdent {
+                        sym: js_word!("Promise"), ..
+                    }),
+                    type_args: Some(type_args),
+                    ..
+                }) = ty.normalize()
+                {
+                    if let Some(ty) = type_args.params.first() {
+                        return ty;
                     }
-                    _ => {}
                 }
 
                 ty
@@ -93,18 +90,15 @@ impl Analyzer<'_, '_> {
             )
             .ok()
             .and_then(|then_ty| {
-                match then_ty.normalize() {
-                    Type::Function(f) => {
-                        // Default type of the first type parameter is awaited type.
-                        if let Some(type_params) = &f.type_params {
-                            if let Some(ty) = type_params.params.first() {
-                                if let Some(ty) = &ty.default {
-                                    return Some(Cow::Owned(*ty.clone()));
-                                }
+                if let Type::Function(f) = then_ty.normalize() {
+                    // Default type of the first type parameter is awaited type.
+                    if let Some(type_params) = &f.type_params {
+                        if let Some(ty) = type_params.params.first() {
+                            if let Some(ty) = &ty.default {
+                                return Some(Cow::Owned(*ty.clone()));
                             }
                         }
                     }
-                    _ => {}
                 }
 
                 None

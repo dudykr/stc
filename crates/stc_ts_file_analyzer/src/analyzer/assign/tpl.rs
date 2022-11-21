@@ -1,3 +1,5 @@
+#![allow(clippy::if_same_then_else)]
+
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_errors::ErrorKind;
 use stc_ts_types::{LitType, TplType, Type};

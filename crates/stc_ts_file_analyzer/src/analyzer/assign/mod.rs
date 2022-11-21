@@ -254,20 +254,17 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
 
-                let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), &rhs);
+                let r_castable = self.can_be_casted_to_number_in_rhs(rhs.span(), rhs);
                 if r_castable {
                     if l.is_num() {
                         return Ok(());
                     }
 
-                    match lhs {
-                        Type::Enum(l) => {
-                            //
-                            if !l.has_str {
-                                return Ok(());
-                            }
+                    if let Type::Enum(l) = lhs {
+                        //
+                        if !l.has_str {
+                            return Ok(());
                         }
-                        _ => {}
                     }
                 }
             }
@@ -310,15 +307,12 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match lhs {
-            Type::TypeLit(lhs) => {
-                if lhs.members.is_empty() {
-                    if rhs.is_str() {
-                        return Ok(());
-                    }
+        if let Type::TypeLit(lhs) = lhs {
+            if lhs.members.is_empty() {
+                if rhs.is_str() {
+                    return Ok(());
                 }
             }
-            _ => {}
         }
 
         match op {
@@ -335,17 +329,14 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match op {
-            op!("&&=") => {
-                if rhs.is_bool() {
-                    return Ok(());
-                }
-
-                if self.can_be_casted_to_number_in_rhs(span, &l) && self.can_be_casted_to_number_in_rhs(span, &r) {
-                    return Ok(());
-                }
+        if let op!("&&=") = op {
+            if rhs.is_bool() {
+                return Ok(());
             }
-            _ => {}
+
+            if self.can_be_casted_to_number_in_rhs(span, &l) && self.can_be_casted_to_number_in_rhs(span, &r) {
+                return Ok(());
+            }
         }
 
         match op {
@@ -376,14 +367,11 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     )
-                    .convert_err(|err| {
-                        ErrorKind::InvalidOpAssign {
-                            span,
-                            op,
-                            lhs: box l.into_owned().clone(),
-                            rhs: box r.into_owned().clone(),
-                        }
-                        .into()
+                    .convert_err(|err| ErrorKind::InvalidOpAssign {
+                        span,
+                        op,
+                        lhs: box l.into_owned().clone(),
+                        rhs: box r.into_owned().clone(),
                     });
             }
             _ => {}
@@ -446,8 +434,7 @@ impl Analyzer<'_, '_> {
                 right: box right.clone(),
                 right_ident: opts.right_ident_span,
                 cause: vec![err.into()],
-            }
-            .into(),
+            },
         })
     }
 
@@ -457,24 +444,21 @@ impl Analyzer<'_, '_> {
         let _ctx = ctx!("tried to normalize a type for assignment");
         let ty = ty.normalize();
 
-        match ty {
-            Type::Instance(Instance { ty, .. }) => {
-                // Normalize further
-                if ty.is_ref_type() {
-                    let normalized = self.normalize_for_assign(span, ty)?;
+        if let Type::Instance(Instance { ty, .. }) = ty {
+            // Normalize further
+            if ty.is_ref_type() {
+                let normalized = self.normalize_for_assign(span, ty)?;
 
-                    if normalized.is_keyword() {
-                        return Ok(normalized);
-                    }
-                }
-
-                if ty.is_mapped() {
-                    let ty = self.normalize_for_assign(span, ty)?;
-
-                    return Ok(ty);
+                if normalized.is_keyword() {
+                    return Ok(normalized);
                 }
             }
-            _ => {}
+
+            if ty.is_mapped() {
+                let ty = self.normalize_for_assign(span, ty)?;
+
+                return Ok(ty);
+            }
         }
 
         match ty {
@@ -524,8 +508,8 @@ impl Analyzer<'_, '_> {
         left.assert_valid();
         right.assert_valid();
 
-        let l = dump_type_as_string(&self.cm, &left);
-        let r = dump_type_as_string(&self.cm, &right);
+        let l = dump_type_as_string(&self.cm, left);
+        let r = dump_type_as_string(&self.cm, right);
 
         let _panic_ctx = debug_ctx!(format!("left = {}", l));
         let _panic_ctx = debug_ctx!(format!("right = {}", r));
@@ -533,7 +517,7 @@ impl Analyzer<'_, '_> {
         if data
             .dejavu
             .iter()
-            .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(&right))
+            .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(right))
         {
             if cfg!(debug_assertions) {
                 info!("[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
@@ -546,8 +530,8 @@ impl Analyzer<'_, '_> {
 
         let res = self.assign_without_wrapping(data, left, right, opts).with_context(|| {
             //
-            let l = dump_type_as_string(&self.cm, &left);
-            let r = dump_type_as_string(&self.cm, &right);
+            let l = dump_type_as_string(&self.cm, left);
+            let r = dump_type_as_string(&self.cm, right);
 
             format!("\nlhs = {}\nrhs = {}", l, r)
         });
@@ -569,8 +553,8 @@ impl Analyzer<'_, '_> {
         }
 
         let _tracing = if cfg!(debug_assertions) {
-            let lhs = dump_type_as_string(&self.cm, &to);
-            let rhs = dump_type_as_string(&self.cm, &rhs);
+            let lhs = dump_type_as_string(&self.cm, to);
+            let rhs = dump_type_as_string(&self.cm, rhs);
 
             Some(span!(Level::ERROR, "assign", lhs = &*lhs, rhs = &*rhs).entered())
         } else {
@@ -713,7 +697,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if let Some(res) = self.assign_to_builtin(data, &to, &rhs, opts) {
+        if let Some(res) = self.assign_to_builtin(data, to, rhs, opts) {
             return res;
         }
 
@@ -731,15 +715,17 @@ impl Analyzer<'_, '_> {
         };
 
         match (to, rhs) {
-            (Type::Rest(lr), r) => match lr.ty.normalize() {
-                Type::Array(la) => return self.assign_with_opts(data, &la.elem_type, &r, opts),
-                _ => {}
-            },
+            (Type::Rest(lr), r) => {
+                if let Type::Array(la) = lr.ty.normalize() {
+                    return self.assign_with_opts(data, &la.elem_type, r, opts);
+                }
+            }
 
-            (l, Type::Rest(rr)) => match rr.ty.normalize() {
-                Type::Array(ra) => return self.assign_with_opts(data, &l, &ra.elem_type, opts),
-                _ => {}
-            },
+            (l, Type::Rest(rr)) => {
+                if let Type::Array(ra) = rr.ty.normalize() {
+                    return self.assign_with_opts(data, l, &ra.elem_type, opts);
+                }
+            }
 
             (Type::Tuple(..) | Type::Array(..), Type::Function(..) | Type::Constructor(..)) => {
                 fail!()
@@ -757,18 +743,15 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match rhs {
-            Type::IndexedAccessType(rhs) => {
-                let err = ErrorKind::NoSuchProperty {
-                    span,
-                    obj: Some(rhs.obj_type.clone()),
-                    // TODO
-                    prop: None,
-                }
-                .into();
-                return Err(ErrorKind::Errors { span, errors: vec![err] }.into());
+        if let Type::IndexedAccessType(rhs) = rhs {
+            let err = ErrorKind::NoSuchProperty {
+                span,
+                obj: Some(rhs.obj_type.clone()),
+                // TODO
+                prop: None,
             }
-            _ => {}
+            .into();
+            return Err(ErrorKind::Errors { span, errors: vec![err] }.into());
         }
 
         match to {
@@ -802,14 +785,11 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Ref(left) => {
-                match rhs {
-                    Type::Ref(right) => {
-                        // We need this as type may recurse, and thus cannot be handled by expander.
-                        if left.type_name.type_eq(&right.type_name) && left.type_args.type_eq(&right.type_args) {
-                            return Ok(());
-                        }
+                if let Type::Ref(right) = rhs {
+                    // We need this as type may recurse, and thus cannot be handled by expander.
+                    if left.type_name.type_eq(&right.type_name) && left.type_args.type_eq(&right.type_args) {
+                        return Ok(());
                     }
-                    _ => {}
                 }
 
                 let new_lhs = self.expand_top_ref(span, Cow::Borrowed(to), Default::default())?.freezed();
@@ -859,10 +839,7 @@ impl Analyzer<'_, '_> {
 
         if match rhs.normalize_instance() {
             Type::Lit(..) => true,
-            Type::Interface(i) => match &**i.name.sym() {
-                "Boolean" | "String" | "Number" => true,
-                _ => false,
-            },
+            Type::Interface(i) => matches!(&**i.name.sym(), "Boolean" | "String" | "Number" | "BigInt"),
             _ => false,
         } {
             // Handle special cases.
@@ -872,6 +849,7 @@ impl Analyzer<'_, '_> {
                 (TsKeywordTypeKind::TsBooleanKeyword, "Boolean"),
                 (TsKeywordTypeKind::TsStringKeyword, "String"),
                 (TsKeywordTypeKind::TsNumberKeyword, "Number"),
+                (TsKeywordTypeKind::TsBigIntKeyword, "BigInt"),
             ];
 
             let rhs = rhs.clone().generalize_lit();
@@ -907,45 +885,42 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match (to, rhs) {
-            (Type::Conditional(lc), Type::Conditional(rc)) => {
-                if lc.check_type.type_eq(&rc.check_type) && lc.extends_type.type_eq(&rc.extends_type) {
-                    self.assign_with_opts(data, &lc.true_type, &rc.true_type, opts)
-                        .context("tried to assign the true type of a conditional type to it of similar conditional type")?;
+        if let (Type::Conditional(lc), Type::Conditional(rc)) = (to, rhs) {
+            if lc.check_type.type_eq(&rc.check_type) && lc.extends_type.type_eq(&rc.extends_type) {
+                self.assign_with_opts(data, &lc.true_type, &rc.true_type, opts)
+                    .context("tried to assign the true type of a conditional type to it of similar conditional type")?;
 
-                    self.assign_with_opts(data, &lc.false_type, &rc.false_type, opts)
-                        .context("tried to assign the true type of a conditional type to it of similar conditional type")?;
+                self.assign_with_opts(data, &lc.false_type, &rc.false_type, opts)
+                    .context("tried to assign the true type of a conditional type to it of similar conditional type")?;
 
-                    return Ok(());
-                }
+                return Ok(());
+            }
 
-                if lc.extends_type.type_eq(&rc.extends_type) {
-                    //
-                    let l_variance = self.variance(&lc)?;
-                    let r_variance = self.variance(&rc)?;
+            if lc.extends_type.type_eq(&rc.extends_type) {
+                //
+                let l_variance = self.variance(lc)?;
+                let r_variance = self.variance(rc)?;
 
-                    match (l_variance, r_variance) {
-                        (Variance::Covariant, Variance::Covariant) => {
-                            return self
-                                .assign_with_opts(data, &lc.check_type, &rc.check_type, opts)
-                                .context("tried assignment of covariant types")
+                match (l_variance, r_variance) {
+                    (Variance::Covariant, Variance::Covariant) => {
+                        return self
+                            .assign_with_opts(data, &lc.check_type, &rc.check_type, opts)
+                            .context("tried assignment of covariant types")
+                    }
+                    (Variance::Contravariant, Variance::Contravariant) => {
+                        return self
+                            .assign_with_opts(data, &rc.check_type, &lc.check_type, opts)
+                            .context("tried assignment of contravariant types")
+                    }
+                    _ => {
+                        return Err(ErrorKind::Unimplemented {
+                            span,
+                            msg: format!("{:?} = {:?}", l_variance, r_variance),
                         }
-                        (Variance::Contravariant, Variance::Contravariant) => {
-                            return self
-                                .assign_with_opts(data, &rc.check_type, &lc.check_type, opts)
-                                .context("tried assignment of contravariant types")
-                        }
-                        _ => {
-                            return Err(ErrorKind::Unimplemented {
-                                span,
-                                msg: format!("{:?} = {:?}", l_variance, r_variance),
-                            }
-                            .into())
-                        }
+                        .into())
                     }
                 }
             }
-            _ => {}
         }
 
         match (to, rhs) {
@@ -959,9 +934,9 @@ impl Analyzer<'_, '_> {
             }
 
             (Type::Conditional(lc), _) => {
-                self.assign_with_opts(data, &lc.true_type, &rhs, opts)
+                self.assign_with_opts(data, &lc.true_type, rhs, opts)
                     .context("tried to assign to the true type")?;
-                self.assign_with_opts(data, &lc.false_type, &rhs, opts)
+                self.assign_with_opts(data, &lc.false_type, rhs, opts)
                     .context("tried to assign to the false type")?;
 
                 return Ok(());
@@ -986,16 +961,12 @@ impl Analyzer<'_, '_> {
             Type::Interface(ref i) if i.name.as_str() == "Object" => return Ok(()),
 
             Type::Module(to) => {
-                match rhs {
-                    // TODO(kdy1): Use unique id for module type.
-                    Type::Module(rhs) => {
-                        if to.name.eq_ignore_span(&rhs.name) {
-                            return Ok(());
-                        }
+                // TODO(kdy1): Use unique id for module type.
+                if let Type::Module(rhs) = rhs {
+                    if to.name.eq_ignore_span(&rhs.name) {
+                        return Ok(());
                     }
-                    _ => {}
                 }
-                dbg!();
                 return Err(ErrorKind::InvalidLValue { span: to.span() }.into());
             }
             Type::Enum(..) => fail!(),
@@ -1053,13 +1024,10 @@ impl Analyzer<'_, '_> {
 
                 if let Some(items) = items {
                     for e in items {
-                        match e.normalize() {
-                            Type::Enum(e) => {
-                                if e.members.len() == 1 {
-                                    return Ok(());
-                                }
+                        if let Type::Enum(e) = e.normalize() {
+                            if e.members.len() == 1 {
+                                return Ok(());
                             }
-                            _ => {}
                         }
                     }
                 }
@@ -1086,7 +1054,7 @@ impl Analyzer<'_, '_> {
                     match self
                         .assign_with_opts(
                             data,
-                            &ty,
+                            ty,
                             rhs,
                             AssignOpts {
                                 allow_unknown_rhs: Some(true),
@@ -1094,12 +1062,9 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .context("tried to assign to an element of an intersection type")
-                        .convert_err(|err| {
-                            ErrorKind::SimpleAssignFailed {
-                                span: err.span(),
-                                cause: Some(box err.into()),
-                            }
-                            .into()
+                        .convert_err(|err| ErrorKind::SimpleAssignFailed {
+                            span: err.span(),
+                            cause: Some(box err.into()),
                         }) {
                         Ok(..) => {}
                         Err(err) => errors.push(err),
@@ -1107,34 +1072,25 @@ impl Analyzer<'_, '_> {
                 }
 
                 let left_contains_object = li.types.iter().any(|ty| ty.is_kwd(TsKeywordTypeKind::TsObjectKeyword));
-                let rhs_requires_unknown_property_check = match rhs.normalize() {
-                    Type::Keyword(..) => false,
-                    _ => true,
-                };
+                let rhs_requires_unknown_property_check = !matches!(rhs.normalize(), Type::Keyword(..));
 
                 if !left_contains_object && rhs_requires_unknown_property_check && !opts.allow_unknown_rhs.unwrap_or_default() {
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
 
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(data, lhs.span, &lhs.members, &rhs, lhs.metadata, opts)
+                        self.assign_to_type_elements(data, lhs.span, &lhs.members, rhs, lhs.metadata, opts)
                             .with_context(|| {
                                 format!(
                                     "tried to check if unknown rhs exists while assigning to an intersection type:\nLHS: {}",
                                     dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
                                 )
                             })
-                            .convert_err(|err| {
-                                ErrorKind::SimpleAssignFailed {
-                                    span: err.span(),
-                                    cause: Some(box err.into()),
-                                }
-                                .into()
+                            .convert_err(|err| ErrorKind::SimpleAssignFailed {
+                                span: err.span(),
+                                cause: Some(box err.into()),
                             })?;
 
-                        errors.retain(|err| match &**err {
-                            ErrorKind::UnknownPropertyInObjectLiteralAssignment { .. } => false,
-                            _ => true,
-                        });
+                        errors.retain(|err| !matches!(&**err, ErrorKind::UnknownPropertyInObjectLiteralAssignment { .. }));
                     }
                 }
 
@@ -1169,7 +1125,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Lit(ref lhs) => match rhs.normalize() {
-                Type::Lit(rhs) if lhs.eq_ignore_span(&rhs) => return Ok(()),
+                Type::Lit(rhs) if lhs.eq_ignore_span(rhs) => return Ok(()),
                 Type::Ref(..) | Type::Query(..) | Type::Param(..) => {
                     // We should expand ref. We expand it with the match
                     // expression below.
@@ -1183,13 +1139,10 @@ impl Analyzer<'_, '_> {
 
                     if let Some(e) = e {
                         for e in e {
-                            match e.normalize() {
-                                Type::Enum(e) => {
-                                    if e.members.len() == 1 {
-                                        return Ok(());
-                                    }
+                            if let Type::Enum(e) = e.normalize() {
+                                if e.members.len() == 1 {
+                                    return Ok(());
                                 }
-                                _ => {}
                             }
                         }
                     }
@@ -1199,7 +1152,7 @@ impl Analyzer<'_, '_> {
                 _ => fail!(),
             },
 
-            Type::Query(ref to) => return self.assign_to_query_type(data, to, &rhs, opts),
+            Type::Query(ref to) => return self.assign_to_query_type(data, to, rhs, opts),
 
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::ReadOnly,
@@ -1207,7 +1160,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 return self
-                    .assign_with_opts(data, &ty, rhs, opts)
+                    .assign_with_opts(data, ty, rhs, opts)
                     .context("tried to assign a type to an operand of readonly type")
             }
 
@@ -1232,7 +1185,7 @@ impl Analyzer<'_, '_> {
 
             Type::Query(rhs) => {
                 return self
-                    .assign_query_type_to_type(data, to, &rhs, opts)
+                    .assign_query_type_to_type(data, to, rhs, opts)
                     .context("tried to assign a query type to another type")
             }
 
@@ -1325,7 +1278,7 @@ impl Analyzer<'_, '_> {
 
                     r.types
                         .iter()
-                        .map(|rhs| {
+                        .try_for_each(|rhs| {
                             if cfg!(debug_assertions) {
                                 // Assertion for deep clones.
                                 let _ = to.clone();
@@ -1342,7 +1295,6 @@ impl Analyzer<'_, '_> {
                                 },
                             )
                         })
-                        .collect::<Result<_, _>>()
                         .context("tried to assign an union type to another one")?;
 
                     return Ok(());
@@ -1359,9 +1311,7 @@ impl Analyzer<'_, '_> {
                 if errors.is_empty() {
                     return Ok(());
                 }
-                return Err(ErrorKind::Errors { span, errors }
-                    .context("tried to assign a union to other type")
-                    .into());
+                return Err(ErrorKind::Errors { span, errors }.context("tried to assign a union to other type"));
             }
 
             Type::Keyword(KeywordType {
@@ -1373,24 +1323,20 @@ impl Analyzer<'_, '_> {
                 ref name, ref constraint, ..
             }) => {
                 //
-                match to {
-                    Type::Param(TypeParam { name: ref l_name, .. }) => {
-                        if opts.allow_assignment_to_param {
-                            return Ok(());
-                        }
-
-                        if name == l_name {
-                            return Ok(());
-                        }
-                        match constraint.as_deref() {
-                            Some(constraint) if constraint.is_type_param() => {}
-                            _ => {
-                                fail!()
-                            }
-                        }
+                if let Type::Param(TypeParam { name: ref l_name, .. }) = to {
+                    if opts.allow_assignment_to_param {
+                        return Ok(());
                     }
 
-                    _ => {}
+                    if name == l_name {
+                        return Ok(());
+                    }
+                    match constraint.as_deref() {
+                        Some(constraint) if constraint.is_type_param() => {}
+                        _ => {
+                            fail!()
+                        }
+                    }
                 }
 
                 match *constraint {
@@ -1419,13 +1365,15 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Predicate(..) => match rhs {
-                Type::Keyword(KeywordType {
+            Type::Predicate(..) => {
+                if let Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
-                }) => return Ok(()),
-                _ => {}
-            },
+                }) = rhs
+                {
+                    return Ok(());
+                }
+            }
 
             _ => {}
         }
@@ -1468,7 +1416,7 @@ impl Analyzer<'_, '_> {
                     elem_type: ref rhs_elem_type,
                     ..
                 }) => {
-                    return self.assign_inner(data, &elem_type, &rhs_elem_type, opts);
+                    return self.assign_inner(data, elem_type, rhs_elem_type, opts);
                 }
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
@@ -1491,20 +1439,17 @@ impl Analyzer<'_, '_> {
                     let r = self.convert_type_to_type_lit(span, Cow::Borrowed(rhs))?;
                     if let Some(r) = r {
                         for m in &r.members {
-                            match m {
-                                TypeElement::Index(m) => match m.params[0].ty.normalize() {
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                                        ..
-                                    }) => {
-                                        if let Some(type_ann) = &m.type_ann {
-                                            return self.assign_with_opts(data, elem_type, type_ann, opts);
-                                        }
+                            if let TypeElement::Index(m) = m {
+                                if let Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    ..
+                                }) = m.params[0].ty.normalize()
+                                {
+                                    if let Some(type_ann) = &m.type_ann {
+                                        return self.assign_with_opts(data, elem_type, type_ann, opts);
                                     }
-                                    _ => {}
-                                },
-                                _ => {}
+                                }
                             }
                         }
                     }
@@ -1513,7 +1458,7 @@ impl Analyzer<'_, '_> {
                     if opts.allow_iterable_on_rhs {
                         let res: VResult<_> = try {
                             let r = self
-                                .get_iterator(span, Cow::Borrowed(&rhs), Default::default())
+                                .get_iterator(span, Cow::Borrowed(rhs), Default::default())
                                 .context("tried to convert a type to an iterator to assign to a tuple")?;
                             //
                             let rhs_el = self
@@ -1531,11 +1476,8 @@ impl Analyzer<'_, '_> {
                             )?;
                         };
 
-                        match res {
-                            Ok(_) => return Ok(()),
-                            Err(_) => {
-                                // TODO(kdy1): Log?
-                            }
+                        if res.is_ok() {
+                            return Ok(());
                         }
                     }
 
@@ -1547,66 +1489,60 @@ impl Analyzer<'_, '_> {
             Type::Union(lu) => {
                 // true | false = boolean
                 if rhs.is_kwd(TsKeywordTypeKind::TsBooleanKeyword) {
-                    if lu.types.iter().any(|ty| match ty.normalize() {
-                        Type::Lit(LitType {
-                            lit: RTsLit::Bool(RBool { value: true, .. }),
-                            ..
-                        }) => true,
-                        _ => false,
-                    }) && lu.types.iter().any(|ty| match ty.normalize() {
-                        Type::Lit(LitType {
-                            lit: RTsLit::Bool(RBool { value: false, .. }),
-                            ..
-                        }) => true,
-                        _ => false,
+                    if lu.types.iter().any(|ty| {
+                        matches!(
+                            ty.normalize(),
+                            Type::Lit(LitType {
+                                lit: RTsLit::Bool(RBool { value: true, .. }),
+                                ..
+                            })
+                        )
+                    }) && lu.types.iter().any(|ty| {
+                        matches!(
+                            ty.normalize(),
+                            Type::Lit(LitType {
+                                lit: RTsLit::Bool(RBool { value: false, .. }),
+                                ..
+                            })
+                        )
                     }) {
                         return Ok(());
                     }
                 }
 
-                match rhs {
-                    Type::Tuple(..) | Type::TypeLit(..) | Type::Union(..) | Type::Alias(..) | Type::Interface(..) => {
-                        if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
-                            return res.context("tried to assign using `assign_to_union`");
-                        }
+                if let Type::Tuple(..) | Type::TypeLit(..) | Type::Union(..) | Type::Alias(..) | Type::Interface(..) = rhs {
+                    if let Some(res) = self.assign_to_union(data, to, rhs, opts) {
+                        return res.context("tried to assign using `assign_to_union`");
                     }
-                    _ => {}
                 }
 
                 // Same operation as above, but for enums.
-                match rhs {
-                    Type::EnumVariant(EnumVariant { enum_name, name: None, .. }) => {
-                        // If `types` contains all variant of the enum, the
-                        // assignment is valid.
-                        let patched_types = lu
-                            .types
-                            .iter()
-                            .map(|ty| {
-                                self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
-                                    .map(Cow::into_owned)
-                            })
-                            .collect::<Result<Vec<_>, _>>()?;
+                if let Type::EnumVariant(EnumVariant { enum_name, name: None, .. }) = rhs {
+                    // If `types` contains all variant of the enum, the
+                    // assignment is valid.
+                    let patched_types = lu
+                        .types
+                        .iter()
+                        .map(|ty| {
+                            self.normalize(Some(span), Cow::Borrowed(ty), Default::default())
+                                .map(Cow::into_owned)
+                        })
+                        .collect::<Result<Vec<_>, _>>()?;
 
-                        if patched_types.iter().all(|ty| match ty.normalize() {
-                            Type::EnumVariant(ev) => ev.enum_name == *enum_name,
-                            _ => false,
-                        }) {
-                            if let Ok(Some(lhs)) = self.find_type(&enum_name) {
-                                for ty in lhs {
-                                    match ty.normalize() {
-                                        Type::Enum(e) => {
-                                            if e.members.len() == lu.types.len() {
-                                                return Ok(());
-                                            }
-                                        }
-                                        _ => {}
+                    if patched_types.iter().all(|ty| match ty.normalize() {
+                        Type::EnumVariant(ev) => ev.enum_name == *enum_name,
+                        _ => false,
+                    }) {
+                        if let Ok(Some(lhs)) = self.find_type(enum_name) {
+                            for ty in lhs {
+                                if let Type::Enum(e) = ty.normalize() {
+                                    if e.members.len() == lu.types.len() {
+                                        return Ok(());
                                     }
                                 }
                             }
                         }
                     }
-
-                    _ => {}
                 }
 
                 let results = lu
@@ -1615,7 +1551,7 @@ impl Analyzer<'_, '_> {
                     .map(|to| {
                         self.assign_with_opts(
                             data,
-                            &to,
+                            to,
                             rhs,
                             AssignOpts {
                                 allow_unknown_rhs_if_expanded: true,
@@ -1659,7 +1595,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Intersection(Intersection { ref types, .. }) => {
-                let vs = types.iter().map(|to| self.assign_inner(data, &to, rhs, opts)).collect::<Vec<_>>();
+                let vs = types.iter().map(|to| self.assign_inner(data, to, rhs, opts)).collect::<Vec<_>>();
 
                 // TODO(kdy1): Multiple error
                 for v in vs {
@@ -1705,10 +1641,11 @@ impl Analyzer<'_, '_> {
                 }
 
                 match kind {
-                    TsKeywordTypeKind::TsStringKeyword => match *rhs {
-                        Type::Lit(LitType { lit: RTsLit::Str(..), .. }) => return Ok(()),
-                        _ => {}
-                    },
+                    TsKeywordTypeKind::TsStringKeyword => {
+                        if let Type::Lit(LitType { lit: RTsLit::Str(..), .. }) = *rhs {
+                            return Ok(());
+                        }
+                    }
 
                     TsKeywordTypeKind::TsNumberKeyword => match *rhs {
                         Type::Lit(LitType {
@@ -1720,14 +1657,11 @@ impl Analyzer<'_, '_> {
                             // number.
                             if let Some(types) = self.find_type(&v.enum_name)? {
                                 for ty in types {
-                                    match *ty.normalize() {
-                                        Type::Enum(ref e) => {
-                                            let is_num = !e.has_str;
-                                            if is_num {
-                                                return Ok(());
-                                            }
+                                    if let Type::Enum(ref e) = *ty.normalize() {
+                                        let is_num = !e.has_str;
+                                        if is_num {
+                                            return Ok(());
                                         }
-                                        _ => {}
                                     }
                                 }
                             }
@@ -1737,10 +1671,11 @@ impl Analyzer<'_, '_> {
                         _ => {}
                     },
 
-                    TsKeywordTypeKind::TsBooleanKeyword => match *rhs {
-                        Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => return Ok(()),
-                        _ => {}
-                    },
+                    TsKeywordTypeKind::TsBooleanKeyword => {
+                        if let Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) = *rhs {
+                            return Ok(());
+                        }
+                    }
 
                     TsKeywordTypeKind::TsVoidKeyword | TsKeywordTypeKind::TsUndefinedKeyword => {
                         //
@@ -1846,12 +1781,9 @@ impl Analyzer<'_, '_> {
                             )?;
                             return self
                                 .assign_inner(data, &left, rhs, opts)
-                                .convert_err(|err| {
-                                    ErrorKind::SimpleAssignFailed {
-                                        span: err.span(),
-                                        cause: Some(box err.into()),
-                                    }
-                                    .into()
+                                .convert_err(|err| ErrorKind::SimpleAssignFailed {
+                                    span: err.span(),
+                                    cause: Some(box err.into()),
                                 })
                                 .context("tried to assign a type literal to an expanded keyword");
                         }
@@ -1897,16 +1829,15 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Optimize handling of unknown rhs
 
                 if name == "Function" {
-                    match rhs.normalize() {
-                        Type::Function(..) => return Ok(()),
-                        _ => {}
+                    if let Type::Function(..) = rhs.normalize() {
+                        return Ok(());
                     }
                 }
 
                 self.assign_to_type_elements(
                     data,
                     span,
-                    &body,
+                    body,
                     rhs,
                     Default::default(),
                     AssignOpts {
@@ -1929,7 +1860,7 @@ impl Analyzer<'_, '_> {
                     let res = self.assign_with_opts(
                         data,
                         &parent,
-                        &rhs,
+                        rhs,
                         AssignOpts {
                             allow_unknown_rhs: Some(true),
                             ..opts
@@ -2018,7 +1949,7 @@ impl Analyzer<'_, '_> {
 
             Type::TypeLit(TypeLit { ref members, metadata, .. }) => {
                 return self
-                    .assign_to_type_elements(data, span, &members, rhs, *metadata, opts)
+                    .assign_to_type_elements(data, span, members, rhs, *metadata, opts)
                     .context("tried to assign a type to type elements");
             }
 
@@ -2104,14 +2035,14 @@ impl Analyzer<'_, '_> {
                         }
 
                         let mut errors = vec![];
-                        for (l, r) in elems.into_iter().zip(rhs_elems) {
+                        for (l, r) in elems.iter().zip(rhs_elems) {
                             for el in elems {
-                                match *r.ty.normalize() {
-                                    Type::Keyword(KeywordType {
-                                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                        ..
-                                    }) => continue,
-                                    _ => {}
+                                if let Type::Keyword(KeywordType {
+                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    ..
+                                }) = *r.ty.normalize()
+                                {
+                                    continue;
                                 }
 
                                 errors.extend(
@@ -2147,7 +2078,7 @@ impl Analyzer<'_, '_> {
                             Type::Rest(RestType { ty: l_ty, .. }) => {
                                 self.assign_inner(
                                     data,
-                                    &l_ty,
+                                    l_ty,
                                     rhs_elem_type,
                                     AssignOpts {
                                         allow_unknown_rhs: Some(true),
@@ -2170,7 +2101,7 @@ impl Analyzer<'_, '_> {
                         // Try to assign by converting rhs to an iterable.
                         if opts.allow_iterable_on_rhs {
                             let r = self
-                                .get_iterator(span, Cow::Borrowed(&rhs), Default::default())
+                                .get_iterator(span, Cow::Borrowed(rhs), Default::default())
                                 .context("tried to convert a type to an iterator to assign to a tuple")?;
                             //
                             for (i, elem) in elems.iter().enumerate() {
@@ -2197,7 +2128,7 @@ impl Analyzer<'_, '_> {
 
             Type::Constructor(ref lc) => {
                 return self
-                    .assign_to_constructor(data, to, &lc, rhs, opts)
+                    .assign_to_constructor(data, to, lc, rhs, opts)
                     .context("tried to assign to a constructor type")
             }
 
@@ -2342,7 +2273,7 @@ impl Analyzer<'_, '_> {
     fn extract_keys(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let ty = self.normalize(
             Some(span),
-            Cow::Borrowed(&ty),
+            Cow::Borrowed(ty),
             NormalizeTypeOpts {
                 normalize_keywords: true,
                 process_only_key: true,
@@ -2351,34 +2282,29 @@ impl Analyzer<'_, '_> {
         )?;
         let ty = ty.normalize();
 
-        match ty {
-            Type::TypeLit(ty) => {
-                //
-                let mut keys = vec![];
-                for member in &ty.members {
-                    match member {
-                        TypeElement::Property(PropertySignature {
-                            span,
-                            key: Key::Normal { sym: key, .. },
-                            ..
-                        }) => {
-                            keys.push(Type::Lit(LitType {
-                                span: *span,
-                                lit: RTsLit::Str(RStr {
-                                    span: *span,
-                                    value: key.clone(),
-                                    raw: None,
-                                }),
-                                metadata: Default::default(),
-                            }));
-                        }
-                        _ => {}
-                    }
+        if let Type::TypeLit(ty) = ty {
+            //
+            let mut keys = vec![];
+            for member in &ty.members {
+                if let TypeElement::Property(PropertySignature {
+                    span,
+                    key: Key::Normal { sym: key, .. },
+                    ..
+                }) = member
+                {
+                    keys.push(Type::Lit(LitType {
+                        span: *span,
+                        lit: RTsLit::Str(RStr {
+                            span: *span,
+                            value: key.clone(),
+                            raw: None,
+                        }),
+                        metadata: Default::default(),
+                    }));
                 }
-
-                return Ok(Type::new_union(span, keys));
             }
-            _ => {}
+
+            return Ok(Type::new_union(span, keys));
         }
 
         if let Some(ty) = self
@@ -2391,7 +2317,7 @@ impl Analyzer<'_, '_> {
 
         Err(ErrorKind::Unimplemented {
             span,
-            msg: format!("Extract keys"),
+            msg: "Extract keys".to_string(),
         })?
     }
 
@@ -2404,12 +2330,12 @@ impl Analyzer<'_, '_> {
         let keys = keys.normalize();
         let rhs = rhs.normalize();
 
-        let mut rhs_keys = self.extract_keys(opts.span, &rhs)?;
+        let mut rhs_keys = self.extract_keys(opts.span, rhs)?;
         rhs_keys.make_clone_cheap();
 
         self.assign_with_opts(
             data,
-            &keys,
+            keys,
             &rhs_keys,
             AssignOpts {
                 allow_unknown_rhs: Some(true),
@@ -2422,7 +2348,7 @@ impl Analyzer<'_, '_> {
     fn assign_to_mapped(&mut self, data: &mut AssignData, l: &Mapped, r: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         let mut r = self
-            .normalize(Some(span), Cow::Borrowed(&r), NormalizeTypeOpts { ..Default::default() })
+            .normalize(Some(span), Cow::Borrowed(r), NormalizeTypeOpts { ..Default::default() })
             .context("tried to normalize rhs of assignment (to a mapped type)")?;
         r.make_clone_cheap();
 
@@ -2449,7 +2375,7 @@ impl Analyzer<'_, '_> {
 
                 Type::TypeLit(rt) => {
                     match &l.type_param.constraint {
-                        Some(constraint) => self.assign_keys(data, &constraint, &r, opts)?,
+                        Some(constraint) => self.assign_keys(data, constraint, &r, opts)?,
                         None => {}
                     }
 
@@ -2458,7 +2384,7 @@ impl Analyzer<'_, '_> {
                         match member {
                             TypeElement::Property(prop) => {
                                 if let Some(prop_ty) = &prop.type_ann {
-                                    self.assign_with_opts(data, &l_ty, &prop_ty, opts)?;
+                                    self.assign_with_opts(data, l_ty, prop_ty, opts)?;
                                 }
                             }
                             _ => Err(ErrorKind::Unimplemented {
@@ -2511,7 +2437,7 @@ impl Analyzer<'_, '_> {
 
             Err(ErrorKind::Unimplemented {
                 span: opts.span,
-                msg: format!("Assignment to mapped type"),
+                msg: "Assignment to mapped type".to_string(),
             })?
         };
 
@@ -2525,17 +2451,11 @@ impl Analyzer<'_, '_> {
         match r.normalize() {
             Type::Union(..) => return Ok(true),
             Type::TypeLit(r) => {
-                if r.members.iter().all(|el| match el {
-                    TypeElement::Call(..) => true,
-                    _ => false,
-                }) {
+                if r.members.iter().all(|el| matches!(el, TypeElement::Call(..))) {
                     return Ok(true);
                 }
 
-                if r.members.iter().all(|el| match el {
-                    TypeElement::Constructor(..) => true,
-                    _ => false,
-                }) {
+                if r.members.iter().all(|el| matches!(el, TypeElement::Constructor(..))) {
                     return Ok(true);
                 }
             }
@@ -2564,17 +2484,15 @@ impl Analyzer<'_, '_> {
     }
 
     fn is_contravariant(&mut self, check_type: &Type, output_type: &Type) -> VResult<bool> {
-        match output_type.normalize() {
-            Type::Operator(Operator {
-                op: TsTypeOperatorOp::KeyOf,
-                ty,
-                ..
-            }) => {
-                if output_type.type_eq(&**ty) {
-                    return Ok(true);
-                }
+        if let Type::Operator(Operator {
+            op: TsTypeOperatorOp::KeyOf,
+            ty,
+            ..
+        }) = output_type.normalize()
+        {
+            if output_type.type_eq(&**ty) {
+                return Ok(true);
             }
-            _ => {}
         }
 
         Ok(false)

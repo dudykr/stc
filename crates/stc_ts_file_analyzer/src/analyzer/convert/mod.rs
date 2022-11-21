@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
             default,
             metadata: Default::default(),
         };
-        self.register_type(param.name.clone().into(), param.clone().into());
+        self.register_type(param.name.clone(), param.clone().into());
 
         if cfg!(debug_assertions) && has_constraint {
             if let Ok(types) = self.find_type(&p.name.clone().into()) {
@@ -392,7 +392,7 @@ impl Analyzer<'_, '_> {
             let key = child.validate_key(&d.key, d.computed)?;
 
             if d.computed {
-                child.validate_computed_prop_key(d.span(), &d.key);
+                child.validate_computed_prop_key(d.span(), &d.key).report(&mut child.storage);
             }
 
             let params = d.params.validate_with(child)?;
@@ -459,7 +459,7 @@ impl Analyzer<'_, '_> {
                                 };
                                 ty = Type::Symbol(Symbol {
                                     span: DUMMY_SP,
-                                    id: SymbolId::known(&key),
+                                    id: SymbolId::known(key),
                                     metadata: Default::default(),
                                 });
                             }
@@ -638,7 +638,7 @@ impl Analyzer<'_, '_> {
             let type_params = try_opt!(t.type_params.validate_with(child));
 
             for param in &t.params {
-                child.default_any_param(&param);
+                child.default_any_param(param);
             }
 
             let mut params: Vec<_> = t.params.validate_with(child)?;
@@ -717,7 +717,7 @@ impl Analyzer<'_, '_> {
             }
 
             RTsEntityName::Ident(ref i) => {
-                self.report_error_for_type_param_usages_in_static_members(&i);
+                self.report_error_for_type_param_usages_in_static_members(i);
 
                 if let Some(types) = self.find_type(&i.into())? {
                     let mut found = false;
@@ -728,9 +728,8 @@ impl Analyzer<'_, '_> {
                             contains_infer = true;
                         }
                         // We use type param instead of reference type if possible.
-                        match ty.normalize() {
-                            Type::Param(..) => return Ok(ty.into_owned()),
-                            _ => {}
+                        if let Type::Param(..) = ty.normalize() {
+                            return Ok(ty.into_owned());
                         }
                     }
 
@@ -966,11 +965,11 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 }),
                 RTsType::TsLitType(ty) => {
-                    match &ty.lit {
-                        RTsLit::Tpl(t) => return Ok(t.validate_with(a)?.into()),
-                        _ => {}
+                    if let RTsLit::Tpl(t) = &ty.lit {
+                        return Ok(t.validate_with(a)?.into());
                     }
-                    let ty = Type::Lit(LitType {
+
+                    Type::Lit(LitType {
                         span: ty.span,
                         lit: ty.lit.clone(),
                         metadata: LitTypeMetadata {
@@ -980,8 +979,7 @@ impl Analyzer<'_, '_> {
                             },
                             ..Default::default()
                         },
-                    });
-                    ty
+                    })
                 }
                 RTsType::TsKeywordType(ty) => {
                     if let TsKeywordTypeKind::TsIntrinsicKeyword = ty.kind {
@@ -1048,34 +1046,31 @@ impl Analyzer<'_, '_> {
         let mut prev_keys: Vec<Cow<_>> = vec![];
 
         for elem in elems {
-            match elem {
-                // TODO(kdy1): Handle getter / setter
-                TypeElement::Property(PropertySignature {
-                    accessor:
-                        Accessor {
-                            getter: false,
-                            setter: false,
-                            ..
-                        },
-                    ..
-                }) => {
-                    if let Some(key) = elem.key() {
-                        let key = key.normalize();
-                        let key_ty = key.ty();
+            if let TypeElement::Property(PropertySignature {
+                accessor:
+                    Accessor {
+                        getter: false,
+                        setter: false,
+                        ..
+                    },
+                ..
+            }) = elem
+            {
+                if let Some(key) = elem.key() {
+                    let key = key.normalize();
+                    let key_ty = key.ty();
 
-                        if key_ty.is_symbol() {
-                            continue;
-                        }
-                        if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(&*prev_key)) {
-                            self.storage
-                                .report(ErrorKind::DuplicateNameWithoutName { span: prev.span() }.into());
-                            self.storage.report(ErrorKind::DuplicateNameWithoutName { span: key.span() }.into());
-                        } else {
-                            prev_keys.push(key);
-                        }
+                    if key_ty.is_symbol() {
+                        continue;
+                    }
+                    if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(prev_key)) {
+                        self.storage
+                            .report(ErrorKind::DuplicateNameWithoutName { span: prev.span() }.into());
+                        self.storage.report(ErrorKind::DuplicateNameWithoutName { span: key.span() }.into());
+                    } else {
+                        prev_keys.push(key);
                     }
                 }
-                _ => {}
             }
         }
     }
@@ -1131,10 +1126,7 @@ impl Analyzer<'_, '_> {
                 return false;
             }
 
-            match scope.kind() {
-                ScopeKind::Method { is_static: true, .. } => true,
-                _ => false,
-            }
+            matches!(scope.kind(), ScopeKind::Method { is_static: true, .. })
         });
 
         if static_method.is_some() {
@@ -1165,6 +1157,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        #[allow(clippy::nonminimal_bool)]
         if self.env.rule().no_implicit_any {
             let no_type_ann =
                 !self.ctx.in_argument && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type) && !self.ctx.in_assign_rhs;
@@ -1238,7 +1231,7 @@ impl Analyzer<'_, '_> {
             metadata: Default::default(),
         });
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert_with(|| ty);
+            m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert(ty);
         }
     }
 
@@ -1257,7 +1250,7 @@ impl Analyzer<'_, '_> {
                     let key = p.key.validate_with(self)?;
                     match *p.value {
                         RPat::Array(_) | RPat::Object(_) => {
-                            self.default_any_pat(&*p.value);
+                            self.default_any_pat(&p.value);
                         }
                         _ => {}
                     }

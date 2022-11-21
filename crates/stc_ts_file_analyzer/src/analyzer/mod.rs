@@ -88,7 +88,6 @@ pub(crate) struct Ctx {
     use_undefined_for_empty_tuple: bool,
 
     allow_module_var: bool,
-    allow_namespace_var: bool,
 
     check_for_implicit_any: bool,
 
@@ -430,6 +429,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         )
     }
 
+    #[allow(clippy::wrong_self_convention)]
     fn new(&'b self, scope: Scope<'scope>, data: AnalyzerData) -> Self {
         Self::new_inner(
             self.env.clone(),
@@ -478,7 +478,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 disallow_unknown_object_property: false,
                 use_undefined_for_empty_tuple: false,
                 allow_module_var: false,
-                allow_namespace_var: false,
                 check_for_implicit_any: false,
                 cannot_be_tuple: false,
                 prefer_tuple: false,
@@ -699,7 +698,7 @@ impl<'b, 'c> Deref for WithCtx<'_, 'b, 'c> {
     type Target = Analyzer<'b, 'c>;
 
     fn deref(&self) -> &Self::Target {
-        &self.analyzer
+        self.analyzer
     }
 }
 
@@ -1033,7 +1032,7 @@ impl Analyzer<'_, '_> {
                     self.register_type(i.into(), ty.clone());
                 }
                 RTsModuleName::Str(s) => {
-                    let name: &str = &*s.value;
+                    let name: &str = &s.value;
 
                     if let Some(pos) = name.as_bytes().iter().position(|&c| c == b'*') {
                         if let Some(rpos) = name.as_bytes().iter().rposition(|&c| c == b'*') {

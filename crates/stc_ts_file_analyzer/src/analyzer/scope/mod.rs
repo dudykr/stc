@@ -127,7 +127,7 @@ impl Scope<'_> {
     where
         F: FnMut(&Scope) -> bool,
     {
-        if filter(&self) {
+        if filter(self) {
             return Some(self);
         }
 
@@ -147,15 +147,15 @@ impl Scope<'_> {
         F: FnMut(&Self) -> Option<bool>,
     {
         let res = filter(self);
-        match res {
-            Some(v) => return Some(v),
-            None => {}
+        if let Some(v) = res {
+            return Some(v);
         }
 
         self.parent?.matches(filter)
     }
 
     /// If `filter` returns [Some], this method returns it.
+    #[allow(unused)]
     pub fn matches_kind<F>(&self, mut filter: F) -> Option<bool>
     where
         F: FnMut(ScopeKind) -> Option<bool>,
@@ -169,10 +169,7 @@ impl Scope<'_> {
                 return false;
             }
 
-            match scope.kind {
-                ScopeKind::Fn | ScopeKind::Method { .. } => true,
-                _ => false,
-            }
+            matches!(scope.kind, ScopeKind::Fn | ScopeKind::Method { .. })
         })
         .is_some()
     }
@@ -288,9 +285,8 @@ impl Scope<'_> {
     }
 
     pub fn is_in_call(&self) -> bool {
-        match self.kind {
-            ScopeKind::Call => return true,
-            _ => {}
+        if let ScopeKind::Call = self.kind {
+            return true;
         }
 
         match self.parent {
@@ -375,9 +371,8 @@ impl Scope<'_> {
     }
 
     pub fn current_module_name(&self) -> Option<Id> {
-        match &self.cur_module_name {
-            Some(v) => return Some(v.clone()),
-            _ => {}
+        if let Some(v) = &self.cur_module_name {
+            return Some(v.clone());
         }
 
         self.parent?.current_module_name()
@@ -397,10 +392,7 @@ impl Scope<'_> {
             ScopeKind::Module | ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn => return,
             _ => {}
         }
-        let is_end_of_loop = match child.kind {
-            ScopeKind::LoopBody { last: true } => true,
-            _ => false,
-        };
+        let is_end_of_loop = matches!(child.kind, ScopeKind::LoopBody { last: true });
 
         for (name, var) in child.vars.drain() {
             if let Some(ty) = &var.ty {
@@ -530,48 +522,42 @@ impl Scope<'_> {
         ty.assert_valid();
 
         let ty = ty.freezed();
-        match ty.normalize() {
-            Type::Param(..) => {
-                // Override type parameter.
+        if let Type::Param(..) = ty.normalize() {
+            // Override type parameter.
 
-                match self.types.entry(name) {
-                    Entry::Occupied(mut e) => {
-                        let prev = e.get_mut();
+            match self.types.entry(name) {
+                Entry::Occupied(mut e) => {
+                    let prev = e.get_mut();
 
-                        if prev.is_type_param() {
-                            match ty.normalize() {
-                                Type::Param(TypeParam {
-                                    constraint: None,
-                                    default: None,
-                                    ..
-                                }) => return,
-                                _ => {}
-                            }
-
-                            *prev = ty;
+                    if prev.is_type_param() {
+                        if let Type::Param(TypeParam {
+                            constraint: None,
+                            default: None,
+                            ..
+                        }) = ty.normalize()
+                        {
                             return;
-                        } else if let Some(prev_i) = prev.as_intersection_mut() {
-                            if let Some(index) = prev_i.types.iter().position(|v| match v.normalize() {
-                                Type::Param(..) => true,
-                                _ => false,
-                            }) {
-                                prev_i.types.remove(index);
-                            }
-
-                            prev_i.types.push(ty);
-                            prev_i.fix();
-
-                            prev.make_clone_cheap();
                         }
-                    }
-                    Entry::Vacant(e) => {
-                        e.insert(ty);
+
+                        *prev = ty;
+                        return;
+                    } else if let Some(prev_i) = prev.as_intersection_mut() {
+                        if let Some(index) = prev_i.types.iter().position(|v| matches!(v.normalize(), Type::Param(..))) {
+                            prev_i.types.remove(index);
+                        }
+
+                        prev_i.types.push(ty);
+                        prev_i.fix();
+
+                        prev.make_clone_cheap();
                     }
                 }
-
-                return;
+                Entry::Vacant(e) => {
+                    e.insert(ty);
+                }
             }
-            _ => {}
+
+            return;
         }
         match self.types.entry(name.clone()) {
             Entry::Occupied(mut e) => {
@@ -621,7 +607,7 @@ impl Scope<'_> {
     }
 
     pub fn get_var(&self, sym: &Id) -> Option<&VarInfo> {
-        if let Some(ref v) = self.vars.get(sym) {
+        if let Some(v) = self.vars.get(sym) {
             return Some(v);
         }
 
@@ -654,11 +640,7 @@ impl Scope<'_> {
     }
 
     pub fn cannot_use_this_because_super_not_called(&self) -> bool {
-        let first = self.first(|scope| match scope.kind {
-            ScopeKind::Class => true,
-            ScopeKind::ArrowFn | ScopeKind::Fn => true,
-            _ => false,
-        });
+        let first = self.first(|scope| matches!(scope.kind, ScopeKind::Class | ScopeKind::ArrowFn | ScopeKind::Fn));
 
         match first {
             Some(s) => s.kind == ScopeKind::Class && *s.class.need_super_call.borrow(),
@@ -778,11 +760,7 @@ impl Analyzer<'_, '_> {
             debug!("[({})/types] Registering: {:?}", self.scope.depth(), name);
         }
 
-        let should_check_for_mixed = !self.is_builtin
-            && match ty.normalize() {
-                Type::Param(..) => false,
-                _ => true,
-            };
+        let should_check_for_mixed = !self.is_builtin && !matches!(ty.normalize(), Type::Param(..));
         if should_check_for_mixed {
             // Report an error for
             //
@@ -862,12 +840,11 @@ impl Analyzer<'_, '_> {
                     | js_word!("String") => {
                         self.env.declare_global_type(name.sym().clone(), ty.clone());
                     }
-                    _ => match &**name.sym() {
-                        "SymbolConstructor" => {
+                    _ => {
+                        if let "SymbolConstructor" = &**name.sym() {
                             self.env.declare_global_type(name.sym().clone(), ty.clone());
                         }
-                        _ => {}
-                    },
+                    }
                 }
             }
 
@@ -989,7 +966,7 @@ impl Analyzer<'_, '_> {
             // println!("({}) find_var_type({})", self.scope.depth(), name);
             let mut scope = Some(&self.scope);
             while let Some(s) = scope {
-                if let Some(ref v) = s.facts.vars.get(&Name::from(name)) {
+                if let Some(v) = s.facts.vars.get(&Name::from(name)) {
                     v.assert_clone_cheap();
 
                     if cfg!(debug_assertions) {
@@ -1041,20 +1018,15 @@ impl Analyzer<'_, '_> {
                 };
                 ty.assert_clone_cheap();
 
-                if let Some(ref excludes) = self.scope.facts.excludes.get(&name) {
-                    if ty.is_union_type() {
-                        match ty.normalize_mut() {
-                            Type::Union(ty::Union { ref mut types, .. }) => {
-                                for ty in types {
-                                    let span = (*ty).span();
-                                    for excluded_ty in excludes.iter() {
-                                        if ty.type_eq(excluded_ty) {
-                                            *ty = Type::never(span, KeywordTypeMetadata { common: ty.metadata() })
-                                        }
-                                    }
+                if let Some(excludes) = self.scope.facts.excludes.get(&name) {
+                    if let Some(ty::Union { ref mut types, .. }) = ty.as_union_type_mut() {
+                        for ty in types {
+                            let span = (*ty).span();
+                            for excluded_ty in excludes.iter() {
+                                if ty.type_eq(excluded_ty) {
+                                    *ty = Type::never(span, KeywordTypeMetadata { common: ty.metadata() })
                                 }
                             }
-                            _ => {}
                         }
                     }
 
@@ -1106,7 +1078,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Ok(ty) = self.env.get_global_type(DUMMY_SP, &name.sym()) {
+        if let Ok(ty) = self.env.get_global_type(DUMMY_SP, name.sym()) {
             return Ok(Some(ItemRef::Owned(vec![ty].into_iter())));
         }
 
@@ -1152,7 +1124,7 @@ impl Analyzer<'_, '_> {
                 if cfg!(debug_assertions) {
                     debug!("Using builtin / global type: {}", dump_type_as_string(&self.cm, &ty));
                 }
-                src.push(ty.clone());
+                src.push(ty);
             }
         }
 
@@ -1250,7 +1222,7 @@ impl Analyzer<'_, '_> {
 
             let prev_vars = self.data.var_spans.entry(name.clone()).or_default();
 
-            (|| match kind {
+            match kind {
                 VarKind::Var(v) => v == VarDeclKind::Var,
                 VarKind::Param => true,
                 // TODO(kdy1): Allow if previous is class / enum (decl merging)
@@ -1263,7 +1235,7 @@ impl Analyzer<'_, '_> {
                 VarKind::Enum => true,
 
                 VarKind::Error => true,
-            })()
+            }
         };
 
         if !self.is_builtin
@@ -1307,14 +1279,11 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match kind {
-            VarKind::Var(VarDeclKind::Let | VarDeclKind::Const) => {
-                if *name.sym() == js_word!("let") || *name.sym() == js_word!("const") {
-                    self.storage
-                        .report(ErrorKind::LetOrConstIsNotValidIdInLetOrConstVarDecls { span }.into());
-                }
+        if let VarKind::Var(VarDeclKind::Let | VarDeclKind::Const) = kind {
+            if *name.sym() == js_word!("let") || *name.sym() == js_word!("const") {
+                self.storage
+                    .report(ErrorKind::LetOrConstIsNotValidIdInLetOrConstVarDecls { span }.into());
             }
-            _ => {}
         }
 
         let ty = match &ty {
@@ -1370,7 +1339,7 @@ impl Analyzer<'_, '_> {
                 VarKind::Var(_) | VarKind::Class | VarKind::Fn | VarKind::Enum => {
                     // TODO: Default to any?
                     if let Some(ty) = ty.clone() {
-                        self.env.declare_global_var(name.sym().clone(), ty.clone());
+                        self.env.declare_global_var(name.sym().clone(), ty);
                     }
                 }
                 _ => {}
@@ -1558,25 +1527,22 @@ impl Analyzer<'_, '_> {
         }
 
         for orig in orig.iter_union() {
-            match orig.normalize() {
-                Type::Function(..) => {
-                    self.assign_with_opts(
-                        &mut Default::default(),
-                        &new,
-                        &orig,
-                        AssignOpts {
-                            span,
-                            for_overload: true,
-                            ..Default::default()
-                        },
-                    )
-                    .convert_err(|err| ErrorKind::ImcompatibleFnOverload {
-                        span: orig.span(),
-                        cause: box err.into(),
-                    })
-                    .context("tried to validate signatures of overloaded functions")?;
-                }
-                _ => {}
+            if let Type::Function(..) = orig.normalize() {
+                self.assign_with_opts(
+                    &mut Default::default(),
+                    new,
+                    orig,
+                    AssignOpts {
+                        span,
+                        for_overload: true,
+                        ..Default::default()
+                    },
+                )
+                .convert_err(|err| ErrorKind::ImcompatibleFnOverload {
+                    span: orig.span(),
+                    cause: box err.into(),
+                })
+                .context("tried to validate signatures of overloaded functions")?;
             }
         }
 
@@ -1768,7 +1734,7 @@ impl<'a> Scope<'a> {
 
     pub(super) fn depth(&self) -> usize {
         match self.parent {
-            Some(ref p) => p.depth() + 1,
+            Some(p) => p.depth() + 1,
             None => 0,
         }
     }
@@ -1783,7 +1749,7 @@ impl<'a> Scope<'a> {
         if let Some(ty) = self.facts.types.get(name) {
             debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
             // println!("({}) find_type({}): Found (cond facts)", self.depth(), name);
-            return Some(ItemRef::Single(iter::once(&ty)));
+            return Some(ItemRef::Single(iter::once(ty)));
         }
 
         if let Some(ty) = self.types.get(name) {
@@ -1791,11 +1757,11 @@ impl<'a> Scope<'a> {
 
             // println!("({}) find_type({}): Found", self.depth(), name);
 
-            return Some(ItemRef::Single(once(&*ty)));
+            return Some(ItemRef::Single(once(ty)));
         }
 
         match self.parent {
-            Some(ref parent) => parent.find_type(name),
+            Some(parent) => parent.find_type(name),
             None => None,
         }
     }
@@ -1877,10 +1843,7 @@ pub(crate) enum ScopeKind {
 impl ScopeKind {
     /// TODO(kdy1): Change
     pub fn allows_respanning(self) -> bool {
-        match self {
-            ScopeKind::Flow | ScopeKind::Class | ScopeKind::ObjectLit => false,
-            _ => true,
-        }
+        !matches!(self, ScopeKind::Flow | ScopeKind::Class | ScopeKind::ObjectLit)
     }
 }
 
@@ -1896,7 +1859,6 @@ struct Expander<'a, 'b, 'c> {
 }
 
 impl Expander<'_, '_, '_> {
-    #[instrument(name = "Expander.expand_ts_entity_name", skip_all)]
     fn expand_ts_entity_name(
         &mut self,
         span: Span,
@@ -1952,13 +1914,10 @@ impl Expander<'_, '_, '_> {
                             }
                         }
                         // We should expand alias again.
-                        let is_alias = match t.normalize() {
-                            Type::Alias(..) => true,
-                            _ => false,
-                        };
+                        let is_alias = matches!(t.normalize(), Type::Alias(..));
 
                         match t.normalize() {
-                            Type::Intersection(..) => return Ok(Some(t.into_owned().clone())),
+                            Type::Intersection(..) => return Ok(Some(t.into_owned())),
 
                             // Result of type expansion should not be Ref unless really required.
                             Type::Ref(r) => {
@@ -2034,15 +1993,12 @@ impl Expander<'_, '_, '_> {
                                         debug!("[expand] Expanded generics: {} => {}", before, after);
                                     }
 
-                                    match ty {
-                                        Type::ClassDef(def) => {
-                                            ty = Type::Class(Class {
-                                                span: self.span,
-                                                def: box def,
-                                                metadata: Default::default(),
-                                            });
-                                        }
-                                        _ => {}
+                                    if let Type::ClassDef(def) = ty {
+                                        ty = Type::Class(Class {
+                                            span: self.span,
+                                            def: box def,
+                                            metadata: Default::default(),
+                                        });
                                     };
 
                                     if is_alias {
@@ -2061,11 +2017,8 @@ impl Expander<'_, '_, '_> {
                                     _ => {}
                                 }
 
-                                match ty.normalize() {
-                                    Type::Alias(..) => {
-                                        self.expand_top_level = true;
-                                    }
-                                    _ => {}
+                                if let Type::Alias(..) = ty.normalize() {
+                                    self.expand_top_level = true;
                                 }
 
                                 // TODO(kdy1): PERF
@@ -2077,15 +2030,12 @@ impl Expander<'_, '_, '_> {
                                     self.dejavu.remove(&i.into());
                                 }
 
-                                match ty {
-                                    Type::ClassDef(def) => {
-                                        ty = Type::Class(Class {
-                                            span: self.span,
-                                            def: box def,
-                                            metadata: Default::default(),
-                                        });
-                                    }
-                                    _ => {}
+                                if let Type::ClassDef(def) = ty {
+                                    ty = Type::Class(Class {
+                                        span: self.span,
+                                        def: box def,
+                                        metadata: Default::default(),
+                                    });
                                 };
 
                                 return Ok(Some(ty));
@@ -2200,10 +2150,7 @@ impl Expander<'_, '_, '_> {
             }
         };
 
-        self.full |= match ty {
-            Type::Mapped(..) => true,
-            _ => false,
-        };
+        self.full |= matches!(ty, Type::Mapped(..));
 
         let trying_primitive_expansion = self.analyzer.scope.expand_triage_depth != 0;
 
@@ -2220,17 +2167,15 @@ impl Expander<'_, '_, '_> {
 
         // We do not expand types specified by user
         if is_expansion_prevented {
+            #[allow(clippy::nonminimal_bool)]
             if !self.analyzer.ctx.ignore_expand_prevention_for_all
                 && !(self.expand_top_level && self.analyzer.ctx.ignore_expand_prevention_for_top)
             {
-                match ty.normalize() {
-                    Type::Ref(r) => {
-                        // Expand type arguments if it should be expanded
-                        if contains_infer_type(&r.type_args) {
-                            return Type::Ref(r.clone().fold_children_with(self));
-                        }
+                if let Type::Ref(r) = ty.normalize() {
+                    // Expand type arguments if it should be expanded
+                    if contains_infer_type(&r.type_args) {
+                        return Type::Ref(r.clone().fold_children_with(self));
                     }
-                    _ => {}
                 }
 
                 if self.expand_top_level && self.analyzer.scope.expand_triage_depth == 0 {
@@ -2257,31 +2202,23 @@ impl Expander<'_, '_, '_> {
         // Start handling type expansion.
         let res: VResult<()> = try {
             if contains_infer_type(&ty) {
-                // TODO(kdy1): PERF
-                match ty.normalize_mut() {
-                    Type::Conditional(cond_ty) => {
-                        // TODO(kdy1): PERF
-                        match cond_ty.check_type.normalize_mut() {
-                            Type::Query(QueryType {
-                                span,
-                                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(name)),
-                                ..
-                            }) => {
-                                let id = (&*name).into();
-                                let ctxt = self.analyzer.ctx.module_id;
-                                //
-                                if let Some(ty) = self.analyzer.find_var_type(&id, TypeOfMode::RValue) {
-                                    cond_ty.check_type = box ty.into_owned();
-                                } else {
-                                    error!("Failed to find variable named {:?}", id);
-                                }
-                            }
-
-                            _ => {}
+                if let Some(cond_ty) = ty.as_conditional_mut() {
+                    // TODO(kdy1): PERF
+                    if let Type::Query(QueryType {
+                        span,
+                        expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(name)),
+                        ..
+                    }) = cond_ty.check_type.normalize_mut()
+                    {
+                        let id = (&*name).into();
+                        let ctxt = self.analyzer.ctx.module_id;
+                        //
+                        if let Some(ty) = self.analyzer.find_var_type(&id, TypeOfMode::RValue) {
+                            cond_ty.check_type = box ty.into_owned();
+                        } else {
+                            error!("Failed to find variable named {:?}", id);
                         }
                     }
-
-                    _ => {}
                 }
             }
         };
@@ -2353,11 +2290,8 @@ impl Expander<'_, '_, '_> {
                             _ => return Type::Ref(r.clone()),
                         }
                     } else {
-                        match ty {
-                            Some(ty) => {
-                                return ty;
-                            }
-                            None => {}
+                        if let Some(ty) = ty {
+                            return ty;
                         }
                     }
                 }
@@ -2403,67 +2337,61 @@ impl Expander<'_, '_, '_> {
                             ..
                         })),
                     ..
-                }) if constraint.type_eq(&obj_type) && *name == index_type.name => {
+                }) if constraint.type_eq(obj_type) && *name == index_type.name => {
                     let unwrap_type = |ty: &Type| match ty {
                         Type::IndexedAccessType(IndexedAccessType {
                             obj_type,
                             index_type: box Type::Param(index_type),
                             ..
-                        }) if index_type.name == *name => {
-                            return (true, *obj_type.clone());
-                        }
+                        }) if index_type.name == *name => (true, *obj_type.clone()),
                         _ => (false, ty.clone()),
                     };
 
-                    match &**obj_type {
-                        Type::Tuple(obj_type) => {
-                            let elements = obj_type
-                                .elems
-                                .iter()
-                                .cloned()
-                                .enumerate()
-                                .map(|(idx, mut element)| {
-                                    if let Some(v) = self.analyzer.extends(span, &element.ty, &extends_type, Default::default()) {
-                                        let ty = if v { true_type } else { false_type };
+                    if let Type::Tuple(obj_type) = obj_type.normalize() {
+                        let elements = obj_type
+                            .elems
+                            .iter()
+                            .cloned()
+                            .enumerate()
+                            .map(|(idx, mut element)| {
+                                if let Some(v) = self.analyzer.extends(span, &element.ty, extends_type, Default::default()) {
+                                    let ty = if v { true_type } else { false_type };
 
-                                        let (unwrapped, ty) = unwrap_type(&ty);
-                                        let mut ty = ty;
-                                        if unwrapped {
-                                            match ty.normalize() {
-                                                Type::Tuple(Tuple { elems, .. }) => ty = *elems[idx].ty.clone(),
-                                                _ => {}
-                                            };
-                                        }
-                                        let type_params = self
-                                            .analyzer
-                                            .infer_ts_infer_types(span, &extends_type, &element.ty, Default::default())
-                                            .ok();
-                                        if let Some(type_params) = type_params {
-                                            ty = self.analyzer.expand_type_params(&type_params, ty, Default::default()).unwrap();
-                                        }
-
-                                        element.ty = box ty;
+                                    let (unwrapped, ty) = unwrap_type(ty);
+                                    let mut ty = ty;
+                                    if unwrapped {
+                                        if let Type::Tuple(Tuple { elems, .. }) = ty.normalize() {
+                                            ty = *elems[idx].ty.clone()
+                                        };
+                                    }
+                                    let type_params = self
+                                        .analyzer
+                                        .infer_ts_infer_types(span, extends_type, &element.ty, Default::default())
+                                        .ok();
+                                    if let Some(type_params) = type_params {
+                                        ty = self.analyzer.expand_type_params(&type_params, ty, Default::default()).unwrap();
                                     }
 
-                                    element
-                                })
-                                .collect();
+                                    element.ty = box ty;
+                                }
 
-                            return Type::Tuple(Tuple {
-                                elems: elements,
-                                ..obj_type.clone()
-                            });
-                        }
-                        _ => {}
+                                element
+                            })
+                            .collect();
+
+                        return Type::Tuple(Tuple {
+                            elems: elements,
+                            ..obj_type.clone()
+                        });
                     }
 
-                    if let Some(v) = self.analyzer.extends(span, &obj_type, &extends_type, Default::default()) {
+                    if let Some(v) = self.analyzer.extends(span, obj_type, extends_type, Default::default()) {
                         let ty = if v { true_type } else { false_type };
-                        let (_, mut ty) = unwrap_type(&**ty);
+                        let (_, mut ty) = unwrap_type(ty);
 
                         let type_params = self
                             .analyzer
-                            .infer_ts_infer_types(span, &extends_type, &obj_type, Default::default())
+                            .infer_ts_infer_types(span, extends_type, obj_type, Default::default())
                             .ok();
                         if let Some(type_params) = type_params {
                             ty = self.analyzer.expand_type_params(&type_params, ty, Default::default()).unwrap();
@@ -2513,58 +2441,52 @@ impl Expander<'_, '_, '_> {
 
         let _ctx = debug_ctx!(format!("Expander.expand_type: {}", dump_type_as_string(&self.analyzer.cm, &ty)));
 
-        match ty {
-            Type::Conditional(Conditional {
-                span,
-                mut check_type,
-                mut extends_type,
-                mut true_type,
-                mut false_type,
-                metadata,
-                ..
-            }) => {
-                extends_type.make_clone_cheap();
-                check_type.make_clone_cheap();
+        if let Type::Conditional(Conditional {
+            span,
+            mut check_type,
+            mut extends_type,
+            mut true_type,
+            mut false_type,
+            metadata,
+            ..
+        }) = ty
+        {
+            extends_type.make_clone_cheap();
+            check_type.make_clone_cheap();
 
-                // We need to handle infer type.
-                let type_params = self
+            // We need to handle infer type.
+            let type_params = self
+                .analyzer
+                .infer_ts_infer_types(self.span, &extends_type, &check_type, Default::default())
+                .ok();
+
+            if let Some(type_params) = type_params {
+                true_type = box self
                     .analyzer
-                    .infer_ts_infer_types(self.span, &extends_type, &check_type, Default::default())
-                    .ok();
+                    .expand_type_params(&type_params, *true_type, Default::default())
+                    .unwrap();
+                false_type = box self
+                    .analyzer
+                    .expand_type_params(&type_params, *false_type, Default::default())
+                    .unwrap();
+            }
 
-                if let Some(type_params) = type_params {
-                    true_type = box self
-                        .analyzer
-                        .expand_type_params(&type_params, *true_type, Default::default())
-                        .unwrap();
-                    false_type = box self
-                        .analyzer
-                        .expand_type_params(&type_params, *false_type, Default::default())
-                        .unwrap();
-                }
-
-                if check_type.is_class() {
-                    match check_type.normalize_mut() {
-                        Type::Class(check_type) => match extends_type.normalize() {
-                            Type::Constructor(..) => {
-                                return *true_type;
-                            }
-                            _ => {}
-                        },
-                        _ => {}
+            if check_type.is_class() {
+                if let Type::Class(check_type) = check_type.normalize_mut() {
+                    if let Type::Constructor(..) = extends_type.normalize() {
+                        return *true_type;
                     }
                 }
-
-                return Type::Conditional(Conditional {
-                    span,
-                    check_type,
-                    extends_type,
-                    true_type,
-                    false_type,
-                    metadata,
-                });
             }
-            _ => {}
+
+            return Type::Conditional(Conditional {
+                span,
+                check_type,
+                extends_type,
+                true_type,
+                false_type,
+                metadata,
+            });
         }
 
         ty
@@ -2660,16 +2582,13 @@ pub struct ShallowNormalizer<'a, 'b, 'c> {
 
 impl VisitMut<Type> for ShallowNormalizer<'_, '_, '_> {
     fn visit_mut(&mut self, value: &mut Type) {
-        match value.normalize() {
-            Type::IndexedAccessType(..) => {
-                if let Ok(new) = self
-                    .analyzer
-                    .normalize(Some(value.span()), Cow::Borrowed(&*value), Default::default())
-                {
-                    *value = new.freezed().into_owned();
-                }
+        if let Type::IndexedAccessType(..) = value.normalize() {
+            if let Ok(new) = self
+                .analyzer
+                .normalize(Some(value.span()), Cow::Borrowed(&*value), Default::default())
+            {
+                *value = new.freezed().into_owned();
             }
-            _ => {}
         }
     }
 }

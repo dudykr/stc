@@ -53,5 +53,5 @@ pub(crate) fn with_ctx<R>(f: impl FnOnce(&mut Vec<Ctx>) -> R) -> R {
     thread_local! {
         static CTX: RefCell<Vec<Ctx<'static>>> = RefCell::new(Vec::new());
     }
-    CTX.with(|ctx| f(&mut *ctx.borrow_mut()))
+    CTX.with(|ctx| f(&mut ctx.borrow_mut()))
 }

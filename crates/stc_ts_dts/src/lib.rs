@@ -60,8 +60,8 @@ pub fn cleanup_module_for_dts(module: &mut Vec<RModuleItem>, type_data: &ModuleT
     });
 
     module.visit_mut_with(&mut DceForDts {
-        used: get_used(&type_data),
-        info: &type_data,
+        used: get_used(type_data),
+        info: type_data,
         current_class: None,
         in_declare: false,
         top_level: true,
@@ -136,11 +136,8 @@ impl Visit<RExportDecl> for TypeUsageCollector {
 
 impl Visit<RExportDefaultExpr> for TypeUsageCollector {
     fn visit(&mut self, export: &RExportDefaultExpr) {
-        match &*export.expr {
-            RExpr::Ident(i) => {
-                self.used_vars.insert(i.into());
-            }
-            _ => {}
+        if let RExpr::Ident(i) = &*export.expr {
+            self.used_vars.insert(i.into());
         }
     }
 }
@@ -151,24 +148,21 @@ impl Visit<RClass> for TypeUsageCollector {
 
         fn left_most(e: &RExpr) -> Option<Id> {
             match e {
-                RExpr::Ident(i) => return Some(i.into()),
+                RExpr::Ident(i) => Some(i.into()),
                 RExpr::Member(RMemberExpr {
                     obj: e,
                     prop: RMemberProp::Ident(..) | RMemberProp::PrivateName(..),
                     ..
-                }) => return left_most(&e),
+                }) => left_most(e),
                 _ => None,
             }
         }
 
-        match &class.super_class {
-            Some(e) => {
-                if let Some(id) = left_most(&e) {
-                    self.used_types.insert(id.clone());
-                    self.used_vars.insert(id);
-                }
+        if let Some(e) = &class.super_class {
+            if let Some(id) = left_most(e) {
+                self.used_types.insert(id.clone());
+                self.used_vars.insert(id);
             }
-            _ => {}
         }
     }
 }
@@ -200,31 +194,27 @@ struct Dts {
 
 impl VisitMut<RClassMember> for Dts {
     fn visit_mut(&mut self, m: &mut RClassMember) {
-        match m {
-            RClassMember::Method(method) => {
-                if let Some(Accessibility::Private) = method.accessibility {
-                    // Converts a private method to a private property without type.
-                    *m = RClassMember::ClassProp(RClassProp {
-                        node_id: NodeId::invalid(),
-                        span: method.span,
-                        key: method.key.clone(),
-                        value: None,
-                        type_ann: None,
-                        is_static: method.is_static,
-                        decorators: Default::default(),
-                        accessibility: Some(Accessibility::Private),
-                        is_abstract: false,
-                        is_optional: method.is_optional,
-                        readonly: false,
-                        declare: false,
-                        definite: false,
-                        is_override: false,
-                    });
-                    return;
-                }
+        if let RClassMember::Method(method) = m {
+            if let Some(Accessibility::Private) = method.accessibility {
+                // Converts a private method to a private property without type.
+                *m = RClassMember::ClassProp(RClassProp {
+                    node_id: NodeId::invalid(),
+                    span: method.span,
+                    key: method.key.clone(),
+                    value: None,
+                    type_ann: None,
+                    is_static: method.is_static,
+                    decorators: Default::default(),
+                    accessibility: Some(Accessibility::Private),
+                    is_abstract: false,
+                    is_optional: method.is_optional,
+                    readonly: false,
+                    declare: false,
+                    definite: false,
+                    is_override: false,
+                });
+                return;
             }
-
-            _ => {}
         }
         m.visit_mut_children_with(self);
     }
@@ -263,17 +253,14 @@ impl VisitMut<Vec<RVarDeclarator>> for Dts {
                     ..
                 }) => {
                     //
-                    for elem in elems.into_iter() {
-                        match elem {
-                            Some(name) => decls.push(RVarDeclarator {
-                                node_id: NodeId::invalid(),
-                                span,
-                                name,
-                                init: None,
-                                definite: false,
-                            }),
-                            None => {}
-                        }
+                    for name in elems.into_iter().flatten() {
+                        decls.push(RVarDeclarator {
+                            node_id: NodeId::invalid(),
+                            span,
+                            name,
+                            init: None,
+                            definite: false,
+                        })
                     }
                 }
                 // TODO
@@ -452,17 +439,14 @@ impl VisitMut<RPat> for Dts {
     fn visit_mut(&mut self, pat: &mut RPat) {
         pat.visit_mut_children_with(self);
 
-        match pat {
-            RPat::Assign(assign) => {
-                *pat = assign.left.take();
-                match pat {
-                    RPat::Ident(pat) => pat.id.optional = true,
-                    RPat::Array(pat) => pat.optional = true,
-                    RPat::Object(pat) => pat.optional = true,
-                    _ => {}
-                }
+        if let RPat::Assign(assign) = pat {
+            *pat = assign.left.take();
+            match pat {
+                RPat::Ident(pat) => pat.id.optional = true,
+                RPat::Array(pat) => pat.optional = true,
+                RPat::Object(pat) => pat.optional = true,
+                _ => {}
             }
-            _ => {}
         }
     }
 }
@@ -470,10 +454,7 @@ impl VisitMut<RPat> for Dts {
 impl VisitMut<Vec<RClassMember>> for Dts {
     fn visit_mut(&mut self, members: &mut Vec<RClassMember>) {
         // Remove empty members.
-        members.retain(|member| match member {
-            RClassMember::Empty(..) => false,
-            _ => true,
-        });
+        members.retain(|member| !matches!(member, RClassMember::Empty(..)));
 
         members.visit_mut_children_with(self);
 
@@ -487,51 +468,48 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                 match m {
                     RClassMember::Constructor(ref mut c) => {
                         for p in c.params.iter_mut() {
-                            match p {
-                                RParamOrTsParamProp::TsParamProp(ref mut p) => {
-                                    if p.accessibility.is_some() || p.readonly {
-                                        props.push(RClassMember::ClassProp(RClassProp {
-                                            node_id: NodeId::invalid(),
-                                            span: Default::default(),
-                                            declare: false,
-                                            key: match &p.param {
-                                                RTsParamPropParam::Ident(p) => RPropName::Ident(p.id.clone()),
-                                                RTsParamPropParam::Assign(p) => match &p.left {
-                                                    //
-                                                    box RPat::Ident(i) => RPropName::Ident(i.id.clone()),
-                                                    _ => unreachable!("binding pattern in property initializer"),
-                                                },
+                            if let RParamOrTsParamProp::TsParamProp(ref mut p) = p {
+                                if p.accessibility.is_some() || p.readonly {
+                                    props.push(RClassMember::ClassProp(RClassProp {
+                                        node_id: NodeId::invalid(),
+                                        span: Default::default(),
+                                        declare: false,
+                                        key: match &p.param {
+                                            RTsParamPropParam::Ident(p) => RPropName::Ident(p.id.clone()),
+                                            RTsParamPropParam::Assign(p) => match &p.left {
+                                                //
+                                                box RPat::Ident(i) => RPropName::Ident(i.id.clone()),
+                                                _ => unreachable!("binding pattern in property initializer"),
                                             },
-                                            value: None,
-                                            type_ann: None,
-                                            is_static: false,
-                                            decorators: vec![],
-                                            accessibility: p.accessibility,
-                                            is_abstract: false,
-                                            is_optional: false,
-                                            readonly: p.readonly,
-                                            definite: false,
-                                            is_override: false,
-                                        }));
-                                    }
-
-                                    p.accessibility = None;
-                                    p.readonly = false;
-
-                                    match &mut p.param {
-                                        RTsParamPropParam::Ident(_) => {}
-                                        RTsParamPropParam::Assign(RAssignPat {
-                                            left: box RPat::Ident(i), ..
-                                        }) => {
-                                            // Original pattern has default value, so it should be
-                                            // option
-                                            i.id.optional = true;
-                                            p.param = RTsParamPropParam::Ident(i.clone());
-                                        }
-                                        _ => {}
-                                    }
+                                        },
+                                        value: None,
+                                        type_ann: None,
+                                        is_static: false,
+                                        decorators: vec![],
+                                        accessibility: p.accessibility,
+                                        is_abstract: false,
+                                        is_optional: false,
+                                        readonly: p.readonly,
+                                        definite: false,
+                                        is_override: false,
+                                    }));
                                 }
-                                _ => {}
+
+                                p.accessibility = None;
+                                p.readonly = false;
+
+                                match &mut p.param {
+                                    RTsParamPropParam::Ident(_) => {}
+                                    RTsParamPropParam::Assign(RAssignPat {
+                                        left: box RPat::Ident(i), ..
+                                    }) => {
+                                        // Original pattern has default value, so it should be
+                                        // option
+                                        i.id.optional = true;
+                                        p.param = RTsParamPropParam::Ident(i.clone());
+                                    }
+                                    _ => {}
+                                }
                             }
                         }
                     }
@@ -540,12 +518,10 @@ impl VisitMut<Vec<RClassMember>> for Dts {
                             m.accessibility = None;
                         }
 
-                        match &m.key {
-                            RPropName::Computed(e) => match &*e.expr {
-                                RExpr::Bin(..) => continue,
-                                _ => {}
-                            },
-                            _ => {}
+                        if let RPropName::Computed(e) = &m.key {
+                            if let RExpr::Bin(..) = &*e.expr {
+                                continue;
+                            }
                         }
                     }
 

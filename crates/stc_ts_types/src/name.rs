@@ -27,6 +27,7 @@ impl Name {
         self.0[0].clone()
     }
 
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -177,6 +178,6 @@ impl<'a> TryFrom<&'a RMemberExpr> for Name {
             _ => return Err(()),
         });
 
-        return Ok(name);
+        Ok(name)
     }
 }

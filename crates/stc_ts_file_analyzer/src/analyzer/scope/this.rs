@@ -20,14 +20,13 @@ impl Analyzer<'_, '_> {
             for (_, m) in self.scope.class_members() {
                 match m {
                     ClassMember::Method(Method { key, is_static: false, .. })
-                    | ClassMember::Property(ClassProperty { key, is_static: false, .. }) => match key {
-                        Key::Normal { sym, .. } => {
+                    | ClassMember::Property(ClassProperty { key, is_static: false, .. }) => {
+                        if let Key::Normal { sym, .. } = key {
                             if *p.sym() == *sym {
                                 return true;
                             }
                         }
-                        _ => {}
-                    },
+                    }
                     _ => {}
                 }
             }

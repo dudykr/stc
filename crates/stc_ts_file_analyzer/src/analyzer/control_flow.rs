@@ -57,18 +57,18 @@ impl CondFacts {
             return;
         }
 
-        for (_, ty) in &self.vars {
+        for ty in self.vars.values() {
             ty.assert_valid();
             ty.assert_clone_cheap();
         }
 
-        for (_, types) in &self.excludes {
+        for types in self.excludes.values() {
             for ty in types {
                 ty.assert_valid();
             }
         }
 
-        for (_, ty) in &self.types {
+        for ty in self.types.values() {
             ty.assert_valid();
             ty.assert_clone_cheap();
         }
@@ -80,19 +80,19 @@ impl CondFacts {
             return;
         }
 
-        for (_, ty) in &self.vars {
+        for ty in self.vars.values() {
             if !ty.is_union_type() {
                 debug_assert!(ty.is_clone_cheap(), "ty.is_clone_cheap() should be true:\n{:?}", &self.vars);
             }
         }
 
-        for (_, types) in &self.excludes {
+        for types in self.excludes.values() {
             for ty in types {
                 debug_assert!(ty.is_clone_cheap());
             }
         }
 
-        for (_, ty) in &self.types {
+        for ty in self.types.values() {
             debug_assert!(ty.is_clone_cheap());
         }
     }
@@ -200,11 +200,8 @@ impl AddAssign for Facts {
 
 impl AddAssign<Option<Self>> for Facts {
     fn add_assign(&mut self, rhs: Option<Self>) {
-        match rhs {
-            Some(rhs) => {
-                *self += rhs;
-            }
-            None => {}
+        if let Some(rhs) = rhs {
+            *self += rhs;
         }
     }
 }
@@ -269,16 +266,18 @@ where
 {
     fn or(&mut self, other: Self) {
         match *self {
-            Some(ref mut v) => match other {
-                Some(other) => v.or(other),
-                None => {}
-            },
+            Some(ref mut v) => {
+                if let Some(other) = other {
+                    v.or(other)
+                }
+            }
             _ => *self = other,
         }
     }
 }
 
 impl AddAssign for CondFacts {
+    #[allow(clippy::suspicious_op_assign_impl)]
     fn add_assign(&mut self, rhs: Self) {
         self.assert_valid();
         rhs.assert_valid();
@@ -320,11 +319,8 @@ impl AddAssign<Option<Self>> for CondFacts {
     fn add_assign(&mut self, rhs: Option<Self>) {
         self.assert_valid();
 
-        match rhs {
-            Some(rhs) => {
-                *self += rhs;
-            }
-            None => {}
+        if let Some(rhs) = rhs {
+            *self += rhs;
         }
     }
 }
@@ -431,24 +427,21 @@ impl Analyzer<'_, '_> {
     fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Type>) -> VResult<Vec<Type>> {
         types.iter_mut().for_each(|ty| {
             // Tuple -> Array
-            match ty.normalize_mut() {
-                Type::Tuple(tuple) => {
-                    let span = tuple.span;
+            if let Type::Tuple(tuple) = ty.normalize_mut() {
+                let span = tuple.span;
 
-                    let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
-                    elem_types.dedup_type();
-                    let elem_type = box Type::new_union(DUMMY_SP, elem_types);
-                    *ty = Type::Array(Array {
-                        span,
-                        elem_type,
-                        metadata: ArrayMetadata {
-                            common: tuple.metadata.common,
-                            ..Default::default()
-                        },
-                    })
-                    .freezed();
-                }
-                _ => {}
+                let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
+                elem_types.dedup_type();
+                let elem_type = box Type::new_union(DUMMY_SP, elem_types);
+                *ty = Type::Array(Array {
+                    span,
+                    elem_type,
+                    metadata: ArrayMetadata {
+                        common: tuple.metadata.common,
+                        ..Default::default()
+                    },
+                })
+                .freezed();
             }
         });
 
@@ -466,31 +459,31 @@ impl Analyzer<'_, '_> {
 
     fn downcast_types(&mut self, span: Span, types: Vec<Type>) -> VResult<Vec<Type>> {
         fn need_work(ty: &Type) -> bool {
-            match ty.normalize() {
+            !matches!(
+                ty.normalize(),
                 Type::Lit(..)
-                | Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsNullKeyword,
-                    ..
-                }) => false,
-                _ => true,
-            }
+                    | Type::Keyword(KeywordType {
+                        kind: TsKeywordTypeKind::TsNullKeyword,
+                        ..
+                    })
+            )
         }
 
         let mut new = vec![];
 
         'outer: for (ai, ty) in types.iter().flat_map(|ty| ty.iter_union()).enumerate() {
-            if need_work(&ty) {
+            if need_work(ty) {
                 for (bi, b) in types.iter().flat_map(|ty| ty.iter_union()).enumerate() {
-                    if ai == bi || !need_work(&b) {
+                    if ai == bi || !need_work(b) {
                         continue;
                     }
 
                     // If type is same, we need to add it.
-                    if b.type_eq(&ty) {
+                    if b.type_eq(ty) {
                         break;
                     }
 
-                    match self.extends(span, &b, ty, Default::default()) {
+                    match self.extends(span, b, ty, Default::default()) {
                         Some(true) => {
                             // Remove ty.
                             continue 'outer;
@@ -521,7 +514,7 @@ impl Analyzer<'_, '_> {
                     continue;
                 }
 
-                match self.extends(span, &ty, b, Default::default()) {
+                match self.extends(span, ty, b, Default::default()) {
                     Some(true) => {
                         // Remove ty.
                         continue 'outer;
@@ -588,32 +581,29 @@ impl Analyzer<'_, '_> {
 
             ends_with_ret = cons.ends_with_ret();
 
-            match case.test {
-                Some(ref test) => {
-                    let binary_test_expr = RExpr::Bin(RBinExpr {
-                        node_id: NodeId::invalid(),
-                        op: op!("==="),
-                        span,
-                        left: stmt.discriminant.clone(),
-                        right: test.clone(),
-                    });
-                    let ctx = Ctx {
-                        in_cond: true,
-                        in_switch_case_test: true,
-                        should_store_truthy_for_access: true,
-                        ..self.ctx
-                    };
-                    let mut a = self.with_ctx(ctx);
-                    match binary_test_expr.validate_with_default(&mut *a) {
-                        Ok(..) => {}
-                        Err(err) => {
-                            a.storage.report(err);
-                            errored = true;
-                            continue;
-                        }
+            if let Some(ref test) = case.test {
+                let binary_test_expr = RExpr::Bin(RBinExpr {
+                    node_id: NodeId::invalid(),
+                    op: op!("==="),
+                    span,
+                    left: stmt.discriminant.clone(),
+                    right: test.clone(),
+                });
+                let ctx = Ctx {
+                    in_cond: true,
+                    in_switch_case_test: true,
+                    should_store_truthy_for_access: true,
+                    ..self.ctx
+                };
+                let mut a = self.with_ctx(ctx);
+                match binary_test_expr.validate_with_default(&mut *a) {
+                    Ok(..) => {}
+                    Err(err) => {
+                        a.storage.report(err);
+                        errored = true;
+                        continue;
                     }
                 }
-                None => {}
             }
 
             let true_facts_created_by_case = self.cur_facts.true_facts.take();
@@ -696,9 +686,9 @@ impl Analyzer<'_, '_> {
                     lhs_ty.make_clone_cheap();
 
                     if op == op!("=") {
-                        self.assign(span, &mut Default::default(), &lhs_ty, &ty)?;
+                        self.assign(span, &mut Default::default(), &lhs_ty, ty)?;
                     } else {
-                        self.assign_with_op(span, op, &lhs_ty, &ty)?;
+                        self.assign_with_op(span, op, &lhs_ty, ty)?;
                     }
                 }
 
@@ -720,7 +710,7 @@ impl Analyzer<'_, '_> {
                                 let lhs = self.type_of_var(&left.id, TypeOfMode::LValue, None);
 
                                 if let Ok(lhs) = lhs {
-                                    self.assign_with_op(span, op, &lhs, &ty)?;
+                                    self.assign_with_op(span, op, &lhs, ty)?;
                                 }
                             }
                             _ => Err(ErrorKind::InvalidOperatorForLhs { span, op })?,
@@ -762,7 +752,7 @@ impl Analyzer<'_, '_> {
         // Update variable's type
         match lhs {
             // We emitted some parsing errors.
-            RPat::Invalid(..) => return Ok(()),
+            RPat::Invalid(..) => Ok(()),
 
             RPat::Assign(assign) => {
                 // TODO(kdy1): Use type annotation?
@@ -771,27 +761,27 @@ impl Analyzer<'_, '_> {
                     .validate_with_default(self)
                     .context("tried to validate type of default expression in an assignment pattern");
 
-                self.try_assign_pat_with_opts(span, &assign.left, &ty, opts)
+                self.try_assign_pat_with_opts(span, &assign.left, ty, opts)
                     .report(&mut self.storage);
 
                 res.and_then(|default_value_type| self.try_assign_pat_with_opts(span, &assign.left, &default_value_type, opts))
                     .report(&mut self.storage);
 
-                return Ok(());
+                Ok(())
             }
 
             RPat::Ident(i) => {
                 // Verify using immutable references.
                 if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
                     if let Some(mut var_ty) = var_info.ty.clone() {
-                        let _panic_ctx = debug_ctx!(format!("var_ty = {}", dump_type_as_string(&self.cm, &ty)));
+                        let _panic_ctx = debug_ctx!(format!("var_ty = {}", dump_type_as_string(&self.cm, ty)));
 
                         var_ty.make_clone_cheap();
 
                         self.assign_with_opts(
                             &mut Default::default(),
                             &var_ty,
-                            &ty,
+                            ty,
                             AssignOpts {
                                 span: i.id.span,
                                 ..opts.assign
@@ -873,16 +863,13 @@ impl Analyzer<'_, '_> {
                 } else {
                     if let Some(types) = self.find_type(&i.id.clone().into())? {
                         for ty in types {
-                            match ty.normalize() {
-                                Type::Module(..) => {
-                                    return Err(ErrorKind::NotVariable {
-                                        span: i.id.span,
-                                        left: lhs.span(),
-                                        ty: Some(box ty.normalize().clone()),
-                                    }
-                                    .into());
+                            if let Type::Module(..) = ty.normalize() {
+                                return Err(ErrorKind::NotVariable {
+                                    span: i.id.span,
+                                    left: lhs.span(),
+                                    ty: Some(box ty.normalize().clone()),
                                 }
-                                _ => {}
+                                .into());
                             }
                         }
                     }
@@ -904,41 +891,38 @@ impl Analyzer<'_, '_> {
                 // We copy varinfo with enhanced type.
                 self.scope.insert_var(i.id.clone().into(), var_info);
 
-                return Ok(());
+                Ok(())
             }
 
             RPat::Array(ref arr) => {
                 let ty = self
-                    .get_iterator(span, Cow::Borrowed(&ty), Default::default())
+                    .get_iterator(span, Cow::Borrowed(ty), Default::default())
                     .context("tried to convert a type to an iterator to assign with an array pattern")
                     .report(&mut self.storage)
                     .unwrap_or_else(|| Cow::Owned(Type::any(span, Default::default())));
                 //
                 for (i, elem) in arr.elems.iter().enumerate() {
                     if let Some(elem) = elem {
-                        match elem {
-                            RPat::Rest(elem) => {
-                                // Rest element is special.
-                                let type_for_rest_arg = self
-                                    .get_rest_elements(None, ty, i)
-                                    .context("tried to get lefting elements of an iterator to assign using a rest pattern")?;
+                        if let RPat::Rest(elem) = elem {
+                            // Rest element is special.
+                            let type_for_rest_arg = self
+                                .get_rest_elements(None, ty, i)
+                                .context("tried to get lefting elements of an iterator to assign using a rest pattern")?;
 
-                                self.try_assign_pat_with_opts(
-                                    span,
-                                    &elem.arg,
-                                    &type_for_rest_arg,
-                                    PatAssignOpts {
-                                        assign: AssignOpts {
-                                            allow_iterable_on_rhs: true,
-                                            ..opts.assign
-                                        },
-                                        ..opts
+                            self.try_assign_pat_with_opts(
+                                span,
+                                &elem.arg,
+                                &type_for_rest_arg,
+                                PatAssignOpts {
+                                    assign: AssignOpts {
+                                        allow_iterable_on_rhs: true,
+                                        ..opts.assign
                                     },
-                                )
-                                .context("tried to assign lefting elements to the arugment of a rest pattern")?;
-                                break;
-                            }
-                            _ => {}
+                                    ..opts
+                                },
+                            )
+                            .context("tried to assign lefting elements to the arugment of a rest pattern")?;
+                            break;
                         }
 
                         let elem_ty = self
@@ -952,7 +936,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                 }
-                return Ok(());
+                Ok(())
             }
 
             RPat::Object(ref obj) => {
@@ -1035,7 +1019,7 @@ impl Analyzer<'_, '_> {
 
                                 RPat::Expr(expr) => {
                                     // { ...obj?.a["b"] }
-                                    if is_obj_opt_chaining(&expr) {
+                                    if is_obj_opt_chaining(expr) {
                                         return Err(ErrorKind::InvalidRestPatternInOptionalChain { span: r.span }.into());
                                     }
 
@@ -1059,7 +1043,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Ok(());
+                Ok(())
             }
 
             RPat::Rest(rest) => {
@@ -1069,16 +1053,13 @@ impl Analyzer<'_, '_> {
                     elem_type: box ty.clone(),
                     metadata: Default::default(),
                 });
-                return self.try_assign_pat_with_opts(span, &rest.arg, &ty, opts);
+                self.try_assign_pat_with_opts(span, &rest.arg, &ty, opts)
             }
 
             RPat::Expr(lhs) => {
-                match &**lhs {
-                    RExpr::Lit(..) => {
-                        self.storage.report(ErrorKind::InvalidLhsOfAssign { span: lhs.span() }.into());
-                        return Ok(());
-                    }
-                    _ => {}
+                if let RExpr::Lit(..) = &**lhs {
+                    self.storage.report(ErrorKind::InvalidLhsOfAssign { span: lhs.span() }.into());
+                    return Ok(());
                 }
                 let lhs_ty = lhs
                     .validate_with_args(self, (TypeOfMode::LValue, None, None))
@@ -1086,9 +1067,9 @@ impl Analyzer<'_, '_> {
                     .report(&mut self.storage);
 
                 if let Some(lhs_ty) = &lhs_ty {
-                    self.assign_with_opts(&mut Default::default(), &lhs_ty, &ty, AssignOpts { span, ..opts.assign })?;
+                    self.assign_with_opts(&mut Default::default(), lhs_ty, ty, AssignOpts { span, ..opts.assign })?;
                 }
-                return Ok(());
+                Ok(())
             }
         }
     }
@@ -1156,7 +1137,7 @@ impl Analyzer<'_, '_> {
             Type::Union(ty) => {
                 let mut new_types = vec![];
                 for ty in &ty.types {
-                    let ty = self.filter_types_with_property(span, &ty, property, type_facts)?;
+                    let ty = self.filter_types_with_property(span, ty, property, type_facts)?;
                     new_types.push(ty);
                 }
                 new_types.retain(|ty| !ty.is_never());
@@ -1248,39 +1229,36 @@ impl Analyzer<'_, '_> {
         let obj = self.type_of_var(&id, TypeOfMode::RValue, None)?;
         let obj = self.expand_top_ref(ty.span(), Cow::Owned(obj), Default::default())?;
 
-        match obj.normalize() {
-            Type::Union(u) => {
-                if ids.len() == 2 {
-                    let mut new_obj_types = vec![];
+        if let Type::Union(u) = obj.normalize() {
+            if ids.len() == 2 {
+                let mut new_obj_types = vec![];
 
-                    for obj in &u.types {
-                        if let Ok(prop_ty) = self.access_property(
-                            obj.span(),
-                            obj,
-                            &Key::Normal {
-                                span: ty.span(),
-                                sym: ids[1].sym().clone(),
-                            },
-                            TypeOfMode::RValue,
-                            IdCtx::Var,
-                            Default::default(),
-                        ) {
-                            if ty.type_eq(&prop_ty) {
-                                new_obj_types.push(obj.clone());
-                            }
+                for obj in &u.types {
+                    if let Ok(prop_ty) = self.access_property(
+                        obj.span(),
+                        obj,
+                        &Key::Normal {
+                            span: ty.span(),
+                            sym: ids[1].sym().clone(),
+                        },
+                        TypeOfMode::RValue,
+                        IdCtx::Var,
+                        Default::default(),
+                    ) {
+                        if ty.type_eq(&prop_ty) {
+                            new_obj_types.push(obj.clone());
                         }
                     }
-
-                    if new_obj_types.is_empty() {
-                        return Ok(None);
-                    }
-                    let mut ty = Type::union(new_obj_types);
-                    ty.fix();
-
-                    return Ok(Some((Name::from(ids[0].clone()), ty)));
                 }
+
+                if new_obj_types.is_empty() {
+                    return Ok(None);
+                }
+                let mut ty = Type::union(new_obj_types);
+                ty.fix();
+
+                return Ok(Some((Name::from(ids[0].clone()), ty)));
             }
-            _ => {}
         }
 
         Ok(None)

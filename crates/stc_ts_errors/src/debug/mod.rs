@@ -52,8 +52,8 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
             }),
         })));
 
-        match t.normalize() {
-            Type::Interface(t) => ALLOW_DEEP_CLONE.set(&(), || {
+        if let Type::Interface(t) = t.normalize() {
+            ALLOW_DEEP_CLONE.set(&(), || {
                 body.push(ModuleItem::Stmt(Stmt::Expr(ExprStmt {
                     span: DUMMY_SP,
                     expr: box Expr::TsAs(TsAsExpr {
@@ -70,8 +70,7 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
                         .into_orig(),
                     }),
                 })));
-            }),
-            _ => {}
+            })
         }
 
         emitter

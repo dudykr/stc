@@ -12,37 +12,34 @@ impl VisitMut<Type> for TupleNormalizer {
         ty.normalize_mut();
         ty.visit_mut_children_with(self);
 
-        match ty.normalize() {
-            Type::Tuple(tuple) => {
-                if tuple.metadata.common.prevent_tuple_to_array {
-                    return;
-                }
-
-                let common_metadata = tuple.metadata.common;
-
-                if tuple.elems.is_empty() {
-                    return;
-                }
-
-                let span = ty.span();
-                let mut types = ty.take().expect_tuple().elems.into_iter().map(|elem| *elem.ty).collect::<Vec<_>>();
-                types.dedup_type();
-
-                let has_other = types.iter().any(|ty| !ty.is_null_or_undefined());
-                if has_other {
-                    types.retain(|ty| !ty.is_null_or_undefined())
-                }
-
-                *ty = Type::Array(Array {
-                    span,
-                    elem_type: box Type::new_union(span, types),
-                    metadata: ArrayMetadata {
-                        common: common_metadata,
-                        ..Default::default()
-                    },
-                });
+        if let Type::Tuple(tuple) = ty.normalize() {
+            if tuple.metadata.common.prevent_tuple_to_array {
+                return;
             }
-            _ => {}
+
+            let common_metadata = tuple.metadata.common;
+
+            if tuple.elems.is_empty() {
+                return;
+            }
+
+            let span = ty.span();
+            let mut types = ty.take().expect_tuple().elems.into_iter().map(|elem| *elem.ty).collect::<Vec<_>>();
+            types.dedup_type();
+
+            let has_other = types.iter().any(|ty| !ty.is_null_or_undefined());
+            if has_other {
+                types.retain(|ty| !ty.is_null_or_undefined())
+            }
+
+            *ty = Type::Array(Array {
+                span,
+                elem_type: box Type::new_union(span, types),
+                metadata: ArrayMetadata {
+                    common: common_metadata,
+                    ..Default::default()
+                },
+            });
         }
     }
 }

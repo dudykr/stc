@@ -141,10 +141,7 @@ impl Analyzer<'_, '_> {
                     }
                     continue;
                 }
-                None => {
-                    let ty = Type::undefined(span, Default::default());
-                    ty
-                }
+                None => Type::undefined(span, Default::default()),
             };
             elements.push(TupleElement {
                 span,
@@ -227,11 +224,11 @@ impl Analyzer<'_, '_> {
             });
         }
 
-        return Ok(Type::Tuple(Tuple {
+        Ok(Type::Tuple(Tuple {
             span,
             elems: elements,
             metadata: Default::default(),
-        }));
+        }))
     }
 }
 
@@ -275,7 +272,7 @@ impl Analyzer<'_, '_> {
                         .get_element_from_iterator(span, Cow::Borrowed(iterator_elem), n)
                         .with_context(|| format!("failed to get element type from {}th element", idx))
                         .convert_err(|err| match err {
-                            ErrorKind::TupleIndexError { span, .. } => ErrorKind::TupleTooShort { span }.into(),
+                            ErrorKind::TupleIndexError { span, .. } => ErrorKind::TupleTooShort { span },
                             _ => err,
                         })
                         .map(Cow::into_owned);
@@ -354,20 +351,16 @@ impl Analyzer<'_, '_> {
                 ErrorKind::NoCallablePropertyWithName { span, .. }
                 | ErrorKind::NoSuchProperty { span, .. }
                 | ErrorKind::NoSuchPropertyInClass { span, .. } => {
-                    match iterator.normalize() {
-                        Type::Union(iterator) => {
-                            if iterator.types.iter().all(|ty| ty.is_tuple()) {
-                                return ErrorKind::NoSuchProperty {
-                                    span,
-                                    obj: None,
-                                    prop: None,
-                                }
-                                .into();
-                            }
+                    if let Type::Union(iterator) = iterator.normalize() {
+                        if iterator.types.iter().all(|ty| ty.is_tuple()) {
+                            return ErrorKind::NoSuchProperty {
+                                span,
+                                obj: None,
+                                prop: None,
+                            };
                         }
-                        _ => {}
                     }
-                    ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span }.into()
+                    ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span }
                 }
                 _ => err,
             })
@@ -388,21 +381,16 @@ impl Analyzer<'_, '_> {
             .context("tried to get the type of property named `value` to determine the type of nth element of an iterator")?;
 
         // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
-        if matches!(elem_ty.normalize(), Type::Union(..)) {
-            match elem_ty.normalize_mut() {
-                Type::Union(u) => {
-                    u.types.retain(|ty| !ty.is_any());
-                    if u.types.is_empty() {
-                        u.types = vec![Type::any(
-                            u.span,
-                            KeywordTypeMetadata {
-                                common: u.metadata.common,
-                                ..Default::default()
-                            },
-                        )]
-                    }
-                }
-                _ => {}
+        if let Some(u) = elem_ty.as_union_type_mut() {
+            u.types.retain(|ty| !ty.is_any());
+            if u.types.is_empty() {
+                u.types = vec![Type::any(
+                    u.span,
+                    KeywordTypeMetadata {
+                        common: u.metadata.common,
+                        ..Default::default()
+                    },
+                )]
             }
         }
 
@@ -487,7 +475,7 @@ impl Analyzer<'_, '_> {
             .context("tried to get element of iterator as a fallback logic for async iterator")
             .convert_err(|err| match err {
                 ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } => {
-                    ErrorKind::MustHaveSymbolAsyncIteratorThatReturnsIterator { span }.into()
+                    ErrorKind::MustHaveSymbolAsyncIteratorThatReturnsIterator { span }
                 }
                 _ => err,
             })?;
@@ -514,24 +502,19 @@ impl Analyzer<'_, '_> {
                 },
             )
             .context("tried to get the type of property named `value` to determine the type of an iterator")
-            .convert_err(|err| ErrorKind::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() }.into())?;
+            .convert_err(|err| ErrorKind::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() })?;
 
         // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
-        if matches!(elem_ty.normalize(), Type::Union(..)) {
-            match elem_ty.normalize_mut() {
-                Type::Union(u) => {
-                    u.types.retain(|ty| !ty.is_any());
-                    if u.types.is_empty() {
-                        u.types = vec![Type::any(
-                            u.span,
-                            KeywordTypeMetadata {
-                                common: u.metadata.common,
-                                ..Default::default()
-                            },
-                        )]
-                    }
-                }
-                _ => {}
+        if let Some(u) = elem_ty.as_union_type_mut() {
+            u.types.retain(|ty| !ty.is_any());
+            if u.types.is_empty() {
+                u.types = vec![Type::any(
+                    u.span,
+                    KeywordTypeMetadata {
+                        common: u.metadata.common,
+                        ..Default::default()
+                    },
+                )]
             }
         }
 
@@ -587,25 +570,22 @@ impl Analyzer<'_, '_> {
 
         let iterator = iterator?;
 
-        match iterator.normalize() {
-            Type::Class(..) => {
-                if let Ok(return_prop_ty) = self.access_property(
+        if let Type::Class(..) = iterator.normalize() {
+            if let Ok(return_prop_ty) = self.access_property(
+                span,
+                &iterator,
+                &Key::Normal {
                     span,
-                    &iterator,
-                    &Key::Normal {
-                        span,
-                        sym: js_word!("return"),
-                    },
-                    TypeOfMode::RValue,
-                    IdCtx::Var,
-                    Default::default(),
-                ) {
-                    if !return_prop_ty.is_fn_type() {
-                        self.storage.report(ErrorKind::ReturnPropertyOfIteratorMustBeMethod { span }.into())
-                    }
+                    sym: js_word!("return"),
+                },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+                Default::default(),
+            ) {
+                if !return_prop_ty.is_fn_type() {
+                    self.storage.report(ErrorKind::ReturnPropertyOfIteratorMustBeMethod { span }.into())
                 }
             }
-            _ => {}
         }
 
         Ok(iterator)
@@ -666,7 +646,7 @@ impl Analyzer<'_, '_> {
                         .collect::<Result<_, _>>()
                         .convert_err(|err| match err {
                             ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span } => {
-                                ErrorKind::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { span }.into()
+                                ErrorKind::MustHaveSymbolIteratorThatReturnsIteratorOrMustBeArray { span }
                             }
                             _ => err,
                         })?;
@@ -722,7 +702,7 @@ impl Analyzer<'_, '_> {
             .convert_err(|err| match err {
                 ErrorKind::NoCallablePropertyWithName { span, .. }
                 | ErrorKind::NoSuchPropertyInClass { span, .. }
-                | ErrorKind::NoSuchProperty { span, .. } => ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span }.into(),
+                | ErrorKind::NoSuchProperty { span, .. } => ErrorKind::MustHaveSymbolIteratorThatReturnsIterator { span },
                 _ => err,
             })
             .map(Cow::Owned)
@@ -857,7 +837,7 @@ impl Analyzer<'_, '_> {
                 Default::default(),
             )
             .convert_err(|err| match err {
-                ErrorKind::NoCallablePropertyWithName { span, .. } => ErrorKind::NoMethodNamedNext { span }.into(),
+                ErrorKind::NoCallablePropertyWithName { span, .. } => ErrorKind::NoMethodNamedNext { span },
                 _ => err,
             })
             .context("tried calling `next()` to get element type of iterator")?;

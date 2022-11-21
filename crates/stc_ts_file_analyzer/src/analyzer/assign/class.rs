@@ -34,7 +34,7 @@ impl Analyzer<'_, '_> {
                     // let p: Parent;
                     // `p = c` is valid
                     if let Some(parent) = &rc.super_class {
-                        if self.assign_to_class_def(data, l, &parent, opts).is_ok() {
+                        if self.assign_to_class_def(data, l, parent, opts).is_ok() {
                             return Ok(());
                         }
                     }
@@ -48,7 +48,7 @@ impl Analyzer<'_, '_> {
                     } else {
                         return Err(ErrorKind::Unimplemented {
                             span: opts.span,
-                            msg: format!("Failed to collect class members"),
+                            msg: "Failed to collect class members".to_string(),
                         }
                         .into());
                     }
@@ -137,7 +137,7 @@ impl Analyzer<'_, '_> {
                     } else {
                         return Err(ErrorKind::Unimplemented {
                             span: opts.span,
-                            msg: format!("Failed to collect class members"),
+                            msg: "Failed to collect class members".to_string(),
                         }
                         .into());
                     }
@@ -160,7 +160,7 @@ impl Analyzer<'_, '_> {
                     // `p = c` is valid
                     if let Some(parent) = &rc.def.super_class {
                         let _ctx = ctx!("tried to instantiated class to assign the super class to a class");
-                        let parent = self.instantiate_class(opts.span, &parent)?;
+                        let parent = self.instantiate_class(opts.span, parent)?;
                         if self.assign_to_class(data, l, &parent, opts).is_ok() {
                             return Ok(());
                         }
@@ -197,7 +197,7 @@ impl Analyzer<'_, '_> {
                     data,
                     l.span,
                     &lhs_members,
-                    &r,
+                    r,
                     TypeLitMetadata {
                         specified: true,
                         ..Default::default()
@@ -218,29 +218,18 @@ impl Analyzer<'_, '_> {
         // Everything left is assignable to empty classes, including classes with only
         // constructors.
         if !opts.disallow_special_assignment_to_empty_class {
-            let is_empty = l
-                .def
-                .body
-                .iter()
-                .find(|member| match member {
-                    ClassMember::Constructor(_) => false,
-                    _ => true,
-                })
-                .is_none();
+            let is_empty = !l.def.body.iter().any(|member| !matches!(&member, ClassMember::Constructor(_)));
             if !l.def.is_abstract && is_empty {
                 return Ok(());
             }
         }
 
-        match r {
-            Type::Lit(..) | Type::Keyword(..) => {
-                return Err(ErrorKind::SimpleAssignFailed {
-                    span: opts.span,
-                    cause: None,
-                }
-                .context("cannot assign literal or keyword to a class"))
+        if let Type::Lit(..) | Type::Keyword(..) = r {
+            return Err(ErrorKind::SimpleAssignFailed {
+                span: opts.span,
+                cause: None,
             }
-            _ => {}
+            .context("cannot assign literal or keyword to a class"));
         }
 
         Err(ErrorKind::Unimplemented {
@@ -262,13 +251,10 @@ impl Analyzer<'_, '_> {
         match l {
             ClassMember::Constructor(lc) => {
                 for rm in r {
-                    match rm {
-                        ClassMember::Constructor(rc) => {
-                            self.assign_params(data, &lc.params, &rc.params, opts)?;
-                            // TODO(kdy1): Validate parameters and etc..
-                            return Ok(());
-                        }
-                        _ => {}
+                    if let ClassMember::Constructor(rc) = rm {
+                        self.assign_params(data, &lc.params, &rc.params, opts)?;
+                        // TODO(kdy1): Validate parameters and etc..
+                        return Ok(());
                     }
                 }
             }
@@ -324,14 +310,11 @@ impl Analyzer<'_, '_> {
                         ClassMember::Constructor(_) => {}
                         ClassMember::Method(_) => {}
                         ClassMember::Property(rp) => {
-                            if lp.is_static == rp.is_static
-                                && lp.is_static == rp.is_static
-                                && self.key_matches(span, &lp.key, &rp.key, false)
-                            {
+                            if lp.is_static == rp.is_static && self.key_matches(span, &lp.key, &rp.key, false) {
                                 if let Some(lt) = &lp.value {
                                     if let Some(rt) = &rp.value {
                                         let _ctx = ctx!("tried to assign a class proeprty to another");
-                                        self.assign_inner(data, &lt, &rt, opts)?;
+                                        self.assign_inner(data, lt, rt, opts)?;
                                     }
                                 }
 

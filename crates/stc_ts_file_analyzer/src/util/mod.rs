@@ -52,7 +52,7 @@ pub(crate) fn is_str_or_union(t: &Type) -> bool {
             kind: TsKeywordTypeKind::TsStringKeyword,
             ..
         }) => true,
-        Type::Union(Union { ref types, .. }) => types.iter().all(|ty| is_str_or_union(&ty)),
+        Type::Union(Union { ref types, .. }) => types.iter().all(is_str_or_union),
         _ => false,
     }
 }
@@ -109,15 +109,13 @@ impl RemoveTypes for Type {
             Type::Lit(LitType {
                 lit: RTsLit::Bool(RBool { value: true, span, .. }),
                 ..
-            }) => {
-                return Type::never(
-                    span,
-                    KeywordTypeMetadata {
-                        common: self.metadata(),
-                        ..Default::default()
-                    },
-                )
-            }
+            }) => Type::never(
+                span,
+                KeywordTypeMetadata {
+                    common: self.metadata(),
+                    ..Default::default()
+                },
+            ),
 
             Type::Union(u) => u.remove_truthy(),
             Type::Intersection(i) => i.remove_truthy(),
@@ -239,7 +237,7 @@ impl RemoveTypes for Union {
     }
 }
 
-impl<'a, T> RemoveTypes for Box<T>
+impl<T> RemoveTypes for Box<T>
 where
     T: RemoveTypes,
 {
@@ -282,7 +280,7 @@ where
     /// Returns true if the statement ends with return, break, continue;
     fn ends_with_ret(&self) -> bool {
         match self.last() {
-            Some(ref stmt) => stmt.ends_with_ret(),
+            Some(stmt) => stmt.ends_with_ret(),
             _ => false,
         }
     }

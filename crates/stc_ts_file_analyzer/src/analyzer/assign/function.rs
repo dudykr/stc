@@ -54,20 +54,17 @@ impl Analyzer<'_, '_> {
 
             if cfg!(feature = "fastpath") && l_params.len() == 1 && l_params[0].ty.is_type_param() && l_params[0].ty.span().is_dummy() {
                 if let Some(l_ret_ty) = l_ret_ty {
-                    if let Some(r_ret_ty) = unwrap_ref_with_single_arg(&r_ret_ty, "Promise") {
-                        match l_ret_ty.normalize() {
-                            Type::Union(l_ret_ty) => {
-                                // Exact match
-                                if l_ret_ty.types.len() == 4
-                                    && l_ret_ty.types[0].is_type_param()
-                                    && unwrap_ref_with_single_arg(&l_ret_ty.types[1], "PromiseLike").type_eq(&Some(&l_ret_ty.types[0]))
-                                    && l_ret_ty.types[2].is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                                    && l_ret_ty.types[3].is_kwd(TsKeywordTypeKind::TsNullKeyword)
-                                {
-                                    return Ok(());
-                                }
+                    if let Some(r_ret_ty) = unwrap_ref_with_single_arg(r_ret_ty, "Promise") {
+                        if let Type::Union(l_ret_ty) = l_ret_ty.normalize() {
+                            // Exact match
+                            if l_ret_ty.types.len() == 4
+                                && l_ret_ty.types[0].is_type_param()
+                                && unwrap_ref_with_single_arg(&l_ret_ty.types[1], "PromiseLike").type_eq(&Some(&l_ret_ty.types[0]))
+                                && l_ret_ty.types[2].is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                                && l_ret_ty.types[3].is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                            {
+                                return Ok(());
                             }
-                            _ => {}
                         }
                     }
                 }
@@ -178,7 +175,7 @@ impl Analyzer<'_, '_> {
                         .iter()
                         .zip(rt.params.iter())
                         .filter(|(l, r)| match (&l.constraint, &r.constraint) {
-                            (None, Some(..)) => return false,
+                            (None, Some(..)) => false,
                             // TODO(kdy1): Use extends()
                             _ => true,
                         })
@@ -238,7 +235,7 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 });
 
-                let map = self.infer_type_with_types(span, &*lt.params, &lf, &rf, InferTypeOpts { ..Default::default() })?;
+                let map = self.infer_type_with_types(span, &lt.params, &lf, &rf, InferTypeOpts { ..Default::default() })?;
                 let mut new_l_params = self
                     .expand_type_params(&map, l_params.to_vec(), Default::default())
                     .context("tried to expand type parameters of lhs as a step of function assignment")?;
@@ -283,7 +280,7 @@ impl Analyzer<'_, '_> {
 
                 let map = self.infer_type_with_types(
                     span,
-                    &*rt.params,
+                    &rt.params,
                     &rf,
                     &lf,
                     InferTypeOpts {
@@ -337,7 +334,7 @@ impl Analyzer<'_, '_> {
 
         // TypeScript functions are bivariant if strict_function_types is false.
         if !self.env.rule().strict_function_types || opts.is_params_of_method_definition {
-            if self.assign_params(data, &r_params, &l_params, opts).is_ok() {
+            if self.assign_params(data, r_params, l_params, opts).is_ok() {
                 return Ok(());
             }
         }
@@ -349,7 +346,7 @@ impl Analyzer<'_, '_> {
         // (t: unknown, t1: unknown) => void
         //
         // So we check for length first.
-        if r_params.len() != 0 {
+        if !r_params.is_empty() {
             self.assign_params(
                 data,
                 l_params,
@@ -380,7 +377,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        return Ok(());
+        Ok(())
     }
 
     /// ```ts
@@ -426,26 +423,23 @@ impl Analyzer<'_, '_> {
 
             Type::TypeLit(rt) => {
                 for rm in &rt.members {
-                    match rm {
-                        TypeElement::Call(rm) => {
-                            return self
-                                .assign_to_fn_like(
-                                    data,
-                                    true,
-                                    l.type_params.as_ref(),
-                                    &l.params,
-                                    Some(&l.ret_ty),
-                                    rm.type_params.as_ref(),
-                                    &rm.params,
-                                    rm.ret_ty.as_deref(),
-                                    AssignOpts {
-                                        infer_type_params_of_left: true,
-                                        ..opts
-                                    },
-                                )
-                                .context("tried to assign TypeElemeny::Call to a function");
-                        }
-                        _ => {}
+                    if let TypeElement::Call(rm) = rm {
+                        return self
+                            .assign_to_fn_like(
+                                data,
+                                true,
+                                l.type_params.as_ref(),
+                                &l.params,
+                                Some(&l.ret_ty),
+                                rm.type_params.as_ref(),
+                                &rm.params,
+                                rm.ret_ty.as_deref(),
+                                AssignOpts {
+                                    infer_type_params_of_left: true,
+                                    ..opts
+                                },
+                            )
+                            .context("tried to assign TypeElemeny::Call to a function");
                     }
                 }
             }
@@ -544,32 +538,29 @@ impl Analyzer<'_, '_> {
 
                 let mut errors = vec![];
                 for (idx, rm) in rt.members.iter().enumerate() {
-                    match rm {
-                        TypeElement::Constructor(rc) => {
-                            if let Err(err) = self
-                                .assign_to_fn_like(
-                                    data,
-                                    false,
-                                    l.type_params.as_ref(),
-                                    &l.params,
-                                    Some(&l.type_ann),
-                                    rc.type_params.as_ref(),
-                                    &rc.params,
-                                    rc.ret_ty.as_deref(),
-                                    AssignOpts {
-                                        allow_assignment_to_param: opts.allow_assignment_to_param || r_el_cnt > 1,
-                                        ..opts
-                                    },
-                                )
-                                .with_context(|| format!("tried to assign a constructor to another constructor ({}th element)", idx))
-                            {
-                                errors.push(err);
-                                continue;
-                            }
-
-                            return Ok(());
+                    if let TypeElement::Constructor(rc) = rm {
+                        if let Err(err) = self
+                            .assign_to_fn_like(
+                                data,
+                                false,
+                                l.type_params.as_ref(),
+                                &l.params,
+                                Some(&l.type_ann),
+                                rc.type_params.as_ref(),
+                                &rc.params,
+                                rc.ret_ty.as_deref(),
+                                AssignOpts {
+                                    allow_assignment_to_param: opts.allow_assignment_to_param || r_el_cnt > 1,
+                                    ..opts
+                                },
+                            )
+                            .with_context(|| format!("tried to assign a constructor to another constructor ({}th element)", idx))
+                        {
+                            errors.push(err);
+                            continue;
                         }
-                        _ => {}
+
+                        return Ok(());
                     }
                 }
 
@@ -642,21 +633,18 @@ impl Analyzer<'_, '_> {
         let _panic = debug_ctx!(format!("left = {}\n{:?}", dump_type_as_string(&self.cm, &l.ty), &l.ty));
         let _panic = debug_ctx!(format!("right = {}\n{:?}", dump_type_as_string(&self.cm, &r.ty), &r.ty));
 
-        match l.pat {
-            RPat::Rest(..) => {
-                let l_ty = self
-                    .normalize(Some(span), Cow::Borrowed(&l.ty), Default::default())
-                    .context("tried to normalize lhs")?;
+        if let RPat::Rest(..) = l.pat {
+            let l_ty = self
+                .normalize(Some(span), Cow::Borrowed(&l.ty), Default::default())
+                .context("tried to normalize lhs")?;
 
-                let l_elem_type = self.get_iterator_element_type(span, l_ty, false, GetIteratorOpts { ..Default::default() });
+            let l_elem_type = self.get_iterator_element_type(span, l_ty, false, GetIteratorOpts { ..Default::default() });
 
-                if let Ok(l_elem_type) = l_elem_type {
-                    if let Ok(()) = self.assign_with_opts(data, &l_elem_type, &r.ty, opts) {
-                        return Ok(());
-                    }
+            if let Ok(l_elem_type) = l_elem_type {
+                if let Ok(()) = self.assign_with_opts(data, &l_elem_type, &r.ty, opts) {
+                    return Ok(());
                 }
             }
-            _ => {}
         }
 
         // TODO(kdy1): Change this to extends call.
@@ -675,15 +663,11 @@ impl Analyzer<'_, '_> {
                 cause: Some(box err.into()),
             },
             ErrorKind::Errors { ref errors, .. } => {
-                if errors.iter().all(|err| match &**err {
-                    ErrorKind::MissingFields { .. } => true,
-                    _ => false,
-                }) {
+                if errors.iter().all(|err| matches!(&**err, ErrorKind::MissingFields { .. })) {
                     ErrorKind::SimpleAssignFailed {
                         span,
                         cause: Some(box err.into()),
                     }
-                    .into()
                 } else {
                     err
                 }
@@ -714,25 +698,26 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_params(&mut self, data: &mut AssignData, l: &[FnParam], r: &[FnParam], opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
 
-        let li = l.iter().filter(|p| match p.pat {
-            RPat::Ident(RBindingIdent {
-                id: RIdent { sym: js_word!("this"), .. },
-                ..
-            }) => false,
-            _ => true,
+        let li = l.iter().filter(|p| {
+            !matches!(
+                p.pat,
+                RPat::Ident(RBindingIdent {
+                    id: RIdent { sym: js_word!("this"), .. },
+                    ..
+                })
+            )
         });
-        let ri = r.iter().filter(|p| match p.pat {
-            RPat::Ident(RBindingIdent {
-                id: RIdent { sym: js_word!("this"), .. },
-                ..
-            }) => false,
-            _ => true,
+        let ri = r.iter().filter(|p| {
+            !matches!(
+                p.pat,
+                RPat::Ident(RBindingIdent {
+                    id: RIdent { sym: js_word!("this"), .. },
+                    ..
+                })
+            )
         });
 
-        let l_has_rest = l.iter().any(|p| match p.pat {
-            RPat::Rest(..) => true,
-            _ => false,
-        });
+        let l_has_rest = l.iter().any(|p| matches!(p.pat, RPat::Rest(..)));
 
         // TODO(kdy1): Consider optional parameters.
 
@@ -772,8 +757,8 @@ impl Analyzer<'_, '_> {
                     if opts.allow_assignment_to_param {
                         if let Ok(()) = self.assign_param(
                             data,
-                            &rp,
-                            &lp,
+                            rp,
+                            lp,
                             AssignOpts {
                                 allow_unknown_type: true,
                                 ..opts

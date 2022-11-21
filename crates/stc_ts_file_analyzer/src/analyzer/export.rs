@@ -146,7 +146,7 @@ impl Analyzer<'_, '_> {
 
                 self.export_type(span, Id::word(js_word!("default")), Some(var_name.clone()));
 
-                self.declare_var(span, VarKind::Class, var_name.clone(), Some(class_ty), None, true, true, false)
+                self.declare_var(span, VarKind::Class, var_name, Some(class_ty), None, true, true, false)
                     .report(&mut self.storage);
 
                 self.export_var(c.span(), Id::word(js_word!("default")), orig_name, true);
@@ -240,9 +240,8 @@ impl Analyzer<'_, '_> {
         let ty = e.validate_with_default(self)?.freezed();
 
         if *name.sym() == js_word!("default") {
-            match e {
-                RExpr::Ident(..) => return Ok(()),
-                _ => {}
+            if let RExpr::Ident(..) = e {
+                return Ok(());
             }
             let var = RVarDeclarator {
                 node_id: NodeId::invalid(),
@@ -258,7 +257,7 @@ impl Analyzer<'_, '_> {
                     type_ann: Some(box RTsTypeAnn {
                         node_id: NodeId::invalid(),
                         span: DUMMY_SP,
-                        type_ann: ty.clone().into(),
+                        type_ann: ty.into(),
                     }),
                 }),
                 init: None,
@@ -288,10 +287,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, node: &RTsExportAssignment) {
-        let ctx = Ctx {
-            allow_namespace_var: true,
-            ..self.ctx
-        };
+        let ctx = Ctx { ..self.ctx };
         self.with_ctx(ctx)
             .export_expr(Id::word(js_word!("default")), node.node_id, &node.expr)?;
 

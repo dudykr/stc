@@ -140,5 +140,5 @@ fn calc_one(done: &AHashSet<usize>, cycles: &[Vec<usize>], graph: &mut FastDiGra
         trace!("Done: {:?}", idx);
     }
 
-    return vec![idx];
+    vec![idx]
 }
