@@ -350,13 +350,15 @@ impl Fold<Type> for Simplifier<'_> {
                 index_type: index_type @ box Type::Lit(LitType { lit: RTsLit::Str(..), .. }),
                 metadata,
                 ..
-            }) if obj.types.iter().all(|ty| match ty.normalize() {
-                Type::TypeLit(..) => true,
-                Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsUnknownKeyword,
-                    ..
-                }) => true,
-                _ => false,
+            }) if obj.types.iter().all(|ty| {
+                matches!(
+                    ty.normalize(),
+                    Type::TypeLit(..)
+                        | Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsUnknownKeyword,
+                            ..
+                        })
+                )
             }) =>
             {
                 let inexact = obj
@@ -383,11 +385,7 @@ impl Fold<Type> for Simplifier<'_> {
                 members.dedup_by(|a, b| {
                     if let Some(a_key) = a.key() {
                         if let Some(b_key) = b.key() {
-                            if a_key.eq_ignore_span(&*b_key) {
-                                true
-                            } else {
-                                false
-                            }
+                            a_key.eq_ignore_span(b_key)
                         } else {
                             false
                         }
@@ -419,11 +417,7 @@ impl Fold<Type> for Simplifier<'_> {
                 obj_type: box Type::Union(obj),
                 index_type: box Type::Lit(LitType { lit: RTsLit::Str(s), .. }),
                 ..
-            }) if obj.types.iter().all(|ty| match ty.normalize() {
-                Type::TypeLit(..) => true,
-                _ => false,
-            }) =>
-            {
+            }) if obj.types.iter().all(|ty| matches!(ty.normalize(), Type::TypeLit(..))) => {
                 let mut types = obj
                     .types
                     .into_iter()
