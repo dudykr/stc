@@ -299,10 +299,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
                     None => {
-                        self.ctx.prefer_tuple = match v.name {
-                            RPat::Array(_) | RPat::Object(..) => true,
-                            _ => false,
-                        };
+                        self.ctx.prefer_tuple = matches!(v.name, RPat::Array(_) | RPat::Object(..));
                         let value_ty = get_value_ty!(None);
 
                         // infer type from value.
