@@ -1278,7 +1278,7 @@ impl Analyzer<'_, '_> {
 
                     r.types
                         .iter()
-                        .map(|rhs| {
+                        .try_for_each(|rhs| {
                             if cfg!(debug_assertions) {
                                 // Assertion for deep clones.
                                 let _ = to.clone();
@@ -1295,7 +1295,6 @@ impl Analyzer<'_, '_> {
                                 },
                             )
                         })
-                        .collect::<Result<_, _>>()
                         .context("tried to assign an union type to another one")?;
 
                     return Ok(());

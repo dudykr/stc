@@ -186,10 +186,10 @@ impl Analyzer<'_, '_> {
                             return Ok(ty);
                         }
                     }
-                    return Ok(Type::from(ThisType {
+                    Ok(Type::from(ThisType {
                         span,
                         metadata: Default::default(),
-                    }));
+                    }))
                 }
 
                 RExpr::Ident(ref i) => {
@@ -210,7 +210,7 @@ impl Analyzer<'_, '_> {
                     Ok(ty)
                 }
 
-                RExpr::Array(arr) => return arr.validate_with_args(self, (mode, type_args, type_ann)),
+                RExpr::Array(arr) => arr.validate_with_args(self, (mode, type_args, type_ann)),
 
                 RExpr::Lit(RLit::Bool(v)) => Ok(Type::Lit(LitType {
                     span: v.span,
@@ -285,9 +285,9 @@ impl Analyzer<'_, '_> {
                     Ok(class.validate_with(self)?.into())
                 }
 
-                RExpr::Arrow(ref e) => return Ok(e.validate_with_args(self, type_ann)?.into()),
+                RExpr::Arrow(ref e) => Ok(e.validate_with_args(self, type_ann)?.into()),
 
-                RExpr::Fn(f) => Ok(f.validate_with_args(self, type_ann)?.into()),
+                RExpr::Fn(f) => Ok(f.validate_with_args(self, type_ann)?),
 
                 RExpr::Member(ref expr) => {
                     // Foo.a
