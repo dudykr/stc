@@ -625,7 +625,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                if arg.is_any() && self.is_implicitly_typed(&arg) {
+                if arg.is_any() && self.is_implicitly_typed(arg) {
                     if inferred.type_params.contains_key(&name.clone()) {
                         return Ok(());
                     }
@@ -661,7 +661,7 @@ impl Analyzer<'_, '_> {
                     Entry::Occupied(mut e) => {
                         match e.get_mut() {
                             InferredType::Union(e) => {
-                                debug!("`{}` is already fixed as {}", name, dump_type_as_string(&self.cm, &e));
+                                debug!("`{}` is already fixed as {}", name, dump_type_as_string(&self.cm, e));
                                 return Ok(());
                             }
                             InferredType::Other(e) => {
@@ -670,7 +670,7 @@ impl Analyzer<'_, '_> {
                                     self.assign_with_opts(
                                         &mut Default::default(),
                                         prev,
-                                        &arg,
+                                        arg,
                                         AssignOpts {
                                             span,
                                             ..Default::default()
@@ -678,13 +678,13 @@ impl Analyzer<'_, '_> {
                                     )
                                     .is_ok()
                                 }) {
-                                    debug!("Ignoring the result for `{}` can be {}", name, dump_type_as_string(&self.cm, &prev));
+                                    debug!("Ignoring the result for `{}` can be {}", name, dump_type_as_string(&self.cm, prev));
 
                                     return Ok(());
                                 }
 
-                                if !e.is_empty() && !opts.append_type_as_union && !is_ok_to_append(&e, arg) {
-                                    debug!("Cannot append to `{}` (arg = {})", name, dump_type_as_string(&self.cm, &arg));
+                                if !e.is_empty() && !opts.append_type_as_union && !is_ok_to_append(e, arg) {
+                                    debug!("Cannot append to `{}` (arg = {})", name, dump_type_as_string(&self.cm, arg));
 
                                     inferred.errored.insert(name.clone());
                                     return Ok(());
@@ -694,7 +694,7 @@ impl Analyzer<'_, '_> {
                                     if self
                                         .assign_with_opts(
                                             &mut Default::default(),
-                                            &arg,
+                                            arg,
                                             prev,
                                             AssignOpts {
                                                 span,
@@ -703,7 +703,7 @@ impl Analyzer<'_, '_> {
                                         )
                                         .is_ok()
                                     {
-                                        debug!("Overrding `{}` with {}", name, dump_type_as_string(&self.cm, &arg));
+                                        debug!("Overrding `{}` with {}", name, dump_type_as_string(&self.cm, arg));
 
                                         *prev = arg.clone().generalize_lit();
                                         return Ok(());
@@ -714,11 +714,11 @@ impl Analyzer<'_, '_> {
                                 e.push(arg.clone());
 
                                 if let Type::Param(param) = param_ty.normalize() {
-                                    self.insert_inferred(span, inferred, &param, Cow::Borrowed(&arg), opts)?;
+                                    self.insert_inferred(span, inferred, param, Cow::Borrowed(arg), opts)?;
                                 }
 
                                 if let Type::Param(param) = arg.normalize() {
-                                    self.insert_inferred(span, inferred, &param, Cow::Owned(param_ty), opts)?;
+                                    self.insert_inferred(span, inferred, param, Cow::Owned(param_ty), opts)?;
                                 }
                             }
                         }
@@ -750,22 +750,20 @@ impl Analyzer<'_, '_> {
                     ..opts
                 };
 
-                match arr.elem_type.normalize() {
-                    Type::Param(TypeParam {
-                        constraint: Some(constraint),
+                if let Type::Param(TypeParam {
+                    constraint: Some(constraint),
+                    ..
+                }) = arr.elem_type.normalize()
+                {
+                    if let Type::Operator(Operator {
+                        op: TsTypeOperatorOp::KeyOf,
                         ..
-                    }) => match constraint.normalize() {
-                        Type::Operator(Operator {
-                            op: TsTypeOperatorOp::KeyOf,
-                            ..
-                        }) => {
-                            let mut arg = arg.clone();
-                            prevent_generalize(&mut arg);
-                            return self.infer_type(span, inferred, &arr.elem_type, &arg, opts);
-                        }
-                        _ => {}
-                    },
-                    _ => {}
+                    }) = constraint.normalize()
+                    {
+                        let mut arg = arg.clone();
+                        prevent_generalize(&mut arg);
+                        return self.infer_type(span, inferred, &arr.elem_type, &arg, opts);
+                    }
                 }
 
                 match arg {
@@ -843,64 +841,54 @@ impl Analyzer<'_, '_> {
                 Type::TypeLit(arg) => return self.infer_type_using_type_lit_and_type_lit(span, inferred, param, arg, opts),
 
                 Type::IndexedAccessType(arg_iat) => {
-                    let arg_obj_ty = self
-                        .expand(
-                            arg_iat.span,
-                            *arg_iat.obj_type.clone(),
-                            ExpandOpts {
-                                full: true,
-                                expand_union: true,
-                                ..Default::default()
-                            },
-                        )?
-                        .foldable();
+                    let arg_obj_ty = self.expand(
+                        arg_iat.span,
+                        *arg_iat.obj_type.clone(),
+                        ExpandOpts {
+                            full: true,
+                            expand_union: true,
+                            ..Default::default()
+                        },
+                    )?;
 
-                    // TODO(kdy1): PERF
+                    if let Some(arg_obj_ty) = arg_obj_ty.mapped() {
+                        if let TypeParam {
+                            constraint:
+                                Some(box Type::Operator(Operator {
+                                    op: TsTypeOperatorOp::KeyOf,
+                                    ty: box Type::Param(param_ty),
+                                    ..
+                                })),
+                            ..
+                        } = &arg_obj_ty.type_param
+                        {
+                            let mut new_lit = TypeLit {
+                                span: arg_iat.span,
+                                members: vec![],
+                                metadata: Default::default(),
+                            };
+                            for member in &param.members {
+                                match member {
+                                    TypeElement::Property(p) => {
+                                        let p = p.clone();
+                                        if let Some(type_ann) = &p.type_ann {
+                                            // TODO(kdy1): Change p.ty
 
-                    match arg_obj_ty {
-                        Type::Mapped(arg_obj_ty) => match &arg_obj_ty.type_param {
-                            TypeParam {
-                                constraint:
-                                    Some(box Type::Operator(Operator {
-                                        op: TsTypeOperatorOp::KeyOf,
-                                        ty: box Type::Param(param_ty),
-                                        ..
-                                    })),
-                                ..
-                            } => {
-                                let mut new_lit = TypeLit {
-                                    span: arg_iat.span,
-                                    members: vec![],
-                                    metadata: Default::default(),
-                                };
-                                for member in &param.members {
-                                    match member {
-                                        TypeElement::Property(p) => {
-                                            let p = p.clone();
-                                            if let Some(type_ann) = &p.type_ann {
-                                                // TODO(kdy1): Change p.ty
-
-                                                self.infer_type(span, inferred, &type_ann, arg, opts)?;
-                                            }
-
-                                            new_lit.members.push(TypeElement::Property(p));
+                                            self.infer_type(span, inferred, type_ann, arg, opts)?;
                                         }
-                                        // TODO(kdy1): Handle IndexSignature
-                                        _ => unimplemented!(
-                                            "calculating IndexAccessType for member other than property: member = {:?}",
-                                            member
-                                        ),
+
+                                        new_lit.members.push(TypeElement::Property(p));
+                                    }
+                                    // TODO(kdy1): Handle IndexSignature
+                                    _ => {
+                                        unimplemented!("calculating IndexAccessType for member other than property: member = {:?}", member)
                                     }
                                 }
-                                self.insert_inferred(span, inferred, &param_ty, Cow::Owned(Type::TypeLit(new_lit)), opts)?;
-
-                                return Ok(());
                             }
+                            self.insert_inferred(span, inferred, param_ty, Cow::Owned(Type::TypeLit(new_lit)), opts)?;
 
-                            _ => {}
-                        },
-
-                        _ => {}
+                            return Ok(());
+                        }
                     }
                 }
 
