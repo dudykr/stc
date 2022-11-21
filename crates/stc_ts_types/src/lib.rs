@@ -830,9 +830,8 @@ assert_eq_size!(Operator, [u8; 32]);
 
 impl TypeEq for Operator {
     fn type_eq(&self, other: &Self) -> bool {
-        match self.op {
-            TsTypeOperatorOp::Unique => return false,
-            _ => {}
+        if let TsTypeOperatorOp::Unique = self.op {
+            return false;
         }
 
         self.op == other.op && self.ty.type_eq(&other.ty)
@@ -1239,7 +1238,7 @@ impl Type {
         let has_bool = tys.iter().any(|ty| ty.is_bool());
         let has_num = tys.iter().any(|ty| ty.is_num());
 
-        if (has_str && has_bool) || (has_bool && has_num) || (has_num && has_str) {
+        if u32::from(has_str) + u32::from(has_bool) + u32::from(has_num) > 1 {
             return Type::never(span, Default::default());
         }
 

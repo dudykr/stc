@@ -36,10 +36,11 @@ impl Fold<Tuple> for LitGeneralizer {
     fn fold(&mut self, mut tuple: Tuple) -> Tuple {
         tuple = tuple.fold_children_with(self);
 
-        let has_rest = tuple.elems.iter().map(|element| &element.ty).any(|ty| match &**ty {
-            Type::Rest(..) => true,
-            _ => false,
-        });
+        let has_rest = tuple
+            .elems
+            .iter()
+            .map(|element| &element.ty)
+            .any(|ty| matches!(&**ty, Type::Rest(..)));
 
         if has_rest {
             // Handle rest
@@ -161,16 +162,13 @@ struct LitChecker {
 
 impl Visit<Type> for LitChecker {
     fn visit(&mut self, ty: &Type) {
-        match ty.normalize() {
-            Type::Lit(LitType { metadata, .. }) => {
-                if metadata.common.prevent_generalization {
-                    return;
-                }
-
-                self.found = true;
+        if let Type::Lit(LitType { metadata, .. }) = ty.normalize() {
+            if metadata.common.prevent_generalization {
                 return;
             }
-            _ => {}
+
+            self.found = true;
+            return;
         }
 
         ty.visit_children_with(self);

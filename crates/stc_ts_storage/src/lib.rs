@@ -128,10 +128,7 @@ impl TypeStore for Single<'_> {
         debug_assert_eq!(ctxt, self.id);
 
         match self.info.exports.private_vars.get(&orig_name).cloned() {
-            Some(ty) => match self.info.exports.vars.insert(id.sym().clone(), ty) {
-                Some(..) => {}
-                None => {}
-            },
+            Some(ty) => if let Some(..) = self.info.exports.vars.insert(id.sym().clone(), ty) {},
             None => self.report(ErrorKind::NoSuchVar { span, name: id }.into()),
         }
     }
