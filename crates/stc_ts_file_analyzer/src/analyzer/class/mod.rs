@@ -144,14 +144,11 @@ impl Analyzer<'_, '_> {
         self.record(p);
 
         if p.is_static {
-            match &p.key {
-                RPropName::Ident(i) => {
-                    if &*i.sym == "prototype" {
-                        self.storage
-                            .report(ErrorKind::StaticPropertyCannotBeNamedPrototype { span: i.span }.into())
-                    }
+            if let RPropName::Ident(i) = &p.key {
+                if &*i.sym == "prototype" {
+                    self.storage
+                        .report(ErrorKind::StaticPropertyCannotBeNamedPrototype { span: i.span }.into())
                 }
-                _ => {}
             }
         }
 
@@ -203,11 +200,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RPrivateProp) -> VResult<ClassProperty> {
-        match p.key.id.sym {
-            js_word!("constructor") => {
-                self.storage.report(ErrorKind::ConstructorIsKeyword { span: p.key.id.span }.into());
-            }
-            _ => {}
+        if let js_word!("constructor") = p.key.id.sym {
+            self.storage.report(ErrorKind::ConstructorIsKeyword { span: p.key.id.span }.into());
         }
 
         let key = Key::Private(p.key.clone().into());
@@ -249,13 +243,13 @@ impl Analyzer<'_, '_> {
             && !self.ctx.ignore_errors
             && self.ctx.in_class_with_super
             && c.body.is_some()
-            && match super_class.map(Type::normalize) {
+            && !matches!(
+                super_class.map(Type::normalize),
                 Some(Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
-                })) => false,
-                _ => true,
-            }
+                }))
+            )
         {
             let mut v = ConstructorSuperCallFinder::default();
             c.visit_with(&mut v);
