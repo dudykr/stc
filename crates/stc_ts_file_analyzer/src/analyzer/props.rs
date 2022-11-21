@@ -143,13 +143,12 @@ impl Analyzer<'_, '_> {
                                 Type::Lit(..) => {}
                                 Type::EnumVariant(..) => {}
                                 _ if ty.is_kwd(TsKeywordTypeKind::TsSymbolKeyword) || ty.is_unique_symbol() || ty.is_symbol() => {}
-                                _ => match mode {
-                                    ComputedPropMode::Interface => {
+                                _ => {
+                                    if let ComputedPropMode::Interface = mode {
                                         errors.push(ErrorKind::TS1169 { span: node.span }.into());
                                         check_for_symbol_form = false;
                                     }
-                                    _ => {}
-                                },
+                                }
                             }
                         }
                     }
@@ -214,10 +213,7 @@ impl Analyzer<'_, '_> {
 
         let ctx = Ctx {
             computed_prop_mode: ComputedPropMode::Object,
-            in_shorthand: match prop {
-                RProp::Shorthand(..) => true,
-                _ => false,
-            },
+            in_shorthand: matches!(prop, RProp::Shorthand(..)),
             ..self.ctx
         };
 
@@ -274,9 +270,8 @@ impl Analyzer<'_, '_> {
 
         let ty = ty.clone().generalize_lit();
 
-        match ty.normalize() {
-            Type::Function(..) => return false,
-            _ => {}
+        if let Type::Function(..) = ty.normalize() {
+            return false;
         }
         let ty = self.normalize(None, Cow::Owned(ty), Default::default());
         let ty = match ty {
@@ -323,12 +318,12 @@ impl Analyzer<'_, '_> {
                     return true;
                 }
 
-                match ty.normalize() {
-                    Type::Operator(Operator {
-                        op: TsTypeOperatorOp::KeyOf,
-                        ..
-                    }) => return true,
-                    _ => {}
+                if let Type::Operator(Operator {
+                    op: TsTypeOperatorOp::KeyOf,
+                    ..
+                }) = ty.normalize()
+                {
+                    return true;
                 }
 
                 false
@@ -344,7 +339,6 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     fn validate_prop_inner(&mut self, prop: &RProp, object_type: Option<&Type>) -> VResult<TypeElement> {
         let computed = match prop {
             RProp::KeyValue(ref kv) => match &kv.key {
@@ -393,10 +387,7 @@ impl Analyzer<'_, '_> {
 
             RProp::KeyValue(ref kv) => {
                 let key = kv.key.validate_with(self)?;
-                let computed = match kv.key {
-                    RPropName::Computed(_) => true,
-                    _ => false,
-                };
+                let computed = matches!(kv.key, RPropName::Computed(_));
 
                 let type_ann = object_type.and_then(|obj| {
                     self.access_property(span, &obj, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
@@ -424,10 +415,7 @@ impl Analyzer<'_, '_> {
             RProp::Getter(ref p) => p.validate_with(self)?,
             RProp::Setter(ref p) => {
                 let key = p.key.validate_with(self)?;
-                let computed = match p.key {
-                    RPropName::Computed(_) => true,
-                    _ => false,
-                };
+                let computed = matches!(p.key, RPropName::Computed(_));
                 let param_span = p.param.span();
                 let param = &p.param;
 
