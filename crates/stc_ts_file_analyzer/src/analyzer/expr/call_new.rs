@@ -869,6 +869,7 @@ impl Analyzer<'_, '_> {
         res
     }
 
+    #[allow(unused)]
     fn extract_callable_properties_of_class(
         &mut self,
         span: Span,
@@ -914,7 +915,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        return Ok(candidates);
+        Ok(candidates)
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
@@ -1066,7 +1067,7 @@ impl Analyzer<'_, '_> {
 
                 if self.key_matches(span, &p.key, prop, false) {
                     // TODO(kdy1): Remove useless clone
-                    let ty = *p.type_ann.clone().unwrap_or(box Type::any(m.span(), Default::default())).clone();
+                    let ty = *p.type_ann.clone().unwrap_or(box Type::any(m.span(), Default::default()));
                     let mut ty = self
                         .normalize(Some(span), Cow::Borrowed(&ty), Default::default())
                         .map(Cow::into_owned)
