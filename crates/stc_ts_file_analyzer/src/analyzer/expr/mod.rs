@@ -217,34 +217,26 @@ impl Analyzer<'_, '_> {
 
                 RExpr::Array(arr) => return arr.validate_with_args(self, (mode, type_args, type_ann)),
 
-                RExpr::Lit(RLit::Bool(v)) => {
-                    return Ok(Type::Lit(LitType {
-                        span: v.span,
-                        lit: RTsLit::Bool(v.clone()),
-                        metadata: Default::default(),
-                    }));
-                }
-                RExpr::Lit(RLit::Str(ref v)) => {
-                    return Ok(Type::Lit(LitType {
-                        span: v.span,
-                        lit: RTsLit::Str(v.clone()),
-                        metadata: Default::default(),
-                    }));
-                }
-                RExpr::Lit(RLit::Num(v)) => {
-                    return Ok(Type::Lit(LitType {
-                        span: v.span,
-                        lit: RTsLit::Number(v.clone()),
-                        metadata: Default::default(),
-                    }));
-                }
-                RExpr::Lit(RLit::BigInt(v)) => {
-                    return Ok(Type::Lit(LitType {
-                        span: v.span,
-                        lit: RTsLit::BigInt(v.clone()),
-                        metadata: Default::default(),
-                    }));
-                }
+                RExpr::Lit(RLit::Bool(v)) => Ok(Type::Lit(LitType {
+                    span: v.span,
+                    lit: RTsLit::Bool(v.clone()),
+                    metadata: Default::default(),
+                })),
+                RExpr::Lit(RLit::Str(ref v)) => Ok(Type::Lit(LitType {
+                    span: v.span,
+                    lit: RTsLit::Str(v.clone()),
+                    metadata: Default::default(),
+                })),
+                RExpr::Lit(RLit::Num(v)) => Ok(Type::Lit(LitType {
+                    span: v.span,
+                    lit: RTsLit::Number(v.clone()),
+                    metadata: Default::default(),
+                })),
+                RExpr::Lit(RLit::BigInt(v)) => Ok(Type::Lit(LitType {
+                    span: v.span,
+                    lit: RTsLit::BigInt(v.clone()),
+                    metadata: Default::default(),
+                })),
                 RExpr::Lit(RLit::Null(RNull { span })) => {
                     if self.ctx.in_export_default_expr {
                         // TODO(kdy1): strict mode
@@ -255,31 +247,27 @@ impl Analyzer<'_, '_> {
                         }));
                     }
 
-                    return Ok(Type::Keyword(KeywordType {
+                    Ok(Type::Keyword(KeywordType {
                         span: *span,
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         metadata: Default::default(),
-                    }));
+                    }))
                 }
-                RExpr::Lit(RLit::Regex(..)) => {
-                    return Ok(Type::Ref(Ref {
+                RExpr::Lit(RLit::Regex(..)) => Ok(Type::Ref(Ref {
+                    span,
+                    type_name: RTsEntityName::Ident(RIdent {
+                        node_id: NodeId::invalid(),
                         span,
-                        type_name: RTsEntityName::Ident(RIdent {
-                            node_id: NodeId::invalid(),
-                            span,
-                            sym: js_word!("RegExp"),
-                            optional: false,
-                        }),
-                        type_args: None,
-                        metadata: Default::default(),
-                    }));
-                }
+                        sym: js_word!("RegExp"),
+                        optional: false,
+                    }),
+                    type_args: None,
+                    metadata: Default::default(),
+                })),
 
                 RExpr::Paren(RParenExpr { ref expr, .. }) => expr.validate_with_args(self, (mode, type_args, type_ann)),
 
-                RExpr::Tpl(ref e) => {
-                    return e.validate_with_args(self, type_ann);
-                }
+                RExpr::Tpl(ref e) => e.validate_with_args(self, type_ann),
 
                 RExpr::TsNonNull(RTsNonNullExpr { span, ref expr, .. }) => {
                     let mut ty = expr.validate_with_args(self, (mode, type_args, type_ann))?.remove_falsy();
@@ -287,28 +275,24 @@ impl Analyzer<'_, '_> {
                     Ok(ty)
                 }
 
-                RExpr::Object(e) => {
-                    return e.validate_with_args(self, type_ann);
-                }
+                RExpr::Object(e) => e.validate_with_args(self, type_ann),
 
                 // https://github.com/Microsoft/TypeScript/issues/26959
                 RExpr::Yield(..) => {
                     e.visit_children_with(self);
-                    return Ok(Type::any(span, Default::default()));
+                    Ok(Type::any(span, Default::default()))
                 }
 
                 RExpr::Await(e) => e.validate_with_args(self, type_ann),
 
                 RExpr::Class(RClassExpr { ref ident, ref class, .. }) => {
                     self.scope.this_class_name = ident.as_ref().map(|i| i.into());
-                    return Ok(class.validate_with(self)?.into());
+                    Ok(class.validate_with(self)?.into())
                 }
 
                 RExpr::Arrow(ref e) => return Ok(e.validate_with_args(self, type_ann)?.into()),
 
-                RExpr::Fn(f) => {
-                    return Ok(f.validate_with_args(self, type_ann)?.into());
-                }
+                RExpr::Fn(f) => Ok(f.validate_with_args(self, type_ann)?.into()),
 
                 RExpr::Member(ref expr) => {
                     // Foo.a
@@ -319,16 +303,14 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    return self.type_of_member_expr(expr, mode);
+                    self.type_of_member_expr(expr, mode)
                 }
 
-                RExpr::SuperProp(ref expr) => {
-                    return self.type_of_super_prop_expr(expr, mode);
-                }
+                RExpr::SuperProp(ref expr) => self.type_of_super_prop_expr(expr, mode),
 
-                RExpr::MetaProp(e) => return e.validate_with(self),
+                RExpr::MetaProp(e) => e.validate_with(self),
 
-                RExpr::Invalid(ref i) => return Ok(Type::any(i.span(), Default::default())),
+                RExpr::Invalid(ref i) => Ok(Type::any(i.span(), Default::default())),
 
                 RExpr::OptChain(expr) => expr.validate_with_args(self, type_ann),
 
