@@ -1058,9 +1058,7 @@ impl Analyzer<'_, '_> {
                                     ignore_not_following_for.push(name.unwrap().clone());
 
                                     for (span, is_abstract) in spans_for_error {
-                                        if report_error_for_abstract && is_abstract {
-                                            self.storage.report(ErrorKind::AbstractAndConcreteIsMixed { span }.into())
-                                        } else if !report_error_for_abstract && !is_abstract {
+                                        if (report_error_for_abstract && is_abstract) || (!report_error_for_abstract && !is_abstract) {
                                             self.storage.report(ErrorKind::AbstractAndConcreteIsMixed { span }.into())
                                         }
                                     }
