@@ -3179,7 +3179,7 @@ impl Analyzer<'_, '_> {
             return false;
         }
 
-        self.assign(span, &mut Default::default(), &arg, param).is_ok()
+        self.assign(span, &mut Default::default(), arg, param).is_ok()
     }
 
     /// This method return [Err] if call is invalid
