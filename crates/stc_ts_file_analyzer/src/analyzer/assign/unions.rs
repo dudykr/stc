@@ -171,7 +171,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// Expands `boolean` to `true | false`.
-    fn expand_union_for_assignment<'a>(&mut self, span: Span, t: &'a Type) -> Option<Union> {
+    fn expand_union_for_assignment(&mut self, span: Span, t: &Type) -> Option<Union> {
         let t = self.normalize(Some(span), Cow::Borrowed(t), Default::default()).ok()?;
 
         match t.normalize() {

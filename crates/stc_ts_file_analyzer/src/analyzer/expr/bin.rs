@@ -319,7 +319,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                match c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match *l_ty {
+                if let Some((Ok(name), ty)) = c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match *l_ty {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
@@ -329,21 +329,18 @@ impl Analyzer<'_, '_> {
                     }
                     _ => None,
                 }) {
-                    Some((Ok(name), ty)) => {
-                        let ty = ty.clone().freezed();
-                        if is_eq {
-                            self.add_deep_type_fact(span, name.clone(), ty.clone(), false);
-                        } else {
-                            self.add_deep_type_fact(span, name.clone(), ty.clone(), true);
-                        }
+                    let ty = ty.clone().freezed();
+                    if is_eq {
+                        self.add_deep_type_fact(span, name, ty, false);
+                    } else {
+                        self.add_deep_type_fact(span, name, ty, true);
                     }
-                    _ => {}
                 }
 
                 self.add_type_facts_for_opt_chains(span, &left, &right, &lt, &rt)
                     .report(&mut self.storage);
 
-                match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
+                if let Some((l, r_ty)) = c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
                     (
                         RExpr::Ident(RIdent {
                             sym: js_word!("undefined"),
@@ -355,25 +352,22 @@ impl Analyzer<'_, '_> {
 
                     (l, r) => Some((extract_name_for_assignment(l, op == op!("==="))?, r_ty)),
                 }) {
-                    Some((l, r_ty)) => {
-                        if self.ctx.in_cond {
-                            let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
-                            prevent_generalize(&mut r);
-                            r.make_clone_cheap();
+                    if self.ctx.in_cond {
+                        let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
+                        prevent_generalize(&mut r);
+                        r.make_clone_cheap();
 
-                            if op == op!("===") {
-                                self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(r.clone());
+                        if op == op!("===") {
+                            self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(r.clone());
 
-                                self.add_deep_type_fact(span, name, r, true);
-                            } else if !is_eq {
-                                // Remove from union
-                                self.cur_facts.true_facts.excludes.entry(name.clone()).or_default().push(r.clone());
+                            self.add_deep_type_fact(span, name, r, true);
+                        } else if !is_eq {
+                            // Remove from union
+                            self.cur_facts.true_facts.excludes.entry(name.clone()).or_default().push(r.clone());
 
-                                self.add_deep_type_fact(span, name, r, false);
-                            }
+                            self.add_deep_type_fact(span, name, r, false);
                         }
                     }
-                    _ => {}
                 }
             }
 
@@ -540,17 +534,17 @@ impl Analyzer<'_, '_> {
                 // Rule:
                 //  - null is invalid operand
                 //  - undefined is invalid operand
-                if c.both(|(_, ty)| match *ty {
-                    Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                        ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsNullKeyword,
-                        ..
-                    }) => true,
-
-                    _ => false,
+                if c.both(|(_, ty)| {
+                    matches!(
+                        *ty,
+                        Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            ..
+                        }) | Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsNullKeyword,
+                            ..
+                        })
+                    )
                 }) {
                     return Err(ErrorKind::TS2365 { span }.into());
                 }
@@ -600,7 +594,7 @@ impl Analyzer<'_, '_> {
                     let rt = rt.normalize();
 
                     if !reported_null_or_undefined {
-                        self.report_possibly_null_or_undefined(lt.span(), &lt).report(&mut self.storage);
+                        self.report_possibly_null_or_undefined(lt.span(), lt).report(&mut self.storage);
                     }
 
                     if lt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
