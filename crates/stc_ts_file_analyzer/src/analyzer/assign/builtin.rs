@@ -159,7 +159,7 @@ impl Analyzer<'_, '_> {
             if let Some(r_elem) = unwrap_ref_with_single_arg(r, "ReadonlyArray") {
                 return Some(self.assign_with_opts(
                     data,
-                    &l,
+                    l,
                     &Type::Array(Array {
                         span: r.span(),
                         elem_type: box r_elem.clone(),
@@ -219,7 +219,7 @@ impl Analyzer<'_, '_> {
                 if let Ok(()) = self.assign_with_opts(
                     data,
                     l,
-                    &r,
+                    r,
                     AssignOpts {
                         may_unwrap_promise: false,
                         ..opts
