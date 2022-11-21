@@ -250,13 +250,12 @@ impl Fold<KeywordType> for TypeFactsHandler<'_, '_, '_> {
             let has_any = keyword_types.iter().any(|&(fact, _)| self.facts.contains(fact));
 
             if has_any {
-                let allowed_keywords = keyword_types
+                if !keyword_types
                     .iter()
                     .filter(|&&(fact, _)| self.facts.contains(fact))
                     .map(|v| v.1)
-                    .collect::<Vec<_>>();
-
-                if !allowed_keywords.contains(&ty.kind) {
+                    .any(|x| x == ty.kind)
+                {
                     return KeywordType {
                         span: ty.span,
                         kind: TsKeywordTypeKind::TsNeverKeyword,

@@ -30,7 +30,7 @@ impl Analyzer<'_, '_> {
         let ty = match ty.normalize() {
             Type::Mapped(..) => self
                 .normalize(Some(span), Cow::Borrowed(ty), Default::default())
-                .unwrap_or(Cow::Borrowed(&ty)),
+                .unwrap_or(Cow::Borrowed(ty)),
             _ => Cow::Borrowed(ty),
         };
 
