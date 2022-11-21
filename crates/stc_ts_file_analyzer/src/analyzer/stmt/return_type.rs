@@ -549,145 +549,140 @@ impl Fold<Type> for KeyInliner<'_, '_, '_> {
 
         ty = ty.fold_children_with(self);
 
-        match ty {
-            Type::IndexedAccessType(IndexedAccessType {
-                span,
-                readonly,
-                ref obj_type,
-                index_type:
-                    box Type::Operator(Operator {
-                        span: op_span,
-                        op: TsTypeOperatorOp::KeyOf,
-                        ty: ref index_type,
-                        metadata: op_metadata,
-                    }),
-                metadata,
-            }) => {
-                let ctx = Ctx {
-                    preserve_ref: false,
-                    ignore_expand_prevention_for_top: true,
-                    ..self.analyzer.ctx
-                };
+        if let Type::IndexedAccessType(IndexedAccessType {
+            span,
+            readonly,
+            ref obj_type,
+            index_type:
+                box Type::Operator(Operator {
+                    span: op_span,
+                    op: TsTypeOperatorOp::KeyOf,
+                    ty: ref index_type,
+                    metadata: op_metadata,
+                }),
+            metadata,
+        }) = ty
+        {
+            let ctx = Ctx {
+                preserve_ref: false,
+                ignore_expand_prevention_for_top: true,
+                ..self.analyzer.ctx
+            };
 
-                // TODO(kdy1): Handle error.
-                let index_ty = self
-                    .analyzer
-                    .with_ctx(ctx)
-                    .expand(
-                        span,
-                        *index_type.clone(),
-                        ExpandOpts {
-                            full: true,
-                            expand_union: true,
-                            ..Default::default()
-                        },
-                    )
-                    .unwrap_or_else(|_| *index_type.clone());
+            // TODO(kdy1): Handle error.
+            let index_ty = self
+                .analyzer
+                .with_ctx(ctx)
+                .expand(
+                    span,
+                    *index_type.clone(),
+                    ExpandOpts {
+                        full: true,
+                        expand_union: true,
+                        ..Default::default()
+                    },
+                )
+                .unwrap_or_else(|_| *index_type.clone());
 
-                if obj_type.type_eq(&index_type) {
-                    // declare type S2 = {
-                    //     a: string;
-                    //     b: string;
-                    // };
-                    // `S2[keyof S2]`;
+            if obj_type.type_eq(index_type) {
+                // declare type S2 = {
+                //     a: string;
+                //     b: string;
+                // };
+                // `S2[keyof S2]`;
 
-                    // TODO(kdy1): PERF
-                    match index_ty.foldable() {
-                        Type::TypeLit(obj) => {
-                            let mut types: Vec<Type> = vec![];
-                            for member in obj.members {
-                                match member {
-                                    TypeElement::Call(_) => {
-                                        unimplemented!("Call signature in S[keyof S]")
-                                    }
-                                    TypeElement::Constructor(_) => {
-                                        unimplemented!("Constructor signature in S[keyof S]")
-                                    }
-                                    TypeElement::Property(p) => {
-                                        if p.key.is_computed() {
-                                            unimplemented!("Computed key mixed with S[keyof S]")
-                                        }
+                // TODO(kdy1): PERF
+                if let Type::TypeLit(obj) = index_ty.foldable() {
+                    let mut types: Vec<Type> = vec![];
+                    for member in obj.members {
+                        match member {
+                            TypeElement::Call(_) => {
+                                unimplemented!("Call signature in S[keyof S]")
+                            }
+                            TypeElement::Constructor(_) => {
+                                unimplemented!("Constructor signature in S[keyof S]")
+                            }
+                            TypeElement::Property(p) => {
+                                if p.key.is_computed() {
+                                    unimplemented!("Computed key mixed with S[keyof S]")
+                                }
 
-                                        if let Some(ty) = p.type_ann {
-                                            if types.iter().all(|previous| !previous.type_eq(&ty)) {
-                                                types.push(*ty);
-                                            }
-                                        }
-                                    }
-                                    TypeElement::Method(_) => {
-                                        unimplemented!("Method property in S[keyof S]")
-                                    }
-                                    TypeElement::Index(_) => {
-                                        unimplemented!("Index signature in S[keyof S]")
+                                if let Some(ty) = p.type_ann {
+                                    if types.iter().all(|previous| !previous.type_eq(&ty)) {
+                                        types.push(*ty);
                                     }
                                 }
                             }
-                            let ty = Type::union(types);
-
-                            return ty;
+                            TypeElement::Method(_) => {
+                                unimplemented!("Method property in S[keyof S]")
+                            }
+                            TypeElement::Index(_) => {
+                                unimplemented!("Index signature in S[keyof S]")
+                            }
                         }
-                        _ => {}
                     }
-                } else {
-                    // declare type S2 = {
-                    //     a: string;
-                    //     b: string;
-                    // };
-                    // `T[keyof S2]`;
-                    // =>
-                    // `T["a" | "b"]`
+                    let ty = Type::union(types);
 
-                    // TODO(kdy1): PERF
-                    if let Some(obj) = index_ty.type_lit() {
-                        let mut types: Vec<Type> = vec![];
-                        for member in obj.members {
-                            match member {
-                                TypeElement::Call(_) => {
-                                    unimplemented!("Call signature in T[keyof S]")
+                    return ty;
+                }
+            } else {
+                // declare type S2 = {
+                //     a: string;
+                //     b: string;
+                // };
+                // `T[keyof S2]`;
+                // =>
+                // `T["a" | "b"]`
+
+                // TODO(kdy1): PERF
+                if let Some(obj) = index_ty.type_lit() {
+                    let mut types: Vec<Type> = vec![];
+                    for member in obj.members {
+                        match member {
+                            TypeElement::Call(_) => {
+                                unimplemented!("Call signature in T[keyof S]")
+                            }
+                            TypeElement::Constructor(_) => {
+                                unimplemented!("Constructor signature in T[keyof S]")
+                            }
+
+                            TypeElement::Index(_) => {
+                                unimplemented!("Index signature in T[keyof S]")
+                            }
+
+                            TypeElement::Property(PropertySignature { key, .. }) | TypeElement::Method(MethodSignature { key, .. }) => {
+                                if key.is_computed() {
+                                    unimplemented!("Computed key mixed with T[keyof S]");
                                 }
-                                TypeElement::Constructor(_) => {
-                                    unimplemented!("Constructor signature in T[keyof S]")
-                                }
 
-                                TypeElement::Index(_) => {
-                                    unimplemented!("Index signature in T[keyof S]")
-                                }
-
-                                TypeElement::Property(PropertySignature { key, .. }) | TypeElement::Method(MethodSignature { key, .. }) => {
-                                    if key.is_computed() {
-                                        unimplemented!("Computed key mixed with T[keyof S]");
-                                    }
-
-                                    if let Key::Normal { span: i_span, sym: key } = key {
-                                        debug_assert_eq!(i_span.ctxt, SyntaxContext::empty());
-                                        let ty = Type::Lit(LitType {
+                                if let Key::Normal { span: i_span, sym: key } = key {
+                                    debug_assert_eq!(i_span.ctxt, SyntaxContext::empty());
+                                    let ty = Type::Lit(LitType {
+                                        span: i_span,
+                                        lit: RTsLit::Str(RStr {
                                             span: i_span,
-                                            lit: RTsLit::Str(RStr {
-                                                span: i_span,
-                                                value: key.clone(),
-                                                raw: None,
-                                            }),
-                                            metadata: Default::default(),
-                                        });
+                                            value: key.clone(),
+                                            raw: None,
+                                        }),
+                                        metadata: Default::default(),
+                                    });
 
-                                        if types.iter().all(|previous| !previous.type_eq(&ty)) {
-                                            types.push(ty);
-                                        }
+                                    if types.iter().all(|previous| !previous.type_eq(&ty)) {
+                                        types.push(ty);
                                     }
                                 }
                             }
                         }
-                        return Type::IndexedAccessType(IndexedAccessType {
-                            span,
-                            readonly,
-                            obj_type: obj_type.clone(),
-                            index_type: box Type::union(types),
-                            metadata,
-                        });
                     }
+                    return Type::IndexedAccessType(IndexedAccessType {
+                        span,
+                        readonly,
+                        obj_type: obj_type.clone(),
+                        index_type: box Type::union(types),
+                        metadata,
+                    });
                 }
             }
-            _ => {}
         }
 
         ty
