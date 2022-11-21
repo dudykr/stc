@@ -54,20 +54,17 @@ impl Analyzer<'_, '_> {
 
             if cfg!(feature = "fastpath") && l_params.len() == 1 && l_params[0].ty.is_type_param() && l_params[0].ty.span().is_dummy() {
                 if let Some(l_ret_ty) = l_ret_ty {
-                    if let Some(r_ret_ty) = unwrap_ref_with_single_arg(&r_ret_ty, "Promise") {
-                        match l_ret_ty.normalize() {
-                            Type::Union(l_ret_ty) => {
-                                // Exact match
-                                if l_ret_ty.types.len() == 4
-                                    && l_ret_ty.types[0].is_type_param()
-                                    && unwrap_ref_with_single_arg(&l_ret_ty.types[1], "PromiseLike").type_eq(&Some(&l_ret_ty.types[0]))
-                                    && l_ret_ty.types[2].is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                                    && l_ret_ty.types[3].is_kwd(TsKeywordTypeKind::TsNullKeyword)
-                                {
-                                    return Ok(());
-                                }
+                    if let Some(r_ret_ty) = unwrap_ref_with_single_arg(r_ret_ty, "Promise") {
+                        if let Type::Union(l_ret_ty) = l_ret_ty.normalize() {
+                            // Exact match
+                            if l_ret_ty.types.len() == 4
+                                && l_ret_ty.types[0].is_type_param()
+                                && unwrap_ref_with_single_arg(&l_ret_ty.types[1], "PromiseLike").type_eq(&Some(&l_ret_ty.types[0]))
+                                && l_ret_ty.types[2].is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                                && l_ret_ty.types[3].is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                            {
+                                return Ok(());
                             }
-                            _ => {}
                         }
                     }
                 }
@@ -178,7 +175,7 @@ impl Analyzer<'_, '_> {
                         .iter()
                         .zip(rt.params.iter())
                         .filter(|(l, r)| match (&l.constraint, &r.constraint) {
-                            (None, Some(..)) => return false,
+                            (None, Some(..)) => false,
                             // TODO(kdy1): Use extends()
                             _ => true,
                         })
@@ -238,7 +235,7 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 });
 
-                let map = self.infer_type_with_types(span, &*lt.params, &lf, &rf, InferTypeOpts { ..Default::default() })?;
+                let map = self.infer_type_with_types(span, &lt.params, &lf, &rf, InferTypeOpts { ..Default::default() })?;
                 let mut new_l_params = self
                     .expand_type_params(&map, l_params.to_vec(), Default::default())
                     .context("tried to expand type parameters of lhs as a step of function assignment")?;
@@ -283,7 +280,7 @@ impl Analyzer<'_, '_> {
 
                 let map = self.infer_type_with_types(
                     span,
-                    &*rt.params,
+                    &rt.params,
                     &rf,
                     &lf,
                     InferTypeOpts {
@@ -380,7 +377,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        return Ok(());
+        Ok(())
     }
 
     /// ```ts
@@ -760,8 +757,8 @@ impl Analyzer<'_, '_> {
                     if opts.allow_assignment_to_param {
                         if let Ok(()) = self.assign_param(
                             data,
-                            &rp,
-                            &lp,
+                            rp,
+                            lp,
                             AssignOpts {
                                 allow_unknown_type: true,
                                 ..opts
