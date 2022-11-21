@@ -116,13 +116,13 @@ impl Analyzer<'_, '_> {
         let type_forms = param.types.iter().map(TypeForm::from).collect_vec();
         let arg_form = TypeForm::from(arg);
 
-        let matched_paths = type_forms.iter().map(|param| compare_type_forms(&param, &arg_form)).collect_vec();
+        let matched_paths = type_forms.iter().map(|param| compare_type_forms(param, &arg_form)).collect_vec();
         let max = matched_paths.iter().max_by(|a, b| max_path(a, b));
 
         if let Some(max) = max {
             for (idx, (param, type_path)) in param.types.iter().zip(matched_paths.iter()).enumerate() {
                 if type_path == max {
-                    self.infer_type(span, inferred, &param, arg, opts)?;
+                    self.infer_type(span, inferred, param, arg, opts)?;
                 }
             }
 
@@ -185,13 +185,10 @@ impl Analyzer<'_, '_> {
 
         info!("Inferred {} as {}", name, dump_type_as_string(&self.cm, &ty));
 
-        match ty.normalize() {
-            Type::Param(ty) => {
-                if name == ty.name {
-                    return Ok(());
-                }
+        if let Type::Param(ty) = ty.normalize() {
+            if name == ty.name {
+                return Ok(());
             }
-            _ => {}
         }
 
         if ty.is_any() && self.is_implicitly_typed(&ty) {
@@ -204,7 +201,7 @@ impl Analyzer<'_, '_> {
                 Entry::Vacant(e) => {
                     e.insert(Type::Param(TypeParam {
                         span: ty.span(),
-                        name: name.clone(),
+                        name,
                         constraint: None,
                         default: None,
                         metadata: TypeParamMetadata {
@@ -221,9 +218,8 @@ impl Analyzer<'_, '_> {
 
         match inferred.type_params.entry(name.clone()) {
             Entry::Occupied(mut e) => {
-                match e.get() {
-                    InferredType::Union(_) => return Ok(()),
-                    _ => {}
+                if let InferredType::Union(_) = e.get() {
+                    return Ok(());
                 }
 
                 if ty.is_union_type() {
@@ -241,7 +237,7 @@ impl Analyzer<'_, '_> {
                         }
 
                         if !e.is_empty() && !opts.append_type_as_union {
-                            inferred.errored.insert(name.clone());
+                            inferred.errored.insert(name);
                             return Ok(());
                         }
 
@@ -358,7 +354,7 @@ impl Analyzer<'_, '_> {
                     return Some(self.infer_type(
                         span,
                         inferred,
-                        &elem_type,
+                        elem_type,
                         &type_args.params[0],
                         InferTypeOpts {
                             append_type_as_union: true,
