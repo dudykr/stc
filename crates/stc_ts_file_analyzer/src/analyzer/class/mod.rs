@@ -1212,9 +1212,8 @@ impl Analyzer<'_, '_> {
         }) {
             Ok(ty) => ty,
             Err(err) => {
-                match *err {
-                    ErrorKind::TS2585 { span } => Err(ErrorKind::TS2585 { span })?,
-                    _ => {}
+                if let ErrorKind::TS2585 { span } = *err {
+                    Err(ErrorKind::TS2585 { span })?
                 }
 
                 errors.push(err);
@@ -1249,11 +1248,7 @@ impl Analyzer<'_, '_> {
     }
 
     /// TODO(kdy1): Implement this.
-    fn report_errors_for_confliicting_interfaces(&mut self, interfaces: &[TsExpr]) {
-        if self.is_builtin {
-            return;
-        }
-    }
+    fn report_errors_for_confliicting_interfaces(&mut self, interfaces: &[TsExpr]) {}
 
     fn report_errors_for_wrong_impls_of_class(&mut self, name: Option<Span>, class: &ClassDef) {
         if self.is_builtin {
@@ -1311,13 +1306,9 @@ impl Analyzer<'_, '_> {
                                 })
                                 .collect(),
                         }
-                        .into()
                     } else {
-                        match err {
-                            ErrorKind::MissingFields { .. } => {
-                                return ErrorKind::ClassIncorrectlyImplementsInterface { span: parent.span() }.into()
-                            }
-                            _ => {}
+                        if let ErrorKind::MissingFields { .. } = err {
+                            return ErrorKind::ClassIncorrectlyImplementsInterface { span: parent.span() };
                         }
                         err
                     }
