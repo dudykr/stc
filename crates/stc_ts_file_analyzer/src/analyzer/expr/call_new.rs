@@ -2239,7 +2239,7 @@ impl Analyzer<'_, '_> {
                 (c, res)
             })
             .collect::<Vec<_>>();
-        callable.sort_by_key(|(_, res)| res.clone());
+        callable.sort_by_key(|(_, res)| *res);
 
         if candidates.is_empty() {
             return Ok(None);
@@ -2366,23 +2366,21 @@ impl Analyzer<'_, '_> {
 
             if type_ann.is_none() && self.ctx.reevaluating_call_or_new {
                 for at in spread_arg_types {
-                    match at.ty.normalize() {
-                        Type::Function(Function {
-                            type_params: Some(type_params),
-                            ..
-                        }) => {
-                            for tp in type_params.params.iter() {
-                                default_unknown_map.insert(
-                                    tp.name.clone(),
-                                    Type::Keyword(KeywordType {
-                                        span: tp.span,
-                                        kind: TsKeywordTypeKind::TsUnknownKeyword,
-                                        metadata: Default::default(),
-                                    }),
-                                );
-                            }
+                    if let Type::Function(Function {
+                        type_params: Some(type_params),
+                        ..
+                    }) = at.ty.normalize()
+                    {
+                        for tp in type_params.params.iter() {
+                            default_unknown_map.insert(
+                                tp.name.clone(),
+                                Type::Keyword(KeywordType {
+                                    span: tp.span,
+                                    kind: TsKeywordTypeKind::TsUnknownKeyword,
+                                    metadata: Default::default(),
+                                }),
+                            );
                         }
-                        _ => {}
                     }
                 }
             }
@@ -2422,10 +2420,10 @@ impl Analyzer<'_, '_> {
 
             // Assert deep clone
             if cfg!(debug_assertions) {
-                let _ = type_args.clone();
-                let _ = type_params.clone();
+                let _ = type_args.cloned();
+                let _ = type_params.to_vec();
                 let _ = params.clone();
-                let _ = spread_arg_types.clone();
+                let _ = spread_arg_types.to_vec();
             }
 
             debug!("Inferring arg types for a call");

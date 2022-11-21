@@ -1206,7 +1206,7 @@ impl Analyzer<'_, '_> {
         }
 
         // Class definition ended with `foo();`
-        for (span, is_constructor) in replace(&mut spans, vec![]) {
+        for (span, is_constructor) in std::mem::take(&mut spans) {
             if is_constructor {
                 errors.push(ErrorKind::ConstructorImplMissingOrNotFollowedByDecl { span }.into());
             } else {
