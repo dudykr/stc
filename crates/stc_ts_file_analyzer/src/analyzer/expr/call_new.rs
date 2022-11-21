@@ -3119,15 +3119,12 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match new_ty.normalize() {
-            Type::ClassDef(def) => {
-                return Ok(Type::Class(Class {
-                    span,
-                    def: box def.clone(),
-                    metadata: Default::default(),
-                }))
-            }
-            _ => {}
+        if let Type::ClassDef(def) = new_ty.normalize() {
+            return Ok(Type::Class(Class {
+                span,
+                def: box def.clone(),
+                metadata: Default::default(),
+            }));
         }
 
         Ok(new_ty.into_owned())
@@ -3138,20 +3135,17 @@ impl Analyzer<'_, '_> {
         match new_ty.normalize() {
             Type::Keyword(..) | Type::Lit(..) => {}
             _ => {
-                if let Some(previous_types) = self
-                    .find_var_type(&var_name.clone().into(), TypeOfMode::RValue)
-                    .map(Cow::into_owned)
-                {
+                if let Some(previous_types) = self.find_var_type(&var_name.clone(), TypeOfMode::RValue).map(Cow::into_owned) {
                     let narrowed_ty = self.narrow_with_predicate(span, &previous_types, new_ty.clone())?.freezed();
 
-                    self.add_type_fact(&var_name.into(), narrowed_ty, new_ty.clone());
+                    self.add_type_fact(&var_name, narrowed_ty, new_ty.clone());
                     return;
                 }
             }
         }
 
         let new_ty = new_ty.clone().freezed();
-        self.add_type_fact(&var_name.into(), new_ty.clone(), new_ty);
+        self.add_type_fact(&var_name, new_ty.clone(), new_ty);
     }
 
     pub(crate) fn validate_type_args_count(
