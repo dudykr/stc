@@ -114,25 +114,23 @@ impl Analyzer<'_, '_> {
             return Some(true);
         }
 
-        if child.type_eq(&parent) {
+        if child.type_eq(parent) {
             return Some(true);
         }
 
         debug!(
             "[generic/extends] Checking if {} extends {}",
-            dump_type_as_string(&self.cm, &child),
-            dump_type_as_string(&self.cm, &parent),
+            dump_type_as_string(&self.cm, child),
+            dump_type_as_string(&self.cm, parent),
         );
 
-        match child {
-            Type::Param(TypeParam {
-                constraint: Some(child), ..
-            }) => {
-                if let Some(v) = self.extends(span, child, parent, opts) {
-                    return Some(v);
-                }
+        if let Type::Param(TypeParam {
+            constraint: Some(child), ..
+        }) = child
+        {
+            if let Some(v) = self.extends(span, child, parent, opts) {
+                return Some(v);
             }
-            _ => {}
         }
 
         match child {
@@ -159,9 +157,8 @@ impl Analyzer<'_, '_> {
                     )
                     .unwrap()
                     .freezed();
-                match child.normalize() {
-                    Type::Ref(..) => return None,
-                    _ => {}
+                if let Type::Ref(..) = child.normalize() {
+                    return None;
                 }
 
                 return self.extends(span, &child, parent, opts);
@@ -311,21 +308,18 @@ impl Analyzer<'_, '_> {
                 }
                 _ => {
                     if let Some(super_class) = &child_class.super_class {
-                        if (&**super_class).type_eq(parent) {
+                        if (**super_class).type_eq(parent) {
                             return Some(true);
                         }
                     }
 
-                    match parent {
-                        Type::ClassDef(parent) => {
-                            // Check for grand parent
-                            if let Some(grand_parent) = &parent.super_class {
-                                if let Some(false) = self.extends(span, child, grand_parent, opts) {
-                                    return Some(false);
-                                }
+                    if let Type::ClassDef(parent) = parent {
+                        // Check for grand parent
+                        if let Some(grand_parent) = &parent.super_class {
+                            if let Some(false) = self.extends(span, child, grand_parent, opts) {
+                                return Some(false);
                             }
                         }
-                        _ => {}
                     }
                 }
             },
