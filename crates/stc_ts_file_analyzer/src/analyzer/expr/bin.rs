@@ -1017,7 +1017,15 @@ impl Analyzer<'_, '_> {
     /// Note that `C extends D` and `D extends C` are true because both of `C`
     /// and `D` are empty classes.
     fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult<Type> {
-        let mut orig_ty = self.normalize(Some(span), Cow::Borrowed(orig_ty), Default::default())?;
+        let mut orig_ty = self.normalize(
+            Some(span),
+            Cow::Borrowed(orig_ty),
+            NormalizeTypeOpts {
+                preserve_global_this: true,
+                preserve_union: true,
+                ..Default::default()
+            },
+        )?;
         orig_ty.make_clone_cheap();
 
         let _stack = stack::track(span)?;
