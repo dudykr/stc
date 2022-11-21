@@ -2181,12 +2181,12 @@ impl Analyzer<'_, '_> {
                 })
                 .unwrap_or(span);
 
-            return Err(ErrorKind::ExpectedNArgsButGotM {
+            Err(ErrorKind::ExpectedNArgsButGotM {
                 span,
                 min: min_param,
                 max: max_param,
             }
-            .into());
+            .into())
         }
     }
 

@@ -526,7 +526,7 @@ impl Analyzer<'_, '_> {
                     type_params,
                     params,
                     box declared_ret_ty
-                        .or_else(|| inferred_ret_ty)
+                        .or(inferred_ret_ty)
                         .unwrap_or_else(|| Type::any(key_span, Default::default())),
                 ))
             },

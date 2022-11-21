@@ -3810,40 +3810,38 @@ impl Analyzer<'_, '_> {
 
         let mut errors = Errors::default();
 
-        let mut is_obj_opt_chain = false;
+        let is_obj_opt_chain;
         let mut should_be_optional = false;
-        let mut obj_ty = match *obj {
-            ref obj => {
-                is_obj_opt_chain = is_obj_opt_chaining(&obj);
+        let mut obj_ty = {
+            is_obj_opt_chain = is_obj_opt_chaining(&obj);
 
-                let obj_ctx = Ctx {
-                    allow_module_var: true,
-                    in_opt_chain: is_obj_opt_chain,
-                    should_store_truthy_for_access: self.ctx.in_cond && !is_obj_opt_chain,
-                    ..self.ctx
-                };
+            let obj_ctx = Ctx {
+                allow_module_var: true,
+                in_opt_chain: is_obj_opt_chain,
+                should_store_truthy_for_access: self.ctx.in_cond && !is_obj_opt_chain,
+                ..self.ctx
+            };
 
-                let obj_ty = match obj.validate_with_default(&mut *self.with_ctx(obj_ctx)) {
-                    Ok(ty) => ty,
-                    Err(err) => {
-                        // Recover error if possible.
-                        if computed {
-                            errors.push(err);
-                            Type::any(span, Default::default())
-                        } else {
-                            return Err(err);
-                        }
+            let obj_ty = match obj.validate_with_default(&mut *self.with_ctx(obj_ctx)) {
+                Ok(ty) => ty,
+                Err(err) => {
+                    // Recover error if possible.
+                    if computed {
+                        errors.push(err);
+                        Type::any(span, Default::default())
+                    } else {
+                        return Err(err);
                     }
-                };
-
-                obj_ty.assert_valid();
-
-                if is_obj_opt_chain {
-                    should_be_optional = self.is_obj_optional(&obj_ty)?;
                 }
+            };
 
-                obj_ty
+            obj_ty.assert_valid();
+
+            if is_obj_opt_chain {
+                should_be_optional = self.is_obj_optional(&obj_ty)?;
             }
+
+            obj_ty
         };
         obj_ty.make_clone_cheap();
 
