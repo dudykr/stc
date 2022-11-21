@@ -287,7 +287,7 @@ impl Analyzer<'_, '_> {
                             let ty = if v { &c.true_type } else { &c.false_type };
                             // TODO(kdy1): Optimize
                             let ty = self
-                                .normalize(span, Cow::Borrowed(&ty), opts)
+                                .normalize(span, Cow::Borrowed(ty), opts)
                                 .context("tried to normalize the calculated type of a conditional type")?
                                 .into_owned();
                             return Ok(Cow::Owned(ty));
@@ -416,22 +416,19 @@ impl Analyzer<'_, '_> {
                         if !opts.preserve_typeof {
                             match &*q.expr {
                                 QueryExpr::TsEntityName(e) => {
-                                    match e {
-                                        RTsEntityName::Ident(i) => {
-                                            //
-                                            if &*i.sym == "globalThis" {
-                                                if opts.preserve_global_this {
-                                                    return Ok(Cow::Owned(Type::Query(QueryType {
-                                                        span: actual_span,
-                                                        expr: box QueryExpr::TsEntityName(e.clone()),
-                                                        metadata: Default::default(),
-                                                    })));
-                                                } else {
-                                                    print_backtrace()
-                                                }
+                                    if let RTsEntityName::Ident(i) = e {
+                                        //
+                                        if &*i.sym == "globalThis" {
+                                            if opts.preserve_global_this {
+                                                return Ok(Cow::Owned(Type::Query(QueryType {
+                                                    span: actual_span,
+                                                    expr: box QueryExpr::TsEntityName(e.clone()),
+                                                    metadata: Default::default(),
+                                                })));
+                                            } else {
+                                                print_backtrace()
                                             }
                                         }
-                                        _ => {}
                                     }
 
                                     let expanded_ty = self
@@ -456,9 +453,9 @@ impl Analyzer<'_, '_> {
                                         )
                                     }
 
-                                    return Ok(self
+                                    return self
                                         .normalize(span, Cow::Owned(expanded_ty), opts)
-                                        .context("tried to normalize the type returned from typeof")?);
+                                        .context("tried to normalize the type returned from typeof");
                                 }
                                 QueryExpr::Import(_) => {}
                             }
