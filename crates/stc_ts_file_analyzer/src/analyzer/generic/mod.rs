@@ -230,10 +230,10 @@ impl Analyzer<'_, '_> {
             }
 
             if type_param.constraint.is_some()
-                && match **type_param.constraint.as_ref().unwrap() {
-                    Type::Interface(..) | Type::Keyword(..) | Type::Ref(..) | Type::TypeLit(..) => true,
-                    _ => false,
-                }
+                && matches!(
+                    type_param.constraint.as_deref().map(Type::normalize).unwrap(),
+                    Type::Interface(..) | Type::Keyword(..) | Type::Ref(..) | Type::TypeLit(..)
+                )
             {
                 let ctx = Ctx {
                     preserve_params: true,
@@ -380,8 +380,8 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let param_str = dump_type_as_string(&self.cm, &param);
-        let arg_str = dump_type_as_string(&self.cm, &arg);
+        let param_str = dump_type_as_string(&self.cm, param);
+        let arg_str = dump_type_as_string(&self.cm, arg);
 
         let _tracing = if cfg!(debug_assertions) {
             Some(span!(Level::ERROR, "infer_type", param = &*param_str, arg = &*arg_str).entered())
