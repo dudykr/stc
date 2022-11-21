@@ -72,17 +72,15 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
-                    match p.pat {
-                        RPat::Ident(RBindingIdent {
-                            id: RIdent { optional, .. },
-                            ..
-                        }) => {
-                            // Allow optional after optional parameter
-                            if optional {
-                                has_optional = true;
-                            }
+                    if let RPat::Ident(RBindingIdent {
+                        id: RIdent { optional, .. },
+                        ..
+                    }) = p.pat
+                    {
+                        // Allow optional after optional parameter
+                        if optional {
+                            has_optional = true;
                         }
-                        _ => {}
                     }
                 }
             }
@@ -378,48 +376,40 @@ impl Analyzer<'_, '_> {
             fn_ty.ret_ty = fn_ty.ret_ty.fold_with(&mut TypeParamHandler {
                 params: fn_ty.type_params.as_ref().map(|v| &*v.params),
             });
-            match fn_ty {
-                ty::Function { ref mut ret_ty, .. } => {
-                    match **ret_ty {
-                        // Handle tuple widening of the return type.
-                        Type::Tuple(Tuple { ref mut elems, .. }) => {
-                            for element in elems.iter_mut() {
-                                let span = element.span();
+            let ty::Function { ref mut ret_ty, .. } = fn_ty;
+            if let Type::Tuple(Tuple { ref mut elems, .. }) = **ret_ty {
+                for element in elems.iter_mut() {
+                    let span = element.span();
 
-                                match element.ty.normalize() {
-                                    Type::Keyword(KeywordType {
-                                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                        ..
-                                    })
-                                    | Type::Keyword(KeywordType {
-                                        kind: TsKeywordTypeKind::TsNullKeyword,
-                                        ..
-                                    }) => {}
-                                    _ => continue,
-                                }
-
-                                //if child.rule.no_implicit_any
-                                //    && child.span_allowed_implicit_any != f.span
-                                //{
-                                //    child.storage.report(Error::ImplicitAny {
-                                //        span: no_implicit_any_span.unwrap_or(span),
-                                //    });
-                                //}
-
-                                element.ty = box Type::any(
-                                    span,
-                                    KeywordTypeMetadata {
-                                        common: element.ty.metadata(),
-                                        ..Default::default()
-                                    },
-                                );
-                            }
-                        }
-
-                        _ => {}
+                    match element.ty.normalize() {
+                        Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            ..
+                        })
+                        | Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsNullKeyword,
+                            ..
+                        }) => {}
+                        _ => continue,
                     }
+
+                    //if child.rule.no_implicit_any
+                    //    && child.span_allowed_implicit_any != f.span
+                    //{
+                    //    child.storage.report(Error::ImplicitAny {
+                    //        span: no_implicit_any_span.unwrap_or(span),
+                    //    });
+                    //}
+
+                    element.ty = box Type::any(
+                        span,
+                        KeywordTypeMetadata {
+                            common: element.ty.metadata(),
+                            ..Default::default()
+                        },
+                    );
                 }
-            }
+            };
 
             if let Some(name) = name {
                 self.scope.declaring_fn = None;

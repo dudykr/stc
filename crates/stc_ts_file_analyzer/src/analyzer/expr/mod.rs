@@ -703,12 +703,6 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if let (Key::Normal { sym, .. }, Key::Num(RNumber { value, .. })) = (declared, cur) {
-            if &**sym == value.to_string() {
-                return true;
-            }
-        }
-
         match (declared, cur) {
             (Key::Num(RNumber { value: declared_value, .. }), Key::Num(RNumber { value, .. })) => {
                 if declared_value == value {
@@ -795,7 +789,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            Type::Union(u) if allow_union => return u.types.iter().any(|ty| self.check_if_type_matches_key(span, declared, &ty, true)),
+            Type::Union(u) if allow_union => return u.types.iter().any(|ty| self.check_if_type_matches_key(span, declared, ty, true)),
 
             _ => {}
         }
@@ -1019,7 +1013,7 @@ impl Analyzer<'_, '_> {
         }
 
         let _tracing = if cfg!(debug_assertions) {
-            let obj = dump_type_as_string(&self.cm, &obj);
+            let obj = dump_type_as_string(&self.cm, obj);
             // let prop_ty = dump_type_as_string(&self.cm, &prop.ty());
 
             Some(tracing::span!(Level::ERROR, "access_property", obj = &*obj).entered())
