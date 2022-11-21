@@ -320,7 +320,7 @@ impl Analyzer<'_, '_> {
                             let mut all = true;
                             let mut types = vec![];
                             for check_type in &check_type_union.types {
-                                let res = self.extends(ty.span(), &check_type, &extends_type, Default::default());
+                                let res = self.extends(ty.span(), check_type, &extends_type, Default::default());
                                 if let Some(v) = res {
                                     if v {
                                         if !c.true_type.is_never() {
@@ -518,14 +518,13 @@ impl Analyzer<'_, '_> {
 
                             let _context = debug_ctx!(format!("Property type: {}", dump_type_as_string(&self.cm, &prop_ty)));
 
-                            match prop_ty.normalize() {
-                                Type::IndexedAccessType(prop_ty) => match prop_ty.index_type.normalize() {
+                            if let Type::IndexedAccessType(prop_ty) = prop_ty.normalize() {
+                                match prop_ty.index_type.normalize() {
                                     Type::Param(..) => {}
                                     _ => {
                                         panic!("{:?}", prop_ty);
                                     }
-                                },
-                                _ => {}
+                                }
                             }
 
                             let ty = self
@@ -552,7 +551,7 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         let keys_ty = self
-                            .keyof(actual_span, &ty)
+                            .keyof(actual_span, ty)
                             .context("tried to get keys of a type as a part of normalization")?;
                         keys_ty.assert_valid();
                         return Ok(Cow::Owned(keys_ty));
@@ -571,7 +570,7 @@ impl Analyzer<'_, '_> {
 
         if let Ok(res) = &res {
             #[cfg(debug_assertions)]
-            let output = dump_type_as_string(&self.cm, &res);
+            let output = dump_type_as_string(&self.cm, res);
 
             #[cfg(debug_assertions)]
             debug!("normalize: {} -> {}", input, output);
