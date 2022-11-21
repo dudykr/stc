@@ -365,7 +365,7 @@ impl Analyzer<'_, '_> {
 
             child.validate_lhs_of_for_loop(left, &elem_ty, kind);
 
-            child.validate_loop_body_with_scope(None, &body).report(&mut child.storage);
+            child.validate_loop_body_with_scope(None, body).report(&mut child.storage);
 
             Ok(())
         })?;

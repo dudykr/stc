@@ -44,6 +44,7 @@ pub(in crate::analyzer) struct ReturnValues {
 }
 
 impl AddAssign for ReturnValues {
+    #[allow(clippy::suspicious_op_assign_impl)]
     fn add_assign(&mut self, rhs: Self) {
         self.should_generalize |= rhs.should_generalize;
 

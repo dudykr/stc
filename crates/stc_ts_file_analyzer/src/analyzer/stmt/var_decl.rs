@@ -38,7 +38,7 @@ use crate::{
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, var: &RVarDecl) {
-        self.record(&*var);
+        self.record(var);
 
         let ctx = Ctx {
             pat_mode: PatMode::Decl,
@@ -55,7 +55,7 @@ impl Analyzer<'_, '_> {
         for decl in &var.decls {
             if let RPat::Array(RArrayPat { span, elems, node_id, .. }) = &decl.name {
                 if let Some(m) = &self.mutations {
-                    if let Some(Type::Tuple(tuple)) = m.for_pats.get(&node_id).map(|m| &m.ty).cloned().flatten() {
+                    if let Some(Type::Tuple(tuple)) = m.for_pats.get(node_id).map(|m| &m.ty).cloned().flatten() {
                         for (i, elem) in elems.iter().enumerate() {
                             if let Some(pat) = elem {
                                 //
