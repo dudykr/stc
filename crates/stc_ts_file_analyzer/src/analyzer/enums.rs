@@ -494,8 +494,8 @@ impl Analyzer<'_, '_> {
                     right,
                     ..
                 }) => {
-                    let lt = type_of_expr(&left)?;
-                    let rt = type_of_expr(&right)?;
+                    let lt = type_of_expr(left)?;
+                    let rt = type_of_expr(right)?;
                     if lt == rt && lt == swc_ecma_utils::Type::Str {
                         return Some(lt);
                     }
@@ -509,7 +509,7 @@ impl Analyzer<'_, '_> {
         match m.init.as_deref() {
             Some(RExpr::Ident(..)) => {}
             Some(e) => {
-                if type_of_expr(&e).is_none() && !matches!(e, RExpr::Tpl(..) | RExpr::Bin(..) | RExpr::Member(..)) {
+                if type_of_expr(e).is_none() && !matches!(e, RExpr::Tpl(..) | RExpr::Bin(..) | RExpr::Member(..)) {
                     self.storage
                         .report(ErrorKind::ComputedMemberInEnumWithStrMember { span: m.span }.into())
                 }
@@ -563,44 +563,38 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn expand_enum_variant(&self, ty: Type) -> VResult<Type> {
-        match ty.normalize() {
-            Type::EnumVariant(ref ev) => {
-                if let Some(variant_name) = &ev.name {
-                    if let Some(types) = self.find_type(&ev.enum_name)? {
-                        for ty in types {
-                            if let Type::Enum(Enum { members, .. }) = ty.normalize() {
-                                if let Some(v) = members.iter().find(|m| match m.id {
-                                    RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
-                                        sym == variant_name
-                                    }
-                                }) {
-                                    match *v.val {
-                                        RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) => {
-                                            return Ok(Type::Lit(LitType {
-                                                span: v.span,
-                                                lit: match *v.val.clone() {
-                                                    RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
-                                                    RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
-                                                    _ => unreachable!(),
-                                                },
-                                                metadata: LitTypeMetadata {
-                                                    common: ev.metadata.common,
-                                                    ..Default::default()
-                                                },
-                                            }));
-                                        }
-                                        _ => {}
-                                    }
+        if let Type::EnumVariant(ref ev) = ty.normalize() {
+            if let Some(variant_name) = &ev.name {
+                if let Some(types) = self.find_type(&ev.enum_name)? {
+                    for ty in types {
+                        if let Type::Enum(Enum { members, .. }) = ty.normalize() {
+                            if let Some(v) = members.iter().find(|m| match m.id {
+                                RTsEnumMemberId::Ident(RIdent { ref sym, .. }) | RTsEnumMemberId::Str(RStr { value: ref sym, .. }) => {
+                                    sym == variant_name
+                                }
+                            }) {
+                                if let RExpr::Lit(RLit::Str(..)) | RExpr::Lit(RLit::Num(..)) = *v.val {
+                                    return Ok(Type::Lit(LitType {
+                                        span: v.span,
+                                        lit: match *v.val.clone() {
+                                            RExpr::Lit(RLit::Str(s)) => RTsLit::Str(s),
+                                            RExpr::Lit(RLit::Num(n)) => RTsLit::Number(n),
+                                            _ => unreachable!(),
+                                        },
+                                        metadata: LitTypeMetadata {
+                                            common: ev.metadata.common,
+                                            ..Default::default()
+                                        },
+                                    }));
                                 }
                             }
                         }
                     }
                 }
             }
-            _ => {}
         }
 
-        return Ok(ty);
+        Ok(ty)
     }
 }
 
@@ -629,14 +623,12 @@ impl Visit<RExpr> for LitValidator<'_> {
                 });
                 if !is_ref {
                     self.error = true;
-                    return;
                 }
             }
             RExpr::Unary(..) | RExpr::Bin(..) | RExpr::Paren(..) => {}
 
             _ => {
                 self.error = true;
-                return;
             }
         }
     }
