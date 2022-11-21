@@ -550,14 +550,11 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        match arg.normalize() {
-            Type::Param(arg) => {
-                if !param.is_type_param() {
-                    self.insert_inferred(span, inferred, &arg, Cow::Borrowed(&param), opts)?;
-                    return Ok(());
-                }
+        if let Type::Param(arg) = arg.normalize() {
+            if !param.is_type_param() {
+                self.insert_inferred(span, inferred, &arg, Cow::Borrowed(&param), opts)?;
+                return Ok(());
             }
-            _ => {}
         }
 
         match param.normalize() {
@@ -1072,12 +1069,8 @@ impl Analyzer<'_, '_> {
                     }) =>
                     {
                         for ty in types {
-                            match ty.normalize() {
-                                Type::Param(obj_type) => {
-                                    self.insert_inferred(span, inferred, &obj_type, Cow::Borrowed(&arg), opts)?;
-                                }
-
-                                _ => {}
+                            if let Type::Param(obj_type) = ty.normalize() {
+                                self.insert_inferred(span, inferred, &obj_type, Cow::Borrowed(&arg), opts)?;
                             }
                         }
                         return Ok(());

@@ -330,7 +330,7 @@ where
                     .unwrap();
                 self.to.push((self.cur_ctxt, DepInfo { span, src }));
             }
-            _ => return,
+            _ => {}
         }
     }
 }
