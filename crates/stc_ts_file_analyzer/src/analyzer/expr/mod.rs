@@ -172,7 +172,23 @@ impl Analyzer<'_, '_> {
                     };
                     if let Some(scope) = scope {
                         if let Some(ty) = scope.this() {
-                            return Ok(ty.into_owned());
+                            let mut ty = ty.into_owned();
+                            let name = Name::from(Id::word(js_word!("this")));
+
+                            if !self.is_builtin {
+                                ty = self.apply_type_facts(&name, ty);
+
+                                ty.assert_valid();
+
+                                // TODO(kdy1): Skip this logic if the `this` is binded
+                                ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, ty);
+
+                                ty.assert_valid();
+
+                                self.exclude_types_using_fact(span, &name, &mut ty);
+                            }
+
+                            return Ok(ty);
                         }
                     }
                     return Ok(Type::from(ThisType {
