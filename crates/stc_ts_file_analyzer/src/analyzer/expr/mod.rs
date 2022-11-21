@@ -3620,7 +3620,7 @@ impl Analyzer<'_, '_> {
                     }),
                 ..
             }) => {
-                let obj_ty = self.type_of_ts_entity_name(span, &obj, None)?;
+                let obj_ty = self.type_of_ts_entity_name(span, obj, None)?;
                 obj_ty.assert_valid();
 
                 let ty = self
@@ -3878,7 +3878,7 @@ impl Analyzer<'_, '_> {
                     Ok(v) => v,
                     Err(..) => return false,
                 };
-                return self.prefer_tuple(Some(&ty));
+                self.prefer_tuple(Some(&ty))
             }
             Type::Tuple(..) => true,
             Type::TypeLit(ty) => self.prefer_tuple_type_elements(&ty.members),
