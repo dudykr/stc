@@ -235,13 +235,10 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        match to {
-            Type::TypeLit(to) => {
-                if to.members.is_empty() {
-                    return Ok(true);
-                }
+        if let Type::TypeLit(to) = to {
+            if to.members.is_empty() {
+                return Ok(true);
             }
-            _ => {}
         }
 
         if from.type_eq(to) {
@@ -361,7 +358,7 @@ impl Analyzer<'_, '_> {
         match to {
             Type::Union(to) => {
                 for to in &to.types {
-                    if self.castable(span, from, &to, opts)? {
+                    if self.castable(span, from, to, opts)? {
                         return Ok(true);
                     }
                 }
@@ -371,7 +368,7 @@ impl Analyzer<'_, '_> {
 
             Type::Intersection(to) => {
                 for to in &to.types {
-                    if self.castable(span, from, &to, opts)? {
+                    if self.castable(span, from, to, opts)? {
                         return Ok(true);
                     }
                 }
@@ -382,7 +379,7 @@ impl Analyzer<'_, '_> {
         }
 
         if from.is_num() {
-            if self.can_be_casted_to_number_in_rhs(span, &to) {
+            if self.can_be_casted_to_number_in_rhs(span, to) {
                 return Ok(true);
             }
         }

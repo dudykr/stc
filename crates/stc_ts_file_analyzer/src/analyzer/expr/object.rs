@@ -163,15 +163,12 @@ impl Analyzer<'_, '_> {
             return Ok(to);
         }
 
-        match to.normalize() {
-            Type::Function(..) => {
-                // objectSpead.ts says
-                //
-                //
-                // functions result in { }
-                return Ok(to);
-            }
-            _ => {}
+        if let Type::Function(..) = to.normalize() {
+            // objectSpead.ts says
+            //
+            //
+            // functions result in { }
+            return Ok(to);
         }
 
         if rhs.is_any() || rhs.is_unknown() {
