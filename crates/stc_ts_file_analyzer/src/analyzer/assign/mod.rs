@@ -1430,7 +1430,7 @@ impl Analyzer<'_, '_> {
                     elem_type: ref rhs_elem_type,
                     ..
                 }) => {
-                    return self.assign_inner(data, &elem_type, &rhs_elem_type, opts);
+                    return self.assign_inner(data, elem_type, rhs_elem_type, opts);
                 }
 
                 Type::Tuple(Tuple { ref elems, .. }) => {
@@ -1547,15 +1547,12 @@ impl Analyzer<'_, '_> {
                         Type::EnumVariant(ev) => ev.enum_name == *enum_name,
                         _ => false,
                     }) {
-                        if let Ok(Some(lhs)) = self.find_type(&enum_name) {
+                        if let Ok(Some(lhs)) = self.find_type(enum_name) {
                             for ty in lhs {
-                                match ty.normalize() {
-                                    Type::Enum(e) => {
-                                        if e.members.len() == lu.types.len() {
-                                            return Ok(());
-                                        }
+                                if let Type::Enum(e) = ty.normalize() {
+                                    if e.members.len() == lu.types.len() {
+                                        return Ok(());
                                     }
-                                    _ => {}
                                 }
                             }
                         }
@@ -1568,7 +1565,7 @@ impl Analyzer<'_, '_> {
                     .map(|to| {
                         self.assign_with_opts(
                             data,
-                            &to,
+                            to,
                             rhs,
                             AssignOpts {
                                 allow_unknown_rhs_if_expanded: true,
