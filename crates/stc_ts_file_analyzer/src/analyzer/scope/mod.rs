@@ -13,7 +13,7 @@ use iter::once;
 use once_cell::sync::Lazy;
 use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RPat, RTsEntityName, RTsQualifiedName};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{expansion::ExpansionPreventer, union_finder::UnionFinder, Fix};
 use stc_ts_types::{
@@ -1199,6 +1199,8 @@ impl Analyzer<'_, '_> {
     ) -> VResult<()> {
         let marks = self.marks();
         let span = span.with_ctxt(SyntaxContext::empty());
+
+        let _ctx = ctx!(format!("declare_var: {:?}", name));
 
         if let Some(ty) = &ty {
             ty.assert_valid();
