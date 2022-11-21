@@ -6,8 +6,7 @@
     `----
 
 Error: 
-  > ((s: string) => void | (s?: string) => void | (...s: string[]) => void | (s: string, s2?: string) => void | (s?: string, n?: number) => void | (s?: string, ...n: number[]) => void | (s:
-  | string, ...sRest: string[]) => void)
+  > (typeof f1 | typeof f2 | typeof f3 | typeof f4 | typeof f5 | typeof f6 | typeof f7)
 
   x Type
     ,-[$DIR/tests/visualize/types/union/call-1.ts:11:1]

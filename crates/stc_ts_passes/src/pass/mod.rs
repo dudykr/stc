@@ -1,9 +1,9 @@
 use rnode::Visit;
 use stc_ts_ast_rnode::{RModule, RProgram, RScript};
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 
 pub trait Pass: Visit<RModule> + Visit<RScript> + Visit<RProgram> {
     fn name() -> &'static str;
 
-    fn take_errors(&mut self) -> Vec<Error>;
+    fn take_errors(&mut self) -> Vec<ErrorKind>;
 }

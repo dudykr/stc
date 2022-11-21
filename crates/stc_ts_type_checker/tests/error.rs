@@ -66,7 +66,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             Arc::new(NodeResolver),
         );
         checker.check(Arc::new(FileName::Real(file_name.into())));
-        let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
+        let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
 
         checker.run(|| {
             for e in errors {

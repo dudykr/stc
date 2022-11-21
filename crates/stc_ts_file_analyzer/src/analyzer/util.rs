@@ -2,7 +2,7 @@ use std::{borrow::Cow, iter::once};
 
 use rnode::{Fold, FoldWith, Visit};
 use stc_ts_ast_rnode::{RExpr, RIdent, RPropName, RStr, RTsEntityName, RTsType};
-use stc_ts_errors::Error;
+use stc_ts_errors::{Error, ErrorKind};
 use stc_ts_storage::Storage;
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
@@ -55,10 +55,11 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        Err(Error::NoNewSignature {
+        Err(ErrorKind::NoNewSignature {
             span,
             callee: box callee.clone(),
-        })
+        }
+        .into())
     }
 
     /// Make instance of `ty`. In case of error, error will be reported to user
@@ -76,8 +77,8 @@ impl Analyzer<'_, '_> {
         match res {
             Ok(ty) => ty,
             Err(err) => {
-                match err.actual() {
-                    Error::NoNewSignature { .. } => {}
+                match &*err {
+                    ErrorKind::NoNewSignature { .. } => {}
                     _ => {
                         self.storage.report(err);
                     }
@@ -158,10 +159,11 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::NoNewSignature {
+        Err(ErrorKind::NoNewSignature {
             span,
             callee: box ty.clone(),
-        })
+        }
+        .into())
     }
 }
 

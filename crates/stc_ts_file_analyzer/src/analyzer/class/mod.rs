@@ -12,7 +12,7 @@ use stc_ts_ast_rnode::{
     RTsFnParam, RTsParamProp, RTsParamPropParam, RTsTypeAliasDecl, RTsTypeAnn, RVarDecl, RVarDeclarator,
 };
 use stc_ts_env::ModuleConfig;
-use stc_ts_errors::{DebugExt, Error, Errors};
+use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_simple_ast_validations::consturctor::ConstructorSuperCallFinder;
 use stc_ts_type_ops::generalization::{prevent_generalize, LitGeneralizer};
@@ -93,7 +93,7 @@ impl Analyzer<'_, '_> {
                             )
                             .is_err()
                         {
-                            self.storage.report(Error::ClassPropNotInitialized { span })
+                            self.storage.report(ErrorKind::ClassPropNotInitialized { span }.into())
                         }
                     }
                 }
@@ -147,7 +147,8 @@ impl Analyzer<'_, '_> {
             match &p.key {
                 RPropName::Ident(i) => {
                     if &*i.sym == "prototype" {
-                        self.storage.report(Error::StaticPropertyCannotBeNamedPrototype { span: i.span })
+                        self.storage
+                            .report(ErrorKind::StaticPropertyCannotBeNamedPrototype { span: i.span }.into())
                     }
                 }
                 _ => {}
@@ -204,7 +205,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RPrivateProp) -> VResult<ClassProperty> {
         match p.key.id.sym {
             js_word!("constructor") => {
-                self.storage.report(Error::ConstructorIsKeyword { span: p.key.id.span });
+                self.storage.report(ErrorKind::ConstructorIsKeyword { span: p.key.id.span }.into());
             }
             _ => {}
         }
@@ -218,7 +219,7 @@ impl Analyzer<'_, '_> {
         if !self.ctx.in_declare && self.rule().no_implicit_any {
             if value.is_none() {
                 self.storage
-                    .report(Error::ImplicitAny { span: key.span() }.context("private class proerty"))
+                    .report(ErrorKind::ImplicitAny { span: key.span() }.context("private class proerty"))
             }
         }
 
@@ -259,14 +260,14 @@ impl Analyzer<'_, '_> {
             let mut v = ConstructorSuperCallFinder::default();
             c.visit_with(&mut v);
             if !v.has_valid_super_call {
-                self.storage.report(Error::SuperNotCalled { span: c.span });
+                self.storage.report(ErrorKind::SuperNotCalled { span: c.span }.into());
             } else {
                 debug_assert_eq!(self.scope.kind(), ScopeKind::Class);
                 *self.scope.class.need_super_call.borrow_mut() = true;
             }
 
             for span in v.nested_super_calls {
-                self.storage.report(Error::SuperInNestedFunction { span })
+                self.storage.report(ErrorKind::SuperInNestedFunction { span }.into())
             }
         }
 
@@ -293,7 +294,7 @@ impl Analyzer<'_, '_> {
                                     })
                                     | RPat::Rest(..) => {}
                                     _ => {
-                                        child.storage.report(Error::TS1016 { span: p.span() });
+                                        child.storage.report(ErrorKind::TS1016 { span: p.span() }.into());
                                     }
                                 },
                                 _ => {}
@@ -364,7 +365,9 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RTsParamProp) -> VResult<FnParam> {
         if self.ctx.in_declare {
             match p.param {
-                RTsParamPropParam::Assign(..) => self.storage.report(Error::InitializerDisallowedInAmbientContext { span: p.span }),
+                RTsParamPropParam::Assign(..) => self
+                    .storage
+                    .report(ErrorKind::InitializerDisallowedInAmbientContext { span: p.span }.into()),
                 _ => {}
             }
         }
@@ -483,7 +486,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RPrivateMethod) -> VResult<ClassMember> {
         match c.key.id.sym {
             js_word!("constructor") => {
-                self.storage.report(Error::ConstructorIsKeyword { span: c.key.id.span });
+                self.storage.report(ErrorKind::ConstructorIsKeyword { span: c.key.id.span }.into());
             }
             _ => {}
         }
@@ -497,7 +500,7 @@ impl Analyzer<'_, '_> {
             |child: &mut Analyzer| -> VResult<_> {
                 let type_params = try_opt!(c.function.type_params.validate_with(child));
                 if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
-                    child.storage.report(Error::TS1094 { span: key_span })
+                    child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
                 }
 
                 let params = c.function.params.validate_with(child)?;
@@ -604,7 +607,7 @@ impl Analyzer<'_, '_> {
                     // It's error if abstract method has a body
 
                     if c.is_abstract && c.function.body.is_some() {
-                        child.storage.report(Error::TS1318 { span: key_span });
+                        child.storage.report(ErrorKind::TS1318 { span: key_span }.into());
                     }
                 }
 
@@ -621,7 +624,7 @@ impl Analyzer<'_, '_> {
                                 })
                                 | RPat::Rest(..) => {}
                                 _ => {
-                                    child.storage.report(Error::TS1016 { span: p.span() });
+                                    child.storage.report(ErrorKind::TS1016 { span: p.span() }.into());
                                 }
                             }
                         }
@@ -642,7 +645,7 @@ impl Analyzer<'_, '_> {
 
                 let type_params = try_opt!(c.function.type_params.validate_with(child));
                 if (c.kind == MethodKind::Getter || c.kind == MethodKind::Setter) && type_params.is_some() {
-                    child.storage.report(Error::TS1094 { span: key_span })
+                    child.storage.report(ErrorKind::TS1094 { span: key_span }.into())
                 }
 
                 let params = c.function.params.validate_with(child)?;
@@ -654,7 +657,7 @@ impl Analyzer<'_, '_> {
                 // }
 
                 if c.kind == MethodKind::Setter && c.function.return_type.is_some() {
-                    child.storage.report(Error::TS1095 { span: key_span })
+                    child.storage.report(ErrorKind::TS1095 { span: key_span }.into())
                 }
 
                 let declared_ret_ty = try_opt!(c.function.return_type.validate_with(child));
@@ -685,7 +688,7 @@ impl Analyzer<'_, '_> {
 
             // getter property must have return statements.
             if let None = inferred_ret_ty {
-                self.storage.report(Error::TS2378 { span: key_span });
+                self.storage.report(ErrorKind::TS2378 { span: key_span }.into());
             }
         }
 
@@ -871,7 +874,7 @@ impl Analyzer<'_, '_> {
                         continue;
                     }
 
-                    self.storage.report(Error::DuplicateNameWithoutName { span: l.0.span() });
+                    self.storage.report(ErrorKind::DuplicateNameWithoutName { span: l.0.span() }.into());
                 }
             }
         }
@@ -892,7 +895,7 @@ impl Analyzer<'_, '_> {
                         continue;
                     }
 
-                    self.storage.report(Error::DuplicateNameWithoutName { span: l.0.span() });
+                    self.storage.report(ErrorKind::DuplicateNameWithoutName { span: l.0.span() }.into());
                 }
             }
         }
@@ -942,9 +945,9 @@ impl Analyzer<'_, '_> {
 
                             for (span, is_staitc) in spans_for_error {
                                 if report_error_for_static && is_staitc {
-                                    self.storage.report(Error::ShouldBeInstanceMethod { span })
+                                    self.storage.report(ErrorKind::ShouldBeInstanceMethod { span }.into())
                                 } else if !report_error_for_static && !is_staitc {
-                                    self.storage.report(Error::ShouldBeStaticMethod { span })
+                                    self.storage.report(ErrorKind::ShouldBeStaticMethod { span }.into())
                                 }
                             }
                         }
@@ -1056,9 +1059,9 @@ impl Analyzer<'_, '_> {
 
                                     for (span, is_abstract) in spans_for_error {
                                         if report_error_for_abstract && is_abstract {
-                                            self.storage.report(Error::AbstractAndConcreteIsMixed { span })
+                                            self.storage.report(ErrorKind::AbstractAndConcreteIsMixed { span }.into())
                                         } else if !report_error_for_abstract && !is_abstract {
-                                            self.storage.report(Error::AbstractAndConcreteIsMixed { span })
+                                            self.storage.report(ErrorKind::AbstractAndConcreteIsMixed { span }.into())
                                         }
                                     }
                                 }
@@ -1093,7 +1096,8 @@ impl Analyzer<'_, '_> {
                             // In this case, we report `abstract methods must be
                             // sequential`
                             if let Some((span, _)) = spans.last() {
-                                self.storage.report(Error::AbstractClassMethodShouldBeSequntial { span: *span })
+                                self.storage
+                                    .report(ErrorKind::AbstractClassMethodShouldBeSequntial { span: *span }.into())
                             }
                         }
                     }
@@ -1120,9 +1124,9 @@ impl Analyzer<'_, '_> {
                         if name.is_some() && !is_key_optional(&m.key) && !is_prop_name_eq_include_computed(&name.unwrap(), &m.key) {
                             for (span, is_constructor) in replace(&mut spans, vec![]) {
                                 if is_constructor {
-                                    errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+                                    errors.push(ErrorKind::ConstructorImplMissingOrNotFollowedByDecl { span }.into());
                                 } else {
-                                    errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                    errors.push(ErrorKind::FnImplMissingOrNotFollowedByDecl { span }.into());
                                 }
                             }
                         }
@@ -1157,23 +1161,23 @@ impl Analyzer<'_, '_> {
                             if is_prop_name_eq_include_computed(&name.unwrap(), &constructor_name) {
                                 for (span, is_constructor) in replace(&mut spans, vec![]) {
                                     if is_constructor {
-                                        errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+                                        errors.push(ErrorKind::ConstructorImplMissingOrNotFollowedByDecl { span }.into());
                                     } else {
-                                        errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                        errors.push(ErrorKind::FnImplMissingOrNotFollowedByDecl { span }.into());
                                     }
                                 }
                             } else if is_prop_name_eq_include_computed(&m.key, &constructor_name) {
                                 for (span, is_constructor) in replace(&mut spans, vec![]) {
                                     if is_constructor {
-                                        errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+                                        errors.push(ErrorKind::ConstructorImplMissingOrNotFollowedByDecl { span }.into());
                                     } else {
-                                        errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                                        errors.push(ErrorKind::FnImplMissingOrNotFollowedByDecl { span }.into());
                                     }
                                 }
                             } else {
                                 spans = vec![];
 
-                                errors.push(Error::TS2389 { span: m.key.span() });
+                                errors.push(ErrorKind::TS2389 { span: m.key.span() }.into());
                             }
 
                             name = None;
@@ -1210,9 +1214,9 @@ impl Analyzer<'_, '_> {
         // Class definition ended with `foo();`
         for (span, is_constructor) in replace(&mut spans, vec![]) {
             if is_constructor {
-                errors.push(Error::ConstructorImplMissingOrNotFollowedByDecl { span });
+                errors.push(ErrorKind::ConstructorImplMissingOrNotFollowedByDecl { span }.into());
             } else {
-                errors.push(Error::FnImplMissingOrNotFollowedByDecl { span });
+                errors.push(ErrorKind::FnImplMissingOrNotFollowedByDecl { span }.into());
             }
         }
 
@@ -1245,8 +1249,8 @@ impl Analyzer<'_, '_> {
         }) {
             Ok(ty) => ty,
             Err(err) => {
-                match err {
-                    Error::TS2585 { span } => Err(Error::TS2585 { span })?,
+                match *err {
+                    ErrorKind::TS2585 { span } => Err(ErrorKind::TS2585 { span })?,
                     _ => {}
                 }
 
@@ -1268,11 +1272,11 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {}
             _ if is_symbol_access => {}
-            _ => errors.push(Error::TS1166 { span }),
+            _ => errors.push(ErrorKind::TS1166 { span }.into()),
         }
 
         if !errors.is_empty() {
-            Err(Error::Errors {
+            Err(ErrorKind::Errors {
                 span,
                 errors: errors.into(),
             })?
@@ -1322,31 +1326,35 @@ impl Analyzer<'_, '_> {
                 .convert_err(|err| {
                     let span = err.span();
                     if err.code() == 2322 {
-                        Error::Errors {
+                        ErrorKind::Errors {
                             span,
                             errors: err
                                 .into_causes()
                                 .into_iter()
                                 .map(|err| {
-                                    err.convert_all(|err| Error::InvalidImplOfInterface {
-                                        span: match &err {
-                                            Error::AssignFailed { right_ident: Some(s), .. } => *s,
-                                            Error::AssignFailed { left, .. } => left.span(),
-                                            _ => err.span(),
-                                        },
-                                        cause: box err,
+                                    err.convert_all(|err| {
+                                        ErrorKind::InvalidImplOfInterface {
+                                            span: match &*err {
+                                                ErrorKind::AssignFailed { right_ident: Some(s), .. } => *s,
+                                                ErrorKind::AssignFailed { left, .. } => left.span(),
+                                                _ => err.span(),
+                                            },
+                                            cause: box err,
+                                        }
+                                        .into()
                                     })
                                 })
                                 .collect(),
                         }
+                        .into()
                     } else {
-                        err.convert_all(|err| {
-                            match err {
-                                Error::MissingFields { .. } => return Error::ClassIncorrectlyImplementsInterface { span: parent.span() },
-                                _ => {}
+                        match err {
+                            ErrorKind::MissingFields { .. } => {
+                                return ErrorKind::ClassIncorrectlyImplementsInterface { span: parent.span() }.into()
                             }
-                            err
-                        })
+                            _ => {}
+                        }
+                        err
                     }
                 })?;
             };
@@ -1404,7 +1412,8 @@ impl Analyzer<'_, '_> {
                                                 && p.accessor != super_property.accessor
                                                 && (super_property.accessor.getter || super_property.accessor.setter)
                                             {
-                                                self.storage.report(Error::DefinedWitHAccessorInSuper { span: p.key.span() })
+                                                self.storage
+                                                    .report(ErrorKind::DefinedWitHAccessorInSuper { span: p.key.span() }.into())
                                             }
 
                                             continue 'outer;
@@ -1450,10 +1459,13 @@ impl Analyzer<'_, '_> {
                         }
 
                         if let Some(key) = sm.key() {
-                            errors.push(Error::ClassDoesNotImplementMemeber {
-                                span,
-                                key: box key.into_owned(),
-                            });
+                            errors.push(
+                                ErrorKind::ClassDoesNotImplementMemeber {
+                                    span,
+                                    key: box key.into_owned(),
+                                }
+                                .into(),
+                            );
                         }
                     }
 
@@ -1500,14 +1512,14 @@ impl Analyzer<'_, '_> {
         match &name {
             Some(i) => match &**i.sym() {
                 "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
-                    self.storage.report(Error::InvalidClassName { span: c.span });
+                    self.storage.report(ErrorKind::InvalidClassName { span: c.span }.into());
                 }
                 "Object" if self.env.target() <= EsVersion::Es5 => match self.env.module() {
                     ModuleConfig::None if self.ctx.in_declare => {}
 
                     ModuleConfig::None | ModuleConfig::Umd | ModuleConfig::System | ModuleConfig::Amd | ModuleConfig::CommonJs => {
                         self.storage
-                            .report(Error::ClassNameCannotBeObjectWhenTargetingEs5WithModule { span: c.span });
+                            .report(ErrorKind::ClassNameCannotBeObjectWhenTargetingEs5WithModule { span: c.span }.into());
                     }
                     _ => {}
                 },
@@ -1563,7 +1575,7 @@ impl Analyzer<'_, '_> {
                             | Type::Keyword(KeywordType {
                                 kind: TsKeywordTypeKind::TsBooleanKeyword,
                                 ..
-                            }) => Err(Error::InvalidSuperClass { span: super_ty.span() }),
+                            }) => Err(ErrorKind::InvalidSuperClass { span: super_ty.span() }.into()),
                             _ => Ok(()),
                         });
 
@@ -1677,7 +1689,7 @@ impl Analyzer<'_, '_> {
             child.report_errors_for_statics_mixed_with_instances(&c).report(&mut child.storage);
             child.report_errors_for_duplicate_class_members(&c).report(&mut child.storage);
 
-            child.scope.super_class = super_class.clone().map(|ty| make_instance_type(*ty));
+            child.scope.super_class = super_class.clone().map(|ty| make_instance_type(*ty).freezed());
             {
                 // Validate constructors
                 let constructors_with_body = c
@@ -1691,7 +1703,7 @@ impl Analyzer<'_, '_> {
 
                 if constructors_with_body.len() >= 2 {
                     for &span in &constructors_with_body {
-                        child.storage.report(Error::DuplicateConstructor { span })
+                        child.storage.report(ErrorKind::DuplicateConstructor { span }.into())
                     }
                 }
 
@@ -1704,7 +1716,7 @@ impl Analyzer<'_, '_> {
                                     match *p {
                                         RParamOrTsParamProp::TsParamProp(..) => child
                                             .storage
-                                            .report(Error::ParamPropIsNotAllowedInAmbientConstructorx { span: p.span() }),
+                                            .report(ErrorKind::ParamPropIsNotAllowedInAmbientConstructorx { span: p.span() }.into()),
                                         _ => {}
                                     }
                                 }
@@ -1755,7 +1767,7 @@ impl Analyzer<'_, '_> {
                                 if let Some(key) = member.key() {
                                     // TODO(kdy1): Use better logic for testing key equality
                                     if declared_static_keys.iter().any(|prev: &Key| prev.type_eq(&*key)) {
-                                        child.storage.report(Error::DuplicateProperty { span: key.span() })
+                                        child.storage.report(ErrorKind::DuplicateProperty { span: key.span() }.into())
                                     }
                                     declared_static_keys.push(key.into_owned());
                                 }
@@ -1877,7 +1889,7 @@ impl Analyzer<'_, '_> {
                                 if let Some(key) = member.key() {
                                     // TODO(kdy1): Use better logic for testing key equality
                                     if declared_instance_keys.iter().any(|prev: &Key| prev.type_eq(&*key)) {
-                                        child.storage.report(Error::DuplicateProperty { span: key.span() })
+                                        child.storage.report(ErrorKind::DuplicateProperty { span: key.span() }.into())
                                     }
                                     declared_instance_keys.push(key.into_owned());
                                 }
@@ -2180,9 +2192,9 @@ impl Analyzer<'_, '_> {
                     )
                     .convert_err(|_err| {
                         if index.params[0].ty.is_kwd(TsKeywordTypeKind::TsNumberKeyword) {
-                            Error::ClassMemberNotCompatibleWithNumericIndexSignature { span }
+                            ErrorKind::ClassMemberNotCompatibleWithNumericIndexSignature { span }.into()
                         } else {
-                            Error::ClassMemberNotCompatibleWithStringIndexSignature { span }
+                            ErrorKind::ClassMemberNotCompatibleWithStringIndexSignature { span }.into()
                         }
                     })?;
                 }
@@ -2215,7 +2227,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )
-                .convert_err(|err| Error::WrongOverloadSignature { span: err.span() })?;
+                .convert_err(|err| ErrorKind::WrongOverloadSignature { span: err.span() }.into())?;
             }
         }
 
@@ -2235,7 +2247,7 @@ impl Analyzer<'_, '_> {
                 }) => {
                     if let Some(name) = &self.scope.this_class_name {
                         if *name == i {
-                            Err(Error::SelfReferentialSuperClass { span: i.span })?
+                            Err(ErrorKind::SelfReferentialSuperClass { span: i.span })?
                         }
                     }
                 }
@@ -2245,7 +2257,7 @@ impl Analyzer<'_, '_> {
             let ty = self.normalize(None, Cow::Borrowed(ty), Default::default())?;
 
             match ty.normalize() {
-                Type::Function(..) => Err(Error::NotConstructorType { span: ty.span() })?,
+                Type::Function(..) => Err(ErrorKind::NotConstructorType { span: ty.span() })?,
 
                 _ => {}
             }

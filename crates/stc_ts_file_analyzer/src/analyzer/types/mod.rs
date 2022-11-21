@@ -5,7 +5,10 @@ use itertools::Itertools;
 use rnode::{VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RExpr, RIdent, RInvalid, RLit, RNumber, RStr, RTplElement, RTsEntityName, RTsEnumMemberId, RTsLit};
 use stc_ts_base_type_ops::bindings::{collect_bindings, BindingCollector, KnownTypeVisitor};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error};
+use stc_ts_errors::{
+    debug::{dump_type_as_string, print_backtrace},
+    DebugExt, ErrorKind,
+};
 use stc_ts_generics::ExpandGenericOpts;
 use stc_ts_type_ops::{tuple_normalization::TupleNormalizer, Fix};
 use stc_ts_types::{
@@ -46,6 +49,12 @@ pub(crate) struct NormalizeTypeOpts {
     pub preserve_typeof: bool,
     /// Should we normalize keywords as interfaces?
     pub normalize_keywords: bool,
+
+    /// Should we preserve `typeof globalThis`?
+    pub preserve_global_this: bool,
+
+    /// Should we preserve [Type::Intersection]?
+    pub preserve_intersection: bool,
 
     //// If `true`, we will not expand generics.
     pub process_only_key: bool,
@@ -251,11 +260,13 @@ impl Analyzer<'_, '_> {
                     }
 
                     Type::Intersection(ty) => {
-                        if let Some(new_ty) = self
-                            .normalize_intersection_types(span.unwrap_or(ty.span), &ty.types, opts)
-                            .context("failed to normalize an intersection type")?
-                        {
-                            return Ok(Cow::Owned(new_ty));
+                        if !opts.preserve_intersection {
+                            if let Some(new_ty) = self
+                                .normalize_intersection_types(span.unwrap_or(ty.span), &ty.types, opts)
+                                .context("failed to normalize an intersection type")?
+                            {
+                                return Ok(Cow::Owned(new_ty));
+                            }
                         }
                     }
 
@@ -415,9 +426,31 @@ impl Analyzer<'_, '_> {
                         if !opts.preserve_typeof {
                             match &*q.expr {
                                 QueryExpr::TsEntityName(e) => {
+                                    match e {
+                                        RTsEntityName::Ident(i) => {
+                                            //
+                                            if &*i.sym == "globalThis" {
+                                                if opts.preserve_global_this {
+                                                    return Ok(Cow::Owned(Type::Query(QueryType {
+                                                        span: actual_span,
+                                                        expr: box QueryExpr::TsEntityName(e.clone()),
+                                                        metadata: Default::default(),
+                                                    })));
+                                                } else {
+                                                    print_backtrace()
+                                                }
+                                            }
+                                        }
+                                        _ => {}
+                                    }
+
                                     let expanded_ty = self
                                         .resolve_typeof(actual_span, e)
-                                        .context("tried to resolve typeof as a part of normalization")?;
+                                        .with_context(|| "tried to resolve typeof as a part of normalization".into())?;
+
+                                    if expanded_ty.is_global_this() {
+                                        return Ok(Cow::Owned(expanded_ty));
+                                    }
 
                                     if ty.type_eq(&expanded_ty) {
                                         return Ok(Cow::Owned(Type::any(
@@ -445,7 +478,7 @@ impl Analyzer<'_, '_> {
 
                     Type::Instance(ty) => {
                         let ty = self
-                            .instantiate_for_normalization(span, &ty.ty)
+                            .instantiate_for_normalization(span, &ty.ty, opts)
                             .context("tried to instantiate for normalizations")?;
                         ty.assert_valid();
 
@@ -771,7 +804,14 @@ impl Analyzer<'_, '_> {
 
             for elem in types.iter() {
                 let elem = self
-                    .normalize(Some(span), Cow::Borrowed(elem), opts)
+                    .normalize(
+                        Some(span),
+                        Cow::Borrowed(elem),
+                        NormalizeTypeOpts {
+                            preserve_global_this: true,
+                            ..opts
+                        },
+                    )
                     .context("failed to normalize types while intersecting properties")?;
 
                 match elem.normalize_instance() {
@@ -823,13 +863,13 @@ impl Analyzer<'_, '_> {
     }
 
     // This is part of normalization.
-    fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type) -> VResult<Type> {
+    fn instantiate_for_normalization(&mut self, span: Option<Span>, ty: &Type, opts: NormalizeTypeOpts) -> VResult<Type> {
         let mut ty = self.normalize(
             span,
             Cow::Borrowed(ty),
             NormalizeTypeOpts {
                 normalize_keywords: false,
-                ..Default::default()
+                ..opts
             },
         )?;
         ty.make_clone_cheap();
@@ -868,11 +908,11 @@ impl Analyzer<'_, '_> {
                 },
             }),
 
-            Type::Intersection(ty) => {
+            Type::Intersection(ty) if !opts.preserve_intersection => {
                 let types = ty
                     .types
                     .into_iter()
-                    .map(|ty| self.instantiate_for_normalization(span, &ty))
+                    .map(|ty| self.instantiate_for_normalization(span, &ty, opts))
                     .collect::<Result<_, _>>()?;
 
                 Type::Intersection(Intersection { types, ..ty }).fixed()
@@ -882,7 +922,7 @@ impl Analyzer<'_, '_> {
                 let types = ty
                     .types
                     .into_iter()
-                    .map(|ty| self.instantiate_for_normalization(span, &ty))
+                    .map(|ty| self.instantiate_for_normalization(span, &ty, opts))
                     .collect::<Result<_, _>>()?;
 
                 Type::Union(Union { types, ..ty }).fixed()
@@ -902,10 +942,10 @@ impl Analyzer<'_, '_> {
         }
 
         if ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
-            return Err(Error::ObjectIsPossiblyUndefined { span });
+            return Err(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
         }
         if ty.is_kwd(TsKeywordTypeKind::TsNullKeyword) {
-            return Err(Error::ObjectIsPossiblyNull { span });
+            return Err(ErrorKind::ObjectIsPossiblyNull { span }.into());
         }
 
         match &*ty {
@@ -928,15 +968,15 @@ impl Analyzer<'_, '_> {
 
                 // tsc is crazy. It uses different error code for these errors.
                 if has_null && has_undefined {
-                    return Err(Error::ObjectIsPossiblyNullOrUndefined { span });
+                    return Err(ErrorKind::ObjectIsPossiblyNullOrUndefined { span }.into());
                 }
 
                 if has_null {
-                    return Err(Error::ObjectIsPossiblyNull { span });
+                    return Err(ErrorKind::ObjectIsPossiblyNull { span }.into());
                 }
 
                 if has_undefined {
-                    return Err(Error::ObjectIsPossiblyUndefined { span });
+                    return Err(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
                 }
 
                 Ok(())
@@ -945,10 +985,11 @@ impl Analyzer<'_, '_> {
                 if !self.rule().strict_null_checks {
                     return Ok(());
                 }
-                Err(Error::ObjectIsPossiblyUndefinedWithType {
+                Err(ErrorKind::ObjectIsPossiblyUndefinedWithType {
                     span,
                     ty: box ty.into_owned(),
-                })
+                }
+                .into())
             }
         }
     }
@@ -1625,6 +1666,39 @@ impl Analyzer<'_, '_> {
                 }));
             }
 
+            Type::Param(TypeParam {
+                span: param_span,
+                name,
+                constraint: Some(constraint),
+                default,
+                metadata,
+            }) => {
+                let constraint = self
+                    .normalize(Some(span), Cow::Borrowed(constraint), Default::default())
+                    .context("failed to expand intrinsics in type parameters")?
+                    .freezed()
+                    .into_owned()
+                    .freezed();
+
+                let arg = Type::Param(TypeParam {
+                    span: *param_span,
+                    name: name.clone(),
+                    constraint: Some(box constraint),
+                    default: default.clone(),
+                    metadata: *metadata,
+                });
+
+                return Ok(Type::Intrinsic(Intrinsic {
+                    span,
+                    kind: ty.kind.clone(),
+                    type_args: TypeParamInstantiation {
+                        span: ty.type_args.span,
+                        params: vec![arg],
+                    },
+                    metadata: ty.metadata,
+                }));
+            }
+
             _ => {}
         }
 
@@ -1673,20 +1747,22 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                Err(Error::NamspaceNotFound {
+                Err(ErrorKind::NamspaceNotFound {
                     span,
                     name: box name.into(),
                     ctxt: self.ctx.module_id,
                     type_args: type_args.cloned().map(Box::new),
-                })
+                }
+                .into())
             }
             RExpr::Ident(i) if &*i.sym == "globalThis" => return Ok(()),
-            RExpr::Ident(_) => Err(Error::TypeNotFound {
+            RExpr::Ident(_) => Err(ErrorKind::TypeNotFound {
                 span,
                 name: box name.into(),
                 ctxt: self.ctx.module_id,
                 type_args: type_args.cloned().map(Box::new),
-            }),
+            }
+            .into()),
             _ => Ok(()),
         }
     }
@@ -1888,13 +1964,6 @@ impl Analyzer<'_, '_> {
         }
 
         self.data.bindings = collect_bindings(node);
-    }
-}
-
-pub(crate) fn left(t: &RTsEntityName) -> &RIdent {
-    match t {
-        RTsEntityName::TsQualifiedName(t) => left(&t.left),
-        RTsEntityName::Ident(i) => i,
     }
 }
 

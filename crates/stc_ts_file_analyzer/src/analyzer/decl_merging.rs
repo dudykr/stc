@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use fxhash::FxHashMap;
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt};
+use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt};
 use stc_ts_types::{ClassDef, ClassMember, ClassProperty, Id, Interface, Method, Type, TypeElement, TypeParam};
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned};
@@ -47,6 +47,8 @@ impl Analyzer<'_, '_> {
         if self.is_builtin {
             return Ok(None);
         }
+
+        let _ctx = ctx!("merge with another interface");
 
         debug_assert!(a.is_clone_cheap());
         debug_assert!(b.is_clone_cheap());
@@ -116,10 +118,9 @@ impl Analyzer<'_, '_> {
                 let mut new_members = a.body.clone();
 
                 // Convert to a type literal first.
-                if let Some(b) = self
-                    .convert_type_to_type_lit(span, Cow::Owned(b))
-                    .context("tried to convert an interface to a type literal to merge with another interface")?
-                {
+                if let Some(b) = self.convert_type_to_type_lit(span, Cow::Owned(b))? {
+                    let _ctx = ctx!("tried to convert an interface to a type literal");
+
                     new_members.extend(b.into_owned().members);
 
                     return Ok(Some(Type::Interface(Interface {

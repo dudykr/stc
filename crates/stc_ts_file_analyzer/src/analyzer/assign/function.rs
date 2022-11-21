@@ -4,8 +4,9 @@ use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
 use stc_ts_errors::{
+    ctx,
     debug::{dump_type_as_string, dump_type_map},
-    DebugExt, Error,
+    DebugExt, ErrorKind,
 };
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, debug_ctx};
@@ -148,19 +149,18 @@ impl Analyzer<'_, '_> {
                         vec.make_clone_cheap();
 
                         for new_l_params in vec {
-                            return self
-                                .assign_to_fn_like(
-                                    data,
-                                    is_call,
-                                    l_type_params,
-                                    &new_l_params,
-                                    l_ret_ty,
-                                    r_type_params,
-                                    r_params,
-                                    r_ret_ty,
-                                    opts,
-                                )
-                                .context("tried to assign by expanding overloads in a type literal");
+                            let _ctx = ctx!("tried to assign by expanding overloads in a type literal");
+                            return self.assign_to_fn_like(
+                                data,
+                                is_call,
+                                l_type_params,
+                                &new_l_params,
+                                l_ret_ty,
+                                r_type_params,
+                                r_params,
+                                r_ret_ty,
+                                opts,
+                            );
                         }
                     }
                 }};
@@ -194,22 +194,22 @@ impl Analyzer<'_, '_> {
                     new_r_params.make_clone_cheap();
                     new_r_ret_ty.make_clone_cheap();
 
-                    return self
-                        .assign_to_fn_like(
-                            data,
-                            is_call,
-                            l_type_params,
-                            l_params,
-                            l_ret_ty,
-                            None,
-                            &new_r_params,
-                            new_r_ret_ty.as_ref(),
-                            AssignOpts {
-                                allow_assignment_of_void: Some(false),
-                                ..opts
-                            },
-                        )
-                        .context("tried to assign to a mapped (wrong) function");
+                    let _ctx = ctx!("tried to assign to a mapped (wrong) function");
+
+                    return self.assign_to_fn_like(
+                        data,
+                        is_call,
+                        l_type_params,
+                        l_params,
+                        l_ret_ty,
+                        None,
+                        &new_r_params,
+                        new_r_ret_ty.as_ref(),
+                        AssignOpts {
+                            allow_assignment_of_void: Some(false),
+                            ..opts
+                        },
+                    );
                 }
             }
 
@@ -456,15 +456,14 @@ impl Analyzer<'_, '_> {
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {
-                    return self
-                        .assign_to_function(data, lt, l, &ty, opts)
-                        .context("tried to assign an expanded type to a function");
+                    let _ctx = ctx!("tried to assign an expanded type to a function");
+                    return self.assign_to_function(data, lt, l, &ty, opts);
                 }
             }
             _ => {}
         }
 
-        Err(Error::SimpleAssignFailed { span, cause: None })
+        Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into())
     }
 
     ///
@@ -537,7 +536,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             Type::Lit(..) | Type::ClassDef(ClassDef { is_abstract: true, .. }) | Type::Function(..) => {
-                return Err(Error::SimpleAssignFailed { span, cause: None })
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into())
             }
 
             Type::TypeLit(rt) => {
@@ -575,7 +574,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if !errors.is_empty() {
-                    return Err(Error::SimpleAssignFailedWithCause { span, cause: errors });
+                    return Err(ErrorKind::SimpleAssignFailedWithCause { span, cause: errors }.into());
                 }
             }
             Type::Interface(..) => {
@@ -592,7 +591,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::SimpleAssignFailed { span, cause: None })
+        Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into())
     }
 
     /// Assigns a parameter to another one.
@@ -662,35 +661,29 @@ impl Analyzer<'_, '_> {
 
         // TODO(kdy1): Change this to extends call.
 
-        let mut l_ty = self.normalize(Some(opts.span), Cow::Borrowed(&l.ty), Default::default())?;
-        let mut r_ty = self.normalize(Some(opts.span), Cow::Borrowed(&r.ty), Default::default())?;
-
-        l_ty.make_clone_cheap();
-        r_ty.make_clone_cheap();
-
         let res = if opts.for_overload {
-            self.assign_with_opts(data, &l_ty, &r_ty, opts)
+            self.assign_with_opts(data, &l.ty, &r.ty, opts)
                 .context("tried to assign the type of a parameter to another")
         } else {
-            self.assign_with_opts(data, &r_ty, &l_ty, opts)
+            self.assign_with_opts(data, &r.ty, &l.ty, opts)
                 .context("tried to assign the type of a parameter to another (reversed due to variance)")
         };
 
-        res.convert_err(|err| match &err {
-            Error::MissingFields { span, .. } => Error::SimpleAssignFailed {
-                span: *span,
-                cause: Some(box err),
+        res.convert_err(|err| match err {
+            ErrorKind::MissingFields { span, .. } => ErrorKind::SimpleAssignFailed {
+                span,
+                cause: Some(box err.into()),
             },
-
-            Error::Errors { errors, .. } => {
-                if errors.iter().all(|err| match err.actual() {
-                    Error::MissingFields { .. } => true,
+            ErrorKind::Errors { ref errors, .. } => {
+                if errors.iter().all(|err| match &**err {
+                    ErrorKind::MissingFields { .. } => true,
                     _ => false,
                 }) {
-                    Error::SimpleAssignFailed {
+                    ErrorKind::SimpleAssignFailed {
                         span,
-                        cause: Some(box err),
+                        cause: Some(box err.into()),
                     }
+                    .into()
                 } else {
                     err
                 }
@@ -751,7 +744,7 @@ impl Analyzer<'_, '_> {
 
         if opts.for_overload {
             if required_li.clone().count() > required_ri.clone().count() {
-                return Err(Error::SimpleAssignFailed { span, cause: None }).context("l.params.required.len > r.params.required.len");
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("l.params.required.len > r.params.required.len"));
             }
         }
 
@@ -764,13 +757,11 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(Error::SimpleAssignFailed { span, cause: None }).with_context(|| {
-                    format!(
-                        "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: {:?}\nRight: {:?}\n",
-                        required_non_void_li.collect_vec(),
-                        required_non_void_ri.collect_vec()
-                    )
-                });
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context(format!(
+                    "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: {:?}\nRight: {:?}\n",
+                    required_non_void_li.collect_vec(),
+                    required_non_void_ri.collect_vec()
+                )));
             }
         }
 
@@ -792,6 +783,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
+                    let _ctx = ctx!(format!("tried to assign a parameter to another parameter"));
                     self.assign_param(
                         data,
                         lp,
@@ -800,8 +792,7 @@ impl Analyzer<'_, '_> {
                             allow_unknown_type: true,
                             ..opts
                         },
-                    )
-                    .with_context(|| format!("tried to assign a parameter to another parameter",))?;
+                    )?;
                 }
                 EitherOrBoth::Left(_) => {}
                 EitherOrBoth::Right(_) => {}

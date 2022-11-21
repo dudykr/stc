@@ -42,7 +42,7 @@ Error:
    `----
 
 Error: 
-  > ((f: (n: string) => void) => string | (f: (n: number) => void) => number | () => undefined)
+  > ((f: (n: string) => void) => string | (f: (n: number) => void) => number | () => any)
 
   x Type
    ,-[$DIR/tests/visualize/exprs/call/overloadResolution/2.ts:7:1]

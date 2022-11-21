@@ -78,11 +78,11 @@ jobs:
           #   docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
           #   build: >-
           #     set -e &&
-          #     rustup target add aarch64-unknown-linux-gnu &&
+          #     rustƒ target add aarch64-unknown-linux-gnu &&
           #     unset CC_x86_64_unknown_linux_gnu && unset CC &&
           #     RUSTFLAGS='' cargo build --release --target aarch64-unknown-linux-gnu &&
           #     cp ./target/aarch64-unknown-linux-gnu/release/stc . && chmod +x ./stc
-          - host: ubuntu-18.04
+          - host: ubuntu-latest
             target: armv7-unknown-linux-gnueabihf
             setup: |
               sudo apt-get update

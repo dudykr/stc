@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 use stc_ts_types::{TsExpr, Type, TypeElement, TypeLit};
 use stc_utils::cache::Freeze;
 use swc_common::{Span, TypeEq, DUMMY_SP};
@@ -59,7 +59,8 @@ impl Analyzer<'_, '_> {
             };
 
             if let Err(err) = res {
-                self.storage.report(Error::InvalidInterfaceInheritance { span, cause: box err });
+                self.storage
+                    .report(ErrorKind::InvalidInterfaceInheritance { span, cause: box err }.into());
                 return;
             }
         }
@@ -98,16 +99,18 @@ impl Analyzer<'_, '_> {
                             ..Default::default()
                         },
                     ) {
-                        match err.actual() {
-                            Error::MissingFields { .. } => {}
+                        match &*err {
+                            ErrorKind::MissingFields { .. } => {}
 
-                            Error::Errors { errors, .. }
-                                if errors.iter().all(|err| match err.actual() {
-                                    Error::MissingFields { .. } => true,
+                            ErrorKind::Errors { errors, .. }
+                                if errors.iter().all(|err| match &**err {
+                                    ErrorKind::MissingFields { .. } => true,
                                     _ => false,
                                 }) => {}
 
-                            _ => self.storage.report(err.convert(|err| Error::InterfaceNotCompatible { span })),
+                            _ => self
+                                .storage
+                                .report(err.convert(|err| ErrorKind::InterfaceNotCompatible { span }.into())),
                         }
                     }
                 }

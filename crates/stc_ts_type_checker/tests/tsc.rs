@@ -23,7 +23,6 @@ use anyhow::{Context, Error};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use serde::Deserialize;
-use stc_testing::init_tracing;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_file_analyzer::env::EnvFactory;
@@ -280,7 +279,7 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
 
         for err in &mut errors {
             let orig_code = err.code.replace("TS", "").parse().expect("failed to parse error code");
-            let code = stc_ts_errors::Error::normalize_error_code(orig_code);
+            let code = stc_ts_errors::ErrorKind::normalize_error_code(orig_code);
 
             if orig_code != code {
                 err.code = format!("TS{}", code);
@@ -540,7 +539,6 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 }
 
 fn do_test(file_name: &Path) -> Result<(), StdErr> {
-    let file_stem = file_name.file_stem().unwrap();
     let fname = file_name.display().to_string();
     let mut expected_errors = load_expected_errors(&file_name).unwrap();
     expected_errors.sort();
@@ -610,7 +608,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
                 time_of_check = end - start;
 
-                let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
+                let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
 
                 checker.run(|| {
                     for e in errors {

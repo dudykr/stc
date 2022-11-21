@@ -3,7 +3,7 @@ use stc_ts_ast_rnode::{
     RArrayPat, RAssignPat, RAssignPatProp, RBindingIdent, RExpr, RIdent, RKeyValuePatProp, RKeyValueProp, RObjectPat, RObjectPatProp,
     RParam, RPat, RProp, RPropOrSpread, RRestPat,
 };
-use stc_ts_errors::{Error, Errors};
+use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_type_ops::widen::Widen;
 use stc_ts_types::{
     Array, ArrayMetadata, CommonTypeMetadata, Instance, Key, KeywordType, PropertySignature, Tuple, TupleElement, TypeElMetadata,
@@ -180,16 +180,18 @@ impl Analyzer<'_, '_> {
 
         if self.ctx.in_declare {
             match p {
-                RPat::Assign(p) => self.storage.report(Error::InitializerDisallowedInAmbientContext { span: p.span }),
+                RPat::Assign(p) => self
+                    .storage
+                    .report(ErrorKind::InitializerDisallowedInAmbientContext { span: p.span }.into()),
                 _ => {}
             }
         }
 
         if !self.ctx.in_declare && !self.ctx.in_fn_without_body {
             match p {
-                RPat::Array(RArrayPat { span, optional: true, .. }) | RPat::Object(RObjectPat { span, optional: true, .. }) => {
-                    self.storage.report(Error::OptionalBindingPatternInImplSignature { span: *span })
-                }
+                RPat::Array(RArrayPat { span, optional: true, .. }) | RPat::Object(RObjectPat { span, optional: true, .. }) => self
+                    .storage
+                    .report(ErrorKind::OptionalBindingPatternInImplSignature { span: *span }.into()),
                 _ => {}
             }
         }
@@ -459,7 +461,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
                     }) => {}
-                    _ => Err(Error::TS2370 { span: p.dot3_token })?,
+                    _ => Err(ErrorKind::TS2370 { span: p.dot3_token })?,
                 }
             };
             res.store(&mut errors);
@@ -473,7 +475,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsAnyKeyword,
                         ..
                     }) => {}
-                    _ => Err(Error::TS2370 { span: p.dot3_token })?,
+                    _ => Err(ErrorKind::TS2370 { span: p.dot3_token })?,
                 }
             };
 
@@ -518,7 +520,7 @@ impl Analyzer<'_, '_> {
                                         }
                                     }
 
-                                    self.storage.report(Error::TS2353 { span: prop.span() })
+                                    self.storage.report(ErrorKind::TS2353 { span: prop.span() }.into())
                                 }
                                 _ => {}
                             }

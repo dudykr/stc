@@ -4,7 +4,7 @@ use rnode::{FoldWith, Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RArrayPat, RCallExpr, RCallee, RExpr, RIdent, RPat, RTsAsExpr, RTsEntityName, RTsTypeAssertion, RVarDecl, RVarDeclarator,
 };
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind, Errors};
 use stc_ts_type_ops::{generalization::prevent_generalize, Fix};
 use stc_ts_types::{
     Array, EnumVariant, Id, Instance, InstanceMetadata, KeywordType, KeywordTypeMetadata, Operator, OperatorMetadata, QueryExpr, QueryType,
@@ -24,6 +24,7 @@ use crate::{
         expr::TypeOfMode,
         pat::PatMode,
         scope::VarKind,
+        types::NormalizeTypeOpts,
         util::{Generalizer, ResultExt},
         Analyzer, Ctx,
     },
@@ -595,12 +596,12 @@ impl Analyzer<'_, '_> {
                                         match v.name {
                                             RPat::Ident(ref i) => {
                                                 let span = i.id.span;
-                                                type_errors.push(Error::ImplicitAny { span }.context("tuple type widenning"));
+                                                type_errors.push(ErrorKind::ImplicitAny { span }.context("tuple type widenning"));
                                                 break;
                                             }
                                             RPat::Array(RArrayPat { ref elems, .. }) => {
                                                 let span = elems[i].span();
-                                                type_errors.push(Error::ImplicitAny { span }.context("tuple type widenning"));
+                                                type_errors.push(ErrorKind::ImplicitAny { span }.context("tuple type widenning"));
                                             }
                                             _ => {}
                                         }
@@ -682,8 +683,15 @@ impl Analyzer<'_, '_> {
                         if !self.is_builtin {
                             // Report error if type is not found.
                             if let Some(ty) = &ty {
-                                self.normalize(Some(i.id.span), Cow::Borrowed(ty), Default::default())
-                                    .report(&mut self.storage);
+                                self.normalize(
+                                    Some(i.id.span),
+                                    Cow::Borrowed(ty),
+                                    NormalizeTypeOpts {
+                                        preserve_global_this: true,
+                                        ..Default::default()
+                                    },
+                                )
+                                .report(&mut self.storage);
                             }
                         }
 

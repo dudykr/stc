@@ -78,7 +78,7 @@ Error:
    `----
 
 Error: 
-  > (n: Base[]) => null
+  > (n: Base[]) => any
 
   x Type
    ,-[$DIR/tests/pass/types/inference/generatedContextualTypings/4.ts:9:1]
