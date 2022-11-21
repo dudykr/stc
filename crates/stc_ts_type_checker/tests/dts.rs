@@ -323,7 +323,7 @@ impl Normalizer {
                 }),
             ) => a.value.cmp(&b.value),
 
-            _ => rank(&a).cmp(&rank(&b)),
+            _ => rank(a).cmp(&rank(b)),
         });
 
         types

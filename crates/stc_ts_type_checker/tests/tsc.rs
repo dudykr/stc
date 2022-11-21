@@ -3,6 +3,7 @@
 #![feature(box_patterns)]
 #![feature(test)]
 #![allow(clippy::if_same_then_else)]
+#![allow(clippy::manual_strip)]
 
 extern crate test;
 
@@ -687,7 +688,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             // If we failed, we only emit errors which has wrong line.
 
             for (d, line_col) in diagnostics.into_iter().zip(full_actual_errors.clone()) {
-                if success || env::var("PRINT_ALL").unwrap_or(String::from("")) == "1" || extra_errors.contains(&line_col) {
+                if success || env::var("PRINT_ALL").unwrap_or_default() == "1" || extra_errors.contains(&line_col) {
                     DiagnosticBuilder::new_diagnostic(&handler, d).emit();
                 }
             }

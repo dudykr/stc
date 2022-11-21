@@ -3,6 +3,7 @@
 #![feature(box_patterns)]
 #![feature(test)]
 #![allow(clippy::if_same_then_else)]
+#![allow(clippy::manual_strip)]
 
 extern crate test;
 
@@ -104,97 +105,94 @@ fn do_test(path: &Path) -> Result<(), StdErr> {
 
             let span = module.span;
             let cmts = comments.leading.get(&span.lo());
-            match cmts {
-                Some(ref cmts) => {
-                    for cmt in cmts.iter() {
-                        let s = cmt.text.trim();
-                        if !s.starts_with('@') {
-                            continue;
-                        }
-                        let s = &s[1..]; // '@'
+            if let Some(ref cmts) = cmts {
+                for cmt in cmts.iter() {
+                    let s = cmt.text.trim();
+                    if !s.starts_with('@') {
+                        continue;
+                    }
+                    let s = &s[1..]; // '@'
 
-                        if s.starts_with("target:") || s.starts_with("Target:") {
-                            let s = s["target:".len()..].trim().to_lowercase();
-                            target = match &*s {
-                                "es3" => EsVersion::Es3,
-                                "es5" => EsVersion::Es5,
-                                "es2015" => EsVersion::Es2015,
-                                "es6" => EsVersion::Es2015,
-                                "es2016" => EsVersion::Es2016,
-                                "es2017" => EsVersion::Es2017,
-                                "es2018" => EsVersion::Es2018,
-                                "es2019" => EsVersion::Es2019,
-                                "esnext" => EsVersion::Es2019,
-                                _ => unimplemented!("target: {:?}", s),
-                            };
-                            libs = match target {
-                                EsVersion::Es3 | EsVersion::Es5 => vec![Lib::Es5],
-                                EsVersion::Es2015 => Lib::load("es2015"),
-                                EsVersion::Es2016 => Lib::load("es2016"),
-                                EsVersion::Es2017 => Lib::load("es2017"),
-                                EsVersion::Es2018 => Lib::load("es2018"),
-                                EsVersion::Es2019 => Lib::load("es2019"),
-                                EsVersion::Es2020 => Lib::load("es2020"),
-                                EsVersion::Es2021 => Lib::load("es2021"),
-                                EsVersion::Es2022 => Lib::load("es2022"),
-                            };
-                        } else if s.starts_with("strict:") {
-                            let strict = s["strict:".len()..].trim().parse().unwrap();
-                            rule.no_implicit_any = strict;
-                            rule.no_implicit_this = strict;
-                            rule.always_strict = strict;
-                            rule.strict_null_checks = strict;
-                            rule.strict_function_types = strict;
-                        } else if s.starts_with("noLib:") {
-                            let v = s["noLib:".len()..].trim().parse().unwrap();
-                            if v {
-                                libs = vec![];
-                            }
-                        } else if s.starts_with("noImplicitAny:") {
-                            let v = s["noImplicitAny:".len()..].trim().parse().unwrap();
-                            rule.no_implicit_any = v;
-                        } else if s.starts_with("noImplicitReturns:") {
-                            let v = s["noImplicitReturns:".len()..].trim().parse().unwrap();
-                            rule.no_implicit_returns = v;
-                        } else if s.starts_with("declaration") {
-                        } else if s.starts_with("stripInternal:") {
-                            // TODO(kdy1): Handle
-                        } else if s.starts_with("traceResolution") {
-                            // no-op
-                        } else if s.starts_with("allowUnusedLabels:") {
-                            let v = s["allowUnusedLabels:".len()..].trim().parse().unwrap();
-                            rule.allow_unused_labels = v;
-                        } else if s.starts_with("noEmitHelpers") {
-                            // TODO
-                        } else if s.starts_with("downlevelIteration: ") {
-                            // TODO
-                        } else if s.starts_with("sourceMap:") || s.starts_with("sourcemap:") {
-                            // TODO
-                        } else if s.starts_with("isolatedModules:") {
-                            // TODO
-                        } else if s.starts_with("lib:") {
-                            let mut ls = HashSet::<_>::default();
-                            for v in s["lib:".len()..].trim().split(',') {
-                                ls.extend(Lib::load(v))
-                            }
-                            libs = ls.into_iter().collect()
-                        } else if s.starts_with("allowUnreachableCode:") {
-                            let v = s["allowUnreachableCode:".len()..].trim().parse().unwrap();
-                            rule.allow_unreachable_code = v;
-                        } else if s.starts_with("strictNullChecks:") {
-                            let v = s["strictNullChecks:".len()..].trim().parse().unwrap();
-                            rule.strict_null_checks = v;
-                        } else if s.starts_with("noImplicitThis:") {
-                            let v = s["noImplicitThis:".len()..].trim().parse().unwrap();
-                            rule.no_implicit_this = v;
-                        } else if s.starts_with("skipDefaultLibCheck") {
-                            // TODO
-                        } else {
-                            panic!("Comment is not handled: {}", s);
+                    if s.starts_with("target:") || s.starts_with("Target:") {
+                        let s = s["target:".len()..].trim().to_lowercase();
+                        target = match &*s {
+                            "es3" => EsVersion::Es3,
+                            "es5" => EsVersion::Es5,
+                            "es2015" => EsVersion::Es2015,
+                            "es6" => EsVersion::Es2015,
+                            "es2016" => EsVersion::Es2016,
+                            "es2017" => EsVersion::Es2017,
+                            "es2018" => EsVersion::Es2018,
+                            "es2019" => EsVersion::Es2019,
+                            "esnext" => EsVersion::Es2019,
+                            _ => unimplemented!("target: {:?}", s),
+                        };
+                        libs = match target {
+                            EsVersion::Es3 | EsVersion::Es5 => vec![Lib::Es5],
+                            EsVersion::Es2015 => Lib::load("es2015"),
+                            EsVersion::Es2016 => Lib::load("es2016"),
+                            EsVersion::Es2017 => Lib::load("es2017"),
+                            EsVersion::Es2018 => Lib::load("es2018"),
+                            EsVersion::Es2019 => Lib::load("es2019"),
+                            EsVersion::Es2020 => Lib::load("es2020"),
+                            EsVersion::Es2021 => Lib::load("es2021"),
+                            EsVersion::Es2022 => Lib::load("es2022"),
+                        };
+                    } else if s.starts_with("strict:") {
+                        let strict = s["strict:".len()..].trim().parse().unwrap();
+                        rule.no_implicit_any = strict;
+                        rule.no_implicit_this = strict;
+                        rule.always_strict = strict;
+                        rule.strict_null_checks = strict;
+                        rule.strict_function_types = strict;
+                    } else if s.starts_with("noLib:") {
+                        let v = s["noLib:".len()..].trim().parse().unwrap();
+                        if v {
+                            libs = vec![];
                         }
+                    } else if s.starts_with("noImplicitAny:") {
+                        let v = s["noImplicitAny:".len()..].trim().parse().unwrap();
+                        rule.no_implicit_any = v;
+                    } else if s.starts_with("noImplicitReturns:") {
+                        let v = s["noImplicitReturns:".len()..].trim().parse().unwrap();
+                        rule.no_implicit_returns = v;
+                    } else if s.starts_with("declaration") {
+                    } else if s.starts_with("stripInternal:") {
+                        // TODO(kdy1): Handle
+                    } else if s.starts_with("traceResolution") {
+                        // no-op
+                    } else if s.starts_with("allowUnusedLabels:") {
+                        let v = s["allowUnusedLabels:".len()..].trim().parse().unwrap();
+                        rule.allow_unused_labels = v;
+                    } else if s.starts_with("noEmitHelpers") {
+                        // TODO
+                    } else if s.starts_with("downlevelIteration: ") {
+                        // TODO
+                    } else if s.starts_with("sourceMap:") || s.starts_with("sourcemap:") {
+                        // TODO
+                    } else if s.starts_with("isolatedModules:") {
+                        // TODO
+                    } else if s.starts_with("lib:") {
+                        let mut ls = HashSet::<_>::default();
+                        for v in s["lib:".len()..].trim().split(',') {
+                            ls.extend(Lib::load(v))
+                        }
+                        libs = ls.into_iter().collect()
+                    } else if s.starts_with("allowUnreachableCode:") {
+                        let v = s["allowUnreachableCode:".len()..].trim().parse().unwrap();
+                        rule.allow_unreachable_code = v;
+                    } else if s.starts_with("strictNullChecks:") {
+                        let v = s["strictNullChecks:".len()..].trim().parse().unwrap();
+                        rule.strict_null_checks = v;
+                    } else if s.starts_with("noImplicitThis:") {
+                        let v = s["noImplicitThis:".len()..].trim().parse().unwrap();
+                        rule.no_implicit_this = v;
+                    } else if s.starts_with("skipDefaultLibCheck") {
+                        // TODO
+                    } else {
+                        panic!("Comment is not handled: {}", s);
                     }
                 }
-                None => {}
             }
 
             (libs, rule, ts_config, target)
