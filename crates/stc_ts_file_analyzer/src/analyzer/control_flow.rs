@@ -593,6 +593,7 @@ impl Analyzer<'_, '_> {
                     in_cond: true,
                     in_switch_case_test: true,
                     should_store_truthy_for_access: true,
+                    checking_switch_discriminant_as_bin: true,
                     ..self.ctx
                 };
                 let mut a = self.with_ctx(ctx);
