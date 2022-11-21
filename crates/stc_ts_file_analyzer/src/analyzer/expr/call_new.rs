@@ -273,7 +273,7 @@ impl Analyzer<'_, '_> {
                     .cloned()
                     .map(|arg| match arg {
                         RExprOrSpread { spread: None, expr } => match *expr {
-                            RExpr::Lit(RLit::Str(RStr { span, value, .. })) => RIdent::new(value.clone(), span).into(),
+                            RExpr::Lit(RLit::Str(RStr { span, value, .. })) => RIdent::new(value, span).into(),
                             _ => unimplemented!("dynamic import: require()"),
                         },
                         _ => unimplemented!("error reporting: spread element in require()"),
@@ -281,7 +281,7 @@ impl Analyzer<'_, '_> {
                     .next()
                     .unwrap();
                 if let Some(dep) = self.find_imported_var(&id)? {
-                    let dep = dep.clone();
+                    let dep = dep;
                     unimplemented!("dep: {:#?}", dep);
                 }
 

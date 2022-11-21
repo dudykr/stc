@@ -664,11 +664,11 @@ impl Analyzer<'_, '_> {
                     )
                 }
 
-                return Ok(Type::Keyword(KeywordType {
+                Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
-                }));
+                }))
             }
 
             op!("<=") | op!("<") | op!(">=") | op!(">") => {
@@ -688,11 +688,11 @@ impl Analyzer<'_, '_> {
                     self.validate_relative_comparison_operands(span, op, &lt, &rt);
                 }
 
-                return Ok(Type::Keyword(KeywordType {
+                Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
-                }));
+                }))
             }
 
             op!("in") => {
@@ -715,11 +715,11 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Ok(Type::Keyword(KeywordType {
+                Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
-                }));
+                }))
             }
 
             op!("||") | op!("&&") => {
