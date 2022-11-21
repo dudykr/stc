@@ -1950,7 +1950,7 @@ impl Analyzer<'_, '_> {
 
             Type::TypeLit(TypeLit { ref members, metadata, .. }) => {
                 return self
-                    .assign_to_type_elements(data, span, &members, rhs, *metadata, opts)
+                    .assign_to_type_elements(data, span, members, rhs, *metadata, opts)
                     .context("tried to assign a type to type elements");
             }
 
@@ -2038,12 +2038,12 @@ impl Analyzer<'_, '_> {
                         let mut errors = vec![];
                         for (l, r) in elems.into_iter().zip(rhs_elems) {
                             for el in elems {
-                                match *r.ty.normalize() {
-                                    Type::Keyword(KeywordType {
-                                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                        ..
-                                    }) => continue,
-                                    _ => {}
+                                if let Type::Keyword(KeywordType {
+                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                                    ..
+                                }) = *r.ty.normalize()
+                                {
+                                    continue;
                                 }
 
                                 errors.extend(
@@ -2274,7 +2274,7 @@ impl Analyzer<'_, '_> {
     fn extract_keys(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let ty = self.normalize(
             Some(span),
-            Cow::Borrowed(&ty),
+            Cow::Borrowed(ty),
             NormalizeTypeOpts {
                 normalize_keywords: true,
                 process_only_key: true,
@@ -2283,32 +2283,29 @@ impl Analyzer<'_, '_> {
         )?;
         let ty = ty.normalize();
 
-        match ty {
-            Type::TypeLit(ty) => {
-                //
-                let mut keys = vec![];
-                for member in &ty.members {
-                    if let TypeElement::Property(PropertySignature {
-                        span,
-                        key: Key::Normal { sym: key, .. },
-                        ..
-                    }) = member
-                    {
-                        keys.push(Type::Lit(LitType {
+        if let Type::TypeLit(ty) = ty {
+            //
+            let mut keys = vec![];
+            for member in &ty.members {
+                if let TypeElement::Property(PropertySignature {
+                    span,
+                    key: Key::Normal { sym: key, .. },
+                    ..
+                }) = member
+                {
+                    keys.push(Type::Lit(LitType {
+                        span: *span,
+                        lit: RTsLit::Str(RStr {
                             span: *span,
-                            lit: RTsLit::Str(RStr {
-                                span: *span,
-                                value: key.clone(),
-                                raw: None,
-                            }),
-                            metadata: Default::default(),
-                        }));
-                    }
+                            value: key.clone(),
+                            raw: None,
+                        }),
+                        metadata: Default::default(),
+                    }));
                 }
-
-                return Ok(Type::new_union(span, keys));
             }
-            _ => {}
+
+            return Ok(Type::new_union(span, keys));
         }
 
         if let Some(ty) = self
@@ -2352,7 +2349,7 @@ impl Analyzer<'_, '_> {
     fn assign_to_mapped(&mut self, data: &mut AssignData, l: &Mapped, r: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         let mut r = self
-            .normalize(Some(span), Cow::Borrowed(&r), NormalizeTypeOpts { ..Default::default() })
+            .normalize(Some(span), Cow::Borrowed(r), NormalizeTypeOpts { ..Default::default() })
             .context("tried to normalize rhs of assignment (to a mapped type)")?;
         r.make_clone_cheap();
 
@@ -2379,7 +2376,7 @@ impl Analyzer<'_, '_> {
 
                 Type::TypeLit(rt) => {
                     match &l.type_param.constraint {
-                        Some(constraint) => self.assign_keys(data, &constraint, &r, opts)?,
+                        Some(constraint) => self.assign_keys(data, constraint, &r, opts)?,
                         None => {}
                     }
 
@@ -2388,7 +2385,7 @@ impl Analyzer<'_, '_> {
                         match member {
                             TypeElement::Property(prop) => {
                                 if let Some(prop_ty) = &prop.type_ann {
-                                    self.assign_with_opts(data, &l_ty, &prop_ty, opts)?;
+                                    self.assign_with_opts(data, l_ty, prop_ty, opts)?;
                                 }
                             }
                             _ => Err(ErrorKind::Unimplemented {
