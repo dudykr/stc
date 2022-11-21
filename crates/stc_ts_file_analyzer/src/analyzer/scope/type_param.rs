@@ -133,22 +133,18 @@ impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {
         ty.normalize_mut();
         ty.visit_mut_children_with(self);
 
-        match ty {
-            Type::Param(param) => {
-                if self.declared.contains(&param.name) {
-                    return;
-                }
-
-                if self.analyzer.is_type_param_dead(&param.name) {
-                    *ty = Type::TypeLit(TypeLit {
-                        span: param.span,
-                        members: vec![],
-                        metadata: Default::default(),
-                    });
-                    return;
-                }
+        if let Type::Param(param) = ty {
+            if self.declared.contains(&param.name) {
+                return;
             }
-            _ => {}
+
+            if self.analyzer.is_type_param_dead(&param.name) {
+                *ty = Type::TypeLit(TypeLit {
+                    span: param.span,
+                    members: vec![],
+                    metadata: Default::default(),
+                });
+            }
         }
     }
 }

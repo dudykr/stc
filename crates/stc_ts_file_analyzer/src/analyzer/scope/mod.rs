@@ -127,7 +127,7 @@ impl Scope<'_> {
     where
         F: FnMut(&Scope) -> bool,
     {
-        if filter(&self) {
+        if filter(self) {
             return Some(self);
         }
 
@@ -392,10 +392,7 @@ impl Scope<'_> {
             ScopeKind::Module | ScopeKind::Method { .. } | ScopeKind::Fn | ScopeKind::ArrowFn => return,
             _ => {}
         }
-        let is_end_of_loop = match child.kind {
-            ScopeKind::LoopBody { last: true } => true,
-            _ => false,
-        };
+        let is_end_of_loop = matches!(child.kind, ScopeKind::LoopBody { last: true });
 
         for (name, var) in child.vars.drain() {
             if let Some(ty) = &var.ty {
@@ -643,11 +640,7 @@ impl Scope<'_> {
     }
 
     pub fn cannot_use_this_because_super_not_called(&self) -> bool {
-        let first = self.first(|scope| match scope.kind {
-            ScopeKind::Class => true,
-            ScopeKind::ArrowFn | ScopeKind::Fn => true,
-            _ => false,
-        });
+        let first = self.first(|scope| matches!(scope.kind, ScopeKind::Class | ScopeKind::ArrowFn | ScopeKind::Fn));
 
         match first {
             Some(s) => s.kind == ScopeKind::Class && *s.class.need_super_call.borrow(),
@@ -767,11 +760,7 @@ impl Analyzer<'_, '_> {
             debug!("[({})/types] Registering: {:?}", self.scope.depth(), name);
         }
 
-        let should_check_for_mixed = !self.is_builtin
-            && match ty.normalize() {
-                Type::Param(..) => false,
-                _ => true,
-            };
+        let should_check_for_mixed = !self.is_builtin && !matches!(ty.normalize(), Type::Param(..));
         if should_check_for_mixed {
             // Report an error for
             //
@@ -851,12 +840,11 @@ impl Analyzer<'_, '_> {
                     | js_word!("String") => {
                         self.env.declare_global_type(name.sym().clone(), ty.clone());
                     }
-                    _ => match &**name.sym() {
-                        "SymbolConstructor" => {
+                    _ => {
+                        if let "SymbolConstructor" = &**name.sym() {
                             self.env.declare_global_type(name.sym().clone(), ty.clone());
                         }
-                        _ => {}
-                    },
+                    }
                 }
             }
 
@@ -978,7 +966,7 @@ impl Analyzer<'_, '_> {
             // println!("({}) find_var_type({})", self.scope.depth(), name);
             let mut scope = Some(&self.scope);
             while let Some(s) = scope {
-                if let Some(ref v) = s.facts.vars.get(&Name::from(name)) {
+                if let Some(v) = s.facts.vars.get(&Name::from(name)) {
                     v.assert_clone_cheap();
 
                     if cfg!(debug_assertions) {

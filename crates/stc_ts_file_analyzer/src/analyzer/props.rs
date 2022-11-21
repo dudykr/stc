@@ -356,9 +356,9 @@ impl Analyzer<'_, '_> {
         // TODO(kdy1): Validate prop key
 
         let shorthand_type_ann = match prop {
-            RProp::Shorthand(ref i) => {
+            RProp::Shorthand(i) => {
                 // TODO(kdy1): Check if RValue is correct
-                self.type_of_var(&i, TypeOfMode::RValue, None)
+                self.type_of_var(i, TypeOfMode::RValue, None)
                     .report(&mut self.storage)
                     .map(Box::new)
             }
@@ -390,7 +390,7 @@ impl Analyzer<'_, '_> {
                 let computed = matches!(kv.key, RPropName::Computed(_));
 
                 let type_ann = object_type.and_then(|obj| {
-                    self.access_property(span, &obj, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                    self.access_property(span, obj, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
                         .ok()
                 });
 
@@ -554,7 +554,7 @@ impl Analyzer<'_, '_> {
                 |child: &mut Analyzer| {
                     if let Some(body) = &n.body {
                         let ret_ty = child.visit_stmts_for_return(n.span, false, false, &body.stmts)?;
-                        if let None = ret_ty {
+                        if ret_ty.is_none() {
                             // getter property must have return statements.
                             child.storage.report(ErrorKind::TS2378 { span: n.key.span() }.into());
                         }
