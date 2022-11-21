@@ -1373,24 +1373,20 @@ impl Analyzer<'_, '_> {
                 ref name, ref constraint, ..
             }) => {
                 //
-                match to {
-                    Type::Param(TypeParam { name: ref l_name, .. }) => {
-                        if opts.allow_assignment_to_param {
-                            return Ok(());
-                        }
-
-                        if name == l_name {
-                            return Ok(());
-                        }
-                        match constraint.as_deref() {
-                            Some(constraint) if constraint.is_type_param() => {}
-                            _ => {
-                                fail!()
-                            }
-                        }
+                if let Type::Param(TypeParam { name: ref l_name, .. }) = to {
+                    if opts.allow_assignment_to_param {
+                        return Ok(());
                     }
 
-                    _ => {}
+                    if name == l_name {
+                        return Ok(());
+                    }
+                    match constraint.as_deref() {
+                        Some(constraint) if constraint.is_type_param() => {}
+                        _ => {
+                            fail!()
+                        }
+                    }
                 }
 
                 match *constraint {
@@ -1419,13 +1415,15 @@ impl Analyzer<'_, '_> {
                 }
             }
 
-            Type::Predicate(..) => match rhs {
-                Type::Keyword(KeywordType {
+            Type::Predicate(..) => {
+                if let Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     ..
-                }) => return Ok(()),
-                _ => {}
-            },
+                }) = rhs
+                {
+                    return Ok(());
+                }
+            }
 
             _ => {}
         }
