@@ -621,7 +621,7 @@ impl Scope<'_> {
     }
 
     pub fn get_var(&self, sym: &Id) -> Option<&VarInfo> {
-        if let Some(ref v) = self.vars.get(sym) {
+        if let Some(v) = self.vars.get(sym) {
             return Some(v);
         }
 

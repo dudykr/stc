@@ -769,7 +769,7 @@ impl Analyzer<'_, '_> {
                 match arg {
                     Type::Array(Array {
                         elem_type: arg_elem_type, ..
-                    }) => return self.infer_type(span, inferred, &arr.elem_type, &arg_elem_type, opts),
+                    }) => return self.infer_type(span, inferred, &arr.elem_type, arg_elem_type, opts),
 
                     Type::Tuple(arg) => {
                         let arg = Type::union(arg.elems.iter().map(|element| *element.ty.clone()));
@@ -1354,14 +1354,12 @@ impl Analyzer<'_, '_> {
                             ty: operator_arg,
                             ..
                         }) => match operator_arg.normalize() {
-                            Type::Param(TypeParam { name, .. }) => {
-                                return Some(Res {
-                                    name: name.clone(),
-                                    key_name: key_name.clone(),
-                                    optional: *optional,
-                                    readonly: *readonly,
-                                })
-                            }
+                            Type::Param(TypeParam { name, .. }) => Some(Res {
+                                name: name.clone(),
+                                key_name: key_name.clone(),
+                                optional: *optional,
+                                readonly: *readonly,
+                            }),
                             _ => None,
                         },
 

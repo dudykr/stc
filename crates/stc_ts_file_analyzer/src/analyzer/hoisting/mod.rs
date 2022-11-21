@@ -15,7 +15,7 @@ impl Analyzer<'_, '_> {
     where
         T: AsModuleDecl + ModuleItemOrStmt + VisitWith<Self> + From<RStmt> + HasNodeId + Sortable<Id = TypedId>,
     {
-        let (order, skip) = self.reorder_stmts(&stmts);
+        let (order, skip) = self.reorder_stmts(stmts);
         let mut type_decls = FxHashMap::<Id, Vec<usize>>::with_capacity_and_hasher(order.len(), Default::default());
 
         if self.scope.is_root() {
