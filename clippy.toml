@@ -16,4 +16,5 @@ disallowed-names = [
   "isize",
   "usize",
 ]
+too-many-arguments-threshold = 20
 type-complexity-threshold = 25000
