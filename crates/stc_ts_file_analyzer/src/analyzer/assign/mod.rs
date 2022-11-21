@@ -163,6 +163,19 @@ pub(crate) struct AssignOpts {
     pub is_params_of_method_definition: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Relation {
+    Assignability,
+    Comparibility,
+    Subtype,
+}
+
+impl Default for Relation {
+    fn default() -> Self {
+        Self::Assignability
+    }
+}
+
 #[derive(Default)]
 pub struct AssignData {
     dejavu: Vec<(Type, Type)>,
