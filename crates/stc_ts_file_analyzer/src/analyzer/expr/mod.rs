@@ -141,14 +141,9 @@ impl Analyzer<'_, '_> {
                         self.storage.report(ErrorKind::ThisUsedBeforeCallingSuper { span }.into())
                     }
 
-                    let is_ref_to_module = match self.scope.kind() {
-                        ScopeKind::Module => true,
-                        _ => false,
-                    } || (self.ctx.in_computed_prop_name
-                        && match self.scope.scope_of_computed_props().map(|s| s.kind()) {
-                            Some(ScopeKind::Module) => true,
-                            _ => false,
-                        });
+                    let is_ref_to_module = matches!(self.scope.kind(), ScopeKind::Module)
+                        || (self.ctx.in_computed_prop_name
+                            && matches!(self.scope.scope_of_computed_props().map(|s| s.kind()), Some(ScopeKind::Module)));
                     if is_ref_to_module {
                         self.storage.report(ErrorKind::ThisRefToModuleOrNamespace { span }.into())
                     }
@@ -1241,7 +1236,7 @@ impl Analyzer<'_, '_> {
                     expr: box RExpr::Lit(RLit::Str(RStr { value: sym, .. })),
                     ..
                 }) => {
-                    if &*sym == "globalThis" {
+                    if &**sym == "globalThis" {
                         return Ok(obj.clone());
                     }
 
@@ -1811,7 +1806,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             //
-                            if self.key_matches(span, &class_prop.key, &prop, false) {
+                            if self.key_matches(span, &class_prop.key, prop, false) {
                                 return Ok(match class_prop.value {
                                     Some(ref ty) => *ty.clone(),
                                     None => Type::any(span, Default::default()),

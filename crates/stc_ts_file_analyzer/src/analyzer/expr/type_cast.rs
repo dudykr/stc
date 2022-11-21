@@ -163,15 +163,10 @@ impl Analyzer<'_, '_> {
 
             Type::Array(ref lt) => {
                 //
-                match orig.normalize() {
-                    Type::Tuple(ref rt) => {
-                        if rt.elems[0].ty.type_eq(&lt.elem_type) {
-                            return Ok(());
-                        }
+                if let Type::Tuple(ref rt) = orig.normalize() {
+                    if rt.elems[0].ty.type_eq(&lt.elem_type) {
+                        return Ok(());
                     }
-
-                    // fallback to .assign
-                    _ => {}
                 }
             }
 
