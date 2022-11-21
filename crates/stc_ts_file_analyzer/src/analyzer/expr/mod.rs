@@ -1224,10 +1224,6 @@ impl Analyzer<'_, '_> {
             debug!("access_property: obj = {}", dump_type_as_string(&self.cm, &obj));
         }
 
-        if obj.is_undefined() && self.rule().strict_null_checks {
-            return Err(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
-        }
-
         let _stack = stack::track(span)?;
 
         let marks = self.marks();
