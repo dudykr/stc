@@ -288,7 +288,7 @@ impl Analyzer<'_, '_> {
                     right: &**right,
                 };
 
-                self.add_type_facts_for_typeof(span, &left, &right, is_eq).report(&mut self.storage);
+                self.add_type_facts_for_typeof(span, left, right, is_eq).report(&mut self.storage);
 
                 // Try narrowing type
                 let c = Comparator {
@@ -337,7 +337,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                self.add_type_facts_for_opt_chains(span, &left, &right, &lt, &rt)
+                self.add_type_facts_for_opt_chains(span, left, right, &lt, &rt)
                     .report(&mut self.storage);
 
                 if let Some((l, r_ty)) = c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
@@ -624,20 +624,18 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Ok(Type::Keyword(KeywordType {
+                Ok(Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     span,
                     metadata: Default::default(),
-                }));
+                }))
             }
 
-            op!("===") | op!("!==") | op!("!=") | op!("==") => {
-                return Ok(Type::Keyword(KeywordType {
-                    span,
-                    kind: TsKeywordTypeKind::TsBooleanKeyword,
-                    metadata: Default::default(),
-                }));
-            }
+            op!("===") | op!("!==") | op!("!=") | op!("==") => Ok(Type::Keyword(KeywordType {
+                span,
+                kind: TsKeywordTypeKind::TsBooleanKeyword,
+                metadata: Default::default(),
+            })),
 
             op!("instanceof") => {
                 if !self.is_valid_lhs_of_instanceof(span, &lt) {
