@@ -355,11 +355,9 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate(&mut self, p: &RTsParamProp) -> VResult<FnParam> {
         if self.ctx.in_declare {
-            match p.param {
-                RTsParamPropParam::Assign(..) => self
-                    .storage
-                    .report(ErrorKind::InitializerDisallowedInAmbientContext { span: p.span }.into()),
-                _ => {}
+            if let RTsParamPropParam::Assign(..) = p.param {
+                self.storage
+                    .report(ErrorKind::InitializerDisallowedInAmbientContext { span: p.span }.into())
             }
         }
 
@@ -1095,14 +1093,11 @@ impl Analyzer<'_, '_> {
                 ($m:expr, $body:expr, $is_constructor:expr) => {{
                     let m = $m;
 
-                    let computed = match m.key {
-                        RPropName::Computed(..) => true,
-                        _ => false,
-                    };
+                    let computed = matches!(m.key, RPropName::Computed(..));
 
                     if $body.is_none() {
                         if name.is_some() && !is_key_optional(&m.key) && !is_prop_name_eq_include_computed(&name.unwrap(), &m.key) {
-                            for (span, is_constructor) in replace(&mut spans, vec![]) {
+                            for (span, is_constructor) in take(&mut spans) {
                                 if is_constructor {
                                     errors.push(ErrorKind::ConstructorImplMissingOrNotFollowedByDecl { span }.into());
                                 } else {
