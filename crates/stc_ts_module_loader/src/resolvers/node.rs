@@ -100,7 +100,7 @@ impl NodeResolver {
     }
 
     fn try_package(&self, pkg_dir: &Path) -> Result<PathBuf, Error> {
-        self.resolve_as_file(&pkg_dir).or_else(|_| self.resolve_as_directory(&pkg_dir))
+        self.resolve_as_file(pkg_dir).or_else(|_| self.resolve_as_directory(pkg_dir))
     }
 
     /// Resolve by walking up node_modules folders.
@@ -142,10 +142,10 @@ impl Resolve for NodeResolver {
             }
         };
         // Absolute path
-        if target.starts_with("/") {
+        if target.starts_with('/') {
             let base_dir = &Path::new("/");
 
-            let path = base_dir.join(&*target);
+            let path = base_dir.join(target);
             return self
                 .resolve_as_file(&path)
                 .or_else(|_| self.resolve_as_directory(&path))
@@ -153,10 +153,10 @@ impl Resolve for NodeResolver {
         }
 
         let cwd = &Path::new(".");
-        let base_dir = base.parent().unwrap_or(&cwd);
+        let base_dir = base.parent().unwrap_or(cwd);
 
         if target.starts_with("./") || target.starts_with("../") {
-            let path = base_dir.join(&*target);
+            let path = base_dir.join(target);
             return self
                 .resolve_as_file(&path)
                 .with_context(|| format!("failed to resolve `{}` as a file dependancy from `{}`", target, base.display()))

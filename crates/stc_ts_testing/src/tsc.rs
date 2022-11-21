@@ -27,7 +27,7 @@ impl TscError {
             }
             let mut error = TscError::default();
 
-            for (idx, item) in line.split(":").enumerate() {
+            for (idx, item) in line.split(':').enumerate() {
                 match idx {
                     0 => {
                         let item = item.strip_prefix("\u{001b}[96m");
@@ -97,7 +97,7 @@ pub struct TypeInfo {
 
 impl TsTestCase {
     pub fn parse(cm: &Arc<SourceMap>, handler: &Handler, file_name: &Path, comments: Option<&dyn Comments>) -> Result<Self, Error> {
-        let s = read_to_string(&file_name).with_context(|| format!("failed to parse typescript test file at `{}`", file_name.display()))?;
+        let s = read_to_string(file_name).with_context(|| format!("failed to parse typescript test file at `{}`", file_name.display()))?;
         let mut code = String::new();
         let mut type_data = vec![];
 

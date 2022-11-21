@@ -22,7 +22,7 @@ pub fn builtin() {
                 "es2015.full",
                 "es5.full",
             ] {
-                libs.extend(Lib::load(&s));
+                libs.extend(Lib::load(s));
             }
             libs.sort();
             libs.dedup();
@@ -69,8 +69,9 @@ pub fn intl() {
         GLOBALS.set(&globals, || {
             let shared = StableEnv::new(globals.clone());
             let mut libs = vec![];
-            for s in &["es5"] {
-                libs.extend(Lib::load(&s));
+            {
+                let s = &"es5";
+                libs.extend(Lib::load(s));
             }
             libs.sort();
             libs.dedup();

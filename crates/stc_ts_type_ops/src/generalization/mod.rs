@@ -83,7 +83,7 @@ impl Fold<Type> for LitGeneralizer {
         ty.normalize_mut();
 
         match &ty {
-            Type::IndexedAccessType(IndexedAccessType { index_type, .. }) if is_str_lit_or_union(&index_type) => {
+            Type::IndexedAccessType(IndexedAccessType { index_type, .. }) if is_str_lit_or_union(index_type) => {
                 return ty;
             }
             _ => {}
@@ -99,7 +99,7 @@ impl Fold<Type> for LitGeneralizer {
                     return ty;
                 }
 
-                return Type::Keyword(KeywordType {
+                Type::Keyword(KeywordType {
                     span,
                     kind: match *lit {
                         RTsLit::Bool(RBool { .. }) => TsKeywordTypeKind::TsBooleanKeyword,
@@ -112,7 +112,7 @@ impl Fold<Type> for LitGeneralizer {
                         common: metadata.common,
                         ..Default::default()
                     },
-                });
+                })
             }
             _ => ty,
         }

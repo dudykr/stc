@@ -60,8 +60,8 @@ pub fn cleanup_module_for_dts(module: &mut Vec<RModuleItem>, type_data: &ModuleT
     });
 
     module.visit_mut_with(&mut DceForDts {
-        used: get_used(&type_data),
-        info: &type_data,
+        used: get_used(type_data),
+        info: type_data,
         current_class: None,
         in_declare: false,
         top_level: true,
@@ -151,19 +151,19 @@ impl Visit<RClass> for TypeUsageCollector {
 
         fn left_most(e: &RExpr) -> Option<Id> {
             match e {
-                RExpr::Ident(i) => return Some(i.into()),
+                RExpr::Ident(i) => Some(i.into()),
                 RExpr::Member(RMemberExpr {
                     obj: e,
                     prop: RMemberProp::Ident(..) | RMemberProp::PrivateName(..),
                     ..
-                }) => return left_most(&e),
+                }) => left_most(e),
                 _ => None,
             }
         }
 
         match &class.super_class {
             Some(e) => {
-                if let Some(id) = left_most(&e) {
+                if let Some(id) = left_most(e) {
                     self.used_types.insert(id.clone());
                     self.used_vars.insert(id);
                 }

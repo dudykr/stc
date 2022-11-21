@@ -111,7 +111,7 @@ where
         let module_id = self.id_generator.generate(entry).0;
 
         let res = {
-            let mut analyzer = GraphAnalyzer::new(&*self);
+            let mut analyzer = GraphAnalyzer::new(self);
             analyzer.load(module_id);
             analyzer.into_result()
         };
@@ -205,10 +205,8 @@ where
     fn load_including_deps(&self, path: &Arc<FileName>, resolve_all: bool) {
         let (id, _) = self.id_generator.generate(path);
 
-        if resolve_all {
-            if self.started.remove(&id).is_none() {
-                return;
-            }
+        if resolve_all && self.started.remove(&id).is_none() {
+            return;
         }
 
         let loaded = self.load(path, resolve_all);
@@ -269,10 +267,8 @@ where
             if self.loaded.contains_key(&module_id) {
                 return Ok(None);
             }
-        } else {
-            if self.started.contains_key(&module_id) {
-                return Ok(None);
-            }
+        } else if self.started.contains_key(&module_id) {
+            return Ok(None);
         }
 
         debug!("Loading {:?}: {}", module_id, filename);
@@ -339,12 +335,12 @@ where
             }
         };
 
-        let fm = self.cm.load_file(&path)?;
+        let fm = self.cm.load_file(path)?;
         let lexer = Lexer::new(
             Syntax::Typescript(TsConfig {
                 dts: path.as_os_str().to_string_lossy().ends_with(".d.ts"),
                 tsx: path.extension().map(|v| v == "tsx").unwrap_or(false),
-                ..self.parser_config.clone()
+                ..self.parser_config
             }),
             self.target,
             StringInput::from(&*fm),

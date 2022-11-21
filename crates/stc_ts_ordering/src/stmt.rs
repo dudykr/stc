@@ -78,7 +78,7 @@ fn vars_declared_by_var_decl(v: &RVarDecl) -> AHashMap<TypedId, AHashSet<TypedId
         }
     }
 
-    return map;
+    map
 }
 
 fn ids_declared_by_decl(d: &RDecl) -> AHashMap<TypedId, AHashSet<TypedId>> {
@@ -100,7 +100,7 @@ fn ids_declared_by_decl(d: &RDecl) -> AHashMap<TypedId, AHashSet<TypedId>> {
                 },
                 used_ids,
             );
-            return map;
+            map
         }
         RDecl::Fn(f) => {
             let used_ids = deps_of(&f.function);
@@ -111,9 +111,9 @@ fn ids_declared_by_decl(d: &RDecl) -> AHashMap<TypedId, AHashSet<TypedId>> {
                 },
                 used_ids,
             );
-            return map;
+            map
         }
-        RDecl::Var(v) => return vars_declared_by_var_decl(v),
+        RDecl::Var(v) => vars_declared_by_var_decl(v),
         RDecl::TsEnum(e) => {
             map.insert(
                 TypedId {
@@ -129,7 +129,7 @@ fn ids_declared_by_decl(d: &RDecl) -> AHashMap<TypedId, AHashSet<TypedId>> {
                 },
                 Default::default(),
             );
-            return map;
+            map
         }
         RDecl::TsModule(box RTsModuleDecl {
             id: RTsModuleName::Ident(i),
@@ -149,7 +149,7 @@ fn ids_declared_by_decl(d: &RDecl) -> AHashMap<TypedId, AHashSet<TypedId>> {
                 },
                 Default::default(),
             );
-            return map;
+            map
         }
 
         RDecl::TsInterface(i) => {
@@ -162,7 +162,7 @@ fn ids_declared_by_decl(d: &RDecl) -> AHashMap<TypedId, AHashSet<TypedId>> {
                 },
                 deps,
             );
-            return map;
+            map
         }
 
         RDecl::TsTypeAlias(a) => {
@@ -175,10 +175,10 @@ fn ids_declared_by_decl(d: &RDecl) -> AHashMap<TypedId, AHashSet<TypedId>> {
                 deps,
             );
 
-            return map;
+            map
         }
 
-        RDecl::TsModule(_) => return Default::default(),
+        RDecl::TsModule(_) => Default::default(),
     }
 }
 
@@ -234,7 +234,7 @@ where
                     e.extend(extra_ids.clone());
                 }
 
-                return map;
+                map
             }
             _ => Default::default(),
         },

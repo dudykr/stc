@@ -126,7 +126,7 @@ pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
                     arms: files
                         .iter()
                         .map(|(_, f)| {
-                            let name = syn::Ident::new(&name_for(&f), call_site());
+                            let name = syn::Ident::new(&name_for(f), call_site());
 
                             q().quote_with(smart_quote!(
                                 Vars {
@@ -202,7 +202,7 @@ pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
                                 .map(|v| {
                                     q().quote_with(smart_quote!(
                                         Vars {
-                                            v: syn::Ident::new(&*v, call_site())
+                                            v: syn::Ident::new(&v, call_site())
                                         },
                                         { Lib::v }
                                     ))

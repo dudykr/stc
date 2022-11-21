@@ -27,14 +27,14 @@ where
     /// This returns [FileName::Custom] for `declare module "http"`-s.
     pub(crate) fn resolve(&self, base: &FileName, module_specifier: &str) -> Result<Arc<FileName>, Error> {
         for (pat, path) in self.declared_modules.read().iter() {
-            if matches(&pat, &module_specifier) {
+            if matches(pat, module_specifier) {
                 return Ok(path.clone());
             }
         }
 
         let resolved = self
             .resolver
-            .resolve(&base, module_specifier)
+            .resolve(base, module_specifier)
             .with_context(|| "failed to resolve dependency")?;
 
         Ok(Arc::new(resolved))

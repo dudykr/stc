@@ -177,6 +177,6 @@ impl<'a> TryFrom<&'a RMemberExpr> for Name {
             _ => return Err(()),
         });
 
-        return Ok(name);
+        Ok(name)
     }
 }
