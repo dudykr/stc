@@ -2063,39 +2063,33 @@ impl Analyzer<'_, '_> {
         let mut setters = vec![];
 
         for (_, body) in &body {
-            match body {
-                ClassMember::Property(ClassProperty {
-                    accessor: Accessor {
-                        setter: true,
-                        getter: true,
-                    },
-                    ..
-                }) => {
-                    unreachable!("At this moment, getters and setters should not be combined")
-                }
-                _ => {}
+            if let ClassMember::Property(ClassProperty {
+                accessor: Accessor {
+                    setter: true,
+                    getter: true,
+                },
+                ..
+            }) = body
+            {
+                unreachable!("At this moment, getters and setters should not be combined")
             }
 
-            match body {
-                ClassMember::Property(ClassProperty {
-                    key,
-                    accessor: Accessor { setter: true, .. },
-                    ..
-                }) => {
-                    setters.push(key.clone());
-                }
-                _ => {}
+            if let ClassMember::Property(ClassProperty {
+                key,
+                accessor: Accessor { setter: true, .. },
+                ..
+            }) = body
+            {
+                setters.push(key.clone());
             }
 
-            match body {
-                ClassMember::Property(ClassProperty {
-                    key,
-                    accessor: Accessor { getter: true, .. },
-                    ..
-                }) => {
-                    getters.push(key.clone());
-                }
-                _ => {}
+            if let ClassMember::Property(ClassProperty {
+                key,
+                accessor: Accessor { getter: true, .. },
+                ..
+            }) = body
+            {
+                getters.push(key.clone());
             }
         }
 
