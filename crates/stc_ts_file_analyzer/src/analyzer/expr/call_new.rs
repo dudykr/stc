@@ -1846,7 +1846,7 @@ impl Analyzer<'_, '_> {
             Type::Interface(..) => {
                 let callee = self.convert_type_to_type_lit(span, callee)?.map(Cow::into_owned).map(Type::TypeLit);
                 if let Some(callee) = callee {
-                    return Ok(self.extract_callee_candidates(span, kind, &callee)?);
+                    return self.extract_callee_candidates(span, kind, &callee);
                 }
             }
 
@@ -1892,21 +1892,18 @@ impl Analyzer<'_, '_> {
 
                 let mut candidates = vec![];
                 for body in &cls.body {
-                    match body {
-                        ClassMember::Constructor(c) => {
-                            candidates.push(CallCandidate {
-                                type_params: c.type_params.clone().map(|v| v.params),
-                                params: c.params.clone(),
-                                ret_ty: c.ret_ty.clone().map(|v| *v).unwrap_or_else(|| {
-                                    Type::Class(Class {
-                                        span,
-                                        def: box cls.clone(),
-                                        metadata: Default::default(),
-                                    })
-                                }),
-                            });
-                        }
-                        _ => {}
+                    if let ClassMember::Constructor(c) = body {
+                        candidates.push(CallCandidate {
+                            type_params: c.type_params.clone().map(|v| v.params),
+                            params: c.params.clone(),
+                            ret_ty: c.ret_ty.clone().map(|v| *v).unwrap_or_else(|| {
+                                Type::Class(Class {
+                                    span,
+                                    def: box cls.clone(),
+                                    metadata: Default::default(),
+                                })
+                            }),
+                        });
                     }
                 }
 

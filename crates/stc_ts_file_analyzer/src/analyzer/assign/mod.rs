@@ -2441,7 +2441,7 @@ impl Analyzer<'_, '_> {
 
             Err(ErrorKind::Unimplemented {
                 span: opts.span,
-                msg: format!("Assignment to mapped type"),
+                msg: "Assignment to mapped type".to_string(),
             })?
         };
 
