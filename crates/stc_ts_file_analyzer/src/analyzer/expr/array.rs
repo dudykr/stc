@@ -582,25 +582,22 @@ impl Analyzer<'_, '_> {
 
         let iterator = iterator?;
 
-        match iterator.normalize() {
-            Type::Class(..) => {
-                if let Ok(return_prop_ty) = self.access_property(
+        if let Type::Class(..) = iterator.normalize() {
+            if let Ok(return_prop_ty) = self.access_property(
+                span,
+                &iterator,
+                &Key::Normal {
                     span,
-                    &iterator,
-                    &Key::Normal {
-                        span,
-                        sym: js_word!("return"),
-                    },
-                    TypeOfMode::RValue,
-                    IdCtx::Var,
-                    Default::default(),
-                ) {
-                    if !return_prop_ty.is_fn_type() {
-                        self.storage.report(ErrorKind::ReturnPropertyOfIteratorMustBeMethod { span }.into())
-                    }
+                    sym: js_word!("return"),
+                },
+                TypeOfMode::RValue,
+                IdCtx::Var,
+                Default::default(),
+            ) {
+                if !return_prop_ty.is_fn_type() {
+                    self.storage.report(ErrorKind::ReturnPropertyOfIteratorMustBeMethod { span }.into())
                 }
             }
-            _ => {}
         }
 
         Ok(iterator)

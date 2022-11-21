@@ -553,8 +553,8 @@ impl Analyzer<'_, '_> {
         }
 
         let _tracing = if cfg!(debug_assertions) {
-            let lhs = dump_type_as_string(&self.cm, &to);
-            let rhs = dump_type_as_string(&self.cm, &rhs);
+            let lhs = dump_type_as_string(&self.cm, to);
+            let rhs = dump_type_as_string(&self.cm, rhs);
 
             Some(span!(Level::ERROR, "assign", lhs = &*lhs, rhs = &*rhs).entered())
         } else {
@@ -1024,13 +1024,10 @@ impl Analyzer<'_, '_> {
 
                 if let Some(items) = items {
                     for e in items {
-                        match e.normalize() {
-                            Type::Enum(e) => {
-                                if e.members.len() == 1 {
-                                    return Ok(());
-                                }
+                        if let Type::Enum(e) = e.normalize() {
+                            if e.members.len() == 1 {
+                                return Ok(());
                             }
-                            _ => {}
                         }
                     }
                 }
@@ -1057,7 +1054,7 @@ impl Analyzer<'_, '_> {
                     match self
                         .assign_with_opts(
                             data,
-                            &ty,
+                            ty,
                             rhs,
                             AssignOpts {
                                 allow_unknown_rhs: Some(true),
@@ -2294,23 +2291,21 @@ impl Analyzer<'_, '_> {
                 //
                 let mut keys = vec![];
                 for member in &ty.members {
-                    match member {
-                        TypeElement::Property(PropertySignature {
-                            span,
-                            key: Key::Normal { sym: key, .. },
-                            ..
-                        }) => {
-                            keys.push(Type::Lit(LitType {
+                    if let TypeElement::Property(PropertySignature {
+                        span,
+                        key: Key::Normal { sym: key, .. },
+                        ..
+                    }) = member
+                    {
+                        keys.push(Type::Lit(LitType {
+                            span: *span,
+                            lit: RTsLit::Str(RStr {
                                 span: *span,
-                                lit: RTsLit::Str(RStr {
-                                    span: *span,
-                                    value: key.clone(),
-                                    raw: None,
-                                }),
-                                metadata: Default::default(),
-                            }));
-                        }
-                        _ => {}
+                                value: key.clone(),
+                                raw: None,
+                            }),
+                            metadata: Default::default(),
+                        }));
                     }
                 }
 
@@ -2329,7 +2324,7 @@ impl Analyzer<'_, '_> {
 
         Err(ErrorKind::Unimplemented {
             span,
-            msg: format!("Extract keys"),
+            msg: "Extract keys".to_string(),
         })?
     }
 

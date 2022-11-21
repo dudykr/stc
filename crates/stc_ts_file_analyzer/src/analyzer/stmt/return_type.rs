@@ -532,7 +532,7 @@ impl Visit<RReturnStmt> for LoopBreakerFinder {
 fn should_preserve_ref(ty: &Type) -> bool {
     match ty {
         Type::IndexedAccessType(..) => true,
-        Type::Array(Array { elem_type, .. }) => should_preserve_ref(&elem_type),
+        Type::Array(Array { elem_type, .. }) => should_preserve_ref(elem_type),
         // TODO(kdy1): More work
         _ => false,
     }
