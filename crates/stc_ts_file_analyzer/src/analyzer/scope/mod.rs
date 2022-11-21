@@ -1246,6 +1246,7 @@ impl Analyzer<'_, '_> {
             && !self.ctx.ignore_errors
             && !self.ctx.reevaluating()
             && !self.ctx.in_ts_fn_type
+            && !self.ctx.checking_switch_discriminant_as_bin
         {
             let spans = self.data.var_spans.entry(name.clone()).or_default();
             let err = !spans.is_empty();
