@@ -286,14 +286,14 @@ impl Analyzer<'_, '_> {
     ) -> VResult<FxHashMap<Id, Type>> {
         if cfg!(debug_assertions) {
             // Assertion for deep clone
-            let _ = type_params.clone();
+            let _ = type_params.to_vec();
             let _ = param.clone();
             let _ = arg.clone();
         }
 
         let mut inferred = InferData::default();
 
-        self.infer_type(span, &mut inferred, &param, &arg, InferTypeOpts { skip_union: true, ..opts })
+        self.infer_type(span, &mut inferred, param, arg, InferTypeOpts { skip_union: true, ..opts })
             .context("tried to infer type using two type")?;
 
         let map = self.finalize_inference(inferred);
@@ -348,14 +348,14 @@ impl Analyzer<'_, '_> {
             ));
         }
 
-        match param {
-            Type::Array(Array { elem_type, .. }) => match arg {
+        if let Type::Array(Array { elem_type, .. }) = param.normalize() {
+            match arg.normalize() {
                 Type::Ref(Ref {
                     type_name: RTsEntityName::Ident(type_name),
                     type_args,
                     ..
-                }) if type_name.sym == *"ReadonlyArray" => match type_args {
-                    Some(type_args) => {
+                }) if type_name.sym == *"ReadonlyArray" => {
+                    if let Some(type_args) = type_args {
                         return Some(self.infer_type(
                             span,
                             inferred,
@@ -367,11 +367,9 @@ impl Analyzer<'_, '_> {
                             },
                         ));
                     }
-                    None => {}
-                },
+                }
                 _ => {}
-            },
-            _ => {}
+            }
         }
 
         None
