@@ -37,6 +37,8 @@ pub(crate) struct AssignOpts {
     pub span: Span,
     pub right_ident_span: Option<Span>,
 
+    pub kind: Relation,
+
     /// # Values
     ///
     /// - `Some(false)`: `inexact` and `specified` of [TypeLitMetaadata] are
@@ -163,7 +165,7 @@ pub(crate) struct AssignOpts {
     pub is_params_of_method_definition: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Relation {
     Assignability,
     Comparibility,
