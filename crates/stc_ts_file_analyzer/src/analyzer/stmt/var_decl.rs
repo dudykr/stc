@@ -173,10 +173,7 @@ impl Analyzer<'_, '_> {
                 //         }
                 //     }
                 // };
-                let creates_new_this = match &**init {
-                    RExpr::Object(..) => true,
-                    _ => false,
-                };
+                let creates_new_this = matches!(&**init, RExpr::Object(..));
 
                 let old_this = if creates_new_this { self.scope.this.take() } else { None };
 
@@ -316,22 +313,16 @@ impl Analyzer<'_, '_> {
                             value_ty
                         };
 
-                        let should_generalize_fully = match v.name {
-                            RPat::Array(_) | RPat::Object(..) => false,
-                            _ => true,
-                        } && self.may_generalize(&ty)
-                            && !contains_type_param(&ty);
+                        let should_generalize_fully =
+                            !matches!(v.name, RPat::Array(_) | RPat::Object(..)) && self.may_generalize(&ty) && !contains_type_param(&ty);
 
                         debug!("var: user did not declare type");
                         let mut ty = self.rename_type_params(span, ty, None)?;
                         ty.fix();
                         ty.assert_valid();
 
-                        if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit())
-                            && match v.name {
-                                RPat::Array(_) | RPat::Object(..) => false,
-                                _ => true,
-                            }
+                        #[allow(clippy::nonminimal_bool)]
+                        if !(self.ctx.var_kind == VarDeclKind::Const && ty.is_lit()) && !matches!(v.name, RPat::Array(_) | RPat::Object(..))
                         {
                             if self.may_generalize(&ty) {
                                 // Vars behave differently based on the context.
@@ -368,20 +359,17 @@ impl Analyzer<'_, '_> {
 
                         debug!("[vars]: Type after normalization: {}", dump_type_as_string(&self.cm, &ty));
 
-                        match ty.normalize() {
-                            Type::Ref(..) => {
-                                let ctx = Ctx {
-                                    preserve_ref: true,
-                                    ignore_expand_prevention_for_all: false,
-                                    ignore_expand_prevention_for_top: false,
-                                    ..self.ctx
-                                };
-                                ty = self.with_ctx(ctx).expand(span, ty, Default::default())?;
-                                ty.assert_valid();
+                        if let Type::Ref(..) = ty.normalize() {
+                            let ctx = Ctx {
+                                preserve_ref: true,
+                                ignore_expand_prevention_for_all: false,
+                                ignore_expand_prevention_for_top: false,
+                                ..self.ctx
+                            };
+                            ty = self.with_ctx(ctx).expand(span, ty, Default::default())?;
+                            ty.assert_valid();
 
-                                debug!("[vars]: Type after expansion: {}", dump_type_as_string(&self.cm, &ty));
-                            }
-                            _ => {}
+                            debug!("[vars]: Type after expansion: {}", dump_type_as_string(&self.cm, &ty));
                         }
 
                         ty.assert_valid();
