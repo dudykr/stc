@@ -700,7 +700,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        if let Some(res) = self.assign_to_builtin(data, &to, &rhs, opts) {
+        if let Some(res) = self.assign_to_builtin(data, to, rhs, opts) {
             return res;
         }
 
