@@ -380,8 +380,8 @@ impl Analyzer<'_, '_> {
 
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let param_str = dump_type_as_string(&self.cm, param);
-        let arg_str = dump_type_as_string(&self.cm, arg);
+        let param_str = dump_type_as_string(param);
+        let arg_str = dump_type_as_string(arg);
 
         let _tracing = if cfg!(debug_assertions) {
             Some(span!(Level::ERROR, "infer_type", param = &*param_str, arg = &*arg_str).entered())
@@ -416,8 +416,8 @@ impl Analyzer<'_, '_> {
 
         let _ctx = debug_ctx!(format!(
             "infer_type()\nParam: {}\nArg: {}",
-            dump_type_as_string(&self.cm, param),
-            dump_type_as_string(&self.cm, arg)
+            dump_type_as_string(param),
+            dump_type_as_string(arg)
         ));
 
         if inferred
@@ -650,18 +650,13 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                debug!(
-                    "({}): Inferred `{}` as {}",
-                    self.scope.depth(),
-                    name,
-                    dump_type_as_string(&self.cm, arg)
-                );
+                debug!("({}): Inferred `{}` as {}", self.scope.depth(), name, dump_type_as_string(arg));
 
                 match inferred.type_params.entry(name.clone()) {
                     Entry::Occupied(mut e) => {
                         match e.get_mut() {
                             InferredType::Union(e) => {
-                                debug!("`{}` is already fixed as {}", name, dump_type_as_string(&self.cm, e));
+                                debug!("`{}` is already fixed as {}", name, dump_type_as_string(e));
                                 return Ok(());
                             }
                             InferredType::Other(e) => {
@@ -678,13 +673,13 @@ impl Analyzer<'_, '_> {
                                     )
                                     .is_ok()
                                 }) {
-                                    debug!("Ignoring the result for `{}` can be {}", name, dump_type_as_string(&self.cm, prev));
+                                    debug!("Ignoring the result for `{}` can be {}", name, dump_type_as_string(prev));
 
                                     return Ok(());
                                 }
 
                                 if !e.is_empty() && !opts.append_type_as_union && !is_ok_to_append(e, arg) {
-                                    debug!("Cannot append to `{}` (arg = {})", name, dump_type_as_string(&self.cm, arg));
+                                    debug!("Cannot append to `{}` (arg = {})", name, dump_type_as_string(arg));
 
                                     inferred.errored.insert(name.clone());
                                     return Ok(());
@@ -703,7 +698,7 @@ impl Analyzer<'_, '_> {
                                         )
                                         .is_ok()
                                     {
-                                        debug!("Overrding `{}` with {}", name, dump_type_as_string(&self.cm, arg));
+                                        debug!("Overrding `{}` with {}", name, dump_type_as_string(arg));
 
                                         *prev = arg.clone().generalize_lit();
                                         return Ok(());
@@ -1259,8 +1254,8 @@ impl Analyzer<'_, '_> {
 
         error!(
             "infer_arg_type: unimplemented\nparam  = {}\narg = {}",
-            dump_type_as_string(&self.cm, param),
-            dump_type_as_string(&self.cm, arg),
+            dump_type_as_string(param),
+            dump_type_as_string(arg),
         );
         Ok(())
     }
@@ -1953,7 +1948,7 @@ impl Analyzer<'_, '_> {
                     if let Some(param_ty) = &param.ty {
                         if let Type::TypeLit(arg_lit) = arg {
                             let reversed_param_ty = param_ty.clone().fold_with(&mut MappedReverser::default()).freezed();
-                            print_type("reversed", &self.cm, &reversed_param_ty);
+                            print_type("reversed", &reversed_param_ty);
 
                             self.infer_type(span, inferred, &reversed_param_ty, arg, opts)?;
 
@@ -2106,7 +2101,7 @@ impl Analyzer<'_, '_> {
         debug!(
             "rename_type_params(has_ann = {:?}, ty = {})",
             type_ann.is_some(),
-            dump_type_as_string(&self.cm, &ty)
+            dump_type_as_string(&ty)
         );
 
         if ty.is_intersection() {

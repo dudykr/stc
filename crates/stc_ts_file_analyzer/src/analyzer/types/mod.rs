@@ -76,7 +76,7 @@ impl Analyzer<'_, '_> {
     /// method. Otherwise the span of the original type is used.
     pub(crate) fn normalize<'a>(&mut self, span: Option<Span>, mut ty: Cow<'a, Type>, opts: NormalizeTypeOpts) -> VResult<Cow<'a, Type>> {
         let _tracing = if cfg!(debug_assertions) {
-            let ty_str = dump_type_as_string(&self.cm, &ty);
+            let ty_str = dump_type_as_string(&ty);
 
             Some(span!(Level::ERROR, "normalize", ty = &*ty_str).entered())
         } else {
@@ -108,11 +108,11 @@ impl Analyzer<'_, '_> {
         }
 
         #[cfg(debug_assertions)]
-        let input = dump_type_as_string(&self.cm, &ty);
+        let input = dump_type_as_string(&ty);
 
         let res = (|| {
             let _stack = stack::track(actual_span)?;
-            let _context = debug_ctx!(format!("Normalize: {}", dump_type_as_string(&self.cm, &ty)));
+            let _context = debug_ctx!(format!("Normalize: {}", dump_type_as_string(&ty)));
 
             if matches!(&*ty, Type::Arc(..)) {
                 let ty = self.normalize(span, Cow::Borrowed(ty.normalize()), opts)?.into_owned();
@@ -449,7 +449,7 @@ impl Analyzer<'_, '_> {
                                     if expanded_ty.is_query() {
                                         unreachable!(
                                             "normalize: resolve_typeof returned a query type: {}",
-                                            dump_type_as_string(&self.cm, &expanded_ty)
+                                            dump_type_as_string(&expanded_ty)
                                         )
                                     }
 
@@ -516,7 +516,7 @@ impl Analyzer<'_, '_> {
                                 return Ok(ty);
                             }
 
-                            let _context = debug_ctx!(format!("Property type: {}", dump_type_as_string(&self.cm, &prop_ty)));
+                            let _context = debug_ctx!(format!("Property type: {}", dump_type_as_string(&prop_ty)));
 
                             if let Type::IndexedAccessType(prop_ty) = prop_ty.normalize() {
                                 match prop_ty.index_type.normalize() {
@@ -570,7 +570,7 @@ impl Analyzer<'_, '_> {
 
         if let Ok(res) = &res {
             #[cfg(debug_assertions)]
-            let output = dump_type_as_string(&self.cm, res);
+            let output = dump_type_as_string(res);
 
             #[cfg(debug_assertions)]
             debug!("normalize: {} -> {}", input, output);
@@ -1002,9 +1002,9 @@ impl Analyzer<'_, '_> {
 
         types_to_exclude.extend(self.cur_facts.true_facts.excludes.get(name).cloned().into_iter().flatten());
 
-        let before = dump_type_as_string(&self.cm, ty);
+        let before = dump_type_as_string(ty);
         self.exclude_types(span, ty, Some(types_to_exclude));
-        let after = dump_type_as_string(&self.cm, ty);
+        let after = dump_type_as_string(ty);
 
         debug!("[types/facts] Excluded types: {} => {}", before, after);
     }

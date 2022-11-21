@@ -290,7 +290,7 @@ impl Analyzer<'_, '_> {
                 )?;
 
                 if cfg!(debug_assertions) {
-                    debug!("Callable map:\n{}", dump_type_map(&self.cm, &map));
+                    debug!("Callable map:\n{}", dump_type_map(&map));
                 }
 
                 let new_l_params = self
@@ -326,7 +326,7 @@ impl Analyzer<'_, '_> {
                         new_r_ret_ty.as_ref(),
                         opts,
                     )
-                    .with_context(|| format!("tried to assign to an expanded callable\nMap:\n{}", dump_type_map(&self.cm, &map)));
+                    .with_context(|| format!("tried to assign to an expanded callable\nMap:\n{}", dump_type_map(&map)));
             }
 
             _ => (r_params, r_ret_ty),
@@ -630,8 +630,8 @@ impl Analyzer<'_, '_> {
         let span = opts.span;
         debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
 
-        let _panic = debug_ctx!(format!("left = {}\n{:?}", dump_type_as_string(&self.cm, &l.ty), &l.ty));
-        let _panic = debug_ctx!(format!("right = {}\n{:?}", dump_type_as_string(&self.cm, &r.ty), &r.ty));
+        let _panic = debug_ctx!(format!("left = {}\n{:?}", dump_type_as_string(&l.ty), &l.ty));
+        let _panic = debug_ctx!(format!("right = {}\n{:?}", dump_type_as_string(&r.ty), &r.ty));
 
         if let RPat::Rest(..) = l.pat {
             let l_ty = self

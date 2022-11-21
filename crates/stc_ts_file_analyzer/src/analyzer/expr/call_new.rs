@@ -258,11 +258,11 @@ impl Analyzer<'_, '_> {
         // For debugging
         if false {
             for (i, ty) in arg_types.iter().enumerate() {
-                print_type(&format!("arg {}", i), &self.cm, &ty.ty);
+                print_type(&format!("arg {}", i), &ty.ty);
             }
 
             for (i, ty) in spread_arg_types.iter().enumerate() {
-                print_type(&format!("spreaded arg {}", i), &self.cm, &ty.ty);
+                print_type(&format!("spreaded arg {}", i), &ty.ty);
             }
         }
 
@@ -825,7 +825,7 @@ impl Analyzer<'_, '_> {
                 .access_property(span, &obj_type, prop, TypeOfMode::RValue, IdCtx::Var, Default::default())
                 .context("tried to access property to call it")?;
 
-            let callee_before_expanding = dump_type_as_string(&self.cm, &callee);
+            let callee_before_expanding = dump_type_as_string(&callee);
             let callee = self.expand_top_ref(span, Cow::Owned(callee), Default::default())?.into_owned();
 
             if let Type::ClassDef(cls) = callee.normalize() {
@@ -833,7 +833,7 @@ impl Analyzer<'_, '_> {
                     self.storage.report(ErrorKind::CannotCreateInstanceOfAbstractClass { span }.into())
                 }
             }
-            let callee_str = dump_type_as_string(&self.cm, &callee);
+            let callee_str = dump_type_as_string(&callee);
 
             self.get_best_return_type(span, expr, callee, kind, type_args, args, arg_types, spread_arg_types, type_ann)
                 .convert_err(|err| match err {
@@ -853,18 +853,13 @@ impl Analyzer<'_, '_> {
                     format!(
                         "tried to call property by using access_property because the object type is not handled by call_property: \nobj = \
                          {}\ncallee = {}\ncallee (before expanding): {}",
-                        dump_type_as_string(&self.cm, &obj_type),
+                        dump_type_as_string(&obj_type),
                         callee_str,
                         callee_before_expanding,
                     )
                 })
         })()
-        .with_context(|| {
-            format!(
-                "tried to call a property of an object ({})",
-                dump_type_as_string(&self.cm, obj_type)
-            )
-        });
+        .with_context(|| format!("tried to call a property of an object ({})", dump_type_as_string(obj_type)));
         self.scope.this = old_this;
         res
     }
@@ -1271,7 +1266,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        debug!("[exprs/call] Calling {}", dump_type_as_string(&self.cm, ty));
+        debug!("[exprs/call] Calling {}", dump_type_as_string(ty));
 
         if let ExtractKind::Call = kind {
             match ty.normalize() {
@@ -2400,7 +2395,7 @@ impl Analyzer<'_, '_> {
                     ..Default::default()
                 },
             )?;
-            debug!("Inferred types:\n{}", dump_type_map(&self.cm, &inferred.types));
+            debug!("Inferred types:\n{}", dump_type_map(&inferred.types));
             warn!("Failed to infer types of {:?}", inferred.errored);
 
             let expanded_param_types = params
@@ -2422,8 +2417,8 @@ impl Analyzer<'_, '_> {
 
             for (idx, (arg, param)) in args.iter().zip(expanded_param_types.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
-                print_type(&format!("Expanded parameter at {}", idx), &self.cm, &param.ty);
-                print_type(&format!("Original argument at {}", idx), &self.cm, &arg_ty.ty);
+                print_type(&format!("Expanded parameter at {}", idx), &param.ty);
+                print_type(&format!("Original argument at {}", idx), &arg_ty.ty);
 
                 let (type_param_decl, actual_params) = match param.ty.normalize() {
                     Type::Function(f) => (&f.type_params, &f.params),
@@ -2507,7 +2502,7 @@ impl Analyzer<'_, '_> {
                     }
                     _ => arg_ty.ty.clone(),
                 };
-                print_type(&format!("Mapped argument at {}", idx), &self.cm, &arg_ty.ty);
+                print_type(&format!("Mapped argument at {}", idx), &arg_ty.ty);
 
                 let new_arg = TypeOrSpread { ty, ..arg_ty.clone() };
 
@@ -2536,7 +2531,7 @@ impl Analyzer<'_, '_> {
                 #[allow(clippy::needless_range_loop)]
                 for idx in expanded_param_types.len()..arg_types.len() {
                     let ty = &arg_types[idx].ty;
-                    print_type(&format!("Expanded param type at {}", idx), &self.cm, ty);
+                    print_type(&format!("Expanded param type at {}", idx), ty);
                 }
                 new_args.extend(arg_types[expanded_param_types.len()..].iter().cloned());
             }
@@ -2631,31 +2626,28 @@ impl Analyzer<'_, '_> {
                 );
             }
 
-            print_type("Return", &self.cm, &ret_ty);
+            print_type("Return", &ret_ty);
             let mut ty = self.expand_type_params(&inferred.types, ret_ty, Default::default())?.freezed();
-            print_type("Return, expanded", &self.cm, &ty);
+            print_type("Return, expanded", &ty);
 
             ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
 
-            print_type("Return, simplified", &self.cm, &ty);
+            print_type("Return, simplified", &ty);
 
             ty = self.simplify(ty);
 
-            print_type("Return, simplified again", &self.cm, &ty);
+            print_type("Return, simplified again", &ty);
 
             ty = ty.fold_with(&mut ReturnTypeGeneralizer { analyzer: self });
 
-            print_type("Return, generalized", &self.cm, &ty);
+            print_type("Return, generalized", &ty);
 
             self.add_required_type_params(&mut ty);
 
-            print_type("Return, after adding type params", &self.cm, &ty);
+            print_type("Return, after adding type params", &ty);
 
             if type_ann.is_none() {
-                info!(
-                    "Defaulting type parameters to unknown:\n{}",
-                    dump_type_map(&self.cm, &default_unknown_map)
-                );
+                info!("Defaulting type parameters to unknown:\n{}", dump_type_map(&default_unknown_map));
 
                 ty = self.expand_type_params(&default_unknown_map, ty, Default::default())?;
             }
@@ -2672,12 +2664,12 @@ impl Analyzer<'_, '_> {
 
         self.validate_arg_types(&params, spread_arg_types, type_params.is_some());
 
-        print_type("Return", &self.cm, &ret_ty);
+        print_type("Return", &ret_ty);
 
         ret_ty.reposition(span);
         ret_ty.visit_mut_with(&mut ReturnTypeSimplifier { analyzer: self });
 
-        print_type("Return, simplified", &self.cm, &ret_ty);
+        print_type("Return, simplified", &ret_ty);
 
         self.add_required_type_params(&mut ret_ty);
         ret_ty.make_clone_cheap();

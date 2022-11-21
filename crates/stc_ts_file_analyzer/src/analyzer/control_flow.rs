@@ -744,7 +744,7 @@ impl Analyzer<'_, '_> {
             .context("tried to normalize a type to assign it to a pattern")?
             .into_owned()
             .freezed();
-        let _panic_ctx = debug_ctx!(format!("ty = {}", dump_type_as_string(&self.cm, &orig_ty)));
+        let _panic_ctx = debug_ctx!(format!("ty = {}", dump_type_as_string(&orig_ty)));
 
         let ty = orig_ty.normalize();
 
@@ -775,7 +775,7 @@ impl Analyzer<'_, '_> {
                 // Verify using immutable references.
                 if let Some(var_info) = self.scope.get_var(&i.id.clone().into()) {
                     if let Some(mut var_ty) = var_info.ty.clone() {
-                        let _panic_ctx = debug_ctx!(format!("var_ty = {}", dump_type_as_string(&self.cm, ty)));
+                        let _panic_ctx = debug_ctx!(format!("var_ty = {}", dump_type_as_string(ty)));
 
                         var_ty.make_clone_cheap();
 

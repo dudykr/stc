@@ -677,8 +677,8 @@ impl Analyzer<'_, '_> {
 
         ty.assert_valid();
 
-        let _ctx = debug_ctx!(format!("expand: {}", dump_type_as_string(&self.cm, &ty)));
-        let orig = dump_type_as_string(&self.cm, &ty);
+        let _ctx = debug_ctx!(format!("expand: {}", dump_type_as_string(&ty)));
+        let orig = dump_type_as_string(&ty);
 
         let mut v = Expander {
             span,
@@ -693,7 +693,7 @@ impl Analyzer<'_, '_> {
         let ty = ty.foldable().fold_with(&mut v).fixed();
         ty.assert_valid();
 
-        let new = dump_type_as_string(&self.cm, &ty);
+        let new = dump_type_as_string(&ty);
         debug!("[expander] expand: {} => {}", orig, new);
 
         Ok(ty)
@@ -1122,7 +1122,7 @@ impl Analyzer<'_, '_> {
                 debug_assert!(ty.is_clone_cheap(), "{:?}", ty);
 
                 if cfg!(debug_assertions) {
-                    debug!("Using builtin / global type: {}", dump_type_as_string(&self.cm, &ty));
+                    debug!("Using builtin / global type: {}", dump_type_as_string(&ty));
                 }
                 src.push(ty);
             }
@@ -1204,12 +1204,7 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = &ty {
             ty.assert_valid();
-            debug!(
-                "[({})/vars]: Declaring {} as {}",
-                self.scope.depth(),
-                name,
-                dump_type_as_string(&self.cm, ty)
-            );
+            debug!("[({})/vars]: Declaring {} as {}", self.scope.depth(), name, dump_type_as_string(ty));
         } else {
             debug!("[({})/vars]: Declaring {} without type", self.scope.depth(), name,);
         }
@@ -1314,7 +1309,7 @@ impl Analyzer<'_, '_> {
         };
 
         if let Some(ty) = &ty {
-            debug!("[vars]: Expanded {} as {}", name, dump_type_as_string(&self.cm, ty));
+            debug!("[vars]: Expanded {} as {}", name, dump_type_as_string(ty));
         }
 
         let ty = ty.map(|ty| ty.freezed());
@@ -1985,13 +1980,13 @@ impl Expander<'_, '_, '_> {
                                         ty.make_clone_cheap();
                                     });
 
-                                    let before = dump_type_as_string(&self.analyzer.cm, &ty);
+                                    let before = dump_type_as_string(&ty);
                                     // TODO(kdy1): PERF
                                     let mut ty = self
                                         .analyzer
                                         .expand_type_params(&inferred.types, ty.foldable(), self.opts.generic)?;
 
-                                    let after = dump_type_as_string(&self.analyzer.cm, &ty);
+                                    let after = dump_type_as_string(&ty);
                                     if cfg!(debug_assertions) {
                                         debug!("[expand] Expanded generics: {} => {}", before, after);
                                     }
@@ -2148,7 +2143,7 @@ impl Expander<'_, '_, '_> {
         let _stack = match stack::track(self.span) {
             Ok(v) => v,
             Err(..) => {
-                error!("[expander] Stack overflow: {}", dump_type_as_string(&self.analyzer.cm, &ty));
+                error!("[expander] Stack overflow: {}", dump_type_as_string(&ty));
                 return ty;
             }
         };
@@ -2442,7 +2437,7 @@ impl Expander<'_, '_, '_> {
             }
         };
 
-        let _ctx = debug_ctx!(format!("Expander.expand_type: {}", dump_type_as_string(&self.analyzer.cm, &ty)));
+        let _ctx = debug_ctx!(format!("Expander.expand_type: {}", dump_type_as_string(&ty)));
 
         if let Type::Conditional(Conditional {
             span,
@@ -2540,7 +2535,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
             }
             _ => {}
         }
-        let before = dump_type_as_string(&self.analyzer.cm, &ty);
+        let before = dump_type_as_string(&ty);
         let start = Instant::now();
         let expanded = self.expand_type(ty).fixed();
         let end = Instant::now();
@@ -2553,7 +2548,7 @@ impl Fold<Type> for Expander<'_, '_, '_> {
             "[expander (time = {:?})]: {} => {}",
             end - start,
             before,
-            dump_type_as_string(&self.analyzer.cm, &expanded)
+            dump_type_as_string(&expanded)
         );
 
         expanded

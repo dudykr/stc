@@ -183,7 +183,7 @@ impl Analyzer<'_, '_> {
     ) -> VResult<()> {
         let marks = self.marks();
 
-        info!("Inferred {} as {}", name, dump_type_as_string(&self.cm, &ty));
+        info!("Inferred {} as {}", name, dump_type_as_string(&ty));
 
         if let Type::Param(ty) = ty.normalize() {
             if name == ty.name {
