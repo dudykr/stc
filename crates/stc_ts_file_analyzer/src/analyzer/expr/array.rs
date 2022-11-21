@@ -514,24 +514,19 @@ impl Analyzer<'_, '_> {
                 },
             )
             .context("tried to get the type of property named `value` to determine the type of an iterator")
-            .convert_err(|err| ErrorKind::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() }.into())?;
+            .convert_err(|err| ErrorKind::NextOfItertorShouldReturnTypeWithPropertyValue { span: err.span() })?;
 
         // TODO(kdy1): Remove `done: true` instead of removing `any` from value.
-        if matches!(elem_ty.normalize(), Type::Union(..)) {
-            match elem_ty.normalize_mut() {
-                Type::Union(u) => {
-                    u.types.retain(|ty| !ty.is_any());
-                    if u.types.is_empty() {
-                        u.types = vec![Type::any(
-                            u.span,
-                            KeywordTypeMetadata {
-                                common: u.metadata.common,
-                                ..Default::default()
-                            },
-                        )]
-                    }
-                }
-                _ => {}
+        if let Some(u) = elem_ty.as_union_type_mut() {
+            u.types.retain(|ty| !ty.is_any());
+            if u.types.is_empty() {
+                u.types = vec![Type::any(
+                    u.span,
+                    KeywordTypeMetadata {
+                        common: u.metadata.common,
+                        ..Default::default()
+                    },
+                )]
             }
         }
 
