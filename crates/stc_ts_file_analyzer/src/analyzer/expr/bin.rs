@@ -582,22 +582,22 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                return Err(ErrorKind::InvalidBinaryOp {
+                Err(ErrorKind::InvalidBinaryOp {
                     span,
                     op,
                     left: box lt,
                     right: box rt,
                 }
-                .into());
+                .into())
             }
             op!("*") | op!("/") => {
                 no_unknown!();
 
-                return Ok(Type::Keyword(KeywordType {
+                Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
-                }));
+                }))
             }
 
             op!(bin, "-") | op!("<<") | op!(">>") | op!(">>>") | op!("%") | op!("|") | op!("&") | op!("^") | op!("**") => {

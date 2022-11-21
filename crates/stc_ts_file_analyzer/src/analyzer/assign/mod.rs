@@ -517,7 +517,7 @@ impl Analyzer<'_, '_> {
         if data
             .dejavu
             .iter()
-            .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(&right))
+            .any(|(prev_l, prev_r)| prev_l.type_eq(left) && prev_r.type_eq(right))
         {
             if cfg!(debug_assertions) {
                 info!("[assign/dejavu] {} = {}\n{:?} ", l, r, opts);
@@ -530,8 +530,8 @@ impl Analyzer<'_, '_> {
 
         let res = self.assign_without_wrapping(data, left, right, opts).with_context(|| {
             //
-            let l = dump_type_as_string(&self.cm, &left);
-            let r = dump_type_as_string(&self.cm, &right);
+            let l = dump_type_as_string(&self.cm, left);
+            let r = dump_type_as_string(&self.cm, right);
 
             format!("\nlhs = {}\nrhs = {}", l, r)
         });
