@@ -289,9 +289,8 @@ impl Scope<'_> {
     }
 
     pub fn is_in_call(&self) -> bool {
-        match self.kind {
-            ScopeKind::Call => return true,
-            _ => {}
+        if let ScopeKind::Call = self.kind {
+            return true;
         }
 
         match self.parent {

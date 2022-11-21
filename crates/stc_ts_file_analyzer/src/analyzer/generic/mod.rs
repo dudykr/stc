@@ -740,7 +740,7 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Infer(param) => {
-                self.insert_inferred(span, inferred, &param.type_param, Cow::Borrowed(&arg), opts)?;
+                self.insert_inferred(span, inferred, &param.type_param, Cow::Borrowed(arg), opts)?;
                 return Ok(());
             }
 
@@ -2121,14 +2121,8 @@ impl Analyzer<'_, '_> {
         if usage_visitor.params.is_empty() {
             debug!("rename_type_param: No type parameter is used in type");
 
-            if matches!(ty.normalize(), Type::Function(..)) {
-                match ty.normalize_mut() {
-                    Type::Function(ref mut f) => {
-                        f.type_params = None;
-                    }
-
-                    _ => {}
-                }
+            if let Some(f) = ty.as_fn_type_mut() {
+                f.type_params = None;
             }
 
             return Ok(ty);
