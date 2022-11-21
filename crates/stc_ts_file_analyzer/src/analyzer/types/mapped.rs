@@ -248,12 +248,18 @@ impl Analyzer<'_, '_> {
         let ty = ty.normalize();
 
         match ty {
-            Type::Ref(..) => {
-                let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
+            Type::Ref(..) | Type::Alias(..) | Type::Query(..) => {
+                let ty = self.normalize(
+                    Some(span),
+                    Cow::Borrowed(ty),
+                    NormalizeTypeOpts {
+                        preserve_global_this: true,
+                        preserve_union: true,
+                        ..Default::default()
+                    },
+                )?;
                 self.convert_type_to_keys(span, &ty)
             }
-
-            Type::Alias(alias) => self.convert_type_to_keys(span, &alias.ty),
 
             Type::Lit(LitType { lit, .. }) => match lit {
                 RTsLit::BigInt(v) => Ok(Some(vec![Key::BigInt(v.clone())])),
