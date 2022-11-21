@@ -1250,7 +1250,7 @@ impl Analyzer<'_, '_> {
 
             let prev_vars = self.data.var_spans.entry(name.clone()).or_default();
 
-            (|| match kind {
+            match kind {
                 VarKind::Var(v) => v == VarDeclKind::Var,
                 VarKind::Param => true,
                 // TODO(kdy1): Allow if previous is class / enum (decl merging)
@@ -1263,7 +1263,7 @@ impl Analyzer<'_, '_> {
                 VarKind::Enum => true,
 
                 VarKind::Error => true,
-            })()
+            }
         };
 
         if !self.is_builtin

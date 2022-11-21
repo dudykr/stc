@@ -314,7 +314,7 @@ impl Analyzer<'_, '_> {
                         let value_ty = get_value_ty!(None);
 
                         // infer type from value.
-                        let ty = (|| -> VResult<_> {
+                        let ty = {
                             match value_ty.normalize() {
                                 Type::TypeLit(..) | Type::Function(..) | Type::Query(..) => {
                                     if let Some(m) = &mut self.mutations {
@@ -324,8 +324,8 @@ impl Analyzer<'_, '_> {
                                 _ => {}
                             }
 
-                            Ok(value_ty)
-                        })()?;
+                            value_ty
+                        };
 
                         let should_generalize_fully = match v.name {
                             RPat::Array(_) | RPat::Object(..) => false,
