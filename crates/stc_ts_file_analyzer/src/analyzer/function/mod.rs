@@ -252,12 +252,11 @@ impl Analyzer<'_, '_> {
 
             Ok(ty::Function {
                 span: f.span,
-                params,
                 type_params,
-                ret_ty: box declared_ret_ty.unwrap_or_else(|| inferred_return_type),
+                params,
+                ret_ty: box declared_ret_ty.unwrap_or(inferred_return_type),
                 metadata: Default::default(),
-            }
-            .into())
+            })
         })
     }
 }
@@ -333,24 +332,18 @@ impl Analyzer<'_, '_> {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
 
-            match type_ann.as_ref().map(|ty| ty.normalize()) {
-                Some(Type::Function(ty)) => {
-                    for p in f.params.iter().zip_longest(ty.params.iter()) {
-                        match p {
-                            EitherOrBoth::Both(param, ty) => {
-                                // Store type infomations, so the pattern validator can use correct
-                                // type.
-                                if let Some(pat_node_id) = param.pat.node_id() {
-                                    if let Some(m) = &mut self.mutations {
-                                        m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| *ty.ty.clone());
-                                    }
-                                }
+            if let Some(Type::Function(ty)) = type_ann.as_ref().map(|ty| ty.normalize()) {
+                for p in f.params.iter().zip_longest(ty.params.iter()) {
+                    if let EitherOrBoth::Both(param, ty) = p {
+                        // Store type infomations, so the pattern validator can use correct
+                        // type.
+                        if let Some(pat_node_id) = param.pat.node_id() {
+                            if let Some(m) = &mut self.mutations {
+                                m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| *ty.ty.clone());
                             }
-                            _ => {}
                         }
                     }
                 }
-                _ => {}
             }
 
             // if let Some(name) = name {
