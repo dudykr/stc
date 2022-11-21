@@ -552,7 +552,7 @@ impl Analyzer<'_, '_> {
 
         if let Type::Param(arg) = arg.normalize() {
             if !param.is_type_param() {
-                self.insert_inferred(span, inferred, &arg, Cow::Borrowed(&param), opts)?;
+                self.insert_inferred(span, inferred, arg, Cow::Borrowed(param), opts)?;
                 return Ok(());
             }
         }
@@ -574,21 +574,21 @@ impl Analyzer<'_, '_> {
                         };
 
                         self.with_ctx(ctx).infer_type(span, inferred, &prev, arg, opts)?;
-                        self.with_ctx(ctx).infer_type(span, inferred, &arg, &prev, opts)?;
+                        self.with_ctx(ctx).infer_type(span, inferred, arg, &prev, opts)?;
                     }
                 }
 
                 trace!("infer_type: type parameter: {} = {:?}", name, constraint);
 
-                if constraint.is_some() && is_literals(&constraint.as_ref().unwrap()) {
+                if constraint.is_some() && is_literals(constraint.as_ref().unwrap()) {
                     info!("infer from literal constraint: {} = {:?}", name, constraint);
-                    if let Some(orig) = inferred.type_params.get(&name) {
+                    if let Some(orig) = inferred.type_params.get(name) {
                         let orig = match orig.clone() {
                             InferredType::Union(ty) => ty,
                             InferredType::Other(types) => Type::union(types),
                         };
 
-                        if !orig.eq_ignore_span(&constraint.as_ref().unwrap()) {
+                        if !orig.eq_ignore_span(constraint.as_ref().unwrap()) {
                             print_backtrace();
                             unreachable!(
                                 "Cannot override T in `T extends <literal>`\nOrig: {:?}\nConstraints: {:?}",
@@ -1620,7 +1620,7 @@ impl Analyzer<'_, '_> {
                         });
                         prevent_generalize(&mut keys);
 
-                        self.insert_inferred_raw(span, inferred, key_name.clone(), Cow::Owned(keys), opts)?;
+                        self.insert_inferred_raw(span, inferred, key_name, Cow::Owned(keys), opts)?;
 
                         return Ok(true);
                     }
@@ -1631,7 +1631,7 @@ impl Analyzer<'_, '_> {
                             self.mapped_type_param_name = vec![name.clone()];
 
                             let mut data = InferData::default();
-                            self.infer_type(span, &mut data, &param_ty, &arg.elem_type, opts)?;
+                            self.infer_type(span, &mut data, param_ty, &arg.elem_type, opts)?;
                             let mut map = self.finalize_inference(data);
                             let mut inferred_ty = map.types.remove(&name);
 
@@ -2198,7 +2198,7 @@ impl Analyzer<'_, '_> {
 pub(super) fn is_literals(ty: &Type) -> bool {
     match ty.normalize() {
         Type::Lit(_) => true,
-        Type::Union(Union { ref types, .. }) => types.iter().all(|v| is_literals(v)),
+        Type::Union(Union { ref types, .. }) => types.iter().all(is_literals),
         _ => false,
     }
 }

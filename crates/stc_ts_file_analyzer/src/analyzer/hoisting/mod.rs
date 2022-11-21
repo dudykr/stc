@@ -21,7 +21,7 @@ impl Analyzer<'_, '_> {
         if self.scope.is_root() {
             // We should track type declarations.
             for &idx in &order {
-                let type_decl_id = type_decl_id(&*stmts[idx]);
+                let type_decl_id = type_decl_id(stmts[idx]);
                 if let Some(id) = type_decl_id {
                     type_decls.entry(id).or_default().push(idx);
                 }
