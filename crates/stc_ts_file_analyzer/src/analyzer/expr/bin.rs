@@ -880,6 +880,13 @@ impl Analyzer<'_, '_> {
             _ => None,
         }) {
             Some((Ok(name), (Some(t), Some(f)))) => {
+                // If typeof foo.bar is `string`, `foo` cannot be undefined nor null
+                for idx in 1..name.as_ids().len() {
+                    let sub = Name::from(&name.as_ids()[..idx]);
+
+                    self.cur_facts.true_facts.facts.insert(sub.clone(), TypeFacts::NEUndefinedOrNull);
+                }
+
                 // Add type facts
                 self.cur_facts.true_facts.facts.insert(name.clone(), t);
                 self.cur_facts.false_facts.facts.insert(name.clone(), f);
