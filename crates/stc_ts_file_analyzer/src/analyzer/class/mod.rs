@@ -1,8 +1,4 @@
-use std::{
-    borrow::Cow,
-    cell::RefCell,
-    mem::{replace, take},
-};
+use std::{borrow::Cow, cell::RefCell, mem::take};
 
 use itertools::Itertools;
 use rnode::{FoldWith, IntoRNode, NodeId, NodeIdGenerator, VisitWith};
@@ -1126,7 +1122,7 @@ impl Analyzer<'_, '_> {
                             let constructor_name = RPropName::Ident(RIdent::new(js_word!("constructor"), DUMMY_SP));
 
                             if is_prop_name_eq_include_computed(&name.unwrap(), &constructor_name) {
-                                for (span, is_constructor) in replace(&mut spans, vec![]) {
+                                for (span, is_constructor) in take(&mut spans) {
                                     if is_constructor {
                                         errors.push(ErrorKind::ConstructorImplMissingOrNotFollowedByDecl { span }.into());
                                     } else {
@@ -1134,7 +1130,7 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                             } else if is_prop_name_eq_include_computed(&m.key, &constructor_name) {
-                                for (span, is_constructor) in replace(&mut spans, vec![]) {
+                                for (span, is_constructor) in take(&mut spans) {
                                     if is_constructor {
                                         errors.push(ErrorKind::ConstructorImplMissingOrNotFollowedByDecl { span }.into());
                                     } else {
