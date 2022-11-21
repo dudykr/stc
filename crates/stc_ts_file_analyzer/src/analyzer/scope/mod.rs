@@ -147,9 +147,8 @@ impl Scope<'_> {
         F: FnMut(&Self) -> Option<bool>,
     {
         let res = filter(self);
-        match res {
-            Some(v) => return Some(v),
-            None => {}
+        if let Some(v) = res {
+            return Some(v);
         }
 
         self.parent?.matches(filter)
@@ -170,10 +169,7 @@ impl Scope<'_> {
                 return false;
             }
 
-            match scope.kind {
-                ScopeKind::Fn | ScopeKind::Method { .. } => true,
-                _ => false,
-            }
+            matches!(scope.kind, ScopeKind::Fn | ScopeKind::Method { .. })
         })
         .is_some()
     }
@@ -375,9 +371,8 @@ impl Scope<'_> {
     }
 
     pub fn current_module_name(&self) -> Option<Id> {
-        match &self.cur_module_name {
-            Some(v) => return Some(v.clone()),
-            _ => {}
+        if let Some(v) = &self.cur_module_name {
+            return Some(v.clone());
         }
 
         self.parent?.current_module_name()
@@ -530,48 +525,42 @@ impl Scope<'_> {
         ty.assert_valid();
 
         let ty = ty.freezed();
-        match ty.normalize() {
-            Type::Param(..) => {
-                // Override type parameter.
+        if let Type::Param(..) = ty.normalize() {
+            // Override type parameter.
 
-                match self.types.entry(name) {
-                    Entry::Occupied(mut e) => {
-                        let prev = e.get_mut();
+            match self.types.entry(name) {
+                Entry::Occupied(mut e) => {
+                    let prev = e.get_mut();
 
-                        if prev.is_type_param() {
-                            match ty.normalize() {
-                                Type::Param(TypeParam {
-                                    constraint: None,
-                                    default: None,
-                                    ..
-                                }) => return,
-                                _ => {}
-                            }
-
-                            *prev = ty;
+                    if prev.is_type_param() {
+                        if let Type::Param(TypeParam {
+                            constraint: None,
+                            default: None,
+                            ..
+                        }) = ty.normalize()
+                        {
                             return;
-                        } else if let Some(prev_i) = prev.as_intersection_mut() {
-                            if let Some(index) = prev_i.types.iter().position(|v| match v.normalize() {
-                                Type::Param(..) => true,
-                                _ => false,
-                            }) {
-                                prev_i.types.remove(index);
-                            }
-
-                            prev_i.types.push(ty);
-                            prev_i.fix();
-
-                            prev.make_clone_cheap();
                         }
-                    }
-                    Entry::Vacant(e) => {
-                        e.insert(ty);
+
+                        *prev = ty;
+                        return;
+                    } else if let Some(prev_i) = prev.as_intersection_mut() {
+                        if let Some(index) = prev_i.types.iter().position(|v| matches!(v.normalize(), Type::Param(..))) {
+                            prev_i.types.remove(index);
+                        }
+
+                        prev_i.types.push(ty);
+                        prev_i.fix();
+
+                        prev.make_clone_cheap();
                     }
                 }
-
-                return;
+                Entry::Vacant(e) => {
+                    e.insert(ty);
+                }
             }
-            _ => {}
+
+            return;
         }
         match self.types.entry(name.clone()) {
             Entry::Occupied(mut e) => {

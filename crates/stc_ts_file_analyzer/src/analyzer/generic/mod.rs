@@ -1052,7 +1052,7 @@ impl Analyzer<'_, '_> {
                     {
                         for ty in types {
                             if let Type::Param(obj_type) = ty.normalize() {
-                                self.insert_inferred(span, inferred, &obj_type, Cow::Borrowed(&arg), opts)?;
+                                self.insert_inferred(span, inferred, obj_type, Cow::Borrowed(arg), opts)?;
                             }
                         }
                         return Ok(());
@@ -1168,7 +1168,7 @@ impl Analyzer<'_, '_> {
 
                 for parent in &arg.extends {
                     let parent = self.type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?;
-                    self.infer_type(span, inferred, &param, &parent, opts)?;
+                    self.infer_type(span, inferred, param, &parent, opts)?;
                 }
 
                 // Check to print unimplemented error message
@@ -1770,7 +1770,7 @@ impl Analyzer<'_, '_> {
                                     TypeElement::Property(p) => {
                                         //
                                         if let Some(ref type_ann) = p.type_ann {
-                                            self.infer_type(span, inferred, &param_ty, &type_ann, opts)?;
+                                            self.infer_type(span, inferred, param_ty, type_ann, opts)?;
                                         }
 
                                         for name in &names {
@@ -1873,7 +1873,7 @@ impl Analyzer<'_, '_> {
                                                         let optional = calc_true_plus_minus_in_param(param.optional, p.optional);
                                                         //
                                                         if let Some(ref type_ann) = p.type_ann {
-                                                            self.infer_type(span, inferred, &param_ty, &type_ann, opts)?;
+                                                            self.infer_type(span, inferred, &param_ty, type_ann, opts)?;
                                                         }
                                                         members.push(TypeElement::Property(PropertySignature {
                                                             optional,
@@ -1893,7 +1893,7 @@ impl Analyzer<'_, '_> {
                                                 metadata: arg.metadata,
                                             });
 
-                                            self.insert_inferred_raw(span, inferred, name.clone(), Cow::Owned(list_ty), opts)?;
+                                            self.insert_inferred_raw(span, inferred, name, Cow::Owned(list_ty), opts)?;
                                             return Ok(true);
                                         }
 
@@ -2153,13 +2153,8 @@ impl Analyzer<'_, '_> {
             params: usage_visitor.params,
         });
 
-        if matches!(ty.normalize(), Type::Function(..)) {
-            match ty.normalize_mut() {
-                Type::Function(ref mut f) => {
-                    f.type_params = decl;
-                }
-                _ => {}
-            }
+        if let Some(ref mut f) = ty.as_fn_type_mut() {
+            f.type_params = decl;
         } else if matches!(ty.normalize(), Type::ClassDef(..) | Type::Class(..)) {
             return Ok(ty);
         }
@@ -2221,7 +2216,6 @@ impl VisitMut<Type> for TypeParamInliner<'_> {
                         ..Default::default()
                     },
                 });
-                return;
             }
             _ => {}
         }
@@ -2277,19 +2271,15 @@ impl VisitMut<Type> for MappedIndexTypeReplacer<'_> {
 
         ty.visit_mut_children_with(self);
 
-        match &*ty {
-            Type::IndexedAccessType(IndexedAccessType { obj_type, index_type, .. }) => {
-                if self.obj_ty.type_eq(&**obj_type) {
-                    match &**index_type {
-                        Type::Param(key) if *self.index_param_name == key.name => {
-                            *ty = self.to.clone();
-                            return;
-                        }
-                        _ => {}
+        if let Type::IndexedAccessType(IndexedAccessType { obj_type, index_type, .. }) = &*ty {
+            if self.obj_ty.type_eq(&**obj_type) {
+                match &**index_type {
+                    Type::Param(key) if *self.index_param_name == key.name => {
+                        *ty = self.to.clone();
                     }
+                    _ => {}
                 }
             }
-            _ => {}
         }
     }
 }
