@@ -416,8 +416,8 @@ impl Analyzer<'_, '_> {
 
         let _ctx = debug_ctx!(format!(
             "infer_type()\nParam: {}\nArg: {}",
-            dump_type_as_string(&self.cm, &param),
-            dump_type_as_string(&self.cm, &arg)
+            dump_type_as_string(&self.cm, param),
+            dump_type_as_string(&self.cm, arg)
         ));
 
         if inferred
@@ -434,23 +434,17 @@ impl Analyzer<'_, '_> {
         let param = param.normalize();
         let arg = arg.normalize();
 
-        match param {
-            Type::Instance(..) => {
-                let mut param = self.normalize(Some(span), Cow::Borrowed(&param), Default::default())?;
-                param.make_clone_cheap();
-                return self.infer_type(span, inferred, &param, arg, opts);
-            }
-            _ => {}
+        if let Type::Instance(..) = param {
+            let mut param = self.normalize(Some(span), Cow::Borrowed(param), Default::default())?;
+            param.make_clone_cheap();
+            return self.infer_type(span, inferred, &param, arg, opts);
         }
 
-        match arg {
-            Type::Instance(..) => {
-                let mut arg = self.normalize(Some(span), Cow::Borrowed(&arg), Default::default())?;
-                arg.make_clone_cheap();
+        if let Type::Instance(..) = arg {
+            let mut arg = self.normalize(Some(span), Cow::Borrowed(arg), Default::default())?;
+            arg.make_clone_cheap();
 
-                return self.infer_type(span, inferred, param, &arg, opts);
-            }
-            _ => {}
+            return self.infer_type(span, inferred, param, &arg, opts);
         }
 
         if param.type_eq(arg) {
