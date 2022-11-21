@@ -392,7 +392,7 @@ impl Analyzer<'_, '_> {
             let key = child.validate_key(&d.key, d.computed)?;
 
             if d.computed {
-                child.validate_computed_prop_key(d.span(), &d.key);
+                child.validate_computed_prop_key(d.span(), &d.key).report(&mut self.storage);
             }
 
             let params = d.params.validate_with(child)?;

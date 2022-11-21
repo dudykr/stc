@@ -154,7 +154,7 @@ impl Analyzer<'_, '_> {
 
         // Verify key if key is computed
         if let RPropName::Computed(p) = &p.key {
-            self.validate_computed_prop_key(p.span, &p.expr);
+            self.validate_computed_prop_key(p.span, &p.expr).report(&mut self.storage);
         }
 
         let value = self
@@ -1024,8 +1024,8 @@ impl Analyzer<'_, '_> {
                             let spans_for_error = take(&mut spans);
 
                             {
-                                let has_abstract = spans_for_error.iter().any(|(_, v)| *v == true);
-                                let has_concrete = spans_for_error.iter().any(|(_, v)| *v == false);
+                                let has_abstract = spans_for_error.iter().any(|(_, v)| *v);
+                                let has_concrete = spans_for_error.iter().any(|(_, v)| !*v);
 
                                 if has_abstract && has_concrete {
                                     ignore_not_following_for.push(name.unwrap().clone());
@@ -1193,23 +1193,23 @@ impl Analyzer<'_, '_> {
         Ok(())
     }
 
-    #[extra_validator]
-    pub(super) fn validate_computed_prop_key(&mut self, span: Span, key: &RExpr) {
+    pub(super) fn validate_computed_prop_key(&mut self, span: Span, key: &RExpr) -> VResult<()> {
         if self.is_builtin {
             // We don't need to validate builtins
             return;
         }
 
         let mut errors = Errors::default();
-        let is_symbol_access = match *key {
+        let is_symbol_access = matches!(
+            *key,
             RExpr::Member(RMemberExpr {
                 obj: box RExpr::Ident(RIdent {
-                    sym: js_word!("Symbol"), ..
+                    sym: js_word!("Symbol"),
+                    ..
                 }),
                 ..
-            }) => true,
-            _ => false,
-        };
+            })
+        );
 
         let ty = match key.validate_with_default(self).map(|mut ty| {
             ty.respan(span);
