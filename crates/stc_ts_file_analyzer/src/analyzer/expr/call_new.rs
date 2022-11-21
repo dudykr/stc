@@ -191,7 +191,7 @@ impl Analyzer<'_, '_> {
 
         args.extend(e.tpl.exprs.iter().cloned().map(|expr| RExprOrSpread { spread: None, expr }));
 
-        let res = self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
+        self.with_child(ScopeKind::Call, Default::default(), |analyzer: &mut Analyzer| {
             analyzer.extract_call_new_expr_member(
                 span,
                 ReevalMode::NoReeval,
@@ -201,11 +201,7 @@ impl Analyzer<'_, '_> {
                 e.type_params.as_deref(),
                 Default::default(),
             )
-        });
-
-        // dbg!(&res);
-
-        res
+        })
     }
 }
 

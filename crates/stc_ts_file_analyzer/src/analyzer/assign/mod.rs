@@ -307,15 +307,12 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match lhs {
-            Type::TypeLit(lhs) => {
-                if lhs.members.is_empty() {
-                    if rhs.is_str() {
-                        return Ok(());
-                    }
+        if let Type::TypeLit(lhs) = lhs {
+            if lhs.members.is_empty() {
+                if rhs.is_str() {
+                    return Ok(());
                 }
             }
-            _ => {}
         }
 
         match op {
@@ -511,8 +508,8 @@ impl Analyzer<'_, '_> {
         left.assert_valid();
         right.assert_valid();
 
-        let l = dump_type_as_string(&self.cm, &left);
-        let r = dump_type_as_string(&self.cm, &right);
+        let l = dump_type_as_string(&self.cm, left);
+        let r = dump_type_as_string(&self.cm, right);
 
         let _panic_ctx = debug_ctx!(format!("left = {}", l));
         let _panic_ctx = debug_ctx!(format!("right = {}", r));
