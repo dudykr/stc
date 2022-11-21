@@ -955,7 +955,7 @@ impl Analyzer<'_, '_> {
                     let mut type_ann = p.value.clone();
                     if let Some(type_params) = &type_params {
                         type_ann = type_ann
-                            .map(|ty| self.expand_type_params(&type_params, *ty, Default::default()).map(Box::new))
+                            .map(|ty| self.expand_type_params(type_params, *ty, Default::default()).map(Box::new))
                             .transpose()?;
                     }
                     //
@@ -996,11 +996,11 @@ impl Analyzer<'_, '_> {
         let mut s = Some(&self.scope);
 
         while let Some(scope) = s {
-            types_to_exclude.extend(scope.facts.excludes.get(&name).cloned().into_iter().flatten());
+            types_to_exclude.extend(scope.facts.excludes.get(name).cloned().into_iter().flatten());
             s = scope.parent();
         }
 
-        types_to_exclude.extend(self.cur_facts.true_facts.excludes.get(&name).cloned().into_iter().flatten());
+        types_to_exclude.extend(self.cur_facts.true_facts.excludes.get(name).cloned().into_iter().flatten());
 
         let before = dump_type_as_string(&self.cm, &ty);
         self.exclude_types(span, ty, Some(types_to_exclude));
@@ -1011,7 +1011,7 @@ impl Analyzer<'_, '_> {
 
     #[instrument(skip(self, name, ty))]
     pub(crate) fn apply_type_facts(&mut self, name: &Name, ty: Type) -> Type {
-        let type_facts = self.scope.get_type_facts(&name) | self.cur_facts.true_facts.facts.get(&name).copied().unwrap_or(TypeFacts::None);
+        let type_facts = self.scope.get_type_facts(name) | self.cur_facts.true_facts.facts.get(name).copied().unwrap_or(TypeFacts::None);
 
         debug!("[types/fact] Facts for {:?} is {:?}", name, type_facts);
 
