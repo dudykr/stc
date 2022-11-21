@@ -260,14 +260,11 @@ impl Analyzer<'_, '_> {
                         return Ok(());
                     }
 
-                    match lhs {
-                        Type::Enum(l) => {
-                            //
-                            if !l.has_str {
-                                return Ok(());
-                            }
+                    if let Type::Enum(l) = lhs {
+                        //
+                        if !l.has_str {
+                            return Ok(());
                         }
-                        _ => {}
                     }
                 }
             }
@@ -1123,18 +1120,12 @@ impl Analyzer<'_, '_> {
                                     dump_type_as_string(&self.cm, &Type::TypeLit(lhs.into_owned()))
                                 )
                             })
-                            .convert_err(|err| {
-                                ErrorKind::SimpleAssignFailed {
-                                    span: err.span(),
-                                    cause: Some(box err.into()),
-                                }
-                                .into()
+                            .convert_err(|err| ErrorKind::SimpleAssignFailed {
+                                span: err.span(),
+                                cause: Some(box err.into()),
                             })?;
 
-                        errors.retain(|err| match &**err {
-                            ErrorKind::UnknownPropertyInObjectLiteralAssignment { .. } => false,
-                            _ => true,
-                        });
+                        errors.retain(|err| !matches!(&**err, ErrorKind::UnknownPropertyInObjectLiteralAssignment { .. }));
                     }
                 }
 

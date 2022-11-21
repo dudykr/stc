@@ -2214,7 +2214,7 @@ impl Analyzer<'_, '_> {
         let old_this = self.scope.this.take();
         // self.scope.this = Some(ty.clone());
 
-        let ty = self.register_type(c.ident.clone().into(), ty.into());
+        let ty = self.register_type(c.ident.clone().into(), ty);
 
         match self.declare_var(
             ty.span(),
