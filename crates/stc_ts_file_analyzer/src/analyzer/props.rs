@@ -448,12 +448,9 @@ impl Analyzer<'_, '_> {
 
             RProp::Method(ref p) => {
                 let key = p.key.validate_with(self)?;
-                let computed = match p.key {
-                    RPropName::Computed(..) => true,
-                    _ => false,
-                };
+                let computed = matches!(p.key, RPropName::Computed(..));
                 let method_type_ann = object_type.and_then(|obj| {
-                    self.access_property(span, &obj, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
+                    self.access_property(span, obj, &key, TypeOfMode::RValue, IdCtx::Var, Default::default())
                         .ok()
                 });
 
@@ -462,33 +459,24 @@ impl Analyzer<'_, '_> {
                         child.ctx.in_async = p.function.is_async;
                         child.ctx.in_generator = p.function.is_generator;
 
-                        match method_type_ann.as_ref().map(|ty| ty.normalize()) {
-                            Some(Type::Function(ty)) => {
-                                for p in p.function.params.iter().zip_longest(ty.params.iter()) {
-                                    match p {
-                                        EitherOrBoth::Both(param, ty) => {
-                                            // Store type infomations, so the pattern validator
-                                            // can use correct type.
-                                            if let Some(pat_node_id) = param.pat.node_id() {
-                                                if let Some(m) = &mut child.mutations {
-                                                    m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| *ty.ty.clone());
-                                                }
-                                            }
+                        if let Some(Type::Function(ty)) = method_type_ann.as_ref().map(|ty| ty.normalize()) {
+                            for p in p.function.params.iter().zip_longest(ty.params.iter()) {
+                                if let EitherOrBoth::Both(param, ty) = p {
+                                    // Store type infomations, so the pattern validator
+                                    // can use correct type.
+                                    if let Some(pat_node_id) = param.pat.node_id() {
+                                        if let Some(m) = &mut child.mutations {
+                                            m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| *ty.ty.clone());
                                         }
-                                        _ => {}
                                     }
                                 }
                             }
-                            _ => {}
                         }
 
                         // We mark as wip
                         if !computed {
-                            match &p.key {
-                                RPropName::Ident(i) => {
-                                    child.scope.declaring_prop = Some(i.into());
-                                }
-                                _ => {}
+                            if let RPropName::Ident(i) = &p.key {
+                                child.scope.declaring_prop = Some(i.into());
                             };
                         }
 
