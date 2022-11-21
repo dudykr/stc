@@ -1584,27 +1584,24 @@ impl Analyzer<'_, '_> {
                                         .types
                                         .iter()
                                         .map(|ty| {
-                                            match ty.normalize() {
-                                                Type::Class(c) => {
-                                                    has_class_in_super = true;
-                                                    // class A -> typeof A
-                                                    return c
-                                                        .def
-                                                        .name
-                                                        .as_ref()
-                                                        .map(|id| {
-                                                            Type::Query(QueryType {
-                                                                span: c.span,
-                                                                expr: box QueryExpr::TsEntityName(id.clone().into()),
-                                                                metadata: QueryTypeMetadata {
-                                                                    common: c.metadata.common,
-                                                                    ..Default::default()
-                                                                },
-                                                            })
+                                            if let Type::Class(c) = ty.normalize() {
+                                                has_class_in_super = true;
+                                                // class A -> typeof A
+                                                return c
+                                                    .def
+                                                    .name
+                                                    .as_ref()
+                                                    .map(|id| {
+                                                        Type::Query(QueryType {
+                                                            span: c.span,
+                                                            expr: box QueryExpr::TsEntityName(id.clone().into()),
+                                                            metadata: QueryTypeMetadata {
+                                                                common: c.metadata.common,
+                                                                ..Default::default()
+                                                            },
                                                         })
-                                                        .expect("Super class should be named");
-                                                }
-                                                _ => {}
+                                                    })
+                                                    .expect("Super class should be named");
                                             }
 
                                             ty.clone()
@@ -1675,8 +1672,8 @@ impl Analyzer<'_, '_> {
             child
                 .report_errors_for_wrong_ambient_methods_of_class(c, false)
                 .report(&mut child.storage);
-            child.report_errors_for_statics_mixed_with_instances(&c).report(&mut child.storage);
-            child.report_errors_for_duplicate_class_members(&c).report(&mut child.storage);
+            child.report_errors_for_statics_mixed_with_instances(c).report(&mut child.storage);
+            child.report_errors_for_duplicate_class_members(c).report(&mut child.storage);
 
             child.scope.super_class = super_class.clone().map(|ty| make_instance_type(*ty).freezed());
             {
