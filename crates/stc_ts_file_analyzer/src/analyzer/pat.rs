@@ -78,10 +78,11 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 }));
             }
-            RPat::Rest(r) => match &*r.arg {
-                RPat::Array(..) => return self.default_type_for_pat(&r.arg),
-                _ => {}
-            },
+            RPat::Rest(r) => {
+                if let RPat::Array(..) = &*r.arg {
+                    return self.default_type_for_pat(&r.arg);
+                }
+            }
             RPat::Object(obj) => {
                 let mut members = Vec::with_capacity(obj.props.len());
 
@@ -179,11 +180,9 @@ impl Analyzer<'_, '_> {
         let marks = self.marks();
 
         if self.ctx.in_declare {
-            match p {
-                RPat::Assign(p) => self
-                    .storage
-                    .report(ErrorKind::InitializerDisallowedInAmbientContext { span: p.span }.into()),
-                _ => {}
+            if let RPat::Assign(p) = p {
+                self.storage
+                    .report(ErrorKind::InitializerDisallowedInAmbientContext { span: p.span }.into())
             }
         }
 
@@ -198,21 +197,20 @@ impl Analyzer<'_, '_> {
 
         let ty = p
             .node_id()
-            .map(|node_id| {
+            .and_then(|node_id| {
                 self.mutations
                     .as_ref()
                     .and_then(|m| m.for_pats.get(&node_id))
                     .and_then(|v| v.ty.clone())
             })
-            .flatten()
             .map(Ok)
             .or_else(|| {
-                match p.get_ty().or_else(|| match p {
-                    RPat::Assign(p) => p.left.get_ty(),
-                    _ => None,
-                }) {
-                    None => None,
-                    Some(ty) => Some({
+                p.get_ty()
+                    .or_else(|| match p {
+                        RPat::Assign(p) => p.left.get_ty(),
+                        _ => None,
+                    })
+                    .map(|ty| {
                         let span = ty.span();
                         ty.validate_with(self).map(|ty| {
                             if !should_instantiate_type_ann(&ty) {
@@ -224,8 +222,7 @@ impl Analyzer<'_, '_> {
                                 metadata: Default::default(),
                             })
                         })
-                    }),
-                }
+                    })
             })
             .map(|res| res.map(|ty| ty.freezed()))
             .transpose()?
@@ -237,15 +234,13 @@ impl Analyzer<'_, '_> {
 
         match self.ctx.pat_mode {
             PatMode::Decl => {
-                match p {
-                    RPat::Ident(RBindingIdent {
-                        id: RIdent { sym: js_word!("this"), .. },
-                        ..
-                    }) => {
-                        assert!(ty.is_some(), "parameter named `this` should have type");
-                        self.scope.this = ty.clone();
-                    }
-                    _ => {}
+                if let RPat::Ident(RBindingIdent {
+                    id: RIdent { sym: js_word!("this"), .. },
+                    ..
+                }) = p
+                {
+                    assert!(ty.is_some(), "parameter named `this` should have type");
+                    self.scope.this = ty.clone();
                 }
 
                 let mut visitor = VarVisitor { names: &mut names };
@@ -292,8 +287,8 @@ impl Analyzer<'_, '_> {
         self.scope.declaring.truncate(prev_declaring_len);
 
         // Mark pattern as optional if default value exists
-        match p {
-            RPat::Assign(assign_pat) => match &*assign_pat.left {
+        if let RPat::Assign(assign_pat) = p {
+            match &*assign_pat.left {
                 RPat::Ident(i) => {
                     if let Some(m) = &mut self.mutations {
                         m.for_pats.entry(i.node_id).or_default().optional = Some(true);
@@ -310,8 +305,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 _ => {}
-            },
-            _ => {}
+            }
         }
 
         let res = (|| -> VResult<()> {
@@ -326,7 +320,7 @@ impl Analyzer<'_, '_> {
                         if let Some(Ok(ty)) = &ty {
                             self.assign_with_opts(
                                 &mut Default::default(),
-                                &ty,
+                                ty,
                                 &default_value_ty,
                                 AssignOpts {
                                     span: assign_pat.span,
@@ -494,44 +488,27 @@ impl Analyzer<'_, '_> {
         p.visit_children_with(self);
 
         //
-        match *p.left {
-            RPat::Object(ref left) => {
-                //
-                match *p.right {
-                    RExpr::Object(ref right) => {
-                        'l: for e in &right.props {
-                            match e {
-                                RPropOrSpread::Prop(ref prop) => {
-                                    //
-                                    for lp in &left.props {
-                                        match lp {
-                                            RObjectPatProp::KeyValue(RKeyValuePatProp { key: ref pk, .. }) => {
-                                                //
-                                                match **prop {
-                                                    RProp::KeyValue(RKeyValueProp { ref key, .. }) => {
-                                                        if pk.type_eq(key) {
-                                                            continue 'l;
-                                                        }
-                                                    }
-                                                    _ => {}
-                                                }
-                                            }
-                                            _ => {}
-                                        }
+        if let RPat::Object(ref left) = *p.left {
+            //
+            if let RExpr::Object(ref right) = *p.right {
+                'l: for e in &right.props {
+                    if let RPropOrSpread::Prop(ref prop) = e {
+                        //
+                        for lp in &left.props {
+                            if let RObjectPatProp::KeyValue(RKeyValuePatProp { key: ref pk, .. }) = lp {
+                                //
+                                if let RProp::KeyValue(RKeyValueProp { ref key, .. }) = **prop {
+                                    if pk.type_eq(key) {
+                                        continue 'l;
                                     }
-
-                                    self.storage.report(ErrorKind::TS2353 { span: prop.span() }.into())
                                 }
-                                _ => {}
                             }
                         }
-                    }
-                    _ => {
-                        // TODO(kdy1): Report an error
+
+                        self.storage.report(ErrorKind::TS2353 { span: prop.span() }.into())
                     }
                 }
             }
-            _ => {}
         }
 
         Ok(())
