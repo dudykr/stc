@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::{
     RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation, RTsTypePredicate,
     RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
-use stc_ts_errors::ErrorKind;
+use stc_ts_errors::{ctx, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
@@ -1080,6 +1080,8 @@ impl Analyzer<'_, '_> {
         if self.is_builtin {
             return;
         }
+
+        let _ctx = ctx!("report_error_for_duplicate_params");
 
         let mut prev_ids: Vec<RIdent> = vec![];
         for param in params {
