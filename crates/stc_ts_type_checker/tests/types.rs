@@ -2,6 +2,7 @@
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(test)]
+#![allow(clippy::if_same_then_else)]
 
 extern crate test;
 

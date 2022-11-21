@@ -1160,7 +1160,7 @@ impl Analyzer<'_, '_> {
                 ..
             }) => {
                 return self
-                    .assign_with_opts(data, &ty, rhs, opts)
+                    .assign_with_opts(data, ty, rhs, opts)
                     .context("tried to assign a type to an operand of readonly type")
             }
 

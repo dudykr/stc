@@ -69,6 +69,7 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             // Disabled because of false positives when the constructor initializes the
             // field.
+            #[allow(clippy::overly_complex_bool_expr)]
             if false && self.rule().strict_null_checks {
                 if value.is_none() {
                     if let Some(ty) = &ty {
