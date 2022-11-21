@@ -1270,7 +1270,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        debug!("[exprs/call] Calling {}", dump_type_as_string(&self.cm, &ty));
+        debug!("[exprs/call] Calling {}", dump_type_as_string(&self.cm, ty));
 
         if let ExtractKind::Call = kind {
             match ty.normalize() {
@@ -1337,7 +1337,7 @@ impl Analyzer<'_, '_> {
                         )
                     });
 
-                    for constructor in constructors {
+                    if let Some(constructor) = constructors.first() {
                         //
                         let type_params = constructor
                             .type_params
