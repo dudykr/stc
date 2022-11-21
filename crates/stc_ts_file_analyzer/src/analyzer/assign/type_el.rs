@@ -234,18 +234,22 @@ impl Analyzer<'_, '_> {
 
                 Type::Array(..) | Type::Tuple(..) => {
                     if opts.allow_assignment_of_array_to_optional_type_lit {
-                        if lhs.iter().all(|el| match el {
-                            TypeElement::Property(PropertySignature { optional: true, .. })
-                            | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
-                            _ => false,
+                        if lhs.iter().all(|el| {
+                            matches!(
+                                el,
+                                TypeElement::Property(PropertySignature { optional: true, .. })
+                                    | TypeElement::Method(MethodSignature { optional: true, .. })
+                            )
                         }) {
                             return Ok(());
                         }
                     }
-                    if lhs.iter().any(|member| match member {
-                        TypeElement::Property(PropertySignature { optional: true, .. })
-                        | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
-                        _ => false,
+                    if lhs.iter().any(|member| {
+                        matches!(
+                            member,
+                            TypeElement::Property(PropertySignature { optional: true, .. })
+                                | TypeElement::Method(MethodSignature { optional: true, .. })
+                        )
                     }) {
                         return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
                     }
@@ -384,13 +388,11 @@ impl Analyzer<'_, '_> {
                             ErrorKind::Errors { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
                                 cause: Some(box err.into()),
-                            }
-                            .into(),
+                            },
                             ErrorKind::MissingFields { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
                                 cause: Some(box err.into()),
-                            }
-                            .into(),
+                            },
                             _ => err,
                         })
                         .with_context(|| {
@@ -643,10 +645,10 @@ impl Analyzer<'_, '_> {
                                     ..
                                 })) = r_mapped.type_param.constraint.as_deref().map(|ty| ty.normalize())
                                 {
-                                    if let Ok(()) = self.assign_with_opts(data, &l_index.params[0].ty, &&r_constraint, opts) {
+                                    if let Ok(()) = self.assign_with_opts(data, &l_index.params[0].ty, r_constraint, opts) {
                                         if let Some(l_type_ann) = &l_index.type_ann {
                                             if let Some(r_ty) = &r_mapped.ty {
-                                                self.assign_with_opts(data, &l_type_ann, &r_ty, opts)
+                                                self.assign_with_opts(data, l_type_ann, r_ty, opts)
                                                     .context("tried to assign a mapped type to an index signature")?;
                                             }
                                         }
@@ -681,18 +683,15 @@ impl Analyzer<'_, '_> {
                     let rhs = self
                         .normalize(
                             Some(span),
-                            Cow::Borrowed(&rhs),
+                            Cow::Borrowed(rhs),
                             NormalizeTypeOpts {
                                 normalize_keywords: true,
                                 ..Default::default()
                             },
                         )
-                        .convert_err(|err| {
-                            ErrorKind::SimpleAssignFailed {
-                                span: err.span(),
-                                cause: Some(box err.into()),
-                            }
-                            .into()
+                        .convert_err(|err| ErrorKind::SimpleAssignFailed {
+                            span: err.span(),
+                            cause: Some(box err.into()),
                         })
                         .context("failed to normalize")?;
 
@@ -708,7 +707,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Tpl(TplType { span: rhs_span, .. }) => {
-                    if lhs.len() == 0 {
+                    if lhs.is_empty() {
                         return Ok(());
                     }
 
