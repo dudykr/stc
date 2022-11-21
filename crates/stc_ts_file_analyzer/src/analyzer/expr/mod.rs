@@ -3094,12 +3094,9 @@ impl Analyzer<'_, '_> {
             }
             Type::Intersection(i) => {
                 for ty in &i.types {
-                    match ty.normalize() {
-                        Type::Module(..) => {
-                            need_intersection = false;
-                            break;
-                        }
-                        _ => {}
+                    if let Type::Module(..) = ty.normalize() {
+                        need_intersection = false;
+                        break;
                     }
                 }
             }
@@ -3109,16 +3106,13 @@ impl Analyzer<'_, '_> {
         if let TypeOfMode::LValue = type_mode {
             if let Some(types) = self.find_type(&id)? {
                 for ty in types {
-                    match ty.normalize() {
-                        Type::Module(..) => {
-                            return Err(ErrorKind::NotVariable {
-                                span,
-                                left: span,
-                                ty: Some(box ty.normalize().clone()),
-                            }
-                            .into())
+                    if let Type::Module(..) = ty.normalize() {
+                        return Err(ErrorKind::NotVariable {
+                            span,
+                            left: span,
+                            ty: Some(box ty.normalize().clone()),
                         }
-                        _ => {}
+                        .into());
                     }
                 }
             }
@@ -3135,9 +3129,8 @@ impl Analyzer<'_, '_> {
                             for ty in &intersection.types {
                                 debug_assert!(ty.is_clone_cheap());
 
-                                match ty.normalize() {
-                                    Type::Module(..) => modules.push(ty.clone()),
-                                    _ => {}
+                                if let Type::Module(..) = ty.normalize() {
+                                    modules.push(ty.clone())
                                 }
                             }
                         }

@@ -1830,7 +1830,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsObjectKeyword,
                 ..
             }) => true,
-            Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_rhs_of_in(span, &ty)),
+            Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_rhs_of_in(span, ty)),
 
             _ => false,
         }
