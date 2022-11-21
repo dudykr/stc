@@ -3455,7 +3455,6 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                     },
                 })
                 .fixed();
-                return;
             }
 
             Type::IndexedAccessType(ty) if is_str_lit_or_union(&ty.index_type) => {
@@ -3468,43 +3467,33 @@ impl VisitMut<Type> for ReturnTypeSimplifier<'_, '_, '_> {
                 type_name: RTsEntityName::Ident(i),
                 type_args: Some(type_args),
                 metadata,
-            }) if type_args.params.len() == 1
-                && type_args.params.iter().any(|ty| match ty.normalize() {
-                    Type::Union(..) => true,
-                    _ => false,
-                }) =>
-            {
+            }) if type_args.params.len() == 1 && type_args.params.iter().any(|ty| matches!(ty.normalize(), Type::Union(..))) => {
                 // TODO(kdy1): Replace .ok() with something better
                 if let Some(types) = self.analyzer.find_type(&(&*i).into()).ok().flatten() {
                     type_args.make_clone_cheap();
 
                     for stored_ty in types {
-                        match stored_ty.normalize() {
-                            Type::Alias(Alias { ty: aliased_ty, .. }) => {
-                                let mut types = vec![];
+                        if let Type::Alias(Alias { ty: aliased_ty, .. }) = stored_ty.normalize() {
+                            let mut types = vec![];
 
-                                match &type_args.params[0].normalize() {
-                                    Type::Union(type_arg) => {
-                                        for ty in &type_arg.types {
-                                            types.push(Type::Ref(Ref {
-                                                span: *span,
-                                                type_name: RTsEntityName::Ident(i.clone()),
-                                                type_args: Some(box TypeParamInstantiation {
-                                                    span: type_args.span,
-                                                    params: vec![ty.clone()],
-                                                }),
-                                                metadata: *metadata,
-                                            }))
-                                        }
-                                    }
-
-                                    _ => unreachable!(),
+                            if let Type::Union(type_arg) = &type_args.params[0].normalize() {
+                                for ty in &type_arg.types {
+                                    types.push(Type::Ref(Ref {
+                                        span: *span,
+                                        type_name: RTsEntityName::Ident(i.clone()),
+                                        type_args: Some(box TypeParamInstantiation {
+                                            span: type_args.span,
+                                            params: vec![ty.clone()],
+                                        }),
+                                        metadata: *metadata,
+                                    }))
                                 }
-
-                                *ty = Type::union(types);
-                                return;
+                            } else {
+                                unreachable!()
                             }
-                            _ => {}
+
+                            *ty = Type::union(types);
+                            return;
                         }
                     }
                 }

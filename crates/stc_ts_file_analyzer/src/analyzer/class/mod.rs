@@ -484,11 +484,8 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, c: &RPrivateMethod) -> VResult<ClassMember> {
-        match c.key.id.sym {
-            js_word!("constructor") => {
-                self.storage.report(ErrorKind::ConstructorIsKeyword { span: c.key.id.span }.into());
-            }
-            _ => {}
+        if let js_word!("constructor") = c.key.id.sym {
+            self.storage.report(ErrorKind::ConstructorIsKeyword { span: c.key.id.span }.into());
         }
 
         let key = c.key.validate_with(self).map(Key::Private)?;
@@ -629,16 +626,14 @@ impl Analyzer<'_, '_> {
                             }
                         }
 
-                        match p.pat {
-                            RPat::Ident(RBindingIdent {
-                                id: RIdent { optional, .. },
-                                ..
-                            }) => {
-                                if optional {
-                                    has_optional = true;
-                                }
+                        if let RPat::Ident(RBindingIdent {
+                            id: RIdent { optional, .. },
+                            ..
+                        }) = p.pat
+                        {
+                            if optional {
+                                has_optional = true;
                             }
-                            _ => {}
                         }
                     }
                 }
@@ -687,7 +682,7 @@ impl Analyzer<'_, '_> {
             // Inferred return type.
 
             // getter property must have return statements.
-            if let None = inferred_ret_ty {
+            if inferred_ret_ty.is_none() {
                 self.storage.report(ErrorKind::TS2378 { span: key_span }.into());
             }
         }
