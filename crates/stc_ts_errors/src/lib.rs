@@ -107,15 +107,11 @@ impl Errors {
             }
         }
 
-        match &*err.inner {
-            // Error::UndefinedSymbol { .. } => panic!(),
-            ErrorKind::Errors { ref errors, .. } => {
-                for err in errors {
-                    self.validate(err)
-                }
-                return;
+        if let ErrorKind::Errors { ref errors, .. } = &*err.inner {
+            for err in errors {
+                self.validate(err)
             }
-            _ => {}
+            return;
         }
 
         let code = err.code();
@@ -1969,20 +1965,20 @@ impl ErrorKind {
     }
 
     pub fn is_property_not_found(&self) -> bool {
-        match self {
+        matches!(
+            self,
             ErrorKind::NoSuchProperty { .. }
-            | ErrorKind::NoSuchPropertyInClass { .. }
-            | ErrorKind::NoSuchPropertyInModule { .. }
-            | ErrorKind::NoSuchPropertyInThis { .. } => true,
-            _ => false,
-        }
+                | ErrorKind::NoSuchPropertyInClass { .. }
+                | ErrorKind::NoSuchPropertyInModule { .. }
+                | ErrorKind::NoSuchPropertyInThis { .. }
+        )
     }
 
     pub fn is_var_not_found(&self) -> bool {
-        match self {
-            Self::NoSuchVar { .. } | Self::NoSuchVarButThisHasSuchProperty { .. } | Self::NoSuchVarForShorthand { .. } => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            Self::NoSuchVar { .. } | Self::NoSuchVarButThisHasSuchProperty { .. } | Self::NoSuchVarForShorthand { .. }
+        )
     }
 
     pub fn is_assign_failure(&self) -> bool {
@@ -1990,10 +1986,7 @@ impl ErrorKind {
     }
 
     pub fn is_type_not_found(&self) -> bool {
-        match self {
-            Self::NoSuchType { .. } | Self::NoSuchTypeButVarExists { .. } => true,
-            _ => false,
-        }
+        matches!(self, Self::NoSuchType { .. } | Self::NoSuchTypeButVarExists { .. })
     }
 
     #[cold]

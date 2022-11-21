@@ -621,34 +621,29 @@ struct MappedHandler<'d> {
 
 impl Fold<Type> for MappedHandler<'_> {
     fn fold(&mut self, mut ty: Type) -> Type {
-        match ty.normalize() {
-            Type::IndexedAccessType(ty) => match ty.obj_type.normalize() {
-                Type::Param(TypeParam { name: obj_param_name, .. }) => match ty.index_type.normalize() {
-                    Type::Param(TypeParam {
-                        name: index_param_name,
-                        constraint: Some(index_type_constraint),
-                        ..
-                    }) => match index_type_constraint.normalize() {
-                        Type::Operator(
-                            operator @ Operator {
-                                op: TsTypeOperatorOp::KeyOf,
-                                ..
-                            },
-                        ) => match operator.ty.normalize() {
-                            Type::Param(constraint_param) => {
-                                if *obj_param_name == constraint_param.name && *self.param_name == *obj_param_name {
-                                    return self.prop_ty.clone();
-                                }
-                            }
-                            _ => {}
+        if let Type::IndexedAccessType(ty) = ty.normalize() {
+            if let Type::Param(TypeParam { name: obj_param_name, .. }) = ty.obj_type.normalize() {
+                if let Type::Param(TypeParam {
+                    name: index_param_name,
+                    constraint: Some(index_type_constraint),
+                    ..
+                }) = ty.index_type.normalize()
+                {
+                    if let Type::Operator(
+                        operator @ Operator {
+                            op: TsTypeOperatorOp::KeyOf,
+                            ..
                         },
-                        _ => {}
-                    },
-                    _ => {}
-                },
-                _ => {}
-            },
-            _ => {}
+                    ) = index_type_constraint.normalize()
+                    {
+                        if let Type::Param(constraint_param) = operator.ty.normalize() {
+                            if *obj_param_name == constraint_param.name && *self.param_name == *obj_param_name {
+                                return self.prop_ty.clone();
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // TODO(kdy1): PERF
