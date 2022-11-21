@@ -86,7 +86,7 @@ impl Analyzer<'_, '_> {
     where
         T: for<'aa> FoldWith<GenericExpander<'aa>> + Fix,
     {
-        for (_, param) in params {
+        for param in params.values() {
             param.assert_valid();
             debug_assert!(param.is_clone_cheap());
         }

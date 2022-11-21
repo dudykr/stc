@@ -71,12 +71,10 @@ impl Simplifier<'_> {
 
 impl Fold<Union> for Simplifier<'_> {
     fn fold(&mut self, mut union: Union) -> Union {
-        let should_remove_null_and_undefined = union.types.iter().any(|ty| match ty.normalize() {
-            Type::TypeLit(..) => true,
-            Type::Ref(..) => true,
-            Type::Function(..) => true,
-            _ => false,
-        });
+        let should_remove_null_and_undefined = union
+            .types
+            .iter()
+            .any(|ty| matches!(ty.normalize(), Type::TypeLit(..) | Type::Ref(..) | Type::Function(..)));
 
         if should_remove_null_and_undefined {
             union.types.retain(|ty| {
@@ -88,10 +86,7 @@ impl Fold<Union> for Simplifier<'_> {
             });
         }
 
-        let has_array = union.types.iter().any(|ty| match ty.normalize() {
-            Type::Array(..) => true,
-            _ => false,
-        });
+        let has_array = union.types.iter().any(|ty| matches!(ty.normalize(), Type::Array(..)));
 
         // Remove empty tuple
         if has_array {
@@ -112,38 +107,35 @@ impl Fold<Type> for Simplifier<'_> {
         // TODO(kdy1): PERF
         ty.normalize_mut();
 
-        match ty.normalize() {
-            Type::Array(Array {
-                elem_type:
-                    box Type::IndexedAccessType(IndexedAccessType {
-                        obj_type: box Type::Param(..),
-                        index_type:
-                            box Type::Param(TypeParam {
-                                constraint:
-                                    Some(box Type::Operator(Operator {
-                                        op: TsTypeOperatorOp::KeyOf,
-                                        ty: box Type::Param(..),
-                                        ..
-                                    })),
-                                ..
-                            }),
-                        ..
-                    }),
-                ..
-            }) => return ty,
-
-            _ => {}
+        if let Type::Array(Array {
+            elem_type:
+                box Type::IndexedAccessType(IndexedAccessType {
+                    obj_type: box Type::Param(..),
+                    index_type:
+                        box Type::Param(TypeParam {
+                            constraint:
+                                Some(box Type::Operator(Operator {
+                                    op: TsTypeOperatorOp::KeyOf,
+                                    ty: box Type::Param(..),
+                                    ..
+                                })),
+                            ..
+                        }),
+                    ..
+                }),
+            ..
+        }) = ty.normalize()
+        {
+            return ty;
         }
 
         if self.should_skip_inference(&ty) {
-            match ty.normalize() {
-                Type::IndexedAccessType(IndexedAccessType {
-                    obj_type: box Type::Param(TypeParam { constraint: Some(..), .. }),
-                    ..
-                }) => {
-                    return ty;
-                }
-                _ => {}
+            if let Type::IndexedAccessType(IndexedAccessType {
+                obj_type: box Type::Param(TypeParam { constraint: Some(..), .. }),
+                ..
+            }) = ty.normalize()
+            {
+                return ty;
             }
         }
 

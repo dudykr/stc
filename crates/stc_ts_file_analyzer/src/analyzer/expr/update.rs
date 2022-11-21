@@ -130,15 +130,12 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        match ty.normalize() {
-            Type::Union(ty) => {
-                for ty in &ty.types {
-                    if !self.is_update_operand_valid(ty)? {
-                        return Ok(false);
-                    }
+        if let Type::Union(ty) = ty.normalize() {
+            for ty in &ty.types {
+                if !self.is_update_operand_valid(ty)? {
+                    return Ok(false);
                 }
             }
-            _ => {}
         }
 
         Ok(true)
