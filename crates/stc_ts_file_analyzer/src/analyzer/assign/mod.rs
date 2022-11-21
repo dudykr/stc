@@ -1139,13 +1139,10 @@ impl Analyzer<'_, '_> {
 
                     if let Some(e) = e {
                         for e in e {
-                            match e.normalize() {
-                                Type::Enum(e) => {
-                                    if e.members.len() == 1 {
-                                        return Ok(());
-                                    }
+                            if let Type::Enum(e) = e.normalize() {
+                                if e.members.len() == 1 {
+                                    return Ok(());
                                 }
-                                _ => {}
                             }
                         }
                     }
