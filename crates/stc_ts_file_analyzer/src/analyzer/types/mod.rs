@@ -650,7 +650,7 @@ impl Analyzer<'_, '_> {
             }
             _ => {
                 //
-                if let Some(extends) = self.extends(span, &check_type_constraint, extends_type, ExtendsOpts { ..Default::default() }) {
+                if let Some(extends) = self.extends(span, check_type_constraint, extends_type, ExtendsOpts { ..Default::default() }) {
                     if extends {
                         return Ok(Some(true_type.into_owned()));
                     } else {
@@ -719,47 +719,40 @@ impl Analyzer<'_, '_> {
                     )
                     .context("failed to normalize types while intersecting properties")?;
 
-                match elem.normalize_instance() {
-                    Type::TypeLit(elem_tl) => {
-                        // Intersect property types
-                        'outer: for e in elem_tl.members.iter() {
-                            match e {
-                                TypeElement::Property(p) => {
-                                    for prev in property_types.iter_mut() {
-                                        match prev {
-                                            TypeElement::Property(prev) => {
-                                                if prev.key.type_eq(&p.key) {
-                                                    let prev_type =
-                                                        prev.type_ann.clone().map(|v| *v).unwrap_or_else(|| {
-                                                            Type::any(span, KeywordTypeMetadata { ..Default::default() })
-                                                        });
-                                                    let other =
-                                                        p.type_ann.clone().map(|v| *v).unwrap_or_else(|| {
-                                                            Type::any(span, KeywordTypeMetadata { ..Default::default() })
-                                                        });
+                if let Type::TypeLit(elem_tl) = elem.normalize_instance() {
+                    // Intersect property types
+                    'outer: for e in elem_tl.members.iter() {
+                        if let TypeElement::Property(p) = e {
+                            for prev in property_types.iter_mut() {
+                                if let TypeElement::Property(prev) = prev {
+                                    if prev.key.type_eq(&p.key) {
+                                        let prev_type = prev
+                                            .type_ann
+                                            .clone()
+                                            .map(|v| *v)
+                                            .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
+                                        let other = p
+                                            .type_ann
+                                            .clone()
+                                            .map(|v| *v)
+                                            .unwrap_or_else(|| Type::any(span, KeywordTypeMetadata { ..Default::default() }));
 
-                                                    let new = self.normalize_intersection_types(span, &[prev_type, other], opts)?;
+                                        let new = self.normalize_intersection_types(span, &[prev_type, other], opts)?;
 
-                                                    if let Some(new) = new {
-                                                        if new.is_never() {
-                                                            return never!();
-                                                        }
-                                                        prev.type_ann = Some(box new);
-                                                        continue 'outer;
-                                                    }
-                                                }
+                                        if let Some(new) = new {
+                                            if new.is_never() {
+                                                return never!();
                                             }
-                                            _ => {}
+                                            prev.type_ann = Some(box new);
+                                            continue 'outer;
                                         }
                                     }
                                 }
-                                _ => {}
                             }
-
-                            property_types.push(e.clone());
                         }
+
+                        property_types.push(e.clone());
                     }
-                    _ => {}
                 }
             }
         }
