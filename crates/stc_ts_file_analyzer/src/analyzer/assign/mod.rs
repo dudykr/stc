@@ -187,8 +187,22 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_with_op(&mut self, span: Span, op: AssignOp, lhs: &Type, rhs: &Type) -> VResult<()> {
         debug_assert_ne!(op, op!("="));
 
-        let l = self.expand_top_ref(span, Cow::Borrowed(lhs), Default::default())?;
-        let r = self.expand_top_ref(span, Cow::Borrowed(rhs), Default::default())?;
+        let l = self.normalize(
+            Some(span),
+            Cow::Borrowed(lhs),
+            NormalizeTypeOpts {
+                preserve_global_this: true,
+                ..Default::default()
+            },
+        )?;
+        let r = self.normalize(
+            Some(span),
+            Cow::Borrowed(rhs),
+            NormalizeTypeOpts {
+                preserve_global_this: true,
+                ..Default::default()
+            },
+        )?;
 
         let lhs = l.normalize();
         let rhs = r.normalize();
