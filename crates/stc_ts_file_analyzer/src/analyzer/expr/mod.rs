@@ -292,7 +292,7 @@ impl Analyzer<'_, '_> {
                 RExpr::Member(ref expr) => {
                     // Foo.a
                     if self.ctx.should_store_truthy_for_access {
-                        if let Ok(name) = Name::try_from(&*expr) {
+                        if let Ok(name) = Name::try_from(expr) {
                             self.cur_facts.true_facts.facts.insert(name.clone(), TypeFacts::Truthy);
                             self.cur_facts.false_facts.facts.insert(name, TypeFacts::Falsy);
                         }
@@ -322,11 +322,8 @@ impl Analyzer<'_, '_> {
         if self.is_builtin {
             // `Symbol.iterator` is defined multiple times, and it results in union of
             // `symbol`s.
-            match &mut ty {
-                Type::Union(u) => {
-                    u.types.dedup_type();
-                }
-                _ => {}
+            if let Type::Union(u) = &mut ty {
+                u.types.dedup_type();
             }
         }
 
@@ -356,12 +353,7 @@ impl Analyzer<'_, '_> {
         }
 
         // Exclude literals
-        if !span.is_dummy()
-            & match e {
-                RExpr::Lit(..) => false,
-                _ => true,
-            }
-        {
+        if !span.is_dummy() & !matches!(e, RExpr::Lit(..)) {
             self.dump_type(span, &ty);
         }
 
@@ -495,7 +487,7 @@ impl Analyzer<'_, '_> {
                                 lhs = RPat::Invalid(RInvalid { span: DUMMY_SP });
                                 &lhs
                             }
-                            RPatOrExpr::Pat(p) => &**p,
+                            RPatOrExpr::Pat(p) => p,
                         },
                         &rhs_ty,
                     );
@@ -565,7 +557,7 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RSeqExpr, mode: TypeOfMode, type_ann: Option<&Type>) -> VResult<Type> {
         let RSeqExpr { span, ref exprs, .. } = *e;
 
-        assert!(exprs.len() >= 1);
+        assert!(!exprs.is_empty());
 
         let len = exprs.len();
 
@@ -594,13 +586,10 @@ impl Analyzer<'_, '_> {
                     _ => {}
                 }
             }
-            match **e {
-                RExpr::Ident(ref i) => {
-                    if self.scope.declaring.contains(&i.into()) {
-                        is_any = true;
-                    }
+            if let RExpr::Ident(ref i) = **e {
+                if self.scope.declaring.contains(&i.into()) {
+                    is_any = true;
                 }
-                _ => {}
             }
 
             if !is_last {
@@ -632,21 +621,17 @@ impl Analyzer<'_, '_> {
     /// Returns `true` if a rhs expression of the assignment expression can be
     /// a tuple.
     fn can_rhs_be_tuple(&mut self, left: &RPat) -> bool {
-        match left {
-            RPat::Array(l) => {
-                for elem in l.elems.iter() {
-                    match elem {
-                        Some(RPat::Rest(rest)) => match &*rest.arg {
-                            RPat::Object(..) => {
-                                return false;
-                            }
-                            _ => {}
-                        },
+        if let RPat::Array(l) = left {
+            for elem in l.elems.iter() {
+                if let Some(RPat::Rest(rest)) = elem {
+                    match &*rest.arg {
+                        RPat::Object(..) => {
+                            return false;
+                        }
                         _ => {}
                     }
                 }
             }
-            _ => {}
         }
 
         true
