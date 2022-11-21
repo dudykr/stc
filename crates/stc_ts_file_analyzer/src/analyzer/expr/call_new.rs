@@ -2989,11 +2989,7 @@ impl Analyzer<'_, '_> {
                             report_err!(err);
                         }
                     } else {
-                        let allow_unknown_rhs = arg.ty.metadata().resolved_from_var
-                            || match arg.ty.normalize() {
-                                Type::TypeLit(..) => false,
-                                _ => true,
-                            };
+                        let allow_unknown_rhs = arg.ty.metadata().resolved_from_var || !matches!(arg.ty.normalize(), Type::TypeLit(..));
                         if let Err(err) = self.assign_with_opts(
                             &mut Default::default(),
                             &param.ty,
