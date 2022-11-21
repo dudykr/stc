@@ -79,9 +79,6 @@ pub(crate) struct AssignOpts {
     pub for_overload: bool,
 
     pub disallow_assignment_to_unknown: bool,
-    /// This is `true` for variable overloads, too. This will be fixed in
-    /// future.
-    pub for_castablity: bool,
 
     /// If this is `false`, assignment of literals or some other strange type to
     /// empty class will success.
@@ -167,14 +164,15 @@ pub(crate) struct AssignOpts {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Relation {
-    Assignability,
-    Comparibility,
+    Assignable,
+    Compable,
+    Castable,
     Subtype,
 }
 
 impl Default for Relation {
     fn default() -> Self {
-        Self::Assignability
+        Self::Assignable
     }
 }
 
@@ -808,7 +806,7 @@ impl Analyzer<'_, '_> {
                     }
                 }
                 _ => {
-                    if opts.for_castablity {
+                    if let Relation::Castable = opts.kind {
                         if rhs.is_kwd(TsKeywordTypeKind::TsStringKeyword) {
                             return Ok(());
                         }
