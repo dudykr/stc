@@ -1339,11 +1339,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(constructor) = constructors.first() {
                         //
-                        let type_params = constructor
-                            .type_params
-                            .as_ref()
-                            .or_else(|| cls.type_params.as_deref())
-                            .map(|v| &*v.params);
+                        let type_params = constructor.type_params.as_ref().or(cls.type_params.as_deref()).map(|v| &*v.params);
                         // TODO(kdy1): Constructor's return type.
 
                         return self

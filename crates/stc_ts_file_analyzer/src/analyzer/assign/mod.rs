@@ -1078,7 +1078,7 @@ impl Analyzer<'_, '_> {
                     let lhs = self.convert_type_to_type_lit(span, Cow::Borrowed(to))?;
 
                     if let Some(lhs) = lhs {
-                        self.assign_to_type_elements(data, lhs.span, &lhs.members, &rhs, lhs.metadata, opts)
+                        self.assign_to_type_elements(data, lhs.span, &lhs.members, rhs, lhs.metadata, opts)
                             .with_context(|| {
                                 format!(
                                     "tried to check if unknown rhs exists while assigning to an intersection type:\nLHS: {}",
@@ -1125,7 +1125,7 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Lit(ref lhs) => match rhs.normalize() {
-                Type::Lit(rhs) if lhs.eq_ignore_span(&rhs) => return Ok(()),
+                Type::Lit(rhs) if lhs.eq_ignore_span(rhs) => return Ok(()),
                 Type::Ref(..) | Type::Query(..) | Type::Param(..) => {
                     // We should expand ref. We expand it with the match
                     // expression below.
@@ -1152,7 +1152,7 @@ impl Analyzer<'_, '_> {
                 _ => fail!(),
             },
 
-            Type::Query(ref to) => return self.assign_to_query_type(data, to, &rhs, opts),
+            Type::Query(ref to) => return self.assign_to_query_type(data, to, rhs, opts),
 
             Type::Operator(Operator {
                 op: TsTypeOperatorOp::ReadOnly,

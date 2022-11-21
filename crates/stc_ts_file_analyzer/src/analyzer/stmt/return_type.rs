@@ -1,3 +1,5 @@
+#![allow(clippy::if_same_then_else)]
+
 use std::{borrow::Cow, mem::take, ops::AddAssign};
 
 use rnode::{Fold, FoldWith, Visit, VisitWith};
