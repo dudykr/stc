@@ -1184,7 +1184,14 @@ impl Analyzer<'_, '_> {
             for arg in arg_types {
                 if arg.spread.is_some() {
                     let arg_ty = self
-                        .expand_top_ref(arg.span(), Cow::Borrowed(&arg.ty), Default::default())
+                        .normalize(
+                            Some(arg.span()),
+                            Cow::Borrowed(&arg.ty),
+                            NormalizeTypeOpts {
+                                preserve_global_this: true,
+                                ..Default::default()
+                            },
+                        )
                         .context("tried to expand ref to handle a spread argument")?;
                     match arg_ty.normalize() {
                         Type::Tuple(arg_ty) => {
