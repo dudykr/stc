@@ -2533,6 +2533,7 @@ impl Analyzer<'_, '_> {
 
             // if arg.len() > param.len(), we need to add all args
             if arg_types.len() > expanded_param_types.len() {
+                #[allow(clippy::needless_range_loop)]
                 for idx in expanded_param_types.len()..arg_types.len() {
                     let ty = &arg_types[idx].ty;
                     print_type(&format!("Expanded param type at {}", idx), &self.cm, ty);

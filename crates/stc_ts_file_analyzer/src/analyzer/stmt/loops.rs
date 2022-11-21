@@ -140,7 +140,7 @@ impl Analyzer<'_, '_> {
     fn validate_lhs_of_for_in_of_loop(&mut self, e: &RVarDeclOrPat, kind: ForHeadKind) -> VResult<()> {
         match e {
             RVarDeclOrPat::VarDecl(v) => {
-                if v.decls.len() >= 1 {
+                if !v.decls.is_empty() {
                     self.validate_lhs_of_for_in_of_loop_pat(&v.decls[0].name, kind)
                 } else {
                     Ok(())
@@ -164,7 +164,7 @@ impl Analyzer<'_, '_> {
     fn validate_lhs_of_for_in_of_loop_expr(&mut self, e: &RExpr, kind: ForHeadKind) -> VResult<()> {
         // for (obj?.a["b"] in obj) {}
         use crate::analyzer::expr::optional_chaining::is_obj_opt_chaining;
-        if is_obj_opt_chaining(&e) {
+        if is_obj_opt_chaining(e) {
             return match kind {
                 ForHeadKind::In => Err(ErrorKind::InvalidRestPatternInForIn { span: e.span() }.into()),
                 ForHeadKind::Of { .. } => Err(ErrorKind::InvalidRestPatternInForOf { span: e.span() }.into()),

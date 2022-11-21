@@ -251,29 +251,25 @@ impl Analyzer<'_, '_> {
         match ty {
             Type::Ref(..) => {
                 let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
-                return self.convert_type_to_keys(span, &ty);
+                self.convert_type_to_keys(span, &ty)
             }
 
-            Type::Alias(alias) => return self.convert_type_to_keys(span, &alias.ty),
+            Type::Alias(alias) => self.convert_type_to_keys(span, &alias.ty),
 
             Type::Lit(LitType { lit, .. }) => match lit {
-                RTsLit::BigInt(v) => return Ok(Some(vec![Key::BigInt(v.clone())])),
-                RTsLit::Number(v) => return Ok(Some(vec![Key::Num(v.clone())])),
-                RTsLit::Str(v) => {
-                    return Ok(Some(vec![Key::Normal {
-                        span: v.span,
-                        sym: v.value.clone(),
-                    }]))
-                }
-                RTsLit::Tpl(t) if t.quasis.len() == 1 => {
-                    return Ok(Some(vec![Key::Normal {
-                        span: t.span,
-                        sym: match &t.quasis[0].cooked {
-                            Some(v) => (&**v).into(),
-                            _ => return Ok(None),
-                        },
-                    }]))
-                }
+                RTsLit::BigInt(v) => Ok(Some(vec![Key::BigInt(v.clone())])),
+                RTsLit::Number(v) => Ok(Some(vec![Key::Num(v.clone())])),
+                RTsLit::Str(v) => Ok(Some(vec![Key::Normal {
+                    span: v.span,
+                    sym: v.value.clone(),
+                }])),
+                RTsLit::Tpl(t) if t.quasis.len() == 1 => Ok(Some(vec![Key::Normal {
+                    span: t.span,
+                    sym: match &t.quasis[0].cooked {
+                        Some(v) => (&**v).into(),
+                        _ => return Ok(None),
+                    },
+                }])),
                 RTsLit::Bool(_) | RTsLit::Tpl(_) => return Ok(None),
             },
 
@@ -288,14 +284,14 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Ok(Some(keys));
+                Ok(Some(keys))
             }
 
             Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) => return Ok(None),
 
             _ => {
                 error!("unimplemented: convert_type_to_keys: {:#?}", ty);
-                return Ok(None);
+                Ok(None)
             }
         }
     }
