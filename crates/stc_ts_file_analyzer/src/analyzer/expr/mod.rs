@@ -1174,7 +1174,7 @@ impl Analyzer<'_, '_> {
         if !self.is_builtin {
             debug_assert!(!span.is_dummy());
 
-            debug!("access_property: obj = {}", dump_type_as_string(&self.cm, &obj));
+            debug!("access_property: obj = {}", dump_type_as_string(&self.cm, obj));
         }
 
         let _stack = stack::track(span)?;
@@ -1837,7 +1837,7 @@ impl Analyzer<'_, '_> {
                                 let prop_ty = prop.ty();
 
                                 let indexed = (index_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword) && prop_ty.is_num())
-                                    || self.assign(span, &mut Default::default(), &index_ty, &prop_ty).is_ok();
+                                    || self.assign(span, &mut Default::default(), index_ty, &prop_ty).is_ok();
 
                                 if indexed {
                                     return Ok(index
