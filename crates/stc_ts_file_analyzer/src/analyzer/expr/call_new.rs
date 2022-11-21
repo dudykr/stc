@@ -2465,7 +2465,7 @@ impl Analyzer<'_, '_> {
             };
             let mut new_args = vec![];
 
-            for (idx, (arg, param)) in args.into_iter().zip(expanded_param_types.iter()).enumerate() {
+            for (idx, (arg, param)) in args.iter().zip(expanded_param_types.iter()).enumerate() {
                 let arg_ty = &arg_types[idx];
                 print_type(&&format!("Expanded parameter at {}", idx), &self.cm, &param.ty);
                 print_type(&&format!("Original argument at {}", idx), &self.cm, &arg_ty.ty);

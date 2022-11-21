@@ -73,10 +73,7 @@ pub fn context(arg: proc_macro::TokenStream, item: proc_macro::TokenStream) -> p
 #[proc_macro_attribute]
 pub fn extra_validator(_: proc_macro::TokenStream, item: proc_macro::TokenStream) -> proc_macro::TokenStream {
     fn expand_extra_validator(i: ImplItemMethod) -> ImplItemMethod {
-        let should_return = match i.sig.output {
-            ReturnType::Default => false,
-            _ => true,
-        };
+        let should_return = !matches!(i.sig.output, ReturnType::Default);
 
         let try_block = ExprTryBlock {
             attrs: Default::default(),

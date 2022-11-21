@@ -1,4 +1,5 @@
 #![feature(box_syntax)]
+#![allow(clippy::derive_partial_eq_without_eq)]
 
 use rnode::{define_rnode, NodeId};
 use swc_atoms::{Atom, JsWord};
