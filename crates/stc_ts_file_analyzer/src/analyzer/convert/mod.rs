@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
             default,
             metadata: Default::default(),
         };
-        self.register_type(param.name.clone().into(), param.clone().into());
+        self.register_type(param.name.clone(), param.clone().into());
 
         if cfg!(debug_assertions) && has_constraint {
             if let Ok(types) = self.find_type(&p.name.clone().into()) {
@@ -728,9 +728,8 @@ impl Analyzer<'_, '_> {
                             contains_infer = true;
                         }
                         // We use type param instead of reference type if possible.
-                        match ty.normalize() {
-                            Type::Param(..) => return Ok(ty.into_owned()),
-                            _ => {}
+                        if let Type::Param(..) = ty.normalize() {
+                            return Ok(ty.into_owned());
                         }
                     }
 
@@ -966,11 +965,11 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 }),
                 RTsType::TsLitType(ty) => {
-                    match &ty.lit {
-                        RTsLit::Tpl(t) => return Ok(t.validate_with(a)?.into()),
-                        _ => {}
+                    if let RTsLit::Tpl(t) = &ty.lit {
+                        return Ok(t.validate_with(a)?.into());
                     }
-                    let ty = Type::Lit(LitType {
+
+                    Type::Lit(LitType {
                         span: ty.span,
                         lit: ty.lit.clone(),
                         metadata: LitTypeMetadata {
@@ -980,8 +979,7 @@ impl Analyzer<'_, '_> {
                             },
                             ..Default::default()
                         },
-                    });
-                    ty
+                    })
                 }
                 RTsType::TsKeywordType(ty) => {
                     if let TsKeywordTypeKind::TsIntrinsicKeyword = ty.kind {
@@ -1065,7 +1063,7 @@ impl Analyzer<'_, '_> {
                     if key_ty.is_symbol() {
                         continue;
                     }
-                    if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(&*prev_key)) {
+                    if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(prev_key)) {
                         self.storage
                             .report(ErrorKind::DuplicateNameWithoutName { span: prev.span() }.into());
                         self.storage.report(ErrorKind::DuplicateNameWithoutName { span: key.span() }.into());
@@ -1128,10 +1126,7 @@ impl Analyzer<'_, '_> {
                 return false;
             }
 
-            match scope.kind() {
-                ScopeKind::Method { is_static: true, .. } => true,
-                _ => false,
-            }
+            matches!(scope.kind(), ScopeKind::Method { is_static: true, .. })
         });
 
         if static_method.is_some() {
