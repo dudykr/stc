@@ -288,12 +288,18 @@ fn handle_enum_variant_fields(nodes_to_convert: &[String], enum_name: Option<&Id
             handle_field(
                 nodes_to_convert,
                 &field.attrs,
-                &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span())),
+                &field
+                    .ident
+                    .clone()
+                    .unwrap_or_else(|| Ident::new(&format!("_{}", idx), field.ident.span())),
                 &field.ty,
             ),
         )
     }) {
-        let binding = &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span()));
+        let binding = &field
+            .ident
+            .clone()
+            .unwrap_or_else(|| Ident::new(&format!("_{}", idx), field.ident.span()));
 
         bindings.push(binding.clone());
 
@@ -453,12 +459,15 @@ fn handle_struct_fields(attrs: &[Attribute], nodes_to_convert: &[String], struct
             handle_field(
                 nodes_to_convert,
                 &field.attrs,
-                &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span())),
+                &field
+                    .ident
+                    .clone()
+                    .unwrap_or_else(|| Ident::new(&format!("_{}", idx), field.ident.span())),
                 &field.ty,
             ),
         )
     }) {
-        let binding = &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span()));
+        let binding = &Option::unwrap_or(field.ident.clone(), Ident::new(&format!("_{}", idx), field.ident.span()));
 
         bindings.push(binding.clone());
 
