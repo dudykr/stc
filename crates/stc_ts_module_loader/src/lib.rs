@@ -153,10 +153,7 @@ where
     pub fn get_circular(&self, id: ModuleId) -> Option<Vec<ModuleId>> {
         let deps = self.deps.read();
 
-        deps.cycles
-            .iter()
-            .find_map(|set| if set.contains(&id) { Some(set) } else { None })
-            .cloned()
+        deps.cycles.iter().find(|set| set.contains(&id)).cloned()
     }
 
     pub fn id(&self, path: &Arc<FileName>) -> ModuleId {
