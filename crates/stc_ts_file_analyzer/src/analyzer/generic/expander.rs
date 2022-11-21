@@ -323,8 +323,8 @@ impl Analyzer<'_, '_> {
                     }
                 }
             },
-            Type::Tuple(child_tuple) => match parent {
-                Type::Array(parent_array) => {
+            Type::Tuple(child_tuple) => {
+                if let Type::Array(parent_array) = parent {
                     if child_tuple
                         .elems
                         .iter()
@@ -333,12 +333,12 @@ impl Analyzer<'_, '_> {
                         return Some(true);
                     }
                 }
-                _ => {}
-            },
-            Type::Array(child_array) => match parent {
-                Type::Tuple(parent_tuple) => return Some(false),
-                _ => {}
-            },
+            }
+            Type::Array(child_array) => {
+                if let Type::Tuple(parent_tuple) = parent {
+                    return Some(false);
+                }
+            }
             _ => {}
         }
         // dbg!(child, parent);
