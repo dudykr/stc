@@ -1683,8 +1683,8 @@ impl Analyzer<'_, '_> {
                 {
                     errors.push(ErrorKind::TS2447 { span }.into());
                 } else {
-                    check(&lt, true);
-                    check(&rt, false);
+                    check(lt, true);
+                    check(rt, false);
                 }
             }
 
@@ -1727,7 +1727,7 @@ impl Analyzer<'_, '_> {
                     }
 
                     _ => {
-                        if !self.is_valid_rhs_of_in(rs, &rt) {
+                        if !self.is_valid_rhs_of_in(rs, rt) {
                             errors.push(
                                 ErrorKind::InvalidRhsForInOperator {
                                     span: rs,
