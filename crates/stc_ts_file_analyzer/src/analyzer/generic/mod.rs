@@ -728,18 +728,12 @@ impl Analyzer<'_, '_> {
                                 let param_ty = Type::union(e.clone()).freezed();
                                 e.push(arg.clone());
 
-                                match param_ty.normalize() {
-                                    Type::Param(param) => {
-                                        self.insert_inferred(span, inferred, &param, Cow::Borrowed(&arg), opts)?;
-                                    }
-                                    _ => {}
+                                if let Type::Param(param) = param_ty.normalize() {
+                                    self.insert_inferred(span, inferred, &param, Cow::Borrowed(&arg), opts)?;
                                 }
 
-                                match arg.normalize() {
-                                    Type::Param(param) => {
-                                        self.insert_inferred(span, inferred, &param, Cow::Owned(param_ty), opts)?;
-                                    }
-                                    _ => {}
+                                if let Type::Param(param) = arg.normalize() {
+                                    self.insert_inferred(span, inferred, &param, Cow::Owned(param_ty), opts)?;
                                 }
                             }
                         }

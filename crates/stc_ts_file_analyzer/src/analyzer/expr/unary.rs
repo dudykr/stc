@@ -25,7 +25,7 @@ impl Analyzer<'_, '_> {
         if let op!("delete") = op {
             // `delete foo` returns bool
 
-            self.validate_with(|a| a.validate_delete_operand(&arg));
+            self.validate_with(|a| a.validate_delete_operand(arg));
         }
 
         // TODO(kdy1): Check for `self.ctx.in_cond` to improve performance.
@@ -112,24 +112,22 @@ impl Analyzer<'_, '_> {
 
             op!(unary, "-") | op!(unary, "+") => {
                 if let Some(arg) = &arg_ty {
-                    match arg.normalize() {
-                        Type::Lit(LitType {
-                            lit: RTsLit::Number(RNumber { span, value, .. }),
-                            ..
-                        }) => {
-                            let span = *span;
+                    if let Type::Lit(LitType {
+                        lit: RTsLit::Number(RNumber { span, value, .. }),
+                        ..
+                    }) = arg.normalize()
+                    {
+                        let span = *span;
 
-                            return Ok(Type::Lit(LitType {
+                        return Ok(Type::Lit(LitType {
+                            span,
+                            lit: RTsLit::Number(RNumber {
                                 span,
-                                lit: RTsLit::Number(RNumber {
-                                    span,
-                                    value: if *op == op!(unary, "-") { -(*value) } else { *value },
-                                    raw: None,
-                                }),
-                                metadata: Default::default(),
-                            }));
-                        }
-                        _ => {}
+                                value: if *op == op!(unary, "-") { -(*value) } else { *value },
+                                raw: None,
+                            }),
+                            metadata: Default::default(),
+                        }));
                     }
                 }
 
@@ -150,15 +148,13 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match arg_ty {
-            Some(Type::Keyword(KeywordType {
-                kind: TsKeywordTypeKind::TsUnknownKeyword,
-                ..
-            })) => {
-                debug_assert!(!arg.span().is_dummy());
-                return Err(ErrorKind::Unknown { span: arg.span() }.into());
-            }
-            _ => {}
+        if let Some(Type::Keyword(KeywordType {
+            kind: TsKeywordTypeKind::TsUnknownKeyword,
+            ..
+        })) = arg_ty
+        {
+            debug_assert!(!arg.span().is_dummy());
+            return Err(ErrorKind::Unknown { span: arg.span() }.into());
         }
 
         if let Some(arg) = arg_ty {

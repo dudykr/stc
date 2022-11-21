@@ -113,7 +113,7 @@ impl Analyzer<'_, '_> {
     fn validate_type_cast_inner(&mut self, span: Span, orig: &Type, casted: &Type) -> VResult<()> {
         // I don't know why this is valid, but `stringLiteralsWithTypeAssertions01.ts`
         // has some tests for this.
-        if is_str_or_union(&orig) && casted.is_str() {
+        if is_str_or_union(orig) && casted.is_str() {
             return Ok(());
         }
 
