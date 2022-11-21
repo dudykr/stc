@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use itertools::Itertools;
 use rnode::{FoldWith, NodeId};
 use stc_ts_ast_rnode::{RBindingIdent, RExpr, RIdent, RNumber, RObjectPatProp, RPat, RStr, RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind};
+use stc_ts_errors::{ctx, debug::dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_type_ops::{widen::Widen, Fix};
 use stc_ts_types::{Array, Key, KeywordType, LitType, Ref, Tuple, Type, TypeLit, TypeParamInstantiation, Union};
 use stc_ts_utils::{run, PatExt};
@@ -59,7 +59,6 @@ impl Analyzer<'_, '_> {
     /// ## default
     ///
     /// The type of default value specified by an assignment pattern.
-    #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn add_vars(
         &mut self,
         pat: &RPat,
@@ -68,6 +67,8 @@ impl Analyzer<'_, '_> {
         default: Option<Type>,
         opts: DeclareVarsOpts,
     ) -> VResult<()> {
+        let _ctx = ctx!("add_vars");
+
         if let Some(ty) = &ty {
             ty.assert_valid();
             if !self.is_builtin {
@@ -361,7 +362,7 @@ impl Analyzer<'_, '_> {
                                     Some(ty) => self
                                         .access_property(
                                             elem.span(),
-                                            &ty,
+                                            ty,
                                             &Key::Num(RNumber {
                                                 span: elem.span(),
                                                 value: idx as f64,
@@ -381,7 +382,7 @@ impl Analyzer<'_, '_> {
                                     Some(ty) => self
                                         .access_property(
                                             elem.span(),
-                                            &ty,
+                                            ty,
                                             &Key::Num(RNumber {
                                                 span: elem.span(),
                                                 value: idx as f64,
@@ -410,10 +411,7 @@ impl Analyzer<'_, '_> {
             }
 
             RPat::Object(obj) => {
-                let should_use_no_such_property = match ty.as_ref().map(Type::normalize) {
-                    Some(Type::TypeLit(..)) => false,
-                    _ => true,
-                };
+                let should_use_no_such_property = !matches!(ty.as_ref().map(Type::normalize), Some(Type::TypeLit(..)));
 
                 // TODO(kdy1): Normalize static
                 //
@@ -433,7 +431,7 @@ impl Analyzer<'_, '_> {
                                 self.with_ctx(ctx)
                                     .access_property(
                                         span,
-                                        &ty,
+                                        ty,
                                         &key,
                                         TypeOfMode::RValue,
                                         IdCtx::Var,
@@ -453,7 +451,7 @@ impl Analyzer<'_, '_> {
                                     self.with_ctx(ctx)
                                         .access_property(
                                             span,
-                                            &ty,
+                                            ty,
                                             &key,
                                             TypeOfMode::RValue,
                                             IdCtx::Var,

@@ -717,7 +717,7 @@ impl Analyzer<'_, '_> {
             let (a, b) = (&types[0], &types[1]);
 
             if (a.is_str_lit() && b.is_str_lit() || (a.is_num_lit() && b.is_num_lit()) || (a.is_bool_lit() && b.is_bool_lit()))
-                && !a.type_eq(&b)
+                && !a.type_eq(b)
             {
                 return never!();
             }
