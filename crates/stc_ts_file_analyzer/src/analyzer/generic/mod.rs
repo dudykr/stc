@@ -1870,85 +1870,80 @@ impl Analyzer<'_, '_> {
 
         match &param.type_param.constraint {
             Some(constraint) => {
-                match constraint.normalize() {
-                    Type::Operator(
-                        operator @ Operator {
-                            op: TsTypeOperatorOp::KeyOf,
+                if let Type::Operator(
+                    operator @ Operator {
+                        op: TsTypeOperatorOp::KeyOf,
+                        ..
+                    },
+                ) = constraint.normalize()
+                {
+                    if let Type::IndexedAccessType(
+                        iat @ IndexedAccessType {
+                            obj_type: box Type::Param(..),
+                            index_type: box Type::Param(..),
                             ..
                         },
-                    ) => match operator.ty.normalize() {
-                        Type::IndexedAccessType(
-                            iat @ IndexedAccessType {
-                                obj_type: box Type::Param(..),
-                                index_type: box Type::Param(..),
-                                ..
-                            },
-                        ) => match iat.obj_type.normalize() {
-                            Type::Param(..) => match iat.index_type.normalize() {
-                                Type::Param(..) => {
-                                    let param_ty = param.ty.clone().unwrap();
-                                    let name = param.type_param.name.clone();
-                                    let (obj_ty, index_ty) = match &**param.type_param.constraint.as_ref().unwrap() {
-                                        Type::Operator(Operator {
-                                            ty:
-                                                box Type::IndexedAccessType(IndexedAccessType {
-                                                    obj_type: box Type::Param(obj_ty),
-                                                    index_type: box Type::Param(index_ty),
-                                                    ..
-                                                }),
-                                            ..
-                                        }) => (obj_ty, index_ty),
-                                        _ => unreachable!(),
-                                    };
-                                    if name == index_ty.name {
-                                        match arg {
-                                            Type::TypeLit(arg) => {
-                                                let mut members = Vec::with_capacity(arg.members.len());
+                    ) = operator.ty.normalize()
+                    {
+                        if let Type::Param(..) = iat.obj_type.normalize() {
+                            if let Type::Param(..) = iat.index_type.normalize() {
+                                let param_ty = param.ty.clone().unwrap();
+                                let name = param.type_param.name.clone();
+                                let (obj_ty, index_ty) = match &**param.type_param.constraint.as_ref().unwrap() {
+                                    Type::Operator(Operator {
+                                        ty:
+                                            box Type::IndexedAccessType(IndexedAccessType {
+                                                obj_type: box Type::Param(obj_ty),
+                                                index_type: box Type::Param(index_ty),
+                                                ..
+                                            }),
+                                        ..
+                                    }) => (obj_ty, index_ty),
+                                    _ => unreachable!(),
+                                };
+                                if name == index_ty.name {
+                                    match arg {
+                                        Type::TypeLit(arg) => {
+                                            let mut members = Vec::with_capacity(arg.members.len());
 
-                                                for m in &arg.members {
-                                                    match m {
-                                                        TypeElement::Property(p) => {
-                                                            let optional = calc_true_plus_minus_in_param(param.optional, p.optional);
-                                                            //
-                                                            if let Some(ref type_ann) = p.type_ann {
-                                                                self.infer_type(span, inferred, &param_ty, &type_ann, opts)?;
-                                                            }
-                                                            members.push(TypeElement::Property(PropertySignature {
-                                                                optional,
-                                                                readonly: calc_true_plus_minus_in_param(param.readonly, p.readonly),
-                                                                type_ann: None,
-                                                                ..p.clone()
-                                                            }));
+                                            for m in &arg.members {
+                                                match m {
+                                                    TypeElement::Property(p) => {
+                                                        let optional = calc_true_plus_minus_in_param(param.optional, p.optional);
+                                                        //
+                                                        if let Some(ref type_ann) = p.type_ann {
+                                                            self.infer_type(span, inferred, &param_ty, &type_ann, opts)?;
                                                         }
-
-                                                        _ => unimplemented!("infer_type: Mapped <- Assign: TypeElement({:?})", m),
+                                                        members.push(TypeElement::Property(PropertySignature {
+                                                            optional,
+                                                            readonly: calc_true_plus_minus_in_param(param.readonly, p.readonly),
+                                                            type_ann: None,
+                                                            ..p.clone()
+                                                        }));
                                                     }
+
+                                                    _ => unimplemented!("infer_type: Mapped <- Assign: TypeElement({:?})", m),
                                                 }
-
-                                                let list_ty = Type::TypeLit(TypeLit {
-                                                    span: arg.span,
-                                                    members,
-                                                    metadata: arg.metadata,
-                                                });
-
-                                                self.insert_inferred_raw(span, inferred, name.clone(), Cow::Owned(list_ty), opts)?;
-                                                return Ok(true);
                                             }
 
-                                            _ => {
-                                                dbg!();
-                                            }
+                                            let list_ty = Type::TypeLit(TypeLit {
+                                                span: arg.span,
+                                                members,
+                                                metadata: arg.metadata,
+                                            });
+
+                                            self.insert_inferred_raw(span, inferred, name.clone(), Cow::Owned(list_ty), opts)?;
+                                            return Ok(true);
+                                        }
+
+                                        _ => {
+                                            dbg!();
                                         }
                                     }
                                 }
-                                _ => {}
-                            },
-
-                            _ => {}
-                        },
-                        _ => {}
-                    },
-                    _ => {}
+                            }
+                        }
+                    }
                 }
             }
             None => {}
@@ -2070,18 +2065,12 @@ impl Analyzer<'_, '_> {
 
         if params.len() > args.len() {
             for param in &params[args.len()..] {
-                match &*param.ty {
-                    Type::Param(param) => {
-                        // TOOD: Union
-                        inferred.defaults.insert(
-                            param.name.clone(),
-                            Type::unknown(param.span.with_ctxt(SyntaxContext::empty()), Default::default()),
-                        );
-                    }
-                    _ => {
-                        // TOOD: Complex inference logic for types like (b:
-                        // Boxifiied<T>) => T
-                    }
+                if let Type::Param(param) = &*param.ty {
+                    // TOOD: Union
+                    inferred.defaults.insert(
+                        param.name.clone(),
+                        Type::unknown(param.span.with_ctxt(SyntaxContext::empty()), Default::default()),
+                    );
                 }
             }
         }

@@ -688,7 +688,7 @@ impl Fold<Type> for Simplifier<'_> {
                     }),
                 index_type: box Type::Union(keys),
                 ..
-            }) if keys.types.iter().all(|ty| is_str_lit_or_union(ty)) => {
+            }) if keys.types.iter().all(is_str_lit_or_union) => {
                 let mut new_types = keys
                     .types
                     .into_iter()
