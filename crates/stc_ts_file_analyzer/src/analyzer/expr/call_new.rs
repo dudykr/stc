@@ -2013,11 +2013,11 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        return Err(if kind == ExtractKind::Call {
+        Err(if kind == ExtractKind::Call {
             ErrorKind::NoCallSignature { span, callee: box callee }.context("tried to calculate return type")
         } else {
             ErrorKind::NoNewSignature { span, callee: box callee }.context("tried to calculate return type")
-        });
+        })
     }
 
     fn validate_arg_count(
@@ -2060,27 +2060,9 @@ impl Analyzer<'_, '_> {
                     id: RIdent { sym: js_word!("this"), .. },
                     ..
                 }) => 0,
-                RPat::Ident(v) => {
-                    if v.id.optional {
-                        0
-                    } else {
-                        1
-                    }
-                }
-                RPat::Array(v) => {
-                    if v.optional {
-                        0
-                    } else {
-                        1
-                    }
-                }
-                RPat::Object(v) => {
-                    if v.optional {
-                        0
-                    } else {
-                        1
-                    }
-                }
+                RPat::Ident(v) => usize::from(!v.id.optional),
+                RPat::Array(v) => usize::from(!v.optional),
+                RPat::Object(v) => usize::from(!v.optional),
                 RPat::Assign(..) | RPat::Invalid(_) | RPat::Expr(_) => 0,
             }
         }
