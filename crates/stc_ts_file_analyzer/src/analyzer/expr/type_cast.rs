@@ -9,7 +9,7 @@ use swc_ecma_ast::TsKeywordTypeKind;
 
 use crate::{
     analyzer::{
-        assign::AssignOpts,
+        assign::{AssignOpts, Relation},
         expr::TypeOfMode,
         scope::ExpandOpts,
         util::{make_instance_type, ResultExt},
@@ -433,10 +433,10 @@ impl Analyzer<'_, '_> {
             to,
             AssignOpts {
                 span,
+                kind: Relation::Castable,
                 disallow_different_classes: opts.disallow_different_classes,
                 allow_assignment_to_param_constraint: opts.allow_assignment_to_param_constraint,
                 disallow_special_assignment_to_empty_class: opts.disallow_special_assignment_to_empty_class,
-                for_castablity: true,
                 ..Default::default()
             },
         ) {

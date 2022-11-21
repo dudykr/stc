@@ -16,7 +16,7 @@ use swc_ecma_ast::{Accessibility, TsKeywordTypeKind, TsTypeOperatorOp};
 
 use crate::{
     analyzer::{
-        assign::{AssignData, AssignOpts},
+        assign::{AssignData, AssignOpts, Relation},
         types::NormalizeTypeOpts,
         util::ResultExt,
         Analyzer,
@@ -1102,7 +1102,7 @@ impl Analyzer<'_, '_> {
                                             }
                                         }
 
-                                        if !opts.for_castablity {
+                                        if Relation::Castable != opts.kind {
                                             if !lp.optional && rp.optional {
                                                 return Err(ErrorKind::AssignFailedDueToOptionalityDifference { span }.into());
                                             }
@@ -1110,7 +1110,7 @@ impl Analyzer<'_, '_> {
 
                                         // Allow assigning undefined to optional properties.
                                         (|| {
-                                            if opts.for_castablity {
+                                            if let Relation::Castable = opts.kind {
                                                 if lp.optional {
                                                     if let Some(r_ty) = &rp.type_ann {
                                                         if r_ty.is_undefined() {
