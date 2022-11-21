@@ -102,10 +102,7 @@ impl Analyzer<'_, '_> {
                 })
                 .collect::<Result<Vec<_>, _>>()?;
 
-            let has_str = members.iter().any(|m| match *m.val {
-                RExpr::Lit(RLit::Str(..)) => true,
-                _ => false,
-            });
+            let has_str = members.iter().any(|m| matches!(*m.val, RExpr::Lit(RLit::Str(..))));
 
             if has_str {
                 for m in &e.members {
@@ -115,10 +112,7 @@ impl Analyzer<'_, '_> {
 
             Enum {
                 span: e.span,
-                has_num: members.iter().any(|m| match *m.val {
-                    RExpr::Lit(RLit::Num(..)) => true,
-                    _ => false,
-                }),
+                has_num: members.iter().any(|m| matches!(*m.val, RExpr::Lit(RLit::Num(..)))),
                 has_str,
                 declare: e.declare,
                 is_const: e.is_const,
@@ -149,7 +143,7 @@ impl Analyzer<'_, '_> {
                 if let Some(init) = &m.init {
                     let mut v = LitValidator {
                         error: false,
-                        decl: &e,
+                        decl: e,
                         errors: Default::default(),
                     };
                     init.visit_with(&mut v);
@@ -183,7 +177,7 @@ impl Evaluator<'_> {
                 RExpr::Lit(RLit::Str(s)) => return Ok(RTsLit::Str(s.clone())),
                 RExpr::Lit(RLit::Num(s)) => return Ok(RTsLit::Number(s.clone())),
                 RExpr::Bin(ref bin) => {
-                    let v = self.compute_bin(span, &bin)?;
+                    let v = self.compute_bin(span, bin)?;
 
                     match &v {
                         RTsLit::Number(n) => {
@@ -326,7 +320,7 @@ impl Evaluator<'_> {
     #[allow(unused)]
     fn try_str(e: &RExpr) -> Result<RStr, ()> {
         match *e {
-            RExpr::Lit(RLit::Str(ref s)) => return Ok(s.clone()),
+            RExpr::Lit(RLit::Str(ref s)) => Ok(s.clone()),
             _ => Err(()),
         }
     }
@@ -337,7 +331,7 @@ impl Analyzer<'_, '_> {
         match e {
             RTsEnumMemberId::Ident(i) => {}
             RTsEnumMemberId::Str(s) => {
-                if s.value.starts_with(|c: char| c.is_digit(10)) {
+                if s.value.starts_with(|c: char| c.is_ascii_digit()) {
                     Err(ErrorKind::EnumMemberIdCannotBeNumber { span: s.span })?
                 }
             }
