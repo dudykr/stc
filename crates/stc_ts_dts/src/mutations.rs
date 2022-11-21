@@ -78,10 +78,8 @@ impl VisitMut<RFunction> for Operator<'_> {
     fn visit_mut(&mut self, f: &mut RFunction) {
         f.visit_mut_children_with(self);
 
-        if let Some(FunctionMut { ret_ty }) = self.mutations.for_fns.remove(&f.node_id) {
-            if let Some(ret_ty) = ret_ty {
-                f.return_type = Some(box ret_ty.into())
-            }
+        if let Some(FunctionMut { ret_ty: Some(ret_ty) }) = self.mutations.for_fns.remove(&f.node_id) {
+            f.return_type = Some(box ret_ty.into())
         }
     }
 }
@@ -114,10 +112,8 @@ impl VisitMut<RClassProp> for Operator<'_> {
     fn visit_mut(&mut self, p: &mut RClassProp) {
         p.visit_mut_children_with(self);
 
-        if let Some(ClassPropMut { ty }) = self.mutations.for_class_props.remove(&p.node_id) {
-            if let Some(ty) = ty {
-                p.type_ann = Some(box ty.into())
-            }
+        if let Some(ClassPropMut { ty: Some(ty) }) = self.mutations.for_class_props.remove(&p.node_id) {
+            p.type_ann = Some(box ty.into())
         }
     }
 }
@@ -171,10 +167,8 @@ impl VisitMut<RRestPat> for Operator<'_> {
     fn visit_mut(&mut self, r: &mut RRestPat) {
         r.visit_mut_children_with(self);
 
-        if let Some(PatMut { ty, optional: _ }) = self.mutations.for_pats.remove(&r.node_id) {
-            if let Some(ty) = ty {
-                r.type_ann = Some(box ty.into())
-            }
+        if let Some(PatMut { ty: Some(ty), optional: _ }) = self.mutations.for_pats.remove(&r.node_id) {
+            r.type_ann = Some(box ty.into())
         }
     }
 }
@@ -183,10 +177,8 @@ impl VisitMut<RExportDefaultExpr> for Operator<'_> {
     fn visit_mut(&mut self, export: &mut RExportDefaultExpr) {
         export.visit_mut_children_with(self);
 
-        if let Some(ExportDefaultMut { replace_with }) = self.mutations.for_export_defaults.remove(&export.node_id) {
-            if let Some(expr) = replace_with {
-                export.expr = expr;
-            }
+        if let Some(ExportDefaultMut { replace_with: Some(expr) }) = self.mutations.for_export_defaults.remove(&export.node_id) {
+            export.expr = expr;
         }
     }
 }
