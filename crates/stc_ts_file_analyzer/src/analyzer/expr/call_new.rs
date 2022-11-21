@@ -659,11 +659,11 @@ impl Analyzer<'_, '_> {
                         span,
                         &obj_type,
                         &i.body,
-                        &prop,
+                        prop,
                         type_args,
                         args,
-                        &arg_types,
-                        &spread_arg_types,
+                        arg_types,
+                        spread_arg_types,
                         type_ann,
                         opts,
                     ) {
@@ -796,9 +796,8 @@ impl Analyzer<'_, '_> {
                                 ..opts
                             },
                         );
-                        match obj_res {
-                            Ok(v) => return Ok(v),
-                            Err(..) => {}
+                        if let Ok(v) = obj_res {
+                            return Ok(v);
                         }
                     }
                 }
