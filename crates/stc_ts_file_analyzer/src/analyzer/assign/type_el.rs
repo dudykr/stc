@@ -969,7 +969,7 @@ impl Analyzer<'_, '_> {
 
         let mut errors = vec![];
 
-        for (i, m) in lhs.into_iter().enumerate().filter(|(_, m)| m.key().is_some()) {
+        for (i, m) in lhs.iter().enumerate().filter(|(_, m)| m.key().is_some()) {
             let res = self
                 .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &[m], lhs_metadata, rhs, opts)
                 .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
@@ -994,7 +994,7 @@ impl Analyzer<'_, '_> {
         if !lhs_index.is_empty() {
             let res = self
                 .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &lhs_index, lhs_metadata, rhs, opts)
-                .with_context(|| format!("tried to assign to an element (not a key-based)"));
+                .with_context(|| "tried to assign to an element (not a key-based)".to_string());
 
             errors.extend(res.err());
         }
@@ -1315,7 +1315,7 @@ impl Analyzer<'_, '_> {
                                         if let Some(li_ret) = &li.type_ann {
                                             self.assign_with_opts(
                                                 data,
-                                                &li_ret,
+                                                li_ret,
                                                 &Type::Function(Function {
                                                     span: rm.span,
                                                     type_params: rm.type_params.clone(),
@@ -1367,47 +1367,44 @@ impl Analyzer<'_, '_> {
                     TypeElement::Call(lc) => {
                         //
                         for (ri, rm) in rhs_members.iter().enumerate() {
-                            match rm {
-                                TypeElement::Call(rc) => {
-                                    for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Call(_))) {
-                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                            unhandled_rhs.remove(pos);
-                                            continue;
-                                        }
+                            if let TypeElement::Call(rc) = rm {
+                                for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Call(_))) {
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
+                                        continue;
                                     }
-
-                                    done = true;
-
-                                    let res = self
-                                        .assign_to_fn_like(
-                                            data,
-                                            true,
-                                            lc.type_params.as_ref(),
-                                            &lc.params,
-                                            lc.ret_ty.as_deref(),
-                                            rc.type_params.as_ref(),
-                                            &rc.params,
-                                            rc.ret_ty.as_deref(),
-                                            AssignOpts {
-                                                infer_type_params_of_left: true,
-                                                ..opts
-                                            },
-                                        )
-                                        .with_context(|| format!("tried to assign {}th element to a call signature", ri));
-
-                                    match res {
-                                        Ok(()) => {
-                                            missing_fields.drain(missing_field_start_idx..);
-                                            return Ok(());
-                                        }
-                                        Err(err) => {
-                                            errors.push(err);
-                                        }
-                                    }
-
-                                    continue;
                                 }
-                                _ => {}
+
+                                done = true;
+
+                                let res = self
+                                    .assign_to_fn_like(
+                                        data,
+                                        true,
+                                        lc.type_params.as_ref(),
+                                        &lc.params,
+                                        lc.ret_ty.as_deref(),
+                                        rc.type_params.as_ref(),
+                                        &rc.params,
+                                        rc.ret_ty.as_deref(),
+                                        AssignOpts {
+                                            infer_type_params_of_left: true,
+                                            ..opts
+                                        },
+                                    )
+                                    .with_context(|| format!("tried to assign {}th element to a call signature", ri));
+
+                                match res {
+                                    Ok(()) => {
+                                        missing_fields.drain(missing_field_start_idx..);
+                                        return Ok(());
+                                    }
+                                    Err(err) => {
+                                        errors.push(err);
+                                    }
+                                }
+
+                                continue;
                             }
                         }
 
@@ -1419,57 +1416,51 @@ impl Analyzer<'_, '_> {
                     TypeElement::Constructor(lc) => {
                         //
                         for rm in rhs_members {
-                            match rm {
-                                TypeElement::Constructor(rc) => {
-                                    for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Constructor(_))) {
-                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                            unhandled_rhs.remove(pos);
-                                            continue;
-                                        }
+                            if let TypeElement::Constructor(rc) = rm {
+                                for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Constructor(_))) {
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
+                                        continue;
                                     }
+                                }
 
-                                    done = true;
+                                done = true;
 
-                                    let res = self.assign_to_fn_like(
-                                        data,
-                                        false,
-                                        lc.type_params.as_ref(),
-                                        &lc.params,
-                                        lc.ret_ty.as_deref(),
-                                        rc.type_params.as_ref(),
-                                        &rc.params,
-                                        rc.ret_ty.as_deref(),
-                                        AssignOpts {
-                                            infer_type_params_of_left: true,
-                                            ..opts
-                                        },
-                                    );
+                                let res = self.assign_to_fn_like(
+                                    data,
+                                    false,
+                                    lc.type_params.as_ref(),
+                                    &lc.params,
+                                    lc.ret_ty.as_deref(),
+                                    rc.type_params.as_ref(),
+                                    &rc.params,
+                                    rc.ret_ty.as_deref(),
+                                    AssignOpts {
+                                        infer_type_params_of_left: true,
+                                        ..opts
+                                    },
+                                );
 
-                                    match res {
-                                        Ok(()) => {
-                                            missing_fields.drain(missing_field_start_idx..);
+                                match res {
+                                    Ok(()) => {
+                                        missing_fields.drain(missing_field_start_idx..);
 
-                                            for rm in rhs_members {
-                                                match rm {
-                                                    TypeElement::Constructor(..) => {
-                                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                                            unhandled_rhs.remove(pos);
-                                                        }
-                                                    }
-                                                    _ => {}
+                                        for rm in rhs_members {
+                                            if let TypeElement::Constructor(..) = rm {
+                                                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                                    unhandled_rhs.remove(pos);
                                                 }
                                             }
+                                        }
 
-                                            return Ok(());
-                                        }
-                                        Err(err) => {
-                                            errors.push(err);
-                                        }
+                                        return Ok(());
                                     }
-
-                                    continue;
+                                    Err(err) => {
+                                        errors.push(err);
+                                    }
                                 }
-                                _ => {}
+
+                                continue;
                             }
                         }
 
