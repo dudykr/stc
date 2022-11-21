@@ -2441,58 +2441,52 @@ impl Expander<'_, '_, '_> {
 
         let _ctx = debug_ctx!(format!("Expander.expand_type: {}", dump_type_as_string(&self.analyzer.cm, &ty)));
 
-        match ty {
-            Type::Conditional(Conditional {
-                span,
-                mut check_type,
-                mut extends_type,
-                mut true_type,
-                mut false_type,
-                metadata,
-                ..
-            }) => {
-                extends_type.make_clone_cheap();
-                check_type.make_clone_cheap();
+        if let Type::Conditional(Conditional {
+            span,
+            mut check_type,
+            mut extends_type,
+            mut true_type,
+            mut false_type,
+            metadata,
+            ..
+        }) = ty
+        {
+            extends_type.make_clone_cheap();
+            check_type.make_clone_cheap();
 
-                // We need to handle infer type.
-                let type_params = self
+            // We need to handle infer type.
+            let type_params = self
+                .analyzer
+                .infer_ts_infer_types(self.span, &extends_type, &check_type, Default::default())
+                .ok();
+
+            if let Some(type_params) = type_params {
+                true_type = box self
                     .analyzer
-                    .infer_ts_infer_types(self.span, &extends_type, &check_type, Default::default())
-                    .ok();
+                    .expand_type_params(&type_params, *true_type, Default::default())
+                    .unwrap();
+                false_type = box self
+                    .analyzer
+                    .expand_type_params(&type_params, *false_type, Default::default())
+                    .unwrap();
+            }
 
-                if let Some(type_params) = type_params {
-                    true_type = box self
-                        .analyzer
-                        .expand_type_params(&type_params, *true_type, Default::default())
-                        .unwrap();
-                    false_type = box self
-                        .analyzer
-                        .expand_type_params(&type_params, *false_type, Default::default())
-                        .unwrap();
-                }
-
-                if check_type.is_class() {
-                    match check_type.normalize_mut() {
-                        Type::Class(check_type) => match extends_type.normalize() {
-                            Type::Constructor(..) => {
-                                return *true_type;
-                            }
-                            _ => {}
-                        },
-                        _ => {}
+            if check_type.is_class() {
+                if let Type::Class(check_type) = check_type.normalize_mut() {
+                    if let Type::Constructor(..) = extends_type.normalize() {
+                        return *true_type;
                     }
                 }
-
-                return Type::Conditional(Conditional {
-                    span,
-                    check_type,
-                    extends_type,
-                    true_type,
-                    false_type,
-                    metadata,
-                });
             }
-            _ => {}
+
+            return Type::Conditional(Conditional {
+                span,
+                check_type,
+                extends_type,
+                true_type,
+                false_type,
+                metadata,
+            });
         }
 
         ty
@@ -2588,16 +2582,13 @@ pub struct ShallowNormalizer<'a, 'b, 'c> {
 
 impl VisitMut<Type> for ShallowNormalizer<'_, '_, '_> {
     fn visit_mut(&mut self, value: &mut Type) {
-        match value.normalize() {
-            Type::IndexedAccessType(..) => {
-                if let Ok(new) = self
-                    .analyzer
-                    .normalize(Some(value.span()), Cow::Borrowed(&*value), Default::default())
-                {
-                    *value = new.freezed().into_owned();
-                }
+        if let Type::IndexedAccessType(..) = value.normalize() {
+            if let Ok(new) = self
+                .analyzer
+                .normalize(Some(value.span()), Cow::Borrowed(&*value), Default::default())
+            {
+                *value = new.freezed().into_owned();
             }
-            _ => {}
         }
     }
 }

@@ -92,7 +92,7 @@ impl Analyzer<'_, '_> {
         if !matches!(pat, RPat::Ident(..)) {
             if let Some(ty @ Type::Ref(..)) = ty.as_ref().map(Type::normalize) {
                 let mut ty = self
-                    .expand_top_ref(ty.span(), Cow::Borrowed(&ty), Default::default())
+                    .expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default())
                     .context("tried to expand reference to declare a complex variable")?
                     .into_owned();
 
@@ -106,7 +106,7 @@ impl Analyzer<'_, '_> {
             RPat::Ident(i) => {
                 if let Some(ty) = &ty {
                     if cfg!(debug_assertions) {
-                        debug!("[vars]: Declaring {} as {}", i.id.sym, dump_type_as_string(&self.cm, &ty));
+                        debug!("[vars]: Declaring {} as {}", i.id.sym, dump_type_as_string(&self.cm, ty));
                     }
                 } else {
                     if cfg!(debug_assertions) {
@@ -196,18 +196,17 @@ impl Analyzer<'_, '_> {
                     opt_union(span, type_ann, Some(right))
                 };
 
-                return self
-                    .add_vars(
-                        &p.left,
-                        ty,
-                        actual,
-                        default,
-                        DeclareVarsOpts {
-                            use_iterator_for_array: true,
-                            ..opts
-                        },
-                    )
-                    .context("tried to declare a variable with an assignment pattern");
+                self.add_vars(
+                    &p.left,
+                    ty,
+                    actual,
+                    default,
+                    DeclareVarsOpts {
+                        use_iterator_for_array: true,
+                        ..opts
+                    },
+                )
+                .context("tried to declare a variable with an assignment pattern")
             }
 
             RPat::Array(arr) => {
@@ -270,13 +269,13 @@ impl Analyzer<'_, '_> {
                                                     let type_ann = p.left.get_ty();
                                                     let type_ann: Option<Type> =
                                                         type_ann.and_then(|v| v.validate_with(self).report(&mut self.storage));
-                                                    let type_ann = type_ann.or(default_ty.clone());
+                                                    let type_ann = type_ann.or_else(|| default_ty.clone());
 
                                                     let right = p
                                                         .right
                                                         .validate_with_args(
                                                             self,
-                                                            (TypeOfMode::RValue, None, type_ann.as_ref().or(Some(&ty))),
+                                                            (TypeOfMode::RValue, None, type_ann.as_ref().or(Some(ty))),
                                                         )
                                                         .report(&mut self.storage)
                                                         .unwrap_or_else(|| Type::any(span, Default::default()));
