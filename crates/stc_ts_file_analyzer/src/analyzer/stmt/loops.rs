@@ -97,7 +97,7 @@ impl Analyzer<'_, '_> {
     fn validate_lhs_of_for_loop(&mut self, e: &RVarDeclOrPat, elem_ty: &Type, kind: ForHeadKind) {
         let span = e.span();
 
-        match self.validate_lhs_of_for_in_of_loop(&e, kind) {
+        match self.validate_lhs_of_for_in_of_loop(e, kind) {
             Ok(()) => {}
             Err(err) => {
                 self.storage.report(err);
@@ -121,7 +121,7 @@ impl Analyzer<'_, '_> {
                 v.visit_with(self);
             }
             RVarDeclOrPat::Pat(ref pat) => {
-                self.try_assign_pat(span, &pat, elem_ty)
+                self.try_assign_pat(span, pat, elem_ty)
                     .context("tried to assign to the pattern of a for-of/for-in loop")
                     .convert_err(|err| {
                         if let ForHeadKind::In = kind {
@@ -290,7 +290,7 @@ impl Analyzer<'_, '_> {
 
             // Type annotation on lhs of for in/of loops is invalid.
             if let RVarDeclOrPat::VarDecl(box RVarDecl { decls, .. }) = left {
-                if decls.len() >= 1 {
+                if !decls.is_empty() {
                     if decls[0].name.get_ty().is_some() {
                         match kind {
                             ForHeadKind::In => {
@@ -327,7 +327,7 @@ impl Analyzer<'_, '_> {
                         .iter_union()
                         .flat_map(|ty| ty.iter_union())
                         .flat_map(|ty| ty.iter_union())
-                        .any(|ty| is_str_or_union(ty))
+                        .any(is_str_or_union)
                     {
                         child.storage.report(ErrorKind::ForOfStringUsedInEs3 { span }.into())
                     }

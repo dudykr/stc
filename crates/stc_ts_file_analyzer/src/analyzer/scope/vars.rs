@@ -524,7 +524,7 @@ impl Analyzer<'_, '_> {
                                 self.with_ctx(ctx)
                                     .access_property(
                                         span,
-                                        &ty,
+                                        ty,
                                         &key,
                                         TypeOfMode::RValue,
                                         IdCtx::Var,
@@ -649,7 +649,7 @@ impl Analyzer<'_, '_> {
                             let rest_ty = ty
                                 .as_ref()
                                 .try_map(|ty| {
-                                    self.exclude_props(pat.span(), &ty, &used_keys)
+                                    self.exclude_props(pat.span(), ty, &used_keys)
                                         .context("tried to exclude keys for assignment with a object rest pattern")
                                 })?
                                 .freezed();
@@ -833,19 +833,17 @@ impl Analyzer<'_, '_> {
             debug_assert!(!span.is_dummy(), "Cannot declare a variable with a dummy span")
         }
 
-        match &*pat {
-            RPat::Ident(..) | RPat::Assign(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => {
-                return self.add_vars(
-                    pat,
-                    ty,
-                    actual_ty,
-                    default_ty,
-                    DeclareVarsOpts {
-                        kind,
-                        use_iterator_for_array: false,
-                    },
-                );
-            }
+        match pat {
+            RPat::Ident(..) | RPat::Assign(..) | RPat::Array(..) | RPat::Object(..) | RPat::Rest(..) => self.add_vars(
+                pat,
+                ty,
+                actual_ty,
+                default_ty,
+                DeclareVarsOpts {
+                    kind,
+                    use_iterator_for_array: false,
+                },
+            ),
 
             RPat::Invalid(..) | RPat::Expr(box RExpr::Invalid(..)) => Ok(()),
 
