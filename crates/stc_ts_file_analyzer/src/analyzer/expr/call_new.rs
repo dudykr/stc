@@ -832,13 +832,10 @@ impl Analyzer<'_, '_> {
             let callee_before_expanding = dump_type_as_string(&self.cm, &callee);
             let callee = self.expand_top_ref(span, Cow::Owned(callee), Default::default())?.into_owned();
 
-            match callee.normalize() {
-                Type::ClassDef(cls) => {
-                    if cls.is_abstract {
-                        self.storage.report(ErrorKind::CannotCreateInstanceOfAbstractClass { span }.into())
-                    }
+            if let Type::ClassDef(cls) = callee.normalize() {
+                if cls.is_abstract {
+                    self.storage.report(ErrorKind::CannotCreateInstanceOfAbstractClass { span }.into())
                 }
-                _ => {}
             }
             let callee_str = dump_type_as_string(&self.cm, &callee);
 
@@ -848,14 +845,12 @@ impl Analyzer<'_, '_> {
                         span,
                         obj: box obj_type.clone(),
                         key: box prop.clone(),
-                    }
-                    .into(),
+                    },
                     ErrorKind::NoNewSignature { span, .. } => ErrorKind::NoConstructablePropertyWithName {
                         span,
                         obj: box obj_type.clone(),
                         key: box prop.clone(),
-                    }
-                    .into(),
+                    },
                     _ => err,
                 })
                 .with_context(|| {
@@ -1281,16 +1276,15 @@ impl Analyzer<'_, '_> {
 
         debug!("[exprs/call] Calling {}", dump_type_as_string(&self.cm, &ty));
 
-        match kind {
-            ExtractKind::Call => match ty.normalize() {
+        if let ExtractKind::Call = kind {
+            match ty.normalize() {
                 Type::Interface(i) if i.name == "Function" => return Ok(Type::any(span, Default::default())),
                 _ => {}
-            },
-            _ => {}
+            }
         }
 
-        match kind {
-            ExtractKind::New => match ty.normalize() {
+        if let ExtractKind::New = kind {
+            match ty.normalize() {
                 Type::ClassDef(ref cls) => {
                     self.scope.this = Some(Type::Class(Class {
                         span,
@@ -1466,8 +1460,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 _ => {}
-            },
-            _ => {}
+            }
         }
 
         macro_rules! ret_err {
@@ -1582,7 +1575,7 @@ impl Analyzer<'_, '_> {
                         if type_args.params.len() == 1 {
                             return Ok(Type::Array(Array {
                                 span,
-                                elem_type: box type_args.params.iter().cloned().next().unwrap(),
+                                elem_type: box type_args.params.iter().next().cloned().unwrap(),
                                 metadata: Default::default(),
                             }));
                         }
@@ -1593,7 +1586,7 @@ impl Analyzer<'_, '_> {
                 match self.call_type_element(
                     span,
                     expr,
-                    &ty,
+                    ty,
                     i.type_params.as_ref().map(|v| &*v.params),
                     &i.body,
                     kind,
@@ -1603,7 +1596,7 @@ impl Analyzer<'_, '_> {
                     type_args,
                     type_ann,
                 ) {
-                    Ok(ty) => return Ok(ty.clone()),
+                    Ok(ty) => Ok(ty.clone()),
                     Err(first_err) => {
                         //  Check parent interface
                         for parent in &i.extends {
@@ -2528,7 +2521,7 @@ impl Analyzer<'_, '_> {
                     }
                     _ => arg_ty.ty.clone(),
                 };
-                print_type(&&format!("Mapped argument at {}", idx), &self.cm, &arg_ty.ty);
+                print_type(&format!("Mapped argument at {}", idx), &self.cm, &arg_ty.ty);
 
                 let new_arg = TypeOrSpread { ty, ..arg_ty.clone() };
 
@@ -2556,7 +2549,7 @@ impl Analyzer<'_, '_> {
             if arg_types.len() > expanded_param_types.len() {
                 for idx in expanded_param_types.len()..arg_types.len() {
                     let ty = &arg_types[idx].ty;
-                    print_type(&&format!("Expanded param type at {}", idx), &self.cm, &ty);
+                    print_type(&format!("Expanded param type at {}", idx), &self.cm, &ty);
                 }
                 new_args.extend(arg_types[expanded_param_types.len()..].iter().cloned());
             }

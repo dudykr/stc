@@ -136,7 +136,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        return Ok(());
+        Ok(())
     }
 
     pub(super) fn insert_inferred(
