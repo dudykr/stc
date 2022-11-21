@@ -34,7 +34,7 @@ impl Analyzer<'_, '_> {
                     // let p: Parent;
                     // `p = c` is valid
                     if let Some(parent) = &rc.super_class {
-                        if self.assign_to_class_def(data, l, &parent, opts).is_ok() {
+                        if self.assign_to_class_def(data, l, parent, opts).is_ok() {
                             return Ok(());
                         }
                     }
@@ -48,7 +48,7 @@ impl Analyzer<'_, '_> {
                     } else {
                         return Err(ErrorKind::Unimplemented {
                             span: opts.span,
-                            msg: format!("Failed to collect class members"),
+                            msg: "Failed to collect class members".to_string(),
                         }
                         .into());
                     }
@@ -137,7 +137,7 @@ impl Analyzer<'_, '_> {
                     } else {
                         return Err(ErrorKind::Unimplemented {
                             span: opts.span,
-                            msg: format!("Failed to collect class members"),
+                            msg: "Failed to collect class members".to_string(),
                         }
                         .into());
                     }
@@ -160,7 +160,7 @@ impl Analyzer<'_, '_> {
                     // `p = c` is valid
                     if let Some(parent) = &rc.def.super_class {
                         let _ctx = ctx!("tried to instantiated class to assign the super class to a class");
-                        let parent = self.instantiate_class(opts.span, &parent)?;
+                        let parent = self.instantiate_class(opts.span, parent)?;
                         if self.assign_to_class(data, l, &parent, opts).is_ok() {
                             return Ok(());
                         }

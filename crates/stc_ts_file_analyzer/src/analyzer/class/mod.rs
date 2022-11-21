@@ -2166,8 +2166,8 @@ impl Analyzer<'_, '_> {
 
                 self.assign_with_opts(
                     &mut Default::default(),
-                    &index_ret_ty,
-                    &value,
+                    index_ret_ty,
+                    value,
                     AssignOpts {
                         span,
                         ..Default::default()
@@ -2208,7 +2208,7 @@ impl Analyzer<'_, '_> {
                         ..Default::default()
                     },
                 )
-                .convert_err(|err| ErrorKind::WrongOverloadSignature { span: err.span() }.into())?;
+                .convert_err(|err| ErrorKind::WrongOverloadSignature { span: err.span() })?;
             }
         }
 
@@ -2277,7 +2277,7 @@ impl Analyzer<'_, '_> {
         let old_this = self.scope.this.take();
         // self.scope.this = Some(ty.clone());
 
-        let ty = self.register_type(c.ident.clone().into(), ty.clone().into());
+        let ty = self.register_type(c.ident.clone().into(), ty.into());
 
         match self.declare_var(
             ty.span(),
