@@ -538,6 +538,17 @@ fn should_preserve_ref(ty: &Type) -> bool {
     }
 }
 
+/// # Example
+///
+/// ```ts
+/// declare type S2 = {
+///     a: string;
+///     b: string;
+/// };
+/// `T[keyof S2]`;
+/// =>
+/// `T["a" | "b"]`
+/// ```
 struct KeyInliner<'a, 'b, 'c> {
     analyzer: &'a mut Analyzer<'b, 'c>,
 }
