@@ -396,7 +396,7 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, &ty) })
+                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, ty) })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 if keys_types.is_empty() {
