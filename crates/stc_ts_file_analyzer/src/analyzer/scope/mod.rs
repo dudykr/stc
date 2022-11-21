@@ -1078,7 +1078,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if let Ok(ty) = self.env.get_global_type(DUMMY_SP, &name.sym()) {
+        if let Ok(ty) = self.env.get_global_type(DUMMY_SP, name.sym()) {
             return Ok(Some(ItemRef::Owned(vec![ty].into_iter())));
         }
 
@@ -1124,7 +1124,7 @@ impl Analyzer<'_, '_> {
                 if cfg!(debug_assertions) {
                     debug!("Using builtin / global type: {}", dump_type_as_string(&self.cm, &ty));
                 }
-                src.push(ty.clone());
+                src.push(ty);
             }
         }
 
@@ -1279,14 +1279,11 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match kind {
-            VarKind::Var(VarDeclKind::Let | VarDeclKind::Const) => {
-                if *name.sym() == js_word!("let") || *name.sym() == js_word!("const") {
-                    self.storage
-                        .report(ErrorKind::LetOrConstIsNotValidIdInLetOrConstVarDecls { span }.into());
-                }
+        if let VarKind::Var(VarDeclKind::Let | VarDeclKind::Const) = kind {
+            if *name.sym() == js_word!("let") || *name.sym() == js_word!("const") {
+                self.storage
+                    .report(ErrorKind::LetOrConstIsNotValidIdInLetOrConstVarDecls { span }.into());
             }
-            _ => {}
         }
 
         let ty = match &ty {
@@ -1342,7 +1339,7 @@ impl Analyzer<'_, '_> {
                 VarKind::Var(_) | VarKind::Class | VarKind::Fn | VarKind::Enum => {
                     // TODO: Default to any?
                     if let Some(ty) = ty.clone() {
-                        self.env.declare_global_var(name.sym().clone(), ty.clone());
+                        self.env.declare_global_var(name.sym().clone(), ty);
                     }
                 }
                 _ => {}
