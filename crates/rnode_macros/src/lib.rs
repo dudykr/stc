@@ -593,17 +593,14 @@ impl Fold for OptionReplacer<'_> {
     fn fold_type(&mut self, ty: Type) -> Type {
         let ty = fold_type(self, ty);
 
-        match &ty {
-            Type::Path(inner_path) => {
-                //
-                if let Some(inner_name) = inner_path.path.get_ident() {
-                    let is_rnode = self.nodes_to_convert.iter().any(|n| inner_name == &*format!("R{}", n));
-                    if is_rnode {
-                        return q!(Vars { inner_name }, (Option<inner_name>)).parse();
-                    }
+        if let Type::Path(inner_path) = &ty {
+            //
+            if let Some(inner_name) = inner_path.path.get_ident() {
+                let is_rnode = self.nodes_to_convert.iter().any(|n| inner_name == &*format!("R{}", n));
+                if is_rnode {
+                    return q!(Vars { inner_name }, (Option<inner_name>)).parse();
                 }
             }
-            _ => {}
         }
 
         ty
@@ -627,37 +624,34 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
     }
 
     // If type can be converted to RNode, do it.
-    match ty {
-        Type::Path(path_ty) => {
-            if let Some(name) = path_ty.path.get_ident() {
-                let rnode_name = Path::from(Ident::new(&format!("R{}", name), path_ty.path.span()));
-                if nodes_to_convert.iter().any(|n| name == n) {
-                    return RNodeField {
-                        ty: Type::Path(TypePath {
-                            path: rnode_name.clone(),
-                            qself: None,
-                        }),
-                        from_orig: q!(
-                            Vars { match_binding },
-                            ({
-                                use rnode::IntoRNode;
-                                match_binding.into_rnode(id_gen)
-                            })
-                        )
-                        .parse(),
-                        to_orig: q!(
-                            Vars { match_binding },
-                            ({
-                                use rnode::RNode;
-                                match_binding.into_orig()
-                            })
-                        )
-                        .parse(),
-                    };
-                }
+    if let Type::Path(path_ty) = ty {
+        if let Some(name) = path_ty.path.get_ident() {
+            let rnode_name = Path::from(Ident::new(&format!("R{}", name), path_ty.path.span()));
+            if nodes_to_convert.iter().any(|n| name == n) {
+                return RNodeField {
+                    ty: Type::Path(TypePath {
+                        path: rnode_name.clone(),
+                        qself: None,
+                    }),
+                    from_orig: q!(
+                        Vars { match_binding },
+                        ({
+                            use rnode::IntoRNode;
+                            match_binding.into_rnode(id_gen)
+                        })
+                    )
+                    .parse(),
+                    to_orig: q!(
+                        Vars { match_binding },
+                        ({
+                            use rnode::RNode;
+                            match_binding.into_orig()
+                        })
+                    )
+                    .parse(),
+                };
             }
         }
-        _ => {}
     }
 
     if arc {
