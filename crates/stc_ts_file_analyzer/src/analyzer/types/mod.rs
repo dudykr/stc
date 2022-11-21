@@ -1614,7 +1614,7 @@ impl Analyzer<'_, '_> {
         let is_resolved = self.data.bindings.types.contains(&top_id)
             || self.imports_by_id.contains_key(&top_id)
             || self.data.unresolved_imports.contains(&top_id)
-            || self.env.get_global_type(l.span, &top_id.sym()).is_ok();
+            || self.env.get_global_type(l.span, top_id.sym()).is_ok();
 
         if is_resolved {
             return Ok(());
@@ -1629,7 +1629,7 @@ impl Analyzer<'_, '_> {
 
         match type_name {
             RExpr::Member(_) => {
-                if let Ok(var) = self.type_of_var(&l, TypeOfMode::RValue, None) {
+                if let Ok(var) = self.type_of_var(l, TypeOfMode::RValue, None) {
                     if var.is_module() {
                         return Ok(());
                     }
@@ -1643,10 +1643,10 @@ impl Analyzer<'_, '_> {
                 }
                 .into())
             }
-            RExpr::Ident(i) if &*i.sym == "globalThis" => return Ok(()),
+            RExpr::Ident(i) if &*i.sym == "globalThis" => Ok(()),
             RExpr::Ident(_) => Err(ErrorKind::TypeNotFound {
                 span,
-                name: box name.into(),
+                name: box name,
                 ctxt: self.ctx.module_id,
                 type_args: type_args.cloned().map(Box::new),
             }
@@ -1739,31 +1739,25 @@ impl Analyzer<'_, '_> {
             Err(..) => Cow::Borrowed(excluded),
         };
 
-        match ty.normalize() {
-            Type::Ref(..) => {
-                // We ignore errors.
-                if let Ok(mut expanded_ty) = self
-                    .expand_top_ref(ty.span(), Cow::Borrowed(&*ty), Default::default())
-                    .map(Cow::into_owned)
-                {
-                    self.exclude_type(span, &mut expanded_ty, &excluded);
-                    *ty = expanded_ty;
-                    return;
-                }
-            }
-            _ => {}
-        }
-
-        match excluded.normalize() {
-            Type::Union(excluded) => {
-                //
-                for excluded in &excluded.types {
-                    self.exclude_type(span, ty, &excluded)
-                }
-
+        if let Type::Ref(..) = ty.normalize() {
+            // We ignore errors.
+            if let Ok(mut expanded_ty) = self
+                .expand_top_ref(ty.span(), Cow::Borrowed(&*ty), Default::default())
+                .map(Cow::into_owned)
+            {
+                self.exclude_type(span, &mut expanded_ty, &excluded);
+                *ty = expanded_ty;
                 return;
             }
-            _ => {}
+        }
+
+        if let Type::Union(excluded) = excluded.normalize() {
+            //
+            for excluded in &excluded.types {
+                self.exclude_type(span, ty, &excluded)
+            }
+
+            return;
         }
 
         // TODO(kdy1): PERF
@@ -1782,7 +1776,6 @@ impl Analyzer<'_, '_> {
                 self.exclude_type(span, constraint, &excluded);
                 if constraint.is_never() {
                     *ty = Type::never(span, Default::default());
-                    return;
                 }
             }
 
@@ -1799,7 +1792,6 @@ impl Analyzer<'_, '_> {
                                     ..Default::default()
                                 },
                             );
-                            return;
                         }
                     }
                 }
