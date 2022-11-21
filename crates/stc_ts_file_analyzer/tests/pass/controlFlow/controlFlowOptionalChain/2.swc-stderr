@@ -1,0 +1,93 @@
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:7:5]
+ 7 | switch (typeof o?.foo) {
+   :                ^
+   `----
+
+Error: 
+  > ({
+  |     foo: (string | number);
+  |     bar(): number;
+  |     baz: object;
+  | } | undefined)
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:7:5]
+ 7 | switch (typeof o?.foo) {
+   :                ^^^^^^
+   `----
+
+Error: 
+  > (undefined | string | number)
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:7:5]
+ 7 | switch (typeof o?.foo) {
+   :         ^^^^^^^^^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:8:9]
+ 8 | case "string":
+   :      ^^^^^^^^
+   `----
+
+Error: 
+  > boolean
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:9:13]
+ 9 | o.foo;
+   : ^
+   `----
+
+Error: 
+  > {
+  |     foo: (string | number);
+  |     bar(): number;
+  |     baz: object;
+  | }
+
+  x Type
+   ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:9:13]
+ 9 | o.foo;
+   : ^^^^^
+   `----
+
+Error: 
+  > string
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:11:9]
+ 11 | case "number":
+    :      ^^^^^^^^
+    `----
+
+Error: 
+  > boolean
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:12:13]
+ 12 | o.foo;
+    : ^
+    `----
+
+Error: 
+  > {
+  |     foo: (string | number);
+  |     bar(): number;
+  |     baz: object;
+  | }
+
+  x Type
+    ,-[$DIR/tests/pass/controlFlow/controlFlowOptionalChain/2.ts:12:13]
+ 12 | o.foo;
+    : ^^^^^
+    `----
+
+Error: 
+  > number
