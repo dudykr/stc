@@ -25,6 +25,7 @@ use swc_common::{Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use tracing::info;
 
+use super::types::NormalizeTypeOpts;
 use crate::{
     analyzer::{
         assign::AssignOpts,
@@ -1130,37 +1131,39 @@ impl Analyzer<'_, '_> {
     ) -> VResult<Type> {
         src.assert_valid();
 
-        match src.normalize() {
-            Type::Ref(..) => {
-                let src = self.expand_top_ref(src.span(), Cow::Borrowed(src), Default::default())?;
-                return self.filter_types_with_property(span, &src, property, type_facts);
-            }
-            Type::Union(ty) => {
-                let mut new_types = vec![];
-                for ty in &ty.types {
-                    let ty = self.filter_types_with_property(span, ty, property, type_facts)?;
-                    new_types.push(ty);
-                }
-                new_types.retain(|ty| !ty.is_never());
-                new_types.dedup_type();
+        let src = self.normalize(
+            Some(span),
+            Cow::Borrowed(src),
+            NormalizeTypeOpts {
+                preserve_union: true,
+                ..Default::default()
+            },
+        )?;
 
-                if new_types.len() == 1 {
-                    return Ok(new_types.into_iter().next().unwrap());
-                }
-
-                return Ok(Type::Union(Union {
-                    span: ty.span(),
-                    types: new_types,
-                    metadata: ty.metadata,
-                }));
+        if let Type::Union(ty) = src.normalize() {
+            let mut new_types = vec![];
+            for ty in &ty.types {
+                let ty = self.filter_types_with_property(span, ty, property, type_facts)?;
+                new_types.push(ty);
             }
-            _ => {}
+            new_types.retain(|ty| !ty.is_never());
+            new_types.dedup_type();
+
+            if new_types.len() == 1 {
+                return Ok(new_types.into_iter().next().unwrap());
+            }
+
+            return Ok(Type::Union(Union {
+                span: ty.span(),
+                types: new_types,
+                metadata: ty.metadata,
+            }));
         }
 
         let prop_res = self
             .access_property(
                 src.span().or_else(|| span),
-                src,
+                &src,
                 &Key::Normal {
                     span: DUMMY_SP,
                     sym: property.clone(),
@@ -1212,7 +1215,7 @@ impl Analyzer<'_, '_> {
             },
         }
 
-        Ok(src.clone())
+        Ok(src.into_owned())
     }
 
     fn determine_type_fact_by_field_fact(&mut self, span: Span, name: &Name, ty: &Type) -> VResult<Option<(Name, Type)>> {
