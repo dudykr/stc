@@ -3945,8 +3945,6 @@ impl Analyzer<'_, '_> {
         } = *expr;
         let computed = matches!(prop, RSuperProp::Computed(_));
 
-        let mut is_obj_opt_chain = false;
-        let mut should_be_optional = false;
         let mut obj_ty = match *obj {
             RSuper { span, .. } => {
                 if self.scope.cannot_use_this_because_super_not_called() {
@@ -3984,21 +3982,14 @@ impl Analyzer<'_, '_> {
             });
         prop.make_clone_cheap();
 
-        let prop_access_ctx = Ctx {
-            in_opt_chain: self.ctx.in_opt_chain || is_obj_opt_chain,
-            ..self.ctx
-        };
+        let prop_access_ctx = Ctx { ..self.ctx };
 
         let ty = self
             .with_ctx(prop_access_ctx)
             .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var, Default::default())
             .context("tried to access property of an object to calculate type of a super property expression")?;
 
-        if should_be_optional {
-            Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))
-        } else {
-            Ok(ty)
-        }
+        Ok(ty)
     }
 
     fn prefer_tuple(&mut self, type_ann: Option<&Type>) -> bool {

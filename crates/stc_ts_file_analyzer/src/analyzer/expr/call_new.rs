@@ -3006,10 +3006,10 @@ impl Analyzer<'_, '_> {
                                         return ErrorKind::Errors { span, errors }
                                     }
                                     ErrorKind::Errors { span, ref errors } => {
-                                        if errors.iter().all(|err| match &**err {
-                                            ErrorKind::UnknownPropertyInObjectLiteralAssignment { span } => true,
-                                            _ => false,
-                                        }) {
+                                        if errors
+                                            .iter()
+                                            .all(|err| matches!(&**err, ErrorKind::UnknownPropertyInObjectLiteralAssignment { span }))
+                                        {
                                             return ErrorKind::Errors {
                                                 span,
                                                 errors: errors
