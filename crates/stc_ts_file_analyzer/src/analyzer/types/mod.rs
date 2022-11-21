@@ -1604,7 +1604,7 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        let l = left_of_expr(&type_name);
+        let l = left_of_expr(type_name);
         let l = match l {
             Some(v) => v,
             _ => return Ok(()),
@@ -1637,7 +1637,7 @@ impl Analyzer<'_, '_> {
 
                 Err(ErrorKind::NamspaceNotFound {
                     span,
-                    name: box name.into(),
+                    name: box name,
                     ctxt: self.ctx.module_id,
                     type_args: type_args.cloned().map(Box::new),
                 }
