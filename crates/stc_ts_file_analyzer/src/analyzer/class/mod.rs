@@ -80,7 +80,7 @@ impl Analyzer<'_, '_> {
                         if self
                             .assign_with_opts(
                                 &mut Default::default(),
-                                &ty,
+                                ty,
                                 &Type::Keyword(KeywordType {
                                     span,
                                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
@@ -398,7 +398,7 @@ impl Analyzer<'_, '_> {
                     if let Some(right) = right {
                         self.assign_with_opts(
                             &mut Default::default(),
-                            &ty,
+                            ty,
                             &right,
                             AssignOpts {
                                 span: right.span(),
