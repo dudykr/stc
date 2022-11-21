@@ -126,7 +126,7 @@ impl Analyzer<'_, '_> {
                     .convert_err(|err| {
                         if let ForHeadKind::In = kind {
                             if err.is_assign_failure() {
-                                return ErrorKind::WrongTypeForLhsOfForInLoop { span: err.span() }.into();
+                                return ErrorKind::WrongTypeForLhsOfForInLoop { span: err.span() };
                             }
                         }
 
