@@ -1376,7 +1376,7 @@ impl Analyzer<'_, '_> {
 
                     // TODO(kdy1): Remove clone
                     let members = self.scope.object_lit_members().to_vec();
-                    if let Some(mut v) = self.access_property_of_type_elements(span, &obj, prop, type_mode, &members, opts)? {
+                    if let Some(mut v) = self.access_property_of_type_elements(span, obj, prop, type_mode, &members, opts)? {
                         v.metadata_mut().infected_by_this_in_object_literal = true;
                         return Ok(v);
                     }
@@ -1517,7 +1517,7 @@ impl Analyzer<'_, '_> {
                                 if property.key.type_eq(prop) {
                                     return Ok(*property.value.clone().unwrap_or_else(|| {
                                         box Type::any(
-                                            span.clone(),
+                                            *span,
                                             KeywordTypeMetadata {
                                                 common: metadata.common,
                                                 ..Default::default()
@@ -2622,10 +2622,8 @@ impl Analyzer<'_, '_> {
                 let scope = if self.ctx.in_computed_prop_name {
                     self.scope.scope_of_computed_props()
                 } else {
-                    self.scope.first(|scope| match scope.kind() {
-                        ScopeKind::TypeParams | ScopeKind::Flow => false,
-                        _ => true,
-                    })
+                    self.scope
+                        .first(|scope| !matches!(scope.kind(), ScopeKind::TypeParams | ScopeKind::Flow))
                 };
 
                 match scope.map(|scope| scope.kind()) {
@@ -3405,35 +3403,32 @@ impl Analyzer<'_, '_> {
         }
 
         // At here, it cannot be a declared variable.
-        match i.sym {
-            js_word!("arguments") => {
-                if self.env.target() <= EsVersion::Es5 {
-                    // `arguments` cannot be used as implicit variable if target <= ES5
-                    let arguments_point_to_arrow = Some(true)
-                        == self.scope.matches(|scope| {
-                            if scope.is_root() {
-                                return Some(false);
-                            }
+        if let js_word!("arguments") = i.sym {
+            if self.env.target() <= EsVersion::Es5 {
+                // `arguments` cannot be used as implicit variable if target <= ES5
+                let arguments_point_to_arrow = Some(true)
+                    == self.scope.matches(|scope| {
+                        if scope.is_root() {
+                            return Some(false);
+                        }
 
-                            match scope.kind() {
-                                ScopeKind::ArrowFn => Some(true),
-                                ScopeKind::Fn | ScopeKind::Constructor | ScopeKind::Method { .. } => Some(false),
-                                _ => None,
-                            }
-                        });
+                        match scope.kind() {
+                            ScopeKind::ArrowFn => Some(true),
+                            ScopeKind::Fn | ScopeKind::Constructor | ScopeKind::Method { .. } => Some(false),
+                            _ => None,
+                        }
+                    });
 
-                    if !self.scope.is_arguments_implicitly_defined() || arguments_point_to_arrow {
-                        self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span }.into())
-                    }
-                } else {
-                    if !self.scope.is_arguments_implicitly_defined() {
-                        self.storage.report(ErrorKind::NoSuchVar { span, name: i.into() }.into())
-                    }
+                if !self.scope.is_arguments_implicitly_defined() || arguments_point_to_arrow {
+                    self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span }.into())
                 }
-
-                return Ok(Type::any(span, Default::default()));
+            } else {
+                if !self.scope.is_arguments_implicitly_defined() {
+                    self.storage.report(ErrorKind::NoSuchVar { span, name: i.into() }.into())
+                }
             }
-            _ => {}
+
+            return Ok(Type::any(span, Default::default()));
         }
 
         if let Ok(Some(types)) = self.find_type(&i.into()) {
