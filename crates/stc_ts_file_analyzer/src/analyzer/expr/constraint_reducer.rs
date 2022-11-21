@@ -17,16 +17,13 @@ impl VisitMut<Type> for ConstraintReducer {
 
         ty.visit_mut_children_with(self);
 
-        match ty {
-            Type::Param(TypeParam {
-                constraint: Some(box arr_ty @ Type::Array(..)),
-                ..
-            }) => {
-                let arr_ty = arr_ty.take();
-                *ty = arr_ty;
-                return;
-            }
-            _ => {}
+        if let Type::Param(TypeParam {
+            constraint: Some(box arr_ty @ Type::Array(..)),
+            ..
+        }) = ty
+        {
+            let arr_ty = arr_ty.take();
+            *ty = arr_ty;
         }
     }
 }

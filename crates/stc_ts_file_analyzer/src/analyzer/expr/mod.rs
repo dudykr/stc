@@ -465,7 +465,7 @@ impl Analyzer<'_, '_> {
             let rhs_ty = match {
                 if !skip_right {
                     let cannot_be_tuple = match &e.left {
-                        RPatOrExpr::Pat(pat) => !analyzer.can_rhs_be_tuple(&pat),
+                        RPatOrExpr::Pat(pat) => !analyzer.can_rhs_be_tuple(pat),
                         _ => false,
                     };
 
@@ -1022,7 +1022,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        if matching_elements.len() == 0 {
+        if matching_elements.is_empty() {
             return Ok(None);
         }
 
@@ -1371,12 +1371,7 @@ impl Analyzer<'_, '_> {
                 Type::This(this) if !self.ctx.in_computed_prop_name && self.scope.is_this_ref_to_object_lit() => {
                     if let Key::Computed(prop) = prop {
                         //
-                        match &*prop.expr {
-                            RExpr::Cond(..) => {
-                                return Ok(Type::any(span, Default::default()));
-                            }
-                            _ => {}
-                        }
+                        return Ok(Type::any(span, Default::default()));
                     }
 
                     // TODO(kdy1): Remove clone
@@ -2546,7 +2541,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 if let Some(super_ty) = &cls.super_class {
-                    if let Ok(v) = self.access_property(span, &super_ty, prop, type_mode, id_ctx, opts) {
+                    if let Ok(v) = self.access_property(span, super_ty, prop, type_mode, id_ctx, opts) {
                         return Ok(v);
                     }
                 }
