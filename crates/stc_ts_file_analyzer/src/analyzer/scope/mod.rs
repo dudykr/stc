@@ -2354,7 +2354,7 @@ impl Expander<'_, '_, '_> {
                             .cloned()
                             .enumerate()
                             .map(|(idx, mut element)| {
-                                if let Some(v) = self.analyzer.extends(span, &element.ty, &extends_type, Default::default()) {
+                                if let Some(v) = self.analyzer.extends(span, &element.ty, extends_type, Default::default()) {
                                     let ty = if v { true_type } else { false_type };
 
                                     let (unwrapped, ty) = unwrap_type(ty);
@@ -2385,13 +2385,13 @@ impl Expander<'_, '_, '_> {
                         });
                     }
 
-                    if let Some(v) = self.analyzer.extends(span, &obj_type, &extends_type, Default::default()) {
+                    if let Some(v) = self.analyzer.extends(span, obj_type, extends_type, Default::default()) {
                         let ty = if v { true_type } else { false_type };
-                        let (_, mut ty) = unwrap_type(&**ty);
+                        let (_, mut ty) = unwrap_type(ty);
 
                         let type_params = self
                             .analyzer
-                            .infer_ts_infer_types(span, &extends_type, &obj_type, Default::default())
+                            .infer_ts_infer_types(span, extends_type, obj_type, Default::default())
                             .ok();
                         if let Some(type_params) = type_params {
                             ty = self.analyzer.expand_type_params(&type_params, ty, Default::default()).unwrap();

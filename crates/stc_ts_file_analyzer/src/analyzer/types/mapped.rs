@@ -188,8 +188,8 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            _ => match m.type_param.constraint.as_deref() {
-                Some(constraint) => {
+            _ => {
+                if let Some(constraint) = m.type_param.constraint.as_deref() {
                     if let Some(keys) = self.convert_type_to_keys(span, constraint)? {
                         let members = keys
                             .into_iter()
@@ -227,8 +227,7 @@ impl Analyzer<'_, '_> {
                         })));
                     }
                 }
-                None => {}
-            },
+            }
         }
 
         Ok(None)
