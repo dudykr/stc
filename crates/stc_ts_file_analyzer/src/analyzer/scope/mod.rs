@@ -2167,17 +2167,15 @@ impl Expander<'_, '_, '_> {
 
         // We do not expand types specified by user
         if is_expansion_prevented {
+            #[allow(clippy::nonminimal_bool)]
             if !self.analyzer.ctx.ignore_expand_prevention_for_all
                 && !(self.expand_top_level && self.analyzer.ctx.ignore_expand_prevention_for_top)
             {
-                match ty.normalize() {
-                    Type::Ref(r) => {
-                        // Expand type arguments if it should be expanded
-                        if contains_infer_type(&r.type_args) {
-                            return Type::Ref(r.clone().fold_children_with(self));
-                        }
+                if let Type::Ref(r) = ty.normalize() {
+                    // Expand type arguments if it should be expanded
+                    if contains_infer_type(&r.type_args) {
+                        return Type::Ref(r.clone().fold_children_with(self));
                     }
-                    _ => {}
                 }
 
                 if self.expand_top_level && self.analyzer.scope.expand_triage_depth == 0 {
@@ -2204,31 +2202,23 @@ impl Expander<'_, '_, '_> {
         // Start handling type expansion.
         let res: VResult<()> = try {
             if contains_infer_type(&ty) {
-                // TODO(kdy1): PERF
-                match ty.normalize_mut() {
-                    Type::Conditional(cond_ty) => {
-                        // TODO(kdy1): PERF
-                        match cond_ty.check_type.normalize_mut() {
-                            Type::Query(QueryType {
-                                span,
-                                expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(name)),
-                                ..
-                            }) => {
-                                let id = (&*name).into();
-                                let ctxt = self.analyzer.ctx.module_id;
-                                //
-                                if let Some(ty) = self.analyzer.find_var_type(&id, TypeOfMode::RValue) {
-                                    cond_ty.check_type = box ty.into_owned();
-                                } else {
-                                    error!("Failed to find variable named {:?}", id);
-                                }
-                            }
-
-                            _ => {}
+                if let Some(cond_ty) = ty.as_conditional_mut() {
+                    // TODO(kdy1): PERF
+                    if let Type::Query(QueryType {
+                        span,
+                        expr: box QueryExpr::TsEntityName(RTsEntityName::Ident(name)),
+                        ..
+                    }) = cond_ty.check_type.normalize_mut()
+                    {
+                        let id = (&*name).into();
+                        let ctxt = self.analyzer.ctx.module_id;
+                        //
+                        if let Some(ty) = self.analyzer.find_var_type(&id, TypeOfMode::RValue) {
+                            cond_ty.check_type = box ty.into_owned();
+                        } else {
+                            error!("Failed to find variable named {:?}", id);
                         }
                     }
-
-                    _ => {}
                 }
             }
         };
