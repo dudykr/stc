@@ -60,16 +60,8 @@ impl Analyzer<'_, '_> {
         let mut errors = vec![];
 
         let ctx = Ctx {
-            should_store_truthy_for_access: self.ctx.should_store_truthy_for_access
-                && match op {
-                    op!("&&") => true,
-                    _ => false,
-                },
-            in_cond: self.ctx.in_cond
-                || match op {
-                    op!("&&") | op!("||") => true,
-                    _ => false,
-                },
+            should_store_truthy_for_access: self.ctx.should_store_truthy_for_access && matches!(op, op!("&&")),
+            in_cond: self.ctx.in_cond || matches!(op, op!("&&") | op!("||")),
             check_for_implicit_any: true,
             ..self.ctx
         };
