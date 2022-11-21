@@ -1004,10 +1004,11 @@ impl Analyzer<'_, '_> {
                 }
             },
 
-            Type::Lit(..) => match arg {
-                Type::Lit(..) => return Ok(()),
-                _ => {}
-            },
+            Type::Lit(..) => {
+                if let Type::Lit(..) = arg {
+                    return Ok(());
+                }
+            }
 
             Type::Alias(param) => {
                 self.infer_type(span, inferred, &param.ty, arg, opts)?;
@@ -1037,7 +1038,7 @@ impl Analyzer<'_, '_> {
                         obj_type: box Type::Param(obj_type),
                         ..
                     } if self.mapped_type_param_name.contains(&obj_type.name) => {
-                        self.insert_inferred(span, inferred, &obj_type, Cow::Borrowed(&arg), opts)?;
+                        self.insert_inferred(span, inferred, obj_type, Cow::Borrowed(arg), opts)?;
                         return Ok(());
                     }
 
