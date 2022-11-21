@@ -622,13 +622,10 @@ impl Analyzer<'_, '_> {
     /// a tuple.
     fn can_rhs_be_tuple(&mut self, left: &RPat) -> bool {
         if let RPat::Array(l) = left {
-            for elem in l.elems.iter() {
-                if let Some(RPat::Rest(rest)) = elem {
-                    match &*rest.arg {
-                        RPat::Object(..) => {
-                            return false;
-                        }
-                        _ => {}
+            for elem in l.elems.iter().flatten() {
+                if let RPat::Rest(rest) = elem {
+                    if let RPat::Object(..) = &*rest.arg {
+                        return false;
                     }
                 }
             }
@@ -706,13 +703,10 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match (declared, cur) {
-            (Key::Normal { sym, .. }, Key::Num(RNumber { value, .. })) => {
-                if &**sym == value.to_string() {
-                    return true;
-                }
+        if let (Key::Normal { sym, .. }, Key::Num(RNumber { value, .. })) = (declared, cur) {
+            if &**sym == value.to_string() {
+                return true;
             }
-            _ => {}
         }
 
         match (declared, cur) {
