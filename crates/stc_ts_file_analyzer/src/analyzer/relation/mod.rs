@@ -8,9 +8,24 @@ use crate::analyzer::Analyzer;
 pub struct IsRelatedOpts {
     pub span: Span,
 
+    pub kind: Relation,
+
     /// If this is [Some], errors are reported with this span. Otherwise, errors
     /// are ignored.
     pub error_span: Option<Span>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Relation {
+    Assignability,
+    Comparibility,
+    Subtype,
+}
+
+impl Default for Relation {
+    fn default() -> Self {
+        Self::Assignability
+    }
 }
 
 impl Analyzer<'_, '_> {
