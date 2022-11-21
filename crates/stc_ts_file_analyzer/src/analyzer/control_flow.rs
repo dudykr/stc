@@ -277,6 +277,7 @@ where
 }
 
 impl AddAssign for CondFacts {
+    #[allow(clippy::suspicious_op_assign_impl)]
     fn add_assign(&mut self, rhs: Self) {
         self.assert_valid();
         rhs.assert_valid();

@@ -459,7 +459,7 @@ impl Analyzer<'_, '_> {
                                 };
                                 ty = Type::Symbol(Symbol {
                                     span: DUMMY_SP,
-                                    id: SymbolId::known(&key),
+                                    id: SymbolId::known(key),
                                     metadata: Default::default(),
                                 });
                             }
@@ -638,7 +638,7 @@ impl Analyzer<'_, '_> {
             let type_params = try_opt!(t.type_params.validate_with(child));
 
             for param in &t.params {
-                child.default_any_param(&param);
+                child.default_any_param(param);
             }
 
             let mut params: Vec<_> = t.params.validate_with(child)?;

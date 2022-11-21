@@ -7,6 +7,7 @@
 #![allow(clippy::collapsible_if)]
 #![allow(clippy::collapsible_else_if)]
 #![allow(clippy::needless_update)]
+#![allow(clippy::only_used_in_recursion)]
 #![deny(unused_must_use)]
 #![deny(unreachable_patterns)]
 #![deny(unused_imports)]
