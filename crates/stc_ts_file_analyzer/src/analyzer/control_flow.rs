@@ -57,18 +57,18 @@ impl CondFacts {
             return;
         }
 
-        for (_, ty) in &self.vars {
+        for ty in self.vars.values() {
             ty.assert_valid();
             ty.assert_clone_cheap();
         }
 
-        for (_, types) in &self.excludes {
+        for types in self.excludes.values() {
             for ty in types {
                 ty.assert_valid();
             }
         }
 
-        for (_, ty) in &self.types {
+        for ty in self.types.values() {
             ty.assert_valid();
             ty.assert_clone_cheap();
         }
@@ -200,11 +200,8 @@ impl AddAssign for Facts {
 
 impl AddAssign<Option<Self>> for Facts {
     fn add_assign(&mut self, rhs: Option<Self>) {
-        match rhs {
-            Some(rhs) => {
-                *self += rhs;
-            }
-            None => {}
+        if let Some(rhs) = rhs {
+            *self += rhs;
         }
     }
 }
@@ -269,10 +266,11 @@ where
 {
     fn or(&mut self, other: Self) {
         match *self {
-            Some(ref mut v) => match other {
-                Some(other) => v.or(other),
-                None => {}
-            },
+            Some(ref mut v) => {
+                if let Some(other) = other {
+                    v.or(other)
+                }
+            }
             _ => *self = other,
         }
     }
@@ -320,11 +318,8 @@ impl AddAssign<Option<Self>> for CondFacts {
     fn add_assign(&mut self, rhs: Option<Self>) {
         self.assert_valid();
 
-        match rhs {
-            Some(rhs) => {
-                *self += rhs;
-            }
-            None => {}
+        if let Some(rhs) = rhs {
+            *self += rhs;
         }
     }
 }
@@ -431,24 +426,21 @@ impl Analyzer<'_, '_> {
     fn adjust_ternary_type(&mut self, span: Span, mut types: Vec<Type>) -> VResult<Vec<Type>> {
         types.iter_mut().for_each(|ty| {
             // Tuple -> Array
-            match ty.normalize_mut() {
-                Type::Tuple(tuple) => {
-                    let span = tuple.span;
+            if let Type::Tuple(tuple) = ty.normalize_mut() {
+                let span = tuple.span;
 
-                    let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
-                    elem_types.dedup_type();
-                    let elem_type = box Type::new_union(DUMMY_SP, elem_types);
-                    *ty = Type::Array(Array {
-                        span,
-                        elem_type,
-                        metadata: ArrayMetadata {
-                            common: tuple.metadata.common,
-                            ..Default::default()
-                        },
-                    })
-                    .freezed();
-                }
-                _ => {}
+                let mut elem_types: Vec<_> = tuple.elems.take().into_iter().map(|elem| *elem.ty).collect();
+                elem_types.dedup_type();
+                let elem_type = box Type::new_union(DUMMY_SP, elem_types);
+                *ty = Type::Array(Array {
+                    span,
+                    elem_type,
+                    metadata: ArrayMetadata {
+                        common: tuple.metadata.common,
+                        ..Default::default()
+                    },
+                })
+                .freezed();
             }
         });
 
@@ -486,11 +478,11 @@ impl Analyzer<'_, '_> {
                     }
 
                     // If type is same, we need to add it.
-                    if b.type_eq(&ty) {
+                    if b.type_eq(ty) {
                         break;
                     }
 
-                    match self.extends(span, &b, ty, Default::default()) {
+                    match self.extends(span, b, ty, Default::default()) {
                         Some(true) => {
                             // Remove ty.
                             continue 'outer;
