@@ -143,11 +143,8 @@ impl Analyzer<'_, '_> {
             }
 
             if let Some(ty) = &mut declared_ret_ty {
-                match ty.normalize() {
-                    Type::Ref(..) => {
-                        child.prevent_expansion(ty);
-                    }
-                    _ => {}
+                if let Type::Ref(..) = ty.normalize() {
+                    child.prevent_expansion(ty);
                 }
             }
 
@@ -196,7 +193,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(ref declared) = declared_ret_ty {
                         span = declared.span();
-                        let declared = child.normalize(Some(span), Cow::Borrowed(&declared), Default::default())?;
+                        let declared = child.normalize(Some(span), Cow::Borrowed(declared), Default::default())?;
 
                         match declared.normalize() {
                             Type::Keyword(KeywordType {
@@ -487,8 +484,8 @@ impl Fold<Type> for TypeParamHandler<'_> {
             let ty: Type = ty.fold_children_with(self);
 
             match ty {
-                Type::Ref(ref r) if r.type_args.is_none() => match r.type_name {
-                    RTsEntityName::Ident(ref i) => {
+                Type::Ref(ref r) if r.type_args.is_none() => {
+                    if let RTsEntityName::Ident(ref i) = r.type_name {
                         //
                         for param in params {
                             if param.name == i {
@@ -496,8 +493,7 @@ impl Fold<Type> for TypeParamHandler<'_> {
                             }
                         }
                     }
-                    _ => {}
-                },
+                }
 
                 _ => {}
             }

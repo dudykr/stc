@@ -3157,51 +3157,48 @@ impl Analyzer<'_, '_> {
 
         // At here, it cannot be a declared variable.
         if self.env.target() <= EsVersion::Es5 {
-            match i.sym {
-                js_word!("arguments") => {
-                    // `arguments` cannot be used as implicit variable if target <= ES5
-                    let arguments_point_to_arrow = Some(true)
-                        == self.scope.matches(|scope| {
-                            if scope.is_root() {
-                                return Some(false);
-                            }
+            if let js_word!("arguments") = i.sym {
+                // `arguments` cannot be used as implicit variable if target <= ES5
+                let arguments_point_to_arrow = Some(true)
+                    == self.scope.matches(|scope| {
+                        if scope.is_root() {
+                            return Some(false);
+                        }
 
-                            match scope.kind() {
-                                ScopeKind::ArrowFn => Some(true),
-                                ScopeKind::Fn | ScopeKind::Constructor | ScopeKind::Method { .. } => Some(false),
-                                _ => None,
-                            }
-                        });
-                    let arguments_points_async_fn = Some(true) == {
-                        let ctx = self.ctx;
+                        match scope.kind() {
+                            ScopeKind::ArrowFn => Some(true),
+                            ScopeKind::Fn | ScopeKind::Constructor | ScopeKind::Method { .. } => Some(false),
+                            _ => None,
+                        }
+                    });
+                let arguments_points_async_fn = Some(true) == {
+                    let ctx = self.ctx;
 
-                        self.scope.matches(|scope| {
-                            if scope.is_root() {
-                                return Some(false);
-                            }
+                    self.scope.matches(|scope| {
+                        if scope.is_root() {
+                            return Some(false);
+                        }
 
-                            match scope.kind() {
-                                ScopeKind::Fn => Some(ctx.in_async),
-                                ScopeKind::ArrowFn | ScopeKind::Constructor | ScopeKind::Method { .. } => Some(false),
-                                _ => None,
-                            }
-                        })
-                    };
+                        match scope.kind() {
+                            ScopeKind::Fn => Some(ctx.in_async),
+                            ScopeKind::ArrowFn | ScopeKind::Constructor | ScopeKind::Method { .. } => Some(false),
+                            _ => None,
+                        }
+                    })
+                };
 
-                    let is_argument_defined_in_current_scope = self.scope.vars.contains_key(&i.clone().into());
+                let is_argument_defined_in_current_scope = self.scope.vars.contains_key(&i.clone().into());
 
-                    if !self.scope.is_arguments_implicitly_defined() {
-                        self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span }.into())
-                    } else if arguments_point_to_arrow && !is_argument_defined_in_current_scope {
-                        self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span }.into());
-                        return Ok(Type::any(span, Default::default()));
-                    } else if arguments_points_async_fn && !is_argument_defined_in_current_scope {
-                        self.storage
-                            .report(ErrorKind::ArgumentsCannotBeUsedInAsyncFnInEs3OrEs5 { span }.into());
-                        return Ok(Type::any(span, Default::default()));
-                    }
+                if !self.scope.is_arguments_implicitly_defined() {
+                    self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span }.into())
+                } else if arguments_point_to_arrow && !is_argument_defined_in_current_scope {
+                    self.storage.report(ErrorKind::InvalidUseOfArgumentsInEs3OrEs5 { span }.into());
+                    return Ok(Type::any(span, Default::default()));
+                } else if arguments_points_async_fn && !is_argument_defined_in_current_scope {
+                    self.storage
+                        .report(ErrorKind::ArgumentsCannotBeUsedInAsyncFnInEs3OrEs5 { span }.into());
+                    return Ok(Type::any(span, Default::default()));
                 }
-                _ => {}
             }
         }
 

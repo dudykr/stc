@@ -636,13 +636,10 @@ impl Analyzer<'_, '_> {
                 }
 
                 if self.ctx.skip_identical_while_inferencing {
-                    match arg {
-                        Type::Param(arg) => {
-                            if *name == arg.name {
-                                return Ok(());
-                            }
+                    if let Type::Param(arg) = arg {
+                        if *name == arg.name {
+                            return Ok(());
                         }
-                        _ => {}
                     }
                 }
 
