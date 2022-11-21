@@ -921,9 +921,8 @@ impl Analyzer<'_, '_> {
             },
 
             Type::Keyword(..) => {
-                match arg {
-                    Type::Keyword(..) => return Ok(()),
-                    _ => {}
+                if let Type::Keyword(..) = arg {
+                    return Ok(());
                 }
 
                 dbg!();
@@ -1026,14 +1025,11 @@ impl Analyzer<'_, '_> {
             }
 
             Type::IndexedAccessType(param) => {
-                match arg {
-                    Type::IndexedAccessType(arg) => {
-                        if param.obj_type.eq_ignore_span(&arg.obj_type) {
-                            self.infer_type(span, inferred, &param.index_type, &arg.index_type, opts)?;
-                            return Ok(());
-                        }
+                if let Type::IndexedAccessType(arg) = arg {
+                    if param.obj_type.eq_ignore_span(&arg.obj_type) {
+                        self.infer_type(span, inferred, &param.index_type, &arg.index_type, opts)?;
+                        return Ok(());
                     }
-                    _ => {}
                 }
 
                 match param {
@@ -1049,10 +1045,7 @@ impl Analyzer<'_, '_> {
                         obj_type: box Type::Intersection(Intersection { types, .. }),
                         ..
                     } if types.iter().all(|ty| match ty.normalize() {
-                        Type::Param(obj_type) => {
-                            let current = self.mapped_type_param_name.contains(&obj_type.name);
-                            current
-                        }
+                        Type::Param(obj_type) => self.mapped_type_param_name.contains(&obj_type.name),
                         _ => false,
                     }) =>
                     {
