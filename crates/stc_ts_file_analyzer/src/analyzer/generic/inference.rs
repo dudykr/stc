@@ -352,21 +352,19 @@ impl Analyzer<'_, '_> {
             match arg.normalize() {
                 Type::Ref(Ref {
                     type_name: RTsEntityName::Ident(type_name),
-                    type_args,
+                    type_args: Some(type_args),
                     ..
                 }) if type_name.sym == *"ReadonlyArray" => {
-                    if let Some(type_args) = type_args {
-                        return Some(self.infer_type(
-                            span,
-                            inferred,
-                            &elem_type,
-                            &type_args.params[0],
-                            InferTypeOpts {
-                                append_type_as_union: true,
-                                ..opts
-                            },
-                        ));
-                    }
+                    return Some(self.infer_type(
+                        span,
+                        inferred,
+                        &elem_type,
+                        &type_args.params[0],
+                        InferTypeOpts {
+                            append_type_as_union: true,
+                            ..opts
+                        },
+                    ));
                 }
                 _ => {}
             }
@@ -511,7 +509,7 @@ impl Analyzer<'_, '_> {
                                 self.infer_type(
                                     span,
                                     inferred,
-                                    &pt,
+                                    pt,
                                     &Type::Function(Function {
                                         span,
                                         type_params: a.type_params.clone(),
@@ -541,7 +539,7 @@ impl Analyzer<'_, '_> {
                                         ret_ty: p.ret_ty.clone().unwrap_or_else(|| box Type::any(span, Default::default())),
                                         metadata: Default::default(),
                                     }),
-                                    &at,
+                                    at,
                                     opts,
                                 )?;
                             }
@@ -584,8 +582,8 @@ impl Analyzer<'_, '_> {
                                     self.infer_type(
                                         span,
                                         inferred,
-                                        &p_ty,
-                                        &arg_ty,
+                                        p_ty,
+                                        arg_ty,
                                         InferTypeOpts {
                                             append_type_as_union: true,
                                             ..opts
@@ -604,7 +602,7 @@ impl Analyzer<'_, '_> {
 
                             if let Some(p_ret) = &p.ret_ty {
                                 if let Some(a_ret) = &a.ret_ty {
-                                    self.infer_type(span, inferred, &p_ret, &a_ret, opts)?;
+                                    self.infer_type(span, inferred, p_ret, a_ret, opts)?;
                                 }
                             }
                         }
