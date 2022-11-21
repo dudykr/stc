@@ -61,11 +61,8 @@ impl Analyzer<'_, '_> {
                     let val = eval
                         .compute(id_span, Some(default), m.init.as_deref())
                         .map(|val| {
-                            match &val {
-                                RTsLit::Number(n) => {
-                                    default = n.value + 1.0;
-                                }
-                                _ => {}
+                            if let RTsLit::Number(n) = &val {
+                                default = n.value + 1.0;
                             }
                             eval.values.insert(
                                 match &m.id {
@@ -143,7 +140,7 @@ impl Analyzer<'_, '_> {
 
         self.register_type(name.clone(), stored_ty.clone());
 
-        self.declare_var(e.span, VarKind::Enum, name.clone(), Some(stored_ty), None, true, true, false)
+        self.declare_var(e.span, VarKind::Enum, name, Some(stored_ty), None, true, true, false)
             .report(&mut self.storage);
 
         // Validate const enums
@@ -221,7 +218,7 @@ impl Evaluator<'_> {
                         match m.id {
                             RTsEnumMemberId::Str(RStr { value: ref sym, .. }) | RTsEnumMemberId::Ident(RIdent { ref sym, .. }) => {
                                 if *sym == id.sym {
-                                    return self.compute(span, None, m.init.as_ref().map(|v| &**v));
+                                    return self.compute(span, None, m.init.as_deref());
                                 }
                             }
                         }

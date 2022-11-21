@@ -510,7 +510,7 @@ impl Analyzer<'_, '_> {
                 Default::default(),
             )?;
 
-            return Ok(expanded_ty.fixed());
+            Ok(expanded_ty.fixed())
         })
     }
 
@@ -862,7 +862,7 @@ impl Analyzer<'_, '_> {
         .with_context(|| {
             format!(
                 "tried to call a property of an object ({})",
-                dump_type_as_string(&self.cm, &obj_type)
+                dump_type_as_string(&self.cm, obj_type)
             )
         });
         self.scope.this = old_this;
@@ -3011,36 +3011,30 @@ impl Analyzer<'_, '_> {
     /// should make type of `subscriber` `SafeSubscriber`, not `Subscriber`.
     /// I (kdy1) don't know why.
     fn add_call_facts(&mut self, params: &[FnParam], args: &[RExprOrSpread], ret_ty: &mut Type) {
-        match ret_ty.normalize() {
-            Type::Predicate(p) => {
-                let ty = match &p.ty {
-                    Some(v) => v.normalize(),
-                    None => return,
-                };
+        if let Type::Predicate(p) = ret_ty.normalize() {
+            let ty = match &p.ty {
+                Some(v) => v.normalize(),
+                None => return,
+            };
 
-                match &p.param_name {
-                    RTsThisTypeOrIdent::TsThisType(this) => {}
-                    RTsThisTypeOrIdent::Ident(arg_id) => {
-                        for (idx, param) in params.iter().enumerate() {
-                            match &param.pat {
-                                RPat::Ident(i) if i.id.sym == arg_id.sym => {
-                                    // TODO(kdy1): Check length of args.
-                                    let arg = &args[idx];
-                                    match &*arg.expr {
-                                        RExpr::Ident(var_name) => {
-                                            let ty = ty.clone().freezed();
-                                            self.store_call_fact_for_var(var_name.span, var_name.into(), &ty);
-                                        }
-                                        _ => {}
-                                    }
+            match &p.param_name {
+                RTsThisTypeOrIdent::TsThisType(this) => {}
+                RTsThisTypeOrIdent::Ident(arg_id) => {
+                    for (idx, param) in params.iter().enumerate() {
+                        match &param.pat {
+                            RPat::Ident(i) if i.id.sym == arg_id.sym => {
+                                // TODO(kdy1): Check length of args.
+                                let arg = &args[idx];
+                                if let RExpr::Ident(var_name) = &*arg.expr {
+                                    let ty = ty.clone().freezed();
+                                    self.store_call_fact_for_var(var_name.span, var_name.into(), &ty);
                                 }
-                                _ => {}
                             }
+                            _ => {}
                         }
                     }
                 }
             }
-            _ => {}
         }
     }
 
