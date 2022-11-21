@@ -11,12 +11,6 @@ function f41(o: Thing | undefined) {
         case "number":
             o.foo;
             break;
-        case "undefined":
-            o.foo;  // Error
-            break;
-        default:
-            o.foo;  // Error
-            break;
     }
 }
 
