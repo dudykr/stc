@@ -562,6 +562,9 @@ pub(crate) struct AccessPropertyOpts {
     ///
     /// This is true for destructuring variable declarations.
     pub disallow_inexact: bool,
+
+    /// Check if `obj` is undefined or null
+    pub check_for_undefined_or_null: bool,
 }
 
 #[validator]
@@ -1368,6 +1371,10 @@ impl Analyzer<'_, '_> {
             }
 
             unimplemented!("access_property_inner: global_this: {:?}", prop);
+        }
+
+        if opts.check_for_undefined_or_null && self.rule().strict_null_checks {
+            self.deny_null_or_undefined(span, obj)?
         }
 
         if id_ctx == IdCtx::Var {
@@ -3853,7 +3860,17 @@ impl Analyzer<'_, '_> {
 
         let mut ty = self
             .with_ctx(prop_access_ctx)
-            .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var, Default::default())
+            .access_property(
+                span,
+                &obj_ty,
+                &prop,
+                type_mode,
+                IdCtx::Var,
+                AccessPropertyOpts {
+                    check_for_undefined_or_null: true,
+                    ..Default::default()
+                },
+            )
             .context("tried to access property of an object to calculate type of a member expression")?;
 
         if !self.is_builtin {
@@ -3963,7 +3980,7 @@ impl Analyzer<'_, '_> {
         let ty = self
             .with_ctx(prop_access_ctx)
             .access_property(span, &obj_ty, &prop, type_mode, IdCtx::Var, Default::default())
-            .context("tried to access property of an object to calculate type of a member expression")?;
+            .context("tried to access property of an object to calculate type of a super property expression")?;
 
         if should_be_optional {
             Ok(Type::union(vec![Type::undefined(span, Default::default()), ty]))

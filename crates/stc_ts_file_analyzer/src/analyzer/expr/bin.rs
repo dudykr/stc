@@ -386,12 +386,12 @@ impl Analyzer<'_, '_> {
             }
 
             op!("instanceof") => {
-                match **left {
-                    RExpr::Ident(ref i) => {
+                if !self.is_builtin {
+                    if let Ok(name) = Name::try_from(&**left) {
                         // typeGuardsTypeParameters.ts says
                         //
                         // Type guards involving type parameters produce intersection types
-                        let mut orig_ty = self.type_of_var(i, TypeOfMode::RValue, None)?;
+                        let mut orig_ty = self.type_of_name(span, name.as_ids(), TypeOfMode::RValue, None)?;
                         if !self.is_valid_lhs_of_instanceof(span, &orig_ty) {
                             self.storage.report(
                                 ErrorKind::InvalidLhsInInstanceOf {
@@ -435,7 +435,7 @@ impl Analyzer<'_, '_> {
                             // TODO(kdy1): Maybe we need to check for intersection or union
                             if orig_ty.is_type_param() {
                                 self.cur_facts.true_facts.vars.insert(
-                                    Name::from(i),
+                                    name,
                                     Type::Intersection(Intersection {
                                         span,
                                         types: vec![orig_ty, narrowed_ty],
@@ -445,19 +445,12 @@ impl Analyzer<'_, '_> {
                                     .freezed(),
                                 );
                             } else {
-                                self.cur_facts.true_facts.vars.insert(Name::from(i), narrowed_ty.clone());
+                                self.cur_facts.true_facts.vars.insert(name.clone(), narrowed_ty.clone());
 
-                                self.cur_facts
-                                    .false_facts
-                                    .excludes
-                                    .entry(Name::from(i))
-                                    .or_default()
-                                    .push(narrowed_ty);
+                                self.cur_facts.false_facts.excludes.entry(name).or_default().push(narrowed_ty);
                             }
                         }
                     }
-
-                    _ => {}
                 }
             }
 
@@ -880,6 +873,15 @@ impl Analyzer<'_, '_> {
             _ => None,
         }) {
             Some((Ok(name), (Some(t), Some(f)))) => {
+                // If typeof foo.bar is `string`, `foo` cannot be undefined nor null
+                if t != TypeFacts::EQUndefined {
+                    for idx in 1..name.as_ids().len() {
+                        let sub = Name::from(&name.as_ids()[..idx]);
+
+                        self.cur_facts.true_facts.facts.insert(sub.clone(), TypeFacts::NEUndefinedOrNull);
+                    }
+                }
+
                 // Add type facts
                 self.cur_facts.true_facts.facts.insert(name.clone(), t);
                 self.cur_facts.false_facts.facts.insert(name.clone(), f);
