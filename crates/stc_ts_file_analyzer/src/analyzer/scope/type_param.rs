@@ -68,8 +68,8 @@ impl Analyzer<'_, '_> {
             }
 
             match s.parent {
-                Some(p) => is_dead(&p, name),
-                None => return true,
+                Some(p) => is_dead(p, name),
+                None => true,
             }
         }
 
@@ -85,18 +85,15 @@ struct TypeParamEscapeVisitor<'a, 'b, 'c> {
 
 impl Visit<Type> for TypeParamEscapeVisitor<'_, '_, '_> {
     fn visit(&mut self, ty: &Type) {
-        match ty {
-            Type::Param(ty) => {
-                if self.declared.contains(&ty.name) {
-                    return;
-                }
-
-                if self.analyzer.is_type_param_dead(&ty.name) {
-                    self.should_work = true;
-                    return;
-                }
+        if let Type::Param(ty) = ty.normalize() {
+            if self.declared.contains(&ty.name) {
+                return;
             }
-            _ => {}
+
+            if self.analyzer.is_type_param_dead(&ty.name) {
+                self.should_work = true;
+                return;
+            }
         }
 
         ty.visit_children_with(self);
@@ -133,22 +130,18 @@ impl VisitMut<Type> for TypeParamEscapeHandler<'_, '_, '_> {
         ty.normalize_mut();
         ty.visit_mut_children_with(self);
 
-        match ty {
-            Type::Param(param) => {
-                if self.declared.contains(&param.name) {
-                    return;
-                }
-
-                if self.analyzer.is_type_param_dead(&param.name) {
-                    *ty = Type::TypeLit(TypeLit {
-                        span: param.span,
-                        members: vec![],
-                        metadata: Default::default(),
-                    });
-                    return;
-                }
+        if let Type::Param(param) = ty {
+            if self.declared.contains(&param.name) {
+                return;
             }
-            _ => {}
+
+            if self.analyzer.is_type_param_dead(&param.name) {
+                *ty = Type::TypeLit(TypeLit {
+                    span: param.span,
+                    members: vec![],
+                    metadata: Default::default(),
+                });
+            }
         }
     }
 }

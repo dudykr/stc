@@ -31,12 +31,12 @@ impl Analyzer<'_, '_> {
     /// TODO(kdy1): Handle index signatures.
     #[instrument(name = "expand_mapped", skip(self, span, m))]
     pub(crate) fn expand_mapped(&mut self, span: Span, m: &Mapped) -> VResult<Option<Type>> {
-        let orig = dump_type_as_string(&self.cm, &ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
+        let orig = dump_type_as_string(&ALLOW_DEEP_CLONE.set(&(), || Type::Mapped(m.clone())));
 
         let ty = self.expand_mapped_inner(span, m)?;
 
         if let Some(ty) = &ty {
-            let expanded = dump_type_as_string(&self.cm, ty);
+            let expanded = dump_type_as_string(ty);
 
             debug!("[types/mapped]: Expanded {} as {}", orig, expanded);
         }
@@ -57,7 +57,7 @@ impl Analyzer<'_, '_> {
 
                 if let Some(mapped_ty) = m.ty.as_deref().map(Type::normalize) {
                     // Special case, but many usages can be handled with this check.
-                    if (&*keyof_operand).type_eq(&mapped_ty) {
+                    if (*keyof_operand).type_eq(mapped_ty) {
                         let new_type = self
                             .convert_type_to_type_lit(span, Cow::Borrowed(&keyof_operand))
                             .context("tried to convert a type to type literal to expand mapped type")?
@@ -92,7 +92,7 @@ impl Analyzer<'_, '_> {
                                 PropertyName::Key(key) => {
                                     let ty = match &m.ty {
                                         Some(mapped_ty) => self
-                                            .expand_key_in_mapped(m.type_param.name.clone(), &mapped_ty, &key)
+                                            .expand_key_in_mapped(m.type_param.name.clone(), mapped_ty, &key)
                                             .map(Box::new)
                                             .map(Some)?,
                                         None => None,
@@ -188,15 +188,15 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-            _ => match m.type_param.constraint.as_deref() {
-                Some(constraint) => {
+            _ => {
+                if let Some(constraint) = m.type_param.constraint.as_deref() {
                     if let Some(keys) = self.convert_type_to_keys(span, constraint)? {
                         let members = keys
                             .into_iter()
                             .map(|key| -> VResult<_> {
                                 let ty = match &m.ty {
                                     Some(mapped_ty) => self
-                                        .expand_key_in_mapped(m.type_param.name.clone(), &mapped_ty, &key)
+                                        .expand_key_in_mapped(m.type_param.name.clone(), mapped_ty, &key)
                                         .map(Box::new)
                                         .map(Some)?,
                                     None => None,
@@ -227,8 +227,7 @@ impl Analyzer<'_, '_> {
                         })));
                     }
                 }
-                None => {}
-            },
+            }
         }
 
         Ok(None)
@@ -251,30 +250,26 @@ impl Analyzer<'_, '_> {
         match ty {
             Type::Ref(..) => {
                 let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
-                return self.convert_type_to_keys(span, &ty);
+                self.convert_type_to_keys(span, &ty)
             }
 
-            Type::Alias(alias) => return self.convert_type_to_keys(span, &alias.ty),
+            Type::Alias(alias) => self.convert_type_to_keys(span, &alias.ty),
 
             Type::Lit(LitType { lit, .. }) => match lit {
-                RTsLit::BigInt(v) => return Ok(Some(vec![Key::BigInt(v.clone())])),
-                RTsLit::Number(v) => return Ok(Some(vec![Key::Num(v.clone())])),
-                RTsLit::Str(v) => {
-                    return Ok(Some(vec![Key::Normal {
-                        span: v.span,
-                        sym: v.value.clone(),
-                    }]))
-                }
-                RTsLit::Tpl(t) if t.quasis.len() == 1 => {
-                    return Ok(Some(vec![Key::Normal {
-                        span: t.span,
-                        sym: match &t.quasis[0].cooked {
-                            Some(v) => (&**v).into(),
-                            _ => return Ok(None),
-                        },
-                    }]))
-                }
-                RTsLit::Bool(_) | RTsLit::Tpl(_) => return Ok(None),
+                RTsLit::BigInt(v) => Ok(Some(vec![Key::BigInt(v.clone())])),
+                RTsLit::Number(v) => Ok(Some(vec![Key::Num(v.clone())])),
+                RTsLit::Str(v) => Ok(Some(vec![Key::Normal {
+                    span: v.span,
+                    sym: v.value.clone(),
+                }])),
+                RTsLit::Tpl(t) if t.quasis.len() == 1 => Ok(Some(vec![Key::Normal {
+                    span: t.span,
+                    sym: match &t.quasis[0].cooked {
+                        Some(v) => (&**v).into(),
+                        _ => return Ok(None),
+                    },
+                }])),
+                RTsLit::Bool(_) | RTsLit::Tpl(_) => Ok(None),
             },
 
             Type::Union(u) => {
@@ -288,14 +283,14 @@ impl Analyzer<'_, '_> {
                     }
                 }
 
-                return Ok(Some(keys));
+                Ok(Some(keys))
             }
 
-            Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) => return Ok(None),
+            Type::TypeLit(..) | Type::Interface(..) | Type::Class(..) | Type::ClassDef(..) => Ok(None),
 
             _ => {
                 error!("unimplemented: convert_type_to_keys: {:#?}", ty);
-                return Ok(None);
+                Ok(None)
             }
         }
     }
@@ -401,7 +396,7 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, &ty) })
+                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, ty) })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 if keys_types.is_empty() {
@@ -421,7 +416,7 @@ impl Analyzer<'_, '_> {
                         sets.iter().all(|set| set.is_none() || set.as_ref().unwrap().contains(item))
                     }
                 }) {
-                    if result.iter().any(|prev| prev.type_eq(&key)) {
+                    if result.iter().any(|prev| prev.type_eq(key)) {
                         continue;
                     }
 
@@ -439,7 +434,7 @@ impl Analyzer<'_, '_> {
                 let keys_types = ty
                     .types
                     .iter()
-                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, &ty) })
+                    .map(|ty| -> VResult<_> { self.get_property_names_for_mapped_type(span, ty) })
                     .collect::<Result<Vec<_>, _>>()?;
 
                 let mut result: Vec<PropertyName> = vec![];
@@ -448,18 +443,13 @@ impl Analyzer<'_, '_> {
                     return Ok(None);
                 }
 
-                for keys in keys_types {
-                    match keys {
-                        Some(keys) => {
-                            for key in keys {
-                                if result.iter().any(|prev| prev.type_eq(&key)) {
-                                    continue;
-                                }
-
-                                result.push(key);
-                            }
+                for keys in keys_types.into_iter().flatten() {
+                    for key in keys {
+                        if result.iter().any(|prev| prev.type_eq(&key)) {
+                            continue;
                         }
-                        None => {}
+
+                        result.push(key);
                     }
                 }
 
@@ -467,18 +457,18 @@ impl Analyzer<'_, '_> {
             }
             Type::Tuple(..) | Type::Array(..) => return Ok(None),
 
-            Type::Mapped(m) => match m.type_param.constraint.as_deref().map(|ty| ty.normalize()) {
-                Some(Type::Operator(Operator {
+            Type::Mapped(m) => {
+                if let Some(Type::Operator(Operator {
                     op: TsTypeOperatorOp::KeyOf,
                     ty,
                     ..
-                })) => {
+                })) = m.type_param.constraint.as_deref().map(|ty| ty.normalize())
+                {
                     return self
                         .get_property_names_for_mapped_type(span, ty)
-                        .context("tried to get property names by using `keyof` constraint")
+                        .context("tried to get property names by using `keyof` constraint");
                 }
-                _ => {}
-            },
+            }
 
             _ => {}
         }
@@ -541,7 +531,7 @@ impl Visit<Conditional> for IndexedAccessTypeFinder<'_> {
 
 impl Visit<IndexedAccessType> for IndexedAccessTypeFinder<'_> {
     fn visit(&mut self, n: &IndexedAccessType) {
-        if (&*n.obj_type).type_eq(self.obj)
+        if (*n.obj_type).type_eq(self.obj)
             && match n.index_type.normalize() {
                 Type::Param(index) => *self.key == index.name,
                 _ => false,
@@ -579,19 +569,15 @@ impl VisitMut<Type> for IndexedAccessTypeReplacer<'_> {
         // TODO(kdy1): PERF
         ty.normalize_mut();
 
-        match ty {
-            Type::IndexedAccessType(n) => {
-                if (&*n.obj_type).type_eq(self.obj)
-                    && match n.index_type.normalize() {
-                        Type::Param(index) => *self.key == index.name,
-                        _ => false,
-                    }
-                {
-                    *ty = self.obj.clone();
-                    return;
+        if let Type::IndexedAccessType(n) = ty {
+            if (*n.obj_type).type_eq(self.obj)
+                && match n.index_type.normalize() {
+                    Type::Param(index) => *self.key == index.name,
+                    _ => false,
                 }
+            {
+                *ty = self.obj.clone();
             }
-            _ => {}
         }
     }
 }

@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use rnode::VisitWith;
 use stc_ts_ast_rnode::{RBlockStmt, RBool, RForStmt, RModuleItem, RStmt, RTsExprWithTypeArgs, RTsLit, RWithStmt};
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 use stc_ts_types::{LitType, Type};
 use stc_utils::stack;
 use swc_common::{Spanned, DUMMY_SP};
@@ -46,16 +46,14 @@ impl Analyzer<'_, '_> {
         let start = Instant::now();
 
         if self.rule().always_strict && !self.rule().allow_unreachable_code && self.ctx.in_unreachable {
-            self.storage.report(Error::UnreachableCode { span: s.span() });
+            self.storage.report(ErrorKind::UnreachableCode { span: s.span() }.into());
         }
 
         let old_in_conditional = self.scope.return_values.in_conditional;
-        self.scope.return_values.in_conditional |= match s {
-            RStmt::If(_) => true,
-            RStmt::Switch(_) => true,
-            RStmt::While(..) | RStmt::DoWhile(..) | RStmt::For(..) | RStmt::ForIn(..) | RStmt::ForOf(..) => true,
-            _ => false,
-        };
+        self.scope.return_values.in_conditional |= matches!(
+            s,
+            RStmt::If(_) | RStmt::Switch(_) | RStmt::While(..) | RStmt::DoWhile(..) | RStmt::For(..) | RStmt::ForIn(..) | RStmt::ForOf(..)
+        );
 
         s.visit_children_with(self);
 
@@ -88,7 +86,6 @@ impl Analyzer<'_, '_> {
             if !has_break {
                 if let Known(v) = test.as_bool() {
                     self.ctx.in_unreachable = true;
-                    return;
                 }
             }
         }
@@ -122,7 +119,7 @@ impl Analyzer<'_, '_> {
 #[validator]
 impl Analyzer<'_, '_> {
     fn validate(&mut self, s: &RWithStmt) {
-        self.storage.report(Error::WithStmtNotSupported { span: s.span });
+        self.storage.report(ErrorKind::WithStmtNotSupported { span: s.span }.into());
 
         s.obj.visit_with(self);
 

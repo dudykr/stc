@@ -4,7 +4,7 @@ use derivative::Derivative;
 use parking_lot::Mutex;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use stc_ts_errors::Error;
+use stc_ts_errors::{Error, ErrorKind};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{Id, Type};
 use stc_utils::cache::Freeze;
@@ -73,7 +73,7 @@ impl Env {
     pub fn declare_global_var(&mut self, name: JsWord, ty: Type) {
         ty.assert_clone_cheap();
 
-        let res = self.global_vars.lock().insert(name.clone(), ty);
+        let _res = self.global_vars.lock().insert(name, ty);
         // debug_assert_eq!(res, None, "failed to declare a global var {}",
         // name);
     }
@@ -105,10 +105,11 @@ impl Env {
             return Ok(v.clone());
         }
 
-        Err(Error::NoSuchVar {
+        Err(ErrorKind::NoSuchVar {
             span,
             name: Id::word(name.clone()),
-        })
+        }
+        .into())
     }
 
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
@@ -123,10 +124,11 @@ impl Env {
             return Ok(ty.clone());
         }
 
-        Err(Error::NoSuchType {
+        Err(ErrorKind::NoSuchType {
             span,
             name: Id::word(name.clone()),
-        })
+        }
+        .into())
     }
 }
 

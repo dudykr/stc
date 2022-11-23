@@ -14,7 +14,7 @@ use stc_ts_ast_rnode::{
 use stc_ts_base_type_ops::bindings::Bindings;
 use stc_ts_dts_mutations::Mutations;
 use stc_ts_env::{Env, Marks, ModuleConfig, Rule, StableEnv};
-use stc_ts_errors::{debug::debugger::Debugger, Error};
+use stc_ts_errors::{debug::debugger::Debugger, ErrorKind};
 use stc_ts_storage::{Builtin, Info, Storage};
 use stc_ts_type_cache::TypeCache;
 use stc_ts_types::{Id, IdCtx, ModuleId, ModuleTypeData, Namespace};
@@ -88,7 +88,6 @@ pub(crate) struct Ctx {
     use_undefined_for_empty_tuple: bool,
 
     allow_module_var: bool,
-    allow_namespace_var: bool,
 
     check_for_implicit_any: bool,
 
@@ -202,6 +201,8 @@ pub(crate) struct Ctx {
     is_fn_param: bool,
 
     in_module: bool,
+
+    checking_switch_discriminant_as_bin: bool,
 }
 
 impl Ctx {
@@ -398,7 +399,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         debugger: Option<Debugger>,
     ) -> Self {
         if env.rule().use_define_property_for_class_fields && env.target() == EsVersion::Es3 {
-            storage.report(Error::OptionInvalidForEs3 { span: DUMMY_SP })
+            storage.report(ErrorKind::OptionInvalidForEs3 { span: DUMMY_SP }.into())
         }
 
         Self::new_inner(
@@ -430,6 +431,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
         )
     }
 
+    #[allow(clippy::wrong_self_convention)]
     fn new(&'b self, scope: Scope<'scope>, data: AnalyzerData) -> Self {
         Self::new_inner(
             self.env.clone(),
@@ -478,7 +480,6 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 disallow_unknown_object_property: false,
                 use_undefined_for_empty_tuple: false,
                 allow_module_var: false,
-                allow_namespace_var: false,
                 check_for_implicit_any: false,
                 cannot_be_tuple: false,
                 prefer_tuple: false,
@@ -528,6 +529,7 @@ impl<'scope, 'b> Analyzer<'scope, 'b> {
                 is_not_topmost_type: false,
                 is_fn_param: false,
                 in_module: false,
+                checking_switch_discriminant_as_bin: false,
             },
             loader,
             is_builtin,
@@ -699,7 +701,7 @@ impl<'b, 'c> Deref for WithCtx<'_, 'b, 'c> {
     type Target = Analyzer<'b, 'c>;
 
     fn deref(&self) -> &Self::Target {
-        &self.analyzer
+        self.analyzer
     }
 }
 
@@ -780,7 +782,8 @@ impl Analyzer<'_, '_> {
                         self.export_equals_span = decl.span;
                     }
                     if !is_dts && has_normal_export {
-                        self.storage.report(Error::ExportEqualsMixedWithOtherExports { span: decl.span });
+                        self.storage
+                            .report(ErrorKind::ExportEqualsMixedWithOtherExports { span: decl.span }.into());
                     }
 
                     //
@@ -793,9 +796,12 @@ impl Analyzer<'_, '_> {
                     | RModuleDecl::TsNamespaceExport(..) => {
                         has_normal_export = true;
                         if !is_dts && !self.export_equals_span.is_dummy() {
-                            self.storage.report(Error::ExportEqualsMixedWithOtherExports {
-                                span: self.export_equals_span,
-                            });
+                            self.storage.report(
+                                ErrorKind::ExportEqualsMixedWithOtherExports {
+                                    span: self.export_equals_span,
+                                }
+                                .into(),
+                            );
                         }
                     }
                     _ => {}
@@ -1029,12 +1035,12 @@ impl Analyzer<'_, '_> {
                     self.register_type(i.into(), ty.clone());
                 }
                 RTsModuleName::Str(s) => {
-                    let name: &str = &*s.value;
+                    let name: &str = &s.value;
 
                     if let Some(pos) = name.as_bytes().iter().position(|&c| c == b'*') {
                         if let Some(rpos) = name.as_bytes().iter().rposition(|&c| c == b'*') {
                             if pos != rpos {
-                                self.storage.report(Error::TooManyAsterisk { span: s.span });
+                                self.storage.report(ErrorKind::TooManyAsterisk { span: s.span }.into());
                             }
                         }
                     }

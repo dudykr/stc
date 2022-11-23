@@ -7,25 +7,69 @@ use rnode::{Fold, FoldWith, RNode, Visit, VisitWith};
 use stc_ts_ast_rnode::RTsType;
 use stc_ts_types::{Id, IndexedAccessType, Ref, Type, TypeLit, TypeParam};
 use stc_utils::cache::ALLOW_DEEP_CLONE;
-use swc_common::{sync::Lrc, SourceMap, TypeEq, DUMMY_SP};
+use swc_common::{sync::Lrc, SourceMap, SourceMapper, TypeEq, DUMMY_SP};
 use swc_ecma_ast::*;
 use swc_ecma_codegen::{text_writer::JsWriter, Emitter};
+use swc_ecma_utils::DropSpan;
+use swc_ecma_visit::VisitMutWith;
 use tracing::info;
 
 pub mod debugger;
 
-pub fn dump_type_map(cm: &Lrc<SourceMap>, map: &FxHashMap<Id, Type>) -> String {
+pub fn dump_type_map(map: &FxHashMap<Id, Type>) -> String {
     if !cfg!(debug_assertions) {
         return String::new();
     }
 
     map.iter()
-        .map(|(name, ty)| format!("{:?}: {}", name, dump_type_as_string(cm, ty)))
+        .map(|(name, ty)| format!("{:?}: {}", name, dump_type_as_string(ty)))
         .collect::<Vec<_>>()
         .join("\n")
 }
 
-pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
+struct FakeSourceMap;
+
+impl SourceMapper for FakeSourceMap {
+    fn lookup_char_pos(&self, _pos: swc_common::BytePos) -> swc_common::Loc {
+        todo!()
+    }
+
+    fn span_to_lines(&self, _sp: swc_common::Span) -> swc_common::source_map::FileLinesResult {
+        todo!()
+    }
+
+    fn span_to_string(&self, _sp: swc_common::Span) -> String {
+        todo!()
+    }
+
+    fn span_to_filename(&self, _sp: swc_common::Span) -> swc_common::FileName {
+        todo!()
+    }
+
+    fn merge_spans(&self, _sp_lhs: swc_common::Span, _sp_rhs: swc_common::Span) -> Option<swc_common::Span> {
+        todo!()
+    }
+
+    fn call_span_if_macro(&self, _sp: swc_common::Span) -> swc_common::Span {
+        todo!()
+    }
+
+    fn doctest_offset_line(&self, _line: usize) -> usize {
+        todo!()
+    }
+
+    fn span_to_snippet(&self, _sp: swc_common::Span) -> Result<String, Box<swc_common::SpanSnippetError>> {
+        todo!()
+    }
+}
+
+impl SourceMapperExt for FakeSourceMap {
+    fn get_code_map(&self) -> &dyn SourceMapper {
+        self
+    }
+}
+
+pub fn dump_type_as_string(t: &Type) -> String {
     if !cfg!(debug_assertions) {
         return String::new();
     }
@@ -37,9 +81,9 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
                 minify: false,
                 ..Default::default()
             },
-            cm: cm.clone(),
+            cm: Lrc::new(FakeSourceMap),
             comments: None,
-            wr: box JsWriter::new(cm.clone(), "\n", &mut buf, None),
+            wr: box JsWriter::new(Lrc::new(SourceMap::default()), "\n", &mut buf, None),
         };
 
         let mut body = vec![];
@@ -52,8 +96,8 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
             }),
         })));
 
-        match t.normalize() {
-            Type::Interface(t) => ALLOW_DEEP_CLONE.set(&(), || {
+        if let Type::Interface(t) = t.normalize() {
+            ALLOW_DEEP_CLONE.set(&(), || {
                 body.push(ModuleItem::Stmt(Stmt::Expr(ExprStmt {
                     span: DUMMY_SP,
                     expr: box Expr::TsAs(TsAsExpr {
@@ -70,9 +114,10 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
                         .into_orig(),
                     }),
                 })));
-            }),
-            _ => {}
+            })
         }
+
+        body.visit_mut_with(&mut DropSpan { preserve_ctxt: true });
 
         emitter
             .emit_module(&Module {
@@ -100,12 +145,12 @@ pub fn dump_type_as_string(cm: &Lrc<SourceMap>, t: &Type) -> String {
     s.to_string()
 }
 
-pub fn dbg_type(name: &str, cm: &Lrc<SourceMap>, t: &Type) {
-    let s = dump_type_as_string(cm, t);
+pub fn dbg_type(name: &str, t: &Type) {
+    let s = dump_type_as_string(t);
     eprintln!("===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
 }
-pub fn print_type(name: &str, cm: &Lrc<SourceMap>, t: &Type) {
-    let s = dump_type_as_string(cm, t);
+pub fn print_type(name: &str, t: &Type) {
+    let s = dump_type_as_string(t);
     info!("===== ===== ===== Type ({}) ===== ===== =====\n{}", name, s);
 }
 

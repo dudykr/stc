@@ -1,5 +1,5 @@
 use stc_ts_ast_rnode::RMetaPropExpr;
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::Type;
 use swc_common::Spanned;
@@ -13,10 +13,10 @@ impl Analyzer<'_, '_> {
         match e.kind {
             MetaPropKind::NewTarget => {
                 if !self.ctx.allow_new_target {
-                    self.storage.report(Error::InvalidUsageOfNewTarget { span: e.span() })
+                    self.storage.report(ErrorKind::InvalidUsageOfNewTarget { span: e.span() }.into())
                 }
 
-                return Ok(Type::any(e.span, Default::default()));
+                Ok(Type::any(e.span, Default::default()))
             }
 
             _ => {

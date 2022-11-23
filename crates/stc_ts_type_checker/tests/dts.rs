@@ -2,6 +2,7 @@
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(test)]
+#![allow(clippy::vec_box)]
 
 extern crate test;
 
@@ -41,7 +42,7 @@ fn fixture(input: PathBuf) {
 
 fn do_test(file_name: &Path) -> Result<(), StdErr> {
     if let Ok(test) = env::var("TEST") {
-        if !file_name.to_string_lossy().replace("/", "::").contains(&test) {
+        if !file_name.to_string_lossy().replace('/', "::").contains(&test) {
             return Ok(());
         }
     }
@@ -84,7 +85,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         let id = checker.check(Arc::new(file_name.clone().into()));
 
-        let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
+        let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
 
         let expected_module = {
             let mut buf = vec![];
@@ -132,11 +133,11 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                         cfg: Default::default(),
                         comments: None,
                         cm: cm.clone(),
-                        wr: box JsWriter::new(cm.clone(), "\n", &mut buf, None),
+                        wr: box JsWriter::new(cm, "\n", &mut buf, None),
                     };
 
                     emitter
-                        .emit_module(&dts.clone().fold_with(&mut HygieneVisualizer))
+                        .emit_module(&dts.fold_with(&mut HygieneVisualizer))
                         .context("failed to emit module")
                         .unwrap();
                 }
@@ -322,7 +323,7 @@ impl Normalizer {
                 }),
             ) => a.value.cmp(&b.value),
 
-            _ => rank(&a).cmp(&rank(&b)),
+            _ => rank(a).cmp(&rank(b)),
         });
 
         types

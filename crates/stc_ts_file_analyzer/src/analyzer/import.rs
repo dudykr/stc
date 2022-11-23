@@ -3,7 +3,7 @@ use rnode::{Visit, VisitWith};
 use stc_ts_ast_rnode::{
     RCallExpr, RCallee, RExportAll, RExpr, RImportDecl, RImportSpecifier, RLit, RModuleItem, RNamedExport, RStr, RTsExternalModuleRef,
 };
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_storage::Storage;
 use stc_ts_types::{Id, ModuleId, Type};
@@ -25,11 +25,11 @@ impl Analyzer<'_, '_> {
     pub(crate) fn get_imported_items(&mut self, span: Span, dst: &JsWord) -> (ModuleId, Type) {
         let ctxt = self.ctx.module_id;
         let base = self.storage.path(ctxt);
-        let dep_id = self.loader.module_id(&base, &dst);
+        let dep_id = self.loader.module_id(&base, dst);
         let dep_id = match dep_id {
             Some(v) => v,
             None => {
-                self.storage.report(Error::ModuleNotFound { span });
+                self.storage.report(ErrorKind::ModuleNotFound { span }.into());
 
                 return (ctxt, Type::any(span, Default::default()));
             }
@@ -37,7 +37,7 @@ impl Analyzer<'_, '_> {
         let data = match self.imports.get(&(ctxt, dep_id)).cloned() {
             Some(v) => v,
             None => {
-                self.storage.report(Error::ModuleNotFound { span });
+                self.storage.report(ErrorKind::ModuleNotFound { span }.into());
 
                 return (ctxt, Type::any(span, Default::default()));
             }
@@ -47,7 +47,7 @@ impl Analyzer<'_, '_> {
     }
 
     pub(super) fn find_imported_var(&self, id: &Id) -> VResult<Option<Type>> {
-        if let Some(ModuleInfo { module_id, data }) = self.imports_by_id.get(&id) {
+        if let Some(ModuleInfo { module_id, data }) = self.imports_by_id.get(id) {
             match data.normalize() {
                 Type::Module(data) => {
                     if let Some(dep) = data.exports.vars.get(id.sym()).cloned() {
@@ -77,7 +77,7 @@ impl Analyzer<'_, '_> {
             return;
         }
         // We first load non-circular imports.
-        let imports = ImportFinder::find_imports(&self.comments, module_spans, &self.storage, &*items);
+        let imports = ImportFinder::find_imports(&self.comments, module_spans, &self.storage, items);
 
         let loader = self.loader;
         let mut normal_imports = vec![];
@@ -89,7 +89,7 @@ impl Analyzer<'_, '_> {
             let dep_id = match dep_id {
                 Some(v) => v,
                 None => {
-                    self.storage.report(Error::ModuleNotFound { span });
+                    self.storage.report(ErrorKind::ModuleNotFound { span }.into());
                     continue;
                 }
             };
@@ -177,7 +177,7 @@ impl Analyzer<'_, '_> {
             if ctxt != target {
                 // If import was successful but the entry is not found, the error should point
                 // the specifier.
-                self.storage.report(Error::ImportFailed { span, orig, id });
+                self.storage.report(ErrorKind::ImportFailed { span, orig, id }.into());
             }
         }
     }
@@ -330,7 +330,7 @@ where
                     .unwrap();
                 self.to.push((self.cur_ctxt, DepInfo { span, src }));
             }
-            _ => return,
+            _ => {}
         }
     }
 }

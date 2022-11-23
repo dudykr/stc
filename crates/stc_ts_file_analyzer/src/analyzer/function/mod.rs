@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use itertools::{EitherOrBoth, Itertools};
 use rnode::{Fold, FoldWith};
 use stc_ts_ast_rnode::{RBindingIdent, RFnDecl, RFnExpr, RFunction, RIdent, RParamOrTsParamProp, RPat, RTsEntityName};
-use stc_ts_errors::{Error, Errors};
+use stc_ts_errors::{ErrorKind, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     Alias, CallSignature, Class, ClassDef, ClassMetadata, Function, Interface, KeywordType, KeywordTypeMetadata, Ref, TypeElement,
@@ -40,7 +40,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Make this efficient by report same error only once.
                 if v.len() >= 2 {
                     for &span in &*v {
-                        self.storage.report(Error::DuplicateFnImpl { span })
+                        self.storage.report(ErrorKind::DuplicateFnImpl { span }.into())
                     }
                 }
             }
@@ -67,22 +67,20 @@ impl Analyzer<'_, '_> {
                             })
                             | RPat::Rest(..) => {}
                             _ => {
-                                child.storage.report(Error::TS1016 { span: p.span() });
+                                child.storage.report(ErrorKind::TS1016 { span: p.span() }.into());
                             }
                         }
                     }
 
-                    match p.pat {
-                        RPat::Ident(RBindingIdent {
-                            id: RIdent { optional, .. },
-                            ..
-                        }) => {
-                            // Allow optional after optional parameter
-                            if optional {
-                                has_optional = true;
-                            }
+                    if let RPat::Ident(RBindingIdent {
+                        id: RIdent { optional, .. },
+                        ..
+                    }) = p.pat
+                    {
+                        // Allow optional after optional parameter
+                        if optional {
+                            has_optional = true;
                         }
-                        _ => {}
                     }
                 }
             }
@@ -145,11 +143,8 @@ impl Analyzer<'_, '_> {
             }
 
             if let Some(ty) = &mut declared_ret_ty {
-                match ty.normalize() {
-                    Type::Ref(..) => {
-                        child.prevent_expansion(ty);
-                    }
-                    _ => {}
+                if let Type::Ref(..) = ty.normalize() {
+                    child.prevent_expansion(ty);
                 }
             }
 
@@ -177,12 +172,12 @@ impl Analyzer<'_, '_> {
                         if f.is_generator && declared.is_kwd(TsKeywordTypeKind::TsVoidKeyword) {
                             child
                                 .storage
-                                .report(Error::GeneratorCannotHaveVoidAsReturnType { span: declared.span() })
+                                .report(ErrorKind::GeneratorCannotHaveVoidAsReturnType { span: declared.span() }.into())
                         }
                     } else {
                         if child.rule().no_implicit_any {
                             if child.is_implicitly_typed(&inferred_return_type) {
-                                child.storage.report(Error::ImplicitReturnType { span })
+                                child.storage.report(ErrorKind::ImplicitReturnType { span }.into())
                             }
                         }
 
@@ -198,7 +193,7 @@ impl Analyzer<'_, '_> {
 
                     if let Some(ref declared) = declared_ret_ty {
                         span = declared.span();
-                        let declared = child.normalize(Some(span), Cow::Borrowed(&declared), Default::default())?;
+                        let declared = child.normalize(Some(span), Cow::Borrowed(declared), Default::default())?;
 
                         match declared.normalize() {
                             Type::Keyword(KeywordType {
@@ -213,7 +208,7 @@ impl Analyzer<'_, '_> {
                                 kind: TsKeywordTypeKind::TsNeverKeyword,
                                 ..
                             }) => {}
-                            _ => errors.push(Error::ReturnRequired { span }),
+                            _ => errors.push(ErrorKind::ReturnRequired { span }.into()),
                         }
                     }
 
@@ -252,12 +247,11 @@ impl Analyzer<'_, '_> {
 
             Ok(ty::Function {
                 span: f.span,
-                params,
                 type_params,
-                ret_ty: box declared_ret_ty.unwrap_or_else(|| inferred_return_type),
+                params,
+                ret_ty: box declared_ret_ty.unwrap_or(inferred_return_type),
                 metadata: Default::default(),
-            }
-            .into())
+            })
         })
     }
 }
@@ -317,7 +311,8 @@ impl Analyzer<'_, '_> {
                 if let Some(default) = default {
                     args.params.push(default);
                 } else {
-                    self.storage.report(Error::ImplicitAny { span }.context("qualify_ref_type_args"));
+                    self.storage
+                        .report(ErrorKind::ImplicitAny { span }.context("qualify_ref_type_args"));
                     args.params
                         .push(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                 }
@@ -332,24 +327,18 @@ impl Analyzer<'_, '_> {
         let fn_ty: Result<_, _> = try {
             let no_implicit_any_span = name.as_ref().map(|name| name.span);
 
-            match type_ann.as_ref().map(|ty| ty.normalize()) {
-                Some(Type::Function(ty)) => {
-                    for p in f.params.iter().zip_longest(ty.params.iter()) {
-                        match p {
-                            EitherOrBoth::Both(param, ty) => {
-                                // Store type infomations, so the pattern validator can use correct
-                                // type.
-                                if let Some(pat_node_id) = param.pat.node_id() {
-                                    if let Some(m) = &mut self.mutations {
-                                        m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| *ty.ty.clone());
-                                    }
-                                }
+            if let Some(Type::Function(ty)) = type_ann.as_ref().map(|ty| ty.normalize()) {
+                for p in f.params.iter().zip_longest(ty.params.iter()) {
+                    if let EitherOrBoth::Both(param, ty) = p {
+                        // Store type infomations, so the pattern validator can use correct
+                        // type.
+                        if let Some(pat_node_id) = param.pat.node_id() {
+                            if let Some(m) = &mut self.mutations {
+                                m.for_pats.entry(pat_node_id).or_default().ty.get_or_insert_with(|| *ty.ty.clone());
                             }
-                            _ => {}
                         }
                     }
                 }
-                _ => {}
             }
 
             // if let Some(name) = name {
@@ -384,48 +373,40 @@ impl Analyzer<'_, '_> {
             fn_ty.ret_ty = fn_ty.ret_ty.fold_with(&mut TypeParamHandler {
                 params: fn_ty.type_params.as_ref().map(|v| &*v.params),
             });
-            match fn_ty {
-                ty::Function { ref mut ret_ty, .. } => {
-                    match **ret_ty {
-                        // Handle tuple widening of the return type.
-                        Type::Tuple(Tuple { ref mut elems, .. }) => {
-                            for element in elems.iter_mut() {
-                                let span = element.span();
+            let ty::Function { ref mut ret_ty, .. } = fn_ty;
+            if let Type::Tuple(Tuple { ref mut elems, .. }) = **ret_ty {
+                for element in elems.iter_mut() {
+                    let span = element.span();
 
-                                match element.ty.normalize() {
-                                    Type::Keyword(KeywordType {
-                                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                        ..
-                                    })
-                                    | Type::Keyword(KeywordType {
-                                        kind: TsKeywordTypeKind::TsNullKeyword,
-                                        ..
-                                    }) => {}
-                                    _ => continue,
-                                }
-
-                                //if child.rule.no_implicit_any
-                                //    && child.span_allowed_implicit_any != f.span
-                                //{
-                                //    child.storage.report(Error::ImplicitAny {
-                                //        span: no_implicit_any_span.unwrap_or(span),
-                                //    });
-                                //}
-
-                                element.ty = box Type::any(
-                                    span,
-                                    KeywordTypeMetadata {
-                                        common: element.ty.metadata(),
-                                        ..Default::default()
-                                    },
-                                );
-                            }
-                        }
-
-                        _ => {}
+                    match element.ty.normalize() {
+                        Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            ..
+                        })
+                        | Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsNullKeyword,
+                            ..
+                        }) => {}
+                        _ => continue,
                     }
+
+                    //if child.rule.no_implicit_any
+                    //    && child.span_allowed_implicit_any != f.span
+                    //{
+                    //    child.storage.report(Error::ImplicitAny {
+                    //        span: no_implicit_any_span.unwrap_or(span),
+                    //    });
+                    //}
+
+                    element.ty = box Type::any(
+                        span,
+                        KeywordTypeMetadata {
+                            common: element.ty.metadata(),
+                            ..Default::default()
+                        },
+                    );
                 }
-            }
+            };
 
             if let Some(name) = name {
                 self.scope.declaring_fn = None;
@@ -503,8 +484,8 @@ impl Fold<Type> for TypeParamHandler<'_> {
             let ty: Type = ty.fold_children_with(self);
 
             match ty {
-                Type::Ref(ref r) if r.type_args.is_none() => match r.type_name {
-                    RTsEntityName::Ident(ref i) => {
+                Type::Ref(ref r) if r.type_args.is_none() => {
+                    if let RTsEntityName::Ident(ref i) = r.type_name {
                         //
                         for param in params {
                             if param.name == i {
@@ -512,8 +493,7 @@ impl Fold<Type> for TypeParamHandler<'_> {
                             }
                         }
                     }
-                    _ => {}
-                },
+                }
 
                 _ => {}
             }

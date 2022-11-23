@@ -4,7 +4,7 @@ use std::{collections::hash_map::Entry, mem::take, sync::Arc};
 
 use auto_impl::auto_impl;
 use fxhash::FxHashMap;
-use stc_ts_errors::{Error, Errors};
+use stc_ts_errors::{Error, ErrorKind, Errors};
 use stc_ts_types::{Id, ModuleId, ModuleTypeData, Type};
 use stc_utils::cache::Freeze;
 use swc_atoms::JsWord;
@@ -93,7 +93,7 @@ impl TypeStore for Single<'_> {
         ty.assert_clone_cheap();
 
         if should_override {
-            if self.info.exports.types.contains_key(&id.sym()) {
+            if self.info.exports.types.contains_key(id.sym()) {
                 self.info.exports.types.insert(id.sym().clone(), vec![ty.clone()]);
             }
             self.info.exports.private_types.insert(id, vec![ty]);
@@ -128,14 +128,8 @@ impl TypeStore for Single<'_> {
         debug_assert_eq!(ctxt, self.id);
 
         match self.info.exports.private_vars.get(&orig_name).cloned() {
-            Some(ty) => match self.info.exports.vars.insert(id.sym().clone(), ty) {
-                Some(..) => {}
-                None => {}
-            },
-            None => {
-                dbg!();
-                self.report(Error::NoSuchVar { span, name: id })
-            }
+            Some(ty) => if let Some(..) = self.info.exports.vars.insert(id.sym().clone(), ty) {},
+            None => self.report(ErrorKind::NoSuchVar { span, name: id }.into()),
         }
     }
 
@@ -144,12 +138,9 @@ impl TypeStore for Single<'_> {
 
         match self.info.exports.private_types.get(&id).cloned() {
             Some(ty) => {
-                *self.info.exports.types.entry(id.sym().clone()).or_default() = ty.clone();
+                *self.info.exports.types.entry(id.sym().clone()).or_default() = ty;
             }
-            None => {
-                dbg!();
-                self.report(Error::NoSuchVar { span, name: id })
-            }
+            None => self.report(ErrorKind::NoSuchVar { span, name: id }.into()),
         }
     }
 
@@ -163,7 +154,7 @@ impl TypeStore for Single<'_> {
             .map(|types| Type::new_intersection(DUMMY_SP, types.iter().cloned()).freezed());
 
         match ty {
-            Some(ty) => return Some(ty),
+            Some(ty) => Some(ty),
             None => self.parent?.get_local_type(ctxt, id),
         }
     }
@@ -172,7 +163,7 @@ impl TypeStore for Single<'_> {
         debug_assert_eq!(ctxt, self.id);
 
         match self.info.exports.private_vars.get(&id) {
-            Some(v) => return Some(v.clone()),
+            Some(v) => Some(v.clone()),
             None => self.parent?.get_local_var(ctxt, id),
         }
     }
@@ -255,7 +246,7 @@ impl ErrorStore for Group<'_> {
 impl TypeStore for Group<'_> {
     fn store_private_type(&mut self, ctxt: ModuleId, id: Id, ty: Type, should_override: bool) {
         if should_override {
-            if self.info.entry(ctxt).or_default().types.contains_key(&id.sym()) {
+            if self.info.entry(ctxt).or_default().types.contains_key(id.sym()) {
                 self.info.entry(ctxt).or_default().types.insert(id.sym().clone(), vec![ty.clone()]);
             }
 
@@ -287,7 +278,7 @@ impl TypeStore for Group<'_> {
             }
             None => {
                 dbg!();
-                self.report(Error::NoSuchVar { span, name: id })
+                self.report(ErrorKind::NoSuchVar { span, name: id }.into())
             }
         }
     }
@@ -298,7 +289,7 @@ impl TypeStore for Group<'_> {
             Some(v) => {
                 e.types.insert(id.sym().clone(), v.clone());
             }
-            None => self.report(Error::NoSuchType { span, name: id }),
+            None => self.report(ErrorKind::NoSuchType { span, name: id }.into()),
         }
     }
 

@@ -25,7 +25,7 @@ impl Analyzer<'_, '_> {
 
         // TODO: verify
 
-        return Ok(ty);
+        Ok(ty)
     }
 }
 
@@ -47,6 +47,6 @@ impl Analyzer<'_, '_> {
 
         let new = self.expand_generics_with_type_args(e.span, ty, &type_args)?;
 
-        return Ok(new);
+        Ok(new)
     }
 }

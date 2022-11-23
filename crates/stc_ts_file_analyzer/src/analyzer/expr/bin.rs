@@ -8,7 +8,7 @@ use stc_ts_ast_rnode::{
     RBinExpr, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl,
     RTsEntityName, RTsLit, RUnaryExpr,
 };
-use stc_ts_errors::{DebugExt, Error, Errors};
+use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_type_ops::{generalization::prevent_generalize, is_str_lit_or_union, Fix};
 use stc_ts_types::{
@@ -60,16 +60,8 @@ impl Analyzer<'_, '_> {
         let mut errors = vec![];
 
         let ctx = Ctx {
-            should_store_truthy_for_access: self.ctx.should_store_truthy_for_access
-                && match op {
-                    op!("&&") => true,
-                    _ => false,
-                },
-            in_cond: self.ctx.in_cond
-                || match op {
-                    op!("&&") | op!("||") => true,
-                    _ => false,
-                },
+            should_store_truthy_for_access: self.ctx.should_store_truthy_for_access && matches!(op, op!("&&")),
+            in_cond: self.ctx.in_cond || matches!(op, op!("&&") | op!("||")),
             check_for_implicit_any: true,
             ..self.ctx
         };
@@ -228,7 +220,7 @@ impl Analyzer<'_, '_> {
 
         let (mut lt, mut rt): (Type, Type) = match (lt, rt) {
             (Some(l), Some(r)) => (l, r),
-            _ => return Err(Error::Errors { span, errors }),
+            _ => return Err(ErrorKind::Errors { span, errors }.into()),
         };
         lt.make_clone_cheap();
         rt.make_clone_cheap();
@@ -265,7 +257,8 @@ impl Analyzer<'_, '_> {
                             ..
                         })
                 ) {
-                    self.storage.report(Error::UndefinedOrNullIsNotValidOperand { span: e.left.span() });
+                    self.storage
+                        .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: e.left.span() }.into());
                     reported_null_or_undefined = true;
                 }
 
@@ -278,7 +271,7 @@ impl Analyzer<'_, '_> {
                         })
                 ) {
                     self.storage
-                        .report(Error::UndefinedOrNullIsNotValidOperand { span: e.right.span() });
+                        .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: e.right.span() }.into());
                     reported_null_or_undefined = true;
                 }
             }
@@ -295,7 +288,7 @@ impl Analyzer<'_, '_> {
                     right: &**right,
                 };
 
-                self.add_type_facts_for_typeof(span, &left, &right, is_eq).report(&mut self.storage);
+                self.add_type_facts_for_typeof(span, left, right, is_eq).report(&mut self.storage);
 
                 // Try narrowing type
                 let c = Comparator {
@@ -305,22 +298,28 @@ impl Analyzer<'_, '_> {
 
                 if !self.is_valid_for_switch_case(span, &lt, &rt)? {
                     if self.ctx.in_switch_case_test {
-                        self.storage.report(Error::SwitchCaseTestNotCompatible {
-                            span,
-                            disc: box lt.clone(),
-                            test: box rt.clone(),
-                        })
+                        self.storage.report(
+                            ErrorKind::SwitchCaseTestNotCompatible {
+                                span,
+                                disc: box lt.clone(),
+                                test: box rt.clone(),
+                            }
+                            .into(),
+                        )
                     } else {
-                        self.storage.report(Error::NoOverlap {
-                            span,
-                            value: true,
-                            left: box lt.clone(),
-                            right: box rt.clone(),
-                        })
+                        self.storage.report(
+                            ErrorKind::NoOverlap {
+                                span,
+                                value: true,
+                                left: box lt.clone(),
+                                right: box rt.clone(),
+                            }
+                            .into(),
+                        )
                     }
                 }
 
-                match c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match *l_ty {
+                if let Some((Ok(name), ty)) = c.take_if_any_matches(|(l, l_ty), (_, r_ty)| match *l_ty {
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUnknownKeyword,
                         ..
@@ -330,21 +329,18 @@ impl Analyzer<'_, '_> {
                     }
                     _ => None,
                 }) {
-                    Some((Ok(name), ty)) => {
-                        let ty = ty.clone().freezed();
-                        if is_eq {
-                            self.add_deep_type_fact(span, name.clone(), ty.clone(), false);
-                        } else {
-                            self.add_deep_type_fact(span, name.clone(), ty.clone(), true);
-                        }
+                    let ty = ty.clone().freezed();
+                    if is_eq {
+                        self.add_deep_type_fact(span, name, ty, false);
+                    } else {
+                        self.add_deep_type_fact(span, name, ty, true);
                     }
-                    _ => {}
                 }
 
-                self.add_type_facts_for_opt_chains(span, &left, &right, &lt, &rt)
+                self.add_type_facts_for_opt_chains(span, left, right, &lt, &rt)
                     .report(&mut self.storage);
 
-                match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
+                if let Some((l, r_ty)) = c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
                     (
                         RExpr::Ident(RIdent {
                             sym: js_word!("undefined"),
@@ -356,40 +352,40 @@ impl Analyzer<'_, '_> {
 
                     (l, r) => Some((extract_name_for_assignment(l, op == op!("==="))?, r_ty)),
                 }) {
-                    Some((l, r_ty)) => {
-                        if self.ctx.in_cond {
-                            let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
-                            prevent_generalize(&mut r);
-                            r.make_clone_cheap();
+                    if self.ctx.in_cond {
+                        let (name, mut r) = self.calc_type_facts_for_equality(l, r_ty)?;
+                        prevent_generalize(&mut r);
+                        r.make_clone_cheap();
 
-                            if op == op!("===") {
-                                self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(r.clone());
+                        if op == op!("===") {
+                            self.cur_facts.false_facts.excludes.entry(name.clone()).or_default().push(r.clone());
 
-                                self.add_deep_type_fact(span, name, r, true);
-                            } else if !is_eq {
-                                // Remove from union
-                                self.cur_facts.true_facts.excludes.entry(name.clone()).or_default().push(r.clone());
+                            self.add_deep_type_fact(span, name, r, true);
+                        } else if !is_eq {
+                            // Remove from union
+                            self.cur_facts.true_facts.excludes.entry(name.clone()).or_default().push(r.clone());
 
-                                self.add_deep_type_fact(span, name, r, false);
-                            }
+                            self.add_deep_type_fact(span, name, r, false);
                         }
                     }
-                    _ => {}
                 }
             }
 
             op!("instanceof") => {
-                match **left {
-                    RExpr::Ident(ref i) => {
+                if !self.is_builtin {
+                    if let Ok(name) = Name::try_from(&**left) {
                         // typeGuardsTypeParameters.ts says
                         //
                         // Type guards involving type parameters produce intersection types
-                        let mut orig_ty = self.type_of_var(i, TypeOfMode::RValue, None)?;
+                        let mut orig_ty = self.type_of_name(span, name.as_ids(), TypeOfMode::RValue, None)?;
                         if !self.is_valid_lhs_of_instanceof(span, &orig_ty) {
-                            self.storage.report(Error::InvalidLhsInInstanceOf {
-                                ty: box lt.clone(),
-                                span: left.span(),
-                            })
+                            self.storage.report(
+                                ErrorKind::InvalidLhsInInstanceOf {
+                                    ty: box lt.clone(),
+                                    span: left.span(),
+                                }
+                                .into(),
+                            )
                         }
                         orig_ty.make_clone_cheap();
 
@@ -403,16 +399,16 @@ impl Analyzer<'_, '_> {
                         // `can't narrow type from 'any' to 'Object'`
                         // `can't narrow type from 'any' to 'Function'
                         let cannot_narrow = orig_ty.is_any()
-                            && match &**right {
+                            && matches!(
+                                &**right,
                                 RExpr::Ident(RIdent {
-                                    sym: js_word!("Object"), ..
+                                    sym: js_word!("Object"),
+                                    ..
+                                }) | RExpr::Ident(RIdent {
+                                    sym: js_word!("Function"),
+                                    ..
                                 })
-                                | RExpr::Ident(RIdent {
-                                    sym: js_word!("Function"), ..
-                                }) => true,
-
-                                _ => false,
-                            };
+                            );
 
                         if self.ctx.in_cond && !cannot_narrow {
                             let narrowed_ty = self
@@ -425,7 +421,7 @@ impl Analyzer<'_, '_> {
                             // TODO(kdy1): Maybe we need to check for intersection or union
                             if orig_ty.is_type_param() {
                                 self.cur_facts.true_facts.vars.insert(
-                                    Name::from(i),
+                                    name,
                                     Type::Intersection(Intersection {
                                         span,
                                         types: vec![orig_ty, narrowed_ty],
@@ -435,19 +431,12 @@ impl Analyzer<'_, '_> {
                                     .freezed(),
                                 );
                             } else {
-                                self.cur_facts.true_facts.vars.insert(Name::from(i), narrowed_ty.clone());
+                                self.cur_facts.true_facts.vars.insert(name.clone(), narrowed_ty.clone());
 
-                                self.cur_facts
-                                    .false_facts
-                                    .excludes
-                                    .entry(Name::from(i))
-                                    .or_default()
-                                    .push(narrowed_ty);
+                                self.cur_facts.false_facts.excludes.entry(name).or_default().push(narrowed_ty);
                             }
                         }
                     }
-
-                    _ => {}
                 }
             }
 
@@ -466,7 +455,7 @@ impl Analyzer<'_, '_> {
                         ..
                     }) => {
                         debug_assert!(!span.is_dummy());
-                        return Err(Error::Unknown { span });
+                        return Err(ErrorKind::Unknown { span }.into());
                     }
                     _ => {}
                 }
@@ -491,7 +480,7 @@ impl Analyzer<'_, '_> {
                     _ => None,
                 }) {
                     debug_assert!(!span.is_dummy());
-                    return Err(Error::Unknown { span });
+                    return Err(ErrorKind::Unknown { span }.into());
                 }
 
                 if lt.is_num() && rt.is_num() {
@@ -539,25 +528,25 @@ impl Analyzer<'_, '_> {
                 }
 
                 if c.any(|(_, ty)| ty.is_kwd(TsKeywordTypeKind::TsUndefinedKeyword) || ty.is_kwd(TsKeywordTypeKind::TsNullKeyword)) {
-                    return Err(Error::TS2365 { span });
+                    return Err(ErrorKind::TS2365 { span }.into());
                 }
 
                 // Rule:
                 //  - null is invalid operand
                 //  - undefined is invalid operand
-                if c.both(|(_, ty)| match *ty {
-                    Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                        ..
-                    })
-                    | Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsNullKeyword,
-                        ..
-                    }) => true,
-
-                    _ => false,
+                if c.both(|(_, ty)| {
+                    matches!(
+                        *ty,
+                        Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            ..
+                        }) | Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsNullKeyword,
+                            ..
+                        })
+                    )
                 }) {
-                    return Err(Error::TS2365 { span });
+                    return Err(ErrorKind::TS2365 { span }.into());
                 }
 
                 if is_str_like_for_addition(&lt) || is_str_like_for_addition(&rt) {
@@ -579,21 +568,22 @@ impl Analyzer<'_, '_> {
                     }));
                 }
 
-                return Err(Error::InvalidBinaryOp {
+                Err(ErrorKind::InvalidBinaryOp {
                     span,
                     op,
                     left: box lt,
                     right: box rt,
-                });
+                }
+                .into())
             }
             op!("*") | op!("/") => {
                 no_unknown!();
 
-                return Ok(Type::Keyword(KeywordType {
+                Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     metadata: Default::default(),
-                }));
+                }))
             }
 
             op!(bin, "-") | op!("<<") | op!(">>") | op!(">>>") | op!("%") | op!("|") | op!("&") | op!("^") | op!("**") => {
@@ -604,7 +594,7 @@ impl Analyzer<'_, '_> {
                     let rt = rt.normalize();
 
                     if !reported_null_or_undefined {
-                        self.report_possibly_null_or_undefined(lt.span(), &lt).report(&mut self.storage);
+                        self.report_possibly_null_or_undefined(lt.span(), lt).report(&mut self.storage);
                     }
 
                     if lt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
@@ -615,11 +605,11 @@ impl Analyzer<'_, '_> {
                         || lt.is_interface()
                         || lt.is_tpl()
                     {
-                        self.storage.report(Error::WrongTypeForLhsOfNumericOperation { span });
+                        self.storage.report(ErrorKind::WrongTypeForLhsOfNumericOperation { span }.into());
                     }
 
                     if !reported_null_or_undefined {
-                        self.report_possibly_null_or_undefined(rt.span(), &rt).report(&mut self.storage);
+                        self.report_possibly_null_or_undefined(rt.span(), rt).report(&mut self.storage);
                     }
 
                     if rt.is_kwd(TsKeywordTypeKind::TsVoidKeyword)
@@ -630,38 +620,39 @@ impl Analyzer<'_, '_> {
                         || rt.is_interface()
                         || rt.is_tpl()
                     {
-                        self.storage.report(Error::WrongTypeForRhsOfNumericOperation { span });
+                        self.storage.report(ErrorKind::WrongTypeForRhsOfNumericOperation { span }.into());
                     }
                 }
 
-                return Ok(Type::Keyword(KeywordType {
+                Ok(Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     span,
                     metadata: Default::default(),
-                }));
+                }))
             }
 
-            op!("===") | op!("!==") | op!("!=") | op!("==") => {
-                return Ok(Type::Keyword(KeywordType {
-                    span,
-                    kind: TsKeywordTypeKind::TsBooleanKeyword,
-                    metadata: Default::default(),
-                }));
-            }
+            op!("===") | op!("!==") | op!("!=") | op!("==") => Ok(Type::Keyword(KeywordType {
+                span,
+                kind: TsKeywordTypeKind::TsBooleanKeyword,
+                metadata: Default::default(),
+            })),
 
             op!("instanceof") => {
                 if !self.is_valid_lhs_of_instanceof(span, &lt) {
-                    self.storage.report(Error::InvalidLhsInInstanceOf {
-                        ty: box lt.clone(),
-                        span: left.span(),
-                    })
+                    self.storage.report(
+                        ErrorKind::InvalidLhsInInstanceOf {
+                            ty: box lt.clone(),
+                            span: left.span(),
+                        }
+                        .into(),
+                    )
                 }
 
-                return Ok(Type::Keyword(KeywordType {
+                Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
-                }));
+                }))
             }
 
             op!("<=") | op!("<") | op!(">=") | op!(">") => {
@@ -681,11 +672,11 @@ impl Analyzer<'_, '_> {
                     self.validate_relative_comparison_operands(span, op, &lt, &rt);
                 }
 
-                return Ok(Type::Keyword(KeywordType {
+                Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
-                }));
+                }))
             }
 
             op!("in") => {
@@ -703,16 +694,16 @@ impl Analyzer<'_, '_> {
                         if let Some(property) = left {
                             let new_ty = self.filter_types_with_property(span, &rt, &property, None)?.fixed().freezed();
 
-                            self.add_deep_type_fact(span, name.clone(), new_ty.clone(), true);
+                            self.add_deep_type_fact(span, name, new_ty, true);
                         }
                     }
                 }
 
-                return Ok(Type::Keyword(KeywordType {
+                Ok(Type::Keyword(KeywordType {
                     span,
                     kind: TsKeywordTypeKind::TsBooleanKeyword,
                     metadata: Default::default(),
-                }));
+                }))
             }
 
             op!("||") | op!("&&") => {
@@ -724,11 +715,7 @@ impl Analyzer<'_, '_> {
                     return Ok(lt);
                 }
 
-                let can_generalize = type_ann.is_none()
-                    && match (&**left, &**right) {
-                        (_, RExpr::Ident(..)) => false,
-                        _ => true,
-                    };
+                let can_generalize = type_ann.is_none() && !matches!((&**left, &**right), (_, RExpr::Ident(..)));
 
                 if self.ctx.can_generalize_literals() && (can_generalize || self.may_generalize(&lt)) {
                     lt = lt.generalize_lit();
@@ -743,13 +730,12 @@ impl Analyzer<'_, '_> {
                     return Ok(lt);
                 }
 
-                match lt.normalize() {
-                    Type::Keyword(KeywordType {
-                        kind: TsKeywordTypeKind::TsAnyKeyword,
-                        ..
-                    }) => return Ok(Type::any(span, Default::default())),
-
-                    _ => {}
+                if let Type::Keyword(KeywordType {
+                    kind: TsKeywordTypeKind::TsAnyKeyword,
+                    ..
+                }) = lt.normalize()
+                {
+                    return Ok(Type::any(span, Default::default()));
                 }
 
                 match op {
@@ -792,7 +778,7 @@ impl Analyzer<'_, '_> {
 
                     _ => unreachable!(),
                 }
-                return Ok(rt);
+                Ok(rt)
             }
 
             op!("??") => {
@@ -831,12 +817,13 @@ impl Analyzer<'_, '_> {
         let c = Comparator { left: l, right: r };
 
         // Check typeof a === 'string'
-        match c.take_if_any_matches(|l, r| match l {
-            RExpr::Unary(RUnaryExpr {
+        if let Some((Ok(name), (Some(t), Some(f)))) = c.take_if_any_matches(|l, r| {
+            if let RExpr::Unary(RUnaryExpr {
                 op: op!("typeof"),
                 ref arg,
                 ..
-            }) => {
+            }) = l
+            {
                 //
                 let name = Name::try_from(&**arg);
                 info!("cond_facts: typeof {:?}", name);
@@ -846,31 +833,38 @@ impl Analyzer<'_, '_> {
                         Some((
                             name,
                             if is_eq {
-                                (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
+                                (TypeFacts::typeof_eq(value), TypeFacts::typeof_neq(value))
                             } else {
-                                (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
+                                (TypeFacts::typeof_neq(value), TypeFacts::typeof_eq(value))
                             },
                         ))
                     }
                     RExpr::Lit(RLit::Str(RStr { ref value, .. })) => Some((
                         name,
                         if is_eq {
-                            (TypeFacts::typeof_eq(&*value), TypeFacts::typeof_neq(&*value))
+                            (TypeFacts::typeof_eq(value), TypeFacts::typeof_neq(value))
                         } else {
-                            (TypeFacts::typeof_neq(&*value), TypeFacts::typeof_eq(&*value))
+                            (TypeFacts::typeof_neq(value), TypeFacts::typeof_eq(value))
                         },
                     )),
                     _ => None,
                 }
+            } else {
+                None
             }
-            _ => None,
         }) {
-            Some((Ok(name), (Some(t), Some(f)))) => {
-                // Add type facts
-                self.cur_facts.true_facts.facts.insert(name.clone(), t);
-                self.cur_facts.false_facts.facts.insert(name.clone(), f);
+            // If typeof foo.bar is `string`, `foo` cannot be undefined nor null
+            if t != TypeFacts::EQUndefined {
+                for idx in 1..name.as_ids().len() {
+                    let sub = Name::from(&name.as_ids()[..idx]);
+
+                    self.cur_facts.true_facts.facts.insert(sub.clone(), TypeFacts::NEUndefinedOrNull);
+                }
             }
-            _ => {}
+
+            // Add type facts
+            self.cur_facts.true_facts.facts.insert(name.clone(), t);
+            self.cur_facts.false_facts.facts.insert(name, f);
         }
 
         Ok(())
@@ -931,7 +925,7 @@ impl Analyzer<'_, '_> {
             right: (r, rt),
         };
 
-        match c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
+        if let Some((names, r_ty)) = c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
             (
                 RExpr::Ident(RIdent {
                     sym: js_word!("undefined"),
@@ -950,14 +944,11 @@ impl Analyzer<'_, '_> {
                 Some((names, r_ty))
             }
         }) {
-            Some((names, r_ty)) => {
-                if !self.can_be_undefined(span, &r_ty)? {
-                    for name in names {
-                        self.cur_facts.false_facts.facts.insert(name.clone(), TypeFacts::NEUndefined);
-                    }
+            if !self.can_be_undefined(span, r_ty)? {
+                for name in names {
+                    self.cur_facts.false_facts.facts.insert(name.clone(), TypeFacts::NEUndefined);
                 }
             }
-            _ => {}
         }
 
         // TODO
@@ -984,8 +975,8 @@ impl Analyzer<'_, '_> {
 
         self.has_overlap(
             span,
-            &disc_ty,
-            &case_ty,
+            disc_ty,
+            case_ty,
             CastableOpts {
                 allow_assignment_to_param_constraint: true,
                 ..Default::default()
@@ -1031,25 +1022,21 @@ impl Analyzer<'_, '_> {
 
         let _stack = stack::track(span)?;
 
-        match orig_ty.normalize() {
-            Type::Union(orig) => {
-                let mut new_types = orig
-                    .types
-                    .iter()
-                    .map(|orig_ty| self.narrow_with_instanceof(span, ty.clone(), orig_ty))
-                    .collect::<Result<Vec<_>, _>>()?;
+        if let Type::Union(orig) = orig_ty.normalize() {
+            let mut new_types = orig
+                .types
+                .iter()
+                .map(|orig_ty| self.narrow_with_instanceof(span, ty.clone(), orig_ty))
+                .collect::<Result<Vec<_>, _>>()?;
 
-                new_types.retain(|ty| !ty.is_never());
+            new_types.retain(|ty| !ty.is_never());
 
-                return Ok(Type::Union(Union {
-                    span: orig.span,
-                    types: new_types,
-                    metadata: orig.metadata,
-                })
-                .fixed());
-            }
-
-            _ => {}
+            return Ok(Type::Union(Union {
+                span: orig.span,
+                types: new_types,
+                metadata: orig.metadata,
+            })
+            .fixed());
         }
 
         if orig_ty.is_kwd(TsKeywordTypeKind::TsStringKeyword)
@@ -1077,15 +1064,12 @@ impl Analyzer<'_, '_> {
                 // Find constructor signature
                 if let Some(ty) = self.convert_type_to_type_lit(span, Cow::Borrowed(&ty))? {
                     for m in &ty.members {
-                        match m {
-                            TypeElement::Constructor(c) => {
-                                if let Some(ret_ty) = &c.ret_ty {
-                                    return self
-                                        .narrow_with_instanceof(span, Cow::Borrowed(&ret_ty), &orig_ty)
-                                        .context("tried to narrow consturctor return type");
-                                }
+                        if let TypeElement::Constructor(c) = m {
+                            if let Some(ret_ty) = &c.ret_ty {
+                                return self
+                                    .narrow_with_instanceof(span, Cow::Borrowed(ret_ty), &orig_ty)
+                                    .context("tried to narrow consturctor return type");
                             }
-                            _ => {}
                         }
                     }
                 }
@@ -1103,21 +1087,17 @@ impl Analyzer<'_, '_> {
             },
         ) {
             if v {
-                match orig_ty.normalize() {
-                    Type::ClassDef(def) => {
-                        return Ok(Type::Class(Class {
-                            span,
-                            def: box def.clone(),
-                            metadata: Default::default(),
-                        }))
-                    }
-                    _ => {}
+                if let Type::ClassDef(def) = orig_ty.normalize() {
+                    return Ok(Type::Class(Class {
+                        span,
+                        def: box def.clone(),
+                        metadata: Default::default(),
+                    }));
                 }
                 return Ok(orig_ty.into_owned());
             } else {
-                match (orig_ty.normalize(), ty.normalize()) {
-                    (Type::Interface(..), Type::Interface(..)) => return Ok(ty.into_owned()),
-                    _ => {}
+                if let (Type::Interface(..), Type::Interface(..)) = (orig_ty.normalize(), ty.normalize()) {
+                    return Ok(ty.into_owned());
                 }
 
                 if !self
@@ -1143,15 +1123,12 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match ty.normalize() {
-            Type::ClassDef(def) => {
-                return Ok(Type::Class(Class {
-                    span,
-                    def: box def.clone(),
-                    metadata: Default::default(),
-                }))
-            }
-            _ => {}
+        if let Type::ClassDef(def) = ty.normalize() {
+            return Ok(Type::Class(Class {
+                span,
+                def: box def.clone(),
+                metadata: Default::default(),
+            }));
         }
         Ok(ty.into_owned())
     }
@@ -1183,8 +1160,8 @@ impl Analyzer<'_, '_> {
                             (TypeElement::Index(lm), TypeElement::Index(rm)) if lm.params.type_eq(&rm.params) => {
                                 if let Some(lt) = &lm.type_ann {
                                     if let Some(rt) = &rm.type_ann {
-                                        if self.assign(span, &mut Default::default(), &lt, &rt).is_ok()
-                                            || self.assign(span, &mut Default::default(), &rt, &lt).is_ok()
+                                        if self.assign(span, &mut Default::default(), lt, rt).is_ok()
+                                            || self.assign(span, &mut Default::default(), rt, lt).is_ok()
                                         {
                                             continue;
                                         }
@@ -1195,12 +1172,15 @@ impl Analyzer<'_, '_> {
                                     continue;
                                 }
                                 //
-                                self.storage.report(Error::CannotCompareWithOp {
-                                    span,
-                                    op,
-                                    left: box l.clone(),
-                                    right: box r.clone(),
-                                });
+                                self.storage.report(
+                                    ErrorKind::CannotCompareWithOp {
+                                        span,
+                                        op,
+                                        left: box l.clone(),
+                                        right: box r.clone(),
+                                    }
+                                    .into(),
+                                );
                                 return;
                             }
                             _ => {}
@@ -1222,24 +1202,27 @@ impl Analyzer<'_, '_> {
 
         macro_rules! error {
             () => {{
-                self.storage.report(Error::CannotCompareWithOp {
-                    span,
-                    op,
-                    left: box l.clone(),
-                    right: box r.clone(),
-                });
+                self.storage.report(
+                    ErrorKind::CannotCompareWithOp {
+                        span,
+                        op,
+                        left: box l.clone(),
+                        right: box r.clone(),
+                    }
+                    .into(),
+                );
                 return Ok(());
             }};
         }
 
         {
             if l.is_symbol_like() {
-                self.storage.report(Error::NumericOpToSymbol { span: l.span() });
+                self.storage.report(ErrorKind::NumericOpToSymbol { span: l.span() }.into());
                 return Ok(());
             }
 
             if r.is_symbol_like() {
-                self.storage.report(Error::NumericOpToSymbol { span: r.span() });
+                self.storage.report(ErrorKind::NumericOpToSymbol { span: r.span() }.into());
                 return Ok(());
             }
         }
@@ -1321,7 +1304,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        if self.has_overlap(span, &l, &r, Default::default())? {
+        if self.has_overlap(span, l, r, Default::default())? {
             return Ok(());
         }
 
@@ -1333,46 +1316,42 @@ impl Analyzer<'_, '_> {
     fn can_compare_type_elements_relatively(&mut self, span: Span, l: &[TypeElement], r: &[TypeElement]) -> VResult<Option<bool>> {
         for lm in l {
             for rm in r {
-                match (lm, rm) {
-                    (TypeElement::Method(lm), TypeElement::Method(rm)) => {
-                        if let Ok(()) = self.assign(span, &mut Default::default(), &lm.key.ty(), &rm.key.ty()) {
-                            if lm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
-                                != rm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
-                            {
-                                return Ok(Some(true));
-                            }
+                if let (TypeElement::Method(lm), TypeElement::Method(rm)) = (lm, rm) {
+                    if let Ok(()) = self.assign(span, &mut Default::default(), &lm.key.ty(), &rm.key.ty()) {
+                        if lm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
+                            != rm.type_params.as_ref().map(|v| v.params.len()).unwrap_or(0)
+                        {
+                            return Ok(Some(true));
+                        }
 
-                            let params_res = self.assign_params(
+                        let params_res = self.assign_params(
+                            &mut Default::default(),
+                            &lm.params,
+                            &rm.params,
+                            AssignOpts {
+                                span,
+                                ..Default::default()
+                            },
+                        );
+
+                        if params_res.is_err() {
+                            return Ok(Some(true));
+                        }
+
+                        let ret_ty_res = match (lm.ret_ty.as_deref(), rm.ret_ty.as_deref()) {
+                            (Some(lt), Some(rt)) => self.assign_with_opts(
                                 &mut Default::default(),
-                                &lm.params,
-                                &rm.params,
+                                lt,
+                                rt,
                                 AssignOpts {
                                     span,
+                                    allow_unknown_rhs: Some(true),
                                     ..Default::default()
                                 },
-                            );
-
-                            if params_res.is_err() {
-                                return Ok(Some(true));
-                            }
-
-                            let ret_ty_res = match (lm.ret_ty.as_deref(), rm.ret_ty.as_deref()) {
-                                (Some(lt), Some(rt)) => self.assign_with_opts(
-                                    &mut Default::default(),
-                                    &lt,
-                                    &rt,
-                                    AssignOpts {
-                                        span,
-                                        allow_unknown_rhs: Some(true),
-                                        ..Default::default()
-                                    },
-                                ),
-                                _ => Ok(()),
-                            };
-                        }
+                            ),
+                            _ => Ok(()),
+                        };
                     }
-
-                    _ => {}
                 }
             }
         }
@@ -1445,17 +1424,23 @@ impl Analyzer<'_, '_> {
                 ..
             })
             | Type::Symbol(..) => {
-                self.storage.report(Error::InvalidRhsInInstanceOf {
-                    span,
-                    ty: box type_for_error.clone(),
-                });
+                self.storage.report(
+                    ErrorKind::InvalidRhsInInstanceOf {
+                        span,
+                        ty: box type_for_error.clone(),
+                    }
+                    .into(),
+                );
             }
 
             Type::TypeLit(e) if e.members.is_empty() => {
-                self.storage.report(Error::InvalidRhsInInstanceOf {
-                    span,
-                    ty: box type_for_error.clone(),
-                });
+                self.storage.report(
+                    ErrorKind::InvalidRhsInInstanceOf {
+                        span,
+                        ty: box type_for_error.clone(),
+                    }
+                    .into(),
+                );
             }
 
             Type::Union(u) => {
@@ -1490,10 +1475,13 @@ impl Analyzer<'_, '_> {
                     }),
                     &ty,
                 ) {
-                    self.storage.report(Error::InvalidRhsInInstanceOf {
-                        span,
-                        ty: box type_for_error.clone(),
-                    });
+                    self.storage.report(
+                        ErrorKind::InvalidRhsInInstanceOf {
+                            span,
+                            ty: box type_for_error.clone(),
+                        }
+                        .into(),
+                    );
                 }
             }
 
@@ -1540,32 +1528,26 @@ impl Analyzer<'_, '_> {
         let ty = self.type_of_name(span, &name.as_ids()[..name.len() - 1], TypeOfMode::RValue, None)?;
         let ty = self.expand_top_ref(span, Cow::Owned(ty), Default::default())?.into_owned();
 
-        match ty.normalize() {
-            Type::Union(u) => {
-                let mut candidates = vec![];
-                for ty in &u.types {
-                    let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
+        if let Type::Union(u) = ty.normalize() {
+            let mut candidates = vec![];
+            for ty in &u.types {
+                let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
 
-                    match prop_res {
-                        Ok(prop_ty) => {
-                            let prop_ty = self.expand_top_ref(prop_ty.span(), Cow::Owned(prop_ty), Default::default())?;
-                            let possible = match prop_ty.normalize() {
-                                // Type parameters might have same value.
-                                Type::Param(..) => true,
-                                _ => prop_ty.type_eq(equals_to),
-                            };
-                            if possible {
-                                candidates.push(ty.clone())
-                            }
-                        }
-                        _ => {}
+                if let Ok(prop_ty) = prop_res {
+                    let prop_ty = self.expand_top_ref(prop_ty.span(), Cow::Owned(prop_ty), Default::default())?;
+                    let possible = match prop_ty.normalize() {
+                        // Type parameters might have same value.
+                        Type::Param(..) => true,
+                        _ => prop_ty.type_eq(equals_to),
+                    };
+                    if possible {
+                        candidates.push(ty.clone())
                     }
                 }
-                let actual = Name::from(&name.as_ids()[..name.len() - 1]);
-
-                return Ok((actual, Type::union(candidates)));
             }
-            _ => {}
+            let actual = Name::from(&name.as_ids()[..name.len() - 1]);
+
+            return Ok((actual, Type::union(candidates)));
         }
 
         Ok((name, eq_ty.clone()))
@@ -1581,7 +1563,7 @@ impl Analyzer<'_, '_> {
     fn narrow_with_equality(&mut self, orig_ty: &Type, equals_to: &Type) -> VResult<Type> {
         let span = equals_to.span();
 
-        if orig_ty.type_eq(&equals_to) {
+        if orig_ty.type_eq(equals_to) {
             return Ok(orig_ty.clone());
         }
 
@@ -1593,32 +1575,29 @@ impl Analyzer<'_, '_> {
         }
 
         // Exclude nevers.
-        match &*orig_ty {
-            Type::Union(orig) => {
-                let mut types = vec![];
-                // We
-                for orig in &orig.types {
-                    let new_ty = self
-                        .narrow_with_equality(&orig, &equals_to)
-                        .context("tried to narrow element of a union type")?;
+        if let Type::Union(orig) = &*orig_ty {
+            let mut types = vec![];
+            // We
+            for orig in &orig.types {
+                let new_ty = self
+                    .narrow_with_equality(orig, &equals_to)
+                    .context("tried to narrow element of a union type")?;
 
-                    if new_ty.is_never() {
-                        continue;
-                    }
-                    types.push(new_ty);
+                if new_ty.is_never() {
+                    continue;
                 }
-
-                return Ok(Type::Union(Union {
-                    span,
-                    types,
-                    metadata: UnionMetadata {
-                        common: equals_to.metadata(),
-                        ..Default::default()
-                    },
-                })
-                .fixed());
+                types.push(new_ty);
             }
-            _ => {}
+
+            return Ok(Type::Union(Union {
+                span,
+                types,
+                metadata: UnionMetadata {
+                    common: equals_to.metadata(),
+                    ..Default::default()
+                },
+            })
+            .fixed());
         }
 
         // At here two variants are different from each other because we checked with
@@ -1652,20 +1631,22 @@ impl Analyzer<'_, '_> {
                 // validation of types is required to compute type of the
                 // expression.
             }
-            op!("||") | op!("&&") => match lt.normalize() {
-                Type::Keyword(KeywordType {
+            op!("||") | op!("&&") => {
+                if let Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
-                }) => errors.push(Error::TS1345 { span }),
-                _ => {}
-            },
+                }) = lt.normalize()
+                {
+                    errors.push(ErrorKind::TS1345 { span }.into())
+                }
+            }
 
             op!("*") | op!("/") | op!("%") | op!(bin, "-") | op!("<<") | op!(">>") | op!(">>>") | op!("&") | op!("^") | op!("|") => {
                 let mut check = |ty: &Type, is_left| {
                     if ty.is_any() {
                         return;
                     }
-                    if self.can_be_casted_to_number_in_rhs(ty.span(), &ty) {
+                    if self.can_be_casted_to_number_in_rhs(ty.span(), ty) {
                         return;
                     }
 
@@ -1677,35 +1658,33 @@ impl Analyzer<'_, '_> {
                         }) => {}
 
                         _ => errors.push(if is_left {
-                            Error::WrongTypeForLhsOfNumericOperation { span: ty.span() }
+                            ErrorKind::WrongTypeForLhsOfNumericOperation { span: ty.span() }.into()
                         } else {
-                            Error::WrongTypeForRhsOfNumericOperation { span: ty.span() }
+                            ErrorKind::WrongTypeForRhsOfNumericOperation { span: ty.span() }.into()
                         }),
                     }
                 };
 
                 if (op == op!("&") || op == op!("^") || op == op!("|"))
-                    && match lt.normalize() {
+                    && matches!(
+                        lt.normalize(),
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsBooleanKeyword,
                             ..
-                        })
-                        | Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => true,
-                        _ => false,
-                    }
-                    && match rt.normalize() {
+                        }) | Type::Lit(LitType { lit: RTsLit::Bool(..), .. })
+                    )
+                    && matches!(
+                        rt.normalize(),
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsBooleanKeyword,
                             ..
-                        })
-                        | Type::Lit(LitType { lit: RTsLit::Bool(..), .. }) => true,
-                        _ => false,
-                    }
+                        }) | Type::Lit(LitType { lit: RTsLit::Bool(..), .. })
+                    )
                 {
-                    errors.push(Error::TS2447 { span });
+                    errors.push(ErrorKind::TS2447 { span }.into());
                 } else {
-                    check(&lt, true);
-                    check(&rt, false);
+                    check(lt, true);
+                    check(rt, false);
                 }
             }
 
@@ -1715,19 +1694,19 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
                     }) => {
-                        self.storage.report(Error::ObjectIsPossiblyNull { span });
+                        self.storage.report(ErrorKind::ObjectIsPossiblyNull { span }.into());
                     }
 
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         ..
                     }) => {
-                        self.storage.report(Error::ObjectIsPossiblyUndefined { span });
+                        self.storage.report(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
                     }
 
                     ty => {
-                        if !self.is_valid_lhs_of_in(&ty) {
-                            errors.push(Error::TS2360 { span: ls });
+                        if !self.is_valid_lhs_of_in(ty) {
+                            errors.push(ErrorKind::TS2360 { span: ls }.into());
                         }
                     }
                 }
@@ -1737,22 +1716,25 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
                     }) => {
-                        self.storage.report(Error::ObjectIsPossiblyNull { span });
+                        self.storage.report(ErrorKind::ObjectIsPossiblyNull { span }.into());
                     }
 
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         ..
                     }) => {
-                        self.storage.report(Error::ObjectIsPossiblyUndefined { span });
+                        self.storage.report(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
                     }
 
                     _ => {
-                        if !self.is_valid_rhs_of_in(rs, &rt) {
-                            errors.push(Error::InvalidRhsForInOperator {
-                                span: rs,
-                                ty: box rt.clone(),
-                            })
+                        if !self.is_valid_rhs_of_in(rs, rt) {
+                            errors.push(
+                                ErrorKind::InvalidRhsForInOperator {
+                                    span: rs,
+                                    ty: box rt.clone(),
+                                }
+                                .into(),
+                            )
                         }
                     }
                 }
@@ -1810,7 +1792,7 @@ impl Analyzer<'_, '_> {
             | Type::Symbol(..)
             | Type::Tpl(..) => true,
 
-            Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_lhs_of_in(&ty)),
+            Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_lhs_of_in(ty)),
 
             _ => false,
         }
@@ -1848,7 +1830,7 @@ impl Analyzer<'_, '_> {
                 kind: TsKeywordTypeKind::TsObjectKeyword,
                 ..
             }) => true,
-            Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_rhs_of_in(span, &ty)),
+            Type::Union(ref u) => u.types.iter().all(|ty| self.is_valid_rhs_of_in(span, ty)),
 
             _ => false,
         }
@@ -1858,22 +1840,16 @@ impl Analyzer<'_, '_> {
     fn report_errors_for_mixed_nullish_coalescing(&mut self, e: &RBinExpr) {
         fn search(span: Span, op: BinaryOp, operand: &RExpr) -> VResult<()> {
             if op == op!("??") {
-                match operand {
-                    RExpr::Bin(bin) => {
-                        if bin.op == op!("||") || bin.op == op!("&&") {
-                            return Err(Error::NullishCoalescingMixedWithLogicalWithoutParen { span });
-                        }
+                if let RExpr::Bin(bin) = operand {
+                    if bin.op == op!("||") || bin.op == op!("&&") {
+                        return Err(ErrorKind::NullishCoalescingMixedWithLogicalWithoutParen { span }.into());
                     }
-                    _ => {}
                 }
             } else if op == op!("||") || op == op!("&&") {
-                match operand {
-                    RExpr::Bin(bin) => {
-                        if bin.op == op!("??") {
-                            return Err(Error::NullishCoalescingMixedWithLogicalWithoutParen { span });
-                        }
+                if let RExpr::Bin(bin) = operand {
+                    if bin.op == op!("??") {
+                        return Err(ErrorKind::NullishCoalescingMixedWithLogicalWithoutParen { span }.into());
                     }
-                    _ => {}
                 }
             }
 
@@ -1922,8 +1898,8 @@ fn is_str_like_for_addition(t: &Type) -> bool {
             kind: TsKeywordTypeKind::TsStringKeyword,
             ..
         }) => true,
-        Type::Intersection(Intersection { types, .. }) => types.iter().any(|ty| is_str_like_for_addition(&ty)),
-        Type::Union(Union { types, .. }) => types.iter().all(|ty| is_str_like_for_addition(&ty)),
+        Type::Intersection(Intersection { types, .. }) => types.iter().any(is_str_like_for_addition),
+        Type::Union(Union { types, .. }) => types.iter().all(is_str_like_for_addition),
         _ => false,
     }
 }

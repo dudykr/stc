@@ -65,7 +65,5 @@ where
         nodes.len(),
     );
 
-    let orders = calc_order(cycles, &mut graph, nodes.len());
-
-    orders
+    calc_order(cycles, &mut graph, nodes.len())
 }

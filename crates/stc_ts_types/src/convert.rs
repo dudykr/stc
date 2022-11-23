@@ -540,7 +540,7 @@ impl From<super::Class> for RTsType {
         RTsTypeRef {
             node_id: NodeId::invalid(),
             span: t.span,
-            type_name: RTsEntityName::Ident(t.def.name.unwrap_or(Id::word("anonymous class".into())).into()),
+            type_name: RTsEntityName::Ident(t.def.name.unwrap_or_else(|| Id::word("anonymous class".into())).into()),
             type_params: None,
         }
         .into()
@@ -581,10 +581,7 @@ impl From<super::ClassMember> for RTsTypeElement {
                 node_id: NodeId::invalid(),
                 span: m.span,
                 readonly: false,
-                computed: match &m.key {
-                    Key::Computed(_) => true,
-                    _ => false,
-                },
+                computed: matches!(&m.key, Key::Computed(_)),
                 key: m.key.into_expr(),
                 optional: m.is_optional,
                 params: m.params.into_iter().map(From::from).collect(),

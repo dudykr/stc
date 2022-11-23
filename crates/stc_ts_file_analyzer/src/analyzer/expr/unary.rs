@@ -2,7 +2,7 @@ use stc_ts_ast_rnode::{
     RBigInt, RBool, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, RNumber, ROptChainBase, ROptChainExpr, RParenExpr, RStr, RTsLit,
     RUnaryExpr,
 };
-use stc_ts_errors::{DebugExt, Error, Errors};
+use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_types::{KeywordType, KeywordTypeMetadata, LitType, Union};
 use swc_atoms::js_word;
 use swc_common::{Span, Spanned};
@@ -25,7 +25,7 @@ impl Analyzer<'_, '_> {
         if let op!("delete") = op {
             // `delete foo` returns bool
 
-            self.validate_with(|a| a.validate_delete_operand(&arg));
+            self.validate_with(|a| a.validate_delete_operand(arg));
         }
 
         // TODO(kdy1): Check for `self.ctx.in_cond` to improve performance.
@@ -66,7 +66,7 @@ impl Analyzer<'_, '_> {
             op!(unary, "+") | op!(unary, "-") | op!("~") => {
                 if let Some(arg) = &arg_ty {
                     if arg.is_symbol_like() {
-                        self.storage.report(Error::NumericOpToSymbol { span: arg.span() })
+                        self.storage.report(ErrorKind::NumericOpToSymbol { span: arg.span() }.into())
                     }
                 }
             }
@@ -112,24 +112,22 @@ impl Analyzer<'_, '_> {
 
             op!(unary, "-") | op!(unary, "+") => {
                 if let Some(arg) = &arg_ty {
-                    match arg.normalize() {
-                        Type::Lit(LitType {
-                            lit: RTsLit::Number(RNumber { span, value, .. }),
-                            ..
-                        }) => {
-                            let span = *span;
+                    if let Type::Lit(LitType {
+                        lit: RTsLit::Number(RNumber { span, value, .. }),
+                        ..
+                    }) = arg.normalize()
+                    {
+                        let span = *span;
 
-                            return Ok(Type::Lit(LitType {
+                        return Ok(Type::Lit(LitType {
+                            span,
+                            lit: RTsLit::Number(RNumber {
                                 span,
-                                lit: RTsLit::Number(RNumber {
-                                    span,
-                                    value: if *op == op!(unary, "-") { -(*value) } else { *value },
-                                    raw: None,
-                                }),
-                                metadata: Default::default(),
-                            }));
-                        }
-                        _ => {}
+                                value: if *op == op!(unary, "-") { -(*value) } else { *value },
+                                raw: None,
+                            }),
+                            metadata: Default::default(),
+                        }));
                     }
                 }
 
@@ -150,15 +148,13 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        match arg_ty {
-            Some(Type::Keyword(KeywordType {
-                kind: TsKeywordTypeKind::TsUnknownKeyword,
-                ..
-            })) => {
-                debug_assert!(!arg.span().is_dummy());
-                return Err(Error::Unknown { span: arg.span() });
-            }
-            _ => {}
+        if let Some(Type::Keyword(KeywordType {
+            kind: TsKeywordTypeKind::TsUnknownKeyword,
+            ..
+        })) = arg_ty
+        {
+            debug_assert!(!arg.span().is_dummy());
+            return Err(ErrorKind::Unknown { span: arg.span() }.into());
         }
 
         if let Some(arg) = arg_ty {
@@ -191,12 +187,12 @@ impl Analyzer<'_, '_> {
 impl Analyzer<'_, '_> {
     fn validate_delete_operand(&mut self, arg: &RExpr) -> VResult<()> {
         let span = arg.span();
-        match &*arg {
+        match arg {
             RExpr::Member(RMemberExpr {
                 obj: box RExpr::This(..),
                 prop: RMemberProp::PrivateName(..),
                 ..
-            }) => Err(Error::CannotDeletePrivateProperty { span }),
+            }) => Err(ErrorKind::CannotDeletePrivateProperty { span }.into()),
 
             RExpr::Paren(RParenExpr {
                 expr: box RExpr::Member(expr),
@@ -208,29 +204,27 @@ impl Analyzer<'_, '_> {
             })
             | RExpr::Member(expr) => {
                 if self.rule().strict_null_checks {
-                    let ty = self.type_of_member_expr(expr, TypeOfMode::RValue).convert_err(|err| match &err {
-                        Error::ObjectIsPossiblyNull { span, .. }
-                        | Error::ObjectIsPossiblyUndefined { span, .. }
-                        | Error::ObjectIsPossiblyNullOrUndefined { span, .. } => Error::DeleteOperandMustBeOptional { span: *span },
+                    let ty = self.type_of_member_expr(expr, TypeOfMode::RValue).convert_err(|err| match err {
+                        ErrorKind::ObjectIsPossiblyNull { span, .. }
+                        | ErrorKind::ObjectIsPossiblyUndefined { span, .. }
+                        | ErrorKind::ObjectIsPossiblyNullOrUndefined { span, .. } => ErrorKind::DeleteOperandMustBeOptional { span },
                         _ => err,
                     })?;
                     if !self.can_be_undefined(span, &ty)? {
-                        return Err(Error::DeleteOperandMustBeOptional { span });
+                        return Err(ErrorKind::DeleteOperandMustBeOptional { span }.into());
                     }
                 }
-                return Ok(());
+                Ok(())
             }
 
             //
             // delete (o4.b?.c.d);
             // delete (o4.b?.c.d)?.e;
-            RExpr::Paren(RParenExpr { expr, .. }) => {
-                return self.validate_delete_operand(expr);
-            }
+            RExpr::Paren(RParenExpr { expr, .. }) => self.validate_delete_operand(expr),
 
-            RExpr::Await(..) => Err(Error::InvalidDeleteOperand { span }),
+            RExpr::Await(..) => Err(ErrorKind::InvalidDeleteOperand { span }.into()),
 
-            _ => Err(Error::InvalidDeleteOperand { span }),
+            _ => Err(ErrorKind::InvalidDeleteOperand { span }.into()),
         }
     }
 
@@ -244,7 +238,7 @@ impl Analyzer<'_, '_> {
                     ..
                 }) => {
                     self.storage
-                        .report(Error::UndefinedOrNullIsNotValidOperand { span: arg_expr.span() });
+                        .report(ErrorKind::UndefinedOrNullIsNotValidOperand { span: arg_expr.span() }.into());
                     return;
                 }
                 _ => {}
@@ -255,7 +249,7 @@ impl Analyzer<'_, '_> {
 
         match op {
             op!("typeof") | op!("delete") | op!("void") => match arg.normalize() {
-                Type::EnumVariant(..) if op == op!("delete") => errors.push(Error::TS2704 { span: arg.span() }),
+                Type::EnumVariant(..) if op == op!("delete") => errors.push(ErrorKind::TS2704 { span: arg.span() }.into()),
 
                 _ => {}
             },
@@ -269,12 +263,12 @@ impl Analyzer<'_, '_> {
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNullKeyword,
                     ..
-                }) => errors.push(Error::TS2531 { span: arg.span() }),
+                }) => errors.push(ErrorKind::TS2531 { span: arg.span() }.into()),
 
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsUndefinedKeyword,
                     ..
-                }) => errors.push(Error::ObjectIsPossiblyUndefined { span: arg.span() }),
+                }) => errors.push(ErrorKind::ObjectIsPossiblyUndefined { span: arg.span() }.into()),
 
                 _ => {
                     //
@@ -289,8 +283,8 @@ impl Analyzer<'_, '_> {
 }
 
 fn negate(ty: Type) -> Type {
-    match ty {
-        Type::Lit(LitType { ref lit, span, metadata }) => match *lit {
+    if let Type::Lit(LitType { ref lit, span, metadata }) = ty {
+        match *lit {
             RTsLit::Bool(ref v) => {
                 return Type::Lit(LitType {
                     lit: RTsLit::Bool(RBool {
@@ -324,7 +318,7 @@ fn negate(ty: Type) -> Type {
             RTsLit::Tpl(ref v) => {
                 return Type::Lit(LitType {
                     lit: RTsLit::Bool(RBool {
-                        value: !v.quasis.iter().next().as_ref().unwrap().raw.is_empty(),
+                        value: !v.quasis.first().as_ref().unwrap().raw.is_empty(),
                         span: v.span,
                     }),
                     span,
@@ -342,9 +336,7 @@ fn negate(ty: Type) -> Type {
                     metadata,
                 });
             }
-        },
-
-        _ => {}
+        }
     }
 
     KeywordType {

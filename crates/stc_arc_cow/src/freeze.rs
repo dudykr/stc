@@ -13,7 +13,7 @@ where
 {
     fn visit_mut(&mut self, n: &mut ArcCow<T>) {
         match n {
-            ArcCow::Arc(_) => return,
+            ArcCow::Arc(_) => (),
             ArcCow::Raw(v) => {
                 // Deep
                 v.visit_mut_with(self);
@@ -32,9 +32,9 @@ where
 {
     fn visit_mut(&mut self, n: &mut BoxedArcCow<T>) {
         match n {
-            BoxedArcCow::Arc(_) => return,
+            BoxedArcCow::Arc(_) => (),
             BoxedArcCow::Boxed(v) => {
-                (&mut **v).visit_mut_with(self);
+                (**v).visit_mut_with(self);
 
                 let v = v.take();
 

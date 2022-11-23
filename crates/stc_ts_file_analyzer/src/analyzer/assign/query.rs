@@ -1,4 +1,4 @@
-use stc_ts_errors::DebugExt;
+use stc_ts_errors::{ctx, DebugExt, ErrorKind};
 use stc_ts_types::{QueryExpr, QueryType, Type};
 
 use crate::{
@@ -15,11 +15,18 @@ impl Analyzer<'_, '_> {
 
         match &*to.expr {
             QueryExpr::TsEntityName(e) => {
-                let to = self
-                    .resolve_typeof(opts.span, e)
-                    .context("tried to resolve typeof for assignment")?;
+                let _ctx = ctx!("tried to resolve typeof for assignment");
+                let to = self.resolve_typeof(opts.span, e)?;
 
-                return self.assign_with_opts(data, &to, rhs, opts);
+                if to.is_global_this() {
+                    return Err(ErrorKind::SimpleAssignFailed {
+                        span: opts.span,
+                        cause: None,
+                    }
+                    .context("global this"));
+                }
+
+                self.assign_with_opts(data, &to, rhs, opts)
             }
             QueryExpr::Import(_) => {
                 unimplemented!("assignment of query type with import")
@@ -30,17 +37,22 @@ impl Analyzer<'_, '_> {
     pub(super) fn assign_query_type_to_type(&mut self, data: &mut AssignData, to: &Type, rhs: &QueryType, opts: AssignOpts) -> VResult<()> {
         let to = to.normalize();
 
-        match &*rhs.expr {
-            QueryExpr::TsEntityName(e) => {
-                let rhs = self
-                    .resolve_typeof(opts.span, e)
-                    .context("tried to resolve typeof for assignment")?;
+        if let QueryExpr::TsEntityName(e) = &*rhs.expr {
+            let rhs = self
+                .resolve_typeof(opts.span, e)
+                .context("tried to resolve typeof for assignment")?;
 
-                return self.assign_with_opts(data, to, &rhs, opts);
+            if rhs.is_global_this() {
+                return Err(ErrorKind::SimpleAssignFailed {
+                    span: opts.span,
+                    cause: None,
+                }
+                .context("global this"));
             }
-            QueryExpr::Import(_) => {
-                unimplemented!("assignment of query type with import")
-            }
+
+            self.assign_with_opts(data, to, &rhs, opts)
+        } else {
+            unimplemented!("assignment of query type with import")
         }
     }
 }

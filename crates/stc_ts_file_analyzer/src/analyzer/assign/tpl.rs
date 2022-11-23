@@ -1,5 +1,7 @@
+#![allow(clippy::if_same_then_else)]
+
 use stc_ts_ast_rnode::RTsLit;
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 use stc_ts_types::{LitType, TplType, Type};
 
 use crate::{
@@ -100,14 +102,14 @@ impl Analyzer<'_, '_> {
                             positions.push(pos);
                             start += pos + 1;
                         }
-                        None => return Err(Error::SimpleAssignFailed { span, cause: None }),
+                        None => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
                     }
                 }
 
                 Ok(())
             }
 
-            _ => Err(Error::SimpleAssignFailed { span, cause: None }),
+            _ => Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
         }
     }
 }

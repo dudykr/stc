@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use itertools::Itertools;
 use stc_ts_ast_rnode::RBool;
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     KeywordType, LitType, LitTypeMetadata, PropertySignature, Tuple, TupleElement, Type, TypeElement, TypeLit, Union, UnionMetadata,
@@ -82,36 +82,32 @@ impl Analyzer<'_, '_> {
 
     /// TODO(kdy1): Use Cow<TupleElement>
     fn append_type_element_to_type(&mut self, span: Span, to: &mut Type, el: &TypeElement) -> VResult<()> {
-        match el {
-            TypeElement::Property(el) => {
-                if let Some(el_ty) = &el.type_ann {
-                    if let Some(ty) = self.expand_union_for_assignment(span, &el_ty) {
-                        let mut to_types = (0..ty.types.len()).map(|_| ALLOW_DEEP_CLONE.set(&(), || to.clone())).collect_vec();
+        if let TypeElement::Property(el) = el {
+            if let Some(el_ty) = &el.type_ann {
+                if let Some(ty) = self.expand_union_for_assignment(span, el_ty) {
+                    let mut to_types = (0..ty.types.len()).map(|_| ALLOW_DEEP_CLONE.set(&(), || to.clone())).collect_vec();
 
-                        for (idx, el_ty) in ty.types.iter().enumerate() {
-                            self.append_type_element_to_type(
-                                span,
-                                &mut to_types[idx],
-                                &TypeElement::Property(PropertySignature {
-                                    type_ann: Some(box el_ty.clone()),
-                                    ..el.clone()
-                                }),
-                            )?;
-                        }
-
-                        *to = Type::Union(Union {
-                            span: ty.span,
-                            types: to_types,
-                            metadata: ty.metadata,
-                        })
-                        .fixed();
-
-                        return Ok(());
+                    for (idx, el_ty) in ty.types.iter().enumerate() {
+                        self.append_type_element_to_type(
+                            span,
+                            &mut to_types[idx],
+                            &TypeElement::Property(PropertySignature {
+                                type_ann: Some(box el_ty.clone()),
+                                ..el.clone()
+                            }),
+                        )?;
                     }
+
+                    *to = Type::Union(Union {
+                        span: ty.span,
+                        types: to_types,
+                        metadata: ty.metadata,
+                    })
+                    .fixed();
+
+                    return Ok(());
                 }
             }
-
-            _ => {}
         }
 
         match to.normalize_mut() {
@@ -127,7 +123,7 @@ impl Analyzer<'_, '_> {
 
                 Ok(())
             }
-            _ => Err(Error::SimpleAssignFailed { span, cause: None }),
+            _ => Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
         }
     }
 
@@ -170,12 +166,12 @@ impl Analyzer<'_, '_> {
 
                 Ok(())
             }
-            _ => Err(Error::SimpleAssignFailed { span, cause: None }),
+            _ => Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
         }
     }
 
     /// Expands `boolean` to `true | false`.
-    fn expand_union_for_assignment<'a>(&mut self, span: Span, t: &'a Type) -> Option<Union> {
+    fn expand_union_for_assignment(&mut self, span: Span, t: &Type) -> Option<Union> {
         let t = self.normalize(Some(span), Cow::Borrowed(t), Default::default()).ok()?;
 
         match t.normalize() {

@@ -54,7 +54,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
     let res = ::testing::run_test2(false, |cm, handler| {
         let handler = Arc::new(handler);
         let mut checker = Checker::new(
-            cm.clone(),
+            cm,
             handler.clone(),
             Env::simple(rule, target, ModuleConfig::None, &libs),
             TsConfig {
@@ -66,7 +66,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
         );
         checker.check(Arc::new(FileName::Real(file_name.into())));
 
-        let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
+        let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
 
         checker.run(|| {
             for e in errors {

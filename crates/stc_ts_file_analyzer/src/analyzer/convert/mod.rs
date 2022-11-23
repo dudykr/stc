@@ -11,7 +11,7 @@ use stc_ts_ast_rnode::{
     RTsTypeAnn, RTsTypeElement, RTsTypeLit, RTsTypeOperator, RTsTypeParam, RTsTypeParamDecl, RTsTypeParamInstantiation, RTsTypePredicate,
     RTsTypeQuery, RTsTypeQueryExpr, RTsTypeRef, RTsUnionOrIntersectionType, RTsUnionType,
 };
-use stc_ts_errors::Error;
+use stc_ts_errors::{ctx, ErrorKind};
 use stc_ts_file_analyzer_macros::extra_validator;
 use stc_ts_types::{
     type_id::SymbolId, Accessor, Alias, AliasMetadata, Array, CallSignature, CommonTypeMetadata, ComputedKey, Conditional,
@@ -64,7 +64,7 @@ impl Analyzer<'_, '_> {
                 for name in names {
                     if !found.insert(name.sym.clone()) {
                         self.storage.report(
-                            Error::DuplicateName {
+                            ErrorKind::DuplicateName {
                                 span: name.span,
                                 name: name.into(),
                             }
@@ -138,7 +138,7 @@ impl Analyzer<'_, '_> {
             default,
             metadata: Default::default(),
         };
-        self.register_type(param.name.clone().into(), param.clone().into());
+        self.register_type(param.name.clone(), param.clone().into());
 
         if cfg!(debug_assertions) && has_constraint {
             if let Ok(types) = self.find_type(&p.name.clone().into()) {
@@ -192,7 +192,7 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsIntrinsicKeyword,
                     }) if !child.is_builtin => {
                         let span = *span;
-                        child.storage.report(Error::IntrinsicIsBuiltinOnly { span });
+                        child.storage.report(ErrorKind::IntrinsicIsBuiltinOnly { span }.into());
                         Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default())
                     }
 
@@ -265,7 +265,7 @@ impl Analyzer<'_, '_> {
         let ty = self.with_child(ScopeKind::Flow, Default::default(), |child: &mut Analyzer| -> VResult<_> {
             match &*d.id.sym {
                 "any" | "void" | "never" | "string" | "number" | "boolean" | "null" | "undefined" | "symbol" => {
-                    child.storage.report(Error::InvalidInterfaceName { span: d.id.span });
+                    child.storage.report(ErrorKind::InvalidInterfaceName { span: d.id.span }.into());
                 }
                 _ => {}
             }
@@ -392,7 +392,7 @@ impl Analyzer<'_, '_> {
             let key = child.validate_key(&d.key, d.computed)?;
 
             if d.computed {
-                child.validate_computed_prop_key(d.span(), &d.key);
+                child.validate_computed_prop_key(d.span(), &d.key).report(&mut child.storage);
             }
 
             let params = d.params.validate_with(child)?;
@@ -459,7 +459,7 @@ impl Analyzer<'_, '_> {
                                 };
                                 ty = Type::Symbol(Symbol {
                                     span: DUMMY_SP,
-                                    id: SymbolId::known(&key),
+                                    id: SymbolId::known(key),
                                     metadata: Default::default(),
                                 });
                             }
@@ -638,7 +638,7 @@ impl Analyzer<'_, '_> {
             let type_params = try_opt!(t.type_params.validate_with(child));
 
             for param in &t.params {
-                child.default_any_param(&param);
+                child.default_any_param(param);
             }
 
             let mut params: Vec<_> = t.params.validate_with(child)?;
@@ -717,7 +717,7 @@ impl Analyzer<'_, '_> {
             }
 
             RTsEntityName::Ident(ref i) => {
-                self.report_error_for_type_param_usages_in_static_members(&i);
+                self.report_error_for_type_param_usages_in_static_members(i);
 
                 if let Some(types) = self.find_type(&i.into())? {
                     let mut found = false;
@@ -728,22 +728,23 @@ impl Analyzer<'_, '_> {
                             contains_infer = true;
                         }
                         // We use type param instead of reference type if possible.
-                        match ty.normalize() {
-                            Type::Param(..) => return Ok(ty.into_owned()),
-                            _ => {}
+                        if let Type::Param(..) = ty.normalize() {
+                            return Ok(ty.into_owned());
                         }
                     }
 
                     if !self.is_builtin && !found && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
-                            self.storage.report(Error::NoSuchTypeButVarExists { span, name: i.into() });
+                            self.storage
+                                .report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() }.into());
                             reported_type_not_found = true;
                         }
                     }
                 } else {
                     if !self.is_builtin && self.ctx.in_actual_type {
                         if let Some(..) = self.scope.get_var(&i.into()) {
-                            self.storage.report(Error::NoSuchTypeButVarExists { span, name: i.into() });
+                            self.storage
+                                .report(ErrorKind::NoSuchTypeButVarExists { span, name: i.into() }.into());
                             reported_type_not_found = true;
                         }
                     }
@@ -964,11 +965,11 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 }),
                 RTsType::TsLitType(ty) => {
-                    match &ty.lit {
-                        RTsLit::Tpl(t) => return Ok(t.validate_with(a)?.into()),
-                        _ => {}
+                    if let RTsLit::Tpl(t) = &ty.lit {
+                        return Ok(t.validate_with(a)?.into());
                     }
-                    let ty = Type::Lit(LitType {
+
+                    Type::Lit(LitType {
                         span: ty.span,
                         lit: ty.lit.clone(),
                         metadata: LitTypeMetadata {
@@ -978,18 +979,20 @@ impl Analyzer<'_, '_> {
                             },
                             ..Default::default()
                         },
-                    });
-                    ty
+                    })
                 }
                 RTsType::TsKeywordType(ty) => {
                     if let TsKeywordTypeKind::TsIntrinsicKeyword = ty.kind {
                         if !a.is_builtin {
                             let span = ty.span;
 
-                            a.storage.report(Error::NoSuchType {
-                                span,
-                                name: Id::word("intrinsic".into()),
-                            });
+                            a.storage.report(
+                                ErrorKind::NoSuchType {
+                                    span,
+                                    name: Id::word("intrinsic".into()),
+                                }
+                                .into(),
+                            );
                             return Ok(Type::any(span.with_ctxt(SyntaxContext::empty()), Default::default()));
                         }
                     }
@@ -1043,33 +1046,31 @@ impl Analyzer<'_, '_> {
         let mut prev_keys: Vec<Cow<_>> = vec![];
 
         for elem in elems {
-            match elem {
-                // TODO(kdy1): Handle getter / setter
-                TypeElement::Property(PropertySignature {
-                    accessor:
-                        Accessor {
-                            getter: false,
-                            setter: false,
-                            ..
-                        },
-                    ..
-                }) => {
-                    if let Some(key) = elem.key() {
-                        let key = key.normalize();
-                        let key_ty = key.ty();
+            if let TypeElement::Property(PropertySignature {
+                accessor:
+                    Accessor {
+                        getter: false,
+                        setter: false,
+                        ..
+                    },
+                ..
+            }) = elem
+            {
+                if let Some(key) = elem.key() {
+                    let key = key.normalize();
+                    let key_ty = key.ty();
 
-                        if key_ty.is_symbol() {
-                            continue;
-                        }
-                        if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(&*prev_key)) {
-                            self.storage.report(Error::DuplicateNameWithoutName { span: prev.span() });
-                            self.storage.report(Error::DuplicateNameWithoutName { span: key.span() });
-                        } else {
-                            prev_keys.push(key);
-                        }
+                    if key_ty.is_symbol() {
+                        continue;
+                    }
+                    if let Some(prev) = prev_keys.iter().find(|prev_key| key.type_eq(prev_key)) {
+                        self.storage
+                            .report(ErrorKind::DuplicateNameWithoutName { span: prev.span() }.into());
+                        self.storage.report(ErrorKind::DuplicateNameWithoutName { span: key.span() }.into());
+                    } else {
+                        prev_keys.push(key);
                     }
                 }
-                _ => {}
             }
         }
     }
@@ -1080,20 +1081,28 @@ impl Analyzer<'_, '_> {
             return;
         }
 
+        let _ctx = ctx!("report_error_for_duplicate_params");
+
         let mut prev_ids: Vec<RIdent> = vec![];
         for param in params {
             let ids: Vec<RIdent> = find_ids_in_pat(&param.pat);
 
             for id in ids {
                 if let Some(prev) = prev_ids.iter().find(|v| v.sym == id.sym) {
-                    self.storage.report(Error::DuplicateName {
-                        span: prev.span,
-                        name: prev.into(),
-                    });
-                    self.storage.report(Error::DuplicateName {
-                        span: id.span,
-                        name: id.into(),
-                    });
+                    self.storage.report(
+                        ErrorKind::DuplicateName {
+                            span: prev.span,
+                            name: prev.into(),
+                        }
+                        .into(),
+                    );
+                    self.storage.report(
+                        ErrorKind::DuplicateName {
+                            span: id.span,
+                            name: id.into(),
+                        }
+                        .into(),
+                    );
                 } else {
                     prev_ids.push(id);
                 }
@@ -1119,14 +1128,12 @@ impl Analyzer<'_, '_> {
                 return false;
             }
 
-            match scope.kind() {
-                ScopeKind::Method { is_static: true, .. } => true,
-                _ => false,
-            }
+            matches!(scope.kind(), ScopeKind::Method { is_static: true, .. })
         });
 
         if static_method.is_some() {
-            self.storage.report(Error::StaticMemberCannotUseTypeParamOfClass { span })
+            self.storage
+                .report(ErrorKind::StaticMemberCannotUseTypeParamOfClass { span }.into())
         }
     }
 
@@ -1152,11 +1159,13 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        #[allow(clippy::nonminimal_bool)]
         if self.env.rule().no_implicit_any {
             let no_type_ann =
                 !self.ctx.in_argument && !(self.ctx.in_return_arg && self.ctx.in_fn_with_return_type) && !self.ctx.in_assign_rhs;
             if no_type_ann || self.ctx.in_useless_expr_for_seq || self.ctx.check_for_implicit_any {
-                self.storage.report(Error::ImplicitAny { span: i.id.span }.context("default type"));
+                self.storage
+                    .report(ErrorKind::ImplicitAny { span: i.id.span }.context("default type"));
             }
         }
 
@@ -1224,7 +1233,7 @@ impl Analyzer<'_, '_> {
             metadata: Default::default(),
         });
         if let Some(m) = &mut self.mutations {
-            m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert_with(|| ty);
+            m.for_pats.entry(arr.node_id).or_default().ty.get_or_insert(ty);
         }
     }
 
@@ -1243,7 +1252,7 @@ impl Analyzer<'_, '_> {
                     let key = p.key.validate_with(self)?;
                     match *p.value {
                         RPat::Array(_) | RPat::Object(_) => {
-                            self.default_any_pat(&*p.value);
+                            self.default_any_pat(&p.value);
                         }
                         _ => {}
                     }

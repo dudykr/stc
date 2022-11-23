@@ -4,6 +4,10 @@
 
 #![allow(incomplete_features)]
 #![allow(unused_variables)] // temporary
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::collapsible_else_if)]
+#![allow(clippy::needless_update)]
+#![allow(clippy::only_used_in_recursion)]
 #![deny(unused_must_use)]
 #![deny(unreachable_patterns)]
 #![deny(unused_imports)]
@@ -13,8 +17,6 @@
 #![feature(try_blocks)]
 #![feature(specialization)]
 #![recursion_limit = "1024"]
-
-use std::path::PathBuf;
 
 use stc_ts_env::StableEnv;
 use stc_ts_errors::Error;
@@ -50,10 +52,5 @@ pub struct Specifier {
 
 #[derive(Debug)]
 pub struct Config {
-    /// Should we generate .d.ts?
-    declaration: bool,
-    /// Directory to store .d.ts files.
-    declaration_dir: PathBuf,
-
     pub env: StableEnv,
 }

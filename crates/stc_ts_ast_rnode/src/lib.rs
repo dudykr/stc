@@ -1,4 +1,5 @@
 #![feature(box_syntax)]
+#![allow(clippy::derive_partial_eq_without_eq)]
 
 use rnode::{define_rnode, NodeId};
 use swc_atoms::{Atom, JsWord};
@@ -20,13 +21,13 @@ impl RIdent {
 
 impl RExpr {
     pub fn is_new_target(&self) -> bool {
-        match self {
+        matches!(
+            self,
             RExpr::MetaProp(RMetaPropExpr {
                 kind: MetaPropKind::NewTarget,
                 ..
-            }) => true,
-            _ => false,
-        }
+            })
+        )
     }
 }
 
@@ -47,12 +48,12 @@ impl From<RTsEntityName> for RExpr {
 impl From<Box<RExpr>> for RTsEntityName {
     fn from(v: Box<RExpr>) -> Self {
         match *v {
-            RExpr::Ident(v) => RTsEntityName::Ident(v.clone()),
+            RExpr::Ident(v) => RTsEntityName::Ident(v),
             RExpr::Member(RMemberExpr { obj, prop, .. }) => RTsEntityName::TsQualifiedName(box RTsQualifiedName {
                 node_id: NodeId::invalid(),
                 left: obj.into(),
                 right: match prop {
-                    RMemberProp::Ident(v) => v.clone(),
+                    RMemberProp::Ident(v) => v,
                     _ => unreachable!("invalid member expression"),
                 },
             }),

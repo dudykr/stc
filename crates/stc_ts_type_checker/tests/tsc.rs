@@ -2,6 +2,8 @@
 #![feature(box_syntax)]
 #![feature(box_patterns)]
 #![feature(test)]
+#![allow(clippy::if_same_then_else)]
+#![allow(clippy::manual_strip)]
 
 extern crate test;
 
@@ -23,7 +25,6 @@ use anyhow::{Context, Error};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use serde::Deserialize;
-use stc_testing::init_tracing;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_file_analyzer::env::EnvFactory;
@@ -79,7 +80,7 @@ struct Stats {
 }
 
 fn is_all_test_enabled() -> bool {
-    env::var("TEST").map(|s| s == "").unwrap_or(false)
+    env::var("TEST").map(|s| s.is_empty()).unwrap_or(false)
 }
 
 fn print_matched_errors() -> bool {
@@ -87,9 +88,9 @@ fn print_matched_errors() -> bool {
 }
 
 fn record_time(line_count: usize, time_of_check: Duration, full_time: Duration) {
-    static TOTAL_CHECK: Lazy<Mutex<Duration>> = Lazy::new(|| Default::default());
-    static TOTAL_FULL: Lazy<Mutex<Duration>> = Lazy::new(|| Default::default());
-    static LINES: Lazy<Mutex<usize>> = Lazy::new(|| Default::default());
+    static TOTAL_CHECK: Lazy<Mutex<Duration>> = Lazy::new(Default::default);
+    static TOTAL_FULL: Lazy<Mutex<Duration>> = Lazy::new(Default::default);
+    static LINES: Lazy<Mutex<usize>> = Lazy::new(Default::default);
 
     if cfg!(debug_assertions) {
         return;
@@ -137,7 +138,7 @@ fn record_time(line_count: usize, time_of_check: Duration, full_time: Duration) 
 
 /// Add stats and return total stats.
 fn record_stat(stats: Stats) -> Stats {
-    static STATS: Lazy<Mutex<Stats>> = Lazy::new(|| Default::default());
+    static STATS: Lazy<Mutex<Stats>> = Lazy::new(Default::default);
 
     if !cfg!(debug_assertions) {
         return stats;
@@ -223,9 +224,8 @@ fn create_test(path: PathBuf) -> Option<Box<dyn FnOnce() + Send + Sync>> {
             }
 
             // These are actually parser test.
-            match &*err.code {
-                "TS2369" => return None,
-                _ => {}
+            if let "TS2369" = &*err.code {
+                return None;
             }
         }
     }
@@ -280,7 +280,7 @@ fn load_expected_errors(ts_file: &Path) -> Result<Vec<RefError>, Error> {
 
         for err in &mut errors {
             let orig_code = err.code.replace("TS", "").parse().expect("failed to parse error code");
-            let code = stc_ts_errors::Error::normalize_error_code(orig_code);
+            let code = stc_ts_errors::ErrorKind::normalize_error_code(orig_code);
 
             if orig_code != code {
                 err.code = format!("TS{}", code);
@@ -316,10 +316,10 @@ fn parse_targets(s: &str) -> Vec<EsVersion> {
         "esnext" => return vec![EsVersion::Es2020],
         _ => {}
     }
-    if !s.contains(",") {
+    if !s.contains(',') {
         panic!("failed to parse `{}` as targets", s)
     }
-    s.split(",").map(|s| s.trim()).flat_map(parse_targets).collect()
+    s.split(',').map(|s| s.trim()).flat_map(parse_targets).collect()
 }
 
 fn parse_test(file_name: &Path) -> Vec<TestSpec> {
@@ -348,8 +348,7 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
         let mut targets = vec![(EsVersion::default(), false)];
 
         let program = parser.parse_program().map_err(|e| {
-            e.into_diagnostic(&handler).emit();
-            ()
+            e.into_diagnostic(handler).emit();
         })?;
 
         for line in fm.src.lines() {
@@ -385,115 +384,112 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 
         let span = program.span();
         let cmts = comments.leading.get(&span.lo());
-        match cmts {
-            Some(ref cmts) => {
-                let directive_start = cmts.iter().position(|cmt| cmt.text.trim().starts_with("@")).unwrap_or(0);
-                let cmt_start_line = if directive_start == 0 {
-                    0
+        if let Some(ref cmts) = cmts {
+            let directive_start = cmts.iter().position(|cmt| cmt.text.trim().starts_with('@')).unwrap_or(0);
+            let cmt_start_line = if directive_start == 0 {
+                0
+            } else {
+                cmts.iter()
+                    .find(|cmt| cmt.text.trim().starts_with('@'))
+                    .map(|cmt| cm.lookup_char_pos(cmt.span.hi).line)
+                    .unwrap_or(0)
+            };
+
+            for cmt in cmts.iter().skip(directive_start) {
+                let s = cmt.text.trim();
+                if !s.starts_with('@') {
+                    if had_comment {
+                        err_shift_n = cm.lookup_char_pos(cmt.span.hi).line - 1 - cmt_start_line;
+                        break;
+                    }
+                    continue;
+                }
+                had_comment = true;
+                err_shift_n = cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line - cmt_start_line;
+                let s = &s[1..]; // '@'
+
+                if s.starts_with("target:") || s.starts_with("Target:") {
+                    let s = s["target:".len()..].trim().to_lowercase();
+                    targets = parse_targets(&s).into_iter().map(|v| (v, true)).collect();
+                } else if s.starts_with("strict:") {
+                    let strict = s["strict:".len()..].trim().parse().unwrap();
+                    rule.no_implicit_any = strict;
+                    rule.no_implicit_this = strict;
+                    rule.always_strict = strict;
+                    rule.strict_null_checks = strict;
+                    rule.strict_function_types = strict;
+                } else if s.starts_with("noLib:") {
+                    let v = s["noLib:".len()..].trim().parse().unwrap();
+                    if v {
+                        libs = vec![];
+                    }
+                } else if s.to_lowercase().starts_with("noimplicitany:") {
+                    let v = s["noImplicitAny:".len()..].trim().parse().unwrap();
+                    rule.no_implicit_any = v;
+                } else if s.starts_with("noImplicitReturns:") {
+                    let v = s["noImplicitReturns:".len()..].trim().parse().unwrap();
+                    rule.no_implicit_returns = v;
+                } else if s.starts_with("declaration") {
+                } else if s.starts_with("stripInternal:") {
+                    // TODO(kdy1): Handle
+                } else if s.starts_with("traceResolution") {
+                    // no-op
+                } else if s.starts_with("allowUnusedLabels:") {
+                    let v = s["allowUnusedLabels:".len()..].trim().parse().unwrap();
+                    rule.allow_unused_labels = v;
+                } else if s.starts_with("noEmitHelpers") {
+                    // TODO
+                } else if s.starts_with("downlevelIteration:") {
+                    // TODO
+                } else if s.starts_with("sourceMap:") || s.starts_with("sourcemap:") {
+                    // TODO
+                } else if s.starts_with("isolatedModules:") {
+                    // TODO
+                } else if s.starts_with("lib:") {
+                    let s = s["lib:".len()..].trim();
+                    let mut ls = HashSet::<_>::default();
+                    for v in s.split(',') {
+                        ls.extend(Lib::load(&v.to_lowercase().replace("es6", "es2015")))
+                    }
+                    libs = ls.into_iter().collect()
+                } else if s.starts_with("allowUnreachableCode:") {
+                    let v = s["allowUnreachableCode:".len()..].trim().parse().unwrap();
+                    rule.allow_unreachable_code = v;
+                } else if s.starts_with("strictNullChecks:") {
+                    let v = s["strictNullChecks:".len()..].trim().parse().unwrap();
+                    rule.strict_null_checks = v;
+                } else if s.starts_with("noImplicitThis:") {
+                    let v = s["noImplicitThis:".len()..].trim().parse().unwrap();
+                    rule.no_implicit_this = v;
+                } else if s.starts_with("skipDefaultLibCheck") {
+                    // TODO
+                } else if s.starts_with("suppressImplicitAnyIndexErrors:") {
+                    // TODO
+                    let v = s["suppressImplicitAnyIndexErrors:".len()..].trim().parse().unwrap();
+                    rule.suppress_implicit_any_index_errors = v;
+                } else if s.starts_with("module:") {
+                    let v = s["module:".len()..].trim().parse().unwrap();
+                    module_config = v;
+                } else if s.to_lowercase().starts_with("notypesandsymbols") {
+                    // Ignored as we don't generate them.
+                } else if s.to_lowercase().starts_with("usedefineforclassfields") {
+                    rule.use_define_property_for_class_fields = true;
+                } else if s.to_lowercase().starts_with("noemit")
+                    || s.to_lowercase().starts_with("jsx")
+                    || s.to_lowercase().starts_with("preserveconstenums")
+                {
+                    // Ignored as we only checks type.
+                } else if s.starts_with("strict") {
+                    let strict = true;
+                    rule.no_implicit_any = strict;
+                    rule.no_implicit_this = strict;
+                    rule.always_strict = strict;
+                    rule.strict_null_checks = strict;
+                    rule.strict_function_types = strict;
                 } else {
-                    cmts.iter()
-                        .find(|cmt| cmt.text.trim().starts_with("@"))
-                        .map(|cmt| cm.lookup_char_pos(cmt.span.hi).line)
-                        .unwrap_or(0)
-                };
-
-                for cmt in cmts.iter().skip(directive_start) {
-                    let s = cmt.text.trim();
-                    if !s.starts_with("@") {
-                        if had_comment {
-                            err_shift_n = cm.lookup_char_pos(cmt.span.hi).line - 1 - cmt_start_line;
-                            break;
-                        }
-                        continue;
-                    }
-                    had_comment = true;
-                    err_shift_n = cm.lookup_char_pos(cmt.span.hi + BytePos(1)).line - cmt_start_line;
-                    let s = &s[1..]; // '@'
-
-                    if s.starts_with("target:") || s.starts_with("Target:") {
-                        let s = s["target:".len()..].trim().to_lowercase();
-                        targets = parse_targets(&s).into_iter().map(|v| (v, true)).collect();
-                    } else if s.starts_with("strict:") {
-                        let strict = s["strict:".len()..].trim().parse().unwrap();
-                        rule.no_implicit_any = strict;
-                        rule.no_implicit_this = strict;
-                        rule.always_strict = strict;
-                        rule.strict_null_checks = strict;
-                        rule.strict_function_types = strict;
-                    } else if s.starts_with("noLib:") {
-                        let v = s["noLib:".len()..].trim().parse().unwrap();
-                        if v {
-                            libs = vec![];
-                        }
-                    } else if s.to_lowercase().starts_with("noimplicitany:") {
-                        let v = s["noImplicitAny:".len()..].trim().parse().unwrap();
-                        rule.no_implicit_any = v;
-                    } else if s.starts_with("noImplicitReturns:") {
-                        let v = s["noImplicitReturns:".len()..].trim().parse().unwrap();
-                        rule.no_implicit_returns = v;
-                    } else if s.starts_with("declaration") {
-                    } else if s.starts_with("stripInternal:") {
-                        // TODO(kdy1): Handle
-                    } else if s.starts_with("traceResolution") {
-                        // no-op
-                    } else if s.starts_with("allowUnusedLabels:") {
-                        let v = s["allowUnusedLabels:".len()..].trim().parse().unwrap();
-                        rule.allow_unused_labels = v;
-                    } else if s.starts_with("noEmitHelpers") {
-                        // TODO
-                    } else if s.starts_with("downlevelIteration:") {
-                        // TODO
-                    } else if s.starts_with("sourceMap:") || s.starts_with("sourcemap:") {
-                        // TODO
-                    } else if s.starts_with("isolatedModules:") {
-                        // TODO
-                    } else if s.starts_with("lib:") {
-                        let s = s["lib:".len()..].trim();
-                        let mut ls = HashSet::<_>::default();
-                        for v in s.split(",") {
-                            ls.extend(Lib::load(&v.to_lowercase().replace("es6", "es2015")))
-                        }
-                        libs = ls.into_iter().collect()
-                    } else if s.starts_with("allowUnreachableCode:") {
-                        let v = s["allowUnreachableCode:".len()..].trim().parse().unwrap();
-                        rule.allow_unreachable_code = v;
-                    } else if s.starts_with("strictNullChecks:") {
-                        let v = s["strictNullChecks:".len()..].trim().parse().unwrap();
-                        rule.strict_null_checks = v;
-                    } else if s.starts_with("noImplicitThis:") {
-                        let v = s["noImplicitThis:".len()..].trim().parse().unwrap();
-                        rule.no_implicit_this = v;
-                    } else if s.starts_with("skipDefaultLibCheck") {
-                        // TODO
-                    } else if s.starts_with("suppressImplicitAnyIndexErrors:") {
-                        // TODO
-                        let v = s["suppressImplicitAnyIndexErrors:".len()..].trim().parse().unwrap();
-                        rule.suppress_implicit_any_index_errors = v;
-                    } else if s.starts_with("module:") {
-                        let v = s["module:".len()..].trim().parse().unwrap();
-                        module_config = v;
-                    } else if s.to_lowercase().starts_with("notypesandsymbols") {
-                        // Ignored as we don't generate them.
-                    } else if s.to_lowercase().starts_with("usedefineforclassfields") {
-                        rule.use_define_property_for_class_fields = true;
-                    } else if s.to_lowercase().starts_with("noemit")
-                        || s.to_lowercase().starts_with("jsx")
-                        || s.to_lowercase().starts_with("preserveconstenums")
-                    {
-                        // Ignored as we only checks type.
-                    } else if s.starts_with("strict") {
-                        let strict = true;
-                        rule.no_implicit_any = strict;
-                        rule.no_implicit_this = strict;
-                        rule.always_strict = strict;
-                        rule.strict_null_checks = strict;
-                        rule.strict_function_types = strict;
-                    } else {
-                        panic!("Comment is not handled: {}", s);
-                    }
+                    panic!("Comment is not handled: {}", s);
                 }
             }
-            None => {}
         }
 
         libs.sort();
@@ -516,12 +512,10 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
                         EsVersion::Es2021 => Lib::load("es2021.full"),
                         EsVersion::Es2022 => Lib::load("es2022.full"),
                     }
+                } else if specified {
+                    libs_with_deps(&libs)
                 } else {
-                    if specified {
-                        libs_with_deps(&libs)
-                    } else {
-                        libs.clone()
-                    }
+                    libs.clone()
                 };
 
                 TestSpec {
@@ -540,9 +534,8 @@ fn parse_test(file_name: &Path) -> Vec<TestSpec> {
 }
 
 fn do_test(file_name: &Path) -> Result<(), StdErr> {
-    let file_stem = file_name.file_stem().unwrap();
     let fname = file_name.display().to_string();
-    let mut expected_errors = load_expected_errors(&file_name).unwrap();
+    let mut expected_errors = load_expected_errors(file_name).unwrap();
     expected_errors.sort();
 
     let specs = parse_test(file_name);
@@ -588,7 +581,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
                 let handler = Arc::new(handler);
                 let mut checker = Checker::new(
-                    cm.clone(),
+                    cm,
                     handler.clone(),
                     Env::simple(rule, target, module_config, &libs),
                     TsConfig {
@@ -610,7 +603,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
                 time_of_check = end - start;
 
-                let errors = ::stc_ts_errors::Error::flatten(checker.take_errors());
+                let errors = ::stc_ts_errors::ErrorKind::flatten(checker.take_errors());
 
                 checker.run(|| {
                     for e in errors {
@@ -626,7 +619,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
                     return Ok(());
                 }
 
-                return Err(());
+                Err(())
             })
             .expect_err("");
 
@@ -634,7 +627,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         if !cfg!(debug_assertions) {
             let line_cnt = {
-                let content = fs::read_to_string(&file_name).unwrap();
+                let content = fs::read_to_string(file_name).unwrap();
 
                 content.lines().count()
             };
@@ -695,7 +688,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
             // If we failed, we only emit errors which has wrong line.
 
             for (d, line_col) in diagnostics.into_iter().zip(full_actual_errors.clone()) {
-                if success || env::var("PRINT_ALL").unwrap_or(String::from("")) == "1" || extra_errors.contains(&line_col) {
+                if success || env::var("PRINT_ALL").unwrap_or_default() == "1" || extra_errors.contains(&line_col) {
                     DiagnosticBuilder::new_diagnostic(&handler, d).emit();
                 }
             }
@@ -714,7 +707,7 @@ fn do_test(file_name: &Path) -> Result<(), StdErr> {
 
         // Print per-test stats so we can prevent regressions.
         if cfg!(debug_assertions) {
-            print_per_test_stat(&file_name, &stats);
+            print_per_test_stat(file_name, &stats);
         }
 
         let total_stats = record_stat(stats);

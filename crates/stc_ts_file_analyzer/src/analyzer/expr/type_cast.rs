@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use stc_ts_ast_rnode::{RTsAsExpr, RTsLit, RTsTypeAssertion};
-use stc_ts_errors::{DebugExt, Error};
+use stc_ts_errors::{DebugExt, ErrorKind};
 use stc_ts_types::{Interface, KeywordType, LitType, TypeElement, TypeParamInstantiation};
 use stc_utils::cache::Freeze;
 use swc_common::{Span, Spanned, TypeEq};
@@ -113,73 +113,60 @@ impl Analyzer<'_, '_> {
     fn validate_type_cast_inner(&mut self, span: Span, orig: &Type, casted: &Type) -> VResult<()> {
         // I don't know why this is valid, but `stringLiteralsWithTypeAssertions01.ts`
         // has some tests for this.
-        if is_str_or_union(&orig) && casted.is_str() {
+        if is_str_or_union(orig) && casted.is_str() {
             return Ok(());
         }
 
-        match orig.normalize() {
-            Type::Union(ref rt) => {
-                let castable = rt.types.iter().any(|v| casted.type_eq(v));
+        if let Type::Union(ref rt) = orig.normalize() {
+            let castable = rt.types.iter().any(|v| casted.type_eq(v));
 
-                if castable {
-                    return Ok(());
-                }
+            if castable {
+                return Ok(());
             }
-
-            _ => {}
         }
 
         match casted.normalize() {
             Type::Tuple(ref lt) => {
                 //
-                match orig.normalize() {
-                    Type::Tuple(ref rt) => {
-                        //
-                        if lt.elems.len() != rt.elems.len() {
-                            Err(Error::InvalidTupleCast {
-                                span,
-                                left: lt.span(),
-                                right: rt.span(),
-                            })?;
-                        }
+                if let Type::Tuple(ref rt) = orig.normalize() {
+                    //
+                    if lt.elems.len() != rt.elems.len() {
+                        Err(ErrorKind::InvalidTupleCast {
+                            span,
+                            left: lt.span(),
+                            right: rt.span(),
+                        })?;
+                    }
 
-                        let mut all_castable = true;
-                        //
-                        for (i, left_element) in lt.elems.iter().enumerate() {
-                            // if rt.types.len() >= i {
-                            //     all_castable = false;
-                            //     break;
-                            // }
-                            let right_element = &rt.elems[i];
+                    let mut all_castable = true;
+                    //
+                    for (i, left_element) in lt.elems.iter().enumerate() {
+                        // if rt.types.len() >= i {
+                        //     all_castable = false;
+                        //     break;
+                        // }
+                        let right_element = &rt.elems[i];
 
-                            let res = self.validate_type_cast_inner(span, &right_element.ty, &left_element.ty);
+                        let res = self.validate_type_cast_inner(span, &right_element.ty, &left_element.ty);
 
-                            if res.is_err() {
-                                all_castable = false;
-                                break;
-                            }
-                        }
-
-                        if all_castable {
-                            return Ok(());
+                        if res.is_err() {
+                            all_castable = false;
+                            break;
                         }
                     }
 
-                    _ => {}
+                    if all_castable {
+                        return Ok(());
+                    }
                 }
             }
 
             Type::Array(ref lt) => {
                 //
-                match orig.normalize() {
-                    Type::Tuple(ref rt) => {
-                        if rt.elems[0].ty.type_eq(&lt.elem_type) {
-                            return Ok(());
-                        }
+                if let Type::Tuple(ref rt) = orig.normalize() {
+                    if rt.elems[0].ty.type_eq(&lt.elem_type) {
+                        return Ok(());
                     }
-
-                    // fallback to .assign
-                    _ => {}
                 }
             }
 
@@ -188,18 +175,6 @@ impl Analyzer<'_, '_> {
         }
 
         // self.assign(&casted_ty, &orig_ty, span)?;
-
-        match casted.normalize() {
-            Type::Tuple(ref rt) => {
-                //
-                match orig.normalize() {
-                    Type::Tuple(ref lt) => {}
-                    _ => {}
-                }
-            }
-
-            _ => {}
-        }
 
         // interface P {}
         // interface C extends P {}
@@ -220,15 +195,15 @@ impl Analyzer<'_, '_> {
             return Ok(());
         }
 
-        self.castable(span, &orig, &casted, Default::default())
+        self.castable(span, orig, casted, Default::default())
             .and_then(|castable| {
                 if castable {
                     Ok(())
                 } else {
-                    Err(Error::NonOverlappingTypeCast { span })
+                    Err(ErrorKind::NonOverlappingTypeCast { span }.into())
                 }
             })
-            .convert_err(|err| Error::NonOverlappingTypeCast { span })
+            .convert_err(|err| ErrorKind::NonOverlappingTypeCast { span })
     }
 
     pub(crate) fn has_overlap(&mut self, span: Span, l: &Type, r: &Type, opts: CastableOpts) -> VResult<bool> {
@@ -260,13 +235,10 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        match to {
-            Type::TypeLit(to) => {
-                if to.members.is_empty() {
-                    return Ok(true);
-                }
+        if let Type::TypeLit(to) = to {
+            if to.members.is_empty() {
+                return Ok(true);
             }
-            _ => {}
         }
 
         if from.type_eq(to) {
@@ -348,22 +320,18 @@ impl Analyzer<'_, '_> {
                 // annotation is different.
                 for lm in &lt.members {
                     for rm in &rt.members {
-                        match (lm, rm) {
-                            (TypeElement::Index(lm), TypeElement::Index(rm)) => {
-                                if lm.params.type_eq(&rm.params) {
-                                    if let Some(lt) = &lm.type_ann {
-                                        if let Some(rt) = &rm.type_ann {
-                                            if self.assign(span, &mut Default::default(), &lt, &rt).is_err()
-                                                && self.assign(span, &mut Default::default(), &rt, &lt).is_err()
-                                            {
-                                                return Ok(false);
-                                            }
+                        if let (TypeElement::Index(lm), TypeElement::Index(rm)) = (lm, rm) {
+                            if lm.params.type_eq(&rm.params) {
+                                if let Some(lt) = &lm.type_ann {
+                                    if let Some(rt) = &rm.type_ann {
+                                        if self.assign(span, &mut Default::default(), lt, rt).is_err()
+                                            && self.assign(span, &mut Default::default(), rt, lt).is_err()
+                                        {
+                                            return Ok(false);
                                         }
                                     }
                                 }
                             }
-
-                            _ => {}
                         }
                     }
                 }
@@ -377,23 +345,20 @@ impl Analyzer<'_, '_> {
             return Ok(true);
         }
 
-        match from {
-            Type::Union(l) => {
-                for l in &l.types {
-                    if self.castable(span, l, to, opts)? {
-                        return Ok(true);
-                    }
+        if let Type::Union(l) = from {
+            for l in &l.types {
+                if self.castable(span, l, to, opts)? {
+                    return Ok(true);
                 }
-
-                return Ok(false);
             }
-            _ => {}
+
+            return Ok(false);
         }
 
         match to {
             Type::Union(to) => {
                 for to in &to.types {
-                    if self.castable(span, from, &to, opts)? {
+                    if self.castable(span, from, to, opts)? {
                         return Ok(true);
                     }
                 }
@@ -403,7 +368,7 @@ impl Analyzer<'_, '_> {
 
             Type::Intersection(to) => {
                 for to in &to.types {
-                    if self.castable(span, from, &to, opts)? {
+                    if self.castable(span, from, to, opts)? {
                         return Ok(true);
                     }
                 }
@@ -414,7 +379,7 @@ impl Analyzer<'_, '_> {
         }
 
         if from.is_num() {
-            if self.can_be_casted_to_number_in_rhs(span, &to) {
+            if self.can_be_casted_to_number_in_rhs(span, to) {
                 return Ok(true);
             }
         }

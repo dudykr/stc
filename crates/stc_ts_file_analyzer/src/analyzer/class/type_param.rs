@@ -1,5 +1,5 @@
 use rnode::{Visit, VisitWith};
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 use stc_ts_types::{Id, TypeParam};
 use swc_common::Span;
 
@@ -18,7 +18,7 @@ impl Analyzer<'_, '_> {
                     return false;
                 }
                 dbg!(&scope.declaring_type_params);
-                scope.declaring_type_params.contains(&id)
+                scope.declaring_type_params.contains(id)
             })
             .is_some()
     }
@@ -36,7 +36,7 @@ impl Visit<TypeParam> for StaticTypeParamValidator<'_, '_, '_> {
         if self.analyzer.is_type_param_declared_in_containing_class(&param.name) {
             self.analyzer
                 .storage
-                .report(Error::StaticMemberCannotUseTypeParamOfClass { span: self.span })
+                .report(ErrorKind::StaticMemberCannotUseTypeParamOfClass { span: self.span }.into())
         }
     }
 }

@@ -11,17 +11,18 @@ use crate::{analyzer::Analyzer, util::ModuleItemOrStmt};
 mod tests;
 
 impl Analyzer<'_, '_> {
+    #[allow(clippy::ptr_arg)]
     pub(super) fn validate_stmts_with_hoisting<T>(&mut self, stmts: &Vec<&T>)
     where
         T: AsModuleDecl + ModuleItemOrStmt + VisitWith<Self> + From<RStmt> + HasNodeId + Sortable<Id = TypedId>,
     {
-        let (order, skip) = self.reorder_stmts(&stmts);
+        let (order, skip) = self.reorder_stmts(stmts);
         let mut type_decls = FxHashMap::<Id, Vec<usize>>::with_capacity_and_hasher(order.len(), Default::default());
 
         if self.scope.is_root() {
             // We should track type declarations.
             for &idx in &order {
-                let type_decl_id = type_decl_id(&*stmts[idx]);
+                let type_decl_id = type_decl_id(stmts[idx]);
                 if let Some(id) = type_decl_id {
                     type_decls.entry(id).or_default().push(idx);
                 }
@@ -36,7 +37,7 @@ impl Analyzer<'_, '_> {
 
             if skip.contains(&idx) {
             } else {
-                let type_decl_id = type_decl_id(&*stmts[idx]);
+                let type_decl_id = type_decl_id(stmts[idx]);
 
                 let node_id = stmts[idx].node_id();
                 stmts[idx].visit_with(self);

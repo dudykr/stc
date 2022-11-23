@@ -310,6 +310,7 @@ es2017/useSharedArrayBuffer5.ts
 es2017/useSharedArrayBuffer6.ts
 es2018/usePromiseFinally.ts
 es2018/useRegexpGroups.ts
+es2019/globalThisTypeIndexAccess.ts
 es2020/bigintMissingES2019.ts
 es2020/modules/exportAsNamespace_nonExistent.ts
 es2020/numberFormatCurrencySign.ts
@@ -343,7 +344,6 @@ es6/Symbols/symbolProperty20.ts
 es6/Symbols/symbolProperty21.ts
 es6/Symbols/symbolProperty22.ts
 es6/Symbols/symbolProperty23.ts
-es6/Symbols/symbolProperty25.ts
 es6/Symbols/symbolProperty26.ts
 es6/Symbols/symbolProperty27.ts
 es6/Symbols/symbolProperty28.ts
@@ -516,6 +516,8 @@ es6/computedProperties/computedPropertyNames37_ES5.ts
 es6/computedProperties/computedPropertyNames37_ES6.ts
 es6/computedProperties/computedPropertyNames38_ES5.ts
 es6/computedProperties/computedPropertyNames38_ES6.ts
+es6/computedProperties/computedPropertyNames39_ES5.ts
+es6/computedProperties/computedPropertyNames39_ES6.ts
 es6/computedProperties/computedPropertyNames41_ES5.ts
 es6/computedProperties/computedPropertyNames41_ES6.ts
 es6/computedProperties/computedPropertyNames42_ES5.ts
@@ -1314,6 +1316,7 @@ expressions/typeGuards/nullOrUndefinedTypeGuardIsOrderIndependent.ts
 expressions/typeGuards/typeGuardEnums.ts
 expressions/typeGuards/typeGuardFunction.ts
 expressions/typeGuards/typeGuardFunctionGenerics.ts
+expressions/typeGuards/typeGuardIntersectionTypes.ts
 expressions/typeGuards/typeGuardNarrowsPrimitiveIntersection.ts
 expressions/typeGuards/typeGuardNarrowsToLiteralType.ts
 expressions/typeGuards/typeGuardNarrowsToLiteralTypeUnion.ts
@@ -1540,6 +1543,7 @@ parser/ecmascript5/ArrowFunctionExpressions/parserArrowFunctionExpression4.ts
 parser/ecmascript5/ArrowFunctionExpressions/parserArrowFunctionExpression5.ts
 parser/ecmascript5/ArrowFunctionExpressions/parserArrowFunctionExpression6.ts
 parser/ecmascript5/ArrowFunctionExpressions/parserArrowFunctionExpression7.ts
+parser/ecmascript5/AutomaticSemicolonInsertion/parserAutomaticSemicolonInsertion1.ts
 parser/ecmascript5/ClassDeclarations/parserClass1.ts
 parser/ecmascript5/ClassDeclarations/parserClass2.ts
 parser/ecmascript5/ClassDeclarations/parserClassDeclaration10.ts
@@ -1818,7 +1822,6 @@ parser/ecmascript5/parserExportAsFunctionIdentifier.ts
 parser/ecmascript5/parserImportDeclaration1.ts
 parser/ecmascript5/parserInExpression1.ts
 parser/ecmascript5/parserKeywordsAsIdentifierName1.ts
-parser/ecmascript5/parserNoASIOnCallAfterFunctionExpressambient/ambientDeclarationsPatterns_tooManyAsterisks.ts
 parser/ecmascript5/parserNoASIOnCallAfterFunctionExpression1.ts
 parser/ecmascript5/parserNotRegex2.ts
 parser/ecmascript5/parserObjectCreationArrayLiteral2.ts
@@ -1913,6 +1916,7 @@ statements/continueStatements/doWhileContinueStatements.ts
 statements/continueStatements/forContinueStatements.ts
 statements/continueStatements/forInContinueStatements.ts
 statements/continueStatements/whileContinueStatements.ts
+statements/for-await-ofStatements/forAwaitPerIterationBindingDownlevel.ts
 statements/for-inStatements/for-inStatementsArray.ts
 statements/for-inStatements/for-inStatementsAsyncIdentifier.ts
 statements/for-inStatements/for-inStatementsDestructuring.ts
@@ -1971,6 +1975,7 @@ statements/for-ofStatements/ES5for-of32.ts
 statements/forStatements/forStatements.ts
 statements/ifDoWhileStatements/ifDoWhileStatements.ts
 statements/returnStatements/returnStatements.ts
+statements/switchStatements/switchStatements.ts
 statements/throwStatements/throwInEnclosingStatements.ts
 statements/throwStatements/throwStatements.ts
 statements/tryStatements/tryStatements.ts
@@ -2058,6 +2063,7 @@ types/members/objectTypePropertyAccess.ts
 types/members/objectTypeWithCallSignatureAppearsToBeFunctionType.ts
 types/members/objectTypeWithCallSignatureHidingMembersOfExtendedFunction.ts
 types/members/objectTypeWithCallSignatureHidingMembersOfFunction.ts
+types/members/objectTypeWithCallSignatureHidingMembersOfFunctionAssignmentCompat.ts
 types/members/objectTypeWithConstructSignatureAppearsToBeFunctionType.ts
 types/members/objectTypeWithConstructSignatureHidingMembersOfExtendedFunction.ts
 types/members/objectTypeWithConstructSignatureHidingMembersOfFunction.ts
@@ -2226,6 +2232,7 @@ types/thisType/thisTypeInClasses.ts
 types/thisType/thisTypeInFunctions3.ts
 types/thisType/thisTypeInInterfaces.ts
 types/thisType/thisTypeInObjectLiterals.ts
+types/thisType/thisTypeInTaggedTemplateCall.ts
 types/thisType/thisTypeInTuples.ts
 types/thisType/thisTypeInTypePredicate.ts
 types/thisType/thisTypeOptionalCall.ts
@@ -2356,6 +2363,7 @@ types/typeRelationships/subtypesAndSuperTypes/subtypingWithConstructSignatures2.
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithConstructSignatures3.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithConstructSignatures4.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithConstructSignatures5.ts
+types/typeRelationships/subtypesAndSuperTypes/subtypingWithNumericIndexer5.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithObjectMembers4.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithObjectMembersOptionality.ts
 types/typeRelationships/subtypesAndSuperTypes/subtypingWithObjectMembersOptionality2.ts

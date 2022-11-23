@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use itertools::Itertools;
 use rnode::NodeId;
 use stc_ts_ast_rnode::{RIdent, RTsEntityName, RTsLit};
-use stc_ts_errors::{debug::dump_type_as_string, DebugExt, Error, Errors};
+use stc_ts_errors::{debug::dump_type_as_string, DebugExt, ErrorKind, Errors};
 use stc_ts_type_ops::Fix;
 use stc_ts_types::{
     Array, Class, ClassDef, ClassMember, Function, Key, KeywordType, LitType, MethodSignature, Operator, PropertySignature, Ref, TplType,
@@ -85,10 +85,11 @@ impl Analyzer<'_, '_> {
                     return if errors.is_empty() {
                         Ok(())
                     } else {
-                        Err(Error::Errors {
+                        Err(ErrorKind::Errors {
                             span,
                             errors: errors.into(),
-                        })
+                        }
+                        .into())
                     };
                 }
 
@@ -106,10 +107,10 @@ impl Analyzer<'_, '_> {
                     }),
                     ..
                 }) => {
-                    if lhs.iter().any(|el| match el {
-                        TypeElement::Call(..) | TypeElement::Constructor(..) => true,
-                        _ => false,
-                    }) {
+                    if lhs
+                        .iter()
+                        .any(|el| matches!(el, TypeElement::Call(..) | TypeElement::Constructor(..)))
+                    {
                         return Ok(());
                     }
                 }
@@ -150,7 +151,7 @@ impl Analyzer<'_, '_> {
                     };
 
                     let rhs_members = rhs_members
-                        .into_iter()
+                        .iter()
                         .enumerate()
                         .filter(|(index, _)| valid_rhs_indexes.contains(index))
                         .map(|(_, v)| v.clone())
@@ -194,22 +195,16 @@ impl Analyzer<'_, '_> {
                     .with_context(|| {
                         format!(
                             "tried assignment of a type literal to a type literals\nLHS={}\nRHS={}",
-                            dump_type_as_string(
-                                &self.cm,
-                                &Type::TypeLit(TypeLit {
-                                    span: DUMMY_SP,
-                                    members: lhs.to_vec(),
-                                    metadata: Default::default()
-                                })
-                            ),
-                            dump_type_as_string(
-                                &self.cm,
-                                &Type::TypeLit(TypeLit {
-                                    span: DUMMY_SP,
-                                    members: rhs_members.to_vec(),
-                                    metadata: Default::default()
-                                })
-                            ),
+                            dump_type_as_string(&Type::TypeLit(TypeLit {
+                                span: DUMMY_SP,
+                                members: lhs.to_vec(),
+                                metadata: Default::default()
+                            })),
+                            dump_type_as_string(&Type::TypeLit(TypeLit {
+                                span: DUMMY_SP,
+                                members: rhs_members.to_vec(),
+                                metadata: Default::default()
+                            })),
                         )
                     })
                     .store(&mut errors);
@@ -226,27 +221,31 @@ impl Analyzer<'_, '_> {
                             .context("tried to assign to type elements by converting rhs to a type literal");
                     }
 
-                    return Err(Error::SimpleAssignFailed { span, cause: None });
+                    return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
                 }
 
                 Type::Tuple(..) | Type::Array(..) | Type::EnumVariant(..) if lhs.is_empty() => return Ok(()),
 
                 Type::Array(..) | Type::Tuple(..) => {
                     if opts.allow_assignment_of_array_to_optional_type_lit {
-                        if lhs.iter().all(|el| match el {
-                            TypeElement::Property(PropertySignature { optional: true, .. })
-                            | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
-                            _ => false,
+                        if lhs.iter().all(|el| {
+                            matches!(
+                                el,
+                                TypeElement::Property(PropertySignature { optional: true, .. })
+                                    | TypeElement::Method(MethodSignature { optional: true, .. })
+                            )
                         }) {
                             return Ok(());
                         }
                     }
-                    if lhs.iter().any(|member| match member {
-                        TypeElement::Property(PropertySignature { optional: true, .. })
-                        | TypeElement::Method(MethodSignature { optional: true, .. }) => true,
-                        _ => false,
+                    if lhs.iter().any(|member| {
+                        matches!(
+                            member,
+                            TypeElement::Property(PropertySignature { optional: true, .. })
+                                | TypeElement::Method(MethodSignature { optional: true, .. })
+                        )
                     }) {
-                        return Err(Error::SimpleAssignFailed { span, cause: None });
+                        return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into());
                     }
 
                     match rhs.normalize() {
@@ -380,20 +379,20 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .convert_err(|err| match err {
-                            Error::Errors { span, .. } => Error::SimpleAssignFailed {
+                            ErrorKind::Errors { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
-                                cause: Some(box err),
+                                cause: Some(box err.into()),
                             },
-                            Error::MissingFields { span, .. } => Error::SimpleAssignFailed {
+                            ErrorKind::MissingFields { span, .. } => ErrorKind::SimpleAssignFailed {
                                 span,
-                                cause: Some(box err),
+                                cause: Some(box err.into()),
                             },
                             _ => err,
                         })
                         .with_context(|| {
                             format!(
                                 "tried to assign a class definition to type elements\nRHS = {}",
-                                dump_type_as_string(&self.cm, &rhs),
+                                dump_type_as_string(&rhs),
                             )
                         });
                 }
@@ -401,7 +400,7 @@ impl Analyzer<'_, '_> {
                 Type::Class(rhs_cls) => {
                     // TODO(kdy1): Check if constructor exists.
                     if rhs_cls.def.is_abstract {
-                        return Err(Error::CannotAssignAbstractConstructorToNonAbstractConstructor { span });
+                        return Err(ErrorKind::CannotAssignAbstractConstructorToNonAbstractConstructor { span }.into());
                     }
 
                     // TODO(kdy1): Optimize
@@ -492,7 +491,7 @@ impl Analyzer<'_, '_> {
                         .with_context(|| {
                             format!(
                                 "tried to assign the converted type to type elements:\nRHS={}",
-                                dump_type_as_string(&self.cm, &rhs)
+                                dump_type_as_string(&rhs)
                             )
                         });
                 }
@@ -549,18 +548,19 @@ impl Analyzer<'_, '_> {
                             },
                         )
                         .map_err(|err| {
-                            err.convert_all(|err| match err {
-                                Error::MissingFields { .. } => Error::SimpleAssignFailed {
+                            err.convert_all(|err| match *err {
+                                ErrorKind::MissingFields { .. } => ErrorKind::SimpleAssignFailed {
                                     span: err.span(),
                                     cause: Some(box err),
-                                },
+                                }
+                                .into(),
                                 _ => err,
                             })
                         })
                         .with_context(|| {
                             format!(
                                 "tried to assign a keyword as builtin to type elements\nRHS = {}",
-                                dump_type_as_string(&self.cm, &rhs)
+                                dump_type_as_string(&rhs)
                             )
                         });
                 }
@@ -611,7 +611,7 @@ impl Analyzer<'_, '_> {
                 | Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsVoidKeyword,
                     ..
-                }) => return Err(Error::SimpleAssignFailed { span, cause: None }),
+                }) => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
 
                 // TODO(kdy1): Strict mode
                 Type::Keyword(KeywordType {
@@ -639,10 +639,10 @@ impl Analyzer<'_, '_> {
                                     ..
                                 })) = r_mapped.type_param.constraint.as_deref().map(|ty| ty.normalize())
                                 {
-                                    if let Ok(()) = self.assign_with_opts(data, &l_index.params[0].ty, &&r_constraint, opts) {
+                                    if let Ok(()) = self.assign_with_opts(data, &l_index.params[0].ty, r_constraint, opts) {
                                         if let Some(l_type_ann) = &l_index.type_ann {
                                             if let Some(r_ty) = &r_mapped.ty {
-                                                self.assign_with_opts(data, &l_type_ann, &r_ty, opts)
+                                                self.assign_with_opts(data, l_type_ann, r_ty, opts)
                                                     .context("tried to assign a mapped type to an index signature")?;
                                             }
                                         }
@@ -662,35 +662,37 @@ impl Analyzer<'_, '_> {
                     if lhs.is_empty() {
                         return Ok(());
                     } else {
-                        let err = Error::MissingFields {
+                        let err = ErrorKind::MissingFields {
                             span,
                             fields: lhs.to_vec(),
                         }
                         .context("keyword `object` is not assignable to a non-empty type literal");
-                        return Err(Error::Errors { span, errors: vec![err] });
+                        return Err(ErrorKind::Errors { span, errors: vec![err] }.into());
                     }
                 }
 
-                Type::EnumVariant(..) => return Err(Error::SimpleAssignFailed { span, cause: None }),
+                Type::EnumVariant(..) => return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into()),
 
                 Type::Keyword(..) => {
                     let rhs = self
                         .normalize(
                             Some(span),
-                            Cow::Borrowed(&rhs),
+                            Cow::Borrowed(rhs),
                             NormalizeTypeOpts {
                                 normalize_keywords: true,
                                 ..Default::default()
                             },
                         )
-                        .convert_err(|err| Error::SimpleAssignFailed {
+                        .convert_err(|err| ErrorKind::SimpleAssignFailed {
                             span: err.span(),
-                            cause: Some(box err),
+                            cause: Some(box err.into()),
                         })
                         .context("failed to normalize")?;
 
                     if rhs.is_keyword() {
-                        return Err(Error::SimpleAssignFailed { span, cause: None }.context("failed to assign builtin type of a keyword"));
+                        return Err(
+                            ErrorKind::SimpleAssignFailed { span, cause: None }.context("failed to assign builtin type of a keyword")
+                        );
                     }
 
                     return self
@@ -699,7 +701,7 @@ impl Analyzer<'_, '_> {
                 }
 
                 Type::Tpl(TplType { span: rhs_span, .. }) => {
-                    if lhs.len() == 0 {
+                    if lhs.is_empty() {
                         return Ok(());
                     }
 
@@ -718,15 +720,19 @@ impl Analyzer<'_, '_> {
                 }
 
                 _ => {
-                    return Err(Error::Unimplemented {
+                    return Err(ErrorKind::Unimplemented {
                         span,
                         msg: format!("assign_to_type_elements - {:#?}", rhs),
-                    })
+                    }
+                    .into())
                 }
             }
 
             if !errors.is_empty() {
-                return Err(Error::ObjectAssignFailed { span, errors })?;
+                return Err(ErrorKind::ObjectAssignFailed {
+                    span,
+                    errors: ErrorKind::flatten(errors),
+                })?;
             }
 
             if !unhandled_rhs.is_empty() {
@@ -735,25 +741,23 @@ impl Analyzer<'_, '_> {
                 //      var c { [n: number]: { a: string; b: number; }; } = [{ a:
                 // '', b: 0, c: '' }];
 
-                return Err(Error::Errors {
+                return Err(ErrorKind::Errors {
                     span,
                     errors: unhandled_rhs
                         .into_iter()
-                        .map(|span| Error::UnknownPropertyInObjectLiteralAssignment { span })
+                        .map(|span| ErrorKind::UnknownPropertyInObjectLiteralAssignment { span }.into())
                         .collect(),
-                });
+                }
+                .into());
             }
         }
 
         'l: for m in lhs {
             // Handle `toString()`
-            match m {
-                TypeElement::Method(ref m) => {
-                    if m.key == js_word!("toString") {
-                        continue;
-                    }
+            if let TypeElement::Method(ref m) = m {
+                if m.key == js_word!("toString") {
+                    continue;
                 }
-                _ => {}
             }
 
             // Handle optional
@@ -778,20 +782,17 @@ impl Analyzer<'_, '_> {
                         }
                         TypeElement::Property(ref lp) => {
                             for rm in body {
-                                match rm {
-                                    ClassMember::Property(ref rp) => {
-                                        match rp.accessibility {
-                                            Some(Accessibility::Private) | Some(Accessibility::Protected) => {
-                                                errors.push(Error::AccessibilityDiffers { span });
-                                            }
-                                            _ => {}
+                                if let ClassMember::Property(ref rp) = rm {
+                                    match rp.accessibility {
+                                        Some(Accessibility::Private) | Some(Accessibility::Protected) => {
+                                            errors.push(ErrorKind::AccessibilityDiffers { span }.into());
                                         }
-
-                                        if lp.key.type_eq(&rp.key) {
-                                            continue 'l;
-                                        }
+                                        _ => {}
                                     }
-                                    _ => {}
+
+                                    if lp.key.type_eq(&rp.key) {
+                                        continue 'l;
+                                    }
                                 }
                             }
 
@@ -823,20 +824,83 @@ impl Analyzer<'_, '_> {
         }
 
         if !missing_fields.is_empty() {
-            errors.push(Error::MissingFields {
-                span,
-                fields: missing_fields,
-            });
+            if self.should_report_properties(span, lhs, rhs) {
+                errors.push(
+                    ErrorKind::MissingFields {
+                        span,
+                        fields: missing_fields,
+                    }
+                    .into(),
+                );
+            } else {
+                errors.push(
+                    ErrorKind::ObjectAssignFailed {
+                        span,
+                        errors: vec![ErrorKind::SimpleAssignFailed { span, cause: None }.into()],
+                    }
+                    .into(),
+                )
+            }
         }
 
         if !errors.is_empty() {
-            return Err(Error::Errors {
-                span,
-                errors: errors.into(),
-            });
+            return Err(ErrorKind::Errors { span, errors }.into());
         }
 
         Ok(())
+    }
+
+    fn should_report_properties(&mut self, span: Span, lhs: &[TypeElement], rhs: &Type) -> bool {
+        let type_call_signatures = lhs
+            .iter()
+            .filter_map(|m| match m {
+                TypeElement::Call(ref m) => Some(m),
+                _ => None,
+            })
+            .count();
+
+        let type_constructor_signatures = lhs
+            .iter()
+            .filter_map(|m| match m {
+                TypeElement::Constructor(ref m) => Some(m),
+                _ => None,
+            })
+            .count();
+
+        if (type_call_signatures > 0 || type_constructor_signatures > 0)
+            && lhs
+                .iter()
+                .filter(|el| matches!(el, TypeElement::Property(..) | TypeElement::Method(..)))
+                .count()
+                == 0
+        {
+            if let Ok(Some(rhs)) = self.convert_type_to_type_lit(span, Cow::Borrowed(rhs)) {
+                let rhs_call_count = rhs
+                    .members
+                    .iter()
+                    .filter_map(|m| match m {
+                        TypeElement::Call(ref m) => Some(m),
+                        _ => None,
+                    })
+                    .count();
+                let rhs_constructor_count = rhs
+                    .members
+                    .iter()
+                    .filter_map(|m| match m {
+                        TypeElement::Constructor(ref m) => Some(m),
+                        _ => None,
+                    })
+                    .count();
+
+                if (rhs_call_count > 0 && type_call_signatures > 0) || (rhs_constructor_count > 0 && type_constructor_signatures > 0) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        true
     }
 
     pub(super) fn try_assign_using_parent(&mut self, data: &mut AssignData, l: &Type, r: &Type, opts: AssignOpts) -> Option<VResult<()>> {
@@ -853,7 +917,7 @@ impl Analyzer<'_, '_> {
 
                         let res = self.assign_with_opts(
                             data,
-                            &l,
+                            l,
                             &parent,
                             AssignOpts {
                                 allow_unknown_rhs: Some(true),
@@ -888,20 +952,22 @@ impl Analyzer<'_, '_> {
 
         let mut errors = vec![];
 
-        for (i, m) in lhs.into_iter().enumerate().filter(|(_, m)| m.key().is_some()) {
+        for (i, m) in lhs.iter().enumerate().filter(|(_, m)| m.key().is_some()) {
             let res = self
                 .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &[m], lhs_metadata, rhs, opts)
                 .with_context(|| format!("tried to assign to {}th element: {:?}", i, m.key()));
 
             match res {
                 Ok(()) => {}
-                Err(Error::Errors { ref errors, .. }) if errors.is_empty() => {}
-                Err(err) => errors.push(err),
+                Err(err) => match &*err {
+                    ErrorKind::Errors { ref errors, .. } if errors.is_empty() => {}
+                    _ => errors.push(err),
+                },
             }
         }
 
         if !errors.is_empty() {
-            return Err(Error::Errors { span, errors });
+            return Err(ErrorKind::Errors { span, errors }.into());
         }
 
         let lhs_index = lhs.iter().filter(|m| matches!(m, TypeElement::Index(_))).collect_vec();
@@ -911,7 +977,7 @@ impl Analyzer<'_, '_> {
         if !lhs_index.is_empty() {
             let res = self
                 .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &lhs_index, lhs_metadata, rhs, opts)
-                .with_context(|| format!("tried to assign to an element (not a key-based)"));
+                .with_context(|| "tried to assign to an element (not a key-based)".to_string());
 
             errors.extend(res.err());
         }
@@ -919,7 +985,7 @@ impl Analyzer<'_, '_> {
         if !lhs_call.is_empty() {
             let res = self
                 .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &lhs_call, lhs_metadata, rhs, opts)
-                .with_context(|| format!("tried to assign to an element (not a key-based)"));
+                .with_context(|| "tried to assign to an element (not a key-based)".to_string());
 
             errors.extend(res.err());
         }
@@ -927,13 +993,13 @@ impl Analyzer<'_, '_> {
         if !lhs_constructor.is_empty() {
             let res = self
                 .assign_type_elements_to_type_element(data, missing_fields, unhandled_rhs, &lhs_constructor, lhs_metadata, rhs, opts)
-                .with_context(|| format!("tried to assign to an element (not a key-based)"));
+                .with_context(|| "tried to assign to an element (not a key-based)".to_string());
 
             errors.extend(res.err());
         }
 
         if !errors.is_empty() {
-            return Err(Error::Errors { span, errors });
+            return Err(ErrorKind::Errors { span, errors }.into());
         }
 
         Ok(())
@@ -1007,7 +1073,7 @@ impl Analyzer<'_, '_> {
                             right_ident_span: Some(r_key.span()),
                             ..opts
                         };
-                        if l_key.type_eq(&*r_key) {
+                        if l_key.type_eq(r_key) {
                             match lm {
                                 TypeElement::Property(ref lp) => match rm {
                                     TypeElement::Property(ref rp) => {
@@ -1015,13 +1081,13 @@ impl Analyzer<'_, '_> {
                                             if lp.accessibility == Some(Accessibility::Private)
                                                 || rp.accessibility == Some(Accessibility::Private)
                                             {
-                                                return Err(Error::AssignFailedDueToAccessibility { span });
+                                                return Err(ErrorKind::AssignFailedDueToAccessibility { span }.into());
                                             }
                                         }
 
                                         if !opts.for_castablity {
                                             if !lp.optional && rp.optional {
-                                                return Err(Error::AssignFailedDueToOptionalityDifference { span });
+                                                return Err(ErrorKind::AssignFailedDueToOptionalityDifference { span }.into());
                                             }
                                         }
 
@@ -1076,7 +1142,7 @@ impl Analyzer<'_, '_> {
                                             } else {
                                                 self.assign_with_opts(
                                                     data,
-                                                    &lp_ty,
+                                                    lp_ty,
                                                     &Type::Function(Function {
                                                         span,
                                                         type_params: rm.type_params.clone(),
@@ -1212,7 +1278,7 @@ impl Analyzer<'_, '_> {
                                     {
                                         if let Some(l_index_ret_ty) = &li.type_ann {
                                             if let Some(r_prop_ty) = &r_prop.type_ann {
-                                                self.assign_with_opts(data, &l_index_ret_ty, &&r_prop_ty, opts)
+                                                self.assign_with_opts(data, l_index_ret_ty, r_prop_ty, opts)
                                                     .context("tried to assign a type of property to thr type of an index signature")?;
                                             }
                                         }
@@ -1232,7 +1298,7 @@ impl Analyzer<'_, '_> {
                                         if let Some(li_ret) = &li.type_ann {
                                             self.assign_with_opts(
                                                 data,
-                                                &li_ret,
+                                                li_ret,
                                                 &Type::Function(Function {
                                                     span: rm.span,
                                                     type_params: rm.type_params.clone(),
@@ -1266,7 +1332,7 @@ impl Analyzer<'_, '_> {
 
                                         if let Some(lt) = &li.type_ann {
                                             if let Some(rt) = &ri.type_ann {
-                                                self.assign_with_opts(data, &lt, &rt, opts)?;
+                                                self.assign_with_opts(data, lt, rt, opts)?;
                                             }
                                         }
 
@@ -1274,7 +1340,8 @@ impl Analyzer<'_, '_> {
                                     }
 
                                     errors.push(
-                                        Error::SimpleAssignFailed { span, cause: None }.context("failed to assign to an index signature"),
+                                        ErrorKind::SimpleAssignFailed { span, cause: None }
+                                            .context("failed to assign to an index signature"),
                                     );
                                 }
                             }
@@ -1283,47 +1350,44 @@ impl Analyzer<'_, '_> {
                     TypeElement::Call(lc) => {
                         //
                         for (ri, rm) in rhs_members.iter().enumerate() {
-                            match rm {
-                                TypeElement::Call(rc) => {
-                                    for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Call(_))) {
-                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                            unhandled_rhs.remove(pos);
-                                            continue;
-                                        }
+                            if let TypeElement::Call(rc) = rm {
+                                for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Call(_))) {
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
+                                        continue;
                                     }
-
-                                    done = true;
-
-                                    let res = self
-                                        .assign_to_fn_like(
-                                            data,
-                                            true,
-                                            lc.type_params.as_ref(),
-                                            &lc.params,
-                                            lc.ret_ty.as_deref(),
-                                            rc.type_params.as_ref(),
-                                            &rc.params,
-                                            rc.ret_ty.as_deref(),
-                                            AssignOpts {
-                                                infer_type_params_of_left: true,
-                                                ..opts
-                                            },
-                                        )
-                                        .with_context(|| format!("tried to assign {}th element to a call signature", ri));
-
-                                    match res {
-                                        Ok(()) => {
-                                            missing_fields.drain(missing_field_start_idx..);
-                                            return Ok(());
-                                        }
-                                        Err(err) => {
-                                            errors.push(err);
-                                        }
-                                    }
-
-                                    continue;
                                 }
-                                _ => {}
+
+                                done = true;
+
+                                let res = self
+                                    .assign_to_fn_like(
+                                        data,
+                                        true,
+                                        lc.type_params.as_ref(),
+                                        &lc.params,
+                                        lc.ret_ty.as_deref(),
+                                        rc.type_params.as_ref(),
+                                        &rc.params,
+                                        rc.ret_ty.as_deref(),
+                                        AssignOpts {
+                                            infer_type_params_of_left: true,
+                                            ..opts
+                                        },
+                                    )
+                                    .with_context(|| format!("tried to assign {}th element to a call signature", ri));
+
+                                match res {
+                                    Ok(()) => {
+                                        missing_fields.drain(missing_field_start_idx..);
+                                        return Ok(());
+                                    }
+                                    Err(err) => {
+                                        errors.push(err);
+                                    }
+                                }
+
+                                continue;
                             }
                         }
 
@@ -1335,62 +1399,56 @@ impl Analyzer<'_, '_> {
                     TypeElement::Constructor(lc) => {
                         //
                         for rm in rhs_members {
-                            match rm {
-                                TypeElement::Constructor(rc) => {
-                                    for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Constructor(_))) {
-                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                            unhandled_rhs.remove(pos);
-                                            continue;
-                                        }
+                            if let TypeElement::Constructor(rc) = rm {
+                                for rm in rhs_members.iter().filter(|rm| matches!(rm, TypeElement::Constructor(_))) {
+                                    if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                        unhandled_rhs.remove(pos);
+                                        continue;
                                     }
+                                }
 
-                                    done = true;
+                                done = true;
 
-                                    let res = self.assign_to_fn_like(
-                                        data,
-                                        false,
-                                        lc.type_params.as_ref(),
-                                        &lc.params,
-                                        lc.ret_ty.as_deref(),
-                                        rc.type_params.as_ref(),
-                                        &rc.params,
-                                        rc.ret_ty.as_deref(),
-                                        AssignOpts {
-                                            infer_type_params_of_left: true,
-                                            ..opts
-                                        },
-                                    );
+                                let res = self.assign_to_fn_like(
+                                    data,
+                                    false,
+                                    lc.type_params.as_ref(),
+                                    &lc.params,
+                                    lc.ret_ty.as_deref(),
+                                    rc.type_params.as_ref(),
+                                    &rc.params,
+                                    rc.ret_ty.as_deref(),
+                                    AssignOpts {
+                                        infer_type_params_of_left: true,
+                                        ..opts
+                                    },
+                                );
 
-                                    match res {
-                                        Ok(()) => {
-                                            missing_fields.drain(missing_field_start_idx..);
+                                match res {
+                                    Ok(()) => {
+                                        missing_fields.drain(missing_field_start_idx..);
 
-                                            for rm in rhs_members {
-                                                match rm {
-                                                    TypeElement::Constructor(..) => {
-                                                        if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
-                                                            unhandled_rhs.remove(pos);
-                                                        }
-                                                    }
-                                                    _ => {}
+                                        for rm in rhs_members {
+                                            if let TypeElement::Constructor(..) = rm {
+                                                if let Some(pos) = unhandled_rhs.iter().position(|span| *span == rm.span()) {
+                                                    unhandled_rhs.remove(pos);
                                                 }
                                             }
+                                        }
 
-                                            return Ok(());
-                                        }
-                                        Err(err) => {
-                                            errors.push(err);
-                                        }
+                                        return Ok(());
                                     }
-
-                                    continue;
+                                    Err(err) => {
+                                        errors.push(err);
+                                    }
                                 }
-                                _ => {}
+
+                                continue;
                             }
                         }
 
                         if !opts.is_assigning_to_class_members {
-                            return Err(Error::SimpleAssignFailed { span, cause: None }.context("failed to assign to a constructor"));
+                            return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("failed to assign to a constructor"));
                         }
                     }
 
@@ -1406,7 +1464,11 @@ impl Analyzer<'_, '_> {
         }
 
         if !errors.is_empty() {
-            return Err(Error::ObjectAssignFailed { span, errors });
+            return Err(ErrorKind::ObjectAssignFailed {
+                span,
+                errors: ErrorKind::flatten(errors),
+            }
+            .into());
         }
 
         unhandled_rhs.clear();

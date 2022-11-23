@@ -288,12 +288,18 @@ fn handle_enum_variant_fields(nodes_to_convert: &[String], enum_name: Option<&Id
             handle_field(
                 nodes_to_convert,
                 &field.attrs,
-                &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span())),
+                &field
+                    .ident
+                    .clone()
+                    .unwrap_or_else(|| Ident::new(&format!("_{}", idx), field.ident.span())),
                 &field.ty,
             ),
         )
     }) {
-        let binding = &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span()));
+        let binding = &field
+            .ident
+            .clone()
+            .unwrap_or_else(|| Ident::new(&format!("_{}", idx), field.ident.span()));
 
         bindings.push(binding.clone());
 
@@ -453,12 +459,15 @@ fn handle_struct_fields(attrs: &[Attribute], nodes_to_convert: &[String], struct
             handle_field(
                 nodes_to_convert,
                 &field.attrs,
-                &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span())),
+                &field
+                    .ident
+                    .clone()
+                    .unwrap_or_else(|| Ident::new(&format!("_{}", idx), field.ident.span())),
                 &field.ty,
             ),
         )
     }) {
-        let binding = &field.ident.clone().unwrap_or(Ident::new(&format!("_{}", idx), field.ident.span()));
+        let binding = &Option::unwrap_or(field.ident.clone(), Ident::new(&format!("_{}", idx), field.ident.span()));
 
         bindings.push(binding.clone());
 
@@ -584,17 +593,14 @@ impl Fold for OptionReplacer<'_> {
     fn fold_type(&mut self, ty: Type) -> Type {
         let ty = fold_type(self, ty);
 
-        match &ty {
-            Type::Path(inner_path) => {
-                //
-                if let Some(inner_name) = inner_path.path.get_ident() {
-                    let is_rnode = self.nodes_to_convert.iter().any(|n| inner_name == &*format!("R{}", n));
-                    if is_rnode {
-                        return q!(Vars { inner_name }, (Option<inner_name>)).parse();
-                    }
+        if let Type::Path(inner_path) = &ty {
+            //
+            if let Some(inner_name) = inner_path.path.get_ident() {
+                let is_rnode = self.nodes_to_convert.iter().any(|n| inner_name == &*format!("R{}", n));
+                if is_rnode {
+                    return q!(Vars { inner_name }, (Option<inner_name>)).parse();
                 }
             }
-            _ => {}
         }
 
         ty
@@ -618,42 +624,39 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
     }
 
     // If type can be converted to RNode, do it.
-    match ty {
-        Type::Path(path_ty) => {
-            if let Some(name) = path_ty.path.get_ident() {
-                let rnode_name = Path::from(Ident::new(&format!("R{}", name), path_ty.path.span()));
-                if nodes_to_convert.iter().any(|n| name == n) {
-                    return RNodeField {
-                        ty: Type::Path(TypePath {
-                            path: rnode_name.clone(),
-                            qself: None,
-                        }),
-                        from_orig: q!(
-                            Vars { match_binding },
-                            ({
-                                use rnode::IntoRNode;
-                                match_binding.into_rnode(id_gen)
-                            })
-                        )
-                        .parse(),
-                        to_orig: q!(
-                            Vars { match_binding },
-                            ({
-                                use rnode::RNode;
-                                match_binding.into_orig()
-                            })
-                        )
-                        .parse(),
-                    };
-                }
+    if let Type::Path(path_ty) = ty {
+        if let Some(name) = path_ty.path.get_ident() {
+            let rnode_name = Path::from(Ident::new(&format!("R{}", name), path_ty.path.span()));
+            if nodes_to_convert.iter().any(|n| name == n) {
+                return RNodeField {
+                    ty: Type::Path(TypePath {
+                        path: rnode_name,
+                        qself: None,
+                    }),
+                    from_orig: q!(
+                        Vars { match_binding },
+                        ({
+                            use rnode::IntoRNode;
+                            match_binding.into_rnode(id_gen)
+                        })
+                    )
+                    .parse(),
+                    to_orig: q!(
+                        Vars { match_binding },
+                        ({
+                            use rnode::RNode;
+                            match_binding.into_orig()
+                        })
+                    )
+                    .parse(),
+                };
             }
         }
-        _ => {}
     }
 
     if arc {
-        if let Some(ty) = extract_opt(&ty) {
-            if let Some(ty) = extract_box(&ty) {
+        if let Some(ty) = extract_opt(ty) {
+            if let Some(ty) = extract_box(ty) {
                 let inner = handle_field(nodes_to_convert, &[], match_binding, ty);
                 // Option<Box<T>>
                 return RNodeField {
@@ -717,7 +720,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
         unimplemented!("rnode: #[arc] for {:?}", ty);
     }
 
-    if let Some(ty) = extract_box(&ty) {
+    if let Some(ty) = extract_box(ty) {
         let res = handle_field(nodes_to_convert, attrs, match_binding, ty);
 
         return RNodeField {
@@ -746,7 +749,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
         };
     }
 
-    if let Some(ty) = extract_opt(&ty) {
+    if let Some(ty) = extract_opt(ty) {
         let info = handle_field(nodes_to_convert, &[], match_binding, ty);
 
         return RNodeField {
@@ -770,7 +773,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
         };
     }
 
-    if let Some(ty) = extract_vec(&ty) {
+    if let Some(ty) = extract_vec(ty) {
         let mut info = handle_field(nodes_to_convert, attrs, match_binding, ty);
         info.ty = q!(Vars { ty: &info.ty }, (Vec<ty>)).parse();
 
@@ -804,7 +807,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
     // Vec<T> -> Vec<Arc<T>>
     // T -> Arc<T>
     if arc {
-        if let Some(ty) = extract_vec(&ty) {
+        if let Some(ty) = extract_vec(ty) {
             return RNodeField {
                 from_orig: q!(Vars { match_binding }, {
                     match_binding.into_iter().map(std::sync::Arc::new).collect()
@@ -823,7 +826,7 @@ fn handle_field(nodes_to_convert: &[String], attrs: &[Attribute], match_binding:
     }
 
     if ref_cell {
-        if let Some(ty) = extract_vec(&ty) {
+        if let Some(ty) = extract_vec(ty) {
             return RNodeField {
                 from_orig: q!(Vars { match_binding }, { match_binding.into_iter().collect() }).parse(),
                 to_orig: q!(Vars { match_binding }, { match_binding }).parse(),
@@ -858,12 +861,7 @@ fn handle_variant(variant: &Variant) -> RNodeVariant {
                         .into_pairs()
                         .map(|mut pair| {
                             let f = pair.value_mut();
-                            f.attrs = f
-                                .attrs
-                                .iter()
-                                .filter(|attr| !attr.path.is_ident("arc") && !attr.path.is_ident("refcell"))
-                                .cloned()
-                                .collect();
+                            f.attrs.retain(|attr| !attr.path.is_ident("arc") && !attr.path.is_ident("refcell"));
 
                             let new_ty = prefix_type_name(&f.ty);
                             f.ty = new_ty;
@@ -899,34 +897,29 @@ fn prefix_type_name(ty: &Type) -> Type {
         Type::Path(p) => {
             let new_name = p.path.get_ident().unwrap().new_ident_with(|s| format!("R{}", s));
 
-            return q!(Vars { new_name }, (new_name)).parse();
+            q!(Vars { new_name }, (new_name)).parse()
         }
         _ => unimplemented!("field type other than `Path`"),
     }
 }
 
 fn extract_generic<'a>(name: &str, ty: &'a Type) -> Option<&'a Type> {
-    match ty {
-        Type::Path(p) => {
-            let last = p.path.segments.last().unwrap();
+    if let Type::Path(p) = ty {
+        let last = p.path.segments.last().unwrap();
 
-            if !last.arguments.is_empty() {
-                if last.ident == name {
-                    match &last.arguments {
-                        PathArguments::AngleBracketed(tps) => {
-                            let arg = tps.args.first().unwrap();
+        if !last.arguments.is_empty() && last.ident == name {
+            match &last.arguments {
+                PathArguments::AngleBracketed(tps) => {
+                    let arg = tps.args.first().unwrap();
 
-                            match arg {
-                                GenericArgument::Type(arg) => return Some(arg),
-                                _ => unimplemented!("generic parameter other than type"),
-                            }
-                        }
-                        _ => unimplemented!("Box() -> T or Box without a type parameter"),
+                    match arg {
+                        GenericArgument::Type(arg) => return Some(arg),
+                        _ => unimplemented!("generic parameter other than type"),
                     }
                 }
+                _ => unimplemented!("Box() -> T or Box without a type parameter"),
             }
         }
-        _ => {}
     }
 
     None

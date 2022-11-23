@@ -37,6 +37,7 @@ macro_rules! impl_traits {
             }
 
             #[inline]
+            #[allow(clippy::partialeq_ne_impl)]
             fn ne(&self, other: &T) -> bool {
                 (**self).ne(&*other)
             }
@@ -60,6 +61,7 @@ macro_rules! impl_traits {
             }
 
             #[inline]
+            #[allow(clippy::partialeq_ne_impl)]
             fn ne(&self, other: &Self) -> bool {
                 (**self).ne(&**other)
             }

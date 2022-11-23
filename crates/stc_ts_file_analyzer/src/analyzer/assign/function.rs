@@ -4,8 +4,9 @@ use fxhash::FxHashMap;
 use itertools::{EitherOrBoth, Itertools};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
 use stc_ts_errors::{
+    ctx,
     debug::{dump_type_as_string, dump_type_map},
-    DebugExt, Error,
+    DebugExt, ErrorKind,
 };
 use stc_ts_types::{ClassDef, Constructor, FnParam, Function, Type, TypeElement, TypeParamDecl};
 use stc_utils::{cache::Freeze, debug_ctx};
@@ -53,20 +54,17 @@ impl Analyzer<'_, '_> {
 
             if cfg!(feature = "fastpath") && l_params.len() == 1 && l_params[0].ty.is_type_param() && l_params[0].ty.span().is_dummy() {
                 if let Some(l_ret_ty) = l_ret_ty {
-                    if let Some(r_ret_ty) = unwrap_ref_with_single_arg(&r_ret_ty, "Promise") {
-                        match l_ret_ty.normalize() {
-                            Type::Union(l_ret_ty) => {
-                                // Exact match
-                                if l_ret_ty.types.len() == 4
-                                    && l_ret_ty.types[0].is_type_param()
-                                    && unwrap_ref_with_single_arg(&l_ret_ty.types[1], "PromiseLike").type_eq(&Some(&l_ret_ty.types[0]))
-                                    && l_ret_ty.types[2].is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
-                                    && l_ret_ty.types[3].is_kwd(TsKeywordTypeKind::TsNullKeyword)
-                                {
-                                    return Ok(());
-                                }
+                    if let Some(r_ret_ty) = unwrap_ref_with_single_arg(r_ret_ty, "Promise") {
+                        if let Type::Union(l_ret_ty) = l_ret_ty.normalize() {
+                            // Exact match
+                            if l_ret_ty.types.len() == 4
+                                && l_ret_ty.types[0].is_type_param()
+                                && unwrap_ref_with_single_arg(&l_ret_ty.types[1], "PromiseLike").type_eq(&Some(&l_ret_ty.types[0]))
+                                && l_ret_ty.types[2].is_kwd(TsKeywordTypeKind::TsUndefinedKeyword)
+                                && l_ret_ty.types[3].is_kwd(TsKeywordTypeKind::TsNullKeyword)
+                            {
+                                return Ok(());
                             }
-                            _ => {}
                         }
                     }
                 }
@@ -148,19 +146,18 @@ impl Analyzer<'_, '_> {
                         vec.make_clone_cheap();
 
                         for new_l_params in vec {
-                            return self
-                                .assign_to_fn_like(
-                                    data,
-                                    is_call,
-                                    l_type_params,
-                                    &new_l_params,
-                                    l_ret_ty,
-                                    r_type_params,
-                                    r_params,
-                                    r_ret_ty,
-                                    opts,
-                                )
-                                .context("tried to assign by expanding overloads in a type literal");
+                            let _ctx = ctx!("tried to assign by expanding overloads in a type literal");
+                            return self.assign_to_fn_like(
+                                data,
+                                is_call,
+                                l_type_params,
+                                &new_l_params,
+                                l_ret_ty,
+                                r_type_params,
+                                r_params,
+                                r_ret_ty,
+                                opts,
+                            );
                         }
                     }
                 }};
@@ -178,7 +175,7 @@ impl Analyzer<'_, '_> {
                         .iter()
                         .zip(rt.params.iter())
                         .filter(|(l, r)| match (&l.constraint, &r.constraint) {
-                            (None, Some(..)) => return false,
+                            (None, Some(..)) => false,
                             // TODO(kdy1): Use extends()
                             _ => true,
                         })
@@ -194,22 +191,22 @@ impl Analyzer<'_, '_> {
                     new_r_params.make_clone_cheap();
                     new_r_ret_ty.make_clone_cheap();
 
-                    return self
-                        .assign_to_fn_like(
-                            data,
-                            is_call,
-                            l_type_params,
-                            l_params,
-                            l_ret_ty,
-                            None,
-                            &new_r_params,
-                            new_r_ret_ty.as_ref(),
-                            AssignOpts {
-                                allow_assignment_of_void: Some(false),
-                                ..opts
-                            },
-                        )
-                        .context("tried to assign to a mapped (wrong) function");
+                    let _ctx = ctx!("tried to assign to a mapped (wrong) function");
+
+                    return self.assign_to_fn_like(
+                        data,
+                        is_call,
+                        l_type_params,
+                        l_params,
+                        l_ret_ty,
+                        None,
+                        &new_r_params,
+                        new_r_ret_ty.as_ref(),
+                        AssignOpts {
+                            allow_assignment_of_void: Some(false),
+                            ..opts
+                        },
+                    );
                 }
             }
 
@@ -238,7 +235,7 @@ impl Analyzer<'_, '_> {
                     metadata: Default::default(),
                 });
 
-                let map = self.infer_type_with_types(span, &*lt.params, &lf, &rf, InferTypeOpts { ..Default::default() })?;
+                let map = self.infer_type_with_types(span, &lt.params, &lf, &rf, InferTypeOpts { ..Default::default() })?;
                 let mut new_l_params = self
                     .expand_type_params(&map, l_params.to_vec(), Default::default())
                     .context("tried to expand type parameters of lhs as a step of function assignment")?;
@@ -283,7 +280,7 @@ impl Analyzer<'_, '_> {
 
                 let map = self.infer_type_with_types(
                     span,
-                    &*rt.params,
+                    &rt.params,
                     &rf,
                     &lf,
                     InferTypeOpts {
@@ -293,7 +290,7 @@ impl Analyzer<'_, '_> {
                 )?;
 
                 if cfg!(debug_assertions) {
-                    debug!("Callable map:\n{}", dump_type_map(&self.cm, &map));
+                    debug!("Callable map:\n{}", dump_type_map(&map));
                 }
 
                 let new_l_params = self
@@ -329,7 +326,7 @@ impl Analyzer<'_, '_> {
                         new_r_ret_ty.as_ref(),
                         opts,
                     )
-                    .with_context(|| format!("tried to assign to an expanded callable\nMap:\n{}", dump_type_map(&self.cm, &map)));
+                    .with_context(|| format!("tried to assign to an expanded callable\nMap:\n{}", dump_type_map(&map)));
             }
 
             _ => (r_params, r_ret_ty),
@@ -337,7 +334,7 @@ impl Analyzer<'_, '_> {
 
         // TypeScript functions are bivariant if strict_function_types is false.
         if !self.env.rule().strict_function_types || opts.is_params_of_method_definition {
-            if self.assign_params(data, &r_params, &l_params, opts).is_ok() {
+            if self.assign_params(data, r_params, l_params, opts).is_ok() {
                 return Ok(());
             }
         }
@@ -349,7 +346,7 @@ impl Analyzer<'_, '_> {
         // (t: unknown, t1: unknown) => void
         //
         // So we check for length first.
-        if r_params.len() != 0 {
+        if !r_params.is_empty() {
             self.assign_params(
                 data,
                 l_params,
@@ -380,7 +377,7 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        return Ok(());
+        Ok(())
     }
 
     /// ```ts
@@ -426,26 +423,23 @@ impl Analyzer<'_, '_> {
 
             Type::TypeLit(rt) => {
                 for rm in &rt.members {
-                    match rm {
-                        TypeElement::Call(rm) => {
-                            return self
-                                .assign_to_fn_like(
-                                    data,
-                                    true,
-                                    l.type_params.as_ref(),
-                                    &l.params,
-                                    Some(&l.ret_ty),
-                                    rm.type_params.as_ref(),
-                                    &rm.params,
-                                    rm.ret_ty.as_deref(),
-                                    AssignOpts {
-                                        infer_type_params_of_left: true,
-                                        ..opts
-                                    },
-                                )
-                                .context("tried to assign TypeElemeny::Call to a function");
-                        }
-                        _ => {}
+                    if let TypeElement::Call(rm) = rm {
+                        return self
+                            .assign_to_fn_like(
+                                data,
+                                true,
+                                l.type_params.as_ref(),
+                                &l.params,
+                                Some(&l.ret_ty),
+                                rm.type_params.as_ref(),
+                                &rm.params,
+                                rm.ret_ty.as_deref(),
+                                AssignOpts {
+                                    infer_type_params_of_left: true,
+                                    ..opts
+                                },
+                            )
+                            .context("tried to assign TypeElemeny::Call to a function");
                     }
                 }
             }
@@ -456,15 +450,14 @@ impl Analyzer<'_, '_> {
                     .map(Cow::into_owned)
                     .map(Type::TypeLit);
                 if let Some(ty) = ty {
-                    return self
-                        .assign_to_function(data, lt, l, &ty, opts)
-                        .context("tried to assign an expanded type to a function");
+                    let _ctx = ctx!("tried to assign an expanded type to a function");
+                    return self.assign_to_function(data, lt, l, &ty, opts);
                 }
             }
             _ => {}
         }
 
-        Err(Error::SimpleAssignFailed { span, cause: None })
+        Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into())
     }
 
     ///
@@ -537,7 +530,7 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
             Type::Lit(..) | Type::ClassDef(ClassDef { is_abstract: true, .. }) | Type::Function(..) => {
-                return Err(Error::SimpleAssignFailed { span, cause: None })
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into())
             }
 
             Type::TypeLit(rt) => {
@@ -545,37 +538,34 @@ impl Analyzer<'_, '_> {
 
                 let mut errors = vec![];
                 for (idx, rm) in rt.members.iter().enumerate() {
-                    match rm {
-                        TypeElement::Constructor(rc) => {
-                            if let Err(err) = self
-                                .assign_to_fn_like(
-                                    data,
-                                    false,
-                                    l.type_params.as_ref(),
-                                    &l.params,
-                                    Some(&l.type_ann),
-                                    rc.type_params.as_ref(),
-                                    &rc.params,
-                                    rc.ret_ty.as_deref(),
-                                    AssignOpts {
-                                        allow_assignment_to_param: opts.allow_assignment_to_param || r_el_cnt > 1,
-                                        ..opts
-                                    },
-                                )
-                                .with_context(|| format!("tried to assign a constructor to another constructor ({}th element)", idx))
-                            {
-                                errors.push(err);
-                                continue;
-                            }
-
-                            return Ok(());
+                    if let TypeElement::Constructor(rc) = rm {
+                        if let Err(err) = self
+                            .assign_to_fn_like(
+                                data,
+                                false,
+                                l.type_params.as_ref(),
+                                &l.params,
+                                Some(&l.type_ann),
+                                rc.type_params.as_ref(),
+                                &rc.params,
+                                rc.ret_ty.as_deref(),
+                                AssignOpts {
+                                    allow_assignment_to_param: opts.allow_assignment_to_param || r_el_cnt > 1,
+                                    ..opts
+                                },
+                            )
+                            .with_context(|| format!("tried to assign a constructor to another constructor ({}th element)", idx))
+                        {
+                            errors.push(err);
+                            continue;
                         }
-                        _ => {}
+
+                        return Ok(());
                     }
                 }
 
                 if !errors.is_empty() {
-                    return Err(Error::SimpleAssignFailedWithCause { span, cause: errors });
+                    return Err(ErrorKind::SimpleAssignFailedWithCause { span, cause: errors }.into());
                 }
             }
             Type::Interface(..) => {
@@ -592,7 +582,7 @@ impl Analyzer<'_, '_> {
             _ => {}
         }
 
-        Err(Error::SimpleAssignFailed { span, cause: None })
+        Err(ErrorKind::SimpleAssignFailed { span, cause: None }.into())
     }
 
     /// Assigns a parameter to another one.
@@ -640,56 +630,43 @@ impl Analyzer<'_, '_> {
         let span = opts.span;
         debug_assert!(!opts.span.is_dummy(), "Cannot assign function parameters with dummy span");
 
-        let _panic = debug_ctx!(format!("left = {}\n{:?}", dump_type_as_string(&self.cm, &l.ty), &l.ty));
-        let _panic = debug_ctx!(format!("right = {}\n{:?}", dump_type_as_string(&self.cm, &r.ty), &r.ty));
+        let _panic = debug_ctx!(format!("left = {}\n{:?}", dump_type_as_string(&l.ty), &l.ty));
+        let _panic = debug_ctx!(format!("right = {}\n{:?}", dump_type_as_string(&r.ty), &r.ty));
 
-        match l.pat {
-            RPat::Rest(..) => {
-                let l_ty = self
-                    .normalize(Some(span), Cow::Borrowed(&l.ty), Default::default())
-                    .context("tried to normalize lhs")?;
+        if let RPat::Rest(..) = l.pat {
+            let l_ty = self
+                .normalize(Some(span), Cow::Borrowed(&l.ty), Default::default())
+                .context("tried to normalize lhs")?;
 
-                let l_elem_type = self.get_iterator_element_type(span, l_ty, false, GetIteratorOpts { ..Default::default() });
+            let l_elem_type = self.get_iterator_element_type(span, l_ty, false, GetIteratorOpts { ..Default::default() });
 
-                if let Ok(l_elem_type) = l_elem_type {
-                    if let Ok(()) = self.assign_with_opts(data, &l_elem_type, &r.ty, opts) {
-                        return Ok(());
-                    }
+            if let Ok(l_elem_type) = l_elem_type {
+                if let Ok(()) = self.assign_with_opts(data, &l_elem_type, &r.ty, opts) {
+                    return Ok(());
                 }
             }
-            _ => {}
         }
 
         // TODO(kdy1): Change this to extends call.
 
-        let mut l_ty = self.normalize(Some(opts.span), Cow::Borrowed(&l.ty), Default::default())?;
-        let mut r_ty = self.normalize(Some(opts.span), Cow::Borrowed(&r.ty), Default::default())?;
-
-        l_ty.make_clone_cheap();
-        r_ty.make_clone_cheap();
-
         let res = if opts.for_overload {
-            self.assign_with_opts(data, &l_ty, &r_ty, opts)
+            self.assign_with_opts(data, &l.ty, &r.ty, opts)
                 .context("tried to assign the type of a parameter to another")
         } else {
-            self.assign_with_opts(data, &r_ty, &l_ty, opts)
+            self.assign_with_opts(data, &r.ty, &l.ty, opts)
                 .context("tried to assign the type of a parameter to another (reversed due to variance)")
         };
 
-        res.convert_err(|err| match &err {
-            Error::MissingFields { span, .. } => Error::SimpleAssignFailed {
-                span: *span,
-                cause: Some(box err),
+        res.convert_err(|err| match err {
+            ErrorKind::MissingFields { span, .. } => ErrorKind::SimpleAssignFailed {
+                span,
+                cause: Some(box err.into()),
             },
-
-            Error::Errors { errors, .. } => {
-                if errors.iter().all(|err| match err.actual() {
-                    Error::MissingFields { .. } => true,
-                    _ => false,
-                }) {
-                    Error::SimpleAssignFailed {
+            ErrorKind::Errors { ref errors, .. } => {
+                if errors.iter().all(|err| matches!(&**err, ErrorKind::MissingFields { .. })) {
+                    ErrorKind::SimpleAssignFailed {
                         span,
-                        cause: Some(box err),
+                        cause: Some(box err.into()),
                     }
                 } else {
                     err
@@ -721,25 +698,26 @@ impl Analyzer<'_, '_> {
     pub(crate) fn assign_params(&mut self, data: &mut AssignData, l: &[FnParam], r: &[FnParam], opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
 
-        let li = l.iter().filter(|p| match p.pat {
-            RPat::Ident(RBindingIdent {
-                id: RIdent { sym: js_word!("this"), .. },
-                ..
-            }) => false,
-            _ => true,
+        let li = l.iter().filter(|p| {
+            !matches!(
+                p.pat,
+                RPat::Ident(RBindingIdent {
+                    id: RIdent { sym: js_word!("this"), .. },
+                    ..
+                })
+            )
         });
-        let ri = r.iter().filter(|p| match p.pat {
-            RPat::Ident(RBindingIdent {
-                id: RIdent { sym: js_word!("this"), .. },
-                ..
-            }) => false,
-            _ => true,
+        let ri = r.iter().filter(|p| {
+            !matches!(
+                p.pat,
+                RPat::Ident(RBindingIdent {
+                    id: RIdent { sym: js_word!("this"), .. },
+                    ..
+                })
+            )
         });
 
-        let l_has_rest = l.iter().any(|p| match p.pat {
-            RPat::Rest(..) => true,
-            _ => false,
-        });
+        let l_has_rest = l.iter().any(|p| matches!(p.pat, RPat::Rest(..)));
 
         // TODO(kdy1): Consider optional parameters.
 
@@ -751,7 +729,7 @@ impl Analyzer<'_, '_> {
 
         if opts.for_overload {
             if required_li.clone().count() > required_ri.clone().count() {
-                return Err(Error::SimpleAssignFailed { span, cause: None }).context("l.params.required.len > r.params.required.len");
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context("l.params.required.len > r.params.required.len"));
             }
         }
 
@@ -764,13 +742,11 @@ impl Analyzer<'_, '_> {
                     return Ok(());
                 }
 
-                return Err(Error::SimpleAssignFailed { span, cause: None }).with_context(|| {
-                    format!(
-                        "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: {:?}\nRight: {:?}\n",
-                        required_non_void_li.collect_vec(),
-                        required_non_void_ri.collect_vec()
-                    )
-                });
+                return Err(ErrorKind::SimpleAssignFailed { span, cause: None }.context(format!(
+                    "!l_has_rest && l.params.required.len < r.params.required.len\nLeft: {:?}\nRight: {:?}\n",
+                    required_non_void_li.collect_vec(),
+                    required_non_void_ri.collect_vec()
+                )));
             }
         }
 
@@ -781,8 +757,8 @@ impl Analyzer<'_, '_> {
                     if opts.allow_assignment_to_param {
                         if let Ok(()) = self.assign_param(
                             data,
-                            &rp,
-                            &lp,
+                            rp,
+                            lp,
                             AssignOpts {
                                 allow_unknown_type: true,
                                 ..opts
@@ -792,6 +768,7 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
+                    let _ctx = ctx!(format!("tried to assign a parameter to another parameter"));
                     self.assign_param(
                         data,
                         lp,
@@ -800,8 +777,7 @@ impl Analyzer<'_, '_> {
                             allow_unknown_type: true,
                             ..opts
                         },
-                    )
-                    .with_context(|| format!("tried to assign a parameter to another parameter",))?;
+                    )?;
                 }
                 EitherOrBoth::Left(_) => {}
                 EitherOrBoth::Right(_) => {}

@@ -28,7 +28,7 @@ impl Analyzer<'_, '_> {
     pub(crate) fn keyof(&mut self, span: Span, ty: &Type) -> VResult<Type> {
         let span = span.with_ctxt(SyntaxContext::empty());
 
-        let _ctx = debug_ctx!(format!("keyof: {}", dump_type_as_string(&self.cm, ty)));
+        let _ctx = debug_ctx!(format!("keyof: {}", dump_type_as_string(ty)));
 
         if !self.is_builtin {
             debug_assert!(!span.is_dummy(), "Cannot perform `keyof` operation with dummy span");
@@ -270,7 +270,7 @@ impl Analyzer<'_, '_> {
                         .map(|ty| self.keyof(span, ty).context("tried to get keys of an element of a union type"))
                         .collect::<Result<Vec<_>, _>>()?;
 
-                    if key_types.iter().all(|ty| is_str_lit_or_union(&ty)) {
+                    if key_types.iter().all(is_str_lit_or_union) {
                         let mut keys = key_types
                             .into_iter()
                             .map(|ty| match ty.foldable() {
@@ -307,16 +307,15 @@ impl Analyzer<'_, '_> {
 
                 Type::Mapped(m) => {
                     //
-                    match m.type_param.constraint.as_deref() {
-                        Some(ty) => return self.keyof(span, ty),
-                        _ => {}
+                    if let Some(ty) = m.type_param.constraint.as_deref() {
+                        return self.keyof(span, ty);
                     }
                 }
 
                 _ => {}
             }
 
-            unimplemented!("keyof: {}", dump_type_as_string(&self.cm, &ty));
+            unimplemented!("keyof: {}", dump_type_as_string(&ty));
         })()?;
 
         ty.assert_valid();

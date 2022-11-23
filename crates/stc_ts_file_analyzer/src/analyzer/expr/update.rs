@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use stc_ts_ast_rnode::{RExpr, RLit, RParenExpr, RTsLit, RUpdateExpr};
-use stc_ts_errors::Error;
+use stc_ts_errors::ErrorKind;
 use stc_ts_types::{KeywordType, LitType, Type};
 use stc_utils::cache::Freeze;
 use swc_common::Spanned;
@@ -19,9 +19,8 @@ impl Analyzer<'_, '_> {
     fn validate(&mut self, e: &RUpdateExpr) -> VResult<Type> {
         let span = e.span;
 
-        match &*e.arg {
-            RExpr::New(..) => self.storage.report(Error::ExprInvalidForUpdateArg { span }),
-            _ => {}
+        if let RExpr::New(..) = &*e.arg {
+            self.storage.report(ErrorKind::ExprInvalidForUpdateArg { span }.into())
         }
 
         let res = e
@@ -52,25 +51,27 @@ impl Analyzer<'_, '_> {
                 | Type::This(..)
                 | Type::Function(..) => {
                     errored = true;
-                    Err(Error::TypeInvalidForUpdateArg {
+                    Err(ErrorKind::TypeInvalidForUpdateArg {
                         span: e.arg.span(),
                         ty: box ty.clone(),
-                    })
+                    }
+                    .into())
                 }
 
                 _ if ty.is_global_this() => {
                     errored = true;
 
-                    Err(Error::TypeInvalidForUpdateArg {
+                    Err(ErrorKind::TypeInvalidForUpdateArg {
                         span: e.arg.span(),
                         ty: box ty.clone(),
-                    })
+                    }
+                    .into())
                 }
 
                 Type::Enum(..) => {
                     errored = true;
 
-                    Err(Error::CannotAssignToEnum { span: e.arg.span() })
+                    Err(ErrorKind::CannotAssignToEnum { span: e.arg.span() }.into())
                 }
 
                 Type::Lit(LitType {
@@ -82,12 +83,12 @@ impl Analyzer<'_, '_> {
                 }) => {
                     match &*e.arg {
                         RExpr::Lit(RLit::Num(..)) | RExpr::Call(..) | RExpr::Paren(..) => {
-                            self.storage.report(Error::ExprInvalidForUpdateArg { span });
+                            self.storage.report(ErrorKind::ExprInvalidForUpdateArg { span }.into());
                         }
 
                         _ => {}
                     }
-                    return Ok(ty);
+                    Ok(ty)
                 }
 
                 _ => Ok(ty),
@@ -96,19 +97,20 @@ impl Analyzer<'_, '_> {
 
         if let Some(ty) = ty {
             if let Some(false) = self.is_update_operand_valid(&ty).report(&mut self.storage) {
-                self.storage.report(Error::InvalidNumericOperand { span: e.arg.span() })
+                self.storage.report(ErrorKind::InvalidNumericOperand { span: e.arg.span() }.into())
             }
         } else {
             if !errored
-                && match &*e.arg {
+                && matches!(
+                    &*e.arg,
                     RExpr::Paren(RParenExpr {
-                        expr: box RExpr::Bin(..), ..
-                    })
-                    | RExpr::Bin(..) => true,
-                    _ => false,
-                }
+                        expr: box RExpr::Bin(..),
+                        ..
+                    }) | RExpr::Bin(..)
+                )
             {
-                self.storage.report(Error::UpdateArgMustBeVariableOrPropertyAccess { span });
+                self.storage
+                    .report(ErrorKind::UpdateArgMustBeVariableOrPropertyAccess { span }.into());
             }
         }
 
@@ -128,15 +130,12 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        match ty.normalize() {
-            Type::Union(ty) => {
-                for ty in &ty.types {
-                    if !self.is_update_operand_valid(ty)? {
-                        return Ok(false);
-                    }
+        if let Type::Union(ty) = ty.normalize() {
+            for ty in &ty.types {
+                if !self.is_update_operand_valid(ty)? {
+                    return Ok(false);
                 }
             }
-            _ => {}
         }
 
         Ok(true)

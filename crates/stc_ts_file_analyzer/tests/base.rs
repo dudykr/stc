@@ -1,4 +1,5 @@
 #![feature(box_syntax)]
+#![allow(clippy::manual_strip)]
 
 use std::{
     path::{Path, PathBuf},
@@ -12,7 +13,7 @@ use stc_testing::logger;
 use stc_ts_ast_rnode::RModule;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
-use stc_ts_errors::{debug::debugger::Debugger, Error};
+use stc_ts_errors::{debug::debugger::Debugger, ErrorKind};
 use stc_ts_file_analyzer::{
     analyzer::{Analyzer, NoopLoader},
     env::EnvFactory,
@@ -100,11 +101,11 @@ fn validate(input: &Path) -> Vec<StcError> {
                 // Don't print logs from builtin modules.
                 let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-                let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
+                let mut analyzer = Analyzer::root(env.clone(), cm, Default::default(), box &mut storage, &NoopLoader, None);
                 module.visit_with(&mut analyzer);
             }
 
-            let errors = ::stc_ts_errors::Error::flatten(storage.info.errors.into_iter().collect());
+            let errors = ::stc_ts_errors::ErrorKind::flatten(storage.info.errors.into_iter().collect());
 
             GLOBALS.set(env.shared().swc_globals(), || {
                 for e in errors {
@@ -116,7 +117,7 @@ fn validate(input: &Path) -> Vec<StcError> {
                 return Ok(());
             }
 
-            return Err(());
+            Err(())
         })
         .expect_err("");
 
@@ -189,11 +190,11 @@ fn errors(input: PathBuf) {
             // Don't print logs from builtin modules.
             let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-            let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(env.clone(), cm, Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
         }
 
-        let errors = ::stc_ts_errors::Error::flatten(storage.info.errors.into_iter().collect());
+        let errors = ::stc_ts_errors::ErrorKind::flatten(storage.info.errors.into_iter().collect());
 
         if errors.is_empty() {
             panic!("Should emit at least one error")
@@ -209,7 +210,7 @@ fn errors(input: PathBuf) {
             return Ok(());
         }
 
-        return Err(());
+        Err(())
     })
     .unwrap_err();
 }
@@ -257,11 +258,11 @@ fn pass_only(input: PathBuf) {
             // Don't print logs from builtin modules.
             let _tracing = tracing::subscriber::set_default(logger(Level::DEBUG));
 
-            let mut analyzer = Analyzer::root(env.clone(), cm.clone(), Default::default(), box &mut storage, &NoopLoader, None);
+            let mut analyzer = Analyzer::root(env.clone(), cm, Default::default(), box &mut storage, &NoopLoader, None);
             module.visit_with(&mut analyzer);
         }
 
-        let errors = ::stc_ts_errors::Error::flatten(storage.info.errors.into_iter().collect());
+        let errors = ::stc_ts_errors::ErrorKind::flatten(storage.info.errors.into_iter().collect());
         let ok = errors.is_empty();
 
         GLOBALS.set(env.shared().swc_globals(), || {
@@ -274,7 +275,7 @@ fn pass_only(input: PathBuf) {
             return Err(());
         }
 
-        return Ok(());
+        Ok(())
     })
     .unwrap();
 }
@@ -306,7 +307,7 @@ fn invoke_tsc(input: &Path) -> Vec<TscError> {
         .arg("--noEmit")
         .arg("--lib")
         .arg("es2020")
-        .arg(&input)
+        .arg(input)
         .output()
         .expect("failed to invoke tsc");
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -442,7 +443,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
 
             if for_error {
                 let errors = storage.take_errors();
-                let errors = Error::flatten(errors.into());
+                let errors = ErrorKind::flatten(errors.into());
 
                 for err in errors {
                     err.emit(&handler);
@@ -460,7 +461,7 @@ fn run_test(file_name: PathBuf, for_error: bool) -> Option<NormalizedOutput> {
 
         panic!("Failed to validate.\n{}\n{}", res.replace("$DIR/", "/"), file_name.display())
     } else {
-        return Some(res);
+        Some(res)
     }
 }
 
