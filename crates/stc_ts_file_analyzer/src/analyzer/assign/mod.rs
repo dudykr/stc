@@ -2043,7 +2043,6 @@ impl Analyzer<'_, '_> {
                                 return Ok(());
                             }
 
-                            return Err(Error::AssignFailedBecauseTupleLengthDiffers { span });
                             return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
                         }
 
