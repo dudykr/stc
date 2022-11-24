@@ -13,7 +13,7 @@ use crate::{
         expr::TypeOfMode,
         scope::ExpandOpts,
         util::{make_instance_type, ResultExt},
-        Analyzer,
+        Analyzer, NormalizeTypeOpts,
     },
     ty::Type,
     util::is_str_or_union,
@@ -223,6 +223,31 @@ impl Analyzer<'_, '_> {
     /// - `r`: to
 
     pub(crate) fn castable(&mut self, span: Span, from: &Type, to: &Type, opts: CastableOpts) -> VResult<bool> {
+        let from = self
+            .normalize(
+                Some(span),
+                Cow::Borrowed(from),
+                NormalizeTypeOpts {
+                    preserve_intersection: true,
+                    preserve_union: true,
+                    preserve_global_this: true,
+                    ..Default::default()
+                },
+            )?
+            .freezed();
+        let to = self
+            .normalize(
+                Some(span),
+                Cow::Borrowed(to),
+                NormalizeTypeOpts {
+                    preserve_intersection: true,
+                    preserve_union: true,
+                    preserve_global_this: true,
+                    ..Default::default()
+                },
+            )?
+            .freezed();
+
         let from = from.normalize();
         let to = to.normalize();
 
@@ -305,30 +330,19 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        match (from, to) {
-            (Type::Ref(_), _) => {
-                let from = self.expand_top_ref(span, Cow::Borrowed(from), Default::default())?.freezed();
-                return self.castable(span, &from, to, opts);
-            }
-            (_, Type::Ref(_)) => {
-                let to = self.expand_top_ref(span, Cow::Borrowed(to), Default::default())?.freezed();
-                return self.castable(span, from, &to, opts);
-            }
-
-            (Type::TypeLit(lt), Type::TypeLit(rt)) => {
-                // It's an error if type of the parameter of index signature is same but type
-                // annotation is different.
-                for lm in &lt.members {
-                    for rm in &rt.members {
-                        if let (TypeElement::Index(lm), TypeElement::Index(rm)) = (lm, rm) {
-                            if lm.params.type_eq(&rm.params) {
-                                if let Some(lt) = &lm.type_ann {
-                                    if let Some(rt) = &rm.type_ann {
-                                        if self.assign(span, &mut Default::default(), lt, rt).is_err()
-                                            && self.assign(span, &mut Default::default(), rt, lt).is_err()
-                                        {
-                                            return Ok(false);
-                                        }
+        if let (Type::TypeLit(lt), Type::TypeLit(rt)) = (from, to) {
+            // It's an error if type of the parameter of index signature is same but type
+            // annotation is different.
+            for lm in &lt.members {
+                for rm in &rt.members {
+                    if let (TypeElement::Index(lm), TypeElement::Index(rm)) = (lm, rm) {
+                        if lm.params.type_eq(&rm.params) {
+                            if let Some(lt) = &lm.type_ann {
+                                if let Some(rt) = &rm.type_ann {
+                                    if self.assign(span, &mut Default::default(), lt, rt).is_err()
+                                        && self.assign(span, &mut Default::default(), rt, lt).is_err()
+                                    {
+                                        return Ok(false);
                                     }
                                 }
                             }
@@ -336,8 +350,6 @@ impl Analyzer<'_, '_> {
                     }
                 }
             }
-
-            _ => {}
         }
 
         // TODO(kdy1): This is wrong
