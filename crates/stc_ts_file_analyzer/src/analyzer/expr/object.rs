@@ -12,7 +12,7 @@ use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::debug;
 
 use crate::{
-    analyzer::{Analyzer, ScopeKind},
+    analyzer::{Analyzer, NormalizeTypeOpts, ScopeKind},
     validator::ValidateWith,
     VResult,
 };
@@ -158,7 +158,7 @@ impl Analyzer<'_, '_> {
     /// `{ a: number } + ( {b: number} | { c: number } )` => `{ a: number, b:
     /// number } | { a: number, c: number }`
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
-    fn append_type(&mut self, to: Type, mut rhs: Type) -> VResult<Type> {
+    fn append_type(&mut self, to: Type, rhs: Type) -> VResult<Type> {
         if to.is_any() || to.is_unknown() {
             return Ok(to);
         }
@@ -170,6 +170,19 @@ impl Analyzer<'_, '_> {
             // functions result in { }
             return Ok(to);
         }
+
+        let mut rhs = self
+            .normalize(
+                Some(rhs.span()),
+                Cow::Owned(rhs),
+                NormalizeTypeOpts {
+                    preserve_intersection: true,
+                    preserve_union: true,
+                    preserve_global_this: true,
+                    ..Default::default()
+                },
+            )?
+            .into_owned();
 
         if rhs.is_any() || rhs.is_unknown() {
             return Ok(rhs);
@@ -187,11 +200,6 @@ impl Analyzer<'_, '_> {
         }
 
         match rhs.normalize() {
-            Type::Ref(..) => {
-                let rhs = self.expand_top_ref(rhs.span(), Cow::Owned(rhs), Default::default())?.into_owned();
-                return self.append_type(to, rhs);
-            }
-
             Type::Interface(..) | Type::Class(..) | Type::Intersection(..) | Type::Mapped(..) => {
                 // Append as a type literal.
                 if let Some(rhs) = self.convert_type_to_type_lit(rhs.span(), Cow::Borrowed(&rhs))? {
