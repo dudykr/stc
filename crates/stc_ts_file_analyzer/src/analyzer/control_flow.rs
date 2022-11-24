@@ -1232,7 +1232,15 @@ impl Analyzer<'_, '_> {
         id.span.hi = span.hi;
 
         let obj = self.type_of_var(&id, TypeOfMode::RValue, None)?;
-        let obj = self.expand_top_ref(ty.span(), Cow::Owned(obj), Default::default())?;
+        let obj = self.normalize(
+            Some(span),
+            Cow::Owned(obj),
+            NormalizeTypeOpts {
+                preserve_global_this: true,
+                preserve_union: true,
+                ..Default::default()
+            },
+        )?;
 
         if let Type::Union(u) = obj.normalize() {
             if ids.len() == 2 {
