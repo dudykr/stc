@@ -2604,8 +2604,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Verify if multiple type has field
                 let mut new = vec![];
                 for ty in types {
-                    let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
-                    if let Ok(v) = self.access_property(span, &ty, prop, type_mode, id_ctx, opts) {
+                    if let Ok(v) = self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
                         new.push(v);
                     }
                 }
