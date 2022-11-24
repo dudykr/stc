@@ -1534,7 +1534,7 @@ impl Analyzer<'_, '_> {
         };
 
         let ty = self.type_of_name(span, &name.as_ids()[..name.len() - 1], TypeOfMode::RValue, None)?;
-        let ty = self.expand_top_ref(span, Cow::Owned(ty), Default::default())?.into_owned();
+        let ty = self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned();
 
         if let Type::Union(u) = ty.normalize() {
             let mut candidates = vec![];
@@ -1542,7 +1542,7 @@ impl Analyzer<'_, '_> {
                 let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
 
                 if let Ok(prop_ty) = prop_res {
-                    let prop_ty = self.expand_top_ref(prop_ty.span(), Cow::Owned(prop_ty), Default::default())?;
+                    let prop_ty = self.normalize(Some(prop_ty.span()), Cow::Owned(prop_ty), Default::default())?;
                     let possible = match prop_ty.normalize() {
                         // Type parameters might have same value.
                         Type::Param(..) => true,
