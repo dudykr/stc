@@ -1145,58 +1145,72 @@ impl Analyzer<'_, '_> {
     fn validate_relative_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) -> VResult<()> {
         let marks = self.marks();
 
+        let l = self
+            .normalize(
+                None,
+                Cow::Borrowed(l),
+                NormalizeTypeOpts {
+                    preserve_global_this: true,
+                    preserve_intersection: true,
+                    preserve_union: true,
+                    ..Default::default()
+                },
+            )?
+            .into_owned()
+            .freezed();
+        let r = self
+            .normalize(
+                None,
+                Cow::Borrowed(r),
+                NormalizeTypeOpts {
+                    preserve_global_this: true,
+                    preserve_intersection: true,
+                    preserve_union: true,
+                    ..Default::default()
+                },
+            )?
+            .into_owned()
+            .freezed();
+
         let l = l.normalize();
         let r = r.normalize();
 
-        match (l, r) {
-            (Type::Ref(..), _) => {
-                if let Ok(l) = self.expand_top_ref(l.span(), Cow::Borrowed(l), Default::default()) {
-                    return self.validate_relative_comparison_operands(span, op, &l.freezed(), r);
-                }
-            }
-            (l, Type::Ref(..)) => {
-                if let Ok(r) = self.expand_top_ref(r.span(), Cow::Borrowed(r), Default::default()) {
-                    return self.validate_relative_comparison_operands(span, op, l, &r.freezed());
-                }
-            }
-            (Type::TypeLit(lt), Type::TypeLit(rt)) => {
-                // It's an error if type of the parameter of index signature is same but type
-                // annotation is different.
-                for lm in &lt.members {
-                    for rm in &rt.members {
-                        match (lm, rm) {
-                            (TypeElement::Index(lm), TypeElement::Index(rm)) if lm.params.type_eq(&rm.params) => {
-                                if let Some(lt) = &lm.type_ann {
-                                    if let Some(rt) = &rm.type_ann {
-                                        if self.assign(span, &mut Default::default(), lt, rt).is_ok()
-                                            || self.assign(span, &mut Default::default(), rt, lt).is_ok()
-                                        {
-                                            continue;
-                                        }
-                                    } else {
+        if let (Type::TypeLit(lt), Type::TypeLit(rt)) = (l, r) {
+            // It's an error if type of the parameter of index signature is same but type
+            // annotation is different.
+            for lm in &lt.members {
+                for rm in &rt.members {
+                    match (lm, rm) {
+                        (TypeElement::Index(lm), TypeElement::Index(rm)) if lm.params.type_eq(&rm.params) => {
+                            if let Some(lt) = &lm.type_ann {
+                                if let Some(rt) = &rm.type_ann {
+                                    if self.assign(span, &mut Default::default(), lt, rt).is_ok()
+                                        || self.assign(span, &mut Default::default(), rt, lt).is_ok()
+                                    {
                                         continue;
                                     }
                                 } else {
                                     continue;
                                 }
-                                //
-                                self.storage.report(
-                                    ErrorKind::CannotCompareWithOp {
-                                        span,
-                                        op,
-                                        left: box l.clone(),
-                                        right: box r.clone(),
-                                    }
-                                    .into(),
-                                );
-                                return Ok(());
+                            } else {
+                                continue;
                             }
-                            _ => {}
+                            //
+                            self.storage.report(
+                                ErrorKind::CannotCompareWithOp {
+                                    span,
+                                    op,
+                                    left: box l.clone(),
+                                    right: box r.clone(),
+                                }
+                                .into(),
+                            );
+                            return Ok(());
                         }
+                        _ => {}
                     }
                 }
             }
-            _ => {}
         }
 
         let l = l.clone().generalize_lit();
