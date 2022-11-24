@@ -24,7 +24,6 @@ use swc_atoms::{js_word, JsWord};
 use swc_common::{FileName, SourceMap, Span, Spanned, DUMMY_SP, GLOBALS};
 use swc_ecma_ast::*;
 
-pub(crate) use self::scope::ScopeKind;
 use self::{
     control_flow::{CondFacts, Facts},
     pat::PatMode,
@@ -32,6 +31,7 @@ use self::{
     scope::{Scope, VarKind},
     util::ResultExt,
 };
+pub(crate) use self::{scope::ScopeKind, types::NormalizeTypeOpts};
 use crate::{
     loader::{Load, ModuleInfo},
     ty,

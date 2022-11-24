@@ -594,7 +594,16 @@ impl Analyzer<'_, '_> {
         ty.assert_valid();
 
         let mut ty = self
-            .normalize(Some(span), ty, Default::default())
+            .normalize(
+                Some(span),
+                ty,
+                NormalizeTypeOpts {
+                    preserve_global_this: true,
+                    preserve_intersection: true,
+                    preserve_union: true,
+                    ..Default::default()
+                },
+            )
             .context("tried to normalize type to get iterator")?;
         ty.make_clone_cheap();
 
@@ -608,11 +617,6 @@ impl Analyzer<'_, '_> {
             }
 
             match ty.normalize() {
-                Type::Ref(..) => {
-                    let ty = self.expand_top_ref(span, ty, Default::default())?;
-                    return self.get_iterator(span, ty, opts);
-                }
-
                 Type::Keyword(KeywordType {
                     kind: TsKeywordTypeKind::TsNumberKeyword,
                     ..

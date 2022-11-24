@@ -953,9 +953,8 @@ impl Analyzer<'_, '_> {
                     || self.assign(span, &mut Default::default(), index_ty, &prop_ty).is_ok();
 
                 if indexed {
-                    if let Some(ref type_ann) = type_ann {
-                        let ty = self.expand_top_ref(span, Cow::Borrowed(type_ann), Default::default())?;
-                        return Ok(Some(ty.into_owned()));
+                    if let Some(type_ann) = type_ann {
+                        return Ok(Some(*type_ann.clone()));
                     }
 
                     return Ok(Some(Type::any(span, Default::default())));
@@ -2604,8 +2603,7 @@ impl Analyzer<'_, '_> {
                 // TODO(kdy1): Verify if multiple type has field
                 let mut new = vec![];
                 for ty in types {
-                    let ty = self.expand_top_ref(span, Cow::Borrowed(ty), Default::default())?;
-                    if let Ok(v) = self.access_property(span, &ty, prop, type_mode, id_ctx, opts) {
+                    if let Ok(v) = self.access_property(span, ty, prop, type_mode, id_ctx, opts) {
                         new.push(v);
                     }
                 }

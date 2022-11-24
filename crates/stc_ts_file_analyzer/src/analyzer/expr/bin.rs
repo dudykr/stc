@@ -669,7 +669,8 @@ impl Analyzer<'_, '_> {
                     check_for_invalid_operand(&lt);
                     check_for_invalid_operand(&rt);
 
-                    self.validate_relative_comparison_operands(span, op, &lt, &rt);
+                    self.validate_relative_comparison_operands(span, op, &lt, &rt)
+                        .report(&mut self.storage);
                 }
 
                 Ok(Type::Keyword(KeywordType {
@@ -1017,7 +1018,15 @@ impl Analyzer<'_, '_> {
     /// Note that `C extends D` and `D extends C` are true because both of `C`
     /// and `D` are empty classes.
     fn narrow_with_instanceof(&mut self, span: Span, ty: Cow<Type>, orig_ty: &Type) -> VResult<Type> {
-        let mut orig_ty = self.normalize(Some(span), Cow::Borrowed(orig_ty), Default::default())?;
+        let mut orig_ty = self.normalize(
+            Some(span),
+            Cow::Borrowed(orig_ty),
+            NormalizeTypeOpts {
+                preserve_global_this: true,
+                preserve_union: true,
+                ..Default::default()
+            },
+        )?;
         orig_ty.make_clone_cheap();
 
         let _stack = stack::track(span)?;
@@ -1133,67 +1142,82 @@ impl Analyzer<'_, '_> {
         Ok(ty.into_owned())
     }
 
-    #[extra_validator]
-    fn validate_relative_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) {
+    fn validate_relative_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) -> VResult<()> {
         let marks = self.marks();
+
+        let l = self
+            .normalize(
+                None,
+                Cow::Borrowed(l),
+                NormalizeTypeOpts {
+                    preserve_global_this: true,
+                    preserve_intersection: true,
+                    preserve_union: true,
+                    ..Default::default()
+                },
+            )?
+            .into_owned()
+            .freezed();
+        let r = self
+            .normalize(
+                None,
+                Cow::Borrowed(r),
+                NormalizeTypeOpts {
+                    preserve_global_this: true,
+                    preserve_intersection: true,
+                    preserve_union: true,
+                    ..Default::default()
+                },
+            )?
+            .into_owned()
+            .freezed();
 
         let l = l.normalize();
         let r = r.normalize();
 
-        match (l, r) {
-            (Type::Ref(..), _) => {
-                if let Ok(l) = self.expand_top_ref(l.span(), Cow::Borrowed(l), Default::default()) {
-                    return self.validate_relative_comparison_operands(span, op, &l.freezed(), r);
-                }
-            }
-            (l, Type::Ref(..)) => {
-                if let Ok(r) = self.expand_top_ref(r.span(), Cow::Borrowed(r), Default::default()) {
-                    return self.validate_relative_comparison_operands(span, op, l, &r.freezed());
-                }
-            }
-            (Type::TypeLit(lt), Type::TypeLit(rt)) => {
-                // It's an error if type of the parameter of index signature is same but type
-                // annotation is different.
-                for lm in &lt.members {
-                    for rm in &rt.members {
-                        match (lm, rm) {
-                            (TypeElement::Index(lm), TypeElement::Index(rm)) if lm.params.type_eq(&rm.params) => {
-                                if let Some(lt) = &lm.type_ann {
-                                    if let Some(rt) = &rm.type_ann {
-                                        if self.assign(span, &mut Default::default(), lt, rt).is_ok()
-                                            || self.assign(span, &mut Default::default(), rt, lt).is_ok()
-                                        {
-                                            continue;
-                                        }
-                                    } else {
+        if let (Type::TypeLit(lt), Type::TypeLit(rt)) = (l, r) {
+            // It's an error if type of the parameter of index signature is same but type
+            // annotation is different.
+            for lm in &lt.members {
+                for rm in &rt.members {
+                    match (lm, rm) {
+                        (TypeElement::Index(lm), TypeElement::Index(rm)) if lm.params.type_eq(&rm.params) => {
+                            if let Some(lt) = &lm.type_ann {
+                                if let Some(rt) = &rm.type_ann {
+                                    if self.assign(span, &mut Default::default(), lt, rt).is_ok()
+                                        || self.assign(span, &mut Default::default(), rt, lt).is_ok()
+                                    {
                                         continue;
                                     }
                                 } else {
                                     continue;
                                 }
-                                //
-                                self.storage.report(
-                                    ErrorKind::CannotCompareWithOp {
-                                        span,
-                                        op,
-                                        left: box l.clone(),
-                                        right: box r.clone(),
-                                    }
-                                    .into(),
-                                );
-                                return;
+                            } else {
+                                continue;
                             }
-                            _ => {}
+                            //
+                            self.storage.report(
+                                ErrorKind::CannotCompareWithOp {
+                                    span,
+                                    op,
+                                    left: box l.clone(),
+                                    right: box r.clone(),
+                                }
+                                .into(),
+                            );
+                            return Ok(());
                         }
+                        _ => {}
                     }
                 }
             }
-            _ => {}
         }
 
         let l = l.clone().generalize_lit();
         let r = r.clone().generalize_lit();
         self.verify_rel_cmp_operands(span, op, &l, &r)?;
+
+        Ok(())
     }
 
     fn verify_rel_cmp_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) -> VResult<()> {
@@ -1526,7 +1550,7 @@ impl Analyzer<'_, '_> {
         };
 
         let ty = self.type_of_name(span, &name.as_ids()[..name.len() - 1], TypeOfMode::RValue, None)?;
-        let ty = self.expand_top_ref(span, Cow::Owned(ty), Default::default())?.into_owned();
+        let ty = self.normalize(Some(span), Cow::Owned(ty), Default::default())?.into_owned();
 
         if let Type::Union(u) = ty.normalize() {
             let mut candidates = vec![];
@@ -1534,7 +1558,7 @@ impl Analyzer<'_, '_> {
                 let prop_res = self.access_property(span, ty, &prop, TypeOfMode::RValue, IdCtx::Var, Default::default());
 
                 if let Ok(prop_ty) = prop_res {
-                    let prop_ty = self.expand_top_ref(prop_ty.span(), Cow::Owned(prop_ty), Default::default())?;
+                    let prop_ty = self.normalize(Some(prop_ty.span()), Cow::Owned(prop_ty), Default::default())?;
                     let possible = match prop_ty.normalize() {
                         // Type parameters might have same value.
                         Type::Param(..) => true,
