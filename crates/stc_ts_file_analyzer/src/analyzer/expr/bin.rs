@@ -669,7 +669,8 @@ impl Analyzer<'_, '_> {
                     check_for_invalid_operand(&lt);
                     check_for_invalid_operand(&rt);
 
-                    self.validate_relative_comparison_operands(span, op, &lt, &rt);
+                    self.validate_relative_comparison_operands(span, op, &lt, &rt)
+                        .report(&mut self.storage);
                 }
 
                 Ok(Type::Keyword(KeywordType {
@@ -1141,8 +1142,7 @@ impl Analyzer<'_, '_> {
         Ok(ty.into_owned())
     }
 
-    #[extra_validator]
-    fn validate_relative_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) {
+    fn validate_relative_comparison_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) -> VResult<()> {
         let marks = self.marks();
 
         let l = l.normalize();
@@ -1189,7 +1189,7 @@ impl Analyzer<'_, '_> {
                                     }
                                     .into(),
                                 );
-                                return;
+                                return Ok(());
                             }
                             _ => {}
                         }
@@ -1202,6 +1202,8 @@ impl Analyzer<'_, '_> {
         let l = l.clone().generalize_lit();
         let r = r.clone().generalize_lit();
         self.verify_rel_cmp_operands(span, op, &l, &r)?;
+
+        Ok(())
     }
 
     fn verify_rel_cmp_operands(&mut self, span: Span, op: BinaryOp, l: &Type, r: &Type) -> VResult<()> {
