@@ -953,9 +953,8 @@ impl Analyzer<'_, '_> {
                     || self.assign(span, &mut Default::default(), index_ty, &prop_ty).is_ok();
 
                 if indexed {
-                    if let Some(ref type_ann) = type_ann {
-                        let ty = self.expand_top_ref(span, Cow::Borrowed(type_ann), Default::default())?;
-                        return Ok(Some(ty.into_owned()));
+                    if let Some(type_ann) = type_ann {
+                        return Ok(Some(*type_ann.clone()));
                     }
 
                     return Ok(Some(Type::any(span, Default::default())));
