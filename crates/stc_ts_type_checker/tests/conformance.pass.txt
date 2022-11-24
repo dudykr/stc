@@ -1156,7 +1156,6 @@ esnext/logicalAssignment/logicalAssignment9.ts
 expressions/arrayLiterals/arrayLiteralInference.ts
 expressions/arrayLiterals/arrayLiterals2ES5.ts
 expressions/arrayLiterals/arrayLiterals2ES6.ts
-expressions/arrayLiterals/arrayLiterals3.ts
 expressions/asOperator/asOpEmitParens.ts
 expressions/asOperator/asOperator1.ts
 expressions/asOperator/asOperator2.ts
