@@ -14,7 +14,10 @@ use swc_common::{Span, Spanned, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::TsKeywordTypeKind;
 use tracing::{debug, instrument};
 
-use crate::{analyzer::Analyzer, type_facts::TypeFacts};
+use crate::{
+    analyzer::{Analyzer, NormalizeTypeOpts},
+    type_facts::TypeFacts,
+};
 
 impl Analyzer<'_, '_> {
     /// TODO(kdy1): Note: This method preserves [Type::Ref] in some cases.
@@ -126,7 +129,14 @@ struct TypeFactsHandler<'a, 'b, 'c> {
 
 impl TypeFactsHandler<'_, '_, '_> {
     fn can_be_primitive(&mut self, ty: &Type) -> bool {
-        let ty = if let Ok(ty) = self.analyzer.normalize(Some(ty.span()), Cow::Borrowed(ty), Default::default()) {
+        let ty = if let Ok(ty) = self.analyzer.normalize(
+            Some(ty.span()),
+            Cow::Borrowed(ty),
+            NormalizeTypeOpts {
+                preserve_global_this: true,
+                ..Default::default()
+            },
+        ) {
             ty
         } else {
             return true;
