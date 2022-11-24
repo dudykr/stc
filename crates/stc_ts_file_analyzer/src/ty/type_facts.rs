@@ -125,9 +125,8 @@ struct TypeFactsHandler<'a, 'b, 'c> {
 }
 
 impl TypeFactsHandler<'_, '_, '_> {
-    #[instrument(skip(self, ty))]
     fn can_be_primitive(&mut self, ty: &Type) -> bool {
-        let ty = if let Ok(ty) = self.analyzer.expand_top_ref(ty.span(), Cow::Borrowed(ty), Default::default()) {
+        let ty = if let Ok(ty) = self.analyzer.normalize(Some(ty.span()), Cow::Borrowed(ty), Default::default()) {
             ty
         } else {
             return true;
