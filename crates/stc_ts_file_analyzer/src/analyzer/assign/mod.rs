@@ -2031,6 +2031,20 @@ impl Analyzer<'_, '_> {
                         // TODO: Handle Type::Rest
 
                         if elems.len() > rhs_elems.len() {
+                            let is_lhs_any_tuple = elems.iter().all(|l| {
+                                matches!(
+                                    *l.ty,
+                                    Type::Keyword(KeywordType {
+                                        kind: TsKeywordTypeKind::TsAnyKeyword,
+                                        ..
+                                    })
+                                )
+                            });
+
+                            if is_lhs_any_tuple {
+                                return Ok(());
+                            }
+
                             return Err(ErrorKind::AssignFailedBecauseTupleLengthDiffers { span }.into());
                         }
 
