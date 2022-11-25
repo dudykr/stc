@@ -310,12 +310,11 @@ impl LspClient {
         })
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn write_response<V>(&mut self, id: u64, result: V) -> Result<()>
     where
         V: Serialize,
     {
-        trace!("write_response");
-
         let value = json!({
           "jsonrpc": "2.0",
           "id": id,
@@ -324,12 +323,12 @@ impl LspClient {
         self.write(value)
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn write_notification<S, V>(&mut self, method: S, params: V) -> Result<()>
     where
         S: AsRef<str>,
         V: Serialize,
     {
-        trace!("write_notification");
         let value = json!({
           "jsonrpc": "2.0",
           "method": method.as_ref(),
