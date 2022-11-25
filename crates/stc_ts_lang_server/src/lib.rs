@@ -1,16 +1,19 @@
 use clap::Args;
 use tower_lsp::{
     async_trait,
-    jsonrpc::{self, Error},
+    jsonrpc::{self},
     lsp_types::*,
     Client, LanguageServer, LspService, Server,
 };
+use tracing::info;
 
 #[derive(Debug, Args)]
 pub struct LspCommand {}
 
 impl LspCommand {
     pub async fn run(self) -> anyhow::Result<()> {
+        info!("Starting server");
+
         let stdin = tokio::io::stdin();
         let stdout = tokio::io::stdout();
 
@@ -43,6 +46,9 @@ impl LanguageServer for StcLangServer {
     }
 
     async fn hover(&self, params: HoverParams) -> jsonrpc::Result<Option<Hover>> {
-        Err(Error::method_not_found())
+        Ok(Some(Hover {
+            contents: HoverContents::Scalar(MarkedString::String(format!("Hovered over {:?}", params))),
+            range: None,
+        }))
     }
 }
