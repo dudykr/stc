@@ -64,6 +64,8 @@ where
         if reader.read_line(&mut buf)? == 0 {
             return Ok(None);
         }
+        dbg!(&buf);
+
         if let Some(captures) = CONTENT_TYPE_REG.captures(&buf) {
             let content_length_match = captures.get(1).ok_or_else(|| anyhow::anyhow!("missing capture"))?;
             content_length = content_length_match.as_str().parse::<usize>()?;
