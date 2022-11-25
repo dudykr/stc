@@ -2235,6 +2235,7 @@ dependencies = [
  "anyhow",
  "clap",
  "env_logger",
+ "log",
  "once_cell",
  "serde",
  "serde_json",
