@@ -123,6 +123,9 @@ impl LspStdoutReader {
         loop {
             for i in 0..msg_queue.len() {
                 let msg = &msg_queue[i];
+
+                debug!("Received message: {:?}", msg);
+
                 if let Some(result) = get_match(msg) {
                     let msg = msg_queue.remove(i);
                     self.read_messages.push(msg);
