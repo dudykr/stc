@@ -16,6 +16,7 @@ use regex::Regex;
 use serde::{de, Deserialize, Serialize};
 use serde_json::{json, to_value, Value};
 use tempdir::TempDir;
+use tracing::debug;
 
 static CONTENT_TYPE_REG: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)^content-length:\s+(\d+)").unwrap());
 
@@ -115,6 +116,8 @@ impl LspStdoutReader {
     }
 
     pub fn read_message<R>(&mut self, mut get_match: impl FnMut(&LspMessage) -> Option<R>) -> R {
+        debug!("read_message");
+
         let (msg_queue, cvar) = &*self.pending_messages;
         let mut msg_queue = msg_queue.lock();
         loop {
@@ -301,6 +304,8 @@ impl LspClient {
     where
         V: Serialize,
     {
+        debug!("write_response");
+
         let value = json!({
           "jsonrpc": "2.0",
           "id": id,
@@ -314,6 +319,7 @@ impl LspClient {
         S: AsRef<str>,
         V: Serialize,
     {
+        debug!("write_notification");
         let value = json!({
           "jsonrpc": "2.0",
           "method": method.as_ref(),

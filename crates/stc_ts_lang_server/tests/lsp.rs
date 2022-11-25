@@ -10,6 +10,7 @@ use serde_json::{json, Value};
 use stc_ts_testing::lsp::LspClient;
 use stc_utils::AHashSet;
 use tower_lsp::lsp_types::{Diagnostic, PublishDiagnosticsParams};
+use tracing::debug;
 
 /// Builds the example lsp command, and returns to the path to it.
 fn exec_path() -> PathBuf {
@@ -77,12 +78,16 @@ where
 }
 
 fn handle_configuration_request(client: &mut LspClient, result: Value) {
+    debug!("handle_configuration_request");
+
     let (id, method, _) = client.read_request::<Value>().unwrap();
     assert_eq!(method, "workspace/configuration");
     client.write_response(id, result).unwrap();
 }
 
 fn read_diagnostics(client: &mut LspClient) -> CollectedDiagnostics {
+    debug!("read_diagnostics");
+
     // diagnostics come in batches of three unless they're cancelled
     let mut diagnostics = vec![];
     for _ in 0..3 {
