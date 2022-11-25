@@ -243,6 +243,7 @@ impl LspClient {
         }))
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn read_notification<R>(&mut self) -> Result<(String, Option<R>)>
     where
         R: de::DeserializeOwned,
@@ -253,6 +254,7 @@ impl LspClient {
         })
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn read_request<R>(&mut self) -> Result<(u64, String, Option<R>)>
     where
         R: de::DeserializeOwned,
@@ -274,6 +276,7 @@ impl LspClient {
         Ok(())
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn write_request<S, V, R>(&mut self, method: S, params: V) -> Result<(Option<R>, Option<LspResponseError>)>
     where
         S: AsRef<str>,
@@ -294,8 +297,6 @@ impl LspClient {
               "params": params,
             })
         };
-
-        trace!("write_request");
 
         self.write(value)?;
 
