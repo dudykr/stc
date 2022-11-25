@@ -1,5 +1,9 @@
-use std::{path::PathBuf, sync::Arc};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
+use anyhow::Context;
 use clap::Args;
 use once_cell::sync::Lazy;
 use stc_ts_builtin_types::Lib;
@@ -59,11 +63,11 @@ pub struct StcLangServer {
 
 #[derive(Default)]
 struct Data {
-    /// A map of the parent directory of `package.json` to project data.
+    /// A map of the parent directory of `tsconfig.json` to project data.
     projects: AHashMap<PathBuf, TsProject>,
 }
 
-/// A directory with `package.json` is treated as a package.
+/// A directory with `tsconfig.json` is treated as a package.
 struct TsProject {
     checker: Checker,
 
@@ -95,8 +99,15 @@ impl LanguageServer for StcLangServer {
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let uri = params.text_document.uri;
-        let path = uri.to_file_path().unwrap();
-        let parent = path.parent().unwrap();
+        let tsconfig_path = find_tsconfig_json(&uri.to_file_path().unwrap());
+        let tsconfig_path = match tsconfig_path {
+            Ok(v) => v,
+            Err(e) => {
+                log::warn!("{:?}", e);
+                return;
+            }
+        };
+        let parent = tsconfig_path.parent().unwrap();
         let mut data = self.data.lock().await;
         let project = data.projects.entry(parent.to_path_buf()).or_insert_with(|| {
             let cm = Arc::new(SourceMap::default());
@@ -134,4 +145,31 @@ impl LanguageServer for StcLangServer {
             range: None,
         }))
     }
+}
+
+fn find_tsconfig_json(start: &Path) -> anyhow::Result<PathBuf> {
+    run(|| {
+        //
+
+        let mut c = Some(start);
+
+        while let Some(cur) = c {
+            let tsconfig = cur.join("tsconfig.json");
+            if tsconfig.is_file() {
+                return Ok(tsconfig);
+            }
+
+            c = cur.parent();
+        }
+
+        anyhow::bail!("failed to find tsconfig.json")
+    })
+    .with_context(|| format!("failed to find tsconfig.json for `{}`", start.display()))
+}
+
+fn run<F, Ret>(op: F) -> anyhow::Result<Ret>
+where
+    F: FnOnce() -> anyhow::Result<Ret>,
+{
+    op()
 }
