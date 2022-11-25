@@ -1,6 +1,7 @@
 use std::{path::PathBuf, sync::Arc};
 
 use clap::Args;
+use once_cell::sync::Lazy;
 use stc_ts_builtin_types::Lib;
 use stc_ts_env::{Env, ModuleConfig, Rule};
 use stc_ts_file_analyzer::env::EnvFactory;
@@ -11,6 +12,7 @@ use swc_common::{
     SourceMap,
 };
 use swc_ecma_ast::EsVersion;
+use swc_ecma_loader::{resolve::Resolve, resolvers::node::NodeModulesResolver, TargetEnv};
 use tokio::sync::Mutex;
 use tower_lsp::{
     async_trait,
@@ -19,6 +21,14 @@ use tower_lsp::{
     Client, LanguageServer, LspService, Server,
 };
 use tracing::info;
+
+/// Cached node.js resolver
+static NODE_RESOLVER: Lazy<Arc<dyn Resolve>> = Lazy::new(|| {
+    //
+    let r = NodeModulesResolver::new(TargetEnv::Node, Default::default(), false);
+    let r = swc_ecma_loader::resolvers::lru::CachingResolver::new(1024, r);
+    Arc::new(r)
+});
 
 #[derive(Debug, Args)]
 pub struct LspCommand {}
@@ -109,7 +119,8 @@ impl LanguageServer for StcLangServer {
                     ..Default::default()
                 },
                 None,
-                resolver,
+                // TODO: tsc resolver
+                NODE_RESOLVER.clone(),
             );
             TsProject { checker, open_cnt: 0 }
         });
