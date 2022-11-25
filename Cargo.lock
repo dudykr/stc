@@ -2216,6 +2216,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "env_logger",
  "once_cell",
  "serde",
  "serde_json",
