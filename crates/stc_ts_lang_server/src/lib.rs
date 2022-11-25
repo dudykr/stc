@@ -1,4 +1,9 @@
+use std::{path::PathBuf, sync::Arc};
+
 use clap::Args;
+use stc_ts_type_checker::Checker;
+use stc_utils::AHashMap;
+use tokio::sync::Mutex;
 use tower_lsp::{
     async_trait,
     jsonrpc::{self},
@@ -17,7 +22,10 @@ impl LspCommand {
         let stdin = tokio::io::stdin();
         let stdout = tokio::io::stdout();
 
-        let (service, socket) = LspService::new(|client| StcLangServer { client });
+        let (service, socket) = LspService::new(|client| StcLangServer {
+            client,
+            data: Default::default(),
+        });
         Server::new(stdin, stdout, socket).serve(service).await;
 
         Ok(())
@@ -27,6 +35,19 @@ impl LspCommand {
 pub struct StcLangServer {
     #[allow(unused)]
     client: Client,
+
+    data: Mutex<Data>,
+}
+
+#[derive(Default)]
+struct Data {
+    /// A map of the parent directory of `package.json` to project data.
+    projects: AHashMap<PathBuf, TsProject>,
+}
+
+/// A directory with `package.json` is treated as a package.
+struct TsProject {
+    checker: Checker,
 }
 
 #[async_trait]
@@ -51,6 +72,8 @@ impl LanguageServer for StcLangServer {
     async fn shutdown(&self) -> jsonrpc::Result<()> {
         Ok(())
     }
+
+    async fn did_open(&self, params: DidOpenTextDocumentParams) {}
 
     async fn hover(&self, _params: HoverParams) -> jsonrpc::Result<Option<Hover>> {
         Ok(Some(Hover {
