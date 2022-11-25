@@ -11,7 +11,7 @@ use stc_ts_testing::lsp::LspClient;
 use stc_utils::AHashSet;
 use testing::run_test;
 use tower_lsp::lsp_types::{Diagnostic, PublishDiagnosticsParams};
-use tracing::debug;
+use tracing::{debug, trace};
 
 /// Builds the example lsp command, and returns to the path to it.
 fn exec_path() -> PathBuf {
@@ -79,7 +79,7 @@ where
 }
 
 fn handle_configuration_request(client: &mut LspClient, result: Value) {
-    debug!("handle_configuration_request");
+    trace!("handle_configuration_request");
 
     let (id, method, _) = client.read_request::<Value>().unwrap();
     assert_eq!(method, "workspace/configuration");
