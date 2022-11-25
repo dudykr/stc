@@ -11,6 +11,7 @@ anyhow = "1.0.66"
 clap = {version = "4.0.23", features = ["derive"]}
 serde = {version = "1", features = ["derive"]}
 serde_json = "1"
+stc_ts_builtin_types = { version = "0.0.0", path = "../stc_ts_builtin_types" }
 stc_ts_env = { version = "0.1.0", path = "../stc_ts_env" }
 stc_ts_errors = { version = "0.1.0", path = "../stc_ts_errors" }
 stc_ts_file_analyzer = { version = "0.1.0", path = "../stc_ts_file_analyzer" }
