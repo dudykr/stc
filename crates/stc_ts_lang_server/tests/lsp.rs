@@ -11,7 +11,7 @@ use stc_ts_testing::lsp::LspClient;
 use stc_utils::AHashSet;
 use testing::run_test;
 use tower_lsp::lsp_types::{Diagnostic, PublishDiagnosticsParams};
-use tracing::{info, trace};
+use tracing::info;
 
 /// Builds the example lsp command, and returns to the path to it.
 fn exec_path() -> PathBuf {
@@ -83,6 +83,7 @@ where
 }
 
 #[tracing::instrument(skip_all)]
+#[allow(unused)]
 fn handle_configuration_request(client: &mut LspClient, result: Value) {
     // TODO: Implement this after implementing lsp
 
@@ -92,6 +93,7 @@ fn handle_configuration_request(client: &mut LspClient, result: Value) {
 }
 
 #[tracing::instrument(skip_all)]
+#[allow(unused)]
 fn read_diagnostics(client: &mut LspClient) -> CollectedDiagnostics {
     CollectedDiagnostics(Default::default())
 
@@ -115,6 +117,7 @@ fn shutdown(client: &mut LspClient) {
 #[derive(Debug, Clone)]
 struct CollectedDiagnostics(Vec<PublishDiagnosticsParams>);
 
+#[allow(unused)]
 impl CollectedDiagnostics {
     /// Gets the diagnostics that the editor will see after all the publishes.
     pub fn viewed(&self) -> Vec<Diagnostic> {
@@ -167,7 +170,7 @@ fn test_init() {
 
 #[test]
 fn test_hover() {
-    run_test(false, |cm, handler| {
+    run_test(false, |_cm, _handler| {
         let mut client = init("initialize_params.json");
         did_open(
             &mut client,
