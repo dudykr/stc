@@ -277,8 +277,6 @@ impl LspClient {
         V: Serialize,
         R: de::DeserializeOwned,
     {
-        trace!("write_request");
-
         let value = if to_value(&params).unwrap().is_null() {
             json!({
               "jsonrpc": "2.0",
@@ -293,6 +291,9 @@ impl LspClient {
               "params": params,
             })
         };
+
+        trace!("write_request: {:?}", value);
+
         self.write(value)?;
 
         self.reader.read_message(|msg| match msg {
