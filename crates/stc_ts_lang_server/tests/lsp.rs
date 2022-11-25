@@ -11,7 +11,7 @@ use stc_ts_testing::lsp::LspClient;
 use stc_utils::AHashSet;
 use testing::run_test;
 use tower_lsp::lsp_types::{Diagnostic, PublishDiagnosticsParams};
-use tracing::{debug, trace};
+use tracing::{info, trace};
 
 /// Builds the example lsp command, and returns to the path to it.
 fn exec_path() -> PathBuf {
@@ -87,7 +87,7 @@ fn handle_configuration_request(client: &mut LspClient, result: Value) {
 }
 
 fn read_diagnostics(client: &mut LspClient) -> CollectedDiagnostics {
-    debug!("read_diagnostics");
+    trace!("read_diagnostics");
 
     // diagnostics come in batches of three unless they're cancelled
     let mut diagnostics = vec![];
@@ -100,6 +100,8 @@ fn read_diagnostics(client: &mut LspClient) -> CollectedDiagnostics {
 }
 
 fn shutdown(client: &mut LspClient) {
+    info!("Shutdown");
+
     client.write_request::<_, _, Value>("shutdown", json!(null)).unwrap();
     client.write_notification("exit", json!(null)).unwrap();
 }
