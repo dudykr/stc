@@ -5,15 +5,17 @@ use std::{
     io::Write,
     path::Path,
     process::{Child, ChildStdin, ChildStdout, Command, Stdio},
-    sync::{Arc, Condvar, Mutex},
+    sync::Arc,
     time::{Duration, Instant},
 };
 
 use anyhow::Result;
 use once_cell::sync::Lazy;
+use parking_lot::{Condvar, Mutex};
 use regex::Regex;
 use serde::{de, Deserialize, Serialize};
 use serde_json::{json, to_value, Value};
+use tempdir::TempDir;
 
 static CONTENT_TYPE_REG: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)^content-length:\s+(\d+)").unwrap());
 
@@ -90,7 +92,7 @@ impl LspStdoutReader {
                     let msg = LspMessage::from(msg_buf.as_slice());
                     let cvar = &messages.1;
                     {
-                        let mut messages = messages.0.lock().unwrap();
+                        let mut messages = messages.0.lock();
                         messages.push(msg);
                     }
                     cvar.notify_all();
@@ -105,16 +107,16 @@ impl LspStdoutReader {
     }
 
     pub fn pending_len(&self) -> usize {
-        self.pending_messages.0.lock().unwrap().len()
+        self.pending_messages.0.lock().len()
     }
 
     pub fn had_message(&self, is_match: impl Fn(&LspMessage) -> bool) -> bool {
-        self.read_messages.iter().any(&is_match) || self.pending_messages.0.lock().unwrap().iter().any(&is_match)
+        self.read_messages.iter().any(&is_match) || self.pending_messages.0.lock().iter().any(&is_match)
     }
 
     pub fn read_message<R>(&mut self, mut get_match: impl FnMut(&LspMessage) -> Option<R>) -> R {
         let (msg_queue, cvar) = &*self.pending_messages;
-        let mut msg_queue = msg_queue.lock().unwrap();
+        let mut msg_queue = msg_queue.lock();
         loop {
             for i in 0..msg_queue.len() {
                 let msg = &msg_queue[i];
@@ -124,7 +126,7 @@ impl LspStdoutReader {
                     return result;
                 }
             }
-            cvar.wait(msg_queue);
+            cvar.wait(&mut msg_queue);
         }
     }
 }
@@ -135,7 +137,7 @@ pub struct LspClient {
     request_id: u64,
     start: Instant,
     writer: io::BufWriter<ChildStdin>,
-    _temp_deno_dir: TempDir, // directory will be deleted on drop
+    _tmp_dir: TempDir, // directory will be deleted on drop
 }
 
 impl Drop for LspClient {
@@ -188,16 +190,10 @@ where
 }
 
 impl LspClient {
-    pub fn new(deno_exe: &Path, print_stderr: bool) -> Result<Self> {
-        let deno_dir = new_deno_dir();
-        let mut command = Command::new(deno_exe);
-        command
-            .env("DENO_DIR", deno_dir.path())
-            .env("DENO_NODE_COMPAT_URL", std_file_url())
-            .env("DENO_NPM_REGISTRY", npm_registry_url())
-            .arg("lsp")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped());
+    pub fn new(exec_path: &Path, print_stderr: bool) -> Result<Self> {
+        let tmp_dir = TempDir::new("_stc_lsp")?;
+        let mut command = Command::new(exec_path);
+        command.stdin(Stdio::piped()).stdout(Stdio::piped());
         if !print_stderr {
             command.stderr(Stdio::null());
         }
@@ -215,7 +211,7 @@ impl LspClient {
             request_id: 1,
             start: Instant::now(),
             writer,
-            _temp_deno_dir: deno_dir,
+            _tmp_dir: tmp_dir,
         })
     }
 
