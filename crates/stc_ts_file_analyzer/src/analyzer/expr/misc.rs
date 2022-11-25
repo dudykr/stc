@@ -2,6 +2,7 @@ use stc_ts_ast_rnode::{RTsInstantiation, RTsSatisfiesExpr};
 use stc_ts_errors::DebugExt;
 use stc_ts_file_analyzer_macros::validator;
 use stc_ts_types::{Type, TypeParamInstantiation};
+use stc_utils::cache::Freeze;
 
 use crate::{
     analyzer::{expr::TypeOfMode, Analyzer},
@@ -18,9 +19,11 @@ impl Analyzer<'_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         type_ann: Option<&Type>,
     ) -> VResult<Type> {
+        let type_ann = e.type_ann.validate_with(self)?.freezed();
+
         let ty = e
             .expr
-            .validate_with_args(self, (mode, type_args, type_ann))
+            .validate_with_args(self, (mode, type_args, Some(&type_ann)))
             .context("tried to verify expr of ts satisfies expression")?;
 
         // TODO: verify
