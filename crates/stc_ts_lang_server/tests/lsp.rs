@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 use stc_ts_testing::lsp::LspClient;
 use stc_utils::AHashSet;
 use testing::run_test;
-use tower_lsp::lsp_types::{Diagnostic, PublishDiagnosticsParams};
+use tower_lsp::lsp_types::{Diagnostic, DidOpenTextDocumentParams, PublishDiagnosticsParams, TextDocumentItem, Url};
 use tracing::info;
 
 /// Builds the example lsp command, and returns to the path to it.
@@ -174,14 +174,14 @@ fn test_hover() {
         let mut client = init("initialize_params.json");
         did_open(
             &mut client,
-            json!({
-              "textDocument": {
-                "uri": "file:///a/file.ts",
-                "languageId": "typescript",
-                "version": 1,
-                "text": "console.log('foo');\n"
-              }
-            }),
+            DidOpenTextDocumentParams {
+                text_document: TextDocumentItem {
+                    uri: Url::parse("file:///a/file.ts").unwrap(),
+                    language_id: "typescript".into(),
+                    version: 1,
+                    text: "console.log('foo');\n".into(),
+                },
+            },
         );
         dbg!("After did_open");
         let (maybe_res, maybe_err) = client
