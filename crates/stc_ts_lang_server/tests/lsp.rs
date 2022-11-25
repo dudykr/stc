@@ -66,6 +66,7 @@ where
 {
     client.write_notification("textDocument/didOpen", params).unwrap();
 
+    dbg!("after write_notification");
     handle_configuration_request(
         client,
         json!([{
@@ -75,27 +76,25 @@ where
           }
         }]),
     );
+
+    dbg!("after handle_configuration_request");
+
     read_diagnostics(client).0
 }
 
+#[tracing::instrument(skip_all)]
 fn handle_configuration_request(client: &mut LspClient, result: Value) {
-    trace!("handle_configuration_request");
-
     let (id, method, _) = client.read_request::<Value>().unwrap();
     assert_eq!(method, "workspace/configuration");
     client.write_response(id, result).unwrap();
 }
 
+#[tracing::instrument(skip_all)]
 fn read_diagnostics(client: &mut LspClient) -> CollectedDiagnostics {
-    trace!("read_diagnostics");
-
-    // diagnostics come in batches of three unless they're cancelled
     let mut diagnostics = vec![];
-    for _ in 0..3 {
-        let (method, response) = client.read_notification::<PublishDiagnosticsParams>().unwrap();
-        assert_eq!(method, "textDocument/publishDiagnostics");
-        diagnostics.push(response.unwrap());
-    }
+    let (method, response) = client.read_notification::<PublishDiagnosticsParams>().unwrap();
+    assert_eq!(method, "textDocument/publishDiagnostics");
+    diagnostics.push(response.unwrap());
     CollectedDiagnostics(diagnostics)
 }
 
@@ -174,6 +173,7 @@ fn test_hover() {
               }
             }),
         );
+        dbg!("After did_open");
         let (maybe_res, maybe_err) = client
             .write_request(
                 "textDocument/hover",
@@ -188,6 +188,8 @@ fn test_hover() {
                 }),
             )
             .unwrap();
+        dbg!("After client.write_request");
+
         assert!(maybe_err.is_none());
         assert_eq!(
             maybe_res,
