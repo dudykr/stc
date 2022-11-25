@@ -692,6 +692,18 @@ impl Analyzer<'_, '_> {
                     } else {
                         self.assign_with_op(span, op, &lhs_ty, ty)?;
                     }
+
+                    if let RExpr::Ident(left) = &**expr {
+                        if op == op!("??=") {
+                            if let Ok(prev) = self.type_of_var(left, TypeOfMode::RValue, None) {
+                                let new_actual_ty = self.apply_type_facts_to_type(TypeFacts::NEUndefinedOrNull, prev);
+
+                                if let Some(var) = self.scope.vars.get_mut(&Id::from(left)) {
+                                    var.actual_ty = Some(new_actual_ty);
+                                }
+                            }
+                        }
+                    }
                 }
 
                 RPatOrExpr::Pat(ref pat) => {
