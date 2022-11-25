@@ -45,9 +45,9 @@ impl LanguageServer for StcLangServer {
         Ok(())
     }
 
-    async fn hover(&self, params: HoverParams) -> jsonrpc::Result<Option<Hover>> {
+    async fn hover(&self, _params: HoverParams) -> jsonrpc::Result<Option<Hover>> {
         Ok(Some(Hover {
-            contents: HoverContents::Scalar(MarkedString::String(format!("Hovered over {:?}", params))),
+            contents: HoverContents::Scalar(MarkedString::String("hover test".to_string())),
             range: None,
         }))
     }

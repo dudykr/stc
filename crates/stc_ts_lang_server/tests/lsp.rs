@@ -179,7 +179,7 @@ fn test_hover() {
                 "uri": "file:///a/file.ts",
                 "languageId": "typescript",
                 "version": 1,
-                "text": "console.log(Deno.args);\n"
+                "text": "console.log('foo');\n"
               }
             }),
         );
@@ -193,7 +193,7 @@ fn test_hover() {
                   },
                   "position": {
                     "line": 0,
-                    "character": 19
+                    "character": 5
                   }
                 }),
             )
@@ -204,28 +204,12 @@ fn test_hover() {
         assert_eq!(
             maybe_res,
             Some(json!({
-              "contents": [
-                {
-                  "language": "typescript",
-                  "value": "const Deno.args: string[]"
-                },
-                "Returns the script arguments to the program.\n\nGive the following command line invocation of Deno:\n\n```sh\ndeno run --allow-read https://deno.land/std/examples/cat.ts /etc/passwd\n```\n\nThen `Deno.args` will contain:\n\n```\n[ \"/etc/passwd\" ]\n```\n\nIf you are looking for a structured way to parse arguments, there is the\n[`std/flags`](https://deno.land/std/flags) module as part of the Deno\nstandard library.",
-                "\n\n*@category* - Runtime Environment",
-              ],
-              "range": {
-                "start": {
-                  "line": 0,
-                  "character": 17
-                },
-                "end": {
-                  "line": 0,
-                  "character": 21
-                }
-              }
+              "contents": "hover test",
             }))
         );
         shutdown(&mut client);
 
         Ok(())
-    }).unwrap();
+    })
+    .unwrap();
 }
