@@ -10,6 +10,8 @@ version = "0.1.0"
 [dependencies]
 anyhow = "1.0.66"
 rnode = {path = "../rnode/"}
+serde = {version = "1.0.147", features = ["derive"]}
+serde_json = "1.0.89"
 stc_testing = {path = "../stc_testing"}
 stc_ts_ast_rnode = {path = "../stc_ts_ast_rnode"}
 stc_ts_types = {path = "../stc_ts_types"}
@@ -21,4 +23,4 @@ swc_ecma_parser = "0.122.26"
 swc_ecma_transforms = "0.198.45"
 swc_ecma_utils = "0.105.32"
 swc_ecma_visit = "0.80.19"
-tokio = { version = "1.22.0", features = ["test-util", "process"] }
+tokio = {version = "1.22.0", features = ["test-util", "process"]}
