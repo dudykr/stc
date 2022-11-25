@@ -28,3 +28,4 @@ swc_ecma_utils = "0.105.32"
 swc_ecma_visit = "0.80.19"
 tempdir = "0.3.7"
 tokio = {version = "1.22.0", features = ["test-util", "process"]}
+tracing = "0.1.37"

@@ -1,12 +1,19 @@
-use anyhow::Result;
 use clap::Args;
-use tower_lsp::{async_trait, jsonrpc, lsp_types::*, Client, LanguageServer, LspService, Server};
+use tower_lsp::{
+    async_trait,
+    jsonrpc::{self},
+    lsp_types::*,
+    Client, LanguageServer, LspService, Server,
+};
+use tracing::info;
 
 #[derive(Debug, Args)]
 pub struct LspCommand {}
 
 impl LspCommand {
-    pub async fn run(self) -> Result<()> {
+    pub async fn run(self) -> anyhow::Result<()> {
+        info!("Starting server");
+
         let stdin = tokio::io::stdin();
         let stdout = tokio::io::stdout();
 
@@ -36,5 +43,12 @@ impl LanguageServer for StcLangServer {
 
     async fn shutdown(&self) -> jsonrpc::Result<()> {
         Ok(())
+    }
+
+    async fn hover(&self, _params: HoverParams) -> jsonrpc::Result<Option<Hover>> {
+        Ok(Some(Hover {
+            contents: HoverContents::Scalar(MarkedString::String("hover test".to_string())),
+            range: None,
+        }))
     }
 }

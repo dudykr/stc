@@ -2216,6 +2216,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "env_logger",
  "once_cell",
  "serde",
  "serde_json",
@@ -2225,8 +2226,11 @@ dependencies = [
  "stc_ts_types",
  "stc_ts_utils",
  "stc_utils",
+ "testing",
  "tokio",
  "tower-lsp",
+ "tracing",
+ "tracing-subscriber 0.2.25",
 ]
 
 [[package]]
@@ -2353,6 +2357,7 @@ dependencies = [
  "swc_ecma_visit",
  "tempdir",
  "tokio",
+ "tracing",
 ]
 
 [[package]]

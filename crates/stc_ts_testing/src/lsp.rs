@@ -16,6 +16,7 @@ use regex::Regex;
 use serde::{de, Deserialize, Serialize};
 use serde_json::{json, to_value, Value};
 use tempdir::TempDir;
+use tracing::{debug, trace};
 
 static CONTENT_TYPE_REG: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)^content-length:\s+(\d+)").unwrap());
 
@@ -63,6 +64,8 @@ where
         if reader.read_line(&mut buf)? == 0 {
             return Ok(None);
         }
+        dbg!(&buf);
+
         if let Some(captures) = CONTENT_TYPE_REG.captures(&buf) {
             let content_length_match = captures.get(1).ok_or_else(|| anyhow::anyhow!("missing capture"))?;
             content_length = content_length_match.as_str().parse::<usize>()?;
@@ -115,11 +118,16 @@ impl LspStdoutReader {
     }
 
     pub fn read_message<R>(&mut self, mut get_match: impl FnMut(&LspMessage) -> Option<R>) -> R {
+        trace!("read_message");
+
         let (msg_queue, cvar) = &*self.pending_messages;
         let mut msg_queue = msg_queue.lock();
         loop {
             for i in 0..msg_queue.len() {
                 let msg = &msg_queue[i];
+
+                debug!("Received message: {:?}", msg);
+
                 if let Some(result) = get_match(msg) {
                     let msg = msg_queue.remove(i);
                     self.read_messages.push(msg);
@@ -147,7 +155,7 @@ impl Drop for LspClient {
                 self.child.kill().unwrap();
                 let _ = self.child.wait();
             }
-            Ok(Some(status)) => panic!("deno lsp exited unexpectedly {}", status),
+            Ok(Some(status)) => panic!("stc lsp exited unexpectedly {}", status),
             Err(e) => panic!("pebble error: {}", e),
         }
     }
@@ -237,6 +245,7 @@ impl LspClient {
         }))
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn read_notification<R>(&mut self) -> Result<(String, Option<R>)>
     where
         R: de::DeserializeOwned,
@@ -247,6 +256,7 @@ impl LspClient {
         })
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn read_request<R>(&mut self) -> Result<(u64, String, Option<R>)>
     where
         R: de::DeserializeOwned,
@@ -261,10 +271,14 @@ impl LspClient {
         let value_str = value.to_string();
         let msg = format!("Content-Length: {}\r\n\r\n{}", value_str.as_bytes().len(), value_str);
         self.writer.write_all(msg.as_bytes())?;
+
+        trace!("write: {}", msg);
         self.writer.flush()?;
+
         Ok(())
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn write_request<S, V, R>(&mut self, method: S, params: V) -> Result<(Option<R>, Option<LspResponseError>)>
     where
         S: AsRef<str>,
@@ -285,6 +299,7 @@ impl LspClient {
               "params": params,
             })
         };
+
         self.write(value)?;
 
         self.reader.read_message(|msg| match msg {
@@ -297,6 +312,7 @@ impl LspClient {
         })
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn write_response<V>(&mut self, id: u64, result: V) -> Result<()>
     where
         V: Serialize,
@@ -309,6 +325,7 @@ impl LspClient {
         self.write(value)
     }
 
+    #[tracing::instrument(skip_all)]
     pub fn write_notification<S, V>(&mut self, method: S, params: V) -> Result<()>
     where
         S: AsRef<str>,
