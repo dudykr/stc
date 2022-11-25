@@ -9,6 +9,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{json, Value};
 use stc_ts_testing::lsp::LspClient;
 use stc_utils::AHashSet;
+use testing::run_test;
 use tower_lsp::lsp_types::{Diagnostic, PublishDiagnosticsParams};
 use tracing::debug;
 
@@ -158,55 +159,59 @@ fn test_init() {
 
 #[test]
 fn test_hover() {
-    let mut client = init("initialize_params.json");
-    did_open(
-        &mut client,
-        json!({
-          "textDocument": {
-            "uri": "file:///a/file.ts",
-            "languageId": "typescript",
-            "version": 1,
-            "text": "console.log(Deno.args);\n"
-          }
-        }),
-    );
-    let (maybe_res, maybe_err) = client
-        .write_request(
-            "textDocument/hover",
+    run_test(false, |cm, handler| {
+        let mut client = init("initialize_params.json");
+        did_open(
+            &mut client,
             json!({
               "textDocument": {
-                "uri": "file:///a/file.ts"
-              },
-              "position": {
-                "line": 0,
-                "character": 19
+                "uri": "file:///a/file.ts",
+                "languageId": "typescript",
+                "version": 1,
+                "text": "console.log(Deno.args);\n"
               }
             }),
-        )
-        .unwrap();
-    assert!(maybe_err.is_none());
-    assert_eq!(
-        maybe_res,
-        Some(json!({
-          "contents": [
-            {
-              "language": "typescript",
-              "value": "const Deno.args: string[]"
-            },
-            "Returns the script arguments to the program.\n\nGive the following command line invocation of Deno:\n\n```sh\ndeno run --allow-read https://deno.land/std/examples/cat.ts /etc/passwd\n```\n\nThen `Deno.args` will contain:\n\n```\n[ \"/etc/passwd\" ]\n```\n\nIf you are looking for a structured way to parse arguments, there is the\n[`std/flags`](https://deno.land/std/flags) module as part of the Deno\nstandard library.",
-            "\n\n*@category* - Runtime Environment",
-          ],
-          "range": {
-            "start": {
-              "line": 0,
-              "character": 17
-            },
-            "end": {
-              "line": 0,
-              "character": 21
-            }
-          }
-        }))
-    );
-    shutdown(&mut client);
+        );
+        let (maybe_res, maybe_err) = client
+            .write_request(
+                "textDocument/hover",
+                json!({
+                  "textDocument": {
+                    "uri": "file:///a/file.ts"
+                  },
+                  "position": {
+                    "line": 0,
+                    "character": 19
+                  }
+                }),
+            )
+            .unwrap();
+        assert!(maybe_err.is_none());
+        assert_eq!(
+            maybe_res,
+            Some(json!({
+              "contents": [
+                {
+                  "language": "typescript",
+                  "value": "const Deno.args: string[]"
+                },
+                "Returns the script arguments to the program.\n\nGive the following command line invocation of Deno:\n\n```sh\ndeno run --allow-read https://deno.land/std/examples/cat.ts /etc/passwd\n```\n\nThen `Deno.args` will contain:\n\n```\n[ \"/etc/passwd\" ]\n```\n\nIf you are looking for a structured way to parse arguments, there is the\n[`std/flags`](https://deno.land/std/flags) module as part of the Deno\nstandard library.",
+                "\n\n*@category* - Runtime Environment",
+              ],
+              "range": {
+                "start": {
+                  "line": 0,
+                  "character": 17
+                },
+                "end": {
+                  "line": 0,
+                  "character": 21
+                }
+              }
+            }))
+        );
+        shutdown(&mut client);
+
+        Ok(())
+    }).unwrap();
 }
