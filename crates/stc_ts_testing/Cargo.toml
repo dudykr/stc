@@ -25,4 +25,5 @@ swc_ecma_parser = "0.122.26"
 swc_ecma_transforms = "0.198.45"
 swc_ecma_utils = "0.105.32"
 swc_ecma_visit = "0.80.19"
+tempdir = "0.3.7"
 tokio = {version = "1.22.0", features = ["test-util", "process"]}
