@@ -2227,6 +2227,7 @@ dependencies = [
  "stc_utils",
  "tokio",
  "tower-lsp",
+ "tracing",
 ]
 
 [[package]]
@@ -2353,6 +2354,7 @@ dependencies = [
  "swc_ecma_visit",
  "tempdir",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
