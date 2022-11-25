@@ -153,7 +153,7 @@ impl Drop for LspClient {
                 self.child.kill().unwrap();
                 let _ = self.child.wait();
             }
-            Ok(Some(status)) => panic!("deno lsp exited unexpectedly {}", status),
+            Ok(Some(status)) => panic!("stc lsp exited unexpectedly {}", status),
             Err(e) => panic!("pebble error: {}", e),
         }
     }
@@ -267,7 +267,10 @@ impl LspClient {
         let value_str = value.to_string();
         let msg = format!("Content-Length: {}\r\n\r\n{}", value_str.as_bytes().len(), value_str);
         self.writer.write_all(msg.as_bytes())?;
+
+        trace!("write: {}", msg);
         self.writer.flush()?;
+
         Ok(())
     }
 
@@ -292,7 +295,7 @@ impl LspClient {
             })
         };
 
-        trace!("write_request: {:?}", value);
+        trace!("write_request");
 
         self.write(value)?;
 
