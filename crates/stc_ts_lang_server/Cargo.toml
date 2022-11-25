@@ -24,5 +24,5 @@ tracing = "0.1.37"
 env_logger = "0.9.0"
 once_cell = "1.16.0"
 stc_ts_testing = {version = "0.1.0", path = "../stc_ts_testing"}
-testing = "0.31.14"
+testing = "0.31.15"
 tracing-subscriber = {version = "0.2.19", features = ["env-filter"]}
