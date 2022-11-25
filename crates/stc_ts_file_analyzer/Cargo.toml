@@ -65,6 +65,6 @@ tracing = "0.1.37"
 stc_testing = {path = "../stc_testing"}
 stc_ts_testing = {path = "../stc_ts_testing"}
 swc_ecma_parser = "0.122.29"
-swc_ecma_transforms = "0.198.60"
+swc_ecma_transforms = "0.198.61"
 swc_ecma_visit = "0.80.20"
 testing = "0.31.15"
