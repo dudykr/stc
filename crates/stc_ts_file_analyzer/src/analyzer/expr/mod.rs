@@ -685,7 +685,11 @@ impl Analyzer<'_, '_> {
     #[cfg_attr(debug_assertions, tracing::instrument(skip_all))]
     pub(crate) fn key_matches(&mut self, span: Span, declared: &Key, cur: &Key, allow_union: bool) -> bool {
         match declared {
-            Key::Computed(..) => {}
+            Key::Computed(declared) => {
+                if self.check_if_type_matches_key(span, cur, &declared.ty, true) {
+                    return true;
+                }
+            }
             _ => {
                 if declared.type_eq(cur) {
                     return true;
