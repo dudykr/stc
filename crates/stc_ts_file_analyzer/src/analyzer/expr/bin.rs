@@ -685,9 +685,10 @@ impl Analyzer<'_, '_> {
                     let left = match &**left {
                         RExpr::Lit(RLit::Str(s)) => Some(s.value.clone()),
                         RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| (&*v).into()),
-                        RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| (&*v).into()),
-                        RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| (&*v).into()),
-                        _ => None,
+                        _ => match &lt {
+                            Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => Some(s.value.clone()),
+                            _ => None,
+                        },
                     };
                     let name = Name::try_from(&**right).ok();
 
