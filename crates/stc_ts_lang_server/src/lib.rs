@@ -18,7 +18,7 @@ use stc_ts_type_checker::Checker;
 use stc_utils::AHashMap;
 use swc_common::{
     errors::{ColorConfig, Handler},
-    SourceMap,
+    FileName, SourceMap,
 };
 use swc_ecma_ast::EsVersion;
 use swc_ecma_loader::{resolve::Resolve, resolvers::node::NodeModulesResolver, TargetEnv};
@@ -195,6 +195,16 @@ impl LanguageServer for StcLangServer {
             project.open_cnt += 1;
         })
         .await;
+
+        let checker = self.checker_for(&uri).await;
+
+        // Wait for typings to be loaded.
+        self.with_project(&uri, |project| project.load_typings.clone()).await;
+
+        let filename = Arc::new(FileName::Real(uri.to_file_path().unwrap()));
+
+        // Validate
+        checker.check(filename);
     }
 
     async fn hover(&self, _params: HoverParams) -> jsonrpc::Result<Option<Hover>> {
