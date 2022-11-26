@@ -685,7 +685,7 @@ impl Analyzer<'_, '_> {
                     let left = match &**left {
                         RExpr::Lit(RLit::Str(s)) => Some(s.value.clone()),
                         RExpr::Tpl(t) if t.quasis.len() == 1 => t.quasis[0].cooked.clone().map(|v| (&*v).into()),
-                        _ => match &lt {
+                        _ => match lt.normalize() {
                             Type::Lit(LitType { lit: RTsLit::Str(s), .. }) => Some(s.value.clone()),
                             _ => None,
                         },
