@@ -2235,6 +2235,7 @@ dependencies = [
  "anyhow",
  "clap",
  "env_logger",
+ "futures-util",
  "log",
  "once_cell",
  "serde",
