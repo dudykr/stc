@@ -63,6 +63,8 @@ pub struct StcLangServer {
 
 #[derive(Default)]
 struct Data {
+    project_without_root: Option<TsProject>,
+
     /// A map of the parent directory of `tsconfig.json` to project data.
     projects: AHashMap<PathBuf, TsProject>,
 }
@@ -72,6 +74,58 @@ struct TsProject {
     checker: Checker,
 
     open_cnt: usize,
+}
+
+impl StcLangServer {
+    fn create_project(&self) -> TsProject {
+        let cm = Arc::new(SourceMap::default());
+        let handler = Arc::new(Handler::with_tty_emitter(ColorConfig::Never, true, false, Some(cm.clone())));
+
+        // TODO: Parse tsconfig.json
+        let env = Env::simple(
+            Rule { ..Default::default() },
+            EsVersion::latest(),
+            ModuleConfig::EsNext,
+            &Lib::load("es2020"),
+        );
+
+        let checker = Checker::new(
+            cm,
+            handler,
+            env,
+            swc_ecma_parser::TsConfig {
+                // TODO
+                ..Default::default()
+            },
+            None,
+            // TODO: tsc resolver
+            NODE_RESOLVER.clone(),
+        );
+        TsProject { checker, open_cnt: 0 }
+    }
+
+    async fn with_project<F, R>(&self, uri: &Url, op: F) -> R
+    where
+        F: FnOnce(&mut TsProject) -> R,
+    {
+        let tsconfig_path = find_tsconfig_json(&uri.to_file_path().unwrap());
+        let tsconfig_path = match tsconfig_path {
+            Ok(v) => v,
+            Err(e) => {
+                log::warn!("{:?}", e);
+
+                let mut p = self.data.lock().await;
+                let project = p.project_without_root.get_or_insert_with(|| self.create_project());
+
+                return op(project);
+            }
+        };
+        let parent = tsconfig_path.parent().unwrap();
+        let mut data = self.data.lock().await;
+        let project = data.projects.entry(parent.to_path_buf()).or_insert_with(|| self.create_project());
+
+        op(project)
+    }
 }
 
 #[async_trait]
@@ -99,44 +153,10 @@ impl LanguageServer for StcLangServer {
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let uri = params.text_document.uri;
-        let tsconfig_path = find_tsconfig_json(&uri.to_file_path().unwrap());
-        let tsconfig_path = match tsconfig_path {
-            Ok(v) => v,
-            Err(e) => {
-                log::warn!("{:?}", e);
-                return;
-            }
-        };
-        let parent = tsconfig_path.parent().unwrap();
-        let mut data = self.data.lock().await;
-        let project = data.projects.entry(parent.to_path_buf()).or_insert_with(|| {
-            let cm = Arc::new(SourceMap::default());
-            let handler = Arc::new(Handler::with_tty_emitter(ColorConfig::Never, true, false, Some(cm.clone())));
 
-            // TODO: Parse tsconfig.json
-            let env = Env::simple(
-                Rule { ..Default::default() },
-                EsVersion::latest(),
-                ModuleConfig::EsNext,
-                &Lib::load("es2020"),
-            );
-
-            let checker = Checker::new(
-                cm,
-                handler,
-                env,
-                swc_ecma_parser::TsConfig {
-                    // TODO
-                    ..Default::default()
-                },
-                None,
-                // TODO: tsc resolver
-                NODE_RESOLVER.clone(),
-            );
-            TsProject { checker, open_cnt: 0 }
+        self.with_project(&uri, |project| {
+            project.open_cnt += 1;
         });
-
-        project.open_cnt += 1;
     }
 
     async fn hover(&self, _params: HoverParams) -> jsonrpc::Result<Option<Hover>> {
