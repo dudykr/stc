@@ -156,7 +156,8 @@ impl LanguageServer for StcLangServer {
 
         self.with_project(&uri, |project| {
             project.open_cnt += 1;
-        });
+        })
+        .await;
     }
 
     async fn hover(&self, _params: HoverParams) -> jsonrpc::Result<Option<Hover>> {
