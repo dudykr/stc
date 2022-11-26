@@ -29,7 +29,6 @@ use tracing::{info, warn};
 
 mod typings;
 
-/// Onc instance per swc::Compiler
 pub struct Checker {
     cm: Arc<SourceMap>,
     handler: Arc<Handler>,
@@ -38,7 +37,7 @@ pub struct Checker {
 
     declared_modules: RwLock<Vec<(ModuleId, Type)>>,
 
-    /// Informatnion required to generate `.d.ts` files.
+    /// Information required to generate `.d.ts` files.
     dts_modules: Arc<DashMap<ModuleId, RModule, FxBuildHasher>>,
 
     module_graph: Arc<ModuleGraph<StcComments, Arc<dyn Resolve>>>,
