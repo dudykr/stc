@@ -1719,14 +1719,14 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
                     }) => {
-                        self.storage.report(ErrorKind::ObjectIsPossiblyNull { span }.into());
+                        self.storage.report(ErrorKind::UndefinedOrNullIsNotValidOperand { span }.into());
                     }
 
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         ..
                     }) => {
-                        self.storage.report(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
+                        self.storage.report(ErrorKind::UndefinedOrNullIsNotValidOperand { span }.into());
                     }
 
                     ty => {
@@ -1741,14 +1741,14 @@ impl Analyzer<'_, '_> {
                         kind: TsKeywordTypeKind::TsNullKeyword,
                         ..
                     }) => {
-                        self.storage.report(ErrorKind::ObjectIsPossiblyNull { span }.into());
+                        self.storage.report(ErrorKind::UndefinedOrNullIsNotValidOperand { span }.into());
                     }
 
                     Type::Keyword(KeywordType {
                         kind: TsKeywordTypeKind::TsUndefinedKeyword,
                         ..
                     }) => {
-                        self.storage.report(ErrorKind::ObjectIsPossiblyUndefined { span }.into());
+                        self.storage.report(ErrorKind::UndefinedOrNullIsNotValidOperand { span }.into());
                     }
 
                     _ => {
