@@ -1563,7 +1563,7 @@ impl Analyzer<'_, '_> {
                     let possible = match prop_ty.normalize() {
                         // Type parameters might have same value.
                         Type::Param(..) => true,
-                        _ => prop_ty.type_eq(equals_to),
+                        _ => self.castable(span, &prop_ty, equals_to, CastableOpts { ..Default::default() })?,
                     };
                     if possible {
                         candidates.push(ty.clone())
