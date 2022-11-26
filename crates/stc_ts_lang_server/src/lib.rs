@@ -21,7 +21,7 @@ use tokio::{spawn, sync::Mutex};
 use tower_lsp::{
     async_trait,
     jsonrpc::{self},
-    lsp_types::{notification::Progress, *},
+    lsp_types::*,
     Client, LanguageServer, LspService, Server,
 };
 use tracing::info;
@@ -136,7 +136,7 @@ impl StcLangServer {
         let project = data
             .projects
             .entry(project_root_dir.to_path_buf())
-            .or_insert_with(|| self.create_project(Some(&project_root_dir)));
+            .or_insert_with(|| self.create_project(Some(project_root_dir)));
 
         op(project)
     }
