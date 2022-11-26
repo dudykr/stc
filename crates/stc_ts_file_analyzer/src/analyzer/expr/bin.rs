@@ -1563,12 +1563,15 @@ impl Analyzer<'_, '_> {
                     let possible = match prop_ty.normalize() {
                         // Type parameters might have same value.
                         Type::Param(..) => true,
-                        Type::Keyword(KeywordType {
-                            kind: TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
-                            ..
-                        }) => prop_ty.type_eq(equals_to),
-                        _ => self.castable(span, &prop_ty, equals_to, CastableOpts { ..Default::default() })?,
+                        _ => {
+                            if prop_ty.is_null_or_undefined() || equals_to.is_null_or_undefined() {
+                                prop_ty.type_eq(equals_to)
+                            } else {
+                                self.has_overlap(span, &prop_ty, equals_to, CastableOpts { ..Default::default() })?
+                            }
+                        }
                     };
+                    dbg!(possible);
                     if possible {
                         candidates.push(ty.clone())
                     }
