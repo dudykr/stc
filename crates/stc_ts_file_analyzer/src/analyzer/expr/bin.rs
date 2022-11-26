@@ -1566,7 +1566,7 @@ impl Analyzer<'_, '_> {
                         Type::Keyword(KeywordType {
                             kind: TsKeywordTypeKind::TsNullKeyword | TsKeywordTypeKind::TsUndefinedKeyword,
                             ..
-                        }) => false,
+                        }) => prop_ty.type_eq(equals_to),
                         _ => self.castable(span, &prop_ty, equals_to, CastableOpts { ..Default::default() })?,
                     };
                     if possible {
